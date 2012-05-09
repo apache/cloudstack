@@ -161,6 +161,7 @@ import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
+import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostNetworkSummary;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHostResourceSummary;
@@ -258,14 +259,18 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected String _privateNetworkVSwitchName;
     protected String _publicNetworkVSwitchName;
     protected String _guestNetworkVSwitchName;
-
+    protected VirtualSwitchType _privateNetworkVSwitchType = VirtualSwitchType.StandardVirtualSwitch;
+    protected VirtualSwitchType _publicNetworkVSwitchType = VirtualSwitchType.StandardVirtualSwitch;
+    protected VirtualSwitchType _guestNetworkVSwitchType = VirtualSwitchType.StandardVirtualSwitch;
+    protected boolean _nexusVSwitch = false;
+    
     protected float _cpuOverprovisioningFactor = 1;
     protected boolean _reserveCpu = false;
     
     protected float _memOverprovisioningFactor = 1;
     protected boolean _reserveMem = false;
     protected boolean _recycleHungWorker = false;
-    protected DiskControllerType _rootDiskController = DiskControllerType.ide;
+    protected DiskControllerType _rootDiskController = DiskControllerType.ide;    
 
     protected ManagedObjectReference _morHyperHost;
     protected VmwareContext _serviceContext;
@@ -787,7 +792,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         	int nicMasks = Integer.parseInt(nicMasksStr);
         	nicMasks &= ~(1 << publicNicInfo.first().intValue());
         	vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, String.valueOf(nicMasks));
-        	
+
             HostMO hostMo = vmMo.getRunningHost();
             List<NetworkDetails> networks = vmMo.getNetworksWithDetails();
             for (NetworkDetails netDetails : networks) {
@@ -806,8 +811,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     private void plugPublicNic(VirtualMachineMO vmMo, final String vlanId, final String vifMacAddress) throws Exception {
         // TODO : probably need to set traffic shaping
-        Pair<ManagedObjectReference, String> networkInfo = HypervisorHostHelper.prepareNetwork(this._publicNetworkVSwitchName, "cloud.public",
-        	vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout, true);
+        Pair<ManagedObjectReference, String> networkInfo = null;
+        
+        if(!_nexusVSwitch) {
+        	networkInfo = HypervisorHostHelper.prepareNetwork(this._publicNetworkVSwitchName, "cloud.public",
+                	vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout, true);
+        }
+        else {
+        	networkInfo = HypervisorHostHelper.prepareNetwork(this._publicNetworkVSwitchName, "cloud.public",
+                	vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout);
+        }
         
         int nicIndex = allocPublicNicIndex(vmMo);
         
@@ -1674,11 +1687,21 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         
         Pair<String, String> switchName =  getTargetSwitch(nicTo);
         String namePrefix = getNetworkNamePrefix(nicTo);
+        Pair<ManagedObjectReference, String> networkInfo = null;
+
+        s_logger.info("Prepare network on vSwitch: " + switchName + " with name prefix: " + namePrefix);
         
-        s_logger.info("Prepare network on vSwitch: " + switchName.first() + " with name prefix: " + namePrefix);
-        return HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix, hostMo, getVlanInfo(nicTo, switchName.second()), 
-                nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, 
-                !namePrefix.startsWith("cloud.private"));
+        if(!_nexusVSwitch) {
+        	networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix, hostMo, getVlanInfo(nicTo, switchName.second()), 
+                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, 
+                    !namePrefix.startsWith("cloud.private"));
+        }
+        else {
+        	networkInfo = HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix, hostMo, getVlanInfo(nicTo, switchName.second()), 
+                    nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout);
+        }
+        	
+        return networkInfo;
     }
     
     // return Pair<switch name, vlan tagging>
@@ -4009,7 +4032,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         _privateNetworkVSwitchName = (String) params.get("private.network.vswitch.name");
         _publicNetworkVSwitchName = (String) params.get("public.network.vswitch.name");
         _guestNetworkVSwitchName = (String) params.get("guest.network.vswitch.name");
-
+        
         String value = (String) params.get("cpu.overprovisioning.factor");
         if(value != null)
             _cpuOverprovisioningFactor = Float.parseFloat(value);
@@ -4036,6 +4059,34 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         else
         	_rootDiskController = DiskControllerType.ide;
 
+        value = params.get("vmware.use.nexus.vswitch").toString();
+        if(value != null && value.equalsIgnoreCase("true"))
+        	_nexusVSwitch = true;
+        
+        value = (String)params.get("private.network.vswitch.type");
+        if(value != null && value.equalsIgnoreCase("standard"))
+        	_privateNetworkVSwitchType = VirtualSwitchType.StandardVirtualSwitch;
+        else if(value != null && value.equalsIgnoreCase("nexus"))
+        	_privateNetworkVSwitchType = VirtualSwitchType.NexusDistributedVirtualSwitch;
+        else
+       	_privateNetworkVSwitchType = VirtualSwitchType.VMwareDistributedVirtualSwitch;
+        
+        value = (String)params.get("public.network.vswitch.type");
+        if(value != null && value.equalsIgnoreCase("standard"))
+        	_publicNetworkVSwitchType = VirtualSwitchType.StandardVirtualSwitch;
+        else if(value != null && value.equalsIgnoreCase("nexus"))
+        	_publicNetworkVSwitchType = VirtualSwitchType.NexusDistributedVirtualSwitch;
+        else
+        	_publicNetworkVSwitchType = VirtualSwitchType.VMwareDistributedVirtualSwitch;
+        
+        value = (String)params.get("guest.network.vswitch.type");
+        if(value != null && value.equalsIgnoreCase("standard"))
+        	_guestNetworkVSwitchType = VirtualSwitchType.StandardVirtualSwitch;
+        else if(value != null && value.equalsIgnoreCase("nexus"))
+        	_guestNetworkVSwitchType = VirtualSwitchType.NexusDistributedVirtualSwitch;
+        else
+        	_guestNetworkVSwitchType = VirtualSwitchType.VMwareDistributedVirtualSwitch;
+        
         s_logger.info("VmwareResource network configuration info. private vSwitch: " + _privateNetworkVSwitchName + ", public vSwitch: " + _publicNetworkVSwitchName + ", guest network: "
                 + _guestNetworkVSwitchName);
 
@@ -4100,8 +4151,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.error("Unable to connect to vSphere server: " + _vCenterAddress, e);
                 throw new CloudRuntimeException("Unable to connect to vSphere server: " + _vCenterAddress);
             }
+            if(_nexusVSwitch)
+            {
+            	VmwareManager mgr = _serviceContext.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);            	
+                Map<String, String> nexusVSwitchCredentials = mgr.getNexusVSMCredentials(_guid);
+                if(nexusVSwitchCredentials != null)
+                {
+                	_serviceContext.registerStockObject("vsmcredentials", nexusVSwitchCredentials);
+                	//_serviceContext.registerStockObject("vsmip", nexusVSwitchCredentials.get("vsmip"));
+                	//_serviceContext.registerStockObject("vsmusername", nexusVSwitchCredentials.get("vsmusername"));
+                	//_serviceContext.registerStockObject("vsmpassword", nexusVSwitchCredentials.get("vsmpassword"));
+                }
+            }            
         }
-
         return _serviceContext;
     }
 

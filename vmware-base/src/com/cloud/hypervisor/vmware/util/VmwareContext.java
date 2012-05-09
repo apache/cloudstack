@@ -66,7 +66,6 @@ public class VmwareContext {
 	private Map<String, Object> _stockMap = new HashMap<String, Object>();
 	private int _CHUNKSIZE = 1*1024*1024;		// 1M
 	
-	
 	static {
 		try {
 			javax.net.ssl.TrustManager[] trustAllCerts = new javax.net.ssl.TrustManager[1]; 
@@ -83,7 +82,7 @@ public class VmwareContext {
 	public VmwareContext(ExtendedAppUtil appUtil, String address) {
 		assert(appUtil != null) : "Invalid parameter in constructing VmwareContext object";
 		
-		_appUtil = appUtil;
+		_appUtil = appUtil;		
 		_serverAddress = address;
 	}
 

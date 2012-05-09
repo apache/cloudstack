@@ -60,4 +60,6 @@ public interface VmwareManager {
 	
 	boolean beginExclusiveOperation(int timeOutSeconds);
 	void endExclusiveOperation();
+
+	Map<String, String> getNexusVSMCredentials(String hostGuid);
 }
