@@ -4,7 +4,9 @@ import org.apache.log4j.Logger;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.ssh.*;
 import com.trilead.ssh2.Session;
 import com.trilead.ssh2.Connection;
@@ -63,19 +65,41 @@ public class NetconfHelper {
     }
 
     public void addPortProfile(String name, PortProfileType type, BindingType binding,
-            SwitchPortMode mode, int vlanid) throws CloudRuntimeException {
-        String command = VsmCommand.getAddPortProfile(name, type, binding, mode, vlanid);
-        command = command.concat(SSH_NETCONF_TERMINATOR);
-        send(command);
-        // parse the rpc reply and the return success or failure.
-        parseReply(receive());
+            SwitchPortMode mode, int vlanid, int networkRate) throws CloudRuntimeException {
+        String command = VsmCommand.getAddPortProfile(name, type, binding, mode, vlanid, networkRate);
+        if (command != null) {
+            command = command.concat(SSH_NETCONF_TERMINATOR);
+            send(command);
+            // parse the rpc reply and the return success or failure.
+            parseReply(receive());
+        } else {
+            throw new CloudRuntimeException("Error generating rpc request for adding port profile.");
+        }
+    }
+
+    public void updatePortProfile(String name, SwitchPortMode mode,
+            List<Pair<VsmCommand.OperationType, String>> params) throws CloudRuntimeException {
+        String command = VsmCommand.getUpdatePortProfile(name, mode, params);
+        if (command != null) {
+            command = command.concat(SSH_NETCONF_TERMINATOR);
+            send(command);
+            // parse the rpc reply and the return success or failure.
+            parseReply(receive());
+        } else {
+            throw new CloudRuntimeException("Error generating rpc request for updating port profile.");
+        }
     }
 
     public void deletePortProfile(String name) throws CloudRuntimeException {
-        String command = VsmCommand.getDeletePortProfile(name) + SSH_NETCONF_TERMINATOR;
-        send(command);
-        // parse the rpc reply and the return success or failure.
-        parseReply(receive());
+        String command = VsmCommand.getDeletePortProfile(name);
+        if (command != null) {
+            command = command.concat(SSH_NETCONF_TERMINATOR);
+            send(command);
+            // parse the rpc reply and the return success or failure.
+            parseReply(receive());
+        } else {
+            throw new CloudRuntimeException("Error generating rpc request for deleting port profile.");
+        }
     }
 
     private void exchangeHello() {

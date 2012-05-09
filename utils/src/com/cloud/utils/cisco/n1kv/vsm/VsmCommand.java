@@ -1,5 +1,6 @@
 package com.cloud.utils.cisco.n1kv.vsm;
 
+import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -9,8 +10,11 @@ import org.w3c.dom.DOMException;
 import org.w3c.dom.DOMImplementation;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSSerializer;
+
+import com.cloud.utils.Pair;
 
 public class VsmCommand {
 
@@ -42,8 +46,14 @@ public class VsmCommand {
         privatevlanpromiscuous
     }
 
+    public enum OperationType {
+        addvlanid,
+        removevlanid,
+        setrate
+    }
+
     public static String getAddPortProfile(String name, PortProfileType type,
-            BindingType binding, SwitchPortMode mode, int vlanid) {
+            BindingType binding, SwitchPortMode mode, int vlanid, int networkRate) {
         try {
             // Create the document and root element.
             DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
@@ -72,6 +82,40 @@ public class VsmCommand {
             return null;
         } catch (DOMException e) {
             s_logger.error("Error while creating delete message : " + e.getMessage());
+            return null;
+        }
+    }
+
+    public static String getUpdatePortProfile(String name, SwitchPortMode mode,
+            List<Pair<VsmCommand.OperationType, String>> params) {
+        try {
+            // Create the document and root element.
+            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+            DOMImplementation domImpl = docBuilder.getDOMImplementation();
+            Document doc = createDocument(domImpl);
+
+            // Edit configuration command.
+            Element editConfig = doc.createElement("nf:edit-config");
+            doc.getDocumentElement().appendChild(editConfig);
+
+            // Command to get into exec configure mode.
+            Element target = doc.createElement("nf:target");
+            Element running = doc.createElement("nf:running");
+            target.appendChild(running);
+            editConfig.appendChild(target);
+
+            // Command to update the port profile with the desired configuration.
+            Element config = doc.createElement("nf:config");
+            config.appendChild(configPortProfileDetails(doc, name, mode, params));
+            editConfig.appendChild(config);
+
+            return serialize(domImpl, doc);
+        } catch (ParserConfigurationException e) {
+            s_logger.error("Error while creating update message : " + e.getMessage());
+            return null;
+        } catch (DOMException e) {
+            s_logger.error("Error while creating update message : " + e.getMessage());
             return null;
         }
     }
@@ -193,7 +237,7 @@ public class VsmCommand {
             // Switchport mode.
             portProf.appendChild(getSwitchPortMode(doc, mode));
             // Adding vlan details.
-            portProf.appendChild(getVlanDetails(doc, mode, vlanid));
+            portProf.appendChild(getAddVlanDetails(doc, mode, Integer.toString(vlanid)));
         }
 
         // Command "vmware port-group".
@@ -213,6 +257,48 @@ public class VsmCommand {
         Element enabled = doc.createElement("enabled");
         state.appendChild(enabled);
         portProf.appendChild(state);
+
+        // Persist the configuration across reboots.
+        // modeConfigure.appendChild(persistConfiguration(doc));
+
+        return configure;
+    }
+
+    private static Element configPortProfileDetails(Document doc, String name, SwitchPortMode mode,
+            List<Pair<VsmCommand.OperationType, String>> params) {
+
+        // In mode, exec_configure.
+        Element configure = doc.createElementNS(s_ciscons, "nxos:configure");
+        Element modeConfigure = doc.createElement("nxos:" + s_configuremode);
+        configure.appendChild(modeConfigure);
+
+        // Port profile name and type configuration.
+        Element portProfile = doc.createElement("port-profile");
+        modeConfigure.appendChild(portProfile);
+
+        // Port profile type.
+        Element portDetails = doc.createElement("name");
+        portProfile.appendChild(portDetails);
+
+        // Name of the profile to update.
+        Element value = doc.createElement(s_paramvalue);
+        value.setAttribute("isKey", "true");
+        value.setTextContent(name);
+        portDetails.appendChild(value);
+
+        // element for port prof mode.
+        Element portProfMode = doc.createElement(s_portprofmode);
+        portDetails.appendChild(portProfMode);
+
+        for (Pair<VsmCommand.OperationType, String> item : params) {
+            if (item.first() == OperationType.addvlanid) {
+                // Set the access mode configuration or the list
+                // of allowed vlans on the trunking interface.
+                portProfMode.appendChild(getAddVlanDetails(doc, mode, item.second()));
+            } else if (item.first() == OperationType.removevlanid) {
+                portProfMode.appendChild(getDeleteVlanDetails(doc, mode, item.second()));
+            }
+        }
 
         // Persist the configuration across reboots.
         // modeConfigure.appendChild(persistConfiguration(doc));
@@ -256,10 +342,16 @@ public class VsmCommand {
         return copy;
     }
 
-    private static Element getVlanDetails(Document doc, SwitchPortMode mode, int vlanid) {
+    private static Element getAddVlanDetails(Document doc, SwitchPortMode mode, String vlanid) {
         Element switchport = doc.createElement("switchport");
 
-        // Handling is there only for 'access' mode command.
+        // Details of the vlanid to add.
+        Element vlancreate = doc.createElement("vlan-id-create-delete");
+        Element value = doc.createElement(s_paramvalue);
+        value.setTextContent(vlanid);
+        vlancreate.appendChild(value);
+
+        // Handling is there only for 'access' and 'trunk allowed' mode command.
         if (mode == SwitchPortMode.access) {
             Element access = doc.createElement("access");
             switchport.appendChild(access);
@@ -267,15 +359,66 @@ public class VsmCommand {
             Element vlan = doc.createElement("vlan");
             access.appendChild(vlan);
 
-            Element vlancreate = doc.createElement("vlan-id-create-delete");
             vlan.appendChild(vlancreate);
+        } else if (mode == SwitchPortMode.trunk) {
+            Element trunk = doc.createElement("trunk");
+            switchport.appendChild(trunk);
 
-            Element value = doc.createElement(s_paramvalue);
-            value.setTextContent(Integer.toString(vlanid));
-            vlancreate.appendChild(value);
+            Element allowed = doc.createElement("allowed");
+            trunk.appendChild(allowed);
+
+            Element vlan = doc.createElement("vlan");
+            allowed.appendChild(vlan);
+
+            Element add = doc.createElement("add");
+            vlan.appendChild(add);
+
+            add.appendChild(vlancreate);
         }
 
         return switchport;
+    }
+
+    private static Node getDeleteVlanDetails(Document doc, SwitchPortMode mode, String vlanid) {
+        Node parentNode = null;
+        Element switchport = doc.createElement("switchport");
+
+        // Handling is there only for 'access' and 'trunk allowed' mode command.
+        if (mode == SwitchPortMode.access) {
+            Element no = doc.createElement("no");
+            no.appendChild(switchport);
+            parentNode = no;
+
+            Element access = doc.createElement("access");
+            switchport.appendChild(access);
+
+            Element vlan = doc.createElement("vlan");
+            access.appendChild(vlan);
+        } else if (mode == SwitchPortMode.trunk) {
+            parentNode = switchport;
+
+            Element trunk = doc.createElement("trunk");
+            switchport.appendChild(trunk);
+
+            Element allowed = doc.createElement("allowed");
+            trunk.appendChild(allowed);
+
+            Element vlan = doc.createElement("vlan");
+            allowed.appendChild(vlan);
+
+            Element remove = doc.createElement("remove");
+            vlan.appendChild(remove);
+
+            // Details of the vlanid to add.
+            Element vlancreate = doc.createElement("vlan-id-create-delete");
+            Element value = doc.createElement(s_paramvalue);
+            value.setTextContent(vlanid);
+            vlancreate.appendChild(value);
+
+            remove.appendChild(vlancreate);
+        }
+
+        return parentNode;
     }
 
     private static Element getBindingType(Document doc, BindingType binding) {
