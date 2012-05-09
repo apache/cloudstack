@@ -27,7 +27,9 @@ import com.vmware.apputils.vim25.ServiceUtil;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ComputeResourceSummary;
+import com.vmware.vim25.DVPortgroupConfigSpec;
 import com.vmware.vim25.DatastoreSummary;
+import com.vmware.vim25.DistributedVirtualSwitchInfo;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.HostConfigManager;
 import com.vmware.vim25.HostConnectInfo;
@@ -892,4 +894,96 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
     	HostRuntimeInfo runtimeInfo = (HostRuntimeInfo)_context.getServiceUtil().getDynamicProperty(_mor, "runtime");
     	return runtimeInfo.getConnectionState() == HostSystemConnectionState.connected;
 	}
+	
+	public DVPortgroupConfigSpec getDvPortGroupSpec(String dvPortGroupName) throws Exception {
+		DVPortgroupConfigSpec configSpec = null;
+		String nameProperty = null;
+		PropertySpec pSpec = new PropertySpec();
+		pSpec.setType("DistributedVirtualPortgroup");
+		pSpec.setPathSet(new String[] {"summary.name", "config"});
+		
+	    TraversalSpec host2DvPortGroupTraversal = new TraversalSpec();
+	    host2DvPortGroupTraversal.setType("HostSystem");
+	    host2DvPortGroupTraversal.setPath("network");
+	    host2DvPortGroupTraversal.setName("host2DvPortgroupTraversal");
+
+	    ObjectSpec oSpec = new ObjectSpec();
+	    oSpec.setObj(_mor);
+	    oSpec.setSkip(Boolean.TRUE);
+	    oSpec.setSelectSet(new SelectionSpec[] { host2DvPortGroupTraversal });
+
+	    PropertyFilterSpec pfSpec = new PropertyFilterSpec();
+	    pfSpec.setPropSet(new PropertySpec[] { pSpec });
+	    pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
+	    
+	    ObjectContent[] ocs = _context.getService().retrieveProperties(
+	    	_context.getServiceContent().getPropertyCollector(), 
+	    	new PropertyFilterSpec[] { pfSpec });
+	    
+	    if(ocs != null) {
+	    	for(ObjectContent oc : ocs) {
+	    		DynamicProperty[] props = oc.getPropSet();
+	    		if(props != null) {
+	    			assert(props.length == 2);
+	    			for(DynamicProperty prop : props) {
+	    				if(prop.getName().equals("config")) {
+	    					  configSpec = (DVPortgroupConfigSpec) prop.getVal();
+	    				}
+	    				else {
+	    					nameProperty = prop.getVal().toString();
+	    				}
+	    				if(nameProperty.equalsIgnoreCase(dvPortGroupName)) {
+	    					return configSpec;
+	    				}
+	    			}
+	    		}
+	    	}
+	    }
+	    return null;
+	}
+	
+	public ManagedObjectReference getDvPortGroupMor(String dvPortGroupName) throws Exception {
+		PropertySpec pSpec = new PropertySpec();
+		pSpec.setType("DistributedVirtualPortgroup");
+		pSpec.setPathSet(new String[] {"summary.name"});
+		
+	    TraversalSpec host2DvPortGroupTraversal = new TraversalSpec();
+	    host2DvPortGroupTraversal.setType("HostSystem");
+	    host2DvPortGroupTraversal.setPath("network");
+	    host2DvPortGroupTraversal.setName("host2DvPortgroupTraversal");
+
+	    ObjectSpec oSpec = new ObjectSpec();
+	    oSpec.setObj(_mor);
+	    oSpec.setSkip(Boolean.TRUE);
+	    oSpec.setSelectSet(new SelectionSpec[] { host2DvPortGroupTraversal });
+
+	    PropertyFilterSpec pfSpec = new PropertyFilterSpec();
+	    pfSpec.setPropSet(new PropertySpec[] { pSpec });
+	    pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
+	    
+	    ObjectContent[] ocs = _context.getService().retrieveProperties(
+	    	_context.getServiceContent().getPropertyCollector(), 
+	    	new PropertyFilterSpec[] { pfSpec });
+	    
+	    if(ocs != null) {
+	    	for(ObjectContent oc : ocs) {
+	    		DynamicProperty[] props = oc.getPropSet();
+	    		if(props != null) {
+	    			for(DynamicProperty prop : props) {
+	    				if(prop.getVal().equals(dvPortGroupName))
+	    					return oc.getObj();
+	    			}
+	    		}
+	    	}
+	    }
+	    return null;
+	}
+	
+	public boolean hasDvPortGroup(String dvPortGroupName) throws Exception {
+		ManagedObjectReference morNetwork = getDvPortGroupMor(dvPortGroupName);
+		if(morNetwork != null)
+			return true;
+		return false;		
+	}
 }
+

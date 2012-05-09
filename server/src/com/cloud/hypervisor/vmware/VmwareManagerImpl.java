@@ -46,7 +46,9 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -66,6 +68,8 @@ import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
 import com.cloud.hypervisor.vmware.mo.VmwareHostType;
 import com.cloud.hypervisor.vmware.resource.SshHelper;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.network.CiscoNexusVSMDeviceVO;
+import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.secstorage.CommandExecLogDao;
@@ -114,6 +118,8 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     @Inject CheckPointManager _checkPointMgr;
     @Inject VirtualNetworkApplianceManager _routerMgr;
     @Inject SecondaryStorageVmManager _ssvmMgr;
+    @Inject CiscoNexusVSMDeviceDao _nexusDao;
+    @Inject ClusterVSMMapDao _vsmMapDao;
     
     ConfigurationServer _configServer;
 
@@ -123,6 +129,10 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     String _privateNetworkVSwitchName;
     String _publicNetworkVSwitchName;
     String _guestNetworkVSwitchName;
+    String _privateNetworkVSwitchType;
+    String _publicNetworkVSwitchType;
+    String _guestNetworkVSwitchType;
+    Boolean _nexusVSwitchActive;
     String _serviceConsoleName;
     String _managemetPortGroupName;
     String _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
@@ -207,22 +217,52 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                 throw new ConfigurationException("Unable to find class " + value);
             }
         }
+        
+        value = configDao.getValue(Config.VmwareUseNexusVSwitch.key());
+        if(value == null) {
+        	_nexusVSwitchActive = false;
+        }
+        else
+        {
+        	_nexusVSwitchActive = Boolean.parseBoolean(value);
+        }
 
         _privateNetworkVSwitchName = configDao.getValue(Config.VmwarePrivateNetworkVSwitch.key());
+        _privateNetworkVSwitchType = configDao.getValue(Config.VmwarePrivateNetworkVSwitchType.key());
         if(_privateNetworkVSwitchName == null) {
-            _privateNetworkVSwitchName = "vSwitch0";
+        	if(_privateNetworkVSwitchType == null || _privateNetworkVSwitchType.equalsIgnoreCase("standard")) {
+        		_privateNetworkVSwitchName = "vSwitch0";
+        	}
+        	else
+        	{
+        		_privateNetworkVSwitchName = "privateEthernetPortProfile";
+        	}
         }
 
         _publicNetworkVSwitchName = configDao.getValue(Config.VmwarePublicNetworkVSwitch.key());
+        _publicNetworkVSwitchType = configDao.getValue(Config.VmwarePublicNetworkVSwitchType.key());
         if(_publicNetworkVSwitchName == null) {
-            _publicNetworkVSwitchName = "vSwitch0";
-        }
+        	if(_publicNetworkVSwitchType == null || _publicNetworkVSwitchType.equalsIgnoreCase("standard")) {
+        		_publicNetworkVSwitchName = "vSwitch0";
+        	}
+        	else
+        	{
+        		_publicNetworkVSwitchName = "publicEthernetPortProfile";
+        	}
+        }        
 
         _guestNetworkVSwitchName =  configDao.getValue(Config.VmwareGuestNetworkVSwitch.key());
+        _guestNetworkVSwitchType = configDao.getValue(Config.VmwareGuestNetworkVSwitchType.key());
         if(_guestNetworkVSwitchName == null) {
-            _guestNetworkVSwitchName = "vSwitch0";
+        	if(_guestNetworkVSwitchType == null || _guestNetworkVSwitchType.equalsIgnoreCase("standard")) {
+        		_guestNetworkVSwitchName = "vSwitch0";
+        	}
+        	else
+        	{
+        		_guestNetworkVSwitchName = "guestEthernetPortProfile";
+        	}
         }
-
+        
         _serviceConsoleName = configDao.getValue(Config.VmwareServiceConsole.key());
         if(_serviceConsoleName == null) {
             _serviceConsoleName = "Service Console";
@@ -352,8 +392,13 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                 if(spec.getVlanId() != 0) {
                     vlanId = String.valueOf(spec.getVlanId());
                 }
-
-                HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
+                
+                if(!_nexusVSwitchActive) {
+                	HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
+                }
+                else {
+                	HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000);
+                }
                 returnedHostList.add(hosts[0]);
                 return returnedHostList;
             } else if(mor.getType().equals("ClusterComputeResource")) {
@@ -386,7 +431,12 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                     }
 
                     // prepare at least one network on the vswitch to enable OVF importing
-                    HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
+                    if(!_nexusVSwitchActive) {
+                    	HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
+                    }
+                    else {
+                    	HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000);
+                    }
                     returnedHostList.add(morHost);
                 }
                 return returnedHostList;
@@ -410,7 +460,12 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                 }
 
                 // prepare at least one network on the vswitch to enable OVF importing
-                HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
+                if(!_nexusVSwitchActive) {
+                	HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
+                }
+                else {
+                	HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000);
+                }
                 returnedHostList.add(mor);
                 return returnedHostList;
             } else {
@@ -490,6 +545,10 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         params.put("private.network.vswitch.name", _privateNetworkVSwitchName);
         params.put("public.network.vswitch.name", _publicNetworkVSwitchName);
         params.put("guest.network.vswitch.name", _guestNetworkVSwitchName);
+        params.put("private.network.vswitch.type", _privateNetworkVSwitchType);
+        params.put("public.network.vswitch.type", _publicNetworkVSwitchType);
+        params.put("guest.network.vswitch.type", _guestNetworkVSwitchType);
+        params.put("vmware.use.nexus.vswitch", _nexusVSwitchActive);
         params.put("service.console.name", _serviceConsoleName);
         params.put("management.portgroup.name", _managemetPortGroupName);
         params.put("cpu.overprovisioning.factor", _cpuOverprovisioningFactor);
@@ -764,6 +823,21 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                 }
             }
         }
+    }
+    
+    @DB
+    public Map<String, String> getNexusVSMCredentials(String hostGuid) {
+    	//Get clusterId from host guid  	
+    	HostVO host = _hostDao.findByGuid(hostGuid);
+    	ClusterVSMMapVO vsmMapVO = _vsmMapDao.findByClusterId(host.getClusterId());
+    	CiscoNexusVSMDeviceVO nexusVSM = _nexusDao.findById(vsmMapVO.getVsmId());
+    	if(nexusVSM == null)
+    		return null;
+    	Map<String, String> nexusVSMCredentials = new HashMap<String, String>();
+    	nexusVSMCredentials.put("vsmip", nexusVSM.getipaddr());
+    	nexusVSMCredentials.put("vsmusername", nexusVSM.getUserName());
+    	nexusVSMCredentials.put("vsmpassword", nexusVSM.getPassword());
+    	return nexusVSMCredentials;    	
     }
 
     @Override @DB

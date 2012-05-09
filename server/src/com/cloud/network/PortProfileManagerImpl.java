@@ -15,8 +15,6 @@ package com.cloud.network;
 import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.hypervisor.vmware.manager.VmwareManager;
-import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -25,12 +23,7 @@ import com.cloud.network.PortProfileVO.PortType;
 import com.cloud.network.dao.PortProfileDaoImpl;
 
 public class PortProfileManagerImpl {
-
-	//@Inject
-	//static PortProfileDao _portProfileDao;
-	@Inject
-	VmwareManager _vmwareMgr;
-    
+	    
 	private PortProfileDaoImpl _portProfileDao;
 	
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(PortProfileManagerImpl.class);

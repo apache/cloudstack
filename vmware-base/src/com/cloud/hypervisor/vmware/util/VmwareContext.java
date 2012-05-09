@@ -83,7 +83,7 @@ public class VmwareContext {
 	public VmwareContext(ExtendedAppUtil appUtil, String address) {
 		assert(appUtil != null) : "Invalid parameter in constructing VmwareContext object";
 		
-		_appUtil = appUtil;
+		_appUtil = appUtil;		
 		_serverAddress = address;
 	}
 
