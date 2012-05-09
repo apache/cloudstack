@@ -126,7 +126,7 @@ public class NetconfHelper {
             while (true) {
                 if (inputStream.available() == 0) {
                     int conditions = _session.waitForCondition(ChannelCondition.STDOUT_DATA
-                            | ChannelCondition.STDERR_DATA | ChannelCondition.EOF, 500);
+                            | ChannelCondition.STDERR_DATA | ChannelCondition.EOF, 2000);
 
                     if ((conditions & ChannelCondition.TIMEOUT) != 0) {
                         break;

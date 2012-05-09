@@ -259,7 +259,7 @@ public class VsmCommand {
         portProf.appendChild(state);
 
         // Persist the configuration across reboots.
-        // modeConfigure.appendChild(persistConfiguration(doc));
+        modeConfigure.appendChild(persistConfiguration(doc));
 
         return configure;
     }
@@ -301,7 +301,7 @@ public class VsmCommand {
         }
 
         // Persist the configuration across reboots.
-        // modeConfigure.appendChild(persistConfiguration(doc));
+        modeConfigure.appendChild(persistConfiguration(doc));
 
         return configure;
     }
@@ -328,7 +328,7 @@ public class VsmCommand {
         portDetails.appendChild(value);
 
         // Persist the configuration across reboots.
-        // modeConfigure.appendChild(persistConfiguration(doc));
+        modeConfigure.appendChild(persistConfiguration(doc));
 
         return configure;
     }
