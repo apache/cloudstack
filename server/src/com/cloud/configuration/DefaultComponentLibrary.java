@@ -74,7 +74,7 @@ import com.cloud.network.dao.ExternalFirewallDeviceDaoImpl;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceDaoImpl;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl;
 import com.cloud.dc.dao.ClusterVSMMapDaoImpl;
-// TODO - Import the Port Profile Device Dao as well.
+import com.cloud.network.dao.PortProfileDaoImpl;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
@@ -322,7 +322,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("NetworkExternalFirewallDao", NetworkExternalFirewallDaoImpl.class);
         addDao("CiscoNexusVSMDeviceDao", CiscoNexusVSMDeviceDaoImpl.class);
         addDao("ClusterVSMMapDao", ClusterVSMMapDaoImpl.class);
-        // TODO - Also put in the Port Profile Device Dao here.
+        addDao("PortProfileDao", PortProfileDaoImpl.class);
         addDao("PhysicalNetworkTrafficTypeDao", PhysicalNetworkTrafficTypeDaoImpl.class);
         addDao("NetworkServiceMapDao", NetworkServiceMapDaoImpl.class);
         addDao("StorageNetworkIpAddressDao", StorageNetworkIpAddressDaoImpl.class);

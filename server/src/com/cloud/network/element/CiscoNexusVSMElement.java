@@ -25,7 +25,6 @@ import com.cloud.api.commands.DeleteCiscoNexusVSMCmd;
 import com.cloud.api.commands.ListCiscoNexusVSMCmd;
 import com.cloud.api.commands.EnableCiscoNexusVSMCmd;
 import com.cloud.api.commands.DisableCiscoNexusVSMCmd;
-import com.cloud.api.commands.ListCiscoNexusVSMNetworksCmd;
 import com.cloud.api.response.CiscoNexusVSMResponse;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -52,7 +51,6 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.network.PortProfile;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.Manager;
@@ -214,29 +212,6 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     	result = disableCiscoNexusVSM(cmd.getCiscoNexusVSMDeviceId());
     	return result;
     }
-    
-    @Override
-    public List<? extends PortProfile> listNetworks(ListCiscoNexusVSMNetworksCmd cmd) {
-    
-    	/***
-    	// Get the device id of the VSM from the database.
-    	Long vsmDeviceId = cmd.getvsmDeviceId();
-    	
-    	// Get all details of the VSM by firing a dao find (querying the db). 
-    	CiscoNexusVSMDeviceVO vsmDeviceVo = _lbDeviceDao.findById(vsmDeviceId);
-    	
-        List<PortProfileVO> portProfileMap = _networkLBDao.listByLoadBalancerDeviceId(lbDeviceId);
-        if (networkLbMaps != null && !networkLbMaps.isEmpty()) {
-            for (NetworkExternalLoadBalancerVO networkLbMap : networkLbMaps) {
-                NetworkVO network = _networkDao.findById(networkLbMap.getNetworkId());
-                networks.add(network);
-            }
-        }
-        
-        return networks;
-        ***/
-    	return null;
-    }
 
     @Override
     public List<CiscoNexusVSMDeviceVO> listCiscoNexusVSMs(ListCiscoNexusVSMCmd cmd) {
@@ -244,7 +219,6 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     	
     }
     
-
     @Override
     public CiscoNexusVSMResponse createCiscoNexusVSMResponse(CiscoNexusVSMDeviceVO vsmDeviceVO) {    		
             CiscoNexusVSMResponse response = new CiscoNexusVSMResponse();
