@@ -179,7 +179,7 @@ public class HypervisorHostHelper {
 		}
 		
 		try {
-			netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, vid, networkRateMbps);
+			netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, vid);
 		} catch(CloudRuntimeException e) {
 			msg = "Failed to add vethernet port profile " + networkName + " with parameters " + params.toString();
 			s_logger.error(msg);

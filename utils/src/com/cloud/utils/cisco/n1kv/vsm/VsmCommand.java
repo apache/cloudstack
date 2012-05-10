@@ -23,6 +23,8 @@ public class VsmCommand {
     private static final String s_ciscons = "http://www.cisco.com/nxos:1.0:ppm";
     private static final String s_configuremode = "__XML__MODE__exec_configure";
     private static final String s_portprofmode = "__XML__MODE_port-prof";
+    private static final String s_policymapmode = "__XML__MODE_policy-map";
+    private static final String s_classtypemode = "__XML__MODE_policy-map_class_type";
     private static final String s_paramvalue = "__XML__PARAM_value";
 
     public enum PortProfileType {
@@ -53,7 +55,7 @@ public class VsmCommand {
     }
 
     public static String getAddPortProfile(String name, PortProfileType type,
-            BindingType binding, SwitchPortMode mode, int vlanid, int networkRate) {
+            BindingType binding, SwitchPortMode mode, int vlanid) {
         try {
             // Create the document and root element.
             DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
@@ -141,6 +143,105 @@ public class VsmCommand {
             // Command to create the port profile with the desired configuration.
             Element config = doc.createElement("nf:config");
             config.appendChild(deletePortProfileDetails(doc, portName));
+            editConfig.appendChild(config);
+
+            return serialize(domImpl, doc);
+        } catch (ParserConfigurationException e) {
+            s_logger.error("Error while creating delete message : " + e.getMessage());
+            return null;
+        } catch (DOMException e) {
+            s_logger.error("Error while creating delete message : " + e.getMessage());
+            return null;
+        }
+    }
+
+    public static String getPolicyMap(String name, int averageRate, int maxRate, int burstRate) {
+        try {
+            // Create the document and root element.
+            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+            DOMImplementation domImpl = docBuilder.getDOMImplementation();
+            Document doc = createDocument(domImpl);
+
+            // Edit configuration command.
+            Element editConfig = doc.createElement("nf:edit-config");
+            doc.getDocumentElement().appendChild(editConfig);
+
+            // Command to get into exec configure mode.
+            Element target = doc.createElement("nf:target");
+            Element running = doc.createElement("nf:running");
+            target.appendChild(running);
+            editConfig.appendChild(target);
+
+            // Command to create the port profile with the desired configuration.
+            Element config = doc.createElement("nf:config");
+            config.appendChild(policyMapDetails(doc, name, averageRate, maxRate, burstRate));
+            editConfig.appendChild(config);
+
+            return serialize(domImpl, doc);
+        } catch (ParserConfigurationException e) {
+            s_logger.error("Error while creating delete message : " + e.getMessage());
+            return null;
+        } catch (DOMException e) {
+            s_logger.error("Error while creating delete message : " + e.getMessage());
+            return null;
+        }
+    }
+
+    public static String getDeletePolicyMap(String name) {
+        try {
+            // Create the document and root element.
+            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+            DOMImplementation domImpl = docBuilder.getDOMImplementation();
+            Document doc = createDocument(domImpl);
+
+            // Edit configuration command.
+            Element editConfig = doc.createElement("nf:edit-config");
+            doc.getDocumentElement().appendChild(editConfig);
+
+            // Command to get into exec configure mode.
+            Element target = doc.createElement("nf:target");
+            Element running = doc.createElement("nf:running");
+            target.appendChild(running);
+            editConfig.appendChild(target);
+
+            // Command to create the port profile with the desired configuration.
+            Element config = doc.createElement("nf:config");
+            config.appendChild(deletePolicyMapDetails(doc, name));
+            editConfig.appendChild(config);
+
+            return serialize(domImpl, doc);
+        } catch (ParserConfigurationException e) {
+            s_logger.error("Error while creating delete message : " + e.getMessage());
+            return null;
+        } catch (DOMException e) {
+            s_logger.error("Error while creating delete message : " + e.getMessage());
+            return null;
+        }
+    }
+
+    public static String getAttachServicePolicy(String policyMap, String portProfile) {
+        try {
+            // Create the document and root element.
+            DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+            DOMImplementation domImpl = docBuilder.getDOMImplementation();
+            Document doc = createDocument(domImpl);
+
+            // Edit configuration command.
+            Element editConfig = doc.createElement("nf:edit-config");
+            doc.getDocumentElement().appendChild(editConfig);
+
+            // Command to get into exec configure mode.
+            Element target = doc.createElement("nf:target");
+            Element running = doc.createElement("nf:running");
+            target.appendChild(running);
+            editConfig.appendChild(target);
+
+            // Command to create the port profile with the desired configuration.
+            Element config = doc.createElement("nf:config");
+            config.appendChild(attachServiceDetails(doc, policyMap, portProfile));
             editConfig.appendChild(config);
 
             return serialize(domImpl, doc);
@@ -333,6 +434,119 @@ public class VsmCommand {
         return configure;
     }
 
+    private static Element policyMapDetails(Document doc, String name,
+            int averageRate, int maxRate, int burstRate) {
+        Element configure = doc.createElementNS(s_ciscons, "nxos:configure");
+        Element modeConfigure = doc.createElement("nxos:" + s_configuremode);
+        configure.appendChild(modeConfigure);
+
+        // Policy map details
+        Element policyMap = doc.createElement("policy-map");
+        modeConfigure.appendChild(policyMap);
+
+        Element policyDetails = doc.createElement("name");
+        policyMap.appendChild(policyDetails);
+
+        // Name of the policy to create/update.
+        Element value = doc.createElement(s_paramvalue);
+        value.setAttribute("isKey", "true");
+        value.setTextContent(name);
+        policyDetails.appendChild(value);
+
+        Element policyMapMode = doc.createElement(s_policymapmode);
+        policyDetails.appendChild(policyMapMode);
+
+        // Create the default class to match all trafic.
+        Element classRoot = doc.createElement("class");
+        Element classDefault = doc.createElement("class-default");
+        policyMapMode.appendChild(classRoot);
+        classRoot.appendChild(classDefault);
+
+        Element classMode = doc.createElement(s_classtypemode);
+        classDefault.appendChild(classMode);
+
+        // Set the average, max and burst rate.
+        // TODO: Add handling for max and burst.
+        Element police = doc.createElement("police");
+        classMode.appendChild(police);
+
+        // Set the committed information rate and its value in mbps.
+        Element cir = doc.createElement("cir");
+        police.appendChild(cir);
+        Element cirValue = doc.createElement(s_paramvalue);
+        Element mbps = doc.createElement("mbps");
+        cirValue.setTextContent(Integer.toString(averageRate));
+        cir.appendChild(cirValue);
+        cir.appendChild(mbps);
+
+        // Persist the configuration across reboots.
+        modeConfigure.appendChild(persistConfiguration(doc));
+
+        return configure;
+    }
+
+    private static Element deletePolicyMapDetails(Document doc, String name) {
+        Element configure = doc.createElementNS(s_ciscons, "nxos:configure");
+        Element modeConfigure = doc.createElement("nxos:" + s_configuremode);
+        configure.appendChild(modeConfigure);
+
+        // Delete Policy map details
+        Element deletePolicyMap = doc.createElement("no");
+        Element policyMap = doc.createElement("policy-map");
+        deletePolicyMap.appendChild(policyMap);
+        modeConfigure.appendChild(deletePolicyMap);
+
+        Element policyDetails = doc.createElement("name");
+        policyMap.appendChild(policyDetails);
+
+        // Name of the policy to create/update.
+        Element value = doc.createElement(s_paramvalue);
+        value.setAttribute("isKey", "true");
+        value.setTextContent(name);
+        policyDetails.appendChild(value);
+
+        // Persist the configuration across reboots.
+        modeConfigure.appendChild(persistConfiguration(doc));
+
+        return configure;
+    }
+
+    private static Element attachServiceDetails(Document doc, String policyMap, String portProfile) {
+        // In mode, exec_configure.
+        Element configure = doc.createElementNS(s_ciscons, "nxos:configure");
+        Element modeConfigure = doc.createElement("nxos:" + s_configuremode);
+        configure.appendChild(modeConfigure);
+
+        // Port profile name and type configuration.
+        Element profile = doc.createElement("port-profile");
+        modeConfigure.appendChild(profile);
+
+        // Port profile type.
+        Element portDetails = doc.createElement("name");
+        profile.appendChild(portDetails);
+
+        // Name of the profile to update.
+        Element value = doc.createElement(s_paramvalue);
+        value.setAttribute("isKey", "true");
+        value.setTextContent(portProfile);
+        portDetails.appendChild(value);
+
+        // element for port prof mode.
+        Element portProfMode = doc.createElement(s_portprofmode);
+        portDetails.appendChild(portProfMode);
+
+        // Associate the policy for input.
+        portProfMode.appendChild(getServicePolicyCmd(doc, policyMap, "input"));
+
+        // Associate the policy for output.
+        portProfMode.appendChild(getServicePolicyCmd(doc, policyMap, "output"));
+
+        // Persist the configuration across reboots.
+        modeConfigure.appendChild(persistConfiguration(doc));
+
+        return configure;
+    }
+
     private static Element persistConfiguration(Document doc) {
         Element copy = doc.createElement("copy");
         Element running = doc.createElement("running-config");
@@ -456,6 +670,21 @@ public class VsmCommand {
         }
 
         return switchport;
+    }
+
+    private static Element getServicePolicyCmd(Document doc, String policyMap, String type) {
+        Element service = doc.createElement("service-policy");
+        Element input = doc.createElement(type);
+        service.appendChild(input);
+
+        Element name = doc.createElement("name");
+        input.appendChild(name);
+
+        Element policyValue = doc.createElement(s_paramvalue);
+        policyValue.setTextContent(policyMap);
+        name.appendChild(policyValue);
+
+        return service;
     }
 
     private static Document createDocument(DOMImplementation dom) {
