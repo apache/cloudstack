@@ -1254,8 +1254,11 @@
     var jsonObj = args.context.item;
     var allowedActions = [];
 
-    if (jsonObj.state == 'Destroyed' || jsonObj.state == 'Migrating') {
+    if (jsonObj.state == 'Destroyed' || jsonObj.state == 'Migrating' || jsonObj.state == 'Uploading') {
       return [];
+    }
+		if (jsonObj.state == 'UploadError') {
+      return ["remove"];
     }
 
     if(jsonObj.hypervisor != "Ovm" && jsonObj.state == "Ready") {
