@@ -1180,6 +1180,8 @@
                               page: args.page,
                               pageSize: pageSize,
                               networkid: args.context.networks[0].id,
+                              account: args.context.ipAddresses[0].account,
+                              domainid: args.context.ipAddresses[0].domainid,
                               listAll: true
                             },
                             dataType: 'json',
@@ -1763,6 +1765,8 @@
                               page: args.page,
                               pageSize: pageSize,
                               networkid: args.context.ipAddresses[0].associatednetworkid,
+                              account: args.context.ipAddresses[0].account,
+                              domainid: args.context.ipAddresses[0].domainid,
                               listAll: true
                             },
                             dataType: 'json',
