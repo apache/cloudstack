@@ -912,6 +912,9 @@
                 var $form = $(this).closest('form');
 
                 var protocol = $(this).val();
+                
+                $form.find('[rel=path]').find(".name").find("label").html('<span class=\"field-required\">*</span>Path:');
+                
                 if(protocol == null)
                   return;
 
@@ -924,7 +927,7 @@
                   //$('li[input_group="nfs"]', $dialogAddPool).show();
                   $form.find('[rel=path]').css('display', 'block');
                   //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
-                  $form.find('[rel=path]').find(".name").find("label").text("Path:");
+                  //$form.find('[rel=path]').find(".name").find("label").text("Path:");
 
                   //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                   $form.find('[rel=iqn]').hide();
@@ -946,7 +949,7 @@
                   //$('li[input_group="nfs"]', $dialogAddPool).show();
                   $form.find('[rel=path]').css('display', 'block');
                   //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
-                  $form.find('[rel=path]').find(".name").find("label").text("Path:");
+                  //$form.find('[rel=path]').find(".name").find("label").text("Path:");
 
                   //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                   $form.find('[rel=iqn]').hide();
@@ -968,7 +971,7 @@
                   //$('li[input_group="nfs"]', $dialogAddPool).show();
                   $form.find('[rel=path]').css('display', 'block');
                   //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.SR.name"]+":");
-                  $form.find('[rel=path]').find(".name").find("label").text("SR Name-Label:");
+                  $form.find('[rel=path]').find(".name").find("label").html("<span class=\"field-required\">*</span>SR Name-Label:");
 
                   //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                   $form.find('[rel=iqn]').hide();
@@ -1049,7 +1052,7 @@
 
                   //$('li[input_group="nfs"]', $dialogAddPool).show();
                   $form.find('[rel=path]').css('display', 'block');
-                  $form.find('[rel=path]').find(".name").find("label").text("Path:");
+                  //$form.find('[rel=path]').find(".name").find("label").text("Path:");
 
                   //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                   $form.find('[rel=iqn]').hide();
