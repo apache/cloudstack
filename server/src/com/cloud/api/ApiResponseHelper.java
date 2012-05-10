@@ -1029,7 +1029,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         volResponse.setCreated(volume.getCreated());
         volResponse.setState(volume.getState().toString());
         if(volume.getState() == Volume.State.UploadOp){
-        	com.cloud.storage.VolumeHostVO volumeHostRef = ApiDBUtils.findVolumeHostRef(volume.getId(), volume.getDataCenterId());
+            com.cloud.storage.VolumeHostVO volumeHostRef = ApiDBUtils.findVolumeHostRef(volume.getId(), volume.getDataCenterId());
             volResponse.setSize(volumeHostRef.getSize());
             volResponse.setCreated(volumeHostRef.getCreated());
             Account caller = UserContext.current().getCaller();
@@ -1047,17 +1047,17 @@ public class ApiResponseHelper implements ResponseGenerator {
                 } else {
                     volumeStatus = volumeHostRef.getErrorString();
                     if(volumeHostRef.getDownloadState() == VMTemplateHostVO.Status.NOT_DOWNLOADED){
-                    	volResponse.setState("UploadNotStarted");
+                        volResponse.setState("UploadNotStarted");
                     }else {
-                    	volResponse.setState("UploadError");
+                        volResponse.setState("UploadError");
                     }
                 }
                 volResponse.setStatus(volumeStatus);
             } else if (volumeHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
-            	volResponse.setStatus("Upload Complete");
-            	volResponse.setState("Uploaded");
+                volResponse.setStatus("Upload Complete");
+                volResponse.setState("Uploaded");
             } else {
-            	volResponse.setStatus("Successfully Installed");
+                volResponse.setStatus("Successfully Installed");
             }            
         }
         
@@ -1107,7 +1107,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         // return hypervisor for ROOT and Resource domain only
         Account caller = UserContext.current().getCaller();
         if ((caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) && volume.getState() != Volume.State.UploadOp) {            
-        	volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());            
+            volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());            
         }
 
         volResponse.setAttached(volume.getAttached());
@@ -2815,7 +2815,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setBroadcastUri(broadcastUri);
             String vlan="N/A";
             if (broadcastUri.startsWith("vlan")) {
-            	vlan = broadcastUri.substring("vlan://".length(), broadcastUri.length());
+                vlan = broadcastUri.substring("vlan://".length(), broadcastUri.length());
             }
             response.setVlan(vlan);
         }
@@ -2895,6 +2895,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         response.setSpecifyIpRanges(network.getSpecifyIpRanges());
+        response.setCanUseForDeploy(ApiDBUtils.canUseForDeploy(network));
         response.setVpcId(network.getVpcId());
 
         response.setObjectName("network");

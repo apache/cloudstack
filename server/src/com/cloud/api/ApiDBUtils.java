@@ -741,7 +741,7 @@ public class ApiDBUtils {
     }
     
     public static long countFreePublicIps() {
-    	return _ipAddressDao.countFreeIPs();
+    	return _ipAddressDao.countFreePublicIPs();
     }
     
     public static long findDefaultRouterServiceOffering() {
@@ -767,5 +767,9 @@ public class ApiDBUtils {
     
     public static List<? extends Network> listVpcNetworks(long vpcId) {
         return _networkMgr.listNetworksByVpc(vpcId);
+    }
+    
+    public static boolean canUseForDeploy(Network network) {
+        return _networkMgr.canUseForDeploy(network);
     }
 }

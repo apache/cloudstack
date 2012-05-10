@@ -21,6 +21,7 @@ import javax.persistence.TableGenerator;
 
 import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkAccountDaoImpl;
@@ -62,6 +63,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     final GenericSearchBuilder<NetworkVO, Long> NetworksRegularUserCanCreateSearch;
     private final GenericSearchBuilder<NetworkVO, Integer> NetworksCount;
     final SearchBuilder<NetworkVO> SourceNATSearch;
+    final GenericSearchBuilder<NetworkVO, Long>  CountByZoneAndURI;
 
 
     NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
@@ -118,7 +120,17 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         ZoneBroadcastUriSearch = createSearchBuilder();
         ZoneBroadcastUriSearch.and("dataCenterId", ZoneBroadcastUriSearch.entity().getDataCenterId(), Op.EQ);
         ZoneBroadcastUriSearch.and("broadcastUri", ZoneBroadcastUriSearch.entity().getBroadcastUri(), Op.EQ);
+        ZoneBroadcastUriSearch.and("guestType", ZoneBroadcastUriSearch.entity().getGuestType(), Op.EQ);
         ZoneBroadcastUriSearch.done();
+        
+        CountByZoneAndURI = createSearchBuilder(Long.class);
+        CountByZoneAndURI.select(null, Func.COUNT, null);
+        CountByZoneAndURI.and("dataCenterId", CountByZoneAndURI.entity().getDataCenterId(), Op.EQ);
+        CountByZoneAndURI.and("broadcastUri", CountByZoneAndURI.entity().getBroadcastUri(), Op.EQ);
+        CountByZoneAndURI.and("guestType", CountByZoneAndURI.entity().getGuestType(), Op.EQ);
+
+        CountByZoneAndURI.done();
+        
 
         ZoneSecurityGroupSearch = createSearchBuilder();
         ZoneSecurityGroupSearch.and("dataCenterId", ZoneSecurityGroupSearch.entity().getDataCenterId(), Op.EQ);
@@ -300,11 +312,13 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override
-    public List<NetworkVO> listBy(long zoneId, String broadcastUri) {
-        SearchCriteria<NetworkVO> sc = ZoneBroadcastUriSearch.create();
+    public long countByZoneAndUri(long zoneId, String broadcastUri) {
+
+        SearchCriteria<Long> sc = CountByZoneAndURI.create();
         sc.setParameters("dataCenterId", zoneId);
         sc.setParameters("broadcastUri", broadcastUri);
-        return search(sc, null);
+        
+        return customSearch(sc, null).get(0);
     }
 
     @Override
@@ -312,6 +326,15 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         SearchCriteria<NetworkVO> sc = ZoneBroadcastUriSearch.create();
         sc.setParameters("dataCenterId", zoneId);
         return search(sc, null);
+    }
+    
+    @Override
+    public long countByZoneUriAndGuestType(long zoneId, String broadcastUri, GuestType guestType) {
+        SearchCriteria<Long> sc = CountByZoneAndURI.create();
+        sc.setParameters("dataCenterId", zoneId);
+        sc.setParameters("broadcastUri", broadcastUri);
+        sc.setParameters("guestType", guestType);
+        return customSearch(sc, null).get(0);
     }
 
     @Override
