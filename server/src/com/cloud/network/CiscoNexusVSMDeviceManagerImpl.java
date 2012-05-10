@@ -13,6 +13,7 @@
 package com.cloud.network;
 
 import java.util.HashMap;
+
 import java.util.List;
 import java.util.Map;
 
@@ -38,13 +39,10 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.network.PortProfileVO.BindingType;
-import com.cloud.network.PortProfileVO.PortType;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.network.dao.PortProfileDao;
-import com.cloud.network.resource.CiscoNexusVSM;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.network.PortProfileManagerImpl;
+import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 
 public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
 
@@ -102,10 +100,15 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     	// the VSM.
     	//NetconfHelper (String ip, String username, String password)
 
-    	CiscoNexusVSM vsmObj = new CiscoNexusVSM(ipaddress, username, password);
-    	if (!vsmObj.connectToVSM()) {
-    		throw new CloudRuntimeException("Couldn't login to the specified VSM");    		
+    	NetconfHelper netconfClient;
+    	try	{
+    		netconfClient = new NetconfHelper(ipaddress, username, password);	
+    	} catch(CloudRuntimeException e) {
+    		String msg = "Failed to connect to Nexus VSM " + ipaddress + " with credentials of user " + username;
+    		s_logger.error(msg);
+    		throw new CloudRuntimeException(msg);
     	}
+
 
     	// Now, go ahead and associate the cluster with this VSM.
     	// First, check if VSM already exists in the table "virtual_supervisor_module".
