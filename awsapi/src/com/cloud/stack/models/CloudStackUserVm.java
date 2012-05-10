@@ -54,7 +54,7 @@ public class CloudStackUserVm {
     private String hostName;
     @SerializedName(ApiConstants.HYPERVISOR)
     private String hypervisor;    
-    @SerializedName(ApiConstants.IP_ADDRESS)
+    @SerializedName(ApiConstants.PUBLIC_IP)
     private String ipAddress;
     @SerializedName(ApiConstants.ISO_DISPLAY_TEXT)
     private String isoDisplayText;
