@@ -60,17 +60,17 @@ public class NetconfHelper {
                 + "        </xml>" + "      </show>" + "    </nc:filter>" + "  </nc:get>"
                 + "</nc:rpc>" + SSH_NETCONF_TERMINATOR;
         send(status);
-        // parse the rpc reply and the return success or failure.
+        // parse the rpc reply.
         parseReply(receive());
     }
 
     public void addPortProfile(String name, PortProfileType type, BindingType binding,
-            SwitchPortMode mode, int vlanid, int networkRate) throws CloudRuntimeException {
-        String command = VsmCommand.getAddPortProfile(name, type, binding, mode, vlanid, networkRate);
+            SwitchPortMode mode, int vlanid) throws CloudRuntimeException {
+        String command = VsmCommand.getAddPortProfile(name, type, binding, mode, vlanid);
         if (command != null) {
             command = command.concat(SSH_NETCONF_TERMINATOR);
             send(command);
-            // parse the rpc reply and the return success or failure.
+            // parse the rpc reply.
             parseReply(receive());
         } else {
             throw new CloudRuntimeException("Error generating rpc request for adding port profile.");
@@ -83,7 +83,7 @@ public class NetconfHelper {
         if (command != null) {
             command = command.concat(SSH_NETCONF_TERMINATOR);
             send(command);
-            // parse the rpc reply and the return success or failure.
+            // parse the rpc reply.
             parseReply(receive());
         } else {
             throw new CloudRuntimeException("Error generating rpc request for updating port profile.");
@@ -95,10 +95,54 @@ public class NetconfHelper {
         if (command != null) {
             command = command.concat(SSH_NETCONF_TERMINATOR);
             send(command);
-            // parse the rpc reply and the return success or failure.
+            // parse the rpc reply.
             parseReply(receive());
         } else {
             throw new CloudRuntimeException("Error generating rpc request for deleting port profile.");
+        }
+    }
+
+    public void addPolicyMap(String name, int averageRate, int maxRate, int burstRate)
+            throws CloudRuntimeException {
+        String command = VsmCommand.getPolicyMap(name, averageRate, maxRate, burstRate);
+        if (command != null) {
+            command = command.concat(SSH_NETCONF_TERMINATOR);
+            send(command);
+            // parse the rpc reply.
+            parseReply(receive());
+        } else {
+            throw new CloudRuntimeException("Error generating rpc request for adding/updating policy map.");
+        }
+    }
+
+    public void deletePolicyMap(String name) throws CloudRuntimeException {
+        String command = VsmCommand.getDeletePolicyMap(name);
+        if (command != null) {
+            command = command.concat(SSH_NETCONF_TERMINATOR);
+            send(command);
+            // parse the rpc reply.
+            parseReply(receive());
+        } else {
+            throw new CloudRuntimeException("Error generating rpc request for deleting policy map.");
+        }
+    }
+
+    public void updatePolicyMap(String name, int averageRate, int maxRate, int burstRate)
+            throws CloudRuntimeException {
+        // Add and update of policy map work in the exact same way.
+        addPolicyMap(name, averageRate, maxRate, burstRate);
+    }
+
+    public void attachServicePolicy(String policyMap, String portProfile)
+            throws CloudRuntimeException {
+        String command = VsmCommand.getAttachServicePolicy(policyMap, portProfile);
+        if (command != null) {
+            command = command.concat(SSH_NETCONF_TERMINATOR);
+            send(command);
+            // parse the rpc reply.
+            parseReply(receive());
+        } else {
+            throw new CloudRuntimeException("Error generating rpc request for adding policy map.");
         }
     }
 
