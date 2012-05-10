@@ -15,7 +15,9 @@
  */
 package com.cloud.bridge.service.core.ec2;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 import com.cloud.bridge.util.EC2RestAuth;
 
@@ -37,6 +39,7 @@ public class EC2Instance {
     private String      hypervisor;
     private String      rootDeviceType;
     private String      rootDeviceId;
+    private List<String>    groupSet;
     
 	public EC2Instance() {
 		id               = null;
@@ -55,6 +58,7 @@ public class EC2Instance {
 		hypervisor       = null;
 		rootDeviceType   = null;
 		rootDeviceId     = null;
+		groupSet         = new ArrayList<String>();
 	}
 	
 	public void setId( String id ) {
@@ -182,6 +186,15 @@ public class EC2Instance {
 	}
 	
 	public void setRootDeviceId(String param) {
-		rootDeviceId = param;		
+		rootDeviceId = param;
 	}
+
+    public void addGroupName( String param ) {
+        groupSet.add( param );
+    }
+		
+    public String[] getGroupSet() {
+        return groupSet.toArray(new String[0]);
+    }
+    
 }

@@ -15,6 +15,9 @@
  */
 package com.cloud.bridge.service.core.ec2;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class EC2RunInstances {
 
 	private String instanceType;
@@ -26,7 +29,7 @@ public class EC2RunInstances {
 	private int    maxCount;
 	private int    minCount;
     private Integer    size;  		// <- in gigs
-	
+    private List<String> groupSet = new ArrayList<String>();
 	
 	public EC2RunInstances() {
 		instanceType = null;
@@ -34,7 +37,7 @@ public class EC2RunInstances {
 		templateId   = null;
 		groupId      = null;
 		userData     = null;
-		keyName = null;
+		keyName      = null;
 		maxCount     = 0;
 		minCount     = 0;
 		size		 = 0;
@@ -112,4 +115,11 @@ public class EC2RunInstances {
 		this.size = size;
 	}
 	
+    public void addGroupName( String param ) {
+        groupSet.add( param );
+    }
+		
+    public String[] getGroupSet() {
+        return groupSet.toArray(new String[0]);
+    }
 }

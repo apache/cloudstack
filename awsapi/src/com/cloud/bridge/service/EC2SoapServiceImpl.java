@@ -618,7 +618,9 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		// -> we can only support one group per instance
 		if (null != gst) {
 			GroupItemType[] items = gst.getItem();
-			if (null != items && 0 < items.length) request.setGroupId( items[0].getGroupId());
+			if (null != items) {
+				for( int i=0; i < items.length; i++ ) request.addGroupName(items[i].getGroupId());
+		    }
 		}
 		return toRunInstancesResponse( engine.runInstances( request ), engine);
 	}
@@ -1468,12 +1470,6 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	    
 	    param1.setReservationId( "" );
 	    
-		GroupSetType  param2 = new GroupSetType();
-		GroupItemType param3 = new GroupItemType();
-		param3.setGroupId( "" );
-		param2.addItem( param3 );
-	    param1.setGroupSet( param2 );
-	    
 	    RunningInstancesSetType param6 = new RunningInstancesSetType();
 		EC2Instance[] instances = engineResponse.getInstanceSet();
 		for (EC2Instance inst : instances) {
@@ -1486,6 +1482,21 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 			String ownerId = domainId + ":" + accountName;
 		
 	        param1.setOwnerId(ownerId);
+			
+            String[] groups = inst.getGroupSet();
+            GroupSetType  param2 = new GroupSetType();
+            if (null == groups || 0 == groups.length) {
+                GroupItemType param3 = new GroupItemType();
+                param3.setGroupId("");
+                param2.addItem( param3 );
+            } else {
+                for (String group : groups) {
+                    GroupItemType param3 = new GroupItemType();
+                    param3.setGroupId(group);
+                    param2.addItem( param3 );   
+                }
+            }
+            param1.setGroupSet(param2);
 			
 	        InstanceStateType param8 = new InstanceStateType();
 	        param8.setCode( toAmazonCode( inst.getState()));
@@ -1570,7 +1581,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		}
 		param1.setInstancesSet( param6 );
 		param1.setRequesterId( "" );
-	    
+		
 	    param1.setRequestId( UUID.randomUUID().toString());
 	    response.setRunInstancesResponse( param1 );
 		return response;
