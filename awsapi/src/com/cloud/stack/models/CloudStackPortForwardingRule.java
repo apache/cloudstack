@@ -24,13 +24,13 @@ import com.google.gson.annotations.SerializedName;
  */
 public class CloudStackPortForwardingRule {
 	@SerializedName(ApiConstants.ID)
-	private Long id;
+	private String id;
 	@SerializedName(ApiConstants.CIDR_LIST)
 	private String cidrList;
 	@SerializedName(ApiConstants.IP_ADDRESS)
 	private String ipAddress;
 	@SerializedName(ApiConstants.IP_ADDRESS_ID)
-	private Long ipAddressId;
+	private String ipAddressId;
 	@SerializedName(ApiConstants.PRIVATE_END_PORT)
 	private Long privateEndPort;
 	@SerializedName(ApiConstants.PRIVATE_PORT)
@@ -46,7 +46,7 @@ public class CloudStackPortForwardingRule {
 	@SerializedName(ApiConstants.VIRTUAL_MACHINE_DISPLAY_NAME)
 	private String virtualMachineDisplayName;
 	@SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-	private Long virtualMachineId;
+	private String virtualMachineId;
 	@SerializedName(ApiConstants.VIRTUAL_MACHINE_NAME)
 	private String virtualMachineName;
 	
@@ -60,7 +60,7 @@ public class CloudStackPortForwardingRule {
 	/**
 	 * @return the id
 	 */
-	public Long getId() {
+	public String getId() {
 		return id;
 	}
 
@@ -81,7 +81,7 @@ public class CloudStackPortForwardingRule {
 	/**
 	 * @return the ipAddressId
 	 */
-	public Long getIpAddressId() {
+	public String getIpAddressId() {
 		return ipAddressId;
 	}
 
@@ -137,7 +137,7 @@ public class CloudStackPortForwardingRule {
 	/**
 	 * @return the virtualMachineId
 	 */
-	public Long getVirtualMachineId() {
+	public String getVirtualMachineId() {
 		return virtualMachineId;
 	}
 

@@ -31,7 +31,7 @@ public class CloudStackSecurityGroup {
     @SerializedName(ApiConstants.DOMAIN_ID)
     private String domainId;
     @SerializedName(ApiConstants.JOB_ID)
-    private Long jobId;
+    private String jobId;
     @SerializedName(ApiConstants.JOB_STATUS)
     private Integer jobStatus;
     @SerializedName(ApiConstants.NAME)
@@ -67,7 +67,7 @@ public class CloudStackSecurityGroup {
 		return domainName;
 	}
 
-	public Long getJobId() {
+	public String getJobId() {
 		return jobId;
 	}
 

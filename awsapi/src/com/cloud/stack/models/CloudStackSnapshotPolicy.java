@@ -25,7 +25,7 @@ import com.google.gson.annotations.SerializedName;
 public class CloudStackSnapshotPolicy {
 	
 	@SerializedName(ApiConstants.ID)
-	private Long id;
+	private String id;
 	@SerializedName(ApiConstants.INTERVAL_TYPE)
 	private String intervalType;
 	@SerializedName(ApiConstants.MAX_SNAPS)
@@ -35,7 +35,7 @@ public class CloudStackSnapshotPolicy {
 	@SerializedName(ApiConstants.TIMEZONE)
 	private String timeZone;
 	@SerializedName(ApiConstants.VOLUME_ID)
-	private Long volumeId;
+	private String volumeId;
 
 	/**
 	 * 
@@ -46,7 +46,7 @@ public class CloudStackSnapshotPolicy {
 	/**
 	 * @return the id
 	 */
-	public Long getId() {
+	public String getId() {
 		return id;
 	}
 
@@ -81,7 +81,7 @@ public class CloudStackSnapshotPolicy {
 	/**
 	 * @return the volumeId
 	 */
-	public Long getVolumeId() {
+	public String getVolumeId() {
 		return volumeId;
 	}
 

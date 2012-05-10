@@ -31,7 +31,7 @@ public class CloudStackSnapshot {
     @SerializedName(ApiConstants.INTERVAL_TYPE)
     private String intervalType;
     @SerializedName(ApiConstants.JOB_ID)
-    private Long jobId;
+    private String jobId;
     @SerializedName(ApiConstants.JOB_STATUS)
     private Integer jobStatus;
     @SerializedName(ApiConstants.NAME)
@@ -90,7 +90,7 @@ public class CloudStackSnapshot {
 		return name;
 	}
 
-	public Long getJobId() {
+	public String getJobId() {
 		return jobId;
 	}
 
