@@ -1201,10 +1201,11 @@
 											args.$select.change(function() {											  
 												var $form = $(this).closest("form");
                         
-												if ($(this).val() == "Shared") {
-                          $form.find('.form-item[rel=specifyVlan]').hide();
-												} else {  //$(this).val() == "Isolated"   
-												  $form.find('.form-item[rel=specifyVlan]').css('display', 'inline-block');
+												if ($(this).val() == "Shared") {                          
+													$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]').attr("disabled", "disabled"); //make it read-only
+													$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]').attr('checked', true);	//make it checked
+												} else {  //$(this).val() == "Isolated" 
+													$form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]').removeAttr("disabled"); //make it editable													
 												}												
 											});
                     }
@@ -1488,8 +1489,8 @@
                 }).join(',');
 
 								
-								if(inputData['guestIpType'] == "Shared"){ //specifyVlan checkbox is hidden
-								  inputData['specifyVlan'] = true;
+								if(inputData['guestIpType'] == "Shared"){ //specifyVlan checkbox is disabled, so inputData won't include specifyVlan
+								  inputData['specifyVlan'] = true;  //hardcode inputData['specifyVlan'] 
 									inputData['specifyIpRanges'] = true;
 								}
 								else if (inputData['guestIpType'] == "Isolated") { //specifyVlan checkbox is shown
