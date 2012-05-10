@@ -25,10 +25,16 @@ def testCaseLogger(message, logger=None):
         logger.debug(message)
 
 class TestCaseExecuteEngine(object):
-    def __init__(self, testclient, testCaseFolder, testcaseLogFile=None, testResultLogFile=None):
+    def __init__(self, testclient, testcaseLogFile=None, testResultLogFile=None):
+        """
+        Initialize the testcase execution engine, just the basics here
+        @var testcaseLogFile: client log file
+        @var testResultLogFile: summary report file  
+        """
         self.testclient = testclient
-        self.testCaseFolder = testCaseFolder
         self.logformat = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
+        self.loader = unittest.loader.TestLoader()
+        self.suite = None
 
         if testcaseLogFile is not None:
             self.logfile = testcaseLogFile
@@ -46,7 +52,18 @@ class TestCaseExecuteEngine(object):
             self.testResultLogFile = fp
         else:
             self.testResultLogFile = sys.stdout
-    
+            
+    def loadTestsFromDir(self, testDirectory):
+        """ Load the test suites from a package with multiple test files """
+        self.suite = self.loader.discover(testDirectory)
+        self.injectTestCase(self.suite)
+        
+    def loadTestsFromFile(self, file_name):
+        """ Load the tests from a single script/module """
+        if os.path.isfile(file_name):
+            self.suite = self.loader.discover(os.path.dirname(file_name), os.path.basename(file_name))
+            self.injectTestCase(self.suite)
+        
     def injectTestCase(self, testSuites):
         for test in testSuites:
             if isinstance(test, unittest.BaseTestSuite):
@@ -67,8 +84,5 @@ class TestCaseExecuteEngine(object):
                     self.testclient.createNewApiClient(test.UserName, test.DomainName, test.AcctType)
 
     def run(self):
-        loader = unittest.loader.TestLoader()
-        suite = loader.discover(self.testCaseFolder)
-        self.injectTestCase(suite)
-        
-        unittest.TextTestRunner(stream=self.testResultLogFile, verbosity=2).run(suite)
+        if self.suite:
+            unittest.TextTestRunner(stream=self.testResultLogFile, verbosity=2).run(self.suite)
