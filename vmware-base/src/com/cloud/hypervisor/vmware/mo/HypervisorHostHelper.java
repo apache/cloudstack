@@ -38,6 +38,7 @@ import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.DVPortgroupConfigSpec;
 import com.vmware.vim25.DVSTrafficShapingPolicy;
 //import com.vmware.vim25.DistributedVirtualSwitchKeyedOpaqueBlob;
+import com.vmware.vim25.DVPortgroupConfigInfo;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.HostNetworkTrafficShapingPolicy;
 import com.vmware.vim25.HostPortGroupSpec;
@@ -212,8 +213,10 @@ public class HypervisorHostHelper {
             long timeOutMs) throws Exception, CloudRuntimeException {		
 		ManagedObjectReference morNetwork = null;
 		VmwareContext context = hostMo.getContext();
+		ManagedObjectReference dcMor = hostMo.getHyperHostDatacenter();
+		DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
 
-		ManagedObjectReference morEthernetPortProfile = hostMo.getDvPortGroupMor(ethPortProfileName);
+		ManagedObjectReference morEthernetPortProfile = dataCenterMo.getDvPortGroupMor(ethPortProfileName);
 
         if (morEthernetPortProfile == null) {
             String msg = "Unable to find Ethernet port profile " + ethPortProfileName;
@@ -253,12 +256,13 @@ public class HypervisorHostHelper {
 			shapingPolicy.setPeakBandwidth(peakBandwidth);
 			shapingPolicy.setBurstSize(burstSize);
 		}
+		
 		boolean bWaitPortGroupReady = false;
-        if (!hostMo.hasDvPortGroup(networkName)) {
+        if (!dataCenterMo.hasDvPortGroup(networkName)) {
             createPortProfile(context, ethPortProfileName, networkName, vid, networkRateMbps);
             bWaitPortGroupReady = true;
         } else {
-        	DVPortgroupConfigSpec spec = hostMo.getDvPortGroupSpec(networkName);        	
+        	DVPortgroupConfigInfo spec = dataCenterMo.getDvPortGroupSpec(networkName);        	
             if(!isSpecMatch(spec, vid, shapingPolicy)) {
                 updatePortProfile(context, ethPortProfileName, vid, networkRateMbps);                
                 bWaitPortGroupReady = true;
@@ -266,9 +270,9 @@ public class HypervisorHostHelper {
         }
 		//Wait for dvPortGroup on vCenter		
         if(bWaitPortGroupReady) 
-            morNetwork = waitForDvPortGroupReady(hostMo, networkName, timeOutMs);
+            morNetwork = waitForDvPortGroupReady(dataCenterMo, networkName, timeOutMs);
         else
-            morNetwork = hostMo.getDvPortGroupMor(networkName);
+            morNetwork = dataCenterMo.getDvPortGroupMor(networkName);
         if (morNetwork == null) {
             String msg = "Failed to create guest network " + networkName;
             s_logger.error(msg);
@@ -284,14 +288,14 @@ public class HypervisorHostHelper {
 	}
 	
     private static ManagedObjectReference waitForDvPortGroupReady(
-			HostMO hostMo, String dvPortGroupName, long timeOutMs) throws Exception {
+			DatacenterMO dataCenterMo, String dvPortGroupName, long timeOutMs) throws Exception {
 		ManagedObjectReference morDvPortGroup = null;
 
 		// if DvPortGroup is just created, we may fail to retrieve it, we
 		// need to retry
 		long startTick = System.currentTimeMillis();
 		while (System.currentTimeMillis() - startTick <= timeOutMs) {
-			morDvPortGroup = hostMo.getDvPortGroupMor(dvPortGroupName);
+			morDvPortGroup = dataCenterMo.getDvPortGroupMor(dvPortGroupName);
 			if (morDvPortGroup != null) {
 				break;
 			}
@@ -302,7 +306,7 @@ public class HypervisorHostHelper {
 		return morDvPortGroup;
 	}
 
-	private static boolean isSpecMatch(DVPortgroupConfigSpec spec, Integer vid,
+	private static boolean isSpecMatch(DVPortgroupConfigInfo spec, Integer vid,
 			DVSTrafficShapingPolicy shapingPolicy) {
 		DVSTrafficShapingPolicy currentTrafficShapingPolicy;
 		currentTrafficShapingPolicy = spec.getDefaultPortConfig().getInShapingPolicy();
