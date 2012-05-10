@@ -31,7 +31,6 @@ body {
   font-family: sans-serif;
   height: 769px !important;
   overflow: auto;
-  overflow-x: hidden;
   background: #FFFFFF;
 }
 
