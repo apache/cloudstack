@@ -110,6 +110,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         CountFreePublicIps = createSearchBuilder(Long.class);
         CountFreePublicIps.select(null, Func.COUNT, null);
         CountFreePublicIps.and("state", CountFreePublicIps.entity().getState(), SearchCriteria.Op.EQ);
+        CountFreePublicIps.and("networkId", CountFreePublicIps.entity().getSourceNetworkId(), SearchCriteria.Op.EQ);
         SearchBuilder<VlanVO> join = _vlanDao.createSearchBuilder();
         join.and("vlanType", join.entity().getVlanType(), Op.EQ);
         CountFreePublicIps.join("vlans", join, CountFreePublicIps.entity().getVlanId(), join.entity().getId(), JoinBuilder.JoinType.INNER);
@@ -293,10 +294,18 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     }
     
     @Override
-    public long countFreeIPs() {
+    public long countFreePublicIPs() {
     	SearchCriteria<Long> sc = CountFreePublicIps.create();
     	sc.setParameters("state", State.Free);
     	sc.setJoinParameters("vlans", "vlanType", VlanType.VirtualNetwork);
+        return customSearch(sc, null).get(0);       
+    }
+    
+    @Override
+    public long countFreeIPsInNetwork(long networkId) {
+        SearchCriteria<Long> sc = CountFreePublicIps.create();
+        sc.setParameters("state", State.Free);
+        sc.setParameters("networkId", networkId);
         return customSearch(sc, null).get(0);       
     }
 }

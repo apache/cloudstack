@@ -134,4 +134,10 @@ public interface NetworkService {
 
     List<? extends Network> getIsolatedNetworksWithSourceNATOwnedByAccountInZone(long zoneId, Account owner);
 
+    /**
+     * @param network
+     * @return
+     */
+    boolean canUseForDeploy(Network network);
+
 }

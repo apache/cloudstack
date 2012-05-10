@@ -49,6 +49,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -84,6 +85,7 @@ import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
@@ -91,9 +93,8 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeHostVO;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume.Type;
+import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -733,7 +734,7 @@ public class ApiDBUtils {
     }
     
     public static long countFreePublicIps() {
-    	return _ipAddressDao.countFreeIPs();
+    	return _ipAddressDao.countFreePublicIPs();
     }
     
     public static long findDefaultRouterServiceOffering() {
@@ -747,5 +748,8 @@ public class ApiDBUtils {
     
     public static String getHaTag() {
         return _haMgr.getHaTag();
+    }
+    public static boolean canUseForDeploy(Network network) {
+        return _networkMgr.canUseForDeploy(network);
     }
 }
