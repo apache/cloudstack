@@ -4561,6 +4561,10 @@ label.error {
   float: left;
 }
 
+.multi-wizard .select-security-group .content {
+  height: 366px;
+}
+
 .multi-wizard .content .section {
   width: 416px;
   background: #E9E9E9;
