@@ -119,10 +119,9 @@ DELETE FROM `cloud`.`configuration` WHERE name='xen.min.xapi.version';
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'enable.ec2.api', 'false', 'enable EC2 API on CloudStack');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'enable.s3.api', 'false', 'enable Amazon S3 API on CloudStack');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'vmware.use.nexus.vswitch’, ‘false', ' Enable/Disable Cisco Nexus 1000v vSwitch in VMware environment');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.guest.network.vswitch.type’, ‘standard', ' Specify type of (standard/nexus) virtual switch designated for guest traffic');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.private.network.vswitch.type’, ‘standard', ' Specify type of (standard/nexus) virtual switch designated for private traffic');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.public.network.vswitch.type’, ‘standard', ' Specify type of (standard/nexus) virtual switch designated for public traffic');
-
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'vmware.use.nexus.vswitch', 'false', 'Enable/Disable Cisco Nexus 1000v vSwitch in VMware environment');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.guest.network.vswitch.type', 'standard', 'Specify type of (standard/nexus) virtual switch designated for guest traffic');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.private.network.vswitch.type','standard', 'Specify type of (standard/nexus) virtual switch designated for private traffic');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.public.network.vswitch.type', 'standard', 'Specify type of (standard/nexus) virtual switch designated for public traffic');
 ALTER TABLE `cloud`.`account` ADD COLUMN `default_zone_id` bigint unsigned;
 ALTER TABLE `cloud`.`account` ADD CONSTRAINT `fk_account__default_zone_id` FOREIGN KEY `fk_account__default_zone_id`(`default_zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
