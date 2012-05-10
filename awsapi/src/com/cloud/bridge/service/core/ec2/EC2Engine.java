@@ -890,7 +890,7 @@ public class EC2Engine {
 	public boolean disassociateAddress( EC2DisassociateAddress request ) {
 		try {
 			CloudStackIpAddress cloudIp = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null).get(0);
-			CloudStackInfoResponse resp = getApi().disassociateIpAddress(cloudIp.getId());
+			CloudStackInfoResponse resp = getApi().disableStaticNat(cloudIp.getId());
 			if (resp != null) {
 				return resp.getSuccess();
 			}
@@ -917,8 +917,9 @@ public class EC2Engine {
             CloudStackZone zone = findZone();
             CloudStackNetwork net = findNetwork(zone);
 //			CloudStackIpAddress resp = getApi().associateIpAddress(null, null, null, "0036952d-48df-4422-9fd0-94b0885e18cb");
-            CloudStackIpAddress resp = getApi().associateIpAddress(null, null, null, net.getId());
+            CloudStackIpAddress resp = getApi().associateIpAddress(zone.getId(), caller.getName(), caller.getDomainId(), net != null ? net.getId():null);
 			ec2Address.setAssociatedInstanceId(resp.getId());
+			
 			if (resp.getIpAddress() == null) {
 			    List<CloudStackIpAddress> addrList = getApi().listPublicIpAddresses(null, null, null, null, null, null, null, null, null);
 			    if (addrList != null && addrList.size() > 0) {

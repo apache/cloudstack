@@ -1,6 +1,8 @@
 package com.cloud.bridge.service;
 
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.util.UUID;
 
 import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
@@ -8,6 +10,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 
 import com.cloud.bridge.persist.PersistContext;
 import com.cloud.bridge.persist.dao.CloudStackConfigurationDao;
@@ -55,9 +58,11 @@ public class EC2MainServlet extends HttpServlet{
 
     protected void doGetOrPost(HttpServletRequest request, HttpServletResponse response) {
         String action = request.getParameter( "Action" );
-        
         if(!isEC2APIEnabled){
-           throw new RuntimeException("EC2 API is disabled.");
+            //response.sendError(404, "EC2 API is disabled.");
+            response.setStatus(404);
+            faultResponse(response, "404" , "EC2 API is disabled.");
+            return;
         }
         
     	if(action != null){
@@ -82,4 +87,23 @@ public class EC2MainServlet extends HttpServlet{
     	}
     	
     }
+    
+    private void faultResponse(HttpServletResponse response, String errorCode, String errorMessage) {
+        try {
+            OutputStreamWriter out = new OutputStreamWriter(response.getOutputStream());
+            response.setContentType("text/xml; charset=UTF-8");
+            out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+            out.write("<Response><Errors><Error><Code>");
+            out.write(errorCode);
+            out.write("</Code><Message>");
+            out.write(errorMessage);
+            out.write("</Message></Error></Errors><RequestID>");
+            out.write(UUID.randomUUID().toString());
+            out.write("</RequestID></Response>");
+            out.flush();
+            out.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }    
 }
