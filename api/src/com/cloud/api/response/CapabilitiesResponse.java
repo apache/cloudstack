@@ -27,7 +27,6 @@ public class CapabilitiesResponse extends BaseResponse {
     @SerializedName("userpublictemplateenabled") @Param(description="true if user and domain admins can set templates to be shared, false otherwise")
     private boolean userPublicTemplateEnabled;
     
-    
     @SerializedName("supportELB") @Param(description="true if region supports elastic load balancer on basic zones")
     private String supportELB;
     
@@ -36,6 +35,10 @@ public class CapabilitiesResponse extends BaseResponse {
     
     @SerializedName(ApiConstants.ALLOW_USER_CREATE_PROJECTS) @Param(description="true if regular user is allowed to create projects")
     private Boolean allowUsersCreateProjects;
+    
+    @SerializedName(ApiConstants.CUSTOM_DISK_OFF_MAX_SIZE) @Param(description="maximum size that can be specified when " +
+    		"create disk from disk offering with custom size")
+    private Long diskOffMaxSize;
 
 
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
@@ -61,5 +64,9 @@ public class CapabilitiesResponse extends BaseResponse {
 	public void setAllowUsersCreateProjects(Boolean allowUsersCreateProjects) {
 		this.allowUsersCreateProjects = allowUsersCreateProjects;
 	}
+
+    public void setDiskOffMaxSize(Long diskOffMaxSize) {
+        this.diskOffMaxSize = diskOffMaxSize;
+    }
 
 }

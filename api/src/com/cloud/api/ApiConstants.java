@@ -330,6 +330,7 @@ public class ApiConstants {
     public static final String INSTANCE_NAME = "instancename";
     public static final String START_VM = "startvm";
     public static final String HA_HOST = "hahost";
+    public static final String CUSTOM_DISK_OFF_MAX_SIZE = "customdiskofferingmaxsize";
 
     public static final String DEFAULT_ZONE_ID = "defaultzoneid";
     
