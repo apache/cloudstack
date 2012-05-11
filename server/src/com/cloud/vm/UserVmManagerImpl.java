@@ -556,16 +556,19 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         boolean volumeOnSec = false;
         VolumeHostVO  volHostVO = _volumeHostDao.findByVolumeId(volume.getId());
         if (volHostVO != null){
-        	volumeOnSec = true;       	
+        	volumeOnSec = true;
+        	if( !(volHostVO.getDownloadState() == Status.DOWNLOADED) ){
+        		throw new InvalidParameterValueException("Volume is not uploaded yet. Please try this operation once the volume is uploaded");	
+        	}
         }
 
-        // Check that the volume is stored on shared storage
-        if (!(Volume.State.Allocated.equals(volume.getState()) || Volume.State.Uploaded.equals(volume.getState())) && !_storageMgr.volumeOnSharedStoragePool(volume)) {
+        //If the volume is Ready, check that the volume is stored on shared storage
+        if (!(Volume.State.Allocated.equals(volume.getState()) || Volume.State.UploadOp.equals(volume.getState())) && !_storageMgr.volumeOnSharedStoragePool(volume)) {
             throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
         }
 
-        if ( !(Volume.State.Allocated.equals(volume.getState()) || Volume.State.Ready.equals(volume.getState()) || Volume.State.Uploaded.equals(volume.getState())) ) {
-            throw new InvalidParameterValueException("Volume state must be in Allocated, Ready or Uploaded state");
+        if ( !(Volume.State.Allocated.equals(volume.getState()) || Volume.State.Ready.equals(volume.getState())) ) {
+            throw new InvalidParameterValueException("Volume state must be in Allocated or Ready state");
         }
 
         VolumeVO rootVolumeOfVm = null;
@@ -578,7 +581,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         HypervisorType rootDiskHyperType = _volsDao.getHypervisorType(rootVolumeOfVm.getId());
 
-        if (volume.getState().equals(Volume.State.Allocated) || volume.getState().equals(Volume.State.Uploaded)) {
+        if (volume.getState().equals(Volume.State.Allocated) || volume.getState().equals(Volume.State.UploadOp)) {
             /* Need to create the volume */
             VMTemplateVO rootDiskTmplt = _templateDao.findById(vm.getTemplateId());
             DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterIdToDeployIn());

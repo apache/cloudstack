@@ -135,7 +135,6 @@ public class DownloadCommand extends AbstractDownloadCommand {
 	    //this.hvm = volume.isRequiresHvm();
 	    this.checksum = checkSum;
 	    this.id = volume.getId();
-	    //this.description = volume.get;
 	    this.setSecUrl(secUrl);
 	    this.maxDownloadSizeInBytes = maxDownloadSizeInBytes;
 	    this.resourceType = ResourceType.VOLUME;

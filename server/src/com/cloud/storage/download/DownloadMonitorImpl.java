@@ -542,13 +542,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         txn.start();		
 
         if (dnldStatus == Status.DOWNLOADED) {
-        	
-        	// Do the volume state transition
-			try {
-				_storageMgr.stateTransitTo(volume, Event.UploadSucceeded);			
-			} catch (NoTransitionException e) {
-				e.printStackTrace();
-			}
 			
 			//Create usage event
             long size = -1;
@@ -563,13 +556,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                UsageEventVO usageEvent = new UsageEventVO(eventType, volume.getAccountId(), host.getDataCenterId(), volume.getId(), volume.getName(), null, 0l , size);
                _usageEventDao.persist(usageEvent);
             }
-        }else if (dnldStatus == Status.DOWNLOAD_ERROR){
-        	//Transistion the volume state
-        	try {
-                _storageMgr.stateTransitTo(volume, Volume.Event.OperationFailed);
-            } catch (NoTransitionException e) {
-                throw new CloudRuntimeException("Unable to update the failure on a volume: " + volume, e);
-            }
+        }else if (dnldStatus == Status.DOWNLOAD_ERROR || dnldStatus == Status.ABANDONED || dnldStatus == Status.UNKNOWN){
             //Decrement the volume count
         	_resourceLimitMgr.decrementResourceCount(volume.getAccountId(), com.cloud.configuration.Resource.ResourceType.volume);
         }
@@ -737,27 +724,25 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                         toBeDownloaded.add(volumeHost);
                     }
 
-                } else {
+                } else { // Put them in right status
                 	volumeHost.setDownloadPercent(100);
                 	volumeHost.setDownloadState(Status.DOWNLOADED);
                 	volumeHost.setInstallPath(volInfo.getInstallPath());
                 	volumeHost.setSize(volInfo.getSize());
                 	volumeHost.setPhysicalSize(volInfo.getPhysicalSize());
-                	volumeHost.setLastUpdated(new Date());
-                	if (volume.getState() == Volume.State.Uploading){
-                		try {
-                			_storageMgr.stateTransitTo(volume, Event.UploadSucceeded);			
-                		} catch (NoTransitionException e) {
-                			e.printStackTrace();
-                		}
-                	}
-                
+                	volumeHost.setLastUpdated(new Date());               
                 	_volumeHostDao.update(volumeHost.getId(), volumeHost);
                 }
+                continue;
         	}
+        	// Volume is not on secondary but we should download.
+        	if (volumeHost.getDownloadState() != Status.DOWNLOADED) {
+                s_logger.info("Volume Sync did not find " + volume.getName() + " ready on server " + sserverId + ", will request download to start/resume shortly");
+                toBeDownloaded.add(volumeHost);
+            } 
         }
         
-        //Download volumes which havent been downloaded yet.
+        //Download volumes which haven't been downloaded yet.
         if (toBeDownloaded.size() > 0) {
             for (VolumeHostVO volumeHost : toBeDownloaded) {
                 if (volumeHost.getDownloadUrl() == null) { // If url is null we can't initiate the download

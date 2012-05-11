@@ -724,8 +724,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     	// Find a suitable storage to create volume on 
     	StoragePoolVO destPool = findStoragePool(dskCh, dc, pod, clusterId, vm, avoidPools);
     	
-    	// Copy the volume from secondary storage to the destination storage pool
-    	stateTransitTo(volume, Event.CopyRequested);    	
+    	// Copy the volume from secondary storage to the destination storage pool    	  	
     	VolumeHostVO volumeHostVO = _volumeHostDao.findByVolumeId(volume.getId());
     	HostVO secStorage = _hostDao.findById(volumeHostVO.getHostId());
     	String secondaryStorageURL = secStorage.getStorageUrl();
@@ -1754,10 +1753,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 		        throw new InvalidParameterValueException("Please specify a valid " + format.toLowerCase());
 		    }
 			
-			if ((format.equalsIgnoreCase("vhd") && (!url.toLowerCase().endsWith("vhd") && !url.toLowerCase().endsWith("vhd.zip") && !url.toLowerCase().endsWith("vhd.bz2") && !url.toLowerCase().endsWith("vhd.gz") ))
-				|| (format.equalsIgnoreCase("qcow2") && (!url.toLowerCase().endsWith("qcow2") && !url.toLowerCase().endsWith("qcow2.zip") && !url.toLowerCase().endsWith("qcow2.bz2") && !url.toLowerCase().endsWith("qcow2.gz") ))
-				|| (format.equalsIgnoreCase("ova") && (!url.toLowerCase().endsWith("ova") && !url.toLowerCase().endsWith("ova.zip") && !url.toLowerCase().endsWith("ova.bz2") && !url.toLowerCase().endsWith("ova.gz")))
-				|| (format.equalsIgnoreCase("raw") && (!url.toLowerCase().endsWith("img") && !url.toLowerCase().endsWith("raw")))) {
+			if ((format.equalsIgnoreCase("vhd") && (!url.toLowerCase().endsWith(".vhd") && !url.toLowerCase().endsWith("vhd.zip") && !url.toLowerCase().endsWith("vhd.bz2") && !url.toLowerCase().endsWith("vhd.gz") ))
+				|| (format.equalsIgnoreCase("qcow2") && (!url.toLowerCase().endsWith(".qcow2") && !url.toLowerCase().endsWith("qcow2.zip") && !url.toLowerCase().endsWith("qcow2.bz2") && !url.toLowerCase().endsWith("qcow2.gz") ))
+				|| (format.equalsIgnoreCase("ova") && (!url.toLowerCase().endsWith(".ova") && !url.toLowerCase().endsWith("ova.zip") && !url.toLowerCase().endsWith("ova.bz2") && !url.toLowerCase().endsWith("ova.gz")))
+				|| (format.equalsIgnoreCase("raw") && (!url.toLowerCase().endsWith(".img") && !url.toLowerCase().endsWith("raw")))) {
 		        throw new InvalidParameterValueException("Please specify a valid URL. URL:" + url + " is an invalid for the format " + format.toLowerCase());
 			}
         validateUrl(url);
