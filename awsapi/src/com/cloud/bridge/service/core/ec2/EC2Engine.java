@@ -1518,7 +1518,7 @@ public class EC2Engine {
 			return instances;
 		} catch( Exception e ) {
 			logger.error( "EC2 StopInstances - ", e);
-			throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
+			throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() + ", might already be destroyed" : "An unexpected error occurred.");
 		}
 	}
 
