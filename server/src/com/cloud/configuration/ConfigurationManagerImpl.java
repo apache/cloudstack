@@ -2474,10 +2474,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                                     " as ip " + ip + " belonging to the range is used for static nat purposes. Cleanup the rules first");
                         }
                         
-                        if (ip.isSourceNat() && _nicDao.findByIp4AddressAndNetworkId(ip.getAddress().addr(), ip.getSourceNetworkId()) != null) {
+                        if (ip.isSourceNat() && _networkMgr.getNetwork(ip.getAssociatedWithNetworkId()) != null) {
                             throw new InvalidParameterValueException("Can't delete account specific vlan " + vlanDbId + 
                                     " as ip " + ip + " belonging to the range is a source nat ip for the network id=" + ip.getSourceNetworkId() + 
-                                    ". Either delete the network, or Virtual Router instance using this ip address");
+                                    ". IP range with the source nat ip address can be removed either as a part of Network, or account removal");
                         }
                         
                         if (_firewallDao.countRulesByIpId(ip.getId()) > 0) {
