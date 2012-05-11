@@ -1461,7 +1461,10 @@ public class EC2Engine {
 				vm.setPreviousState(vm.getState());
 
 				// -> if its already running then we don't care
-				if (vm.getState().equalsIgnoreCase( "Running" ) || vm.getState().equalsIgnoreCase( "Destroyed" )) continue;
+				if (vm.getState().equalsIgnoreCase( "Running" ) || vm.getState().equalsIgnoreCase( "Destroyed" )) {
+				    instances.addInstance(vm);
+				    continue;
+				}
 
 				CloudStackUserVm resp = getApi().startVirtualMachine(vm.getId());
 				if(resp != null){
@@ -1500,12 +1503,18 @@ public class EC2Engine {
 				vm.setPreviousState( vm.getState());
 				CloudStackUserVm resp = null;
 				if (request.getDestroyInstances()) {
-					if (vm.getState().equalsIgnoreCase( "Destroyed" )) continue;
+					if (vm.getState().equalsIgnoreCase( "Destroyed" )) {
+					    instances.addInstance(vm);
+					    continue;
+					}
 					resp = getApi().destroyVirtualMachine(vm.getId());
 					if(logger.isDebugEnabled())
 						logger.debug("Destroying VM " + vm.getId() + " job " + resp.getJobId());
 				} else {
-					if (vm.getState().equalsIgnoreCase("Stopped") || vm.getState().equalsIgnoreCase("Destroyed")) continue;
+					if (vm.getState().equalsIgnoreCase("Stopped") || vm.getState().equalsIgnoreCase("Destroyed")) {
+					    instances.addInstance(vm);
+					    continue;
+					}
 					resp = getApi().stopVirtualMachine(vm.getId(), false);
 					if(logger.isDebugEnabled())
 						logger.debug("Stopping VM " + vm.getId() + " job " + resp.getJobId());
