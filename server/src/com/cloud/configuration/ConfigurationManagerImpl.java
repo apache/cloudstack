@@ -2181,16 +2181,22 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if (forVirtualNetwork) {
             if (vlanOwner != null) {
                 // verify resource limits
-                long ipResourceLimit = _resourceLimitMgr.findCorrectResourceLimitForAccount(vlanOwner, ResourceType.public_ip);
+                //long ipResourceLimit = _resourceLimitMgr.findCorrectResourceLimitForAccount(vlanOwner, ResourceType.public_ip);
+                
                 long accountIpRange = NetUtils.ip2Long(endIP) - NetUtils.ip2Long(startIP) + 1;
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(" IPResourceLimit " + ipResourceLimit + " accountIpRange " + accountIpRange);
-                }
-                if (ipResourceLimit != -1 && accountIpRange > ipResourceLimit) { // -1
-                                                                                 // means
-                                                                                 // infinite
-                    throw new InvalidParameterValueException(" Public IP Resource Limit is set to " + ipResourceLimit + " which is less than the IP range of " + accountIpRange + " provided");
-                }
+
+                //check resource limits
+                _resourceLimitMgr.checkResourceLimit(vlanOwner, ResourceType.public_ip, accountIpRange);
+                
+//                if (s_logger.isDebugEnabled()) {
+//                    s_logger.debug(" IPResourceLimit " + ipResourceLimit + " accountIpRange " + accountIpRange);
+//                }
+//                if (ipResourceLimit != -1 && accountIpRange > ipResourceLimit) { // -1
+//                                                                                 // means
+//                                                                                 // infinite
+//                    throw new InvalidParameterValueException(" Public IP Resource Limit is set to " + ipResourceLimit +
+//                            " which is less than the IP range of " + accountIpRange + " provided");
+//                }
                 associateIpRangeToAccount = true;
             }
         }
