@@ -94,7 +94,7 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
 		    long memory = _mockAgentMgr.DEFAULT_HOST_MEM_SIZE;
 		    long localstorageSize = _mockStorageMgr.DEFAULT_HOST_STORAGE_SIZE;
 			if (scheme.equals("http")) {
-				if (host == null || !host.equalsIgnoreCase("sim")) {
+				if (host == null || !host.startsWith("sim")) {
 					String msg = "uri is not of simulator type so we're not taking care of the discovery for this: "
 							+ uri;
 					if(s_logger.isDebugEnabled()) {
