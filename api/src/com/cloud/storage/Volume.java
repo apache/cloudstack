@@ -32,9 +32,7 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
         Snapshotting("There is a snapshot created on this volume, not backed up to secondary storage yet"),
         Expunging("The volume is being expunging"),
         Destroy("The volume is destroyed, and can't be recovered."),        
-        Uploading ("The volume upload is in progress"),
-        Uploaded ("The volume is uploaded and present on secondary storage"),
-        UploadError ("The volume couldnt be uploaded");
+        UploadOp ("The volume upload operation is in progress");            
 
         String _description;
 
@@ -59,15 +57,9 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
             s_fsm.addTransition(Creating, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Creating, Event.DestroyRequested, Destroy);
             s_fsm.addTransition(Creating, Event.CreateRequested, Creating);            
-            s_fsm.addTransition(Allocated, Event.UploadRequested, Uploading);
-            s_fsm.addTransition(Uploading, Event.UploadSucceeded, Uploaded);
-            s_fsm.addTransition(Uploading, Event.OperationFailed, UploadError);
-            s_fsm.addTransition(UploadError, Event.DestroyRequested, Destroy);
-            s_fsm.addTransition(Uploaded, Event.UploadSucceeded, Uploaded);
-            s_fsm.addTransition(Uploaded, Event.CopyRequested, Creating);
-            s_fsm.addTransition(Uploaded, Event.DestroyRequested, Destroy);
+            s_fsm.addTransition(Allocated, Event.UploadRequested, UploadOp);         
             s_fsm.addTransition(Creating, Event.CopySucceeded, Ready);
-            s_fsm.addTransition(Creating, Event.CopyFailed, Uploaded);
+            s_fsm.addTransition(UploadOp, Event.CopySucceeded, Ready);
             s_fsm.addTransition(Ready, Event.DestroyRequested, Destroy);
             s_fsm.addTransition(Destroy, Event.ExpungingRequested, Expunging);
             s_fsm.addTransition(Ready, Event.SnapshotRequested, Snapshotting);
@@ -89,7 +81,6 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
         OperationSucceeded,
         OperationRetry,
         UploadRequested,
-        UploadSucceeded,
         MigrationRequested,
         SnapshotRequested,
         DestroyRequested,

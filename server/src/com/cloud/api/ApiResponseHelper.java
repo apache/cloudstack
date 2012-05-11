@@ -1020,7 +1020,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         volResponse.setCreated(volume.getCreated());
         volResponse.setState(volume.getState().toString());
-        if(volume.getState() == Volume.State.Uploading || volume.getState() == Volume.State.Uploaded){
+        if(volume.getState() == Volume.State.UploadOp){
         	com.cloud.storage.VolumeHostVO volumeHostRef = ApiDBUtils.findVolumeHostRef(volume.getId(), volume.getDataCenterId());
             volResponse.setSize(volumeHostRef.getSize());
             volResponse.setCreated(volumeHostRef.getCreated());
@@ -1032,12 +1032,19 @@ public class ApiResponseHelper implements ResponseGenerator {
                     } else {
                         volumeStatus = volumeHostRef.getDownloadPercent() + "% Uploaded";
                     }
+                    volResponse.setState("Uploading");
                 } else {
                     volumeStatus = volumeHostRef.getErrorString();
+                    if(volumeHostRef.getDownloadState() == VMTemplateHostVO.Status.NOT_DOWNLOADED){
+                    	volResponse.setState("UploadNotStarted");
+                    }else {
+                    	volResponse.setState("UploadError");
+                    }
                 }
                 volResponse.setStatus(volumeStatus);
             } else if (volumeHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
             	volResponse.setStatus("Upload Complete");
+            	volResponse.setState("Uploaded");
             } else {
             	volResponse.setStatus("Successfully Installed");
             }            
@@ -1048,7 +1055,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         String storageType;
         try {
             if (volume.getPoolId() == null) {
-                if (volume.getState() == Volume.State.Allocated || volume.getState() == Volume.State.Uploaded || volume.getState() == Volume.State.Uploading) {
+                if (volume.getState() == Volume.State.Allocated || volume.getState() == Volume.State.UploadOp) {
                     /* set it as shared, so the UI can attach it to VM */
                     storageType = "shared";
                 } else {
