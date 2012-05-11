@@ -135,7 +135,7 @@ public class NetconfHelper {
 
     public void attachServicePolicy(String policyMap, String portProfile)
             throws CloudRuntimeException {
-        String command = VsmCommand.getAttachServicePolicy(policyMap, portProfile);
+        String command = VsmCommand.getServicePolicy(policyMap, portProfile, true);
         if (command != null) {
             command = command.concat(SSH_NETCONF_TERMINATOR);
             send(command);
@@ -143,6 +143,19 @@ public class NetconfHelper {
             parseReply(receive());
         } else {
             throw new CloudRuntimeException("Error generating rpc request for adding policy map.");
+        }
+    }
+
+    public void detachServicePolicy(String policyMap, String portProfile)
+            throws CloudRuntimeException {
+        String command = VsmCommand.getServicePolicy(policyMap, portProfile, false);
+        if (command != null) {
+            command = command.concat(SSH_NETCONF_TERMINATOR);
+            send(command);
+            // parse the rpc reply.
+            parseReply(receive());
+        } else {
+            throw new CloudRuntimeException("Error generating rpc request for removing policy map.");
         }
     }
 

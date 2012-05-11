@@ -221,7 +221,7 @@ public class VsmCommand {
         }
     }
 
-    public static String getAttachServicePolicy(String policyMap, String portProfile) {
+    public static String getServicePolicy(String policyMap, String portProfile, boolean attach) {
         try {
             // Create the document and root element.
             DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
@@ -241,7 +241,7 @@ public class VsmCommand {
 
             // Command to create the port profile with the desired configuration.
             Element config = doc.createElement("nf:config");
-            config.appendChild(attachServiceDetails(doc, policyMap, portProfile));
+            config.appendChild(serviceDetails(doc, policyMap, portProfile, attach));
             editConfig.appendChild(config);
 
             return serialize(domImpl, doc);
@@ -511,7 +511,8 @@ public class VsmCommand {
         return configure;
     }
 
-    private static Element attachServiceDetails(Document doc, String policyMap, String portProfile) {
+    private static Element serviceDetails(Document doc, String policyMap,
+            String portProfile, boolean attach) {
         // In mode, exec_configure.
         Element configure = doc.createElementNS(s_ciscons, "nxos:configure");
         Element modeConfigure = doc.createElement("nxos:" + s_configuremode);
@@ -535,11 +536,23 @@ public class VsmCommand {
         Element portProfMode = doc.createElement(s_portprofmode);
         portDetails.appendChild(portProfMode);
 
-        // Associate the policy for input.
-        portProfMode.appendChild(getServicePolicyCmd(doc, policyMap, "input"));
+        // Associate/Remove the policy for input.
+        if (attach) {
+            portProfMode.appendChild(getServicePolicyCmd(doc, policyMap, "input"));
+        } else {
+            Element detach = doc.createElement("no");
+            portProfMode.appendChild(detach);
+            detach.appendChild(getServicePolicyCmd(doc, policyMap, "input"));
+        }
 
-        // Associate the policy for output.
-        portProfMode.appendChild(getServicePolicyCmd(doc, policyMap, "output"));
+        // Associate/Remove the policy for output.
+        if (attach) {
+            portProfMode.appendChild(getServicePolicyCmd(doc, policyMap, "output"));
+        } else {
+            Element detach = doc.createElement("no");
+            portProfMode.appendChild(detach);
+            detach.appendChild(getServicePolicyCmd(doc, policyMap, "output"));
+        }
 
         // Persist the configuration across reboots.
         modeConfigure.appendChild(persistConfiguration(doc));
