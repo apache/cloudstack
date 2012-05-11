@@ -1840,14 +1840,13 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 				} else {
 					for (String range : rangeSet) {
 						// TODO: This needs further attention...
-						if (range == null) {
-							range = "";
-						}
-						IpRangeSetType param6 = new IpRangeSetType();
-						IpRangeItemType param7 = new IpRangeItemType();
-						param7.setCidrIp(range);
-						param6.addItem(param7);
-						param5.setIpRanges(param6);
+                        IpRangeSetType param6 = new IpRangeSetType();
+                        if (range != null) {
+                            IpRangeItemType param7 = new IpRangeItemType();
+                            param7.setCidrIp(range);
+                            param6.addItem(param7);
+                        }
+                        param5.setIpRanges(param6);
 					}
 				}
 				param4.addItem(param5);
