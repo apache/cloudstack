@@ -93,17 +93,6 @@ Description: CloudStack core library
  The CloudStack core libraries provide a set of Java classes used
  in the CloudStack Cloud Stack.
 
-Package: cloud-test
-Provides: vmops-test
-Conflicts: vmops-test
-Replaces: vmops-test
-Architecture: any
-Depends: openjdk-6-jre, wget, cloud-utils (= ${source:Version}), cloud-deps (= ${source:Version})
-Description: CloudStack test suite
- The CloudStack test package contains a suite of automated tests
- that the very much appreciated QA team at CloudStack constantly
- uses to help increase the quality of the Cloud Stack.
-
 Package: cloud-client
 Provides: vmops-client
 Conflicts: vmops-client

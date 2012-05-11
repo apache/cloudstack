@@ -1,5 +1,3 @@
-/usr/bin/cloud-run-test
-/usr/share/java/cloud-test.jar
 /var/lib/cloud/test/*
 /usr/lib/cloud/test/*
 /etc/cloud/test/*
