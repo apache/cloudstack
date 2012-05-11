@@ -4,7 +4,7 @@
   <fmt:setLocale value="${cookie.lang.value}" />
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
-
+<% long now = System.currentTimeMillis(); %>
 
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
@@ -1580,9 +1580,12 @@
     <script src="lib/jquery.js" type="text/javascript"></script>
     <script src="lib/jquery.easing.js" type="text/javascript"></script>
     <script src="lib/jquery.validate.js" type="text/javascript"></script>
-    <script src="lib/jquery-ui/js/jquery-ui.js" type="text/javascript"></script>
-
-    <!-- Flot -->
+    <script src="lib/jquery-ui/js/jquery-ui.js" type="text/javascript"></script>		
+    <script src="lib/date.js" type="text/javascript"></script>
+    <script src="lib/jquery.cookies.js" type="text/javascript"></script>
+    <script src="lib/jquery.timers.js" type="text/javascript"></script>
+    <script src="lib/jquery.md5.js" type="text/javascript" ></script>
+		
     <script src="lib/excanvas.js"></script>
     <script src="lib/flot/jquery.flot.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.colorhelpers.js" type="text/javascript"></script>
@@ -1597,74 +1600,53 @@
     <script src="lib/flot/jquery.flot.symbol.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.flot.threshold.js" type="text/javascript"></script>
 
-    <!-- UI -->
-    <script src="scripts/ui/core.js" type="text/javascript"></script>
-    <script src="scripts/ui/utils.js" type="text/javascript"></script>
-    <script src="scripts/ui/events.js" type="text/javascript"></script>
-    <script src="scripts/ui/dialog.js" type="text/javascript"></script>
-
-    <!-- UI - Widgets -->
-    <script src="scripts/ui/widgets/multiEdit.js" type="text/javascript"></script>
-    <script src="scripts/ui/widgets/overlay.js" type="text/javascript"></script>
-    <script src="scripts/ui/widgets/dataTable.js" type="text/javascript"></script>
-    <script src="scripts/ui/widgets/cloudBrowser.js" type="text/javascript"></script>
-    <script src="scripts/ui/widgets/listView.js" type="text/javascript"></script>
-    <script src="scripts/ui/widgets/detailView.js" type="text/javascript"></script>
-    <script src="scripts/ui/widgets/treeView.js" type="text/javascript"></script>
-    <script src="scripts/ui/widgets/notifications.js" type="text/javascript"></script>
-
-    <!-- Common libraries -->
-    <script src="lib/date.js" type="text/javascript"></script>
-    <script src="lib/jquery.cookies.js" type="text/javascript"></script>
-    <script src="lib/jquery.timers.js" type="text/javascript"></script>
-    <script src="lib/jquery.md5.js" type="text/javascript" ></script>
-
+		
     <!-- CloudStack -->
-    <script src="scripts/cloud.core.callbacks.js" type="text/javascript"></script>
-    <script src="scripts/sharedFunctions.js" type="text/javascript"></script>
-    <script src="scripts/ui-custom/login.js" type="text/javascript"></script>
-    <script src="scripts/ui-custom/projects.js" type="text/javascript"></script>
-    <script src="scripts/cloudStack.js" type="text/javascript"></script>
-    <script src="scripts/lbStickyPolicy.js" type="text/javascript"></script>
-    <script src="scripts/ui-custom/zoneChart.js" type="text/javascript"></script>
-    <script src="scripts/ui-custom/dashboard.js" type="text/javascript"></script>
-    <script src="scripts/installWizard.js" type="text/javascript"></script>
-    <script src="scripts/ui-custom/installWizard.js" type="text/javascript"></script>
-    <script src="scripts/projects.js" type="text/javascript"></script>
-    <script src="scripts/dashboard.js" type="text/javascript"></script>
-    <script src="scripts/ui-custom/instanceWizard.js" type="text/javascript"></script>
-    <script src="scripts/instances.js" type="text/javascript"></script>
-    <script src="scripts/events.js" type="text/javascript"></script>
-    <script src="scripts/ui-custom/ipRules.js" type="text/javascript"></script>
-    <script src="scripts/ui-custom/enableStaticNAT.js" type="text/javascript"></script>
-    <script src="scripts/ui-custom/securityRules.js" type="text/javascript"></script>
-    <script src="scripts/network.js" type="text/javascript"></script>
-    <script src="scripts/ui-custom/recurringSnapshots.js" type="text/javascript"></script>
-    <script src="scripts/ui-custom/uploadVolume.js" type="text/javascript"></script>
-    <script src="scripts/storage.js" type="text/javascript"></script>
-    <script src="scripts/templates.js" type="text/javascript"></script>
-    <script src="scripts/accounts.js" type="text/javascript"></script>
-    <script src="scripts/configuration.js" type="text/javascript"></script>
-    <script src="scripts/globalSettings.js" type="text/javascript"></script>
-    <script src="scripts/zoneWizard.js" type="text/javascript"></script>
-    <script src="scripts/ui-custom/physicalResources.js" type="text/javascript"></script>
-    <script src="scripts/ui-custom/zoneWizard.js" type="text/javascript"></script>
-    <script src="scripts/system.js" type="text/javascript"></script>
-    <script src="scripts/domains.js" type="text/javascript"></script>
-
-    <!-- Local testing-->
-    <!--
-    <script src="js-test/accounts.js" type="text/javascript"></script>
-    <script src="js-test/configuration.js" type="text/javascript"></script>
-    <script src="js-test/dashboard.js" type="text/javascript"></script>
-    <script src="js-test/domains.js" type="text/javascript"></script>
-    <script src="js-test/events.js" type="text/javascript"></script>
-    <script src="js-test/instances.js" type="text/javascript"></script>
-    <script src="js-test/network.js" type="text/javascript"></script>
-    <script src="js-test/storage.js" type="text/javascript"></script>
-    <script src="js-test/system.js" type="text/javascript"></script>
-    <script src="js-test/templates.js" type="text/javascript"></script>
-    -->
+    <script type="text/javascript" src="scripts/ui/core.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui/utils.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui/events.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui/dialog.js?t=<%=now%>"></script>
+    
+    <script type="text/javascript" src="scripts/ui/widgets/multiEdit.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui/widgets/overlay.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui/widgets/dataTable.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui/widgets/cloudBrowser.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui/widgets/listView.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui/widgets/detailView.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui/widgets/treeView.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui/widgets/notifications.js?t=<%=now%>"></script> 
+    
+    <script type="text/javascript" src="scripts/cloud.core.callbacks.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/sharedFunctions.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/login.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/projects.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/cloudStack.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/lbStickyPolicy.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/zoneChart.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/dashboard.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/installWizard.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/installWizard.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/projects.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/dashboard.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/instanceWizard.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/instances.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/events.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/ipRules.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/enableStaticNAT.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/securityRules.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/network.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/recurringSnapshots.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/uploadVolume.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/storage.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/templates.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/accounts.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/configuration.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/globalSettings.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/zoneWizard.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/physicalResources.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/zoneWizard.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/system.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/domains.js?t=<%=now%>"></script>   
   </body>
 </html>
 
