@@ -2785,6 +2785,8 @@ public class ManagementServerImpl implements ManagementServer {
                     supportELB = networkType;
             }
         }
+        
+        long diskOffMaxSize = Long.valueOf(_configDao.getValue(Config.CustomDiskOfferingMaxSize.key()));
 
         String userPublicTemplateEnabled = _configs.get(Config.AllowPublicUserTemplates.key());
 
@@ -2794,6 +2796,8 @@ public class ManagementServerImpl implements ManagementServer {
         capabilities.put("supportELB", supportELB);
         capabilities.put("projectInviteRequired", _projectMgr.projectInviteRequired());
         capabilities.put("allowusercreateprojects", _projectMgr.allowUserToCreateProject());
+        capabilities.put("customDiskOffMaxSize", diskOffMaxSize);
+        
         return capabilities;
     }
 

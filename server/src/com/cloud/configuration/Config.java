@@ -328,8 +328,8 @@ public enum Config {
 
     DefaultExternalLoadBalancerCapacity("Advanced", ManagementServer.class, String.class, "external.lb.default.capacity", "50", "default number of networks permitted per external load balancer device", null),
     DefaultExternalFirewallCapacity("Advanced", ManagementServer.class, String.class, "external.firewall.default.capacity", "50", "default number of networks permitted per external load firewall device", null),
-	CustomDiskOfferingMinSize("Advanced", ManagementServer.class, Integer.class, "custom.diskoffering.size.min", "1", "Minimum size in GB for custom disk offering", null),
-	CustomDiskOfferingMaxSize("Advanced", ManagementServer.class, Integer.class, "custom.diskoffering.size.max", "1024", "Maximum size in GB for custom disk offering", null),
+	CustomDiskOfferingMinSize("Advanced", ManagementServer.class, Long.class, "custom.diskoffering.size.min", "1", "Minimum size in GB for custom disk offering", null),
+	CustomDiskOfferingMaxSize("Advanced", ManagementServer.class, Long.class, "custom.diskoffering.size.max", "1024", "Maximum size in GB for custom disk offering", null),
 	ConsoleProxyServiceOffering("Advanced", ManagementServer.class, Long.class, "consoleproxy.service.offering", null, "Service offering used by console proxy; if NULL - system offering will be used", null),
 	SecondaryStorageServiceOffering("Advanced", ManagementServer.class, Long.class, "secstorage.service.offering", null, "Service offering used by secondary storage; if NULL - system offering will be used", null),
 	HaTag("Advanced", ManagementServer.class, String.class, "ha.tag", null, "HA tag defining that the host marked with this tag can be used for HA purposes only", null);

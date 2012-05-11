@@ -47,6 +47,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setSupportELB((String)capabilities.get("supportELB"));
         response.setProjectInviteRequired((Boolean)capabilities.get("projectInviteRequired"));
         response.setAllowUsersCreateProjects((Boolean)capabilities.get("allowusercreateprojects"));
+        response.setDiskOffMaxSize((Long)capabilities.get("customDiskOffMaxSize"));
         response.setObjectName("capability");
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
