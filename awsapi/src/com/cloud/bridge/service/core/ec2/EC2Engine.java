@@ -1413,7 +1413,14 @@ public class EC2Engine {
                 }
 				vm.setState(resp.getState());
 				vm.setCreated(resp.getCreated());
-				vm.setIpAddress(resp.getIpAddress());
+                List <CloudStackNic> nicList = resp.getNics();
+                for (CloudStackNic nic : nicList) {
+                    if (nic.getIsDefault()) {
+                        vm.setPrivateIpAddress(nic.getIpaddress());
+                        break;
+                    }
+                }
+                vm.setIpAddress(resp.getIpAddress());
 				vm.setAccountName(resp.getAccountName());
 				vm.setDomainId(resp.getDomainId());
 				vm.setHypervisor(resp.getHypervisor());

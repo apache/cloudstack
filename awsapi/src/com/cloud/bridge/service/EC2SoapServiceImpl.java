@@ -1539,7 +1539,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             param7.setVpcId( "" );
             String ipAddr = inst.getPrivateIpAddress();
             param7.setPrivateIpAddress((null != ipAddr ? ipAddr : ""));
-	        param7.setIpAddress( inst.getIpAddress());
+	        param7.setIpAddress(inst.getIpAddress());
 
 	        StateReasonType param13 = new StateReasonType();
 	        param13.setCode( "" );
