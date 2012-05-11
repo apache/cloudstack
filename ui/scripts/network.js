@@ -928,7 +928,7 @@
               addRow: 'true',
               action: function(args) {
                 var apiCmd = "associateIpAddress";
-                if(args.context.networks[0].type == "Shared")
+                if(args.context.networks[0].type == "Shared" && !args.context.projects)
                   apiCmd += "&domainid=" + g_domainid + "&account=" + g_account;
                 $.ajax({
                   url: createURL(apiCmd),
@@ -1174,16 +1174,23 @@
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
                         dataProvider: function(args) {
+                          var data = {
+                            page: args.page,
+                            pageSize: pageSize,
+                            networkid: args.context.networks[0].id,
+                            listAll: true
+                          };
+
+                          if (!args.context.projects) {
+                            $.extend(data, {
+                              account: args.context.ipAddresses[0].account,
+                              domainid: args.context.ipAddresses[0].domainid
+                            }); 
+                          }
+                          
                           $.ajax({
                             url: createURL('listVirtualMachines'),
-                            data: {
-                              page: args.page,
-                              pageSize: pageSize,
-                              networkid: args.context.networks[0].id,
-                              account: args.context.ipAddresses[0].account,
-                              domainid: args.context.ipAddresses[0].domainid,
-                              listAll: true
-                            },
+                            data: data,
                             dataType: 'json',
                             async: true,
                             success: function(data) {
@@ -1758,17 +1765,23 @@
                         dataProvider: function(args) {
                           var itemData = $.isArray(args.context.multiRule) && args.context.multiRule[0]['_itemData'] ?
                             args.context.multiRule[0]['_itemData'] : [];
+                          var data = {
+                            page: args.page,
+                            pageSize: pageSize,
+                            networkid: args.context.ipAddresses[0].associatednetworkid,
+                            listAll: true
+                          };
+
+                          if (!args.context.projects) {
+                            $.extend(data, {
+                              account: args.context.ipAddresses[0].account,
+                              domainid: args.context.ipAddresses[0].domainid
+                            }); 
+                          }
 
                           $.ajax({
                             url: createURL('listVirtualMachines'),
-                            data: {
-                              page: args.page,
-                              pageSize: pageSize,
-                              networkid: args.context.ipAddresses[0].associatednetworkid,
-                              account: args.context.ipAddresses[0].account,
-                              domainid: args.context.ipAddresses[0].domainid,
-                              listAll: true
-                            },
+                            data: data,
                             dataType: 'json',
                             async: true,
                             success: function(data) {
@@ -2124,14 +2137,23 @@
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
                         dataProvider: function(args) {
+                          var data = {
+                            page: args.page,
+                            pageSize: pageSize,
+                            listAll: true,
+                            networkid: args.context.ipAddresses[0].associatednetworkid
+                          };
+
+                          if (!args.context.projects) {
+                            $.extend(data, {
+                              account: args.context.ipAddresses[0].account,
+                              domainid: args.context.ipAddresses[0].domainid
+                            }); 
+                          }
+
                           $.ajax({
                             url: createURL('listVirtualMachines'),
-                            data: {
-                              page: args.page,
-                              pageSize: pageSize,
-                              listAll: true,
-                              networkid: args.context.ipAddresses[0].associatednetworkid
-                            },
+                            data: data,
                             dataType: 'json',
                             async: true,
                             success: function(data) {
