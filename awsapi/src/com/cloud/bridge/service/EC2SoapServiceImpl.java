@@ -1813,8 +1813,13 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 					continue;
 				IpPermissionType param5 = new IpPermissionType();
 				param5.setIpProtocol(perm.getProtocol());
-				param5.setFromPort(perm.getFromPort());
-				param5.setToPort(perm.getToPort());
+                if (perm.getProtocol().equalsIgnoreCase("icmp")) {
+                    param5.setFromPort(Integer.parseInt(perm.getIcmpType()));
+                    param5.setToPort(Integer.parseInt(perm.getIcmpCode()));
+                } else {			
+                    param5.setFromPort(perm.getFromPort());
+                    param5.setToPort(perm.getToPort());
+                }
 
 				// -> user groups
 				EC2SecurityGroup[] userSet = perm.getUserSet();

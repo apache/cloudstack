@@ -117,13 +117,19 @@ public class EC2GroupFilterSet {
 			return false;			
 		} else if (filterName.equalsIgnoreCase( "ip-permission.from-port" )) {
 			for (EC2IpPermission perm : permissionSet) {
-				result = containsInteger(perm.getFromPort(), valueSet);
+                if (perm.getProtocol().equalsIgnoreCase("icmp"))
+                    result = containsInteger(Integer.parseInt(perm.getIcmpType()), valueSet);
+                else
+                    result = containsInteger(perm.getFromPort(), valueSet);
 				if (result) return true;
 			}
 			return false;		
 		} else if (filterName.equalsIgnoreCase( "ip-permission.to-port" )) {
 			for (EC2IpPermission perm : permissionSet) {
-				result = containsInteger( perm.getToPort(), valueSet );
+                if (perm.getProtocol().equalsIgnoreCase("icmp"))
+                    result = containsInteger(Integer.parseInt(perm.getIcmpCode()), valueSet);
+                else
+                    result = containsInteger( perm.getToPort(), valueSet );
 				if (result) return true;
 			}
 			return false;		
