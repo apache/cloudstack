@@ -61,7 +61,6 @@ import com.cloud.hypervisor.vmware.manager.VmwareStorageMount;
 import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import com.cloud.hypervisor.vmware.mo.HostFirewallSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
-import com.cloud.hypervisor.vmware.mo.HostVirtualNicType;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
@@ -69,6 +68,7 @@ import com.cloud.hypervisor.vmware.mo.VmwareHostType;
 import com.cloud.hypervisor.vmware.resource.SshHelper;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
+import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.org.Cluster.ClusterType;
@@ -91,7 +91,6 @@ import com.cloud.utils.script.Script;
 import com.cloud.vm.DomainRouterVO;
 import com.google.gson.Gson;
 import com.vmware.apputils.vim25.ServiceUtil;
-import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.HostConnectSpec;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.ManagedObjectReference;
@@ -110,6 +109,8 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     private String _instance;
 
     @Inject AgentManager _agentMgr;
+    @Inject
+    protected NetworkManager _netMgr;
     @Inject HostDao _hostDao;
     @Inject ClusterDao _clusterDao;
     @Inject ClusterDetailsDao _clusterDetailsDao;
@@ -132,7 +133,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     String _privateNetworkVSwitchType;
     String _publicNetworkVSwitchType;
     String _guestNetworkVSwitchType;
-    Boolean _nexusVSwitchActive;
+    boolean _nexusVSwitchActive;
     String _serviceConsoleName;
     String _managemetPortGroupName;
     String _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
@@ -358,6 +359,10 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         return _name;
     }
 
+    public boolean getNexusVSwitchGlobalParameter() {
+        return _nexusVSwitchActive;
+    }
+
     @Override
     public String composeWorkerName() {
         return UUID.randomUUID().toString().replace("-", "");
@@ -367,6 +372,13 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     public List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId,
             String hostInventoryPath) throws Exception {
         ManagedObjectReference mor = serviceContext.getHostMorByPath(hostInventoryPath);
+        String privateTrafficLabel = null;
+        if (_nexusVSwitchActive) {
+            privateTrafficLabel = serviceContext.getStockObject("privateTrafficLabel");
+            if (privateTrafficLabel == null) {
+                privateTrafficLabel = _privateNetworkVSwitchName;
+            }
+        }
         if(mor != null) {
             List<ManagedObjectReference> returnedHostList = new ArrayList<ManagedObjectReference>();
 
@@ -392,12 +404,12 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                 if(spec.getVlanId() != 0) {
                     vlanId = String.valueOf(spec.getVlanId());
                 }
-                
+
                 if(!_nexusVSwitchActive) {
                 	HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
                 }
                 else {
-                	HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000);
+                    HypervisorHostHelper.prepareNetwork(privateTrafficLabel, "cloud.private", hostMo, vlanId, null, null, 180000);
                 }
                 returnedHostList.add(hosts[0]);
                 return returnedHostList;
@@ -435,7 +447,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                     	HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
                     }
                     else {
-                    	HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000);
+                        HypervisorHostHelper.prepareNetwork(privateTrafficLabel, "cloud.private", hostMo, vlanId, null, null, 180000);
                     }
                     returnedHostList.add(morHost);
                 }
@@ -464,7 +476,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                 	HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false);
                 }
                 else {
-                	HypervisorHostHelper.prepareNetwork(_privateNetworkVSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000);
+                    HypervisorHostHelper.prepareNetwork(privateTrafficLabel, "cloud.private", hostMo, vlanId, null, null, 180000);
                 }
                 returnedHostList.add(mor);
                 return returnedHostList;
@@ -962,4 +974,17 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
 	public int getRouterExtraPublicNics() {
 		return this._routerExtraPublicNics;
 	}
+
+    @Override
+    public Map<String, String> getNexusVSMCredentialsByClusterId(Long clusterId) {
+        ClusterVSMMapVO vsmMapVO = _vsmMapDao.findByClusterId(clusterId);
+        CiscoNexusVSMDeviceVO nexusVSM = _nexusDao.findById(vsmMapVO.getVsmId());
+        if (nexusVSM == null)
+            return null;
+        Map<String, String> nexusVSMCredentials = new HashMap<String, String>();
+        nexusVSMCredentials.put("vsmip", nexusVSM.getipaddr());
+        nexusVSMCredentials.put("vsmusername", nexusVSM.getUserName());
+        nexusVSMCredentials.put("vsmpassword", nexusVSM.getPassword());
+        return nexusVSMCredentials;
+    }
 }

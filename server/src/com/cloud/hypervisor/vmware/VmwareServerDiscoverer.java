@@ -43,6 +43,7 @@ import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.resource.VmwareContextFactory;
 import com.cloud.hypervisor.vmware.resource.VmwareResource;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
@@ -50,7 +51,6 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import com.cloud.resource.ResourceStateAdapter.DeleteHostAnswer;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
@@ -74,6 +74,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     @Inject HostDao _hostDao;
     @Inject ResourceManager _resourceMgr;
     @Inject CiscoNexusVSMDeviceDao _nexusDao;
+    @Inject
+    NetworkManager _netmgr;
     
     @Override
     public Map<? extends ServerResource, Map<String, String>> find(long dcId, Long podId, Long clusterId, URI url, 
@@ -101,12 +103,39 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         	s_logger.error(msg);
         	throw new DiscoveredWithErrorException(msg);
         }
-    	
+
+        String privateTrafficLabel = null;
+        Map<String, String> vsmCredentials = null;
+        if (_vmwareMgr.getNexusVSwitchGlobalParameter()) {
+            // Get physical network label
+            privateTrafficLabel = _netmgr.getDefaultManagementTrafficLabel(dcId, HypervisorType.VMware);
+            if (privateTrafficLabel != null) {
+                s_logger.info("Detected private network label : " + privateTrafficLabel);
+            }
+            // Get credentials
+            vsmCredentials = _vmwareMgr.getNexusVSMCredentialsByClusterId(clusterId);
+        }
+
 		VmwareContext context = null;
 		try {
 			context = VmwareContextFactory.create(url.getHost(), username, password);
+            if (_vmwareMgr.getNexusVSwitchGlobalParameter()) {
+                // Get physical network label
+                privateTrafficLabel = _netmgr.getDefaultManagementTrafficLabel(dcId, HypervisorType.VMware);
+                if (privateTrafficLabel != null) {
+                    context.registerStockObject("privateTrafficLabel", privateTrafficLabel);
+                    s_logger.info("Detected private network label : " + privateTrafficLabel);
+                }
+                // Get credentials
+                vsmCredentials = _vmwareMgr.getNexusVSMCredentialsByClusterId(clusterId);
+                if (vsmCredentials != null)
+                    context.registerStockObject("vsmCredentials", vsmCredentials);
+            }
 			List<ManagedObjectReference> morHosts = _vmwareMgr.addHostToPodCluster(context, dcId, podId, clusterId,
 				URLDecoder.decode(url.getPath()));
+            if (privateTrafficLabel != null)
+                context.uregisterStockObject("privateTrafficLabel");
+
 			if(morHosts == null) {
 				s_logger.error("Unable to find host or cluster based on url: " + URLDecoder.decode(url.getPath()));
 				return null;
@@ -138,7 +167,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
 					s_logger.warn("The discovered host does not belong to the cluster");
 				return null;
 			}
-			
+
             Map<VmwareResource, Map<String, String>> resources = new HashMap<VmwareResource, Map<String, String>>();
 			for(ManagedObjectReference morHost : morHosts) {
 	            Map<String, String> details = new HashMap<String, String>();
@@ -158,6 +187,9 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
 	            params.put("pod", Long.toString(podId));
 	            params.put("cluster", Long.toString(clusterId));
 	            params.put("guid", guid);
+                if (privateTrafficLabel != null) {
+                    params.put("private.network.vswitch.name", privateTrafficLabel);
+                }
 	            
 	            VmwareResource resource = new VmwareResource(); 
 	            try {
