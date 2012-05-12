@@ -16,7 +16,6 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-//import com.cloud.cluster.CheckPointManager;
 import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
@@ -62,4 +61,8 @@ public interface VmwareManager {
 	void endExclusiveOperation();
 
 	Map<String, String> getNexusVSMCredentials(String hostGuid);
+
+    boolean getNexusVSwitchGlobalParameter();
+
+    Map<String, String> getNexusVSMCredentialsByClusterId(Long clusterId);
 }

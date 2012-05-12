@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.mortbay.jetty.servlet.Context;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
@@ -35,10 +34,8 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.vmware.vim25.BoolPolicy;
-import com.vmware.vim25.DVPortgroupConfigSpec;
-import com.vmware.vim25.DVSTrafficShapingPolicy;
-//import com.vmware.vim25.DistributedVirtualSwitchKeyedOpaqueBlob;
 import com.vmware.vim25.DVPortgroupConfigInfo;
+import com.vmware.vim25.DVSTrafficShapingPolicy;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.HostNetworkTrafficShapingPolicy;
 import com.vmware.vim25.HostPortGroupSpec;
@@ -130,7 +127,7 @@ public class HypervisorHostHelper {
 		return sb.toString();
 	}
 	
-	public static Map<String, String> getValidatedVsmCredentials(VmwareContext context) throws Exception, CloudRuntimeException {
+    public static Map<String, String> getValidatedVsmCredentials(VmwareContext context) throws Exception {
 		Map<String, String> vsmCredentials = context.getStockObject("vsmcredentials");
 		String msg;
 		if(vsmCredentials == null || vsmCredentials.size() != 3) {
@@ -145,12 +142,12 @@ public class HypervisorHostHelper {
 		if(vsmIp == null || vsmIp.isEmpty() || vsmUserName == null || vsmUserName.isEmpty() || vsmPassword == null || vsmPassword.isEmpty()) {
 			msg = "Detected invalid credentials for Nexus VSM";
 			s_logger.error(msg);
-			throw new CloudRuntimeException(msg);
+            throw new Exception(msg);
 		}
 		return vsmCredentials;
 	}
 	
-	public static void createPortProfile(VmwareContext context, String ethPortProfileName, String networkName, Integer vid, Integer networkRateMbps) throws Exception, CloudRuntimeException {
+    public static void createPortProfile(VmwareContext context, String ethPortProfileName, String networkName, Integer vid, Integer networkRateMbps) throws Exception {
 		Map<String, String> vsmCredentials = getValidatedVsmCredentials(context);
 		String vsmIp = vsmCredentials.get("vsmip");
 		String vsmUserName = vsmCredentials.get("vsmusername");
@@ -187,7 +184,7 @@ public class HypervisorHostHelper {
 		}
 	}
 	
-	public static void updatePortProfile(VmwareContext context, String ethPortProfileName, Integer vid, Integer networkRateMbps) throws CloudRuntimeException, Exception {
+    public static void updatePortProfile(VmwareContext context, String ethPortProfileName, Integer vid, Integer networkRateMbps) throws Exception {
 		Map<String, String> vsmCredentials = getValidatedVsmCredentials(context);
 		String vsmIp = vsmCredentials.get("vsmip");
 		String vsmUserName = vsmCredentials.get("vsmusername");
@@ -218,7 +215,7 @@ public class HypervisorHostHelper {
 	
 	public static Pair<ManagedObjectReference, String> prepareNetwork(String ethPortProfileName, String namePrefix,
             HostMO hostMo, String vlanId, Integer networkRateMbps, Integer networkRateMulticastMbps, 
-            long timeOutMs) throws Exception, CloudRuntimeException {		
+            long timeOutMs) throws Exception {
 		ManagedObjectReference morNetwork = null;
 		VmwareContext context = hostMo.getContext();
 		ManagedObjectReference dcMor = hostMo.getHyperHostDatacenter();
