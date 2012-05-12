@@ -138,7 +138,7 @@ public class VmwareHelper {
 	    
 	    return disk;
 	}
-
+	
 	// vmdkDatastorePath: [datastore name] vmdkFilePath, create delta disk based on disk from template
 	public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, String vmdkDatastorePath, 
 		int sizeInMb, ManagedObjectReference morDs, VirtualDisk templateDisk, int deviceNumber, int contextNumber) throws Exception {
@@ -245,7 +245,47 @@ public class VmwareHelper {
 	    
 	    return disk;
 	}
+	
+	public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, 
+		Pair<String, ManagedObjectReference>[] vmdkDatastorePathChain, 
+		int deviceNumber, int contextNumber) throws Exception {
+		
+		assert(vmdkDatastorePathChain != null);
+		assert(vmdkDatastorePathChain.length >= 1);
+	
+		VirtualDisk disk = new VirtualDisk();
+		
+		VirtualDiskFlatVer2BackingInfo backingInfo = new VirtualDiskFlatVer2BackingInfo();
+        backingInfo.setDatastore(vmdkDatastorePathChain[0].second());
+        backingInfo.setFileName(vmdkDatastorePathChain[0].first());
+        backingInfo.setDiskMode(VirtualDiskMode.persistent.toString());
+        if(vmdkDatastorePathChain.length > 1) {
+        	Pair<String, ManagedObjectReference>[] parentDisks = new Pair[vmdkDatastorePathChain.length - 1];
+        	for(int i = 0; i < vmdkDatastorePathChain.length - 1; i++)
+        		parentDisks[i] = vmdkDatastorePathChain[i + 1];
+        	
+        	setParentBackingInfo(backingInfo, parentDisks);
+        }
+        
+        disk.setBacking(backingInfo);
 
+		if(controllerKey < 0)
+			controllerKey = vmMo.getIDEDeviceControllerKey();
+        if(deviceNumber < 0)
+        	deviceNumber = vmMo.getNextDeviceNumber(controllerKey);
+		
+		disk.setControllerKey(controllerKey);
+	    disk.setKey(-contextNumber);
+	    disk.setUnitNumber(deviceNumber);
+	    
+	    VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
+	    connectInfo.setConnected(true);
+	    connectInfo.setStartConnected(true);
+	    disk.setConnectable(connectInfo);
+	    
+	    return disk;
+	}
+	
 	private static void setParentBackingInfo(VirtualDiskFlatVer2BackingInfo backingInfo, 
 		ManagedObjectReference morDs, String[] parentDatastorePathList) {
 		
@@ -260,6 +300,24 @@ public class VmwareHelper {
 			setParentBackingInfo(parentBacking, morDs, nextDatastorePathList);
 		}
 		parentBacking.setFileName(parentDatastorePathList[0]);
+		
+		backingInfo.setParent(parentBacking);
+	}
+	
+	private static void setParentBackingInfo(VirtualDiskFlatVer2BackingInfo backingInfo, 
+		Pair<String, ManagedObjectReference>[] parentDatastorePathList) {
+		
+		VirtualDiskFlatVer2BackingInfo parentBacking = new VirtualDiskFlatVer2BackingInfo();
+		parentBacking.setDatastore(parentDatastorePathList[0].second());
+		parentBacking.setDiskMode(VirtualDiskMode.persistent.toString());
+		
+		if(parentDatastorePathList.length > 1) {
+			Pair<String, ManagedObjectReference>[] nextDatastorePathList = new Pair[parentDatastorePathList.length -1];
+			for(int i = 0; i < parentDatastorePathList.length -1; i++)
+				nextDatastorePathList[i] = parentDatastorePathList[i + 1];
+			setParentBackingInfo(parentBacking, nextDatastorePathList);
+		}
+		parentBacking.setFileName(parentDatastorePathList[0].first());
 		
 		backingInfo.setParent(parentBacking);
 	}

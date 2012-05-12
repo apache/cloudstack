@@ -944,6 +944,39 @@ public class VirtualMachineMO extends BaseMO {
 			s_logger.trace("vCenter API trace - attachDisk() done(successfully)"); 
 	}
 	
+	public void attachDisk(Pair<String, ManagedObjectReference>[] vmdkDatastorePathChain, int controllerKey) throws Exception {
+		
+		if(s_logger.isTraceEnabled())
+			s_logger.trace("vCenter API trace - attachDisk(). target MOR: " + _mor.get_value() + ", vmdkDatastorePath: " 
+				+ new Gson().toJson(vmdkDatastorePathChain));
+		
+		VirtualDevice newDisk = VmwareHelper.prepareDiskDevice(this, controllerKey, 
+			vmdkDatastorePathChain, -1, 1);
+	    VirtualMachineConfigSpec reConfigSpec = new VirtualMachineConfigSpec();      
+	    VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
+	    VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+	    
+	    deviceConfigSpec.setDevice(newDisk);
+	    deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.add);
+	      
+	    deviceConfigSpecArray[0] = deviceConfigSpec;
+	    reConfigSpec.setDeviceChange(deviceConfigSpecArray);
+		
+	    ManagedObjectReference morTask = _context.getService().reconfigVM_Task(_mor, reConfigSpec);
+		String result = _context.getServiceUtil().waitForTask(morTask);
+		
+		if(!result.equals("sucess")) {
+			if(s_logger.isTraceEnabled())
+				s_logger.trace("vCenter API trace - attachDisk() done(failed)"); 
+            throw new Exception("Failed to attach disk due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+        }
+	
+		_context.waitForTaskProgressDone(morTask);
+		
+		if(s_logger.isTraceEnabled())
+			s_logger.trace("vCenter API trace - attachDisk() done(successfully)"); 
+	}
+	
 	// vmdkDatastorePath: [datastore name] vmdkFilePath
 	public List<Pair<String, ManagedObjectReference>> detachDisk(String vmdkDatastorePath, boolean deleteBackingFile) throws Exception {
 		

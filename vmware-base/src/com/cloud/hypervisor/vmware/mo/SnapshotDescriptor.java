@@ -248,6 +248,28 @@ public class SnapshotDescriptor {
 		public DiskInfo[] getDisks() {
 			return _disks;
 		}
+		
+		@Override
+		public String toString() {
+			StringBuffer sb = new StringBuffer();
+			sb.append("SnapshotInfo : { id: ");
+			sb.append(_id);
+			sb.append(", displayName: ").append(_displayName);
+			sb.append(", numOfDisks: ").append(_numOfDisks);
+			sb.append(", disks: [");
+			if(_disks != null) {
+				int i = 0;
+				for(DiskInfo diskInfo : _disks) {
+					if(i > 0)
+						sb.append(", ");
+					sb.append(diskInfo.toString());
+					i++;
+				}
+			}
+			sb.append("]}");
+			
+			return sb.toString();
+		}
 	}
 	
 	public static class DiskInfo {
@@ -265,6 +287,11 @@ public class SnapshotDescriptor {
 		
 		public String getDeviceName() {
 			return _deviceName;
+		}
+	
+		@Override
+		public String toString() {
+			return "DiskInfo: { device: " + _deviceName + ", file: " + _diskFileName + " }";
 		}
 	}
 }
