@@ -168,7 +168,7 @@ public class KvmServerDiscoverer extends DiscovererBase implements Discoverer,
 			sshConnection.connect(null, 60000, 60000);
 			if (!sshConnection.authenticateWithPassword(username, password)) {
 				s_logger.debug("Failed to authenticate");
-				throw new DiscoveredWithErrorException("Authetication error");
+				throw new DiscoveredWithErrorException("Authentication error");
 			}
 			
 			if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "lsmod|grep kvm", 3)) {
