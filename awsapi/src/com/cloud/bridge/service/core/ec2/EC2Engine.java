@@ -1804,6 +1804,15 @@ public class EC2Engine {
     					break;
     				}
     			}
+    			
+                if (cloudVm.getSecurityGroupList() != null && cloudVm.getSecurityGroupList().size() > 0) {
+                    // TODO, we have a list of security groups, just return the first one?
+                    List<CloudStackSecurityGroup> securityGroupList = cloudVm.getSecurityGroupList();
+                    for (CloudStackSecurityGroup securityGroup : securityGroupList) {
+                        ec2Vm.addGroupName(securityGroup.getName());
+                    }
+                }
+    			
     			instances.addInstance(ec2Vm);
     		}
 		}else{
