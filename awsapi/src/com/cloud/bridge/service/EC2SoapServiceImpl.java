@@ -1157,9 +1157,18 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        
 			GroupSetType  param4 = new GroupSetType();
 			GroupItemType param5 = new GroupItemType();
-			param5.setGroupId( (null == inst.getGroup() ? "" : inst.getGroup()));
-			param4.addItem( param5 );
-	        param3.setGroupSet( param4 );
+	        
+            String[] groups = inst.getGroupSet();
+            if (null == groups || 0 == groups.length) {
+                param5.setGroupId("");
+                param4.addItem( param5 );
+            } else {
+                for (String group : groups) {
+                    param5.setGroupId(group);
+                    param4.addItem( param5 );   
+                }
+            }
+            param3.setGroupSet( param4 );
 	        
 	        RunningInstancesSetType  param6 = new RunningInstancesSetType();
 	        RunningInstancesItemType param7 = new RunningInstancesItemType();
@@ -1207,7 +1216,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             param7.setVpcId( "" );
 //            String ipAddr = inst.getPrivateIpAddress();
 //            param7.setPrivateIpAddress((null != ipAddr ? ipAddr : ""));
-            param7.setPrivateIpAddress(inst.getIpAddress());
+            param7.setPrivateIpAddress(inst.getPrivateIpAddress());
 	        param7.setIpAddress( inst.getIpAddress());
 	        
 	        StateReasonType param13 = new StateReasonType();
@@ -1235,6 +1244,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             param7.setBlockDeviceMapping( param14 );
             param7.setInstanceLifecycle( "" );
             param7.setSpotInstanceRequestId( "" );
+            param7.setHypervisor(inst.getHypervisor());
 
 	        param6.addItem( param7 );
 	        param3.setInstancesSet( param6 );
