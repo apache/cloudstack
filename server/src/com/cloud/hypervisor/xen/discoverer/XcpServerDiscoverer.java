@@ -315,7 +315,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 resources.put(resource, details);
             }                        
         } catch (SessionAuthenticationFailed e) {       
-            throw new DiscoveredWithErrorException("Authetication error");
+            throw new DiscoveredWithErrorException("Authentication error");
         } catch (XenAPIException e) {
             s_logger.warn("XenAPI exception", e);
             return null;
