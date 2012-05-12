@@ -922,18 +922,18 @@
               },
 
               copyISO: {
-                label: 'label.action.copy.iso',
+                label: 'label.action.copy.ISO',
                 messages: {
                   notification: function(args) {
                     return 'Copying ISO';
                   }
                 },
                 createForm: {
-                  title: 'label.action.copy.iso',
-                  desc: 'label.action.copy.iso',
+                  title: 'label.action.copy.ISO',
+                  desc: 'label.action.copy.ISO',
                   fields: {
                     destinationZoneId: {
-                      label: 'label.destinaton.zone',
+                      label: 'label.destination.zone',
                       validation: { required: true },
                       select: function(args) {
                         $.ajax({
