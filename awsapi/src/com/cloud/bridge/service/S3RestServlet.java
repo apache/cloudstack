@@ -167,7 +167,7 @@ public class S3RestServlet extends HttpServlet {
 
             
     	    // -> authenticated calls
-        	if (!method.equalsIgnoreCase( "POST" )) {
+        	if ( !((method.equalsIgnoreCase( "POST" ) && !(request.getQueryString().equalsIgnoreCase("delete"))) ) ){
         	    S3AuthParams params = extractRequestHeaders( request );
         		authenticateRequest( request, params );
         	}

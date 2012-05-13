@@ -75,6 +75,7 @@ public class RestAuth {
 			add("versioning");
 			add("versions");
 			add("website");
+			add("delete");
 			}}; 
 	}
 

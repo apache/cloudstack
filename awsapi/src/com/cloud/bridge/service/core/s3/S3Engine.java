@@ -1095,7 +1095,7 @@ public class S3Engine {
 		SBucket sbucket = bucketDao.getByName( bucketName );
 		if (sbucket == null) {
 			response.setResultCode(404);
-			response.setResultDescription("Bucket " + bucketName + " does not exist");
+			response.setResultDescription("<Code>Bucket dosen't exists</Code><Message>Bucket " + bucketName + " does not exist</Message>");
 			return response;
 		}
 		
@@ -1104,7 +1104,7 @@ public class S3Engine {
 		SObject sobject = objectDao.getByNameKey( sbucket, nameKey );
 		if (sobject == null) {
 			response.setResultCode(404);
-			response.setResultDescription("No object with key " +  nameKey + " exists in bucket " + bucketName);
+			response.setResultDescription("<Code>Not Found</Code><Message>No object with key " +  nameKey + " exists in bucket " + bucketName+"</Message>");
 			return response;
 		}
 		
@@ -1125,6 +1125,7 @@ public class S3Engine {
 				 // If versioning is on and no versionId is given then we just write a deletion marker
 				 sobject.setDeletionMark( UUID.randomUUID().toString());
 				 objectDao.update( sobject );
+				 response.setResultDescription("<DeleteMarker>true</DeleteMarker><DeleteMarkerVersionId>"+ sobject.getDeletionMark() +"</DeleteMarkerVersionId>");
 			 }
 			 else {	
 				  // Otherwise remove the deletion marker if this has been set
@@ -1132,6 +1133,8 @@ public class S3Engine {
 				  if (null != deletionMarker && wantVersion.equalsIgnoreCase( deletionMarker )) {
 					  sobject.setDeletionMark( null );  
 			    	  objectDao.update( sobject );	
+			    	  response.setResultDescription("<VersionId>" + wantVersion +"</VersionId>");
+			    	  response.setResultDescription("<DeleteMarker>true</DeleteMarker><DeleteMarkerVersionId>"+ sobject.getDeletionMark() +"</DeleteMarkerVersionId>");
 			  		  response.setResultCode(204);
 					  return response;
 	              }
@@ -1145,7 +1148,8 @@ public class S3Engine {
 			    	   // Providing versionId is non-null, then just delete the one item that matches the versionId from the database
 			    	   storedPath = item.getStoredPath();
 			    	   sobject.deleteItem( item.getId());
-			    	   objectDao.update( sobject );	    	   
+			    	   objectDao.update( sobject );
+			    	   response.setResultDescription("<VersionId>" + wantVersion +"</VersionId>");
 			      }
 			 }
 	    }
@@ -1157,6 +1161,7 @@ public class S3Engine {
 
 			 if ( null == (item = sobject.getLatestVersion( true ))) {
 		    	  response.setResultCode(404);
+		    	  response.setResultDescription("<Code>AccessDenied</Code><Message>Access Denied</Message>");
 		    	  return response;
 		     }
 		     else {

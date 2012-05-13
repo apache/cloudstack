@@ -23,7 +23,9 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -36,6 +38,7 @@ import javax.xml.stream.XMLStreamException;
 import org.apache.log4j.Logger;
 import org.json.simple.parser.ParseException;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
@@ -57,6 +60,7 @@ import com.cloud.bridge.service.controller.s3.ServiceProvider;
 import com.cloud.bridge.service.UserContext;
 import com.cloud.bridge.service.core.s3.S3AccessControlList;
 import com.cloud.bridge.service.core.s3.S3AccessControlPolicy;
+import com.cloud.bridge.service.core.s3.S3AuthParams;
 import com.cloud.bridge.service.core.s3.S3BucketAdapter;
 import com.cloud.bridge.service.core.s3.S3BucketPolicy;
 import com.cloud.bridge.service.core.s3.S3CanonicalUser;
@@ -64,6 +68,7 @@ import com.cloud.bridge.service.core.s3.S3CreateBucketConfiguration;
 import com.cloud.bridge.service.core.s3.S3CreateBucketRequest;
 import com.cloud.bridge.service.core.s3.S3CreateBucketResponse;
 import com.cloud.bridge.service.core.s3.S3DeleteBucketRequest;
+import com.cloud.bridge.service.core.s3.S3DeleteObjectRequest;
 import com.cloud.bridge.service.core.s3.S3Engine;
 import com.cloud.bridge.service.core.s3.S3GetBucketAccessControlPolicyRequest;
 import com.cloud.bridge.service.core.s3.S3Grant;
@@ -72,6 +77,7 @@ import com.cloud.bridge.service.core.s3.S3ListAllMyBucketsResponse;
 import com.cloud.bridge.service.core.s3.S3ListBucketObjectEntry;
 import com.cloud.bridge.service.core.s3.S3ListBucketRequest;
 import com.cloud.bridge.service.core.s3.S3ListBucketResponse;
+import com.cloud.bridge.service.core.s3.S3MetaDataEntry;
 import com.cloud.bridge.service.core.s3.S3MultipartUpload;
 import com.cloud.bridge.service.core.s3.S3PolicyContext;
 import com.cloud.bridge.service.core.s3.S3PutObjectRequest;
@@ -89,12 +95,14 @@ import com.cloud.bridge.service.exception.OutOfServiceException;
 import com.cloud.bridge.service.exception.PermissionDeniedException;
 import com.cloud.bridge.util.Converter;
 import com.cloud.bridge.util.DateHelper;
+import com.cloud.bridge.util.HeaderParam;
 import com.cloud.bridge.util.PolicyParser;
 import com.cloud.bridge.util.StringHelper;
 import com.cloud.bridge.util.OrderedPair;
 import com.cloud.bridge.util.Triple;
 import com.cloud.bridge.util.XSerializer;
 import com.cloud.bridge.util.XSerializerXmlAdapter;
+import com.cloud.bridge.util.XmlHelper;
 
 
 /**
@@ -205,10 +213,124 @@ public class S3BucketAction implements ServletAction {
 		else if ( (method.equalsIgnoreCase("POST")) && (queryString.equalsIgnoreCase("delete")) )
 		{
 			// TODO - Hi Pri - Implement multi-object delete in a single command
-			throw new InternalErrorException("Multi-object delete in a single command not yet implemented");
+			executeMultiObjectDelete(request, response);
 		}
 		else throw new IllegalArgumentException("Unsupported method in REST request");
 	}
+	
+	
+	
+private void executeMultiObjectDelete(HttpServletRequest request, HttpServletResponse response) throws IOException{
+
+		int contentLength = request.getContentLength();
+		StringBuffer  xmlDeleteResponse = null;
+		boolean quite = true;
+		
+		if(contentLength > 0) 
+		{
+			InputStream is = null;
+			String versionID =null;
+			try {
+				is = request.getInputStream();
+				String xml = StringHelper.stringFromStream(is);
+				String elements[] = {"Key","VersionId"};
+				Document doc = XmlHelper.parse(xml);
+				Node node = XmlHelper.getRootNode(doc);
+				
+				if(node == null) {
+					System.out.println("Invalid XML document, no root element");
+					return;
+				}
+				
+				xmlDeleteResponse = new StringBuffer("<?xml version=\"1.0\" encoding=\"UTF-8\"?>" +
+						"<DeleteResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">");
+				
+				String bucket = (String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
+
+				S3DeleteObjectRequest engineRequest = new S3DeleteObjectRequest();
+				engineRequest.setBucketName( bucket );
+				is.close();
+				
+				doc.getDocumentElement().normalize();
+				NodeList qList = doc.getElementsByTagName("Quiet");
+
+				if (qList.getLength() == 1 ) {
+					Node qNode= qList.item(0);
+					if ( qNode.getFirstChild().getNodeValue().equalsIgnoreCase("true") == false )
+						quite = false;
+					
+					logger.debug("Quite value  :" + qNode.getFirstChild().getNodeValue());
+				}
+				
+				NodeList objList = doc.getElementsByTagName("Object");
+				
+				for (int i = 0; i < objList.getLength(); i++) {
+
+				   Node key = objList.item(i);
+				   NodeList key_data = key.getChildNodes();
+				   
+				   if (key.getNodeType() == Node.ELEMENT_NODE) {
+					  Element eElement = (Element) key;
+					  String key_name = getTagValue(elements[0], eElement);
+						engineRequest.setBucketName(bucket);
+						engineRequest.setKey(key_name);
+
+						if (key_data.getLength() == 2) {
+							  versionID = getTagValue(elements[1], eElement);
+							  engineRequest.setVersion(versionID);
+						  }
+
+						S3Response engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest( engineRequest );
+						int resultCode = engineResponse.getResultCode();
+						String resutlDesc = engineResponse.getResultDescription();
+						if(resultCode == 204) {
+							if (quite) { // show response depending on quite/verbose
+								xmlDeleteResponse.append("<Deleted><Key>"+key_name+"</Key>");
+								if (resutlDesc != null)
+									xmlDeleteResponse.append(resutlDesc);
+								xmlDeleteResponse.append("</Deleted>");
+							}
+						}
+						else {
+							logger.debug("Error in delete ::" + key_name + " eng response:: " + engineResponse.getResultDescription());
+							xmlDeleteResponse.append("<Error><Key>"+key_name+"</Key>" );
+							if (resutlDesc != null)
+								xmlDeleteResponse.append(resutlDesc);
+							xmlDeleteResponse.append("</Error>");
+						}
+						
+						
+				   }
+				}
+				
+				String version = engineRequest.getVersion();
+				if (null != version) response.addHeader( "x-amz-version-id", version );
+				
+				
+			} catch (IOException e) {
+				logger.error("Unable to read request data due to " + e.getMessage(), e);
+				throw new NetworkIOException(e);
+				
+			} finally {
+				if(is != null) is.close();
+			}
+
+			xmlDeleteResponse.append("</DeleteResult>");
+		
+		}
+		response.setStatus(200);
+		response.setContentType("text/xml; charset=UTF-8");
+    	S3RestServlet.endResponse(response, xmlDeleteResponse.toString());
+		
+	}
+
+	private String getTagValue(String sTag, Element eElement) {
+		
+		NodeList nlList = eElement.getElementsByTagName(sTag).item(0).getChildNodes();
+	    Node nValue = (Node) nlList.item(0);
+		return nValue.getNodeValue();
+	  }
+	
 	
 	/** 
 	 * In order to support a policy on the "s3:CreateBucket" action we must be able to set and get
