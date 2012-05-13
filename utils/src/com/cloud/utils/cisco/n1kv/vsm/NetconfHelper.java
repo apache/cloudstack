@@ -1,20 +1,20 @@
 package com.cloud.utils.cisco.n1kv.vsm;
 
-import org.apache.log4j.Logger;
-
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.utils.Pair;
-import com.cloud.utils.ssh.*;
-import com.trilead.ssh2.Session;
-import com.trilead.ssh2.Connection;
-import com.trilead.ssh2.ChannelCondition;
 import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.BindingType;
 import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.PortProfileType;
 import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.SwitchPortMode;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.ssh.SSHCmdHelper;
+import com.trilead.ssh2.ChannelCondition;
+import com.trilead.ssh2.Connection;
+import com.trilead.ssh2.Session;
 
 public class NetconfHelper {
     private static final Logger s_logger = Logger.getLogger(NetconfHelper.class);
@@ -183,7 +183,7 @@ public class NetconfHelper {
             while (true) {
                 if (inputStream.available() == 0) {
                     int conditions = _session.waitForCondition(ChannelCondition.STDOUT_DATA
-                            | ChannelCondition.STDERR_DATA | ChannelCondition.EOF, 2000);
+                            | ChannelCondition.STDERR_DATA | ChannelCondition.EOF, 3000);
 
                     if ((conditions & ChannelCondition.TIMEOUT) != 0) {
                         break;
