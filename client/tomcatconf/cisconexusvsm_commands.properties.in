@@ -6,3 +6,4 @@ addCiscoNexusVSM = com.cloud.api.commands.AddCiscoNexusVSMCmd;7
 deleteCiscoNexusVSM = com.cloud.api.commands.DeleteCiscoNexusVSMCmd;7
 enableCiscoNexusVSM = com.cloud.api.commands.EnableCiscoNexusVSMCmd;7
 disableCiscoNexusVSM = com.cloud.api.commands.DisableCiscoNexusVSMCmd;7
+getCiscoVSMByClusterId = com.cloud.api.commands.GetCiscoVSMByClusterIdCmd;7
