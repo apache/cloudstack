@@ -212,7 +212,6 @@ public class S3BucketAction implements ServletAction {
 		}
 		else if ( (method.equalsIgnoreCase("POST")) && (queryString.equalsIgnoreCase("delete")) )
 		{
-			// TODO - Hi Pri - Implement multi-object delete in a single command
 			executeMultiObjectDelete(request, response);
 		}
 		else throw new IllegalArgumentException("Unsupported method in REST request");
