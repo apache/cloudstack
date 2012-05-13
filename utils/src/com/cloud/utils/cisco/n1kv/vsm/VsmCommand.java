@@ -50,8 +50,7 @@ public class VsmCommand {
 
     public enum OperationType {
         addvlanid,
-        removevlanid,
-        setrate
+        removevlanid
     }
 
     public static String getAddPortProfile(String name, PortProfileType type,
@@ -338,7 +337,9 @@ public class VsmCommand {
             // Switchport mode.
             portProf.appendChild(getSwitchPortMode(doc, mode));
             // Adding vlan details.
-            portProf.appendChild(getAddVlanDetails(doc, mode, Integer.toString(vlanid)));
+            if (vlanid > 0) {
+                portProf.appendChild(getAddVlanDetails(doc, mode, Integer.toString(vlanid)));
+            }
         }
 
         // Command "vmware port-group".

@@ -157,7 +157,6 @@ public class HypervisorHostHelper {
 		
 		List<Pair<OperationType, String>> params = new ArrayList<Pair<OperationType, String>>();
 		params.add(new Pair<OperationType, String>(OperationType.addvlanid, vid.toString()));
-		params.add(new Pair<OperationType, String>(OperationType.setrate, networkRateMbps.toString()));
 		
 		try {
 			netconfClient.updatePortProfile(ethPortProfileName, SwitchPortMode.access, params); 
@@ -194,7 +193,6 @@ public class HypervisorHostHelper {
 		
 		List<Pair<OperationType, String>> params = new ArrayList<Pair<OperationType, String>>();
 		params.add(new Pair<OperationType, String>(OperationType.addvlanid, vid.toString()));
-		params.add(new Pair<OperationType, String>(OperationType.setrate, networkRateMbps.toString()));
 		
 		try {
 			netconfClient.updatePortProfile(ethPortProfileName, SwitchPortMode.access, params); 
