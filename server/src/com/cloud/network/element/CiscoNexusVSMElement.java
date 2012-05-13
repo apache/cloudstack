@@ -25,6 +25,7 @@ import com.cloud.api.commands.DeleteCiscoNexusVSMCmd;
 import com.cloud.api.commands.ListCiscoNexusVSMCmd;
 import com.cloud.api.commands.EnableCiscoNexusVSMCmd;
 import com.cloud.api.commands.DisableCiscoNexusVSMCmd;
+import com.cloud.api.commands.GetCiscoVSMByClusterIdCmd;
 import com.cloud.api.response.CiscoNexusVSMResponse;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -36,6 +37,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
+import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.network.CiscoNexusVSMDeviceManagerImpl;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
@@ -213,6 +215,12 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     	return result;
     }
 
+    @Override
+    public CiscoNexusVSMDeviceVO getCiscoNexusVSMByClusId(GetCiscoVSMByClusterIdCmd cmd) {
+    	CiscoNexusVSMDeviceVO result = getCiscoVSMbyClusId(cmd.getClusterId());
+    	return result;
+    }
+    
     @Override
     public List<CiscoNexusVSMDeviceVO> listCiscoNexusVSMs(ListCiscoNexusVSMCmd cmd) {
     	return null;
