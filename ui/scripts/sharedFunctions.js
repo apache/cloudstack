@@ -180,9 +180,13 @@ function parseXMLHttpResponse(XMLHttpResponse) {
   if (json != null) {
     var property;
     for(property in json) {}
-    var errorObj = json[property];
-    return _s(errorObj.errortext);
-  } else {
+    var errorObj = json[property];		
+		if(errorObj.errorcode == 401 && errorObj.errortext == "unable to verify user credentials and/or request signature")
+		  return _l('label.session.expired');
+		else
+      return _s(errorObj.errortext);
+  } 
+	else {
     return "";
   }
 }
