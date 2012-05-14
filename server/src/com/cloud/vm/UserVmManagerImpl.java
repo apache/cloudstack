@@ -567,7 +567,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
         }
 
-        if ( !(Volume.State.Allocated.equals(volume.getState()) || Volume.State.Ready.equals(volume.getState())) ) {
+        if ( !(Volume.State.Allocated.equals(volume.getState()) || Volume.State.Ready.equals(volume.getState()) || Volume.State.UploadOp.equals(volume.getState())) ) {
             throw new InvalidParameterValueException("Volume state must be in Allocated or Ready state");
         }
 

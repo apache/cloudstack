@@ -2825,6 +2825,14 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             throw new InvalidParameterValueException("Please specify a volume that is not attached to any VM.");
         }
 
+        // Check that volume is completely Uploaded 
+        if (volume.getState() == Volume.State.UploadOp){
+        	VolumeHostVO volumeHost = _volumeHostDao.findByVolumeId(volume.getId());
+            if (volumeHost.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS){
+            	throw new InvalidParameterValueException("Please specify a volume that is not uploading");
+            }            
+        }
+        
         // Check that the volume is not already destroyed
         if (volume.getState() != Volume.State.Destroy) {
             if (!destroyVolume(volume)) {
