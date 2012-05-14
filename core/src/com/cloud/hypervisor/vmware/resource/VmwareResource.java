@@ -156,7 +156,6 @@ import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.DiskControllerType;
 import com.cloud.hypervisor.vmware.mo.HostFirewallSystemMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
-import com.cloud.hypervisor.vmware.mo.HostVirtualNicType;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
@@ -1475,6 +1474,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
 
+            String switchUuid;
+            ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
+            DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
+
             VirtualDevice nic;
             int nicMask = 0;
             int nicCount = 0;
@@ -1482,7 +1485,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.info("Prepare NIC device based on NicTO: " + _gson.toJson(nicTo));
 
                 Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo);
-                
+
+                ManagedObjectReference dvsMor = dataCenterMo.getDvSwitchMor(networkInfo.first());
+                switchUuid = dataCenterMo.getDvSwitchUuid(dvsMor);
+                s_logger.info("Preparing NIC device on dvSwitch : " + switchUuid);
+
                 nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), nicTo.getMac(), i, i + 1, true, true);
                 deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
                 deviceConfigSpecArray[i].setDevice(nic);
@@ -4025,13 +4032,22 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             VmwareHypervisorHost hostMo = this.getHyperHost(context);
             _hostName = hostMo.getHyperHostName();
+            _privateNetworkVSwitchName = mgr.getPrivateVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
+            _publicNetworkVSwitchName = mgr.getPublicVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
+            _guestNetworkVSwitchName = mgr.getGuestVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
         } catch (Exception e) {
             s_logger.error("Unexpected Exception ", e);
         }
 
-        _privateNetworkVSwitchName = (String) params.get("private.network.vswitch.name");
-        _publicNetworkVSwitchName = (String) params.get("public.network.vswitch.name");
-        _guestNetworkVSwitchName = (String) params.get("guest.network.vswitch.name");
+        if(_privateNetworkVSwitchName == null) {
+            _privateNetworkVSwitchName = (String) params.get("private.network.vswitch.name");
+        }    
+        if(_publicNetworkVSwitchName == null) {
+            _publicNetworkVSwitchName = (String) params.get("public.network.vswitch.name");
+        }
+        if(_guestNetworkVSwitchName == null) {
+            _guestNetworkVSwitchName = (String) params.get("guest.network.vswitch.name");
+        }
         
         String value = (String) params.get("cpu.overprovisioning.factor");
         if(value != null)
