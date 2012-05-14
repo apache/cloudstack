@@ -182,7 +182,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
@@ -6408,4 +6407,59 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         nic.setDns2(dc.getDns2());
     }
 
+    @Override
+    public String getDefaultPublicTrafficLabel(long dcId, HypervisorType hypervisorType) {
+        try {
+            PhysicalNetwork mgmtPhyNetwork = getDefaultPhysicalNetworkByZoneAndTrafficType(dcId, TrafficType.Public);
+            PhysicalNetworkTrafficTypeVO publicTraffic = _pNTrafficTypeDao.findBy(mgmtPhyNetwork.getId(), TrafficType.Public);
+            if (publicTraffic != null) {
+                String label = null;
+                switch (hypervisorType) {
+                case XenServer:
+                    label = publicTraffic.getXenNetworkLabel();
+                    break;
+                case KVM:
+                    label = publicTraffic.getKvmNetworkLabel();
+                    break;
+                case VMware:
+                    label = publicTraffic.getVmwareNetworkLabel();
+                    break;
+                }
+                return label;
+            }
+        } catch (Exception ex) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Failed to retrive the default label for management traffic:" + "zone: " + dcId + " hypervisor: " + hypervisorType + " due to:" + ex.getMessage());
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public String getDefaultGuestTrafficLabel(long dcId, HypervisorType hypervisorType) {
+        try {
+            PhysicalNetwork mgmtPhyNetwork = getDefaultPhysicalNetworkByZoneAndTrafficType(dcId, TrafficType.Guest);
+            PhysicalNetworkTrafficTypeVO guestTraffic = _pNTrafficTypeDao.findBy(mgmtPhyNetwork.getId(), TrafficType.Guest);
+            if (guestTraffic != null) {
+                String label = null;
+                switch (hypervisorType) {
+                case XenServer:
+                    label = guestTraffic.getXenNetworkLabel();
+                    break;
+                case KVM:
+                    label = guestTraffic.getKvmNetworkLabel();
+                    break;
+                case VMware:
+                    label = guestTraffic.getVmwareNetworkLabel();
+                    break;
+                }
+                return label;
+            }
+        } catch (Exception ex) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Failed to retrive the default label for management traffic:" + "zone: " + dcId + " hypervisor: " + hypervisorType + " due to:" + ex.getMessage());
+            }
+        }
+        return null;
+    }
 }

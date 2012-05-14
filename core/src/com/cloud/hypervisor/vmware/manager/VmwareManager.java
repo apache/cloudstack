@@ -65,4 +65,10 @@ public interface VmwareManager {
     boolean getNexusVSwitchGlobalParameter();
 
     Map<String, String> getNexusVSMCredentialsByClusterId(Long clusterId);
+
+    String getPrivateVSwitchTypeGlobalParameter();
+
+    String getPublicVSwitchTypeGlobalParameter();
+
+    String getGuestVSwitchTypeGlobalParameter();
 }
