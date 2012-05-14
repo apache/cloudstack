@@ -134,9 +134,13 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
         for (IpPermissionType ipPerm : items) {
     	   EC2IpPermission perm = new EC2IpPermission();       	
     	   perm.setProtocol( ipPerm.getIpProtocol());
-    	   perm.setFromPort( ipPerm.getFromPort());
-    	   perm.setToPort( ipPerm.getToPort());
-  	
+           if (ipPerm.getIpProtocol().equalsIgnoreCase("icmp")) {
+               perm.setIcmpType( Integer.toString(ipPerm.getFromPort()));
+               perm.setIcmpCode( Integer.toString(ipPerm.getToPort()));
+           } else {
+               perm.setFromPort( ipPerm.getFromPort());
+               perm.setToPort( ipPerm.getToPort());
+           }
     	   UserIdGroupPairSetType groups = ipPerm.getGroups();
     	   if (null != groups && groups.getItem() != null) {
     		   UserIdGroupPairType[] groupItems = groups.getItem();
