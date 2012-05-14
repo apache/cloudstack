@@ -88,7 +88,8 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     @SerializedName("templatetype") @Param(description="the type of the template")
     private String templateType;
 
-    @SerializedName(ApiConstants.HYPERVISOR) @Param(description="the hypervisor on which the template runs")
+    @SerializedName(ApiConstants.HYPERVISOR) @Param(description="the hypervisor on which the template runs. This parameter" +
+    		"is returned to the ROOT admin only")
     private String hypervisor;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the name of the domain to which the template belongs")
