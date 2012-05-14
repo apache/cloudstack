@@ -139,13 +139,9 @@ public class UserCredentialsDao extends BaseDao{
 		conn = null;
 	}
 
-	public static void preCheckTableExistence() {
+	public static void preCheckTableExistence() throws Exception{
 		UserCredentialsDao dao = new UserCredentialsDao();
-		try {
-			dao.checkTableExistence();
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+		dao.checkTableExistence();
 	}
 
 	private void checkTableExistence() throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {

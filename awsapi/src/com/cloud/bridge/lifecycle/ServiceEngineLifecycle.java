@@ -18,6 +18,9 @@ package com.cloud.bridge.lifecycle;
 import org.apache.axis2.context.ConfigurationContext;
 import org.apache.axis2.description.AxisService;
 import org.apache.axis2.engine.ServiceLifeCycle;
+import org.apache.log4j.Logger;
+
+import com.cloud.bridge.persist.dao.UserCredentialsDao;
 import com.cloud.bridge.service.controller.s3.ServiceProvider;
 
 
@@ -29,13 +32,23 @@ import com.cloud.bridge.service.controller.s3.ServiceProvider;
  */
 public class ServiceEngineLifecycle implements ServiceLifeCycle {
 	private static final long serialVersionUID = -249114759030608486L;
+	public static final Logger logger = Logger.getLogger(ServiceEngineLifecycle.class);
+	private static boolean initialized = false;
 
 	public void startUp(ConfigurationContext config, AxisService service) {
 		// initialize service provider during Axis engine startup
-		ServiceProvider.getInstance();
+	    try{
+	        UserCredentialsDao.preCheckTableExistence();
+	        ServiceProvider.getInstance();
+	        ServiceEngineLifecycle.initialized = true;
+	    }catch(Exception e){
+	        logger.error("Error initializing awsapi: "+ e.getMessage());
+	    }
 	}
 	
 	public void shutDown(ConfigurationContext config, AxisService service) {
-		ServiceProvider.getInstance().shutdown();
+	    if(ServiceEngineLifecycle.initialized){
+	        ServiceProvider.getInstance().shutdown();
+	    }
 	}
 };

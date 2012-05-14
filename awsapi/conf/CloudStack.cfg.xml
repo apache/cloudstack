@@ -10,7 +10,6 @@
 	<!-- transactiion isolation level : 1 - read uncommitted, 2 - read committed, 4 - repeatable read, 8 - Serializable	 -->
 	<property name="hibernate.connection.isolation">2</property>
 	
-    <property name="hibernate.hbm2ddl.auto">update</property>
 	<property name="hibernate.order_updates">true</property>
     <property name="dialect">org.hibernate.dialect.MySQLDialect</property>
     

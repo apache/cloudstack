@@ -115,10 +115,10 @@ public class S3RestServlet extends HttpServlet {
     		if(value != null) {
     		    isS3APIEnabled = Boolean.valueOf(value);
     		}
-    		
-		}finally {
-		    PersistContext.commitTransaction(true);
+    		PersistContext.commitTransaction(true);
             PersistContext.closeSession(true);
+		}catch(Exception e){
+		    throw new ServletException("Error initializing awsapi: " + e.getMessage());
         }
 		
 	}
