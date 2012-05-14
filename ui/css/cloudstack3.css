@@ -248,6 +248,7 @@ body.login {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   font-size: 12px;
   /*+box-shadow:inset 0px 1px 1px #838383;*/
@@ -291,6 +292,7 @@ body.login {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   /*+box-shadow:inset 0px 1px 1px #4E4E4E;*/
   -moz-box-shadow: inset 0px 1px 1px #4E4E4E;
@@ -444,13 +446,17 @@ body.login {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   border: 1px solid #CDCDCD;
-  /*+box-shadow:inset 0px 1px 0px #AEAEAE;*/
+  /*+box-shadow:inset 0px 1px #AEAEAE;*/
+  -moz-box-shadow: inset 0px 1px #AEAEAE;
+  -webkit-box-shadow: inset 0px 1px #AEAEAE;
+  -o-box-shadow: inset 0px 1px #AEAEAE;
+  box-shadow: inset 0px 1px #AEAEAE;
   -moz-box-shadow: inset 0px 1px 0px #AEAEAE;
   -webkit-box-shadow: inset 0px 1px 0px #AEAEAE;
   -o-box-shadow: inset 0px 1px 0px #AEAEAE;
-  box-shadow: inset 0px 1px #AEAEAE;
   font-size: 14px;
   color: #232323;
   padding: 6px;
@@ -464,6 +470,7 @@ body.login {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   border: 1px solid #505050;
   color: #FFFFFF;
@@ -533,6 +540,7 @@ body.login {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   overflow: auto;
   overflow-x: hidden;
@@ -659,11 +667,14 @@ body.login {
   background: url(../images/bg-transparent-white.png);
   width: 469px;
   border: 1px solid #DFDFDF;
-  /*+text-shadow:0px 1px 0px #FFFFFF;*/
+  /*+text-shadow:0px 1px #FFFFFF;*/
+  -moz-text-shadow: 0px 1px #FFFFFF;
+  -webkit-text-shadow: 0px 1px #FFFFFF;
+  -o-text-shadow: 0px 1px #FFFFFF;
+  text-shadow: 0px 1px #FFFFFF;
   -moz-text-shadow: 0px 1px 0px #FFFFFF;
   -webkit-text-shadow: 0px 1px 0px #FFFFFF;
   -o-text-shadow: 0px 1px 0px #FFFFFF;
-  text-shadow: 0px 1px #FFFFFF;
   /*+box-shadow:0px 5px 9px #9F9F9F;*/
   -moz-box-shadow: 0px 5px 9px #9F9F9F;
   -webkit-box-shadow: 0px 5px 9px #9F9F9F;
@@ -812,6 +823,7 @@ div.notification-box .container {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   border: 1px solid #8198AE;
 }
@@ -896,6 +908,7 @@ div.notification-box .button {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   border-bottom: 1px solid #2B2B2B;
   /*+box-shadow:0px 0px 2px #272727;*/
@@ -1010,6 +1023,7 @@ div.notification.corner-alert:hover div.message span {
   -moz-border-radius: 22px;
   -webkit-border-radius: 22px;
   -khtml-border-radius: 22px;
+  border-radius: 22px;
   border-radius: 22px 22px 22px 22px;
 }
 
@@ -1275,11 +1289,14 @@ div.list-view td.state.off span {
   -webkit-text-shadow: 0px 0px #FFFFFF;
   -o-text-shadow: 0px 0px #FFFFFF;
   text-shadow: 0px 0px #FFFFFF;
-  /*+box-shadow:0px 0px none;*/
+  /*+box-shadow:0px 0px;*/
+  -moz-box-shadow: 0px 0px;
+  -webkit-box-shadow: 0px 0px;
+  -o-box-shadow: 0px 0px;
+  box-shadow: 0px 0px;
   -moz-box-shadow: 0px 0px none;
   -webkit-box-shadow: 0px 0px none;
   -o-box-shadow: 0px 0px none;
-  box-shadow: 0px 0px none;
 }
 
 .ui-tabs li.ui-state-active.first a,
@@ -1293,6 +1310,7 @@ div.list-view td.state.off span {
   -moz-border-radius: 4px 0 0;
   -webkit-border-radius: 4px 0 0;
   -khtml-border-radius: 4px 0 0;
+  border-radius: 4px 0 0;
   border-radius: 4px 0 0 0;
 }
 
@@ -1392,6 +1410,7 @@ div.list-view td.state.off span {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   /*+text-shadow:0px -1px 2px #000000;*/
   -moz-text-shadow: 0px -1px 2px #000000;
@@ -1715,11 +1734,14 @@ div.detail-group.actions td {
   background: url(../images/sprites.png) no-repeat -593px -870px;
   color: #FFFFFF;
   font-size: 11px;
-  /*+text-shadow:0px -1px 0px #6C7283;*/
+  /*+text-shadow:0px -1px #6C7283;*/
+  -moz-text-shadow: 0px -1px #6C7283;
+  -webkit-text-shadow: 0px -1px #6C7283;
+  -o-text-shadow: 0px -1px #6C7283;
+  text-shadow: 0px -1px #6C7283;
   -moz-text-shadow: 0px -1px 0px #6C7283;
   -webkit-text-shadow: 0px -1px 0px #6C7283;
   -o-text-shadow: 0px -1px 0px #6C7283;
-  text-shadow: 0px -1px #6C7283;
 }
 
 #header div.notifications div.total.pending {
@@ -1917,11 +1939,14 @@ div.detail-group.actions td {
 
 #navigation ul li.disabled:hover span {
   color: #596D7F;
-  /*+text-shadow:0px 0px none;*/
+  /*+text-shadow:0px 0px;*/
+  -moz-text-shadow: 0px 0px;
+  -webkit-text-shadow: 0px 0px;
+  -o-text-shadow: 0px 0px;
+  text-shadow: 0px 0px;
   -moz-text-shadow: 0px 0px none;
   -webkit-text-shadow: 0px 0px none;
   -o-text-shadow: 0px 0px none;
-  text-shadow: 0px 0px none;
   -moz-text-shadow: none;
   -webkit-text-shadow: none;
   -o-text-shadow: none;
@@ -2061,6 +2086,7 @@ div.detail-group.actions td {
   -moz-border-radius: 0 2px 2px;
   -webkit-border-radius: 0 2px 2px;
   -khtml-border-radius: 0 2px 2px;
+  border-radius: 0 2px 2px;
   border-radius: 0 2px 2px 2px;
   /*+placement:shift 0px -1px;*/
   position: relative;
@@ -2199,6 +2225,7 @@ div.toolbar div.button.main-action,
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   height: 12px;
 }
@@ -2316,6 +2343,7 @@ div.list-view div.toolbar div.section-switcher div.section {
   -moz-border-radius: 10px;
   -webkit-border-radius: 10px;
   -khtml-border-radius: 10px;
+  border-radius: 10px;
   border-radius: 10px 10px 10px 10px;
   /*+text-shadow:0px 1px 1px #EDEDED;*/
   -moz-text-shadow: 0px 1px 1px #EDEDED;
@@ -2368,6 +2396,7 @@ div.list-view div.toolbar div.section-switcher div.section.first.last a {
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
   -khtml-border-radius: 5px;
+  border-radius: 5px;
   border-radius: 5px 5px 5px 5px;
 }
 
@@ -2391,6 +2420,7 @@ div.list-view div.toolbar div.section-switcher div.section-select select {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
 }
 
@@ -2434,6 +2464,7 @@ div.toolbar div.filters select {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   padding: 0px 0 0;
   margin: 1px 0 0;
@@ -2507,11 +2538,14 @@ div.toolbar div.filters select {
   left: 0px;
   top: 0px;
   color: #CED4D9;
-  /*+text-shadow:0px 0px none;*/
+  /*+text-shadow:0px 0px;*/
+  -moz-text-shadow: 0px 0px;
+  -webkit-text-shadow: 0px 0px;
+  -o-text-shadow: 0px 0px;
+  text-shadow: 0px 0px;
   -moz-text-shadow: 0px 0px none;
   -webkit-text-shadow: 0px 0px none;
   -o-text-shadow: 0px 0px none;
-  text-shadow: 0px 0px none;
   -moz-text-shadow: none;
   -webkit-text-shadow: none;
   -o-text-shadow: none;
@@ -2727,6 +2761,7 @@ Dialogs*/
   -moz-border-radius: 7px;
   -webkit-border-radius: 7px;
   -khtml-border-radius: 7px;
+  border-radius: 7px;
   border-radius: 7px 7px 7px 7px;
   /*+box-shadow:0px -4px 15px #4C4A4A;*/
   -moz-box-shadow: 0px -4px 15px #4C4A4A;
@@ -2759,6 +2794,7 @@ Dialogs*/
   -moz-border-radius: 10px;
   -webkit-border-radius: 10px;
   -khtml-border-radius: 10px;
+  border-radius: 10px;
   border-radius: 10px 10px 10px 10px;
 }
 
@@ -2784,6 +2820,7 @@ Dialogs*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
 }
 
@@ -2818,6 +2855,7 @@ Dialogs*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
 }
 
@@ -2972,13 +3010,17 @@ Dialogs*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   border: 1px solid #AFAFAF;
-  /*+box-shadow:inset 0px 1px 0px #727272;*/
+  /*+box-shadow:inset 0px 1px #727272;*/
+  -moz-box-shadow: inset 0px 1px #727272;
+  -webkit-box-shadow: inset 0px 1px #727272;
+  -o-box-shadow: inset 0px 1px #727272;
+  box-shadow: inset 0px 1px #727272;
   -moz-box-shadow: inset 0px 1px 0px #727272;
   -webkit-box-shadow: inset 0px 1px 0px #727272;
   -o-box-shadow: inset 0px 1px 0px #727272;
-  box-shadow: inset 0px 1px #727272;
   float: left;
 }
 
@@ -3031,6 +3073,7 @@ Dialogs*/
   -moz-border-radius: 10px;
   -webkit-border-radius: 10px;
   -khtml-border-radius: 10px;
+  border-radius: 10px;
   border-radius: 10px 10px 10px 10px;
   border: 1px solid #808080;
   /*+box-shadow:inset 0px 1px 1px #929292;*/
@@ -3077,6 +3120,7 @@ Dialogs*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
 }
 
@@ -3099,6 +3143,7 @@ Dialogs*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   /*+box-shadow:inset -1px 1px 1px #636363;*/
   -moz-box-shadow: inset -1px 1px 1px #636363;
@@ -3208,6 +3253,7 @@ Dialogs*/
   -moz-border-radius: 6px;
   -webkit-border-radius: 6px;
   -khtml-border-radius: 6px;
+  border-radius: 6px;
   border-radius: 6px 6px 6px 6px;
   padding: 0px 8px 18px 0px;
   margin: 0 0 11px;
@@ -3221,11 +3267,14 @@ Dialogs*/
   font-size: 10px;
   float: right;
   clear: none;
-  /*+text-shadow:0px 1px 0px #333E49;*/
+  /*+text-shadow:0px 1px #333E49;*/
+  -moz-text-shadow: 0px 1px #333E49;
+  -webkit-text-shadow: 0px 1px #333E49;
+  -o-text-shadow: 0px 1px #333E49;
+  text-shadow: 0px 1px #333E49;
   -moz-text-shadow: 0px 1px 0px #333E49;
   -webkit-text-shadow: 0px 1px 0px #333E49;
   -o-text-shadow: 0px 1px 0px #333E49;
-  text-shadow: 0px 1px #333E49;
   padding: 3px 8px 3px 10px;
   background: url(../images/bg-gradients.png) repeat-x 0px -411px;
   border: 1px solid #383838;
@@ -3233,6 +3282,7 @@ Dialogs*/
   -moz-border-radius: 6px;
   -webkit-border-radius: 6px;
   -khtml-border-radius: 6px;
+  border-radius: 6px;
   border-radius: 6px 6px 6px 6px;
   /*+box-shadow:0px 1px 1px #718CA5;*/
   -moz-box-shadow: 0px 1px 1px #718CA5;
@@ -3247,11 +3297,14 @@ Dialogs*/
   font-size: 10px;
   float: right;
   clear: none;
-  /*+text-shadow:0px 1px 0px #333E49;*/
+  /*+text-shadow:0px 1px #333E49;*/
+  -moz-text-shadow: 0px 1px #333E49;
+  -webkit-text-shadow: 0px 1px #333E49;
+  -o-text-shadow: 0px 1px #333E49;
+  text-shadow: 0px 1px #333E49;
   -moz-text-shadow: 0px 1px 0px #333E49;
   -webkit-text-shadow: 0px 1px 0px #333E49;
   -o-text-shadow: 0px 1px 0px #333E49;
-  text-shadow: 0px 1px #333E49;
   padding: 3px 8px 3px 10px;
   background: url(../images/bg-gradients.png) repeat-x 0px -411px;
   border: 1px solid #383838;
@@ -3259,6 +3312,7 @@ Dialogs*/
   -moz-border-radius: 6px;
   -webkit-border-radius: 6px;
   -khtml-border-radius: 6px;
+  border-radius: 6px;
   border-radius: 6px 6px 6px 6px;
   /*+box-shadow:0px 1px 1px #718CA5;*/
   -moz-box-shadow: 0px 1px 1px #718CA5;
@@ -3443,6 +3497,7 @@ Dialogs*/
   -moz-border-radius: 10px;
   -webkit-border-radius: 10px;
   -khtml-border-radius: 10px;
+  border-radius: 10px;
   border-radius: 10px 10px 10px 10px;
   padding: 0 12px 0px;
   margin: 0 0 10px;
@@ -3480,6 +3535,7 @@ Dialogs*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   /*+text-shadow:0px -1px 1px #6F6F6F;*/
   -moz-text-shadow: 0px -1px 1px #6F6F6F;
@@ -3499,6 +3555,7 @@ Dialogs*/
   -moz-border-radius: 7px;
   -webkit-border-radius: 7px;
   -khtml-border-radius: 7px;
+  border-radius: 7px;
   border-radius: 7px 7px 7px 7px;
   border-bottom: 1px solid #FFFFFF;
   border-top: 1px solid #727272;
@@ -3511,6 +3568,7 @@ Dialogs*/
   -moz-border-radius: 10px;
   -webkit-border-radius: 10px;
   -khtml-border-radius: 10px;
+  border-radius: 10px;
   border-radius: 10px 10px 10px 10px;
   margin: 1px 0px 0;
 }
@@ -3565,6 +3623,7 @@ Dialogs*/
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
   -khtml-border-radius: 5px;
+  border-radius: 5px;
   border-radius: 5px 5px 5px 5px;
   margin: 0px 0 12px;
   /*[empty]color:;*/
@@ -3615,6 +3674,7 @@ Dialogs*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   color: #FFFFFF;
   /*+text-shadow:0px -1px 2px #13293E;*/
@@ -3655,6 +3715,7 @@ Dialogs*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   /*+box-shadow:inset 0px 0px 1px #DDE3EC;*/
   -moz-box-shadow: inset 0px 0px 1px #DDE3EC;
@@ -3703,6 +3764,7 @@ Dialogs*/
   -moz-border-radius: 9px;
   -webkit-border-radius: 9px;
   -khtml-border-radius: 9px;
+  border-radius: 9px;
   border-radius: 9px 9px 9px 9px;
 }
 
@@ -3748,6 +3810,7 @@ Dialogs*/
   -moz-border-radius: 10px;
   -webkit-border-radius: 10px;
   -khtml-border-radius: 10px;
+  border-radius: 10px;
   border-radius: 10px 10px 10px 10px;
   margin: 0 0 0 11px;
   background: #EBEDF1;
@@ -3829,6 +3892,7 @@ Dialogs*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
 }
 
@@ -3938,6 +4002,7 @@ Dialogs*/
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   /*+box-shadow:0px 0px 2px #A6A6A6;*/
   -moz-box-shadow: 0px 0px 2px #A6A6A6;
@@ -4092,6 +4157,7 @@ Dialogs*/
   -moz-border-radius: 2px;
   -webkit-border-radius: 2px;
   -khtml-border-radius: 2px;
+  border-radius: 2px;
   border-radius: 2px 2px 2px 2px;
   padding: 8px 7px;
   /*+placement:shift 187px 76px;*/
@@ -4123,11 +4189,14 @@ Dialogs*/
 
 .system-chart.network ul.resources li {
   background: transparent;
-  /*+box-shadow:0px 0px none;*/
+  /*+box-shadow:0px 0px;*/
+  -moz-box-shadow: 0px 0px;
+  -webkit-box-shadow: 0px 0px;
+  -o-box-shadow: 0px 0px;
+  box-shadow: 0px 0px;
   -moz-box-shadow: 0px 0px none;
   -webkit-box-shadow: 0px 0px none;
   -o-box-shadow: 0px 0px none;
-  box-shadow: 0px 0px none;
   -moz-box-shadow: none;
   -webkit-box-shadow: none;
   -o-box-shadow: none;
@@ -4136,6 +4205,7 @@ Dialogs*/
   -moz-border-radius: 0px;
   -webkit-border-radius: 0px;
   -khtml-border-radius: 0px;
+  border-radius: 0px;
   border-radius: 0px 0px 0px 0px;
 }
 
@@ -4266,6 +4336,7 @@ Dialogs*/
   -moz-border-radius: 12px;
   -webkit-border-radius: 12px;
   -khtml-border-radius: 12px;
+  border-radius: 12px;
   border-radius: 12px 12px 12px 12px;
   border: 1px solid #ECECEC;
 }
@@ -4322,6 +4393,7 @@ Dialogs*/
   -moz-border-radius: 6px;
   -webkit-border-radius: 6px;
   -khtml-border-radius: 6px;
+  border-radius: 6px;
   border-radius: 6px 6px 6px 6px;
   font-size: 16px;
   border: 1px solid #B7B7B7;
@@ -4353,6 +4425,7 @@ Dialogs*/
   -moz-border-radius: 10px;
   -webkit-border-radius: 10px;
   -khtml-border-radius: 10px;
+  border-radius: 10px;
   border-radius: 10px 10px 10px 10px;
   border: 1px solid #858585;
   color: #FFFFFF;
@@ -4373,6 +4446,7 @@ Dialogs*/
   -moz-border-radius: 7px;
   -webkit-border-radius: 7px;
   -khtml-border-radius: 7px;
+  border-radius: 7px;
   border-radius: 7px 7px 7px 7px;
 }
 
@@ -4557,6 +4631,7 @@ label.error {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   display: inline-block;
   float: left;
@@ -4613,6 +4688,7 @@ label.error {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   margin: 11px 0px 0 14px;
   float: left;
@@ -4800,6 +4876,7 @@ label.error {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   margin: 10px 10px 0px;
 }
@@ -4873,6 +4950,7 @@ label.error {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
 }
 
@@ -4927,13 +5005,17 @@ label.error {
   -moz-border-radius: 0;
   -webkit-border-radius: 0;
   -khtml-border-radius: 0;
+  border-radius: 0;
   border-radius: 0 0 0 0;
   background: transparent;
-  /*+box-shadow:0px 0px inherit;*/
+  /*+box-shadow:0px 0px;*/
+  -moz-box-shadow: 0px 0px;
+  -webkit-box-shadow: 0px 0px;
+  -o-box-shadow: 0px 0px;
+  box-shadow: 0px 0px;
   -moz-box-shadow: 0px 0px inherit;
   -webkit-box-shadow: 0px 0px inherit;
   -o-box-shadow: 0px 0px inherit;
-  box-shadow: 0px 0px inherit;
   -moz-box-shadow: inherit;
   -webkit-box-shadow: inherit;
   -o-box-shadow: inherit;
@@ -4984,6 +5066,7 @@ label.error {
   -moz-border-radius: 6px;
   -webkit-border-radius: 6px;
   -khtml-border-radius: 6px;
+  border-radius: 6px;
   border-radius: 6px 6px 6px 6px;
 }
 
@@ -5004,6 +5087,7 @@ label.error {
   -moz-border-radius: 6px;
   -webkit-border-radius: 6px;
   -khtml-border-radius: 6px;
+  border-radius: 6px;
   border-radius: 6px 6px 6px 6px;
 }
 
@@ -5064,6 +5148,7 @@ label.error {
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
   -khtml-border-radius: 5px;
+  border-radius: 5px;
   border-radius: 5px 5px 5px 5px;
   z-index: 1;
   padding: 162px 0 194px;
@@ -5503,6 +5588,7 @@ label.error {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
 }
 
@@ -5596,6 +5682,7 @@ label.error {
   -moz-border-radius: 7px;
   -webkit-border-radius: 7px;
   -khtml-border-radius: 7px;
+  border-radius: 7px;
   border-radius: 7px 7px 7px 7px;
   line-height: 19px;
 }
@@ -5673,6 +5760,7 @@ label.error {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   /*+box-shadow:inset 0px 1px 2px #CBCACA;*/
   -moz-box-shadow: inset 0px 1px 2px #CBCACA;
@@ -5726,6 +5814,7 @@ label.error {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   border: 3px dashed #BBBFC4;
 }
@@ -5736,6 +5825,7 @@ label.error {
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
   -khtml-border-radius: 5px;
+  border-radius: 5px;
   border-radius: 5px 5px 5px 5px;
   width: 99%;
   height: 94%;
@@ -5773,6 +5863,7 @@ label.error {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   float: left;
   text-align: left;
@@ -5835,6 +5926,7 @@ label.error {
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
   -khtml-border-radius: 5px;
+  border-radius: 5px;
   border-radius: 5px 5px 5px 5px;
   /*+box-shadow:inset 0px 2px 4px #999696;*/
   -moz-box-shadow: inset 0px 2px 4px #999696;
@@ -5983,6 +6075,7 @@ label.error {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   border-top: 1px solid #FFFFFF;
   /*+placement:shift -15px 61px;*/
@@ -6213,6 +6306,7 @@ label.error {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   color: #475765;
   /*+text-shadow:0px 1px 1px #FFFFFF;*/
@@ -6274,6 +6368,7 @@ label.error {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
 }
 
@@ -6356,6 +6451,7 @@ label.error {
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
   -khtml-border-radius: 5px;
+  border-radius: 5px;
   border-radius: 5px 5px 5px 5px;
 }
 
@@ -6514,6 +6610,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
   -khtml-border-radius: 5px;
+  border-radius: 5px;
   border-radius: 5px 5px 5px 5px;
   width: 74px;
   text-align: center;
@@ -6685,6 +6782,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 9px;
   -webkit-border-radius: 9px;
   -khtml-border-radius: 9px;
+  border-radius: 9px;
   border-radius: 9px 9px 9px 9px;
   float: left;
   margin: -3px 0 0 11px;
@@ -7029,11 +7127,14 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   border: none;
   background-color: transparent;
   border: none;
-  /*+box-shadow:0px 0px none;*/
+  /*+box-shadow:0px 0px;*/
+  -moz-box-shadow: 0px 0px;
+  -webkit-box-shadow: 0px 0px;
+  -o-box-shadow: 0px 0px;
+  box-shadow: 0px 0px;
   -moz-box-shadow: 0px 0px none;
   -webkit-box-shadow: 0px 0px none;
   -o-box-shadow: 0px 0px none;
-  box-shadow: 0px 0px none;
   -moz-box-shadow: none;
   -webkit-box-shadow: none;
   -o-box-shadow: none;
@@ -7047,6 +7148,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 8px;
   -webkit-border-radius: 8px;
   -khtml-border-radius: 8px;
+  border-radius: 8px;
   border-radius: 8px 8px 8px 8px;
   /*+box-shadow:inset 0px 1px 2px #4E4E4E;*/
   -moz-box-shadow: inset 0px 1px 2px #4E4E4E;
@@ -7102,6 +7204,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
 }
 
@@ -7141,6 +7244,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 3px;
   -webkit-border-radius: 3px;
   -khtml-border-radius: 3px;
+  border-radius: 3px;
   border-radius: 3px 3px 3px 3px;
   padding: 2px;
   width: 186px;
@@ -7228,6 +7332,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 9px;
   -webkit-border-radius: 9px;
   -khtml-border-radius: 9px;
+  border-radius: 9px;
   border-radius: 9px 9px 9px 9px;
 }
 
@@ -7331,6 +7436,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 8px;
   -webkit-border-radius: 8px;
   -khtml-border-radius: 8px;
+  border-radius: 8px;
   border-radius: 8px 8px 8px 8px;
   /*+box-shadow:inset 0px 0px 1px #FFFFFF;*/
   -moz-box-shadow: inset 0px 0px 1px #FFFFFF;
@@ -7384,6 +7490,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 3px;
   -webkit-border-radius: 3px;
   -khtml-border-radius: 3px;
+  border-radius: 3px;
   border-radius: 3px 3px 3px 3px;
   border: 1px solid #5A5A5A;
   /*+box-shadow:inset 0px 0px 1px #FFFFFF;*/
@@ -7436,6 +7543,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 7px;
   -webkit-border-radius: 7px;
   -khtml-border-radius: 7px;
+  border-radius: 7px;
   border-radius: 7px 7px 7px 7px;
   /*+box-shadow:inset 0px 1px 3px #000000;*/
   -moz-box-shadow: inset 0px 1px 3px #000000;
@@ -7771,11 +7879,14 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   background: transparent;
   border: none;
   border-bottom: 1px solid #93A4B4;
-  /*+box-shadow:0px 2px 0px #FFFFFF;*/
+  /*+box-shadow:0px 2px #FFFFFF;*/
+  -moz-box-shadow: 0px 2px #FFFFFF;
+  -webkit-box-shadow: 0px 2px #FFFFFF;
+  -o-box-shadow: 0px 2px #FFFFFF;
+  box-shadow: 0px 2px #FFFFFF;
   -moz-box-shadow: 0px 2px 0px #FFFFFF;
   -webkit-box-shadow: 0px 2px 0px #FFFFFF;
   -o-box-shadow: 0px 2px 0px #FFFFFF;
-  box-shadow: 0px 2px #FFFFFF;
 }
 
 .project-selector .search input[type=text] {
@@ -7783,6 +7894,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 3px;
   -webkit-border-radius: 3px;
   -khtml-border-radius: 3px;
+  border-radius: 3px;
   border-radius: 3px 3px 3px 3px;
   width: 192px;
   height: 18px;
@@ -7877,6 +7989,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 11px;
   -webkit-border-radius: 11px;
   -khtml-border-radius: 11px;
+  border-radius: 11px;
   border-radius: 11px 11px 11px 11px;
   padding: 26px;
   margin-top: 17px;
@@ -7909,6 +8022,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   border: 1px solid #C6C6C6;
   padding: 6px;
@@ -7926,6 +8040,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   clear: both;
 }
@@ -8105,6 +8220,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
 }
 
@@ -8151,6 +8267,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 4px;
   -webkit-border-radius: 4px;
   -khtml-border-radius: 4px;
+  border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
   /*+box-shadow:inset 0px 1px 1px #85ACC4;*/
   -moz-box-shadow: inset 0px 1px 1px #85ACC4;
@@ -8374,14 +8491,18 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
   -khtml-border-radius: 5px;
+  border-radius: 5px;
   border-radius: 5px 5px 5px 5px;
   font-size: 14px;
   border: 1px solid #E2E1DF;
-  /*+box-shadow:inset 0px 1px 0px #A1A1A1;*/
+  /*+box-shadow:inset 0px 1px #A1A1A1;*/
+  -moz-box-shadow: inset 0px 1px #A1A1A1;
+  -webkit-box-shadow: inset 0px 1px #A1A1A1;
+  -o-box-shadow: inset 0px 1px #A1A1A1;
+  box-shadow: inset 0px 1px #A1A1A1;
   -moz-box-shadow: inset 0px 1px 0px #A1A1A1;
   -webkit-box-shadow: inset 0px 1px 0px #A1A1A1;
   -o-box-shadow: inset 0px 1px 0px #A1A1A1;
-  box-shadow: inset 0px 1px #A1A1A1;
   width: 506px;
   height: 20px;
   margin: 17px 25px 0 0;
@@ -8437,6 +8558,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 9px;
   -webkit-border-radius: 9px;
   -khtml-border-radius: 9px;
+  border-radius: 9px;
   border-radius: 9px 9px 9px 9px;
   margin: 0px 63px 0 0;
   cursor: pointer;
@@ -8580,6 +8702,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 10px;
   -webkit-border-radius: 10px;
   -khtml-border-radius: 10px;
+  border-radius: 10px;
   border-radius: 10px 10px 10px 10px;
 }
 
@@ -8967,6 +9090,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -moz-border-radius: 10px;
   -webkit-border-radius: 10px;
   -khtml-border-radius: 10px;
+  border-radius: 10px;
   border-radius: 10px 10px 10px 10px;
   background-position: -74px -162px;
 }
