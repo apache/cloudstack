@@ -8,12 +8,7 @@ from sys import version
 
 if version < "2.7":
     print "Marvin needs at least python 2.7, found : \n%s"%version
-else:
-    try:
-        import paramiko
-    except ImportError:
-        print "Marvin requires paramiko to be installed"
-        raise
+    raise
     
     setup(name="Marvin",
       version="0.1.0",
