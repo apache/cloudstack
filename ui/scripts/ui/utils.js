@@ -108,4 +108,16 @@
 
     return reversedValue;
   };
+
+  /**
+   * If the str.length is > maxLen,
+   * then concatenate and add '...' to the end of the string
+   */
+  cloudStack.concat = function(str, maxLen) {
+    if (str.length > maxLen) {
+      return str.substr(0, maxLen) + '...';
+    } else {
+      return str;
+    }
+  };
 })(jQuery, cloudStack);
