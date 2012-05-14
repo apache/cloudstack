@@ -197,7 +197,7 @@
                   <!-- Slider -->
                   <label class="size">1 GB</label>
                   <div class="slider custom-size"></div>
-                  <label class="size">100 GB</label>
+                  <label class="size max"><span></span> GB</label>
 
                   <input type="text" class="required digits" name="size" value="1" />
                   <label class="size">GB</label>

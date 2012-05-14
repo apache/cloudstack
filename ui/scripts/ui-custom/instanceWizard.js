@@ -702,11 +702,15 @@
           $futureSteps.removeClass('loaded');
         });
 
+        var maxCustomDiskSize = args.maxDiskOfferingSize ?
+              args.maxDiskOfferingSize() : 100;
+
         // Setup tabs and slider
+        $wizard.find('.section.custom-size .size.max span').html(maxCustomDiskSize);
         $wizard.find('.tab-view').tabs();
         $wizard.find('.slider').slider({
           min: 1,
-          max: 100,
+          max: maxCustomDiskSize,
           start: function(event) {
             $wizard.find('div.data-disk-offering div.custom-size input[type=radio]').click();
           },
