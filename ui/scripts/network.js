@@ -2115,8 +2115,12 @@
                             });
 
                             $.extend(item, {
-                              _itemName: 'displayname',
-                              _itemData: lbInstances,
+                              _itemName: '_displayName',
+                              _itemData: $.map(lbInstances, function(vm) {
+                                return $.extend(vm, {
+                                  _displayName: vm.id == vm.displayname ? vm.instancename : vm.displayname
+                                });
+                              }),
                               _maxLength: {
                                 name: 7
                               },
@@ -2286,8 +2290,8 @@
 
                           $(portForwardingData).each(function() {
                             var item = this;
-
-                            item._itemName = 'displayname';
+                            
+                            item._itemName = '_displayName';
 
                             $.ajax({
                               url: createURL('listVirtualMachines'),
@@ -2300,7 +2304,11 @@
                               success: function(data) {
                                 loadCurrent++;
                                 $.extend(item, {
-                                  _itemData: data.listvirtualmachinesresponse.virtualmachine,
+                                  _itemData: $.map(data.listvirtualmachinesresponse.virtualmachine, function(vm) {
+                                    return $.extend(vm, {
+                                      _displayName: vm.id == vm.displayname ? vm.instancename : vm.displayname
+                                    });
+                                  }),
                                   _context: {
                                     instances: data.listvirtualmachinesresponse.virtualmachine
                                   }
