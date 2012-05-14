@@ -218,6 +218,9 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     @Override
     public CiscoNexusVSMDeviceVO getCiscoNexusVSMByClusId(GetCiscoVSMByClusterIdCmd cmd) {
     	CiscoNexusVSMDeviceVO result = getCiscoVSMbyClusId(cmd.getClusterId());
+    	if (result == null) {
+    		throw new CloudRuntimeException("No Cisco VSM associated with specified Cluster Id");
+    	}
     	return result;
     }
     
