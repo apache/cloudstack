@@ -282,8 +282,7 @@ public class RestAuth {
         if (!match) 
         	logger.error( "Signature mismatch, [" + signature + "] [" + calSig + "] over [" + StringToSign + "]" );
         
-        //return match;
-        return true;
+        return match;
 	}
 
 	
