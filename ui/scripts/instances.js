@@ -65,6 +65,9 @@
 
           action: {
             custom: cloudStack.instanceWizard({
+              maxDiskOfferingSize: function() {
+                return g_capabilities.customdiskofferingmaxsize;
+              },
               steps: [
                 // Step 1: Setup
                 function(args) {
