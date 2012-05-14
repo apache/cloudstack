@@ -9,8 +9,8 @@ from sys import version
 if version < "2.7":
     print "Marvin needs at least python 2.7, found : \n%s"%version
     raise
-    
-    setup(name="Marvin",
+
+setup(name="Marvin",
       version="0.1.0",
       description="Marvin - Python client for testing cloudstack",
       author="Edison Su",
@@ -23,8 +23,8 @@ if version < "2.7":
       packages=["marvin", "marvin.cloudstackAPI", "marvin.sandbox", "marvin.pymysql", "marvin.pymysql.constants", "marvin.pymysql.tests"],
       license="LICENSE.txt",
       install_requires=[
-                "Python>=2.7",
-                "paramiko",
-                "nose"
-                ],         
+          "Python>=2.7",
+          "paramiko",
+          "nose"
+      ],         
      )
