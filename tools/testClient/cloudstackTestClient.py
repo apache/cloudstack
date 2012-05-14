@@ -4,6 +4,7 @@ import dbConnection
 from cloudstackAPI import * 
 import random
 import string
+import hashlib
 
 class cloudstackTestClient(object):
     def __init__(self, mgtSvr=None, port=8096, apiKey = None, securityKey = None, asyncTimeout=3600, defaultWorkerThreads=10, logging=None):
@@ -56,6 +57,10 @@ class cloudstackTestClient(object):
             domain = self.apiClient.createDomain(cdomain)
             domId = domain.id
         
+        mdf = hashlib.md5()
+        mdf.update("password")
+        mdf_pass = mdf.hexdigest()
+        
         cmd = listAccounts.listAccountsCmd()
         cmd.name = UserName
         cmd.domainid = domId
@@ -69,7 +74,7 @@ class cloudstackTestClient(object):
             createAcctCmd.email = "test-" + self.random_gen() + "@citrix.com"
             createAcctCmd.firstname = UserName
             createAcctCmd.lastname = UserName
-            createAcctCmd.password = "password"
+            createAcctCmd.password = mdf_pass
             createAcctCmd.username = UserName
             acct = self.apiClient.createAccount(createAcctCmd)
             acctId = acct.id
