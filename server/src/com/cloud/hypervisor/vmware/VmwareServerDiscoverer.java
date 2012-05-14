@@ -107,13 +107,32 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         }
 
         String privateTrafficLabel = null;
+        String publicTrafficLabel = null;
+        String guestTrafficLabel = null;
         Map<String, String> vsmCredentials = null;
         if (_vmwareMgr.getNexusVSwitchGlobalParameter()) {
-            // Get physical network label
-            privateTrafficLabel = _netmgr.getDefaultManagementTrafficLabel(dcId, HypervisorType.VMware);
-            if (privateTrafficLabel != null) {
-                s_logger.info("Detected private network label : " + privateTrafficLabel);
+            if (_vmwareMgr.getPrivateVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus")) {
+                // Get physical network label
+                privateTrafficLabel = _netmgr.getDefaultManagementTrafficLabel(dcId, HypervisorType.VMware);
+                if (privateTrafficLabel != null) {
+                    s_logger.info("Detected private network label : " + privateTrafficLabel);
+                }
             }
+            if (_vmwareMgr.getPublicVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus")) {
+                // Get physical network label
+                publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId, HypervisorType.VMware);
+                if (publicTrafficLabel != null) {
+                    s_logger.info("Detected public network label : " + publicTrafficLabel);
+                }
+            }
+            if (_vmwareMgr.getGuestVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus")) {
+                // Get physical network label
+                guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(dcId, HypervisorType.VMware);
+                if (guestTrafficLabel != null) {
+                    s_logger.info("Detected guest network label : " + guestTrafficLabel);
+                }
+            }
+
             // Get credentials
             vsmCredentials = _vmwareMgr.getNexusVSMCredentialsByClusterId(clusterId);
         }
@@ -122,19 +141,19 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
 		try {
 			context = VmwareContextFactory.create(url.getHost(), username, password);
             if (_vmwareMgr.getNexusVSwitchGlobalParameter()) {
-                // Get physical network label
-                privateTrafficLabel = _netmgr.getDefaultManagementTrafficLabel(dcId, HypervisorType.VMware);
-                if (privateTrafficLabel != null) {
-                    context.registerStockObject("privateTrafficLabel", privateTrafficLabel);
-                    s_logger.info("Detected private network label : " + privateTrafficLabel);
+                if (_vmwareMgr.getPrivateVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus")) {
+                    if (privateTrafficLabel != null)
+                        context.registerStockObject("privateTrafficLabel", privateTrafficLabel);
                 }
-                // Get credentials
-                vsmCredentials = _vmwareMgr.getNexusVSMCredentialsByClusterId(clusterId);
-                if (vsmCredentials != null)
-                    context.registerStockObject("vsmCredentials", vsmCredentials);
+                if (vsmCredentials != null) {
+                    s_logger.info("Stocking credentials of Nexus VSM");
+                    context.registerStockObject("vsmcredentials", vsmCredentials);
+                }
             }
 			List<ManagedObjectReference> morHosts = _vmwareMgr.addHostToPodCluster(context, dcId, podId, clusterId,
 				URLDecoder.decode(url.getPath()));
+            if (morHosts == null)
+                s_logger.info("Found 0 hosts.");
             if (privateTrafficLabel != null)
                 context.uregisterStockObject("privateTrafficLabel");
 
@@ -191,6 +210,12 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
 	            params.put("guid", guid);
                 if (privateTrafficLabel != null) {
                     params.put("private.network.vswitch.name", privateTrafficLabel);
+                }
+                if (publicTrafficLabel != null) {
+                    params.put("public.network.vswitch.name", publicTrafficLabel);
+                }
+                if (guestTrafficLabel != null) {
+                    params.put("guest.network.vswitch.name", guestTrafficLabel);
                 }
 	            
 	            VmwareResource resource = new VmwareResource(); 

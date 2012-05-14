@@ -147,7 +147,61 @@ public class HypervisorHostHelper {
 		return vsmCredentials;
 	}
 	
-    public static void createPortProfile(VmwareContext context, String ethPortProfileName, String networkName, Integer vid, Integer networkRateMbps) throws Exception {
+    public static void createPortProfile(VmwareContext context, String ethPortProfileName, String networkName, Integer vlanId, Integer networkRateMbps) throws Exception {
+		Map<String, String> vsmCredentials = getValidatedVsmCredentials(context);
+		String vsmIp = vsmCredentials.get("vsmip");
+		String vsmUserName = vsmCredentials.get("vsmusername");
+		String vsmPassword = vsmCredentials.get("vsmpassword");
+		String msg;
+
+		NetconfHelper netconfClient;
+		try	{
+            s_logger.info("Connecting to Nexus VSM : " + vsmIp);
+            netconfClient = new NetconfHelper(vsmIp, vsmUserName, vsmPassword);
+            s_logger.info("Successfully connected to Nexus VSM : " + vsmIp);
+		} catch(CloudRuntimeException e) {
+			msg = "Failed to connect to Nexus VSM " + vsmIp + " with credentials of user " + vsmUserName;
+			s_logger.error(msg);
+			throw new CloudRuntimeException(msg);
+        }
+
+		List<Pair<OperationType, String>> params = new ArrayList<Pair<OperationType, String>>();
+        if (vlanId != null) {
+            // No need to update ethernet port profile for untagged vlans
+            params.add(new Pair<OperationType, String>(OperationType.addvlanid, vlanId.toString()));
+            try {
+                s_logger.info("Updating Ethernet port profile " + ethPortProfileName + " with VLAN " + vlanId);
+                netconfClient.updatePortProfile(ethPortProfileName, SwitchPortMode.trunk, params);
+                s_logger.info("Added " + vlanId + " to Ethernet port profile " + ethPortProfileName);
+            } catch (CloudRuntimeException e) {
+                msg = "Failed to modify ethernet port profile " + ethPortProfileName + " with parameters " + params.toString();
+                s_logger.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+        }
+		
+		try {
+            if (vlanId == null) {
+                s_logger.info("Adding port profile configured over untagged VLAN.");
+                netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, 0);
+            } else {
+                s_logger.info("Adding port profile configured over VLAN : " + vlanId.toString());
+                netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, vlanId.intValue());
+            }
+        } catch (CloudRuntimeException e) {
+            msg = "Failed to add vEthernet port profile " + networkName + ". Exception: " + e.toString();
+			s_logger.error(msg);
+			throw new CloudRuntimeException(msg);
+		}
+	}
+	
+    public static void updatePortProfile(VmwareContext context, String ethPortProfileName, Integer vlanId, Integer networkRateMbps) throws Exception {
+        if (vlanId == null) {
+            s_logger.info("Skipping update operation over ethernet port profile " + ethPortProfileName + " for untagged VLAN.");
+            return;
+        }
+        s_logger.info("Updating vEthernet port profile with VLAN " + vlanId);
+
 		Map<String, String> vsmCredentials = getValidatedVsmCredentials(context);
 		String vsmIp = vsmCredentials.get("vsmip");
 		String vsmUserName = vsmCredentials.get("vsmusername");
@@ -164,43 +218,7 @@ public class HypervisorHostHelper {
 		}		
 		
 		List<Pair<OperationType, String>> params = new ArrayList<Pair<OperationType, String>>();
-		params.add(new Pair<OperationType, String>(OperationType.addvlanid, vid.toString()));
-		
-		try {
-			netconfClient.updatePortProfile(ethPortProfileName, SwitchPortMode.access, params); 
-		} catch(CloudRuntimeException e) {
-			msg = "Failed to modify ethernet port profile " + ethPortProfileName + " with parameters " + params.toString();
-			s_logger.error(msg);
-			throw new CloudRuntimeException(msg);
-		}
-		
-		try {
-			netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, vid);
-		} catch(CloudRuntimeException e) {
-			msg = "Failed to add vethernet port profile " + networkName + " with parameters " + params.toString();
-			s_logger.error(msg);
-			throw new CloudRuntimeException(msg);
-		}
-	}
-	
-    public static void updatePortProfile(VmwareContext context, String ethPortProfileName, Integer vid, Integer networkRateMbps) throws Exception {
-		Map<String, String> vsmCredentials = getValidatedVsmCredentials(context);
-		String vsmIp = vsmCredentials.get("vsmip");
-		String vsmUserName = vsmCredentials.get("vsmusername");
-		String vsmPassword = vsmCredentials.get("vsmpassword");
-		String msg;
-		
-		NetconfHelper netconfClient;
-		try	{
-			netconfClient = new NetconfHelper(vsmIp, vsmUserName, vsmPassword);	
-		} catch(CloudRuntimeException e) {
-			msg = "Failed to connect to Nexus VSM " + vsmIp + " with credentials of user " + vsmUserName;
-			s_logger.error(msg);
-			throw new CloudRuntimeException(msg);
-		}		
-		
-		List<Pair<OperationType, String>> params = new ArrayList<Pair<OperationType, String>>();
-		params.add(new Pair<OperationType, String>(OperationType.addvlanid, vid.toString()));
+        params.add(new Pair<OperationType, String>(OperationType.addvlanid, vlanId.toString()));
 		
 		try {
 			netconfClient.updatePortProfile(ethPortProfileName, SwitchPortMode.access, params); 
@@ -211,6 +229,17 @@ public class HypervisorHostHelper {
 		}
 	}
 	
+	/**
+	 * @param ethPortProfileName
+	 * @param namePrefix
+	 * @param hostMo
+	 * @param vlanId
+	 * @param networkRateMbps
+	 * @param networkRateMulticastMbps
+	 * @param timeOutMs
+	 * @return
+	 * @throws Exception
+	 */
 	public static Pair<ManagedObjectReference, String> prepareNetwork(String ethPortProfileName, String namePrefix,
             HostMO hostMo, String vlanId, Integer networkRateMbps, Integer networkRateMulticastMbps, 
             long timeOutMs) throws Exception {
@@ -226,6 +255,9 @@ public class HypervisorHostHelper {
             s_logger.error(msg);
             throw new Exception(msg);
         }
+        else {
+            s_logger.info("Found Ethernet port profile  " + ethPortProfileName);
+        }
 
         boolean createGCTag = false;
         String networkName;
@@ -237,8 +269,9 @@ public class HypervisorHostHelper {
         }
 		
 		networkName = composeCloudNetworkName(namePrefix, vlanId, networkRateMbps, ethPortProfileName);
-		
-		DVSTrafficShapingPolicy shapingPolicy = null;		
+
+        // TODO(sateesh): Enable this for VMware DVS.
+		/*DVSTrafficShapingPolicy shapingPolicy = null;		
 		if(networkRateMbps != null && networkRateMbps.intValue() > 0) {
 			shapingPolicy = new DVSTrafficShapingPolicy();
 			BoolPolicy isEnabled = new BoolPolicy();			
@@ -259,17 +292,36 @@ public class HypervisorHostHelper {
 			shapingPolicy.setPeakBandwidth(peakBandwidth);
 			shapingPolicy.setBurstSize(burstSize);
 		}
+		DVPortgroupConfigInfo spec = dataCenterMo.getDvPortGroupSpec(networkName);*/
+        long averageBandwidth = 0L;
+        if (networkRateMbps != null && networkRateMbps.intValue() > 0) {
+            averageBandwidth = (long) (networkRateMbps.intValue() * 1024L * 1024L);
+        }
+		//We chose 50% higher allocation than average bandwidth.
+		//TODO(sateesh): Also let user specify the peak coefficient
+        long peakBandwidth = (long) (averageBandwidth * 1.5);
+		//TODO(sateesh): Also let user specify the burst coefficient
+		long burstSize = 5 * averageBandwidth / 8;
 		
 		boolean bWaitPortGroupReady = false;
         if (!dataCenterMo.hasDvPortGroup(networkName)) {
+            s_logger.info("Port profile " + networkName + " not found.");
             createPortProfile(context, ethPortProfileName, networkName, vid, networkRateMbps);
             bWaitPortGroupReady = true;
         } else {
-        	DVPortgroupConfigInfo spec = dataCenterMo.getDvPortGroupSpec(networkName);        	
-            if(!isSpecMatch(spec, vid, shapingPolicy)) {
-                updatePortProfile(context, ethPortProfileName, vid, networkRateMbps);                
-                bWaitPortGroupReady = true;
-            }            
+            s_logger.info("Port profile " + networkName + " found.");
+            updatePortProfile(context, ethPortProfileName, vid, networkRateMbps);
+            bWaitPortGroupReady = true;
+            // TODO(sateesh): Enable port profile policy configuration
+            // PortProfile portProfile;
+            // try {
+            // portProfile = getPortProfileByName(networkName);
+            // if (portProfile.vlanId != vlanId ||
+            //        portProfile.policy.getAverageBandwidth() != averageBandwidth ||
+            //        portProfile.policy.getPeakBandwidth() != peakBandwidth ||
+            // portProfile.policy.getBurstRate() != burstRate) {
+            // updatePortProfile(context, ethPortProfileName, vlanId, averageBandwidth, peakBandwidth, burstSize);
+            // }
         }
 		//Wait for dvPortGroup on vCenter		
         if(bWaitPortGroupReady) 
