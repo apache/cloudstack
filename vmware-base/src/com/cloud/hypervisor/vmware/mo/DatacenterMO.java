@@ -394,4 +394,81 @@ public class DatacenterMO extends BaseMO {
 	    }
 	    return null;
 	}
+
+    public ManagedObjectReference getDvSwitchMor(ManagedObjectReference morDatacenter, ManagedObjectReference dvPortGroupMor) throws Exception {
+        String dvPortGroupKey = null;
+        ManagedObjectReference dvSwitchMor = null;
+        PropertySpec pSpec = new PropertySpec();
+        pSpec.setType("DistributedVirtualPortgroup");
+        pSpec.setPathSet(new String[] { "key", "config.distributedVirtualSwitch" });
+
+        TraversalSpec datacenter2DvPortGroupTraversal = new TraversalSpec();
+        datacenter2DvPortGroupTraversal.setType("Datacenter");
+        datacenter2DvPortGroupTraversal.setPath("network");
+        datacenter2DvPortGroupTraversal.setName("datacenter2DvPortgroupTraversal");
+
+        ObjectSpec oSpec = new ObjectSpec();
+        oSpec.setObj(morDatacenter);
+        oSpec.setSkip(Boolean.TRUE);
+        oSpec.setSelectSet(new SelectionSpec[] { datacenter2DvPortGroupTraversal });
+
+        PropertyFilterSpec pfSpec = new PropertyFilterSpec();
+        pfSpec.setPropSet(new PropertySpec[] { pSpec });
+        pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
+
+        ObjectContent[] ocs = _context.getService().retrieveProperties(
+                _context.getServiceContent().getPropertyCollector(),
+                new PropertyFilterSpec[] { pfSpec });
+
+        if (ocs != null) {
+            for (ObjectContent oc : ocs) {
+                DynamicProperty[] props = oc.getPropSet();
+                if (props != null) {
+                    assert (props.length == 2);
+                    for (DynamicProperty prop : props) {
+                        if (prop.getName().equals("key")) {
+                            dvPortGroupKey = (String) prop.getVal();
+                        }
+                        else {
+                            dvSwitchMor = (ManagedObjectReference) prop.getVal();
+                        }
+                    }
+                    if ((dvPortGroupKey != null) && dvPortGroupKey.equals(dvPortGroupMor.get_value())) {
+                        return dvSwitchMor;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    public String getDvSwitchUuid(ManagedObjectReference dvSwitchMor) throws Exception {
+        assert (dvSwitchMor != null);
+        PropertySpec pSpec = new PropertySpec();
+        pSpec.setType("DistributedVirtualSwitch");
+        pSpec.setPathSet(new String[] { "uuid" });
+
+        ObjectSpec oSpec = new ObjectSpec();
+        oSpec.setObj(dvSwitchMor);
+        oSpec.setSkip(Boolean.FALSE);
+        oSpec.setSelectSet(new SelectionSpec[] {});
+
+        PropertyFilterSpec pfSpec = new PropertyFilterSpec();
+        pfSpec.setPropSet(new PropertySpec[] { pSpec });
+        pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
+
+        ObjectContent[] ocs = _context.getService().retrieveProperties(
+                _context.getServiceContent().getPropertyCollector(),
+                new PropertyFilterSpec[] { pfSpec });
+
+        if (ocs != null) {
+            for (ObjectContent oc : ocs) {
+                DynamicProperty[] props = oc.getPropSet();
+                if (props != null) {
+                    return (String) props[0].getVal();
+                }
+            }
+        }
+        return null;
+    }
 }
