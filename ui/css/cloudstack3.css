@@ -1768,6 +1768,7 @@ div.detail-group.actions td {
   border-right: none;
   /*[empty]border-top:;*/
   min-width: 75px;
+  max-width: 120px;
   text-align: center;
   height: 12px;
   overflow: hidden;

@@ -183,14 +183,13 @@
             .append($('<select>'));
 
       // User status area
+      var userLabel = args.context.users[0].name ?
+            args.context.users[0].name : args.context.users[0].login;
       var $userInfo = $('<div>').attr({ id: 'user' }).addClass('button')
             .append(
               $('<div>').addClass('name').html(
                 args.context && args.context.users ?
-                  (
-                    args.context.users[0].name ?
-                      args.context.users[0].name : args.context.users[0].login
-                  ) : 'Invalid User'
+                  cloudStack.concat(userLabel, 14) : 'Invalid User'
               )
             )
             .append(
@@ -199,6 +198,7 @@
                   $('<div>').addClass('icon arrow')
                 )
             );
+      $userInfo.attr('title', userLabel);
 
       return [
         $('<div>').addClass('logo'),
