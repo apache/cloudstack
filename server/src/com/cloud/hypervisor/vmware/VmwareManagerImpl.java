@@ -379,7 +379,22 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     public String composeWorkerName() {
         return UUID.randomUUID().toString().replace("-", "");
     }
-
+    
+    @Override
+    public String getPrivateVSwitchName(long dcId, HypervisorType hypervisorType) {
+        return _netMgr.getDefaultManagementTrafficLabel(dcId, hypervisorType);
+    }
+    
+    @Override
+    public String getPublicVSwitchName(long dcId, HypervisorType hypervisorType) {
+        return _netMgr.getDefaultPublicTrafficLabel(dcId, hypervisorType);
+    }
+    
+    @Override
+    public String getGuestVSwitchName(long dcId, HypervisorType hypervisorType) {
+        return _netMgr.getDefaultGuestTrafficLabel(dcId, hypervisorType);
+    }
+    
     @Override
     public List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId,
             String hostInventoryPath) throws Exception {

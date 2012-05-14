@@ -394,7 +394,7 @@ public class DatacenterMO extends BaseMO {
 	    return null;
 	}
 
-    public ManagedObjectReference getDvSwitchMor(ManagedObjectReference morDatacenter, ManagedObjectReference dvPortGroupMor) throws Exception {
+    public ManagedObjectReference getDvSwitchMor(ManagedObjectReference dvPortGroupMor) throws Exception {
         String dvPortGroupKey = null;
         ManagedObjectReference dvSwitchMor = null;
         PropertySpec pSpec = new PropertySpec();
@@ -407,7 +407,7 @@ public class DatacenterMO extends BaseMO {
         datacenter2DvPortGroupTraversal.setName("datacenter2DvPortgroupTraversal");
 
         ObjectSpec oSpec = new ObjectSpec();
-        oSpec.setObj(morDatacenter);
+        oSpec.setObj(_mor);
         oSpec.setSkip(Boolean.TRUE);
         oSpec.setSelectSet(new SelectionSpec[] { datacenter2DvPortGroupTraversal });
 

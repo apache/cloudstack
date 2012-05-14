@@ -32,6 +32,7 @@ import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.ExceptionUtil;
+import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.MethodFault;
@@ -53,6 +54,7 @@ import com.vmware.vim25.VirtualDiskSparseVer1BackingInfo;
 import com.vmware.vim25.VirtualDiskSparseVer2BackingInfo;
 import com.vmware.vim25.VirtualE1000;
 import com.vmware.vim25.VirtualEthernetCard;
+import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
 import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineSnapshotTree;
@@ -107,6 +109,54 @@ public class VmwareHelper {
 		return nic;
 	}
 	
+    public static VirtualDevice prepareDvNicDevice(VirtualMachineMO vmMo, ManagedObjectReference morNetwork, VirtualEthernetCardType deviceType,
+            String dvPortGroupName, String dvSwitchUuid, String macAddress, int deviceNumber, int contextNumber, boolean conntected, boolean connectOnStart) throws Exception {
+
+        VirtualEthernetCard nic;
+        switch (deviceType) {
+        case E1000:
+            nic = new VirtualE1000();
+            break;
+
+        case PCNet32:
+            nic = new VirtualPCNet32();
+            break;
+
+        case Vmxnet2:
+            nic = new VirtualVmxnet2();
+            break;
+
+        case Vmxnet3:
+            nic = new VirtualVmxnet3();
+            break;
+
+        default:
+            assert (false);
+            nic = new VirtualE1000();
+        }
+
+        final VirtualEthernetCardDistributedVirtualPortBackingInfo dvPortBacking = new VirtualEthernetCardDistributedVirtualPortBackingInfo();
+        final DistributedVirtualSwitchPortConnection dvPortConnection = new DistributedVirtualSwitchPortConnection();
+        final VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
+
+        dvPortConnection.setSwitchUuid(dvSwitchUuid);
+        dvPortConnection.setPortgroupKey(morNetwork.get_value());
+        dvPortBacking.setPort(dvPortConnection);
+        nic.setBacking(dvPortBacking);
+        nic.setKey(30);
+
+        connectInfo.setAllowGuestControl(true);
+        connectInfo.setConnected(conntected);
+        connectInfo.setStartConnected(connectOnStart);
+        nic.setAddressType("Manual");
+        nic.setConnectable(connectInfo);
+        nic.setMacAddress(macAddress);
+
+        nic.setUnitNumber(deviceNumber);
+        nic.setKey(-contextNumber);
+        return nic;
+    }
+
 	// vmdkDatastorePath: [datastore name] vmdkFilePath
 	public static VirtualDevice prepareDiskDevice(VirtualMachineMO vmMo, int controllerKey, String vmdkDatastorePath, 
 		int sizeInMb, ManagedObjectReference morDs, int deviceNumber, int contextNumber) throws Exception {
