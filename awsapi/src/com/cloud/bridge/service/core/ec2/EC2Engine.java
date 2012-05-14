@@ -290,6 +290,7 @@ public class EC2Engine {
 				EC2IpPermission[] perms = group.getIpPermissionSet();
 				for (EC2IpPermission perm : perms) {
 					ruleId = doesRuleMatch( items[0], perm );
+					if (ruleId != null) break;
 				}
 			}
 
