@@ -962,12 +962,13 @@
           label: 'label.menu.network.offerings',
           fields: {
             name: { label: 'label.name' },
-            state: {
-              converter: function(str) {
-                // For localization
-                return str;
-              },
-              label: 'label.state', indicator: { 'Enabled': 'on', 'Disabled': 'off', 'Destroyed': 'off' }
+            state: {              
+              label: 'label.state', 
+							indicator: { 
+							  'Enabled': 'on', 
+								'Disabled': 'off', 
+								'Destroyed': 'off' 
+							}
             }
           },
 
@@ -1767,7 +1768,8 @@
                     },
                     serviceCapabilities: {
                       label: 'label.service.capabilities'
-                    }
+                    },
+										tags: { label: 'label.tags' }
                   }
                 ],
 
