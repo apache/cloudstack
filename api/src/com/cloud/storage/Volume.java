@@ -60,6 +60,7 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
             s_fsm.addTransition(Allocated, Event.UploadRequested, UploadOp);         
             s_fsm.addTransition(Creating, Event.CopySucceeded, Ready);
             s_fsm.addTransition(UploadOp, Event.CopySucceeded, Ready);
+            s_fsm.addTransition(UploadOp, Event.DestroyRequested, Destroy);
             s_fsm.addTransition(Ready, Event.DestroyRequested, Destroy);
             s_fsm.addTransition(Destroy, Event.ExpungingRequested, Expunging);
             s_fsm.addTransition(Ready, Event.SnapshotRequested, Snapshotting);
