@@ -224,12 +224,15 @@
       },   
 
       setupPhysicalNetwork: function(args) {
-        if (args.data['network-model'] == 'Basic') {
+        if (args.data['network-model'] == 'Basic' &&
+            !(selectedNetworkOfferingHavingELB && selectedNetworkOfferingHavingEIP)) {
           $('.setup-physical-network .info-desc.conditional.basic').show();
           $('.setup-physical-network .info-desc.conditional.advanced').hide();
+          $('.subnav li.public-network').hide();
         } else {
           $('.setup-physical-network .info-desc.conditional.basic').hide();
           $('.setup-physical-network .info-desc.conditional.advanced').show();
+          $('.subnav li.public-network').show();
         }
         return true; // Both basic & advanced zones show physical network UI
       },
