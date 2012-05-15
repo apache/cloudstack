@@ -1474,7 +1474,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
 
-            String switchUuid;
+            String dvSwitchUuid;
             ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
             DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
 
@@ -1487,10 +1487,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo);
 
                 ManagedObjectReference dvsMor = dataCenterMo.getDvSwitchMor(networkInfo.first());
-                switchUuid = dataCenterMo.getDvSwitchUuid(dvsMor);
-                s_logger.info("Preparing NIC device on dvSwitch : " + switchUuid);
+                dvSwitchUuid = dataCenterMo.getDvSwitchUuid(dvsMor);
+                s_logger.info("Preparing NIC device on dvSwitch : " + dvSwitchUuid);
 
-                nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), nicTo.getMac(), i, i + 1, true, true);
+                nic = VmwareHelper.prepareDvNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), dvSwitchUuid, nicTo.getMac(), i, i + 1, true, true);
                 deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
                 deviceConfigSpecArray[i].setDevice(nic);
                 deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.add);
@@ -4035,6 +4035,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             _privateNetworkVSwitchName = mgr.getPrivateVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
             _publicNetworkVSwitchName = mgr.getPublicVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
             _guestNetworkVSwitchName = mgr.getGuestVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
+            Map<String, String> vsmCredentials;
+            if (mgr.getNexusVSwitchGlobalParameter()) {
+                vsmCredentials = mgr.getNexusVSMCredentials(_guid);
+                if (vsmCredentials != null) {
+                    s_logger.info("Stocking credentials while configuring resource.");
+                    context.registerStockObject("vsmcredentials", vsmCredentials);
+                }
+            }
+
         } catch (Exception e) {
             s_logger.error("Unexpected Exception ", e);
         }
