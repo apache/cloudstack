@@ -602,7 +602,8 @@
                           $.ajax({
                             url: createURL('listVirtualMachines'),
                             data: $.extend(data, {
-                              state: this.toString()
+                              state: this.toString(),
+															hypervisor: args.context.volumes[0].hypervisor
                             }),
                             async: false,
                             success: function(json) {
