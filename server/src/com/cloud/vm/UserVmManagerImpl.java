@@ -2532,11 +2532,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
             Pair<String, String> isoPathPair = _storageMgr.getAbsoluteIsoPath(template.getId(), vm.getDataCenterIdToDeployIn());
 
-            if (isoPathPair == null) {
-                s_logger.warn("Couldn't get absolute iso path");
-                return false;
+            if (template.getTemplateType() == TemplateType.PERHOST) {
+            	isoPath = template.getName();
             } else {
-                isoPath = isoPathPair.first();
+            	if (isoPathPair == null) {
+            		s_logger.warn("Couldn't get absolute iso path");
+            		return false;
+            	} else {
+            		isoPath = isoPathPair.first();
+            	}
             }
 
             if (template.isBootable()) {

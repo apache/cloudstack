@@ -817,11 +817,26 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected VDI mount(Connection conn, String vmName, VolumeTO volume) throws XmlRpcException, XenAPIException {
         if (volume.getType() == Volume.Type.ISO) {
+        	String isopath = volume.getPath();
+        	if (isopath == null) {
+        		return null;
+        	}
+        	if (isopath.startsWith("xs-tools")) {
+        		try {
+        			Set<VDI> vdis = VDI.getByNameLabel(conn, isopath);
+        			if (vdis.isEmpty()) {
+        				throw new CloudRuntimeException("Could not find ISO with URL: " + isopath);
+        			}
+        			return vdis.iterator().next();
 
-            String isopath = volume.getPath();
-            if (isopath == null) {
-                return null;
-            }
+        		} catch (XenAPIException e) {
+        			throw new CloudRuntimeException("Unable to get pv iso: " + isopath + " due to " + e.toString());
+        		} catch (Exception e) {
+        			throw new CloudRuntimeException("Unable to get pv iso: " + isopath + " due to " + e.toString());
+        		}
+        	}
+
+          
             int index = isopath.lastIndexOf("/");
 
             String mountpoint = isopath.substring(0, index);
