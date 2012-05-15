@@ -553,10 +553,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         _accountMgr.checkAccess(caller, null, true, volume, vm);
         
         //Check if volume is stored on secondary Storage.
-        boolean volumeOnSec = false;
+        boolean isVolumeOnSec = false;
         VolumeHostVO  volHostVO = _volumeHostDao.findByVolumeId(volume.getId());
         if (volHostVO != null){
-        	volumeOnSec = true;
+        	isVolumeOnSec = true;
         	if( !(volHostVO.getDownloadState() == Status.DOWNLOADED) ){
         		throw new InvalidParameterValueException("Volume is not uploaded yet. Please try this operation once the volume is uploaded");	
         	}
@@ -568,7 +568,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         if ( !(Volume.State.Allocated.equals(volume.getState()) || Volume.State.Ready.equals(volume.getState()) || Volume.State.UploadOp.equals(volume.getState())) ) {
-            throw new InvalidParameterValueException("Volume state must be in Allocated or Ready state");
+            throw new InvalidParameterValueException("Volume state must be in Allocated, Ready or in Uploaded state");
         }
 
         VolumeVO rootVolumeOfVm = null;
@@ -581,8 +581,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         HypervisorType rootDiskHyperType = _volsDao.getHypervisorType(rootVolumeOfVm.getId());
 
-        if (volume.getState().equals(Volume.State.Allocated) || volume.getState().equals(Volume.State.UploadOp)) {
-            /* Need to create the volume */
+        /*if (volume.getState().equals(Volume.State.Allocated) || volume.getState().equals(Volume.State.UploadOp)) {
+            // Need to create the volume
             VMTemplateVO rootDiskTmplt = _templateDao.findById(vm.getTemplateId());
             DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterIdToDeployIn());
             HostPodVO pod = _podDao.findById(vm.getPodIdToDeployIn());
@@ -607,7 +607,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (volume == null) {
                 throw new CloudRuntimeException("Failed to create volume when attaching it to VM: " + vm.getHostName());
             }
-        }
+        }*/
 
         HypervisorType dataDiskHyperType = _volsDao.getHypervisorType(volume.getId());
         if (dataDiskHyperType != HypervisorType.None && rootDiskHyperType != dataDiskHyperType) {
@@ -641,11 +641,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         boolean createVolumeOnBackend = true;
         if (rootVolumeOfVm.getState() == Volume.State.Allocated) {
             createVolumeOnBackend = false;
+            if(isVolumeOnSec){
+            	throw new CloudRuntimeException("Cant attach uploaded volume to the vm which is not created. Please start it and then retry");
+            }
         }
 
         //create volume on the backend only when vm's root volume is allocated
         if (createVolumeOnBackend) {
-            if (volume.getState().equals(Volume.State.Allocated)) {
+            if (volume.getState().equals(Volume.State.Allocated) || isVolumeOnSec) {
                 /* Need to create the volume */
                 VMTemplateVO rootDiskTmplt = _templateDao.findById(vm.getTemplateId());
                 DataCenterVO dcVO = _dcDao.findById(vm.getDataCenterIdToDeployIn());
@@ -654,8 +657,21 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 ServiceOfferingVO svo = _serviceOfferingDao.findById(vm.getServiceOfferingId());
                 DiskOfferingVO diskVO = _diskOfferingDao.findById(volume.getDiskOfferingId());
                 Long clusterId = (rootDiskPool == null ? null : rootDiskPool.getClusterId());
-
-                volume = _storageMgr.createVolume(volume, vm, rootDiskTmplt, dcVO, pod, clusterId, svo, diskVO, new ArrayList<StoragePoolVO>(), volume.getSize(), rootDiskHyperType);
+                
+                if (!isVolumeOnSec){
+                	volume = _storageMgr.createVolume(volume, vm, rootDiskTmplt, dcVO, pod, clusterId, svo, diskVO, new ArrayList<StoragePoolVO>(), volume.getSize(), rootDiskHyperType);
+                }else {
+                	try {
+                    	// Format of data disk should be the same as root disk
+                    	if( ! volHostVO.getFormat().getFileExtension().equals(_storageMgr.getSupportedImageFormatForCluster(rootDiskPool.getClusterId())) ){
+                    		throw new InvalidParameterValueException("Failed to attach volume to VM since volumes format " +volHostVO.getFormat().getFileExtension() + " is not compatible with the vm hypervisor type" );
+                    	}
+                    	
+    					volume = _storageMgr.copyVolumeFromSecToPrimary(volume, vm, rootDiskTmplt, dcVO, pod, rootDiskPool.getClusterId(), svo, diskVO, new ArrayList<StoragePoolVO>(), volume.getSize(), rootDiskHyperType);
+    				} catch (NoTransitionException e) {				
+    					throw new CloudRuntimeException("Unable to transition the volume ",e);
+    				}
+                }
 
                 if (volume == null) {
                     throw new CloudRuntimeException("Failed to create volume when attaching it to VM: " + vm.getHostName());
