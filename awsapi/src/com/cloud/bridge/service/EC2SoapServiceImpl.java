@@ -155,8 +155,10 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
     	   IpRangeSetType ranges = ipPerm.getIpRanges();
     	   if (ranges != null && ranges.getItem() != null) {
     		   IpRangeItemType[] rangeItems = ranges.getItem();
-    		   for (IpRangeItemType ipRange: rangeItems) 
-    			  perm.addIpRange( ipRange.getCidrIp() );
+                for (IpRangeItemType ipRange: rangeItems) {
+                    perm.addIpRange( ipRange.getCidrIp() );
+                    perm.setCIDR(ipRange.getCidrIp());
+                }
     	   }  
    
     	   request.addIpPermission( perm );
