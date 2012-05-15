@@ -2618,19 +2618,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 				}
 			} else {
 				int devId = (int) volume.getDeviceId();
-				if (pool.getType() == StoragePoolType.CLVM) {
-					disk.defBlockBasedDisk(physicalDisk.getPath(), devId,
-							diskBusType);
+
+				if (volume.getType() == Volume.Type.DATADISK) {
+					disk.defFileBasedDisk(physicalDisk.getPath(), devId,
+							DiskDef.diskBus.VIRTIO,
+							DiskDef.diskFmtType.QCOW2);
 				} else {
-					if (volume.getType() == Volume.Type.DATADISK) {
-						disk.defFileBasedDisk(physicalDisk.getPath(), devId,
-								DiskDef.diskBus.VIRTIO,
-								DiskDef.diskFmtType.QCOW2);
-					} else {
-						disk.defFileBasedDisk(physicalDisk.getPath(), devId,
-								diskBusType, DiskDef.diskFmtType.QCOW2);
-					}
+					disk.defFileBasedDisk(physicalDisk.getPath(), devId,
+							diskBusType, DiskDef.diskFmtType.QCOW2);
 				}
+
 			}
 
 			vm.getDevices().addDevice(disk);
@@ -2682,12 +2679,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
 		/* add patch disk */
 		DiskDef patchDisk = new DiskDef();
-		if (pool.getType() == StoragePoolType.CLVM) {
-			patchDisk.defBlockBasedDisk(datadiskPath, 1, rootDisk.getBusType());
-		} else {
-			patchDisk.defFileBasedDisk(datadiskPath, 1, rootDisk.getBusType(),
-					DiskDef.diskFmtType.RAW);
-		}
+
+		patchDisk.defFileBasedDisk(datadiskPath, 1, rootDisk.getBusType(),
+				DiskDef.diskFmtType.RAW);
+		
 		disks.add(patchDisk);
 
 		String bootArgs = vmSpec.getBootArgs();

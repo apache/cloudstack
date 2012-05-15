@@ -418,19 +418,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 			if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.NETFS
 					|| spd.getPoolType() == LibvirtStoragePoolDef.poolType.DIR) {
 				type = StoragePoolType.Filesystem;
-			} else if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.LOGICAL) {
-				type = StoragePoolType.CLVM;
 			}
 			LibvirtStoragePool pool = new LibvirtStoragePool(uuid,
 					storage.getName(), type, this, storage);
 			pool.setLocalPath(spd.getTargetPath());
-
-			if (pool.getType() == StoragePoolType.CLVM) {
-				pool.setCapacity(storage.getInfo().capacity);
-				pool.setUsed(storage.getInfo().allocation);
-			} else {
-				getStats(pool);
-			}
+			getStats(pool);
 			return pool;
 		} catch (LibvirtException e) {
 			throw new CloudRuntimeException(e.toString());
@@ -491,8 +483,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 			} else if (type == StoragePoolType.SharedMountPoint
 					|| type == StoragePoolType.Filesystem) {
 				sp = CreateSharedStoragePool(conn, name, host, path);
-			} else if (type == StoragePoolType.CLVM) {
-				sp = createCLVMStoragePool(conn, name, host, path);
 			}
 		}
 
@@ -507,12 +497,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 					sp.getName(), type, this, sp);
 			pool.setLocalPath(spd.getTargetPath());
 
-			if (pool.getType() == StoragePoolType.CLVM) {
-				pool.setCapacity(sp.getInfo().capacity);
-				pool.setUsed(sp.getInfo().allocation);
-			} else {
-				getStats(pool);
-			}
+			getStats(pool);
+			
 			return pool;
 		} catch (LibvirtException e) {
 			throw new CloudRuntimeException(e.toString());

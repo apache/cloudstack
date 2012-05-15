@@ -1294,8 +1294,6 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             pool = new StoragePoolVO(StoragePoolType.Filesystem, "localhost", 0, hostPath);
         } else if (scheme.equalsIgnoreCase("sharedMountPoint")) {
             pool = new StoragePoolVO(StoragePoolType.SharedMountPoint, storageHost, 0, hostPath);
-        } else if (scheme.equalsIgnoreCase("clvm")) {
-            pool = new StoragePoolVO(StoragePoolType.CLVM, storageHost, 0, hostPath.replaceFirst("/", ""));
         } else if (scheme.equalsIgnoreCase("PreSetup")) {
             pool = new StoragePoolVO(StoragePoolType.PreSetup, storageHost, 0, hostPath);
         } else if (scheme.equalsIgnoreCase("iscsi")) {
@@ -1594,7 +1592,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         s_logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
         if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem && pool.getPoolType() != StoragePoolType.IscsiLUN
                 && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS && pool.getPoolType() != StoragePoolType.SharedMountPoint
-                && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.OCFS2 && pool.getPoolType() != StoragePoolType.CLVM) {
+                && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.OCFS2) {
             s_logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
             return false;
         }
