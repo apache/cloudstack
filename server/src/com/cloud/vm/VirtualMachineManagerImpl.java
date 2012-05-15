@@ -86,6 +86,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -126,7 +127,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -1542,7 +1542,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     }
 
     @Override
-    public boolean isVirtualMachineUpgradable(UserVm vm, ServiceOffering offering) {
+    public boolean isVirtualMachineUpgradable(VirtualMachine vm, ServiceOffering offering) {
         Enumeration<HostAllocator> en = _hostAllocators.enumeration();
         boolean isMachineUpgradable = true;
         while (isMachineUpgradable && en.hasMoreElements()) {
@@ -2345,5 +2345,85 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     @Override
     public VMInstanceVO findById(long vmId) {
         return _vmDao.findById(vmId);
+    }
+    
+    @Override
+    public void checkIfCanUpgrade(VirtualMachine vmInstance, long newServiceOfferingId) {
+        ServiceOfferingVO newServiceOffering = _offeringDao.findById(newServiceOfferingId);
+        if (newServiceOffering == null) {
+            throw new InvalidParameterValueException("Unable to find a service offering with id " + newServiceOfferingId);
+        }
+
+        // Check that the VM is stopped
+        if (!vmInstance.getState().equals(State.Stopped)) {
+            s_logger.warn("Unable to upgrade virtual machine " + vmInstance.toString() + " in state " + vmInstance.getState());
+            throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() + " " +
+            		"in state " + vmInstance.getState()
+                    + "; make sure the virtual machine is stopped and not in an error state before upgrading.");
+        }
+
+        // Check if the service offering being upgraded to is what the VM is already running with
+        if (vmInstance.getServiceOfferingId() == newServiceOffering.getId()) {
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("Not upgrading vm " + vmInstance.toString() + " since it already has the requested " +
+                		"service offering (" + newServiceOffering.getName() + ")");
+            }
+
+            throw new InvalidParameterValueException("Not upgrading vm " + vmInstance.toString() + " since it already " +
+            		"has the requested service offering (" + newServiceOffering.getName() + ")");
+        }
+
+        ServiceOfferingVO currentServiceOffering = _offeringDao.findByIdIncludingRemoved(vmInstance.getServiceOfferingId());
+
+        // Check that the service offering being upgraded to has the same Guest IP type as the VM's current service offering
+        // NOTE: With the new network refactoring in 2.2, we shouldn't need the check for same guest IP type anymore.
+        /*
+         * if (!currentServiceOffering.getGuestIpType().equals(newServiceOffering.getGuestIpType())) { String errorMsg =
+         * "The service offering being upgraded to has a guest IP type: " + newServiceOffering.getGuestIpType(); errorMsg +=
+         * ". Please select a service offering with the same guest IP type as the VM's current service offering (" +
+         * currentServiceOffering.getGuestIpType() + ")."; throw new InvalidParameterValueException(errorMsg); }
+         */
+
+        // Check that the service offering being upgraded to has the same storage pool preference as the VM's current service
+        // offering
+        if (currentServiceOffering.getUseLocalStorage() != newServiceOffering.getUseLocalStorage()) {
+            throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString()
+                    + ", cannot switch between local storage and shared storage service offerings.  Current offering " +
+                    "useLocalStorage=" + currentServiceOffering.getUseLocalStorage()
+                    + ", target offering useLocalStorage=" + newServiceOffering.getUseLocalStorage());
+        }
+        
+        // if vm is a system vm, check if it is a system service offering, if yes return with error as it cannot be used for user vms
+        if (currentServiceOffering.getSystemUse() != newServiceOffering.getSystemUse()) {
+            throw new InvalidParameterValueException("isSystem property is different for current service offering and new service offering");
+        }
+
+        // Check that there are enough resources to upgrade the service offering
+        if (!isVirtualMachineUpgradable(vmInstance, newServiceOffering)) {
+            throw new InvalidParameterValueException("Unable to upgrade virtual machine, not enough resources available " +
+            		"for an offering of " + newServiceOffering.getCpu() + " cpu(s) at "
+                    + newServiceOffering.getSpeed() + " Mhz, and " + newServiceOffering.getRamSize() + " MB of memory");
+        }
+
+        // Check that the service offering being upgraded to has all the tags of the current service offering
+        List<String> currentTags = _configMgr.csvTagsToList(currentServiceOffering.getTags());
+        List<String> newTags = _configMgr.csvTagsToList(newServiceOffering.getTags());
+        if (!newTags.containsAll(currentTags)) {
+            throw new InvalidParameterValueException("Unable to upgrade virtual machine; the new service offering " +
+            		"does not have all the tags of the "
+                    + "current service offering. Current service offering tags: " + currentTags + "; " + "new service " +
+                    		"offering tags: " + newTags);
+        }
+    }
+    
+    @Override
+    public boolean upgradeVmDb(long vmId, long serviceOfferingId) {
+        VMInstanceVO vmForUpdate = _vmDao.createForUpdate();
+        vmForUpdate.setServiceOfferingId(serviceOfferingId);
+        ServiceOffering newSvcOff = _configMgr.getServiceOffering(serviceOfferingId);
+        vmForUpdate.setHaEnabled(newSvcOff.getOfferHA());
+        vmForUpdate.setLimitCpuUse(newSvcOff.getLimitCpuUse());
+        vmForUpdate.setServiceOfferingId(newSvcOff.getId());
+        return _vmDao.update(vmId, vmForUpdate);
     }
 }
