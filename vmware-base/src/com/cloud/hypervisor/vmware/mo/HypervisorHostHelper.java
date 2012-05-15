@@ -133,7 +133,7 @@ public class HypervisorHostHelper {
 		if(vsmCredentials == null || vsmCredentials.size() != 3) {
 			msg = "Failed to retrieve required credentials of Nexus VSM from database.";
 			s_logger.error(msg);
-			throw new Exception(msg);
+            throw new Exception(msg);
 		}
 		
 		String vsmIp = vsmCredentials.containsKey("vsmip") ? vsmCredentials.get("vsmip") : null;
@@ -191,7 +191,10 @@ public class HypervisorHostHelper {
         } catch (CloudRuntimeException e) {
             msg = "Failed to add vEthernet port profile " + networkName + ". Exception: " + e.toString();
 			s_logger.error(msg);
-			throw new CloudRuntimeException(msg);
+			if(vlanId == null) {
+                s_logger.warn("Ignoring exception : " + e.toString());
+                // throw new CloudRuntimeException(msg);
+			}
 		}
 	}
 	
