@@ -2,8 +2,8 @@
 ### Please standardize naming conventions to camel-case (even for acronyms).
 
 #### netscaler load balancer commands
-addNetscalerLoadBalancer = com.cloud.api.commands.AddNetscalerLoadBalancerCmd;7
-deleteNetscalerLoadBalancer = com.cloud.api.commands.DeleteNetscalerLoadBalancerCmd;7
-configureNetscalerLoadBalancer = com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;7
-listNetscalerLoadBalancers = com.cloud.api.commands.ListNetscalerLoadBalancersCmd;7
-listNetscalerLoadBalancerNetworks = com.cloud.api.commands.ListNetscalerLoadBalancerNetworksCmd;7
+addNetscalerLoadBalancer = com.cloud.api.commands.AddNetscalerLoadBalancerCmd;1
+deleteNetscalerLoadBalancer = com.cloud.api.commands.DeleteNetscalerLoadBalancerCmd;1
+configureNetscalerLoadBalancer = com.cloud.api.commands.ConfigureNetscalerLoadBalancerCmd;1
+listNetscalerLoadBalancers = com.cloud.api.commands.ListNetscalerLoadBalancersCmd;1
+listNetscalerLoadBalancerNetworks = com.cloud.api.commands.ListNetscalerLoadBalancerNetworksCmd;1
