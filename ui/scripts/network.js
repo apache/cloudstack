@@ -33,11 +33,7 @@
       var allowedActions = args.context.actions;
       var disallowedActions = [];
       var item = args.context.item;
-      var status = item.state;
-
-      if (status == 'Released') {
-        return [];
-      }
+      var status = item.state;   
 
       if (status == 'Destroyed' ||
           status == 'Releasing' ||
@@ -46,7 +42,7 @@
           status == 'Allocating' ||
           item.account == 'system' ||
           item.issystem == true ) {
-        disallowedActions = allowedActions;
+        return [];
       }
 
       if (item.isstaticnat) {
