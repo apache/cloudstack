@@ -26,7 +26,8 @@ import com.cloud.bridge.service.exception.EC2ServiceException;
 
 public class EC2GroupFilterSet {
 
-	protected List<EC2Filter> filterSet = new ArrayList<EC2Filter>();    
+    protected List<EC2Filter> filterSet = new ArrayList<EC2Filter>();
+    protected List<EC2Filter> ipPermissionFilterSet = new ArrayList<EC2Filter>();
 
 	private Map<String,String> filterTypes = new HashMap<String,String>();
 
@@ -80,28 +81,29 @@ public class EC2GroupFilterSet {
 
 		EC2SecurityGroup[] groupSet = sampleList.getGroupSet();
 		EC2Filter[]     filterSet   = getFilterSet();
-		for (EC2SecurityGroup group : groupSet) {
-			matched = true;
-			for (EC2Filter filter : filterSet) {
-				if (!filterMatched( group, filter)) {
-					matched = false;
-					break;
-				}
-			}
-
-			if (matched) resultList.addGroup( group );
-		}
-
-		return resultList;
-	}
+        for (EC2SecurityGroup group : groupSet) {
+            matched = true;
+            for (EC2Filter filter : filterSet) {
+                if (filter.getName().startsWith("ip-permission"))
+                    ipPermissionFilterSet.add(filter);
+                else {
+                    if (!filterMatched( group, filter)) {
+                        matched = false;
+                        break;
+                    }
+                }
+            }
+            if (matched && ipPermissionFilterMatched(group, ipPermissionFilterSet))
+                resultList.addGroup( group );
+        }
+        return resultList;
+    }
 
 
 	private boolean filterMatched( EC2SecurityGroup sg, EC2Filter filter ) throws ParseException
 	{
 		String filterName = filter.getName();
 		String[] valueSet = filter.getValueSet();
-		EC2IpPermission[] permissionSet = sg.getIpPermissionSet();
-		boolean result = false;
 
 		if ( filterName.equalsIgnoreCase( "description" )) 
 			return containsString( sg.getDescription(), valueSet );	
@@ -109,42 +111,42 @@ public class EC2GroupFilterSet {
 			return containsString( sg.getId(), valueSet );	
 		else if (filterName.equalsIgnoreCase( "group-name" )) 
 			return containsString( sg.getName(), valueSet );	
-		else if (filterName.equalsIgnoreCase( "ip-permission.cidr" )) {
-			for (EC2IpPermission perm : permissionSet) {
-				result = containsString(perm.getCIDR(), valueSet);
-				if (result) return true;
-			}
-			return false;			
-		} else if (filterName.equalsIgnoreCase( "ip-permission.from-port" )) {
-			for (EC2IpPermission perm : permissionSet) {
-                if (perm.getProtocol().equalsIgnoreCase("icmp"))
-                    result = containsInteger(Integer.parseInt(perm.getIcmpType()), valueSet);
-                else
-                    result = containsInteger(perm.getFromPort(), valueSet);
-				if (result) return true;
-			}
-			return false;		
-		} else if (filterName.equalsIgnoreCase( "ip-permission.to-port" )) {
-			for (EC2IpPermission perm : permissionSet) {
-                if (perm.getProtocol().equalsIgnoreCase("icmp"))
-                    result = containsInteger(Integer.parseInt(perm.getIcmpCode()), valueSet);
-                else
-                    result = containsInteger( perm.getToPort(), valueSet );
-				if (result) return true;
-			}
-			return false;		
-		} else if (filterName.equalsIgnoreCase( "ip-permission.protocol" )) {
-			for (EC2IpPermission perm : permissionSet) {
-				result = containsString( perm.getProtocol(), valueSet );
-				if (result) return true;
-			}
-			return false;	
-		} else if (filterName.equalsIgnoreCase( "owner-id" )) {	
+		else if (filterName.equalsIgnoreCase( "owner-id" )) {	
 			String owner = new String( sg.getDomainId() + ":" + sg.getAccountName()); 
 			return containsString( owner, valueSet );	
 		}
 		else return false;
 	}
+
+    private boolean ipPermissionFilterMatched( EC2SecurityGroup sg, List<EC2Filter> ipPermissionFilterSet ) throws ParseException
+    {
+        EC2IpPermission[] permissionSet = sg.getIpPermissionSet();
+
+        for (EC2IpPermission perm : permissionSet) {
+            boolean matched = true;
+            for (EC2Filter filter : ipPermissionFilterSet) {
+                String filterName = filter.getName();
+                String[] valueSet = filter.getValueSet();
+                if (filterName.equalsIgnoreCase( "ip-permission.cidr" ))
+                    matched = containsString(perm.getCIDR(), valueSet);
+                else if (filterName.equalsIgnoreCase( "ip-permission.from-port" )) {
+                    if (perm.getProtocol().equalsIgnoreCase("icmp"))
+                        matched = containsInteger(Integer.parseInt(perm.getIcmpType()), valueSet);
+                    else 
+                        matched = containsInteger(perm.getFromPort(), valueSet);
+                } else if (filterName.equalsIgnoreCase( "ip-permission.to-port" )) {
+                    if (perm.getProtocol().equalsIgnoreCase("icmp"))
+                        matched = containsInteger(Integer.parseInt(perm.getIcmpCode()), valueSet);
+                    else 
+                        matched = containsInteger( perm.getToPort(), valueSet );
+                } else if (filterName.equalsIgnoreCase( "ip-permission.protocol" ))
+                    matched = containsString( perm.getProtocol(), valueSet );
+                if (!matched) break;
+            }
+            if (matched) return true;
+        }
+        return false;
+    }
 
 
 	private boolean containsString( String lookingFor, String[] set )
