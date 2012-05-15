@@ -30,7 +30,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -106,7 +105,7 @@ public class RandomAllocator implements HostAllocator {
     }
 
     @Override
-    public boolean isVirtualMachineUpgradable(UserVm vm, ServiceOffering offering) {
+    public boolean isVirtualMachineUpgradable(VirtualMachine vm, ServiceOffering offering) {
         // currently we do no special checks to rule out a VM being upgradable to an offering, so
         // return true
         return true;

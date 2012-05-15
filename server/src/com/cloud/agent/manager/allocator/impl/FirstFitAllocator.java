@@ -45,7 +45,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -266,7 +265,7 @@ public class FirstFitAllocator implements HostAllocator {
     }
 
     @Override
-    public boolean isVirtualMachineUpgradable(UserVm vm, ServiceOffering offering) {
+    public boolean isVirtualMachineUpgradable(VirtualMachine vm, ServiceOffering offering) {
         // currently we do no special checks to rule out a VM being upgradable to an offering, so
         // return true
         return true;

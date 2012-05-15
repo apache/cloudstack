@@ -19,7 +19,6 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -30,7 +29,7 @@ public interface HostAllocator extends Adapter {
 	 * @param UserVm vm
 	 * @param ServiceOffering offering
 	 **/
-	boolean isVirtualMachineUpgradable(final UserVm vm, final ServiceOffering offering);
+	boolean isVirtualMachineUpgradable(final VirtualMachine vm, final ServiceOffering offering);
 
 	/** 
 	* Determines which physical hosts are suitable to 

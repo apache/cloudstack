@@ -160,7 +160,6 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -244,9 +243,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.utils.exception.CSExceptionErrorCode;
-import com.cloud.utils.AnnotationHelper;
-
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
 
@@ -3448,50 +3444,25 @@ public class ManagementServerImpl implements ManagementServer {
         Long serviceOfferingId = cmd.getServiceOfferingId();
         Account caller = UserContext.current().getCaller();
 
-        VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(systemVmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
+        VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(systemVmId, VirtualMachine.Type.ConsoleProxy, 
+                VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {
             throw new InvalidParameterValueException("Unable to find SystemVm with id " + systemVmId);
         }
 
         _accountMgr.checkAccess(caller, null, true, systemVm);
+        
+        // Check that the specified service offering ID is valid
+        _itMgr.checkIfCanUpgrade(systemVm, serviceOfferingId);
 
-        if (systemVm.getServiceOfferingId() == serviceOfferingId) {
-            s_logger.debug("System vm id: " + systemVmId + "already has service offering: " + serviceOfferingId);
-            return systemVm;
-        }
-
-        ServiceOffering newServiceOffering = _configMgr.getServiceOffering(serviceOfferingId);
-        if (newServiceOffering == null) {
-            throw new InvalidParameterValueException("Unable to find service offering with id " + serviceOfferingId);
-        }
-
-        // check if it is a system service offering, if yes return with error as it cannot be used for user vms
-        if (!newServiceOffering.getSystemUse()) {
-            throw new InvalidParameterValueException("Cannot upgrade system vm to a non system service offering " + serviceOfferingId);
-        }
-
-        // Check that the system vm is stopped
-        if (!systemVm.getState().equals(State.Stopped)) {
-            s_logger.warn("Unable to upgrade system vm " + systemVm + " in state " + systemVm.getState());
-            throw new InvalidParameterValueException("Unable to upgrade system vm " + systemVm + " in state " + systemVm.getState()
-                    + "; make sure the system vm is stopped and not in an error state before upgrading.");
-        }
-
-        ServiceOffering currentServiceOffering = _configMgr.getServiceOffering(systemVm.getServiceOfferingId());
-
-        // Check that the service offering being upgraded to has the same storage pool preference as the VM's current service
-        // offering
-        if (currentServiceOffering.getUseLocalStorage() != newServiceOffering.getUseLocalStorage()) {
-            throw new InvalidParameterValueException("Can't upgrade, due to new local storage status : " + newServiceOffering.getUseLocalStorage() + " is different from "
-                    + "curruent local storage status: " + currentServiceOffering.getUseLocalStorage());
-        }
-
-        systemVm.setServiceOfferingId(serviceOfferingId);
-        if (_vmInstanceDao.update(systemVmId, systemVm)) {
+        boolean result = _itMgr.upgradeVmDb(systemVmId, serviceOfferingId);
+        
+        if (result) {
             return _vmInstanceDao.findById(systemVmId);
         } else {
             throw new CloudRuntimeException("Unable to upgrade system vm " + systemVm);
         }
 
     }
+
 }

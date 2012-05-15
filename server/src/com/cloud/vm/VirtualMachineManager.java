@@ -34,7 +34,6 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -114,10 +113,23 @@ public interface VirtualMachineManager extends Manager {
      * @param offering
      * @return true if the host can handle the upgrade, false otherwise
      */
-    boolean isVirtualMachineUpgradable(final UserVm vm, final ServiceOffering offering);
+    boolean isVirtualMachineUpgradable(final VirtualMachine vm, final ServiceOffering offering);
     
     VMInstanceVO findById(long vmId);
 
 	<T extends VMInstanceVO> T storageMigration(T vm, StoragePool storagePoolId);
+
+    /**
+     * @param vmInstance
+     * @param newServiceOfferingId
+     */
+    void checkIfCanUpgrade(VirtualMachine vmInstance, long newServiceOfferingId);
+
+    /**
+     * @param vmId
+     * @param serviceOfferingId
+     * @return
+     */
+    boolean upgradeVmDb(long vmId, long serviceOfferingId);
 
 }

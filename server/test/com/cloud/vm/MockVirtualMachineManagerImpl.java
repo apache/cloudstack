@@ -37,7 +37,6 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.user.User;
-import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VirtualMachine.Event;
@@ -138,7 +137,7 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
     }
 
     @Override
-    public boolean isVirtualMachineUpgradable(UserVm vm, ServiceOffering offering) {
+    public boolean isVirtualMachineUpgradable(VirtualMachine vm, ServiceOffering offering) {
         // TODO Auto-generated method stub
         return false;
     }
