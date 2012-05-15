@@ -757,6 +757,7 @@
 
           detailView: {
             name: 'User details',
+            isMaximized: true,
             actions: {
               edit: {
                 label: 'label.edit',
