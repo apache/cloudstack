@@ -44,7 +44,26 @@
           item.issystem == true ) {
         return [];
       }
-
+				
+			if(item.networkOfferingConserveMode == false) {			 
+				/*
+				(1) If IP is SourceNat, no LoadBalancer/PortForwarding/VPN/StaticNat can be added/enabled. 
+				*/
+	      if (item.issourcenat){
+					disallowedActions.push('enableStaticNAT');
+					disallowedActions.push('enableVPN');
+				}
+				
+				/*
+				(2) If IP is non-SourceNat, show LoadBalancer/PortForwarding/VPN/StaticNat.
+				1. Once a LoadBalancer rule is added, hide PortForwarding/VPN/StaticNat.
+				2. Once a PortForwarding rule is added, hide LoadBalancer/VPN/StaticNat.
+				3. Once VPN is enabled, hide LoadBalancer/PortForwarding/StaticNat.
+				4. Once StaticNat is enabled, hide LoadBalancer/PortForwarding/VPN.	
+				*/
+			  				
+			}			
+			
       if (item.isstaticnat) {
         disallowedActions.push('enableStaticNAT');
       } else {
@@ -1400,28 +1419,41 @@
                     dataType: "json",
                     async: true,
                     success: function(json) {
-                      var item = items[0];
-                      // Get VPN data
-                      $.ajax({
-                        url: createURL('listRemoteAccessVpns'),
-                        data: {
-                          listAll: true,
-                          publicipid: item.id
-                        },
-                        dataType: 'json',
-                        async: true,
-                        success: function(vpnResponse) {
-                          var isVPNEnabled = vpnResponse.listremoteaccessvpnsresponse.count;
-                          if (isVPNEnabled) {
-                            item.vpnenabled = true;
-                            item.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
-                          };
-                          args.response.success({
-                            actionFilter: actionFilters.ipAddress,
-                            data: item
-                          });
-                        }
-                      });
+                      var ipObj = items[0];	
+											$.ajax({
+												url: createURL('listNetworkOfferings'),
+												data: {
+													id: args.context.networks[0].networkofferingid
+												},
+												dataType: 'json',
+												async: true,
+												success: function(json) {		
+													var networkOfferingObj = json.listnetworkofferingsresponse.networkoffering[0];
+													ipObj.networkOfferingConserveMode= networkOfferingObj.conservemode; 
+																									
+													// Get VPN data
+													$.ajax({
+														url: createURL('listRemoteAccessVpns'),
+														data: {
+															listAll: true,
+															publicipid: ipObj.id
+														},
+														dataType: 'json',
+														async: true,
+														success: function(vpnResponse) {
+															var isVPNEnabled = vpnResponse.listremoteaccessvpnsresponse.count;
+															if (isVPNEnabled) {
+																ipObj.vpnenabled = true;
+																ipObj.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
+															};
+															args.response.success({
+																actionFilter: actionFilters.ipAddress,
+																data: ipObj
+															});
+														}
+													});													
+												}
+											});					
                     },
                     error: function(data) {
                       args.response.error(parseXMLHttpResponse(data));
