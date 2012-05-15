@@ -745,7 +745,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
             mountPoint = mount(uri.getHost() + ":" + uri.getPath(), _mountParent);
             if(mountPoint == null) {
                 s_logger.error("Unable to create mount point for " + storageUrl);
-                throw new CloudRuntimeException("Unable to create mount point for " + storageUrl);
+                return "/mnt/sec"; // throw new CloudRuntimeException("Unable to create mount point for " + storageUrl);
             }
 
             _storageMounts.put(storageUrl, mountPoint);
@@ -874,24 +874,19 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     
     @DB
     public Map<String, String> getNexusVSMCredentials(String hostGuid) {
-        CiscoNexusVSMDeviceVO nexusVSM = null;
-        ClusterVSMMapVO vsmMapVO = null;
+        s_logger.info("Reading credentials from DB.");
         HostVO host = _hostDao.findByGuid(hostGuid);
-        if (host != null)
-            vsmMapVO = _vsmMapDao.findByClusterId(host.getClusterId());
-        if (vsmMapVO != null)
-            nexusVSM = _nexusDao.findById(vsmMapVO.getVsmId());
-        Map<String, String> nexusVSMCredentials = new HashMap<String, String>();
-        if (nexusVSM != null) {
-            nexusVSMCredentials.put("vsmip", nexusVSM.getipaddr());
-            nexusVSMCredentials.put("vsmusername", nexusVSM.getUserName());
-            nexusVSMCredentials.put("vsmpassword", nexusVSM.getPassword());
-        } else {
-            nexusVSMCredentials.put("vsmip", "10.102.125.32");
-            nexusVSMCredentials.put("vsmusername", "admin");
-            nexusVSMCredentials.put("vsmpassword", "vCenter!9");
+        Map<String, String> vsmCredentials = null;
+        long clusterId;
+        if (host != null) {
+            clusterId = host.getClusterId();
+            s_logger.info("cluster is : " + clusterId);
+            vsmCredentials = getNexusVSMCredentialsByClusterId(clusterId);
         }
-        return nexusVSMCredentials;
+        else {
+            s_logger.info("Found invalid host object for hostGuid : " + hostGuid);
+        }
+        return vsmCredentials;
     }
 
     @Override @DB
@@ -1023,17 +1018,24 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         ClusterVSMMapVO vsmMapVO = null;
 
         vsmMapVO = _vsmMapDao.findByClusterId(clusterId);
-        if (vsmMapVO != null)
-            nexusVSM = _nexusDao.findById(vsmMapVO.getVsmId());
+        long vsmId = 0;
+        if (vsmMapVO != null) {
+            vsmId = vsmMapVO.getVsmId(); 
+            s_logger.info("vsmId is " + vsmId);
+            nexusVSM = _nexusDao.findById(vsmId);
+            s_logger.info("Fetching nexus vsm credentials from database.");
+        }
+        else {
+            s_logger.info("Found empty vsmMapVO.");
+            return null;
+        }        
+
         Map<String, String> nexusVSMCredentials = new HashMap<String, String>();
         if (nexusVSM != null) {
             nexusVSMCredentials.put("vsmip", nexusVSM.getipaddr());
             nexusVSMCredentials.put("vsmusername", nexusVSM.getUserName());
             nexusVSMCredentials.put("vsmpassword", nexusVSM.getPassword());
-        } else {
-            nexusVSMCredentials.put("vsmip", "10.102.125.32");
-            nexusVSMCredentials.put("vsmusername", "admin");
-            nexusVSMCredentials.put("vsmpassword", "vCenter!9");
+            s_logger.info(nexusVSMCredentials.toString());
         }
         return nexusVSMCredentials;
     }

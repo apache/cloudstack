@@ -65,11 +65,13 @@ import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -92,12 +94,14 @@ import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
+import com.cloud.network.CiscoNexusVSMDeviceVO;
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
-import com.cloud.org.Managed;
 import com.cloud.org.Grouping.AllocationState;
+import com.cloud.org.Managed;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.StorageManager;
@@ -123,6 +127,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -166,6 +171,10 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected ClusterDetailsDao              _clusterDetailsDao;
     @Inject
     protected ClusterDao                     _clusterDao;
+    @Inject
+    protected ClusterVSMMapDao _clusterVSMDao;
+    @Inject
+    protected CiscoNexusVSMDeviceDao _vsmDao;
     @Inject
     protected CapacityDao 					 _capacityDao;
     @Inject
@@ -311,6 +320,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         
     }
 
+    @DB
     @Override
     public List<? extends Cluster> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException {
         long dcId = cmd.getZoneId();
@@ -405,6 +415,47 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         clusterId = cluster.getId();
         result.add(cluster);
 
+        String vsmIp = cmd.getVSMIpaddress();
+        String vsmUser = cmd.getVSMUsername();
+        String vsmPassword = cmd.getVSMPassword();
+
+        if (vsmIp != null && vsmUser != null && vsmPassword != null) {
+            NetconfHelper netconfClient;
+            try {
+                netconfClient = new NetconfHelper(vsmIp, vsmUser, vsmPassword);
+                netconfClient.disconnect();
+            } catch (CloudRuntimeException e) {
+                String msg = "Invalid credentials supplied for user " + vsmUser + " for Cisco Nexus 1000v VSM at " + vsmIp;
+                s_logger.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+            // persist credentials in database
+            CiscoNexusVSMDeviceVO vsm = new CiscoNexusVSMDeviceVO(vsmIp, vsmUser, vsmPassword, "", "");
+            
+            Transaction txn = Transaction.currentTxn();
+            try {
+                txn.start();
+                vsm = _vsmDao.persist(vsm);
+                txn.commit();
+            } catch (Exception e) {
+                txn.rollback();
+                s_logger.error("Failed to persist VSM details to database. Exception: " + e.getMessage());
+                throw new CloudRuntimeException(e.getMessage());
+            }
+            
+            ClusterVSMMapVO connectorObj = new ClusterVSMMapVO(clusterId, vsm.getId());
+            txn = Transaction.currentTxn();
+            try {
+                txn.start();
+                _clusterVSMDao.persist(connectorObj);
+                txn.commit();
+            } catch (Exception e) {
+                txn.rollback();
+                s_logger.error("Failed to associate VSM with cluster: " + clusterName + ". Exception: " + e.getMessage());
+                throw new CloudRuntimeException(e.getMessage());
+            }
+        }
+
         if (clusterType == Cluster.ClusterType.CloudManaged) {
             return result;
         }
@@ -415,6 +466,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         details.put("username", username);
         details.put("password", password);
         _clusterDetailsDao.persist(cluster.getId(), details);
+
 
         boolean success = false;
         try {

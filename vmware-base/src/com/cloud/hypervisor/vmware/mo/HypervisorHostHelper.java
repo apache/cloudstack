@@ -120,7 +120,7 @@ public class HypervisorHostHelper {
 	}
 	
     public static Map<String, String> getValidatedVsmCredentials(VmwareContext context) throws Exception {
-		Map<String, String> vsmCredentials = context.getStockObject("vsmcredentials");
+        Map<String, String> vsmCredentials = context.getStockObject("vsmcredentials");
 		String msg;
 		if(vsmCredentials == null || vsmCredentials.size() != 3) {
 			msg = "Failed to retrieve required credentials of Nexus VSM from database.";

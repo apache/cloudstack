@@ -64,6 +64,27 @@ public class AddClusterCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ALLOCATION_STATE, type=CommandType.STRING, description="Allocation state of this cluster for allocation of new resources")
     private String allocationState;
     
+    @Parameter(name = ApiConstants.VSM_USERNAME, type = CommandType.STRING, required = false, description = "the username for the VSM associated with this cluster")
+    private String vsmusername;
+
+    @Parameter(name = ApiConstants.VSM_PASSWORD, type = CommandType.STRING, required = false, description = "the password for the VSM associated with this cluster")
+    private String vsmpassword;
+
+    @Parameter(name = ApiConstants.VSM_IPADDRESS, type = CommandType.STRING, required = false, description = "the ipaddress of the VSM associated with this cluster")
+    private String vsmipaddress;
+
+    public String getVSMIpaddress() {
+        return vsmipaddress;
+    }
+
+    public String getVSMPassword() {
+        return vsmpassword;
+    }
+
+    public String getVSMUsername() {
+        return vsmusername;
+    }
+
     public String getClusterName() {
         return clusterName;
     }

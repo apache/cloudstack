@@ -342,6 +342,9 @@ public class ApiConstants {
     public static final String VCENTER_IP_ADDRESS = "vcenteripaddr";
     public static final String VCENTER_DC_NAME = "vcenterdcname";
     public static final String CISCO_NEXUS_VSM_NAME = "vsmname";
+    public static final String VSM_USERNAME = "vsmusername";
+    public static final String VSM_PASSWORD = "vsmpassword";
+    public static final String VSM_IPADDRESS = "vsmipaddress";
     
     public enum HostDetails {
         all, capacity, events, stats, min;
