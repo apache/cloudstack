@@ -127,6 +127,7 @@ public class ApiConstants {
     public static final String SSHKEY_ENABLED = "sshkeyenabled";
     public static final String PATH = "path";
     public static final String POD_ID = "podid";
+    public static final String POD_IDS = "podids";
     public static final String POLICY_ID = "policyid";
     public static final String PORT = "port";
     public static final String PORTAL = "portal";

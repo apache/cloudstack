@@ -2079,4 +2079,13 @@ CREATE TABLE  `cloud`.`op_user_stats_log` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+CREATE TABLE  `cloud`.`netscaler_pod_ref` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `external_load_balancer_device_id` bigint unsigned NOT NULL COMMENT 'id of external load balancer device',
+  `pod_id` bigint unsigned NOT NULL COMMENT 'pod id',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_ns_pod_ref__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_ns_pod_ref__device_id` FOREIGN KEY (`external_load_balancer_device_id`) REFERENCES `external_load_balancer_devices`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 SET foreign_key_checks = 1;

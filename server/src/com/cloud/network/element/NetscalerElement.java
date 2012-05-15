@@ -41,8 +41,11 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterIpAddressVO;
+import com.cloud.dc.HostPodVO;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -59,6 +62,7 @@ import com.cloud.network.ExternalLoadBalancerDeviceVO;
 import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.IpAddress;
+import com.cloud.network.NetScalerPodVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -71,6 +75,7 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceDao;
+import com.cloud.network.dao.NetScalerPodDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
@@ -129,7 +134,11 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     HostDetailsDao _detailsDao;
     @Inject
     ConfigurationDao _configDao;
-
+    @Inject
+    NetScalerPodDao _netscalerPodDao;
+    @Inject
+    DataCenterIpAddressDao _privateIpAddressDao;
+   
     private boolean canHandle(Network config, Service service) {
         DataCenter zone = _dcDao.findById(config.getDataCenterId());
         boolean handleInAdvanceZone = (zone.getNetworkType() == NetworkType.Advanced && config.getGuestType() == Network.GuestType.Isolated && config.getTrafficType() == TrafficType.Guest);
@@ -324,21 +333,52 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         Boolean dedicatedUse = cmd.getLoadBalancerDedicated();
         Boolean inline = cmd.getLoadBalancerInline();
         Long capacity = cmd.getLoadBalancerCapacity();
-
+        List<Long> podIds = cmd.getPodIds();
         try {
-            return configureNetscalerLoadBalancer(lbDeviceId, capacity, inline, dedicatedUse);
+            return configureNetscalerLoadBalancer(lbDeviceId, capacity, inline, dedicatedUse, podIds);
         } catch (Exception e) {
             throw new CloudRuntimeException("failed to configure netscaler device due to " + e.getMessage());
         }
     }
 
     @DB
-    private ExternalLoadBalancerDeviceVO configureNetscalerLoadBalancer(long lbDeviceId, Long capacity, Boolean inline, Boolean dedicatedUse) {
+    private ExternalLoadBalancerDeviceVO configureNetscalerLoadBalancer(long lbDeviceId, Long capacity, Boolean inline, Boolean dedicatedUse, List<Long> newPodsConfig) {
         ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
         Map<String, String> lbDetails = _detailsDao.findDetails(lbDeviceVo.getHostId());
 
         if ((lbDeviceVo == null) || !isNetscalerDevice(lbDeviceVo.getDeviceName())) {
             throw new InvalidParameterValueException("No netscaler device found with ID: " + lbDeviceId);
+        }
+
+        List<Long> currentPodsConfig = new ArrayList<Long>();
+        List<NetScalerPodVO> currentPodVOs = _netscalerPodDao.listByNetScalerDeviceId(lbDeviceVo.getId());
+        if (currentPodVOs != null && currentPodVOs.size() > 0) {
+            for (NetScalerPodVO nsPodVo: currentPodVOs) {
+                currentPodsConfig.add(nsPodVo.getPodId());
+            }
+        }
+
+        List<Long> podsToAssociate = new ArrayList<Long>();
+        if (newPodsConfig != null && newPodsConfig.size() > 0) {
+            for (Long podId: newPodsConfig) {
+                HostPodVO pod = _podDao.findById(podId);
+                if (pod == null) {
+                    throw new InvalidParameterValueException("Can't find pod by id " + podId);
+                }
+            }
+
+            for (Long podId: newPodsConfig) {
+                if (!currentPodsConfig.contains(podId)) {
+                    podsToAssociate.add(podId);
+                }
+            }
+        }
+
+        List<Long> podsToDeassociate = new ArrayList<Long>();
+        for (Long podId: currentPodsConfig) {
+            if (!newPodsConfig.contains(podId)) {
+                podsToDeassociate.add(podId);
+            }
         }
 
         String deviceName = lbDeviceVo.getDeviceName();
@@ -394,6 +434,16 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         txn.start();
 
         _lbDeviceDao.update(lbDeviceId, lbDeviceVo);
+
+        for (Long podId: podsToAssociate) {
+            NetScalerPodVO nsPodVo = new NetScalerPodVO(lbDeviceId, podId);
+            _netscalerPodDao.persist(nsPodVo);
+        }
+
+        for (Long podId: podsToDeassociate) {
+            NetScalerPodVO nsPodVo = _netscalerPodDao.findByPodId(podId);
+            _netscalerPodDao.remove(nsPodVo.getId());
+        }
 
         // FIXME get the row lock to avoid race condition
         _detailsDao.persist(lbDeviceVo.getHostId(), lbDetails);
@@ -485,6 +535,15 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         response.setProvider(lbDeviceVO.getProviderName());
         response.setDeviceState(lbDeviceVO.getState().name());
         response.setObjectName("netscalerloadbalancer");
+        
+        List<Long> associatedPods = new ArrayList<Long>();
+        List<NetScalerPodVO> currentPodVOs = _netscalerPodDao.listByNetScalerDeviceId(lbDeviceVO.getId());
+        if (currentPodVOs != null && currentPodVOs.size() > 0) {
+        	for (NetScalerPodVO nsPodVo: currentPodVOs) {
+        		associatedPods.add(nsPodVo.getPodId());
+        	}
+        }
+        response.setAssociatedPods(associatedPods);
         return response;
     }
 
@@ -630,47 +689,96 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             return false;
         }
 
-        String errMsg;
-        ExternalLoadBalancerDeviceVO lbDevice = getExternalLoadBalancerForNetwork(config);
-        if (lbDevice == null) {
-            try {
-                lbDevice = allocateLoadBalancerForNetwork(config);
-            } catch (Exception e) {
-                errMsg = "Could not allocate a NetSclaer load balancer for configuring static NAT rules due to" + e.getMessage();
-                s_logger.error(errMsg);
-                throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
-            }
-        }
+        boolean multiNetScalerDeployment = Boolean.valueOf(_configDao.getValue(Config.EIPWithMultipleNetScalersEnabled.key()));
 
-        if (!isNetscalerDevice(lbDevice.getDeviceName())) {
-            errMsg = "There are no NetScaler load balancer assigned for this network. So NetScaler element will not be handling the static nat rules.";
-            s_logger.error(errMsg);
-            throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
-        }
-
-        SetStaticNatRulesAnswer answer = null;
         try {
-            List<StaticNatRuleTO> rulesTO = null;
-            if (rules != null) {
-                rulesTO = new ArrayList<StaticNatRuleTO>();
-                for (StaticNat rule : rules) {
-                    IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
-                    StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
-                    rulesTO.add(ruleTO);
+            if (!multiNetScalerDeployment) {
+                String errMsg;
+                ExternalLoadBalancerDeviceVO lbDevice = getExternalLoadBalancerForNetwork(config);
+                if (lbDevice == null) {
+                    try {
+                        lbDevice = allocateLoadBalancerForNetwork(config);
+                    } catch (Exception e) {
+                        errMsg = "Could not allocate a NetSclaer load balancer for configuring static NAT rules due to" + e.getMessage();
+                        s_logger.error(errMsg);
+                        throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
+                    }
+                }
+
+                if (!isNetscalerDevice(lbDevice.getDeviceName())) {
+                    errMsg = "There are no NetScaler load balancer assigned for this network. So NetScaler element will not be handling the static nat rules.";
+                    s_logger.error(errMsg);
+                    throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
+                }
+                SetStaticNatRulesAnswer answer = null;
+                List<StaticNatRuleTO> rulesTO = null;
+                if (rules != null) {
+                    rulesTO = new ArrayList<StaticNatRuleTO>();
+                    for (StaticNat rule : rules) {
+                        IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+                        StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
+                        rulesTO.add(ruleTO);
+                    }
+                }
+
+                SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO);
+                answer = (SetStaticNatRulesAnswer) _agentMgr.send(lbDevice.getHostId(), cmd);
+                if (answer == null) {
+                    return false;
+                } else {
+                    return answer.getResult();
+                }
+            } else {
+                if (rules != null) {
+                    for (StaticNat rule : rules) {
+                        // validate if EIP rule can be configured. 
+                        ExternalLoadBalancerDeviceVO lbDevice = getNetScalerForEIP(rule);
+                        if (lbDevice == null) {
+                            String errMsg = "There is no NetScaler device configured to perform EIP to guest IP address: " + rule.getDestIpAddress();
+                            s_logger.error(errMsg);
+                            throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
+                        }
+
+                        List<StaticNatRuleTO> rulesTO = new ArrayList<StaticNatRuleTO>();
+                        IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+                        StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
+                        rulesTO.add(ruleTO);
+                        SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO);
+
+                        // send commands to configure INAT rule on the NetScaler device
+                        SetStaticNatRulesAnswer answer = (SetStaticNatRulesAnswer) _agentMgr.send(lbDevice.getHostId(), cmd);
+                        if (answer == null) {
+                            String errMsg = "Failed to configure INAT rule on NetScaler device " + lbDevice.getHostId();
+                            s_logger.error(errMsg);
+                            throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
+                        }
+                    }
+                    return true;
                 }
             }
-
-            SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO);
-            answer = (SetStaticNatRulesAnswer) _agentMgr.send(lbDevice.getHostId(), cmd);
-            if (answer == null) {
-                return false;
-            } else {
-                return answer.getResult();
-            }
+            return true;
         } catch (Exception e) {
             s_logger.error("Failed to configure StaticNat rule due to " + e.getMessage());
             return false;
         }
     }
 
+    // returns configured NetScaler device that is associated with the pod that owns guest IP
+    private ExternalLoadBalancerDeviceVO getNetScalerForEIP(StaticNat rule) {
+        String guestIP = rule.getDestIpAddress();
+        List <DataCenterIpAddressVO> dcGuestIps =  _privateIpAddressDao.listAll();
+        if (dcGuestIps != null) {
+            for (DataCenterIpAddressVO dcGuestIp: dcGuestIps) {
+                if (dcGuestIp.getIpAddress().equalsIgnoreCase(guestIP)) {
+                    long podId = dcGuestIp.getPodId();
+                    NetScalerPodVO  nsPodVO = _netscalerPodDao.findByPodId(podId);
+                    if (nsPodVO != null) {
+                        ExternalLoadBalancerDeviceVO lbDeviceVO = _lbDeviceDao.findById(nsPodVO.getNetscalerDeviceId());
+                        return lbDeviceVO;
+                    }
+                }
+           }
+        }
+        return null;
+    }
 }

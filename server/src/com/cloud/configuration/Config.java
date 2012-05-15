@@ -328,6 +328,7 @@ public enum Config {
 
     DefaultExternalLoadBalancerCapacity("Advanced", ManagementServer.class, String.class, "external.lb.default.capacity", "50", "default number of networks permitted per external load balancer device", null),
     DefaultExternalFirewallCapacity("Advanced", ManagementServer.class, String.class, "external.firewall.default.capacity", "50", "default number of networks permitted per external load firewall device", null),
+    EIPWithMultipleNetScalersEnabled("Advanced", ManagementServer.class, Boolean.class, "eip.use.multiple.netscalers", "false", "Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone", null),
 	CustomDiskOfferingMinSize("Advanced", ManagementServer.class, Long.class, "custom.diskoffering.size.min", "1", "Minimum size in GB for custom disk offering", null),
 	CustomDiskOfferingMaxSize("Advanced", ManagementServer.class, Long.class, "custom.diskoffering.size.max", "1024", "Maximum size in GB for custom disk offering", null),
 	ConsoleProxyServiceOffering("Advanced", ManagementServer.class, Long.class, "consoleproxy.service.offering", null, "Service offering used by console proxy; if NULL - system offering will be used", null),
