@@ -397,6 +397,8 @@
           return false;
         });
 
+        showDiagram('');
+
         return $changeUser;
       },
 
