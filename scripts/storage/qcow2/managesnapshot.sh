@@ -43,61 +43,7 @@ create_snapshot() {
   local snapshotname="$2"
   local failed=0
 
-  if [ -b "${disk}" ] && lvm lvs "${disk}" >/dev/null 2>&1; then
-      local lv=$( lvm lvs --noheadings --unbuffered --separator=/ "${disk}" 2>/dev/null | sed 's|^[[:space:]]\+||' )
-      local lvname=$( echo "${lv}" | awk -F/ '{ print $1 }' )
-      local vgname=$( echo "${lv}" | awk -F/ '{ print $2 }' )
-      local lvdmname=$( echo "${lvname}" | sed 's|-|--|g' )
-      local vgdmname=$( echo "${vgname}" | sed 's|-|--|g' )
-      local blockdevname="/dev/mapper/${vgdmname}-${lvdmname}"
-      local blockdevsnap="/dev/mapper/${vgdmname}-${snapshotname}"
-      local blockdevsize=$( blockdev --getsz "${blockdevname}" )
-       
-      lvm lvcreate --name "${snapshotname}-cow" --size "$(blockdev --getsize64 ${blockdevname})b" "${vgname}" >&2 || return 1
-      dmsetup suspend "${vgdmname}-${lvdmname}" >&2
-      [ $? -ne 0 ] && destroy_snapshot "${disk}" "${snapshotname}" && return 1
-      if dmsetup table | awk -v e=1 -v tbl="${vgdmname}-${lvdmname}-real:" '$1 == tbl { e=0 }; END { exit e }'; then
-          dmsetup create "${vgdmname}-${snapshotname}" --notable >&2
-          [ $? -ne 0 ] && destroy_snapshot "${disk}" "${snapshotname}" && return 1
-
-          echo "0 ${blockdevsize} snapshot ${blockdevname}-real ${blockdevsnap}--cow p 64" | \
-              dmsetup load "${vgdmname}-${snapshotname}" >&2
-          [ $? -ne 0 ] && destroy_snapshot "${disk}" "${snapshotname}" && return 1
-
-          dmsetup resume "${vgdmname}-${snapshotname}" >&2
-          [ $? -ne 0 ] && destroy_snapshot "${disk}" "${snapshotname}" && return 1
-
-      else
-
-          dmsetup create "${vgdmname}-${lvdmname}-real" --notable >&2
-          [ $? -ne 0 ] && destroy_snapshot "${disk}" "${snapshotname}" && return 1
-
-          dmsetup table "${vgdmname}-${lvdmname}" | dmsetup load "${vgdmname}-${lvdmname}-real" >&2
-          [ $? -ne 0 ] && destroy_snapshot "${disk}" "${snapshotname}" && return 1
-
-          dmsetup resume "${vgdmname}-${lvdmname}-real" >&2
-          [ $? -ne 0 ] && destroy_snapshot "${disk}" "${snapshotname}" && return 1
-
-          dmsetup create "${vgdmname}-${snapshotname}" --notable >&2
-          [ $? -ne 0 ] && destroy_snapshot "${disk}" "${snapshotname}" && return 1
-
-          echo "0 ${blockdevsize} snapshot ${blockdevname}-real ${blockdevsnap}--cow p 64" | \
-              dmsetup load "${vgdmname}-${snapshotname}" >&2
-          [ $? -ne 0 ] && destroy_snapshot "${disk}" "${snapshotname}" && return 1
-
-          echo "0 ${blockdevsize} snapshot-origin ${blockdevname}-real" | \
-              dmsetup load "${vgdmname}-${lvdmname}"
-          [ $? -ne 0 ] && destroy_snapshot "${disk}" "${snapshotname}" && return 1
-
-          dmsetup resume "${vgdmname}-${snapshotname}" >&2
-          [ $? -ne 0 ] && destroy_snapshot "${disk}" "${snapshotname}" && return 1
-
-      fi
-
-      dmsetup resume "${vgdmname}-${lvdmname}" >&2
-      [ $? -ne 0 ] && destroy_snapshot "${disk}" "${snapshotname}" && return 1
-
-  elif [ -f "${disk}" ]; then
+  if [ -f "${disk}" ]; then
      $qemu_img snapshot -c "$snapshotname" $disk
 
   
@@ -124,24 +70,8 @@ destroy_snapshot() {
   local disk=$1
   local snapshotname=$2
   local failed=0
-  if [ -b ${disk} ]; then
-     local lvname=$( echo "${disk}" | awk -F/ '{ print $(NF) }' ) # '
-     local vgname=$( echo "${disk}" | awk -F/ '{ print $(NF-1) }' ) # '
-     local lvdmname=$( echo "${lvname}" | sed 's|-|--|g' )
-     local vgdmname=$( echo "${vgname}" | sed 's|-|--|g' )
 
-     if [ $( dmsetup --columns --noheadings --separator=: info "${vgdmname}-${lvdmname}-real" | awk -F: '{ print $5 }' ) -le 2 ]; then
-         dmsetup suspend "${vgdmname}-${lvdmname}" >&2
-         dmsetup table "${vgdmname}-${lvdmname}-real" | dmsetup load "${vgdmname}-${lvdmname}" >&2
-         dmsetup resume "${vgdmname}-${lvdmname}" >&2
-         dmsetup remove "${vgdmname}-${snapshotname}" >&2
-         dmsetup remove "${vgdmname}-${lvdmname}-real" >&2
-     else
-         dmsetup remove "${vgdmname}-${snapshotname}" >&2
-     fi
-     lvm lvremove -f "${vgname}/${snapshotname}-cow" >&2
-
-  elif [ -f $disk ]; then
+  if [ -f $disk ]; then
      $qemu_img snapshot -d "$snapshotname" $disk
      if [ $? -gt 0 ]
      then
@@ -186,18 +116,7 @@ backup_snapshot() {
      fi
   fi
 
-  if [ -b ${disk} ] && lvm lvs "${disk}" >/dev/null 2>&1; then
-	local lv=$( lvm lvs --noheadings --unbuffered --separator=/ "${disk}" 2>/dev/null | sed 's|^[[:space:]]\+||' )
-	local vgname=$( echo "${lv}" | awk -F/ '{ print $2 }' )
-	local vgdmname=$( echo "${vgname}" | sed 's|-|--|g' )
-
-	if [ -x "$( dirname $0 )/raw2qcow2.sh" ]; then
-	    "$( dirname $0 )/raw2qcow2.sh" "/dev/mapper/${vgdmname}-${snapshotname}" "${destPath}/${destName}"
-	else
-	    $qemu_img convert -f raw -O qcow2 "/dev/mapper/${vgdmname}-${snapshotname}" "${destPath}/${destName}"
-	fi
-	return 0
-  elif [ -f ${disk} ]; then
+  if [ -f ${disk} ]; then
     # Does the snapshot exist? 
     $qemu_img snapshot -l $disk|grep -w "$snapshotname" >& /dev/null
     if [ $? -gt 0 ]

@@ -315,7 +315,7 @@
     }
 
     // Hide logo conditionally
-    if (!args.hasLogo) $('#header .controls').addClass('nologo');
+    if (!args.hasLogo) $('#header, #header .controls').addClass('nologo');
 
     return this;
   };

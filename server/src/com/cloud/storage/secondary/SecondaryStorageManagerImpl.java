@@ -362,7 +362,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             List<String> allowedCidrs = new ArrayList<String>();
             String[] cidrs = _allowedInternalSites.split(",");
             for (String cidr : cidrs) {
-                if (NetUtils.isValidCIDR(cidr) || NetUtils.isValidIp(cidr)) {
+                if (NetUtils.isValidCIDR(cidr) || NetUtils.isValidIp(cidr) || !cidr.startsWith("0.0.0.0")) {
                     allowedCidrs.add(cidr);
                 }
             }
@@ -727,8 +727,8 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                     }
                 }
             } else {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Zone host is ready, but secondary storage vm template is not ready");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Zone host is ready, but secondary storage vm template: " + template.getId() + " is not ready on secondary storage: " + secHost.getId());
                 }
             }
         }

@@ -1123,13 +1123,13 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                 if (l != null && l.size() > 0 && l.get(0).second().intValue() > 0) {
                     return true;
                 } else {
-                    if (s_logger.isTraceEnabled()) {
-                        s_logger.trace("Primary storage is not ready, wait until it is ready to launch console proxy");
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Primary storage is not ready, wait until it is ready to launch console proxy");
                     }
                 }
             } else {
-                if (s_logger.isTraceEnabled()) {
-                    s_logger.trace("Zone host is ready, but console proxy template is not ready");
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Zone host is ready, but console proxy template: " + template.getId() +  " is not ready on secondary storage: " + secondaryStorageHost.getId());
                 }
             }
         }

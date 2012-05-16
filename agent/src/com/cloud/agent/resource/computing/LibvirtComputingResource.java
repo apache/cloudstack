@@ -299,7 +299,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 	protected String _linkLocalBridgeName;
 	protected String _publicBridgeName;
 	protected String _guestBridgeName;
-	protected String _privateBridgeIp;
+	protected String _privateIp;
 	protected String _pool;
 	protected String _localGateway;
 	private boolean _can_bridge_firewall;
@@ -1805,7 +1805,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		try {
 			Connect conn = LibvirtConnection.getConnection();
 			Integer vncPort = getVncPort(conn, cmd.getName());
-			return new GetVncPortAnswer(cmd, 5900 + vncPort);
+			return new GetVncPortAnswer(cmd, _privateIp, 5900 + vncPort);
 		} catch (Exception e) {
 			return new GetVncPortAnswer(cmd, e.toString());
 		}
@@ -2618,19 +2618,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 				}
 			} else {
 				int devId = (int) volume.getDeviceId();
-				if (pool.getType() == StoragePoolType.CLVM) {
-					disk.defBlockBasedDisk(physicalDisk.getPath(), devId,
-							diskBusType);
+
+				if (volume.getType() == Volume.Type.DATADISK) {
+					disk.defFileBasedDisk(physicalDisk.getPath(), devId,
+							DiskDef.diskBus.VIRTIO,
+							DiskDef.diskFmtType.QCOW2);
 				} else {
-					if (volume.getType() == Volume.Type.DATADISK) {
-						disk.defFileBasedDisk(physicalDisk.getPath(), devId,
-								DiskDef.diskBus.VIRTIO,
-								DiskDef.diskFmtType.QCOW2);
-					} else {
-						disk.defFileBasedDisk(physicalDisk.getPath(), devId,
-								diskBusType, DiskDef.diskFmtType.QCOW2);
-					}
+					disk.defFileBasedDisk(physicalDisk.getPath(), devId,
+							diskBusType, DiskDef.diskFmtType.QCOW2);
 				}
+
 			}
 
 			vm.getDevices().addDevice(disk);
@@ -2682,12 +2679,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
 		/* add patch disk */
 		DiskDef patchDisk = new DiskDef();
-		if (pool.getType() == StoragePoolType.CLVM) {
-			patchDisk.defBlockBasedDisk(datadiskPath, 1, rootDisk.getBusType());
-		} else {
-			patchDisk.defFileBasedDisk(datadiskPath, 1, rootDisk.getBusType(),
-					DiskDef.diskFmtType.RAW);
-		}
+
+		patchDisk.defFileBasedDisk(datadiskPath, 1, rootDisk.getBusType(),
+				DiskDef.diskFmtType.RAW);
+		
 		disks.add(patchDisk);
 
 		String bootArgs = vmSpec.getBootArgs();
@@ -2972,6 +2967,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 				RouterPrivateIpStrategy.HostLocal);
 		cmd.setStateChanges(changes);
 		fillNetworkInformation(cmd);
+		_privateIp = cmd.getPrivateIpAddress();
 		cmd.getHostDetails().putAll(getVersionStrings());
 		cmd.setPool(_pool);
 		cmd.setCluster(_clusterId);
