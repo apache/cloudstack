@@ -3246,7 +3246,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         for (NetworkElement ne : _networkElements) {
             Provider provider = Network.Provider.getProvider(ne.getName());
             if (provider == null) {
-                if (ne.getName().equalsIgnoreCase("Ovs") || ne.getName().equalsIgnoreCase("BareMetal")) {
+                if (ne.getName().equalsIgnoreCase("Ovs") || ne.getName().equalsIgnoreCase("BareMetal")
+                		|| ne.getName().equalsIgnoreCase("CiscoNexus1000vVSM")) {
                     continue;
                 }
                 throw new CloudRuntimeException("Unable to identify the provider by name " + ne.getName());
