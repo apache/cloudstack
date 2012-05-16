@@ -299,7 +299,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 	protected String _linkLocalBridgeName;
 	protected String _publicBridgeName;
 	protected String _guestBridgeName;
-	protected String _privateBridgeIp;
+	protected String _privateIp;
 	protected String _pool;
 	protected String _localGateway;
 	private boolean _can_bridge_firewall;
@@ -1805,7 +1805,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		try {
 			Connect conn = LibvirtConnection.getConnection();
 			Integer vncPort = getVncPort(conn, cmd.getName());
-			return new GetVncPortAnswer(cmd, 5900 + vncPort);
+			return new GetVncPortAnswer(cmd, _privateIp, 5900 + vncPort);
 		} catch (Exception e) {
 			return new GetVncPortAnswer(cmd, e.toString());
 		}
@@ -2967,6 +2967,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 				RouterPrivateIpStrategy.HostLocal);
 		cmd.setStateChanges(changes);
 		fillNetworkInformation(cmd);
+		_privateIp = cmd.getPrivateIpAddress();
 		cmd.getHostDetails().putAll(getVersionStrings());
 		cmd.setPool(_pool);
 		cmd.setCluster(_clusterId);
