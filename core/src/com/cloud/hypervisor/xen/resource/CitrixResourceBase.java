@@ -1699,10 +1699,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             boolean removeVif = false;
             if (add && correctVif == null) {
                 addVif = true;
-            } else if (!add && firstIP) {
-                /* FIXME: This is incorrect. Because you can only tell if it's the first IP in this bundle of ip address which send to the router,
-                 * but don't know if it's the only IP left in the router - because we didn't send all the related vlan's IPs to the router now. */
-                removeVif = true;
             }
 
             if (addVif) {
@@ -1732,18 +1728,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } else {
                 args += " -D ";
             }
-            String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
+
             if (sourceNat) {
                 args += " -s";
-            } 
+            }
             if (firstIP) {
                 args += " -f";
-                args += " -l ";
-                args += publicIpAddress + "/" + cidrSize;
-            } else {
-                args += " -l ";
-                args += publicIpAddress;
             }
+
+            String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
+            args += " -l ";
+            args += publicIpAddress + "/" + cidrSize;
 
             args += " -c ";
             args += "eth" + correctVif.getDevice(conn);

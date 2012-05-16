@@ -751,18 +751,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         } else {
             args = " -D ";
         }
-        String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
+
         if (sourceNat) {
             args += " -s ";
         }
         if (firstIP) {
             args += " -f ";
-            args += " -l ";
-            args += publicIpAddress + "/" + cidrSize;
-        } else {
-            args += " -l ";
-            args += publicIpAddress;
         }
+        String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
+        args += " -l ";
+        args += publicIpAddress + "/" + cidrSize;
 
         args += " -c ";
         args += "eth" + publicNicInfo.first();
