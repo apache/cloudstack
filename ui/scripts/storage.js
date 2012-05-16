@@ -33,7 +33,7 @@
           fields: {
             name: { label: 'label.name' },
             type: { label: 'label.type' },
-            storagetype: { label: 'label.storage.type' },
+            hypervisor: { label: 'label.hypervisor' },	
             vmdisplayname: { label: 'label.vm.display.name' },
             state: { 
 						  label: 'State',
@@ -597,13 +597,18 @@
                             projectid: args.context.projects[0].id
                           };
                         }
-
+																
+												if(args.context.volumes[0].hypervisor != null && args.context.volumes[0].hypervisor.length > 0 && args.context.volumes[0].hypervisor != 'None') {
+												  data = $.extend(data, {
+													  hypervisor: args.context.volumes[0].hypervisor
+													});
+												}
+																								
                         $(['Running', 'Stopped']).each(function() {
                           $.ajax({
                             url: createURL('listVirtualMachines'),
                             data: $.extend(data, {
-                              state: this.toString(),
-															hypervisor: args.context.volumes[0].hypervisor
+                              state: this.toString()															
                             }),
                             async: false,
                             success: function(json) {
@@ -931,7 +936,8 @@
                     zonename: { label: 'label.zone' },                    
                     state: { label: 'label.state' },
                     type: { label: 'label.type' },
-                    storagetype: { label: 'label.storage.type' },                    
+                    storagetype: { label: 'label.storage.type' },   
+                    hypervisor: { label: 'label.hypervisor' },										
                     size : {
                       label: 'Size ',
                       converter: function(args) {
