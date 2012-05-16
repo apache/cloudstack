@@ -76,9 +76,8 @@ public class SshKeysDistriMonitor implements Listener {
 	    		    ((StartupRoutingCommand) cmd).getHypervisorType() == HypervisorType.XenServer) {
 	    			/*TODO: Get the private/public keys here*/
 	    			
-	    			Map<String, String> configs = _configDao.getConfiguration("management-server", new HashMap<String, Object>());
-	    			String pubKey = configs.get("ssh.publickey");
-	    			String prvKey = configs.get("ssh.privatekey");
+	    			String pubKey = _configDao.getValue("ssh.publickey");
+	    			String prvKey = _configDao.getValue("ssh.privatekey");
 	    			
 	    			try {
 	    				ModifySshKeysCommand cmds = new ModifySshKeysCommand(pubKey, prvKey);
