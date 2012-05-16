@@ -47,7 +47,7 @@
 				
 			if(item.networkOfferingConserveMode == false) {			 
 				/*
-				(1) If IP is SourceNat, no LoadBalancer/PortForwarding/VPN/StaticNat can be added/enabled. 
+				(1) If IP is SourceNat, no StaticNat/VPN/PortForwarding/LoadBalancer can be enabled/added. 
 				*/
 	      if (item.issourcenat == true){
 					disallowedActions.push('enableStaticNAT');
@@ -55,14 +55,19 @@
 				}			
 				
 				/*
-				(2) If IP is non-SourceNat, show LoadBalancer/PortForwarding/VPN/StaticNat at first.
-				1. Once a LoadBalancer rule is added, hide PortForwarding/VPN/StaticNat.
-				2. Once a PortForwarding rule is added, hide LoadBalancer/VPN/StaticNat.
-				3. Once VPN is enabled, hide LoadBalancer/PortForwarding/StaticNat.
-				4. Once StaticNat is enabled, hide LoadBalancer/PortForwarding/VPN.	
+				(2) If IP is non-SourceNat, show StaticNat/VPN/PortForwarding/LoadBalancer at first.
+				1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
+				2. Once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
+				3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
+				4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
 				*/
-				else { //item.issourcenat == false
-				   //???
+				else { //item.issourcenat == false				   
+					 if (item.isstaticnat) { //1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
+					   disallowedActions.push('enableVPN');
+					 }
+					 if (item.vpnenabled) { //2. Once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
+					   disallowedActions.push('enableStaticNAT');
+					 }
 				}			  				
 			}			
 			
@@ -1496,11 +1501,11 @@
 																				
 										if(args.context.ipAddresses[0].networkOfferingConserveMode == false) {			 
 											/*
-											(1) If IP is SourceNat, no LoadBalancer/PortForwarding/VPN/StaticNat can be added/enabled. 
+											(1) If IP is SourceNat, no StaticNat/VPN/PortForwarding/LoadBalancer can be enabled/added. 
 											*/
 											if (args.context.ipAddresses[0].issourcenat){
-											  disallowedActions.push("loadBalancing");
-											  disallowedActions.push("portForwarding");												
+											  disallowedActions.push("portForwarding");			
+											  disallowedActions.push("loadBalancing");											  									
 											}
 										}
 																				
