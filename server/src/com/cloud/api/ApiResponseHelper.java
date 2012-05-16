@@ -91,6 +91,8 @@ import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.response.VirtualRouterProviderResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.api.response.VolumeResponse;
+import com.cloud.api.response.VpcOfferingResponse;
+import com.cloud.api.response.VpcResponse;
 import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
@@ -143,6 +145,8 @@ import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -3397,6 +3401,89 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public Long getIdentiyId(String tableName, String token) {
         return ApiDispatcher.getIdentiyId(tableName, token);
+    }
+    
+    
+    @Override
+    public VpcOfferingResponse createVpcOfferingResponse(VpcOffering offering) {
+        VpcOfferingResponse response = new VpcOfferingResponse();
+        response.setId(offering.getId());
+        response.setName(offering.getName());
+        response.setDisplayText(offering.getDisplayText());
+        response.setIsDefault(offering.isDefault());
+        response.setState(offering.getState().name());
+
+        Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(offering.getId());
+        List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
+        for (Service service : serviceProviderMap.keySet()) {
+            ServiceResponse svcRsp = new ServiceResponse();
+            // skip gateway service
+            if (service == Service.Gateway) {
+                continue;
+            }
+            svcRsp.setName(service.getName());
+            List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
+            for (Provider provider : serviceProviderMap.get(service)) {
+                if (provider != null) {
+                    ProviderResponse providerRsp = new ProviderResponse();
+                    providerRsp.setName(provider.getName());
+                    providers.add(providerRsp);
+                }
+            }
+            svcRsp.setProviders(providers);
+
+            serviceResponses.add(svcRsp);
+        }
+        response.setServices(serviceResponses);
+        response.setObjectName("vpcoffering");
+        return response;
+    }
+    
+    
+    @Override
+    public VpcResponse createVpcResponse(Vpc vpc) {
+        VpcResponse response = new VpcResponse();
+        response.setId(vpc.getId());
+        response.setName(vpc.getName());
+        response.setDisplayText(vpc.getDisplayText());
+        response.setState(vpc.getState().name());
+        response.setVpcOfferingId(vpc.getVpcOfferingId());
+        response.setCidr(vpc.getCidr());
+        response.setZoneId(vpc.getZoneId());
+
+        Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(vpc.getVpcOfferingId());
+        List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
+        for (Service service : serviceProviderMap.keySet()) {
+            ServiceResponse svcRsp = new ServiceResponse();
+            // skip gateway service
+            if (service == Service.Gateway) {
+                continue;
+            }
+            svcRsp.setName(service.getName());
+            List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
+            for (Provider provider : serviceProviderMap.get(service)) {
+                if (provider != null) {
+                    ProviderResponse providerRsp = new ProviderResponse();
+                    providerRsp.setName(provider.getName());
+                    providers.add(providerRsp);
+                }
+            }
+            svcRsp.setProviders(providers);
+
+            serviceResponses.add(svcRsp);
+        }
+        
+        List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
+        List<? extends Network> networks = ApiDBUtils.listVpcNetworks(vpc.getId());
+        for (Network network : networks) {
+            NetworkResponse ntwkRsp = createNetworkResponse(network);
+            networkResponses.add(ntwkRsp);
+        }
+        
+        response.setNetworks(networkResponses);
+        response.setServices(serviceResponses);
+        response.setObjectName("vpcoffering");
+        return response;
     }
 
 }

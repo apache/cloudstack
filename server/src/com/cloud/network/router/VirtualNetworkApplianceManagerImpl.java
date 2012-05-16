@@ -95,7 +95,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
@@ -132,7 +131,6 @@ import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.VpnUser;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.addr.PublicIp;
-import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -163,13 +161,11 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -214,13 +210,13 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
-import com.cloud.vm.dao.VMInstanceDao;
 
 /**
  * VirtualNetworkApplianceManagerImpl manages the different types of virtual network appliances available in the Cloud Stack.
  */
 @Local(value = { VirtualNetworkApplianceManager.class, VirtualNetworkApplianceService.class })
-public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService, VirtualMachineGuru<DomainRouterVO>, Listener {
+public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplianceManager, VirtualNetworkApplianceService, 
+                            VirtualMachineGuru<DomainRouterVO>, Listener {
     private static final Logger s_logger = Logger.getLogger(VirtualNetworkApplianceManagerImpl.class);
 
     String _name;
@@ -245,23 +241,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Inject
     UserStatisticsDao _userStatsDao = null;
     @Inject
-    VolumeDao _volsDao = null;
-    @Inject
     HostDao _hostDao = null;
-    @Inject
-    EventDao _eventDao = null;
     @Inject
     ConfigurationDao _configDao;
     @Inject
     HostPodDao _podDao = null;
     @Inject
-    VMTemplateHostDao _vmTemplateHostDao = null;
-    @Inject
     UserStatsLogDao _userStatsLogDao = null;
     @Inject
     AgentManager _agentMgr;
-    @Inject
-    StorageManager _storageMgr;
     @Inject
     AlertManager _alertMgr;
     @Inject
@@ -272,8 +260,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     ServiceOfferingDao _serviceOfferingDao = null;
     @Inject
     UserVmDao _userVmDao;
-    @Inject
-    FirewallRulesDao _firewallRulesDao;
     @Inject
     UserStatisticsDao _statsDao = null;
     @Inject
@@ -299,13 +285,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Inject
     RemoteAccessVpnDao _vpnDao;
     @Inject
-    VMInstanceDao _instanceDao;
-    @Inject
     NicDao _nicDao;
     @Inject
     VolumeDao _volumeDao = null;
-    @Inject
-    FirewallRulesCidrsDao _firewallCidrsDao;
     @Inject
     UserVmDetailsDao _vmDetailsDao;
     @Inject
@@ -343,12 +325,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     ScheduledExecutorService _networkStatsUpdateExecutor;
 
     Account _systemAcct;
-
-    @Override
-    public List<DomainRouterVO> getRouters(long accountId, long dataCenterId) {
-        return _routerDao.findBy(accountId, dataCenterId);
-    }
-
+    
     @Override
     public boolean sendSshKeysToHost(Long hostId, String pubKey, String prvKey) {
         ModifySshKeysCommand cmd = new ModifySshKeysCommand(pubKey, prvKey);
@@ -540,26 +517,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             txn.rollback();
             throw new CloudRuntimeException("Problem getting stats after reboot/stop ", e);
         }
-    }
-
-    @Override
-    public boolean getRouterStatistics(final long vmId, final Map<String, long[]> netStats, final Map<String, long[]> diskStats) {
-        final DomainRouterVO router = _routerDao.findById(vmId);
-
-        if (router == null || router.getState() != State.Running || router.getHostId() == null) {
-            return true;
-        }
-
-        /*
-         * final GetVmStatsCommand cmd = new GetVmStatsCommand(router, router.getInstanceName()); final Answer answer =
-         * _agentMgr.easySend(router.getHostId(), cmd); if (answer == null) { return false; }
-         * 
-         * final GetVmStatsAnswer stats = (GetVmStatsAnswer)answer;
-         * 
-         * netStats.putAll(stats.getNetworkStats()); diskStats.putAll(stats.getDiskStats());
-         */
-
-        return true;
     }
 
     @Override @ActionEvent(eventType = EventTypes.EVENT_ROUTER_REBOOT, eventDescription = "rebooting router Vm", async = true)
@@ -908,10 +865,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 s_logger.debug("Exception while trying to acquire network stats lock", e);
             }  finally {
                 scanLock.releaseRef();
-            }
-           
+            }  
         }
-
     }
 
 
@@ -1110,9 +1065,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
     }
 
-    public static boolean isAdmin(short accountType) {
-        return ((accountType == Account.ACCOUNT_TYPE_ADMIN) || (accountType == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || (accountType == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) || (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN));
-    } 
+
     private final int DEFAULT_PRIORITY = 100;
     private final int DEFAULT_DELTA = 2;
 
@@ -1477,7 +1430,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public List<DomainRouterVO> deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params, boolean isRedundant) throws InsufficientCapacityException,
+    public List<DomainRouterVO> deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, 
+            Map<Param, Object> params, boolean isRedundant) throws InsufficientCapacityException,
     ConcurrentOperationException, ResourceUnavailableException {
         if (_networkMgr.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
             owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
@@ -1489,7 +1443,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
         }
         
-        assert guestNetwork.getState() == Network.State.Implemented || guestNetwork.getState() == Network.State.Setup || guestNetwork.getState() == Network.State.Implementing : "Network is not yet fully implemented: "
+        assert guestNetwork.getState() == Network.State.Implemented || guestNetwork.getState() == Network.State.Setup || 
+                guestNetwork.getState() == Network.State.Implementing : "Network is not yet fully implemented: "
                 + guestNetwork;
         assert guestNetwork.getTrafficType() == TrafficType.Guest;
 
@@ -2940,14 +2895,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public boolean processTimeout(long agentId, long seq) {
         return false;
-    }
-
-    @Override
-    public long getDefaultVirtualRouterServiceOfferingId() {
-        if (_offering != null) {
-            return _offering.getId();
-        }
-        return 0;
     }
 
     private String getRouterControlIp(long routerId) {

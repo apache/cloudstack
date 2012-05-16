@@ -357,6 +357,8 @@ public class ApiConstants {
     public static final String VSM_CONFIG_STATE = "vsmconfigstate";
     public static final String VSM_DEVICE_STATE = "vsmdevicestate";
     public static final String ADD_VSM_FLAG = "addvsmflag";
+    public static final String VPC_OFF_ID = "vpcofferingid";
+    public static final String NETWORK = "network";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

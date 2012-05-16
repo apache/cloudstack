@@ -332,3 +332,22 @@ updateStorageNetworkIpRange=com.cloud.api.commands.UpdateStorageNetworkIpRangeCm
 addNetworkDevice=com.cloud.api.commands.AddNetworkDeviceCmd;1
 listNetworkDevice=com.cloud.api.commands.ListNetworkDeviceCmd;1
 deleteNetworkDevice=com.cloud.api.commands.DeleteNetworkDeviceCmd;1
+
+### Network Devices commands
+addNetworkDevice=com.cloud.api.commands.AddNetworkDeviceCmd;1
+listNetworkDevice=com.cloud.api.commands.ListNetworkDeviceCmd;1
+deleteNetworkDevice=com.cloud.api.commands.DeleteNetworkDeviceCmd;1
+
+
+### VPC commands
+createVPC=com.cloud.api.commands.CreateVPCCmd;15
+listVPCs=com.cloud.api.commands.ListVPCsCmd;15
+deleteVPC=com.cloud.api.commands.DeleteVPCCmd;15
+updateVPC=com.cloud.api.commands.UpdateVPCCmd;15
+
+
+#### VPC offering commands
+createVPCOffering=com.cloud.api.commands.CreateVPCOfferingCmd;1
+updateVPCOffering=com.cloud.api.commands.UpdateVPCOfferingCmd;1
+deleteVPCOffering=com.cloud.api.commands.DeleteVPCOfferingCmd;1
+listVPCOfferings=com.cloud.api.commands.ListVPCOfferingsCmd;15

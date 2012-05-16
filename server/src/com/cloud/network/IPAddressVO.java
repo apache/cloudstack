@@ -28,6 +28,7 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.api.Identity;
+import com.cloud.network.IpAddress;
 import com.cloud.utils.net.Ip;
 
 /**

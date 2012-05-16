@@ -74,6 +74,8 @@ import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.response.VirtualRouterProviderResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.api.response.VolumeResponse;
+import com.cloud.api.response.VpcOfferingResponse;
+import com.cloud.api.response.VpcResponse;
 import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
@@ -107,6 +109,8 @@ import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.network.security.SecurityRule;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -280,4 +284,16 @@ public interface ResponseGenerator {
      * @return
      */
     Long getIdentiyId(String tableName, String token);
+
+    /**
+     * @param offering
+     * @return
+     */
+    VpcOfferingResponse createVpcOfferingResponse(VpcOffering offering);
+
+    /**
+     * @param vpc
+     * @return
+     */
+    VpcResponse createVpcResponse(Vpc vpc);
 }

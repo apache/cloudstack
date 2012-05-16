@@ -17,12 +17,9 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import com.cloud.exception.UnsupportedServiceException;
-import com.cloud.network.NetworkServiceMapVO;
-import com.cloud.network.Network.Service;
 import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;

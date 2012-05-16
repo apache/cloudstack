@@ -283,4 +283,9 @@ public interface Network extends ControlledEntity {
 	boolean isRestartRequired();
 
 	boolean getSpecifyIpRanges();
+
+    /**
+     * @return
+     */
+    long getVpcId();
 }
