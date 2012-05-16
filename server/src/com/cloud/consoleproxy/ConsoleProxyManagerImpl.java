@@ -33,6 +33,8 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ConsoleAccessAuthenticationAnswer;
 import com.cloud.agent.api.ConsoleAccessAuthenticationCommand;
 import com.cloud.agent.api.ConsoleProxyLoadReportCommand;
+import com.cloud.agent.api.GetVncPortAnswer;
+import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupProxyCommand;
@@ -109,6 +111,7 @@ import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
@@ -865,25 +868,27 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             s_logger.debug("Console authentication. Ticket in url for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + ticketInUrl);
         }
 
-        String ticket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId());
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Console authentication. Ticket in 1 minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + ticket);
-        }
-
-        if (!ticket.equals(ticketInUrl)) {
-            Date now = new Date();
-            // considering of minute round-up
-            String minuteEarlyTicket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId(), new Date(now.getTime() - 60 * 1000));
-
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Console authentication. Ticket in 2-minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + minuteEarlyTicket);
-            }
-
-            if (!minuteEarlyTicket.equals(ticketInUrl)) {
-                s_logger.error("Access ticket expired or has been modified. vmId: " + cmd.getVmId() + "ticket in URL: " + ticketInUrl + ", tickets to check against: " + ticket + ","
-                        + minuteEarlyTicket);
-                return new ConsoleAccessAuthenticationAnswer(cmd, false);
-            }
+        if(!cmd.isReauthenticating()) {
+	        String ticket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId());
+	        if (s_logger.isDebugEnabled()) {
+	            s_logger.debug("Console authentication. Ticket in 1 minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + ticket);
+	        }
+	
+	        if (!ticket.equals(ticketInUrl)) {
+	            Date now = new Date();
+	            // considering of minute round-up
+	            String minuteEarlyTicket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId(), new Date(now.getTime() - 60 * 1000));
+	
+	            if (s_logger.isDebugEnabled()) {
+	                s_logger.debug("Console authentication. Ticket in 2-minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + minuteEarlyTicket);
+	            }
+	
+	            if (!minuteEarlyTicket.equals(ticketInUrl)) {
+	                s_logger.error("Access ticket expired or has been modified. vmId: " + cmd.getVmId() + "ticket in URL: " + ticketInUrl + ", tickets to check against: " + ticket + ","
+	                        + minuteEarlyTicket);
+	                return new ConsoleAccessAuthenticationAnswer(cmd, false);
+	            }
+	        }
         }
 
         if (cmd.getVmId() != null && cmd.getVmId().isEmpty()) {
@@ -899,10 +904,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             return new ConsoleAccessAuthenticationAnswer(cmd, false);
         }
 
-        // TODO authentication channel between console proxy VM and management
-        // server needs to be secured,
-        // the data is now being sent through private network, but this is
-        // apparently not enough
         VMInstanceVO vm = _instanceDao.findById(vmId);
         if (vm == null) {
             return new ConsoleAccessAuthenticationAnswer(cmd, false);
@@ -923,6 +924,40 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         if (sid == null || !sid.equals(vm.getVncPassword())) {
             s_logger.warn("sid " + sid + " in url does not match stored sid " + vm.getVncPassword());
             return new ConsoleAccessAuthenticationAnswer(cmd, false);
+        }
+        
+        if(cmd.isReauthenticating()) {
+            ConsoleAccessAuthenticationAnswer authenticationAnswer = new ConsoleAccessAuthenticationAnswer(cmd, true);
+            authenticationAnswer.setReauthenticating(true);
+
+            s_logger.info("Re-authentication request, ask host " + vm.getHostId() + " for new console info");
+        	GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new 
+            	GetVncPortCommand(vm.getId(), vm.getInstanceName()));
+
+            if (answer != null && answer.getResult()) {
+            	Ternary<String, String, String> parsedHostInfo = ConsoleProxyServlet.parseHostInfo(answer.getAddress());
+            	
+        		if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
+        			
+                    s_logger.info("Re-authentication result. vm: " + vm.getId() + ", tunnel url: " + parsedHostInfo.second()
+                    	+ ", tunnel session: " + parsedHostInfo.third());
+        			
+        			authenticationAnswer.setTunnelUrl(parsedHostInfo.second());
+        			authenticationAnswer.setTunnelSession(parsedHostInfo.third());
+        		} else {
+                    s_logger.info("Re-authentication result. vm: " + vm.getId() + ", host address: " + parsedHostInfo.first()
+                        	+ ", port: " + answer.getPort());
+        			
+        			authenticationAnswer.setHost(parsedHostInfo.first());
+        			authenticationAnswer.setPort(answer.getPort());
+        		}
+            } else {
+                s_logger.warn("Re-authentication request failed");
+            	
+            	authenticationAnswer.setSuccess(false);
+            }
+            
+            return authenticationAnswer;
         }
 
         return new ConsoleAccessAuthenticationAnswer(cmd, true);

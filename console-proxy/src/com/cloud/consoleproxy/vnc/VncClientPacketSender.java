@@ -22,6 +22,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.vnc.packet.client.ClientPacket;
 import com.cloud.consoleproxy.vnc.packet.client.FramebufferUpdateRequestPacket;
 import com.cloud.consoleproxy.vnc.packet.client.KeyboardEventPacket;
@@ -30,6 +31,7 @@ import com.cloud.consoleproxy.vnc.packet.client.SetEncodingsPacket;
 import com.cloud.consoleproxy.vnc.packet.client.SetPixelFormatPacket;
 
 public class VncClientPacketSender implements Runnable, PaintNotificationListener, KeyListener, MouseListener, MouseMotionListener, FrameBufferUpdateListener {
+  private static final Logger s_logger = Logger.getLogger(VncClientPacketSender.class);
 
   // Queue for outgoing packets
   private final BlockingQueue<ClientPacket> queue = new ArrayBlockingQueue<ClientPacket>(30);
@@ -68,6 +70,7 @@ public class VncClientPacketSender implements Runnable, PaintNotificationListene
         }
       }
     } catch (Throwable e) {
+      s_logger.error("Unexpected exception: ", e);
       if (connectionAlive) {
         closeConnection();
         vncConnection.shutdown();

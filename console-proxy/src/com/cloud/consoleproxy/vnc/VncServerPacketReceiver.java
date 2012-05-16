@@ -83,7 +83,7 @@ public class VncServerPacketReceiver implements Runnable {
         }
       }
     } catch (Throwable e) {
-    	
+      s_logger.error("Unexpected exception: ", e);
       if (connectionAlive) {
         closeConnection();
         vncConnection.shutdown();

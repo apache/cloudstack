@@ -13,8 +13,6 @@
 package com.cloud.servlet;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -40,7 +38,6 @@ import com.cloud.server.ManagementServer;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.DomainManager;
 import com.cloud.user.User;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
@@ -286,17 +283,23 @@ public class ConsoleProxyServlet extends HttpServlet {
 	}
 	
 	// put the ugly stuff here
-	static private Ternary<String, String, String> parseHostInfo(String hostInfo) {
+	static public Ternary<String, String, String> parseHostInfo(String hostInfo) {
 		String host = null;
 		String tunnelUrl = null;
 		String tunnelSession = null;
 		
+		s_logger.info("Parse host info returned from executing GetVNCPortCommand. host info: " + hostInfo);
+		
         if(hostInfo != null && hostInfo.startsWith("consoleurl")) {
         	String tokens[] = hostInfo.split("&");
         	
-        	host = hostInfo.substring(19, hostInfo.indexOf('/', 19)).trim();
-        	tunnelUrl = tokens[0].substring("consoleurl=".length());
-        	tunnelSession = tokens[1].split("=")[1];
+        	if(hostInfo.length() > 19 && hostInfo.indexOf('/', 19) > 19) {
+	        	host = hostInfo.substring(19, hostInfo.indexOf('/', 19)).trim();
+	        	tunnelUrl = tokens[0].substring("consoleurl=".length());
+	        	tunnelSession = tokens[1].split("=")[1];
+        	} else {
+        		host = "";
+        	}
         } else {
         	host = hostInfo;
         }
