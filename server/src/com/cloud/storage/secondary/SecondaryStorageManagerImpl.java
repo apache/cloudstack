@@ -362,7 +362,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             List<String> allowedCidrs = new ArrayList<String>();
             String[] cidrs = _allowedInternalSites.split(",");
             for (String cidr : cidrs) {
-                if (NetUtils.isValidCIDR(cidr) || NetUtils.isValidIp(cidr)) {
+                if (NetUtils.isValidCIDR(cidr) || NetUtils.isValidIp(cidr) || !cidr.startsWith("0.0.0.0")) {
                     allowedCidrs.add(cidr);
                 }
             }
