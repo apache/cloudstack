@@ -49,19 +49,21 @@
 				/*
 				(1) If IP is SourceNat, no LoadBalancer/PortForwarding/VPN/StaticNat can be added/enabled. 
 				*/
-	      if (item.issourcenat){
+	      if (item.issourcenat == true){
 					disallowedActions.push('enableStaticNAT');
 					disallowedActions.push('enableVPN');
-				}
+				}			
 				
 				/*
-				(2) If IP is non-SourceNat, show LoadBalancer/PortForwarding/VPN/StaticNat.
+				(2) If IP is non-SourceNat, show LoadBalancer/PortForwarding/VPN/StaticNat at first.
 				1. Once a LoadBalancer rule is added, hide PortForwarding/VPN/StaticNat.
 				2. Once a PortForwarding rule is added, hide LoadBalancer/VPN/StaticNat.
 				3. Once VPN is enabled, hide LoadBalancer/PortForwarding/StaticNat.
 				4. Once StaticNat is enabled, hide LoadBalancer/PortForwarding/VPN.	
 				*/
-			  				
+				else { //item.issourcenat == false
+				   //???
+				}			  				
 			}			
 			
       if (item.isstaticnat) {
@@ -1461,7 +1463,8 @@
                   });
                 }
               },
-              ipRules: {
+
+              ipRules: { //Configuration tab
                 title: 'label.configuration',
                 custom: cloudStack.ipRules({
                   preFilter: function(args) {
@@ -1490,6 +1493,17 @@
                         });
                       }
                     });
+																				
+										if(args.context.ipAddresses[0].networkOfferingConserveMode == false) {			 
+											/*
+											(1) If IP is SourceNat, no LoadBalancer/PortForwarding/VPN/StaticNat can be added/enabled. 
+											*/
+											if (args.context.ipAddresses[0].issourcenat){
+											  disallowedActions.push("loadBalancing");
+											  disallowedActions.push("portForwarding");												
+											}
+										}
+																				
                     if(networkOfferingHavingFirewallService == false)
                       disallowedActions.push("firewall");
                     if(networkOfferingHavingPortForwardingService == false)
