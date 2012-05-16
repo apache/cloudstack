@@ -577,14 +577,24 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         // Grab the SSH key pair and insert it into the database, if it is not present
 
         String userid = System.getProperty("user.name");
-        if (!userid.startsWith("cloud")) {
+        Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
+        if (!userid.startsWith("cloud") && !devel) {
             return;
         }
         String already = _configDao.getValue("ssh.privatekey");
-        String homeDir = Script.runSimpleBashScript("echo ~cloud");
-        if (homeDir == null) {
-        	throw new CloudRuntimeException("Cannot get home directory for account: cloud");
+        String homeDir = null;
+        if (devel) {
+        	homeDir = Script.runSimpleBashScript("echo ~");
+        	if (homeDir == null) {
+        		throw new CloudRuntimeException("Cannot get home directory for account: cloud");
+        	}
+        } else {
+        	homeDir = Script.runSimpleBashScript("echo ~cloud");
+        	if (homeDir == null) {
+        		throw new CloudRuntimeException("Cannot get home directory for account: cloud");
+        	}
         }
+        
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Processing updateKeyPairs");
         }
@@ -660,7 +670,13 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             }
         }
         s_logger.info("Going to update systemvm iso with generated keypairs if needed");
-        injectSshKeysIntoSystemVmIsoPatch(pubkeyfile.getAbsolutePath(), privkeyfile.getAbsolutePath());
+        try {
+        	injectSshKeysIntoSystemVmIsoPatch(pubkeyfile.getAbsolutePath(), privkeyfile.getAbsolutePath());
+        } catch (CloudRuntimeException e) {
+        	if (!devel) {
+        		throw new CloudRuntimeException(e.getMessage());
+        	}
+        }
     }
 
     private void writeKeyToDisk(String key, String keyPath) {

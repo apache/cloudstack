@@ -305,10 +305,12 @@ public class LibvirtVMDef {
 			return devicesBuilder.toString();
 		}
 
+		@SuppressWarnings("unchecked")
 		public List<DiskDef> getDisks() {
 			return (List<DiskDef>) devices.get(DiskDef.class.toString());
 		}
 
+		@SuppressWarnings("unchecked")
 		public List<InterfaceDef> getInterfaces() {
 			return (List<InterfaceDef>) devices.get(InterfaceDef.class
 					.toString());
