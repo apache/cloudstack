@@ -1507,6 +1507,24 @@
 											  disallowedActions.push("portForwarding");			
 											  disallowedActions.push("loadBalancing");											  									
 											}
+											
+											/*
+											(2) If IP is non-SourceNat, show StaticNat/VPN/PortForwarding/LoadBalancer at first.
+											1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
+											2. Once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
+											3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
+											4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
+											*/
+											else { //args.context.ipAddresses[0].issourcenat == false				   
+												if (args.context.ipAddresses[0].isstaticnat) { //1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
+												  disallowedActions.push("portForwarding");
+													disallowedActions.push("loadBalancing");
+												}
+												if (args.context.ipAddresses[0].vpnenabled) { //2. Once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
+													disallowedActions.push("portForwarding");
+													disallowedActions.push("loadBalancing"); 
+												}
+											}						
 										}
 																				
                     if(networkOfferingHavingFirewallService == false)
