@@ -4027,16 +4027,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             VmwareHypervisorHost hostMo = this.getHyperHost(context);
             _hostName = hostMo.getHyperHostName();
-            _privateNetworkVSwitchName = mgr.getPrivateVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
-            _publicNetworkVSwitchName = mgr.getPublicVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
-            _guestNetworkVSwitchName = mgr.getGuestVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
+
             Map<String, String> vsmCredentials;
             if (mgr.getNexusVSwitchGlobalParameter()) {
-                vsmCredentials = mgr.getNexusVSMCredentials(_guid);
+                vsmCredentials = mgr.getNexusVSMCredentialsByClusterId(Long.parseLong(_cluster));
                 if (vsmCredentials != null) {
                     s_logger.info("Stocking credentials while configuring resource.");
                     context.registerStockObject("vsmcredentials", vsmCredentials);
                 }
+                if (mgr.getPrivateVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus"))
+                    _privateNetworkVSwitchName = mgr.getPrivateVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
+                if (mgr.getPublicVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus"))
+                _publicNetworkVSwitchName = mgr.getPublicVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
+                if (mgr.getGuestVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus"))
+                _guestNetworkVSwitchName = mgr.getGuestVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
             }
 
         } catch (Exception e) {
@@ -4171,18 +4175,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.error("Unable to connect to vSphere server: " + _vCenterAddress, e);
                 throw new CloudRuntimeException("Unable to connect to vSphere server: " + _vCenterAddress);
             }
-            if(_nexusVSwitch)
-            {
-            	VmwareManager mgr = _serviceContext.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);            	
-                Map<String, String> nexusVSwitchCredentials = mgr.getNexusVSMCredentials(_guid);
-                if(nexusVSwitchCredentials != null)
-                {
-                	_serviceContext.registerStockObject("vsmcredentials", nexusVSwitchCredentials);
-                	//_serviceContext.registerStockObject("vsmip", nexusVSwitchCredentials.get("vsmip"));
-                	//_serviceContext.registerStockObject("vsmusername", nexusVSwitchCredentials.get("vsmusername"));
-                	//_serviceContext.registerStockObject("vsmpassword", nexusVSwitchCredentials.get("vsmpassword"));
-                }
-            }            
         }
         return _serviceContext;
     }

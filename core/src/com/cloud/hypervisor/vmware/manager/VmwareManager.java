@@ -61,8 +61,6 @@ public interface VmwareManager {
 	boolean beginExclusiveOperation(int timeOutSeconds);
 	void endExclusiveOperation();
 
-	Map<String, String> getNexusVSMCredentials(String hostGuid);
-
     boolean getNexusVSwitchGlobalParameter();
 
     Map<String, String> getNexusVSMCredentialsByClusterId(Long clusterId);

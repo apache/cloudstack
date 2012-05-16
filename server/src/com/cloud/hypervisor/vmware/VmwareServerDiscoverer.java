@@ -30,7 +30,10 @@ import com.cloud.alert.AlertManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter.NetworkType;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.HostVO;
@@ -72,6 +75,8 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
     @Inject VMTemplateDao _tmpltDao;
     @Inject ClusterDetailsDao _clusterDetailsDao;
     @Inject HostDao _hostDao;
+    @Inject
+    DataCenterDao _dcDao;
     @Inject ResourceManager _resourceMgr;
     @Inject CiscoNexusVSMDeviceDao _nexusDao;
     @Inject
@@ -116,13 +121,21 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                     s_logger.info("Detected private network label : " + privateTrafficLabel);
                 }
             }
-            if (_vmwareMgr.getPublicVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus")) {
+
+            DataCenterVO zone = _dcDao.findById(dcId);
+            NetworkType zoneType = zone.getNetworkType();
+
+            if (zoneType != NetworkType.Basic && _vmwareMgr.getPublicVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus")) {
                 // Get physical network label
                 publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId, HypervisorType.VMware);
                 if (publicTrafficLabel != null) {
                     s_logger.info("Detected public network label : " + publicTrafficLabel);
                 }
             }
+            else {
+                s_logger.info("Skipping detection of public traffic label as zone type is Basic.");
+            }
+
             if (_vmwareMgr.getGuestVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus")) {
                 // Get physical network label
                 guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(dcId, HypervisorType.VMware);
