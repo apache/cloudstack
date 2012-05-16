@@ -24,7 +24,7 @@ def doit(term):
   if len(issues) == 0:
     return
   for issue in issues:
-    print "Found %s in %s" % (term, issue['key'])
+    print "Found %s in http://%s/browse/%s" % (term, host, issue['key'])
 
 
 for term in sys.stdin.readlines():
