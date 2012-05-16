@@ -114,6 +114,7 @@ import com.cloud.dc.VlanVO;
 import com.cloud.domain.Domain;
 import com.cloud.event.Event;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
@@ -158,6 +159,7 @@ import com.cloud.storage.Snapshot;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
@@ -1100,9 +1102,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         volResponse.setAttached(volume.getAttached());
-        volResponse.setDestroyed(volume.getState() == Volume.State.Destroy);
-        VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
-        boolean isExtractable = template != null && template.isExtractable() && !(template.getTemplateType() == TemplateType.SYSTEM);
+        volResponse.setDestroyed(volume.getState() == Volume.State.Destroy);        
+        boolean isExtractable = true;
+        if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk dont have any template dependence.
+            VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
+            if (template != null) { // For ISO based volumes template = null and we allow extraction of all ISO based volumes
+                isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;                
+            }
+        }
+        
         volResponse.setExtractable(isExtractable);
         volResponse.setObjectName("volume");
         return volResponse;
