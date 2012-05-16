@@ -1474,10 +1474,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
 
-            String dvSwitchUuid;
-            ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
-            DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
-
             VirtualDevice nic;
             int nicMask = 0;
             int nicCount = 0;
@@ -1485,12 +1481,19 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.info("Prepare NIC device based on NicTO: " + _gson.toJson(nicTo));
 
                 Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo);
-
-                ManagedObjectReference dvsMor = dataCenterMo.getDvSwitchMor(networkInfo.first());
-                dvSwitchUuid = dataCenterMo.getDvSwitchUuid(dvsMor);
-                s_logger.info("Preparing NIC device on dvSwitch : " + dvSwitchUuid);
-
-                nic = VmwareHelper.prepareDvNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), dvSwitchUuid, nicTo.getMac(), i, i + 1, true, true);
+                if (mgr.getNexusVSwitchGlobalParameter()) {
+                    String dvSwitchUuid;
+                    ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
+                    DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
+                    ManagedObjectReference dvsMor = dataCenterMo.getDvSwitchMor(networkInfo.first());
+                    dvSwitchUuid = dataCenterMo.getDvSwitchUuid(dvsMor);
+                    s_logger.info("Preparing NIC device on dvSwitch : " + dvSwitchUuid);
+                    nic = VmwareHelper.prepareDvNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), dvSwitchUuid, nicTo.getMac(), i, i + 1, true, true);
+                } else {
+                    s_logger.info("Preparing NIC device on network " + networkInfo.second());
+                    nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), nicTo.getMac(), i, i + 1, true, true);
+                }
+                
                 deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
                 deviceConfigSpecArray[i].setDevice(nic);
                 deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.add);
