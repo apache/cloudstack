@@ -6514,7 +6514,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         } catch (Exception ex) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Failed to retrive the default label for management traffic:" + "zone: " + dcId + " hypervisor: " + hypervisorType + " due to:" + ex.getMessage());
+                s_logger.debug("Failed to retrieve the default label for public traffic." + "zone: " + dcId + " hypervisor: " + hypervisorType + " due to: " + ex.getMessage());
             }
         }
         return null;
@@ -6542,7 +6542,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         } catch (Exception ex) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Failed to retrive the default label for management traffic:" + "zone: " + dcId + " hypervisor: " + hypervisorType + " due to:" + ex.getMessage());
+                s_logger.debug("Failed to retrieve the default label for guest traffic." + "zone: " + dcId + " hypervisor: " + hypervisorType + " due to: " + ex.getMessage());
             }
         }
         return null;

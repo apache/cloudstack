@@ -871,23 +871,6 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
             }
         }
     }
-    
-    @DB
-    public Map<String, String> getNexusVSMCredentials(String hostGuid) {
-        s_logger.info("Reading credentials from DB.");
-        HostVO host = _hostDao.findByGuid(hostGuid);
-        Map<String, String> vsmCredentials = null;
-        long clusterId;
-        if (host != null) {
-            clusterId = host.getClusterId();
-            s_logger.info("cluster is : " + clusterId);
-            vsmCredentials = getNexusVSMCredentialsByClusterId(clusterId);
-        }
-        else {
-            s_logger.info("Found invalid host object for hostGuid : " + hostGuid);
-        }
-        return vsmCredentials;
-    }
 
     @Override @DB
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
