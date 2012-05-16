@@ -581,17 +581,16 @@ public class VirtualRoutingResource implements Manager {
         } else {
             command.add("-D");
         }
-        String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
+
         if (sourceNat) {
             command.add("-s");
         } 
         if (firstIP) {
             command.add( "-f");
-            command.add( "-l", publicIpAddress + "/" + cidrSize);
-        } else {
-            command.add("-l", publicIpAddress);
-        }
 
+        }
+        String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
+        command.add( "-l", publicIpAddress + "/" + cidrSize);
         String publicNic = "eth" + nicNum;
         command.add("-c", publicNic);
         

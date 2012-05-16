@@ -1555,8 +1555,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             boolean removeVif = false;
             if (add && correctVif == null) {
                 addVif = true;
-            } else if (!add && firstIP) {
-                removeVif = true;
             }
 
             if (addVif) {
@@ -1586,19 +1584,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } else {
                 args += " -D ";
             }
-            String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
+
             if (sourceNat) {
                 args += " -s";
-            } 
-            if (firstIP) {
-            	args += " -f";
-            	args += " -l ";
-                args += publicIpAddress + "/" + cidrSize;
-            } else {
-              	args += " -l ";
-                args += publicIpAddress;
             }
-            
+            if (firstIP) {
+                args += " -f";
+            }
+
+            String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
+            args += " -l ";
+            args += publicIpAddress + "/" + cidrSize;
+
             args += " -c ";
             args += "eth" + correctVif.getDevice(conn);
             

@@ -100,40 +100,6 @@ del_vpn_chain_for_ip () {
   logger -t cloud "$(basename $0): vpn chain did not exist for $pubIp, cleaned up"
 }
 
-convert_primary_to_32() {
-  local existingIpMask=$(sudo ip addr show dev $ethDev | grep "inet " | awk '{print $2}')
-  local primary=$(echo $1 | awk -F'/' '{print $1}')
-# add 32 mask to the existing primary
-  for ipMask in $existingIpMask
-  do
-      local ipNoMask=$(echo $ipMask | awk -F'/' '{print $1}')
-      local mask=$(echo $ipMask | awk -F'/' '{print $2}')
-      if [ "$ipNoMask" == "$primary" ]
-      then
-        continue
-      fi
-      if [ "$mask" != "32" ]
-      then
-         sudo ip addr add dev $ethDev $ipNoMask/32
-      fi
-  done
-#delete primaries
-  for ipMask in $existingIpMask
-  do
-      local ipNoMask=$(echo $ipMask | awk -F'/' '{print $1}')
-      local mask=$(echo $ipMask | awk -F'/' '{print $2}')
-      if [ "$ipNoMask" == "$primary" ]
-      then
-        continue
-      fi
-      if [ "$mask" != "32" ]
-      then
-    # this would have erase all primaries and secondaries in the previous loop, so we need to eat up the error.
-         sudo ip addr del dev $ethDev $ipNoMask/$mask > /dev/null
-      fi
-  done
-}
-
 remove_routing() {
   local pubIp=$1
   logger -t cloud "$(basename $0):Remove routing $pubIp on interface $ethDev"
@@ -168,6 +134,18 @@ copy_routes_from_main() {
   sudo ip route add throw $eth1Mask table $tableName proto static 
   sudo ip route add throw $ethMask  table $tableName proto static 
   return 0;
+}
+
+ip_addr_add() {
+  local dev="$1"
+  local ip="$2"
+  local ipNoMask=$(echo $ip | awk -F'/' '{print $1}')
+  local mask=$(echo $ip | awk -F'/' '{print $2}')
+  local subnet=`TERM=linux ipcalc $ip | grep Network | awk -F' ' '{print $2}' | awk -F'/' '{print $1}'`
+  local brd=`TERM=linux ipcalc $ip|grep Broadcast|awk -F' ' '{print $2}'`
+  sudo ip addr add dev $dev $subnet/$mask broadcast $brd > /dev/null
+  sudo ip addr add dev $dev $ipNoMask/32
+
 }
 
 add_routing() {
@@ -236,13 +214,7 @@ add_first_ip() {
   sudo ip link show $ethDev | grep "state DOWN" > /dev/null
   local old_state=$?
   
-  convert_primary_to_32 $pubIp
-  sudo ip addr add dev $ethDev $pubIp
-  if [ "$mask" != "32" ] && [ "$mask" != "" ]
-  then
-    # remove if duplicat ip with 32 mask, this happens when we are promting the ip to primary
-       sudo ip addr del dev $ethDev $ipNoMask/32 > /dev/null
-  fi
+  ip_addr_add $ethDev $pubIp
 
   sudo iptables -D FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
   sudo iptables -D FORWARD -i eth0 -o $ethDev  -j ACCEPT
@@ -297,7 +269,7 @@ add_an_ip () {
   sudo ip link show $ethDev | grep "state DOWN" > /dev/null
   local old_state=$?
 
-  sudo ip addr add dev $ethDev $pubIp ;
+  ip_addr_add $ethDev $pubIp
   add_snat $1
   if [ $if_keep_state -ne 1 -o $old_state -ne 0 ]
   then
@@ -317,24 +289,7 @@ remove_an_ip () {
   local existingIpMask=$(sudo ip addr show dev $ethDev | grep inet | awk '{print $2}'  | grep -w $ipNoMask)
   [ "$existingIpMask" == "" ] && return 0
   remove_snat $1
-  local existingMask=$(echo $existingIpMask | awk -F'/' '{print $2}')
-  if [ "$existingMask" == "32" ] 
-  then
-    sudo ip addr del dev $ethDev $existingIpMask
-    result=$?
-  fi
-
-  if [ "$existingMask" != "32" ] 
-  then
-        replaceIpMask=`sudo ip addr show dev $ethDev | grep inet | grep -v $existingIpMask | awk '{print $2}' | sort -t/ -k2 -n|tail -1`
-        sudo ip addr del dev $ethDev $existingIpMask;
-        if [ -n "$replaceIpMask" ]; then
-          sudo ip addr del dev $ethDev $replaceIpMask;
-          replaceIp=`echo $replaceIpMask | awk -F/ '{print $1}'`;
-          sudo ip addr add dev $ethDev $replaceIp/$existingMask;
-        fi
-    result=$?
-  fi
+  sudo ip addr del dev $ethDev $existingIpMask
 
   if [ $result -gt 0  -a $result -ne 2 ]
   then
