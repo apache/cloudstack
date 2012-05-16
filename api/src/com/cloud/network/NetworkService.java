@@ -129,5 +129,7 @@ public interface NetworkService {
     List<Pair<TrafficType, String>> listTrafficTypeImplementor(ListTrafficTypeImplementorsCmd cmd);
 
     List<? extends Network> getIsolatedNetworksWithSourceNATOwnedByAccountInZone(long zoneId, Account owner);
+    
+    List<? extends Network> listNetworksByVpc(long vpcId);
 
 }

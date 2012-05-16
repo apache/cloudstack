@@ -1245,29 +1245,29 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         NetworkOfferingVO offering = null;
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOfferingWithSGService) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultSharedNetworkOfferingWithSGService, "Offering for Shared Security group enabled networks", TrafficType.Guest,
-                    null, true, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true);
+            offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedNetworkOfferingWithSGService, "Offering for Shared Security group enabled networks", TrafficType.Guest, null,
+                    true, Availability.Optional, null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
 
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedNetworkOffering) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultSharedNetworkOffering, "Offering for Shared networks", TrafficType.Guest, null, true, Availability.Optional,
-                    null, defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true);
+            offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedNetworkOffering, "Offering for Shared networks", TrafficType.Guest, null, true, Availability.Optional, null,
+                    defaultSharedNetworkOfferingProviders, true, Network.GuestType.Shared, false, null, true, null, true);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
 
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService, "Offering for Isolated networks with Source Nat service enabled",
-                    TrafficType.Guest, null, false, Availability.Required, null, defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null, false);
+            offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService, "Offering for Isolated networks with Source Nat service enabled", TrafficType.Guest,
+                    null, false, Availability.Required, null, defaultIsolatedSourceNatEnabledNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
 
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOffering) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultIsolatedNetworkOffering, "Offering for Isolated networks with no Source Nat service", TrafficType.Guest, null,
-                    true, Availability.Optional, null, defaultIsolatedNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null, true);
+            offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOffering, "Offering for Isolated networks with no Source Nat service", TrafficType.Guest, null, true,
+                    Availability.Optional, null, defaultIsolatedNetworkOfferingProviders, true, Network.GuestType.Isolated, false, null, true, null, true);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
@@ -1295,8 +1295,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         serviceCapabilityMap.put(Service.StaticNat, eip);
         
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultSharedEIPandELBNetworkOffering) == null) {
-            offering = _configMgr.createNetworkOffering(Account.ACCOUNT_ID_SYSTEM, NetworkOffering.DefaultSharedEIPandELBNetworkOffering, "Offering for Shared networks with Elastic IP and Elastic LB capabilities", TrafficType.Guest, null,
-                    true, Availability.Optional, null, netscalerServiceProviders, true, Network.GuestType.Shared, false, null, true, serviceCapabilityMap, true);
+            offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultSharedEIPandELBNetworkOffering, "Offering for Shared networks with Elastic IP and Elastic LB capabilities", TrafficType.Guest, null, true,
+                    Availability.Optional, null, netscalerServiceProviders, true, Network.GuestType.Shared, false, null, true, serviceCapabilityMap, true);
             offering.setState(NetworkOffering.State.Enabled);
             offering.setDedicatedLB(false);
             _networkOfferingDao.update(offering.getId(), offering);
@@ -1914,7 +1914,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 nic.setState(Nic.State.Reserved);
                 updateNic(nic, network.getId(), 1);
             }
-
+            
             for (NetworkElement element : _networkElements) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
@@ -6461,5 +6461,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         return null;
+    }
+    
+    @Override
+    public List<? extends Network> listNetworksByVpc(long vpcId) {
+        return _networksDao.listByVpc(vpcId);
     }
 }

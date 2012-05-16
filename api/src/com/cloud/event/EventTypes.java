@@ -252,4 +252,14 @@ public class EventTypes {
     public static final String EVENT_EXTERNAL_FIREWALL_DEVICE_ADD = "PHYSICAL.FIREWALL.ADD";
     public static final String EVENT_EXTERNAL_FIREWALL_DEVICE_DELETE = "PHYSICAL.FIREWALL.DELETE";
     public static final String EVENT_EXTERNAL_FIREWALL_DEVICE_CONFIGURE = "PHYSICAL.FIREWALL.CONFIGURE";
+    
+    // VPC
+    public static final String EVENT_VPC_CREATE = "VPC.CREATE";
+    public static final String EVENT_VPC_UPDATE = "VPC.UPDATE";
+    public static final String EVENT_VPC_DELETE = "VPC.DELETE";
+    
+    
+    public static final String EVENT_VPC_OFFERING_CREATE = "VPC.OFFERING.CREATE";
+    public static final String EVENT_VPC_OFFERING_UPDATE = "VPC.OFFERING.UPDATE";
+    public static final String EVENT_VPC_OFFERING_DELETE = "VPC.OFFERING.DELETE";
 }

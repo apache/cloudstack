@@ -75,6 +75,9 @@ public class NetworkVO implements Network, Identity {
 
     @Column(name="network_offering_id")
     long networkOfferingId;
+    
+    @Column(name="vpc_id")
+    long vpcId;
 
     @Column(name="physical_network_id")
     Long physicalNetworkId;
@@ -472,5 +475,10 @@ public class NetworkVO implements Network, Identity {
     @Override
     public boolean getSpecifyIpRanges() {
     	return specifyIpRanges;
+    }
+
+    @Override
+    public long getVpcId() {
+        return vpcId;
     }
 }

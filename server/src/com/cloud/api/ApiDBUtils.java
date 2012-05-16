@@ -49,6 +49,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -68,6 +69,7 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -91,8 +93,8 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.Volume.Type;
+import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -187,6 +189,7 @@ public class ApiDBUtils {
     private static AccountDetailsDao _accountDetailsDao;
     private static NetworkDomainDao _networkDomainDao;
     private static HighAvailabilityManager _haMgr;
+    private static VpcManager _vpcMgr;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -240,6 +243,7 @@ public class ApiDBUtils {
         _accountDetailsDao = locator.getDao(AccountDetailsDao.class);
         _networkDomainDao = locator.getDao(NetworkDomainDao.class);
         _haMgr = locator.getManager(HighAvailabilityManager.class);
+        _vpcMgr = locator.getManager(VpcManager.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -742,5 +746,13 @@ public class ApiDBUtils {
     
     public static String getHaTag() {
         return _haMgr.getHaTag();
+    }
+    
+    public static Map<Service, Set<Provider>> listVpcOffServices(long vpcOffId) {
+        return _vpcMgr.getVpcOffSvcProvidersMap(vpcOffId);
+    }
+    
+    public static List<? extends Network> listVpcNetworks(long vpcId) {
+        return _networkMgr.listNetworksByVpc(vpcId);
     }
 }

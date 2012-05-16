@@ -43,7 +43,8 @@ public interface StorageService{
      * @throws ResourceUnavailableException
      *             TODO
      */
-    StoragePool createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceUnavailableException;
+    StoragePool createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, 
+    UnknownHostException, ResourceUnavailableException;
 
     /**
      * Creates the database object for a volume based on the given criteria
@@ -88,7 +89,8 @@ public interface StorageService{
      * @throws InsufficientCapacityException
      *             TODO
      */
-    public StoragePool preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException, InsufficientCapacityException;
+    public StoragePool preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException, 
+    InsufficientCapacityException;
 
     /**
      * Complete maintenance for primary storage
@@ -99,7 +101,8 @@ public interface StorageService{
      * @throws ResourceUnavailableException
      *             TODO
      */
-    public StoragePool cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ResourceUnavailableException;
+    public StoragePool cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) 
+            throws ResourceUnavailableException;
 
     public StoragePool updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
 
