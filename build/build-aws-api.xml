@@ -70,11 +70,6 @@
 				<isset property="update.build.number" />
 			</and>
 		</condition>
-        <replaceregexp file="wscript"
-            match="VERSION = '(.*)'"
-            replace="VERSION = '${impl.version}'"
-            byline="true"
-            />
 		<echo message="Build number is ${impl.version}" />
         <!--
         <propertyfile file="${base.dir}/awsapi/conf/ec2-service.properties">
