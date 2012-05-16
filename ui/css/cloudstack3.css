@@ -1685,6 +1685,15 @@ div.detail-group.actions td {
   position: relative;
   float: left;
   margin: 4px 0 0 19px;
+  background: url(../images/logo-cloudplatform.png) no-repeat 0 center;
+}
+
+#header.nologo div.logo {
+  width: 170px;
+  height: 47px;
+  position: relative;
+  float: left;
+  margin: 4px 0 0 19px;
   background: url(../images/logo.png) no-repeat 0 center;
 }
 
