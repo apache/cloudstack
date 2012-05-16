@@ -1018,7 +1018,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
             nexusVSMCredentials.put("vsmip", nexusVSM.getipaddr());
             nexusVSMCredentials.put("vsmusername", nexusVSM.getUserName());
             nexusVSMCredentials.put("vsmpassword", nexusVSM.getPassword());
-            s_logger.info(nexusVSMCredentials.toString());
+            s_logger.info("Successfully fetched the credentials of Nexus VSM.");
         }
         return nexusVSMCredentials;
     }
