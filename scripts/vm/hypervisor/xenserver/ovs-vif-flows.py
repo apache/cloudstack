@@ -41,8 +41,12 @@ def apply_flows(bridge, this_vif_ofport, vif_ofports):
 def main(command, vif_raw):
     if command not in ('online', 'offline'):
         return
-    # TODO (very important)
-    # Quit immediately if networking is NOT being managed by the OVS tunnel manager
+    # Make sure the networking stack is not linux bridge!
+    net_stack = pluginlib.do_cmd(['cat', '/etc/xensource/network.conf'])
+    if net_stack.lower() == "bridge":
+        # Nothing to do here!
+        return
+
     vif_name, dom_id, vif_index = vif_raw.split('-')
     # validate vif and dom-id
     this_vif = "%s%s.%s" % (vif_name, dom_id, vif_index)
