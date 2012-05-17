@@ -7,6 +7,18 @@
     <property name="hibernate.connection.pool_size">20</property>
 	<property name="hibernate.connection.autocommit">false</property>
 	
+	<property name="connection.provider_class">org.hibernate.connection.C3P0ConnectionProvider</property>
+
+	<property name="hibernate.c3p0.min_size">5</property>
+	<property name="hibernate.c3p0.max_size">50</property>
+	<property name="hibernate.c3p0.timeout">7200</property>
+	<property name="hibernate.c3p0.max_statements">50</property>
+	<!-- This property forces the revalidation of a connection after the given amount of time (in secs)	 -->
+	<!-- it must be set to LESS than the wait_timout setting for the mysql server (this setting defaults to 28800 secs (8 hours)) -->
+
+	<property name="hibernate.c3p0.idle_test_period">5400</property>
+
+	
 	<!-- transactiion isolation level : 1 - read uncommitted, 2 - read committed, 4 - repeatable read, 8 - Serializable	 -->
 	<property name="hibernate.connection.isolation">2</property>
 	
