@@ -1026,6 +1026,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         	com.cloud.storage.VolumeHostVO volumeHostRef = ApiDBUtils.findVolumeHostRef(volume.getId(), volume.getDataCenterId());
             volResponse.setSize(volumeHostRef.getSize());
             volResponse.setCreated(volumeHostRef.getCreated());
+            Account caller = UserContext.current().getCaller();
+            if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)
+            volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volumeHostRef.getFormat()).toString());
             if (volumeHostRef.getDownloadState() != Status.DOWNLOADED) {
                 String volumeStatus = "Processing";
                 if (volumeHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
@@ -1097,8 +1100,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // return hypervisor for ROOT and Resource domain only
         Account caller = UserContext.current().getCaller();
-        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());
+        if ((caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) && volume.getState() != Volume.State.UploadOp) {            
+        	volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());            
         }
 
         volResponse.setAttached(volume.getAttached());

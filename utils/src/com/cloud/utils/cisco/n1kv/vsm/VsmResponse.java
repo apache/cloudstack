@@ -17,7 +17,7 @@ import org.xml.sax.InputSource;
 import java.io.StringReader;
 import java.io.IOException;
 
-public class VsmResponse {
+public abstract class VsmResponse {
 
     // Following error tags, error types and severity have been taken from RFC 4741.
     public enum ErrorTag {
@@ -56,16 +56,16 @@ public class VsmResponse {
 
     private static final Logger s_logger = Logger.getLogger(VsmResponse.class);
 
-    private String _xmlResponse;
-    private Document _docResponse;
-    private boolean _responseOk;
+    protected String _xmlResponse;
+    protected Document _docResponse;
+    protected boolean _responseOk;
 
-    private ErrorTag _tag;
-    private ErrorType _type;
-    private ErrorSeverity _severity;
-    private String _path;
-    private String _message;
-    private String _info;
+    protected ErrorTag _tag;
+    protected ErrorType _type;
+    protected ErrorSeverity _severity;
+    protected String _path;
+    protected String _message;
+    protected String _info;
 
     VsmResponse(String response) {
         _xmlResponse = response;
@@ -117,19 +117,9 @@ public class VsmResponse {
         return error.toString();
     }
 
-    private void parse(Element root) {
-        NodeList list = root.getElementsByTagName("nf:rpc-error");
-        if (list.getLength() == 0) {
-            // No rpc-error tag; means response was ok.
-            assert(root.getElementsByTagName("nf:ok").getLength() > 0);
-            _responseOk = true;
-        } else {
-            parseError(list.item(0));
-            _responseOk = false;
-        }
-    }
+    protected abstract void parse(Element root);
 
-    private void parseError(Node element) {
+    protected void parseError(Node element) {
         Element rpcError = (Element) element;
 
         try {
@@ -155,7 +145,7 @@ public class VsmResponse {
         }
     }
 
-    private ErrorTag getErrorTag(String tagText) {
+    protected ErrorTag getErrorTag(String tagText) {
         ErrorTag tag = ErrorTag.InUse;
 
         if (tagText.equals("in-use")) {
@@ -202,7 +192,7 @@ public class VsmResponse {
     }
 
     // Helper routine to check for the response received.
-    private void printResponse() {
+    protected void printResponse() {
         try {
             DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder docBuilder = docFactory.newDocumentBuilder();

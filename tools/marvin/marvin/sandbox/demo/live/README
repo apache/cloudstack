@@ -1,0 +1,8 @@
+
+Download Marvin source from hudson
+
+Install Marvin:
+pip install Marvin-0.1.0.tar.gz
+
+To Run the test:
+python -m marvin.deployAndRun -c demo.cfg -t /tmp/t.log -r /tmp/r.log -f testSshDeployVM.py -l
