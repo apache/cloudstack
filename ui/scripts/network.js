@@ -71,6 +71,24 @@
 								 
 					//3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
 					$.ajax({
+						url: createURL('listPortForwardingRules'),
+						data: {
+							ipaddressid: item.id,
+							listAll: true
+						},
+						dataType: 'json',
+						async: false,
+						success: function(json) {							
+							var rules = json.listportforwardingrulesresponse.portforwardingrule;
+							if(rules != null && rules.length > 0) {
+							  disallowedActions.push('enableVPN');
+								disallowedActions.push('enableStaticNAT'); 
+							}
+						}
+					});	
+										
+					//4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
+					$.ajax({
 						url: createURL('listLoadBalancerRules'),
 						data: {
 							publicipid: item.id,
@@ -85,27 +103,7 @@
 								disallowedActions.push('enableStaticNAT'); 
 							}
 						}
-					});						
-					
-					//4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
-					$.ajax({
-						url: createURL('listPortForwardingRules'),
-						data: {
-							ipaddressid: item.id,
-							listAll: true
-						},
-						dataType: 'json',
-						async: false,
-						success: function(json) {
-							// Get instance
-							var rules = json.listportforwardingrulesresponse.portforwardingrule;
-							if(rules != null && rules.length > 0) {
-							  disallowedActions.push('enableVPN');
-								disallowedActions.push('enableStaticNAT'); 
-							}
-						}
-					});	
-					 
+					});		
 				}			  				
 			}			
 			
@@ -1562,6 +1560,41 @@
 													disallowedActions.push("portForwarding");
 													disallowedActions.push("loadBalancing"); 
 												}
+																																					 
+												//3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
+												$.ajax({
+													url: createURL('listPortForwardingRules'),
+													data: {
+														ipaddressid: args.context.ipAddresses[0].id,
+														listAll: true
+													},
+													dataType: 'json',
+													async: false,
+													success: function(json) {
+														// Get instance
+														var rules = json.listportforwardingrulesresponse.portforwardingrule;
+														if(rules != null && rules.length > 0) {																
+															disallowedActions.push("loadBalancing"); 
+														}
+													}
+												});								
+												
+												//4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
+												$.ajax({
+													url: createURL('listLoadBalancerRules'),
+													data: {
+														publicipid: args.context.ipAddresses[0].id,
+														listAll: true
+													},
+													dataType: 'json',
+													async: false,
+													success: function(json) {
+														var rules = json.listloadbalancerrulesresponse.loadbalancerrule;
+														if(rules != null && rules.length > 0) {
+															disallowedActions.push("portForwarding");
+														}
+													}
+												});															
 											}						
 										}
 																				
