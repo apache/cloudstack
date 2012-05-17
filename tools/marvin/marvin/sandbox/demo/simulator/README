@@ -1,0 +1,12 @@
+To generate the config
+Alter the .properties file to point to your simulator installed environment
+
+python simulator_setup.py -i simulatordemo.properties -o simulatordemo.cfg
+
+
+To deploy the environment and run the tests
+
+python -m marvin.deployAndRun -c simulatordemo.cfg -t /tmp/t.log -r /tmp/r.log -d testcase 
+
+
+
