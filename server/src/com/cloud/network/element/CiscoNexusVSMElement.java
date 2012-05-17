@@ -26,6 +26,7 @@ import com.cloud.api.commands.ListCiscoNexusVSMCmd;
 import com.cloud.api.commands.EnableCiscoNexusVSMCmd;
 import com.cloud.api.commands.DisableCiscoNexusVSMCmd;
 import com.cloud.api.commands.GetCiscoVSMByClusterIdCmd;
+import com.cloud.api.commands.GetCiscoVSMDetailsCmd;
 import com.cloud.api.response.CiscoNexusVSMResponse;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -216,6 +217,15 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     }
 
     @Override
+    public CiscoNexusVSMDeviceVO getCiscoNexusVSMDetails(GetCiscoVSMDetailsCmd cmd) {
+    	CiscoNexusVSMDeviceVO result = getCiscoVSMbyVSMId(cmd.getVSMId());
+    	if (result == null) {
+    		throw new CloudRuntimeException("Cisco VSM with specified Id found");
+    	}
+    	return result;
+    }
+    
+    @Override
     public CiscoNexusVSMDeviceVO getCiscoNexusVSMByClusId(GetCiscoVSMByClusterIdCmd cmd) {
     	CiscoNexusVSMDeviceVO result = getCiscoVSMbyClusId(cmd.getClusterId());
     	if (result == null) {
@@ -237,6 +247,27 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
             response.setMgmtIpAddress(vsmDeviceVO.getipaddr());
             return response;
         }
+    
+    public CiscoNexusVSMResponse createCiscoNexusVSMDetailedResponse(CiscoNexusVSMDeviceVO vsmDeviceVO) {
+    	CiscoNexusVSMResponse response = new CiscoNexusVSMResponse();
+    	response.setId(vsmDeviceVO.getId());
+    	response.setDeviceName(vsmDeviceVO.getvsmName());
+    	response.setDeviceState(vsmDeviceVO.getvsmDeviceState().toString());    	
+    	response.setMgmtIpAddress(vsmDeviceVO.getipaddr());
+    	response.setvCenterDcName(vsmDeviceVO.getvCenterDCName());    	
+    	response.setvCenterIpAddress(vsmDeviceVO.getvCenterIPAddr());
+    	// The following values can be null, so check for that.
+    	if(vsmDeviceVO.getvsmConfigMode() != null)
+    		response.setVSMConfigMode(vsmDeviceVO.getvsmConfigMode().toString());
+    	if(vsmDeviceVO.getvsmConfigState() != null)
+    		response.setVSMConfigState(vsmDeviceVO.getvsmConfigState().toString());
+    	if(vsmDeviceVO.getvsmDeviceState() != null)
+    		response.setVSMDeviceState(vsmDeviceVO.getvsmDeviceState().toString());
+    	response.setVSMCtrlVlanId(vsmDeviceVO.getManagementVlan());
+    	response.setVSMPktVlanId(vsmDeviceVO.getPacketVlan());
+    	response.setVSMStorageVlanId(vsmDeviceVO.getStorageVlan());
+    	return response;
+    }
 
     @Override
     public String getPropertiesFile() {

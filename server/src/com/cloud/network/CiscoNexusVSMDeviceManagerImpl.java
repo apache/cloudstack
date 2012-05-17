@@ -304,6 +304,11 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     }
     
     @DB
+    public CiscoNexusVSMDeviceVO getCiscoVSMbyVSMId(long vsmId) {
+    	return _ciscoNexusVSMDeviceDao.findById(vsmId);
+    }
+    
+    @DB
     public CiscoNexusVSMDeviceVO getCiscoVSMbyClusId(long clusterId) {
     	ClusterVSMMapVO mapVO = _clusterVSMDao.findByClusterId(clusterId);
     	if (mapVO == null) {

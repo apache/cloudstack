@@ -346,6 +346,14 @@ public class ApiConstants {
     public static final String VSM_USERNAME = "vsmusername";
     public static final String VSM_PASSWORD = "vsmpassword";
     public static final String VSM_IPADDRESS = "vsmipaddress";
+    public static final String VSM_MGMT_VLAN_ID = "vsmmgmtvlanid";
+    public static final String VSM_PKT_VLAN_ID = "vsmpktvlanid";
+    public static final String VSM_CTRL_VLAN_ID = "vsmctrlvlanid";
+    public static final String VSM_STORAGE_VLAN_ID = "vsmstoragevlanid";
+    public static final String VSM_DOMAIN_ID = "vsmdomainid";
+    public static final String VSM_CONFIG_MODE = "vsmconfigmode";
+    public static final String VSM_CONFIG_STATE = "vsmconfigstate";
+    public static final String VSM_DEVICE_STATE = "vsmdevicestate";
     
     public enum HostDetails {
         all, capacity, events, stats, min;
