@@ -639,8 +639,8 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
                 range = start + "/" + end
                 if start == "-1":
                     range = "any"
-                    for ip in ips:
-                        execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " " + direction + "  " + ip + " -j "+ action)
+                for ip in ips:
+                    execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " " + direction + "  " + ip + " -j "+ action)
         
         if allow_any and protocol != 'all':
             if protocol != 'icmp':
@@ -649,7 +649,7 @@ def add_network_rules(vm_name, vm_id, vm_ip, signature, seqno, vmMac, rules, vif
                 range = start + "/" + end
                 if start == "-1":
                     range = "any"
-                    execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " -j "+action)
+                execute("iptables -I " + vmchain + " -p icmp --icmp-type " + range + " -j "+action)
  
     egress_vmchain = egress_chain_name(vm_name)
     if egressrule == 0 :
