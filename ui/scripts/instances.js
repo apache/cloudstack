@@ -1613,7 +1613,7 @@
                   if(json.listvirtualmachinesresponse.virtualmachine != null && json.listvirtualmachinesresponse.virtualmachine.length > 0)                  
 									  jsonObj = json.listvirtualmachinesresponse.virtualmachine[0]; 
 									else
-									  jsonObj = $.extend(args.context.instances[0], {state: "Destroyed",}); //after a regular user destroys a VM, listVirtualMachines API will no longer returns this destroyed VM to the regular user.
+									  jsonObj = $.extend(args.context.instances[0], {state: "Destroyed"}); //after a regular user destroys a VM, listVirtualMachines API will no longer returns this destroyed VM to the regular user.
 																			
 									args.response.success(
 										{
