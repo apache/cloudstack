@@ -254,6 +254,11 @@
             $input = $('<input>').attr({ name: key, type: 'checkbox' }).appendTo($value);
             if (field.isChecked) {
               $input.attr('checked', 'checked');
+            } else {
+              // This is mainly for IE compatibility
+              setTimeout(function() {
+                $input.attr('checked', false);                
+              }, 100);
             }
           }
         } else if (field.dynamic) {
