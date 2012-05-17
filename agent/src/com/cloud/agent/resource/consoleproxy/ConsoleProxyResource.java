@@ -55,6 +55,7 @@ import com.cloud.resource.ServerResourceBase;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
+import com.google.gson.Gson;
 
 /**
  * 
@@ -417,28 +418,36 @@ public class ConsoleProxyResource extends ServerResourceBase implements
 		}
 	}
 
-	public boolean authenticateConsoleAccess(String host, String port,
-			String vmId, String sid, String ticket) {
+	public String authenticateConsoleAccess(String host, String port,
+		String vmId, String sid, String ticket, Boolean isReauthentication) {
+		
 		ConsoleAccessAuthenticationCommand cmd = new ConsoleAccessAuthenticationCommand(
 				host, port, vmId, sid, ticket);
+		cmd.setReauthenticating(isReauthentication);
+		
+		ConsoleProxyAuthenticationResult result = new ConsoleProxyAuthenticationResult();
+		result.setSuccess(false);
+		result.setReauthentication(isReauthentication);
 
 		try {
-			AgentControlAnswer answer = getAgentControl().sendRequest(cmd,
-					10000);
+			AgentControlAnswer answer = getAgentControl().sendRequest(cmd, 10000);
+			
 			if (answer != null) {
-				return ((ConsoleAccessAuthenticationAnswer) answer).succeeded();
+				ConsoleAccessAuthenticationAnswer authAnswer = (ConsoleAccessAuthenticationAnswer)answer;
+				result.setSuccess(authAnswer.succeeded());
+				result.setHost(authAnswer.getHost());
+				result.setPort(authAnswer.getPort());
+				result.setTunnelUrl(authAnswer.getTunnelUrl());
+				result.setTunnelSession(authAnswer.getTunnelSession());
 			} else {
-				s_logger.error("Authentication failed for vm: " + vmId
-						+ " with sid: " + sid);
+				s_logger.error("Authentication failed for vm: " + vmId + " with sid: " + sid);
 			}
-
 		} catch (AgentControlChannelException e) {
-			s_logger.error(
-					"Unable to send out console access authentication request due to "
-							+ e.getMessage(), e);
+			s_logger.error("Unable to send out console access authentication request due to "
+				+ e.getMessage(), e);
 		}
 
-		return false;
+		return new Gson().toJson(result);
 	}
 
 	public void reportLoadInfo(String gsonLoadInfo) {

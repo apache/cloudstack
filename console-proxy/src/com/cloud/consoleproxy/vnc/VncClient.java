@@ -121,10 +121,12 @@ public class VncClient {
 	  } catch (Throwable e) {
 	  }
 	}
-    
-    clientListener.onClientClose();
   }
 
+  public ConsoleProxyClientListener getClientListener() {
+	  return clientListener; 
+  }
+  
   public void connectTo(String host, int port, String path,
     String session, boolean useSSL, String sid) throws UnknownHostException, IOException {
 	if(port < 0) {

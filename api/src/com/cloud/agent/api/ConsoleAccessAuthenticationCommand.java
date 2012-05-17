@@ -20,7 +20,10 @@ public class ConsoleAccessAuthenticationCommand extends AgentControlCommand {
 	private String _sid;
 	private String _ticket;
 	
+	private boolean _isReauthenticating;
+	
 	public ConsoleAccessAuthenticationCommand() {
+		_isReauthenticating = false;
 	}
 	
 	public ConsoleAccessAuthenticationCommand(String host, String port, String vmId, String sid, String ticket) {
@@ -49,5 +52,13 @@ public class ConsoleAccessAuthenticationCommand extends AgentControlCommand {
 	
 	public String getTicket() {
 		return _ticket;
+	}
+	
+	public boolean isReauthenticating() {
+		return _isReauthenticating;
+	}
+	
+	public void setReauthenticating(boolean value) {
+		_isReauthenticating = value;
 	}
 }

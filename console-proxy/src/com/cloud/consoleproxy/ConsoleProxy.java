@@ -30,6 +30,7 @@ import org.apache.axis.encoding.Base64;
 import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.consoleproxy.util.Logger;
+import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpServer;
 
 /**
@@ -171,9 +172,17 @@ public class ConsoleProxy {
 		}
 	}
 
-	public static boolean authenticateConsoleAccess(ConsoleProxyClientParam param) {
-		if(standaloneStart)
-			return true;
+	public static ConsoleProxyAuthenticationResult authenticateConsoleAccess(ConsoleProxyClientParam param, boolean reauthentication) {
+
+		ConsoleProxyAuthenticationResult authResult = new ConsoleProxyAuthenticationResult();
+		authResult.setSuccess(true);
+		authResult.setReauthentication(reauthentication);
+		authResult.setHost(param.getClientHostAddress());
+		authResult.setPort(param.getClientHostPort());
+		
+		if(standaloneStart) {
+			return authResult;
+		}
 		
 		if(authMethod != null) {
 			Object result;
@@ -183,26 +192,29 @@ public class ConsoleProxy {
 					String.valueOf(param.getClientHostPort()), 
 					param.getClientTag(), 
 					param.getClientHostPassword(), 
-					param.getTicket());
+					param.getTicket(),
+					new Boolean(reauthentication));
 			} catch (IllegalAccessException e) {
 				s_logger.error("Unable to invoke authenticateConsoleAccess due to IllegalAccessException" + " for vm: " + param.getClientTag(), e);
-				return false;
+				authResult.setSuccess(false);
+				return authResult;
 			} catch (InvocationTargetException e) {
 				s_logger.error("Unable to invoke authenticateConsoleAccess due to InvocationTargetException " + " for vm: " + param.getClientTag(), e);
-				return false;
+				authResult.setSuccess(false);
+				return authResult;
 			}
 			
-			if(result != null && result instanceof Boolean) {
-				return ((Boolean)result).booleanValue();
+			if(result != null && result instanceof String) {
+				authResult = new Gson().fromJson((String)result, ConsoleProxyAuthenticationResult.class);
 			} else {
 				s_logger.error("Invalid authentication return object " + result + " for vm: " + param.getClientTag() + ", decline the access");
-				return false;
+				authResult.setSuccess(false);
 			}
-			
 		} else {
 			s_logger.warn("Private channel towards management server is not setup. Switch to offline mode and allow access to vm: " + param.getClientTag());
-			return true;
 		}
+		
+		return authResult;
 	}
 	
 	public static void reportLoadInfo(String gsonLoadInfo) {
@@ -250,7 +262,7 @@ public class ConsoleProxy {
 		ConsoleProxy.ksPassword = ksPassword;
 		try {
 			Class<?> contextClazz = Class.forName("com.cloud.agent.resource.consoleproxy.ConsoleProxyResource");
-			authMethod = contextClazz.getDeclaredMethod("authenticateConsoleAccess", String.class, String.class, String.class, String.class, String.class);
+			authMethod = contextClazz.getDeclaredMethod("authenticateConsoleAccess", String.class, String.class, String.class, String.class, String.class, Boolean.class);
 			reportMethod = contextClazz.getDeclaredMethod("reportLoadInfo", String.class);
 			ensureRouteMethod = contextClazz.getDeclaredMethod("ensureRoute", String.class);
 		} catch (SecurityException e) {
@@ -455,11 +467,17 @@ public class ConsoleProxy {
 	}
 	
 	public static void authenticationExternally(ConsoleProxyClientParam param) throws AuthenticationException {
-		if(!authenticateConsoleAccess(param)) {
+		ConsoleProxyAuthenticationResult authResult = authenticateConsoleAccess(param, false);
+		
+		if(authResult == null || !authResult.isSuccess()) {
     		s_logger.warn("External authenticator failed authencation request for vm " + param.getClientTag() + " with sid " + param.getClientHostPassword());
         	
 			throw new AuthenticationException("External authenticator failed request for vm " + param.getClientTag() + " with sid " + param.getClientHostPassword());
 		}
+	}
+	
+	public static ConsoleProxyAuthenticationResult reAuthenticationExternally(ConsoleProxyClientParam param) {
+		return authenticateConsoleAccess(param, true);
 	}
 	
 	public static String getEncryptorPassword() { 

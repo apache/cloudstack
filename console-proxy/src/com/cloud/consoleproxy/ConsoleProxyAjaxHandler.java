@@ -82,7 +82,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 		
 		int port;
 
-		if(host == null || portStr == null || sid == null)
+		if(host == null || portStr == null || sid == null) 
 			throw new IllegalArgumentException();
 		
 		try {
@@ -159,8 +159,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
 			}
 		} else {
 			if(ajaxSessionId != 0 && ajaxSessionId != viewer.getAjaxSessionId()) {
-				if(s_logger.isDebugEnabled())
-					s_logger.debug("Ajax request comes from a different session, id in request: " + ajaxSessionId + ", id in viewer: " + viewer.getAjaxSessionId());
+				s_logger.info("Ajax request comes from a different session, id in request: " + ajaxSessionId + ", id in viewer: " + viewer.getAjaxSessionId());
 				handleClientKickoff(t, viewer);
 			} else if(ajaxSessionId == 0) {
 				if(s_logger.isDebugEnabled())

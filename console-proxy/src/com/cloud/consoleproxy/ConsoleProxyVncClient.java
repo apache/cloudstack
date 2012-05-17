@@ -48,8 +48,10 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
 	
 	@Override
 	public boolean isFrontEndAlive() {
-		if(workerDone || System.currentTimeMillis() - getClientLastFrontEndActivityTime() > ConsoleProxy.VIEWER_LINGER_SECONDS*1000)
+		if(workerDone || System.currentTimeMillis() - getClientLastFrontEndActivityTime() > ConsoleProxy.VIEWER_LINGER_SECONDS*1000) {
+			s_logger.info("Front end has been idle for too long");
 			return false;
+		}
 		return true;
 	}
 
@@ -57,34 +59,28 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
 	public void initClient(ConsoleProxyClientParam param) {
 		setClientParam(param);
 		
-		final String tunnelUrl = param.getClientTunnelUrl();
-		final String tunnelSession = param.getClientTunnelSession();
-		
 		client = new VncClient(this);
 		worker = new Thread(new Runnable() {
 			public void run() {
-				long startTick = System.currentTimeMillis();
-				while(System.currentTimeMillis() - startTick < 7000) {
+				String tunnelUrl = getClientParam().getClientTunnelUrl();
+				String tunnelSession = getClientParam().getClientTunnelSession();
+				
+				for(int i = 0; i < 15; i++) {
 					try {
 						if(tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null && !tunnelSession.isEmpty()) {
-							try {
-								URI uri = new URI(tunnelUrl);
-								s_logger.info("Connect to VNC server via tunnel. url: " + tunnelUrl + ", session: " + tunnelSession);
-								client.connectTo(
-									uri.getHost(), uri.getPort(), 
-									uri.getPath() + "?" + uri.getQuery(), 
-									tunnelSession, "https".equalsIgnoreCase(uri.getScheme()),
-									getClientHostPassword());
-							} catch (URISyntaxException e) {
-								s_logger.warn("Invalid tunnel URL " + tunnelUrl);
-							}
+							URI uri = new URI(tunnelUrl);
+							s_logger.info("Connect to VNC server via tunnel. url: " + tunnelUrl + ", session: " + tunnelSession);
+							client.connectTo(
+								uri.getHost(), uri.getPort(), 
+								uri.getPath() + "?" + uri.getQuery(), 
+								tunnelSession, "https".equalsIgnoreCase(uri.getScheme()),
+								getClientHostPassword());
 						} else {
 							s_logger.info("Connect to VNC server directly. host: " + getClientHostAddress() + ", port: " + getClientHostPort());
 							client.connectTo(getClientHostAddress(), getClientHostPort(), getClientHostPassword());
 						}
 					} catch (UnknownHostException e) {
-						s_logger.error("Unexpected exception", e);
-						break;
+						s_logger.error("Unexpected exception (will retry until timeout)", e);
 					} catch (IOException e) {
 						s_logger.error("Unexpected exception (will retry until timeout) ", e);
 					} catch (Throwable e) {
@@ -95,9 +91,24 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
 						Thread.sleep(1000);
 					} catch (InterruptedException e) {
 					}
+
+					if(tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null && !tunnelSession.isEmpty()) {
+						ConsoleProxyAuthenticationResult authResult = ConsoleProxy.reAuthenticationExternally(getClientParam());
+						if(authResult != null && authResult.isSuccess()) {
+							if(authResult.getTunnelUrl() != null && !authResult.getTunnelUrl().isEmpty() && 
+								authResult.getTunnelSession() != null && !authResult.getTunnelSession().isEmpty()) {
+								tunnelUrl = authResult.getTunnelUrl();
+								tunnelSession = authResult.getTunnelSession();
+								
+								s_logger.info("Reset XAPI session. url: " + tunnelUrl + ", session: " + tunnelSession);
+							}
+						}
+					}
 				}
-					
+
+				s_logger.info("Receiver thread stopped.");
 				workerDone = true;
+			    client.getClientListener().onClientClose();
 			}
 		});
 		
@@ -116,6 +127,8 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
 	}
 	
 	public void onClientClose() {
+		s_logger.info("Received client close indication. remove viewer from map.");
+		
 		ConsoleProxy.removeViewer(this);
 	}
 	
