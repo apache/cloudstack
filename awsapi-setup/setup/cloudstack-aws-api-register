@@ -4,7 +4,9 @@ import base64
 import hmac
 import os
 import sys
+import urllib2
 import urllib
+import httplib
 from datetime import datetime
 from optparse import OptionParser
 from urlparse import urlparse
@@ -24,23 +26,36 @@ def get_url(url, api_key, secret_key, action, query):
     amzn_string += '&SignatureVersion=2&Timestamp='+ datetime.now().isoformat()[:19] +'Z&Version=2010-11-15'
     query = amzn_string + '&' + query
     url = url + '?' + query + '&Signature=' + get_signature(secret_key, url, query)
-    return urllib.urlretrieve(url)
+    try:
+        urllib2.urlopen(url)
+		if action == 'SetCertificate':
+		print 'User registration is successful!'
+		return True
+    except urllib2.HTTPError, e:
+		print  'User registration failed with http error code:' , e.code
+		return False
+    except urllib2.URLError, e:    
+		print 'User registration failed with error: ' , e.reason
+		return False
+   
 
 def register(url, api_key, secret_key, cert):
     # Register API keys
     query = 'accesskey=' + api_key + '&secretkey=' + secret_key
-    get_url(url, api_key, secret_key, 'SetUserKeys', query)
+    result = get_url(url, api_key, secret_key, 'SetUserKeys', query)
 
-    # Tie Certifcate to API keys
-    query = 'cert=' + urllib.quote_plus(cert)
-    get_url(url, api_key, secret_key, 'SetCertificate', query)
+    if result == True:
+	    # Tie Certifcate to API keys
+	    query = 'cert=' + urllib.quote_plus(cert)
+	    get_url(url, api_key, secret_key, 'SetCertificate', query)
+
 
 def get_opts():
     parser = OptionParser()
     parser.add_option('-a', '--apikey') 
     parser.add_option('-s', '--secretkey') 
     parser.add_option('-c', '--cert', help='Name of a file containing an X.509 certificate') 
-    parser.add_option('-u', '--url', help='Bridge URL, eg. http://bridge.host:8090/bridge') 
+    parser.add_option('-u', '--url', help='CloudStack AWSAPI URL, eg. http://cloudstack.host:8080/awsapi') 
     (options, args) = parser.parse_args()
     if None in [options.apikey, options.secretkey, options.cert, options.url]:
         print 'Error: Missing argument\n'
