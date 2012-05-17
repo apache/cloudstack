@@ -903,26 +903,27 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 		StoragePoolVO pool = _poolDao.findById(templatePoolVO.getPoolId());
 		VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templatePoolVO.getTemplateId());
 		
-		long hostId;
-		List<StoragePoolHostVO> poolHostVOs = _poolHostDao.listByPoolId(pool.getId());
-		if (poolHostVOs.isEmpty()) {
-			return;
-		} else {
-			hostId = poolHostVOs.get(0).getHostId();
-		}
 		
 		if (s_logger.isDebugEnabled()) {
 		    s_logger.debug("Evicting " + templatePoolVO);
 		}
 		DestroyCommand cmd = new DestroyCommand(pool, templatePoolVO);
-		Answer answer = _agentMgr.easySend(hostId, cmd);
 		
-    	if (answer != null && answer.getResult()) {
-    		// Remove the templatePoolVO
-    		if (_tmpltPoolDao.remove(templatePoolVO.getId())) {
-    			s_logger.debug("Successfully evicted template: " + template.getName() + " from storage pool: " + pool.getName());
-    		}
-    	}
+        try {
+            Answer answer = _storageMgr.sendToPool(pool, cmd);
+		
+            if (answer != null && answer.getResult()) {
+                // Remove the templatePoolVO
+                if (_tmpltPoolDao.remove(templatePoolVO.getId())) {
+                    s_logger.debug("Successfully evicted template: " + template.getName() + " from storage pool: " + pool.getName());
+                }
+            } else {
+                s_logger.info("Will retry evicte template: " + template.getName() + " from storage pool: " + pool.getName());
+            }
+        } catch (StorageUnavailableException e) {
+            s_logger.info("Storage is unavailable currently.  Will retry evicte template: " + template.getName() + " from storage pool: " + pool.getName());
+        }
+
 	}
     
     void swiftTemplateSync() {
