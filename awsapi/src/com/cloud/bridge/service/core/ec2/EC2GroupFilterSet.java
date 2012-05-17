@@ -27,7 +27,6 @@ import com.cloud.bridge.service.exception.EC2ServiceException;
 public class EC2GroupFilterSet {
 
     protected List<EC2Filter> filterSet = new ArrayList<EC2Filter>();
-    protected List<EC2Filter> ipPermissionFilterSet = new ArrayList<EC2Filter>();
 
 	private Map<String,String> filterTypes = new HashMap<String,String>();
 
@@ -82,6 +81,7 @@ public class EC2GroupFilterSet {
 		EC2SecurityGroup[] groupSet = sampleList.getGroupSet();
 		EC2Filter[]     filterSet   = getFilterSet();
         for (EC2SecurityGroup group : groupSet) {
+            List<EC2Filter> ipPermissionFilterSet = new ArrayList<EC2Filter>();
             matched = true;
             for (EC2Filter filter : filterSet) {
                 if (filter.getName().startsWith("ip-permission"))
