@@ -1,0 +1,14 @@
+To run the tests - you should have marvin installed and correctly importable.
+The tests are long running and are best monitored by external hudson jobs.
+
+Also you will have to point marvin to the right configuration file that has
+details about your cloudstack deployment. For more help on how to write the
+config file check the tutorial at :
+
+
+http://docs.cloudstack.org/test_framework_1.0
+
+http://wiki.cloudstack.org/display/QA/Testing+with+python
+
+To run:
+$ python -m marvin.deployAndRun -c config.cfg -d integration/smoke -t testcase.log -r result.log -l
