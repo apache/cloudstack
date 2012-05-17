@@ -3824,4 +3824,24 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         }
     }
     
+    @Override
+    public HypervisorType getHypervisorTypeFromFormat(ImageFormat format) {
+        
+    	if(format == null) {
+            return HypervisorType.None;
+    	}
+    	
+        if (format == ImageFormat.VHD) {
+            return HypervisorType.XenServer;
+        } else if (format == ImageFormat.OVA) {
+            return HypervisorType.VMware;
+        } else if (format == ImageFormat.QCOW2) {
+            return HypervisorType.KVM;
+        } else if (format == ImageFormat.RAW) {
+            return HypervisorType.Ovm;
+        } else {
+            return HypervisorType.None;
+        }
+    }
+    
 }
