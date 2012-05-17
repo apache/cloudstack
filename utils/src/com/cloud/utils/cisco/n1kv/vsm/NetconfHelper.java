@@ -12,7 +12,6 @@ import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.PortProfileType;
 import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.SwitchPortMode;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
-import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
 
@@ -20,6 +19,9 @@ public class NetconfHelper {
     private static final Logger s_logger = Logger.getLogger(NetconfHelper.class);
 
     private static final String SSH_NETCONF_TERMINATOR = "]]>]]>";
+
+    // Number of times to retry the command on failure.
+    private static final int s_retryCount = 3;
 
     private Connection _connection;
 
@@ -61,7 +63,7 @@ public class NetconfHelper {
                 + "</nc:rpc>" + SSH_NETCONF_TERMINATOR;
         send(status);
         // parse the rpc reply.
-        parseReply(receive());
+        parseOkReply(receive());
     }
 
     public void addPortProfile(String name, PortProfileType type, BindingType binding,
@@ -69,9 +71,28 @@ public class NetconfHelper {
         String command = VsmCommand.getAddPortProfile(name, type, binding, mode, vlanid);
         if (command != null) {
             command = command.concat(SSH_NETCONF_TERMINATOR);
-            send(command);
-            // parse the rpc reply.
-            parseReply(receive());
+
+            // This command occasionally fails. On retry it succeeds. Putting in
+            // retry to handle failures.
+            for (int i = 0; i < s_retryCount; ++i) {
+                send(command);
+                // parse the rpc reply.
+                // parseOkReply(receive());
+                VsmOkResponse response = new VsmOkResponse(receive().trim());
+                if (!response.isResponseOk()) {
+                    if (i >= s_retryCount) {
+                        throw new CloudRuntimeException(response.toString());
+                    }
+
+                    try {
+                        Thread.sleep(1000);
+                    } catch (final InterruptedException e) {
+                        s_logger.debug("Got interrupted while waiting.");
+                    }
+                } else {
+                    break;
+                }
+            }
         } else {
             throw new CloudRuntimeException("Error generating rpc request for adding port profile.");
         }
@@ -84,7 +105,7 @@ public class NetconfHelper {
             command = command.concat(SSH_NETCONF_TERMINATOR);
             send(command);
             // parse the rpc reply.
-            parseReply(receive());
+            parseOkReply(receive());
         } else {
             throw new CloudRuntimeException("Error generating rpc request for updating port profile.");
         }
@@ -96,7 +117,7 @@ public class NetconfHelper {
             command = command.concat(SSH_NETCONF_TERMINATOR);
             send(command);
             // parse the rpc reply.
-            parseReply(receive());
+            parseOkReply(receive());
         } else {
             throw new CloudRuntimeException("Error generating rpc request for deleting port profile.");
         }
@@ -109,7 +130,7 @@ public class NetconfHelper {
             command = command.concat(SSH_NETCONF_TERMINATOR);
             send(command);
             // parse the rpc reply.
-            parseReply(receive());
+            parseOkReply(receive());
         } else {
             throw new CloudRuntimeException("Error generating rpc request for adding/updating policy map.");
         }
@@ -121,7 +142,7 @@ public class NetconfHelper {
             command = command.concat(SSH_NETCONF_TERMINATOR);
             send(command);
             // parse the rpc reply.
-            parseReply(receive());
+            parseOkReply(receive());
         } else {
             throw new CloudRuntimeException("Error generating rpc request for deleting policy map.");
         }
@@ -140,7 +161,7 @@ public class NetconfHelper {
             command = command.concat(SSH_NETCONF_TERMINATOR);
             send(command);
             // parse the rpc reply.
-            parseReply(receive());
+            parseOkReply(receive());
         } else {
             throw new CloudRuntimeException("Error generating rpc request for adding policy map.");
         }
@@ -153,7 +174,22 @@ public class NetconfHelper {
             command = command.concat(SSH_NETCONF_TERMINATOR);
             send(command);
             // parse the rpc reply.
-            parseReply(receive());
+            parseOkReply(receive());
+        } else {
+            throw new CloudRuntimeException("Error generating rpc request for removing policy map.");
+        }
+    }
+
+    public void getPortProfileByName(String name) throws CloudRuntimeException {
+        String command = VsmCommand.getPortProfile(name);
+        if (command != null) {
+            command = command.concat(SSH_NETCONF_TERMINATOR);
+            send(command);
+            // parse the rpc reply.
+            VsmPortProfileResponse response = new VsmPortProfileResponse(receive().trim());
+            if (!response.isResponseOk()) {
+                throw new CloudRuntimeException("Error response while getting the port profile details.");
+            }
         } else {
             throw new CloudRuntimeException("Error generating rpc request for removing policy map.");
         }
@@ -177,49 +213,122 @@ public class NetconfHelper {
     }
 
     private String receive() {
-        byte[] buffer = new byte[8192];
+        String response = new String("");
         InputStream inputStream = _session.getStdout();
+
         try {
-            while (true) {
-                if (inputStream.available() == 0) {
-                    int conditions = _session.waitForCondition(ChannelCondition.STDOUT_DATA
-                            | ChannelCondition.STDERR_DATA | ChannelCondition.EOF, 3000);
+           Delimiter delimiter = new Delimiter();
+           byte[] buffer = new byte[1024];
+           int count = 0;
 
-                    if ((conditions & ChannelCondition.TIMEOUT) != 0) {
-                        break;
+           // Read the input stream till we find the end sequence ']]>]]>'.
+           while (true) {
+              int data = inputStream.read();
+              if (data != -1) {
+                 byte[] dataStream = delimiter.parse(data);
+                 if (delimiter.endReached()) {
+                     response += new String(buffer, 0, count);
+                    break;
+                 }
+
+                 if (dataStream != null) {
+                    for (int i = 0; i < dataStream.length; i++) {
+                       buffer[count] = dataStream[i];
+                       count++;
+                       if (count == 1024) {
+                           response += new String(buffer, 0, count);
+                          count = 0;
+                       }
                     }
-
-                    if ((conditions & ChannelCondition.EOF) != 0) {
-                        if ((conditions & (ChannelCondition.STDOUT_DATA | ChannelCondition.STDERR_DATA)) == 0) {
-                            break;
-                        }
-                    }
-                }
-
-                while (inputStream.available() > 0) {
-                    inputStream.read(buffer);
-                }
-            }
-        } catch (Exception e) {
-            s_logger.error("Failed to receive message: " + e.getMessage());
-            throw new CloudRuntimeException("Failed to receives message: " + e.getMessage());
+                 }
+              } else {
+                 break;
+              }
+           }
+        } catch (final Exception e) {
+           throw new CloudRuntimeException("Error occured while reading from the stream: " + e.getMessage());
         }
 
-        return new String(buffer);
+        return response;
     }
 
-    private void parseReply(String reply) throws CloudRuntimeException {
-        reply = reply.trim();
-        if (reply.endsWith(SSH_NETCONF_TERMINATOR)) {
-            reply = reply.substring(0, reply.length() - (new String(SSH_NETCONF_TERMINATOR).length()));
-        }
-        else {
-            throw new CloudRuntimeException("Malformed response from vsm" + reply);
-        }
-
-        VsmResponse response = new VsmResponse(reply);
+    private void parseOkReply(String reply) throws CloudRuntimeException {
+        VsmOkResponse response = new VsmOkResponse(reply.trim());
         if (!response.isResponseOk()) {
             throw new CloudRuntimeException(response.toString());
+        }
+    }
+
+    private static class Delimiter  {
+        private boolean _endReached = false;
+
+        // Used to accumulate response read while searching for end of response.
+        private byte[] _gatherResponse = new byte[6];
+
+        // Index into number of bytes read.
+        private int _offset = 0;
+
+        // True if ']]>]]>' detected.
+        boolean endReached() {
+            return _endReached;
+        }
+
+        // Parses the input stream and checks if end sequence is reached.
+        byte[] parse(int input) throws RuntimeException {
+            boolean collect = false;
+            byte[] streamRead = null;
+
+            // Check if end sequence matched.
+            switch (_offset) {
+            case 0:
+                if (input == ']') {
+                    collect = true;
+                }
+                break;
+            case 1:
+                if (input == ']') {
+                    collect = true;
+                }
+                break;
+            case 2:
+                if (input == '>') {
+                    collect = true;
+                }
+                break;
+            case 3:
+                if (input == ']') {
+                    collect = true;
+                }
+                break;
+            case 4:
+                if (input == ']') {
+                    collect = true;
+                }
+                break;
+            case 5:
+                if (input == '>') {
+                    collect = true;
+                    _endReached = true;
+                }
+                break;
+            default:
+                throw new RuntimeException("Invalid index value: " + _offset);
+            }
+
+            if (collect) {
+                _gatherResponse[_offset++] = (byte)input;
+            } else {
+                // End sequence not yet reached. Return the stream of bytes collected so far.
+                streamRead = new byte[_offset+1];
+                for (int index = 0; index < _offset; ++index) {
+                    streamRead[index] = _gatherResponse[index];
+                }
+
+                streamRead[_offset] = (byte) input;
+                _offset = 0;
+            }
+
+            return streamRead;
         }
     }
 }
