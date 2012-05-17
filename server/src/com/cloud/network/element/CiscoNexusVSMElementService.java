@@ -19,7 +19,6 @@
 package com.cloud.network.element;
 
 import java.util.List;
-import com.cloud.api.commands.AddCiscoNexusVSMCmd;
 import com.cloud.api.commands.DeleteCiscoNexusVSMCmd;
 import com.cloud.api.commands.EnableCiscoNexusVSMCmd;
 import com.cloud.api.commands.DisableCiscoNexusVSMCmd;
@@ -31,14 +30,6 @@ import com.cloud.network.CiscoNexusVSMDeviceVO;
 import com.cloud.utils.component.PluggableService;
 
 public interface CiscoNexusVSMElementService extends PluggableService {
-
-    /**
-     * adds a Cisco Nexus VSM
-     * @param AddCiscoNexusVSMCmd 
-     * @return CiscoNexusVSMDeviceVO object for the device added
-     */
-    public CiscoNexusVSMDeviceVO addCiscoNexusVSM(AddCiscoNexusVSMCmd cmd);
-
     /**
      * removes a Cisco Nexus VSM
      * @param DeleteCiscoNexusVSMCmd 

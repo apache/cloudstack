@@ -215,6 +215,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
         		if (hosts != null && hosts.size() > 0) {
         			for (Host host: hosts) {
         				if (host.getType() == Host.Type.Routing) {
+        					s_logger.info("Non-empty cluster with id" + clusterId + "still has a host that uses this VSM. Please empty the cluster first");
                 			throw new ResourceInUseException("Non-empty cluster with id" + clusterId + "still has a host that uses this VSM. Please empty the cluster first");
         				}
         			}        			

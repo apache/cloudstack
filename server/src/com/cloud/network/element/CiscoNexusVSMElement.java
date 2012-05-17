@@ -20,7 +20,6 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.api.commands.AddCiscoNexusVSMCmd;
 import com.cloud.api.commands.DeleteCiscoNexusVSMCmd;
 import com.cloud.api.commands.ListCiscoNexusVSMCmd;
 import com.cloud.api.commands.EnableCiscoNexusVSMCmd;
@@ -159,33 +158,6 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     @Override
     public boolean verifyServicesCombination(List<String> services) {
     	return true;
-    }
-    
-    @Override
-    public CiscoNexusVSMDeviceVO addCiscoNexusVSM(AddCiscoNexusVSMCmd cmd) {
-    
-    	// This function essentially prepares all the parameters we need to send
-    	// to the addCiscoNexusVSM() function defined in CiscoNexusVSMDeviceManagerImpl.java.
-    	
-    	// We have this separation of functionality between CiscoNexusVSMElement.java
-    	// to address multiple versions of Cisco Nexus Switches in future. This is the
-    	// function/layer that will parse multiple versions and accordingly prepare
-    	// different parameters to pass to to the CiscoNexusVSMDeviceManagerImpl functions
-    	// which will in turn talk to the right resource via the appropriate manager.
-
-        String vsmipaddress = cmd.getIpAddr();
-        String vsmusername = cmd.getUsername();
-        String vsmpassword = cmd.getPassword();
-        String vCenterIpaddr = cmd.getvCenterIpaddr();
-        String vCenterDcName = cmd.getvCenterDcName();
-        long clusterId = cmd.getClusterId();
-        
-        // Invoke the addCiscoNexusVSM() function defined in the upper layer (DeviceMgrImpl).
-        // The  upper layer function will create a resource of type "host" to represent this VSM.
-        // It will add this VSM to the db.
-        //CiscoNexusVSMDeviceVO vsmDeviceVO = addCiscoNexusVSM(clusterId, vsmipaddress, vsmusername, vsmpassword, (ServerResource) new CiscoNexusVSMResource(), vsmName);
-        CiscoNexusVSMDeviceVO vsmDeviceVO = addCiscoNexusVSM(clusterId, vsmipaddress, vsmusername, vsmpassword, vCenterIpaddr, vCenterDcName);
-        return vsmDeviceVO;
     }
 
     @Override
