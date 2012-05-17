@@ -637,7 +637,7 @@ fi
 %{_datadir}/cloud/bridge/lib/*
 %{_datadir}/cloud/bridge/webapps/*
 %attr(0644,root,root) %{_datadir}/cloud/setup/bridge/db/*
-%attr(0755,root,root) %{_bindir}/cloud-bridge-register
+%attr(0755,root,root) %{_bindir}/cloudstack-aws-api-register
 %attr(0755,root,root) %{_bindir}/cloud-setup-bridge
 
 %changelog
