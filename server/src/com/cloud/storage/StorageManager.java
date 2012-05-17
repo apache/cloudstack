@@ -28,6 +28,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume.Event;
 import com.cloud.storage.Volume.Type;
 import com.cloud.user.Account;
@@ -228,4 +229,6 @@ public interface StorageManager extends StorageService, Manager {
 			HypervisorType hyperType) throws NoTransitionException;
 
 	String getSupportedImageFormatForCluster(Long clusterId);
+
+	HypervisorType getHypervisorTypeFromFormat(ImageFormat format);
 }

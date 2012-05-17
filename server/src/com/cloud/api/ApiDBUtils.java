@@ -92,6 +92,7 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeHostVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -559,6 +560,10 @@ public class ApiDBUtils {
 
     public static HypervisorType getVolumeHyperType(long volumeId) {
         return _volumeDao.getHypervisorType(volumeId);
+    }
+    
+    public static HypervisorType getHypervisorTypeFromFormat(ImageFormat format){
+    	return _storageMgr.getHypervisorTypeFromFormat(format);    	   	
     }
 
     public static List<VMTemplateHostVO> listTemplateHostBy(long templateId, Long zoneId, boolean readyOnly) {
