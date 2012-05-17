@@ -242,8 +242,8 @@ for full help
             self.info(None, True)
             
         awsApiDbDir = '/usr/share/cloud/setup/bridge/db'
-        for f in ["cloudbridge_db"]:
-            p = os.path.join(awsApiDbDir,"%s.sql"%f)
+        for f in ["cloudbridge_db.sql", "deploy-db-bridge.sh"]:
+            p = os.path.join(awsApiDbDir,f)
             if not os.path.exists(p): continue
             text = file(p).read()
             for t, r in replacements: text = text.replace(t,r)
