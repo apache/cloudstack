@@ -242,6 +242,13 @@ for full help
             self.info(None, True)
             
         awsApiDbDir = '/usr/share/cloud/setup/bridge/db'
+        for f in ["cloudbridge_db"]:
+            p = os.path.join(awsApiDbDir,"%s.sql"%f)
+            if not os.path.exists(p): continue
+            text = file(p).read()
+            for t, r in replacements: text = text.replace(t,r)
+            file(p, 'w').write(text)
+
         awsApiCmds = ['cd %s;'%awsApiDbDir, 'sh deploy-db-bridge.sh %s;'%self.rootpassword, 'cd -']
         runCmd(awsApiCmds)
                
