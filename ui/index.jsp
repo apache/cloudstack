@@ -11,7 +11,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-    <title>CloudStack</title>
+    <title></title>
     <link type="text/css" rel="stylesheet" href="lib/reset.css"/>
     <link type="text/css" rel="stylesheet" href="css/cloudstack3.css" />
     <c:if test="${!empty cookie.lang && cookie.lang.value != 'en'}">
