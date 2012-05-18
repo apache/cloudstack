@@ -36,7 +36,7 @@ public class RegisterSSHKeyPairCmd extends BaseCmd {
 	@Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="Name of the keypair") 
 	private String name;
 	
-    @Parameter(name="publickey", type=CommandType.STRING, required=true, description="Public key material of the keypair") 
+    @Parameter(name="publickey", type=CommandType.STRING, required=true, description="Public key material of the keypair", length=5120) 
     private String publicKey;
 
     //Owner information
