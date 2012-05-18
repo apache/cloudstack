@@ -1652,6 +1652,12 @@
 
 <script language="javascript">
 dictionary = {
+'label.ipaddress': '<fmt:message key="label.ipaddress"/>',
+'label.vcdcname': '<fmt:message key="label.vcdcname"/>',
+'label.vcipaddress': '<fmt:message key="label.vcipaddress"/>',
+'label.vsmclrlvlanid': '<fmt:message key="label.vsmctrlvlanid"/>',
+'label.vsmpktvlanid': '<fmt:message key="label.vsmpktvlanid"/>',
+'label.vsmstoragevlanid': '<fmt:message key="label.vsmstoragevlanid"/>',
 'message.specify.url': '<fmt:message key="message.specify.url"/>',
 'label.select.instance.to.attach.volume.to': '<fmt:message key="label.select.instance.to.attach.volume.to"/>',
 'label.upload': '<fmt:message key="label.upload"/>',
