@@ -93,8 +93,10 @@ public class EC2GroupFilterSet {
                     }
                 }
             }
-            if (matched && ipPermissionFilterMatched(group, ipPermissionFilterSet))
-                resultList.addGroup( group );
+            if (matched) {
+                if (ipPermissionFilterSet.isEmpty() || ipPermissionFilterMatched(group, ipPermissionFilterSet))
+                    resultList.addGroup( group );
+            }
         }
         return resultList;
     }
