@@ -1479,7 +1479,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.info("Prepare NIC device based on NicTO: " + _gson.toJson(nicTo));
 
                 Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo);
-                if (_nexusVSwitch) {
+                if (mgr.getNexusVSwitchGlobalParameter()) {
                     String dvSwitchUuid;
                     ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
                     DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
