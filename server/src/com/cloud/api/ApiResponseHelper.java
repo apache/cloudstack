@@ -114,7 +114,6 @@ import com.cloud.dc.VlanVO;
 import com.cloud.domain.Domain;
 import com.cloud.event.Event;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
 import com.cloud.host.Host;
 import com.cloud.host.HostStats;
 import com.cloud.host.HostVO;
@@ -156,10 +155,10 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
@@ -1804,7 +1803,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         if (result.getFormat() == ImageFormat.ISO) { // Templates are always bootable
             response.setBootable(result.isBootable());
-        } else if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+        } else {
             response.setHypervisor(result.getHypervisorType().toString());// hypervisors are associated with templates
         }
 
@@ -1862,10 +1861,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             templateResponse.setTemplateType(template.getTemplateType().toString());
         }
 
-        Account caller = UserContext.current().getCaller();
-        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            templateResponse.setHypervisor(template.getHypervisorType().toString());
-        }
+        templateResponse.setHypervisor(template.getHypervisorType().toString());
 
         GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
         if (os != null) {
@@ -1880,6 +1876,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         populateAccount(templateResponse, account.getId());
         populateDomain(templateResponse, account.getDomainId());
 
+        Account caller = UserContext.current().getCaller();
         boolean isAdmin = false;
         if (BaseCmd.isAdmin(caller.getType())) {
             isAdmin = true;
@@ -1939,11 +1936,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             templateResponse.setTemplateType(template.getTemplateType().toString());
         }
 
-        Account caller = UserContext.current().getCaller();
-        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            templateResponse.setHypervisor(template.getHypervisorType().toString());
-        }
-
+        templateResponse.setHypervisor(template.getHypervisorType().toString());
         templateResponse.setDetails(template.getDetails());
 
         GuestOS os = ApiDBUtils.findGuestOSById(template.getGuestOSId());
@@ -1966,6 +1959,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         templateResponse.setZoneName(datacenter.getName());
 
         boolean isAdmin = false;
+        Account caller = UserContext.current().getCaller();
         if ((caller == null) || BaseCmd.isAdmin(caller.getType())) {
             isAdmin = true;
         }
