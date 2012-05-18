@@ -133,14 +133,14 @@ public class EC2GroupFilterSet {
                     matched = containsString(perm.getCIDR(), valueSet);
                 else if (filterName.equalsIgnoreCase( "ip-permission.from-port" )) {
                     if (perm.getProtocol().equalsIgnoreCase("icmp"))
-                        matched = containsInteger(Integer.parseInt(perm.getIcmpType()), valueSet);
+                        matched = containsString(perm.getIcmpType(), valueSet);
                     else 
-                        matched = containsInteger(perm.getFromPort(), valueSet);
+                        matched = containsString(perm.getFromPort().toString(), valueSet);
                 } else if (filterName.equalsIgnoreCase( "ip-permission.to-port" )) {
                     if (perm.getProtocol().equalsIgnoreCase("icmp"))
-                        matched = containsInteger(Integer.parseInt(perm.getIcmpCode()), valueSet);
+                        matched = containsString(perm.getIcmpCode(), valueSet);
                     else 
-                        matched = containsInteger( perm.getToPort(), valueSet );
+                        matched = containsString( perm.getToPort().toString(), valueSet );
                 } else if (filterName.equalsIgnoreCase( "ip-permission.protocol" ))
                     matched = containsString( perm.getProtocol(), valueSet );
                 if (!matched) break;
@@ -162,14 +162,4 @@ public class EC2GroupFilterSet {
 		return false;
 	}
 
-
-	private boolean containsInteger( int lookingFor, String[] set )
-	{
-		for (String s : set) {
-			//System.out.println( "contsinsInteger: " + lookingFor + " " + set[i] );
-			int temp = Integer.parseInt( s );
-			if (lookingFor == temp) return true;
-		}
-		return false;
-	}
 }
