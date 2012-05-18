@@ -2252,7 +2252,9 @@
                               _itemName: '_displayName',
                               _itemData: $.map(lbInstances, function(vm) {
                                 return $.extend(vm, {
-                                  _displayName: vm.id == vm.displayname ? vm.instancename : vm.displayname
+                                  _displayName: vm.id == vm.displayname ?
+                                    (vm.instancename ? vm.instancename : vm.name)
+                                    : vm.displayname
                                 });
                               }),
                               _maxLength: {
@@ -2440,7 +2442,9 @@
                                 $.extend(item, {
                                   _itemData: $.map(data.listvirtualmachinesresponse.virtualmachine, function(vm) {
                                     return $.extend(vm, {
-                                      _displayName: vm.id == vm.displayname ? vm.instancename : vm.displayname
+                                      _displayName: vm.id == vm.displayname ?
+                                        (vm.instancename ? vm.instancename : vm.name)
+                                      : vm.displayname
                                     });
                                   }),
                                   _context: {
