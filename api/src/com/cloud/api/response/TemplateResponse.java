@@ -16,9 +16,9 @@ import java.util.Date;
 import java.util.Map;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
@@ -88,8 +88,7 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     @SerializedName("templatetype") @Param(description="the type of the template")
     private String templateType;
 
-    @SerializedName(ApiConstants.HYPERVISOR) @Param(description="the hypervisor on which the template runs. This parameter" +
-    		"is returned to the ROOT admin only")
+    @SerializedName(ApiConstants.HYPERVISOR) @Param(description="the hypervisor on which the template runs")
     private String hypervisor;
 
     @SerializedName(ApiConstants.DOMAIN) @Param(description="the name of the domain to which the template belongs")
