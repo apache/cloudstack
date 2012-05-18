@@ -23,7 +23,7 @@ def testCaseLogger(message, logger=None):
         logger.debug(message)
 
 class NoseTestExecuteEngine(object):
-    def __init__(self, testclient=None, workingdir=None, clientLog=None, resultLog=None):
+    def __init__(self, testclient=None, workingdir=None, clientLog=None, resultLog=None, format="text"):
         self.testclient = testclient
         self.logformat = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
         self.suite = []
@@ -53,10 +53,12 @@ class NoseTestExecuteEngine(object):
                 self.injectTestCase(test)
             print self.suite[0].countTestCases()
         else:
-            print "Single module test runs unsupported using Nose"
-            raise
-
-        self.runner = nose.core.TextTestRunner(stream=self.testResultLogFile, descriptions=1, verbosity=2, config=None)
+            raise Exception("Single module test runs unsupported using Nose")
+            
+        if format == "text":
+            self.runner = nose.core.TextTestRunner(stream=self.testResultLogFile, descriptions=1, verbosity=2, config=None)
+        else:
+            raise Exception("XML runner not supported under nose")
             
     def runTests(self):
         #testProgram = nose.core.TestProgram(argv=["--process-timeout=3600"], testRunner = self.runner, testLoader = self.loader)
