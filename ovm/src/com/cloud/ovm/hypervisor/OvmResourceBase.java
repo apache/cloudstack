@@ -1024,7 +1024,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 	protected GetVncPortAnswer execute(GetVncPortCommand cmd) {
 		try {
 			Integer vncPort = OvmVm.getVncPort(_conn, cmd.getName());
-			return new GetVncPortAnswer(cmd, vncPort);
+			return new GetVncPortAnswer(cmd, _ip, vncPort);
 		} catch (Exception e) {
 			s_logger.debug("get vnc port for " + cmd.getName() + " failed", e);
 			return new GetVncPortAnswer(cmd, e.getMessage());
