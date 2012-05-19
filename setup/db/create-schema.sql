@@ -1071,7 +1071,6 @@ CREATE TABLE `cloud`.`domain_router` (
   `public_netmask` varchar(15)  COMMENT 'netmask used for the domR',
   `guest_netmask` varchar(15) COMMENT 'netmask used for the guest network',
   `guest_ip_address` char(40) COMMENT ' ip address in the guest network',   
-  `network_id` bigint unsigned NOT NULL COMMENT 'network configuration that this domain router belongs to',
   `is_redundant_router` int(1) unsigned NOT NULL COMMENT 'if in redundant router mode',
   `priority` int(4) unsigned COMMENT 'priority of router in the redundant router mode',
   `is_priority_bumpup` int(1) unsigned NOT NULL COMMENT 'if the priority has been bumped up',
