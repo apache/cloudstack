@@ -183,7 +183,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     @Override
     public List<DomainRouterVO> findByNetwork(long networkId) {
         SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
-        sc.setParameters("networkId", networkId);
+        sc.setJoinParameters("networkRouter", "networkId", networkId);
         return listBy(sc);
     }
 
@@ -198,7 +198,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     @Override
     public List<DomainRouterVO> listActive(long networkId) {
         SearchCriteria<DomainRouterVO> sc = IdNetworkIdStatesSearch.create();
-        sc.setParameters("networkId", networkId);
+        sc.setJoinParameters("networkRouter", "networkId", networkId);
         sc.setParameters("states", State.Running, State.Migrating, State.Stopping, State.Starting);
         return listBy(sc);
     }
@@ -215,7 +215,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     @Override
     public List<DomainRouterVO> findByNetworkOutsideThePod(long networkId, long podId, State state, Role role) {
         SearchCriteria<DomainRouterVO> sc = OutsidePodSearch.create();
-        sc.setParameters("networkId", networkId);
+        sc.setJoinParameters("networkRouter", "networkId", networkId);
         sc.setParameters("podId", podId);
         sc.setParameters("state", state);
         sc.setParameters("role", role);
@@ -225,7 +225,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     @Override
     public List<DomainRouterVO> listByNetworkAndPodAndRole(long networkId, long podId, Role role) {
         SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
-        sc.setParameters("networkId", networkId);
+        sc.setJoinParameters("networkRouter", "networkId", networkId);
         sc.setParameters("podId", podId);
         sc.setParameters("role", role);
         return listBy(sc);
@@ -234,7 +234,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     @Override
     public List<DomainRouterVO> listByNetworkAndRole(long networkId, Role role) {
         SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
-        sc.setParameters("networkId", networkId);
+        sc.setJoinParameters("networkRouter", "networkId", networkId);
         sc.setParameters("role", role);
         return listBy(sc);
     }
