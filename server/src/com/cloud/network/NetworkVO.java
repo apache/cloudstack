@@ -77,7 +77,7 @@ public class NetworkVO implements Network, Identity {
     long networkOfferingId;
     
     @Column(name="vpc_id")
-    long vpcId;
+    Long vpcId;
 
     @Column(name="physical_network_id")
     Long physicalNetworkId;
@@ -478,7 +478,7 @@ public class NetworkVO implements Network, Identity {
     }
 
     @Override
-    public long getVpcId() {
+    public Long getVpcId() {
         return vpcId;
     }
 }

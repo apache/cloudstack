@@ -44,9 +44,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     
     @Column(name="guest_ip_address")
     private String guestIpAddress;
-    
-    @Column(name="network_id")
-    long networkId;
 
     @Column(name="is_redundant_router")
     boolean isRedundantRouter;
@@ -83,15 +80,14 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
             long guestOSId,
             long domainId,
             long accountId,
-            long networkId,
             boolean isRedundantRouter,
             int priority,
             boolean isPriorityBumpUp,
             RedundantState redundantState,
-            boolean haEnabled, boolean stopPending) {
+            boolean haEnabled,
+            boolean stopPending) {
         super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.elementId = elementId;
-        this.networkId = networkId;
         this.isRedundantRouter = isRedundantRouter;
         this.priority = priority;
         this.redundantState = redundantState;
@@ -108,16 +104,15 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
             long guestOSId,
             long domainId,
             long accountId,
-            long networkId,
             boolean isRedundantRouter,
             int priority,
             boolean isPriorityBumpUp,
             RedundantState redundantState,
             boolean haEnabled,
-            boolean stopPending, VirtualMachine.Type vmType) {
+            boolean stopPending,
+            VirtualMachine.Type vmType) {
         super(id, serviceOfferingId, name, name, vmType, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.elementId = elementId;
-        this.networkId = networkId;
         this.isRedundantRouter = isRedundantRouter;
         this.priority = priority;
         this.redundantState = redundantState;
@@ -139,10 +134,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
 
     public void setPublicNetmask(String publicNetmask) {
         this.publicNetmask = publicNetmask;
-    }
-
-    public long getNetworkId() {
-        return networkId;
     }
     
     public void setGuestIpAddress(String routerIpAddress) {

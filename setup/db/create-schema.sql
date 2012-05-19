@@ -2184,5 +2184,16 @@ CREATE TABLE  `cloud`.`vpc_offering_service_map` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+CREATE TABLE `cloud`.`router_network_ref` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `router_id` bigint unsigned NOT NULL COMMENT 'router id',
+  `network_id` bigint unsigned NOT NULL COMMENT 'network id',
+  `guest_type` char(32) COMMENT 'type of guest network that can be shared or isolated',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_router_network_ref__router_id` FOREIGN KEY (`router_id`) REFERENCES `domain_router`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_router_network_ref__networks_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 SET foreign_key_checks = 1;
 

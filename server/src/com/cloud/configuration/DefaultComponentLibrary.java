@@ -70,6 +70,7 @@ import com.cloud.maint.UpgradeManagerImpl;
 import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.ExternalLoadBalancerUsageManagerImpl;
 import com.cloud.network.NetworkManagerImpl;
+import com.cloud.network.RouterNetworkDaoImpl;
 import com.cloud.network.StorageNetworkManagerImpl;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl;
 import com.cloud.network.dao.ExternalFirewallDeviceDaoImpl;

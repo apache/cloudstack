@@ -155,7 +155,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         }
 
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
-        params.put(VirtualMachineProfile.Param.ReProgramNetwork, true);
+        params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
         _routerMgr.deployVirtualRouter(network, dest, _accountMgr.getAccount(network.getAccountId()), params, offering.getRedundantRouter());
 

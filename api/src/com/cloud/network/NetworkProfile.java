@@ -213,7 +213,7 @@ public class NetworkProfile implements Network {
     }
 
     @Override
-    public long getVpcId() {
+    public Long getVpcId() {
         return vpcId;
     }
 

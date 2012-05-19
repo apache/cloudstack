@@ -64,16 +64,7 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      * @param hostId id of the host.  null if to get all.
      * @return list of DomainRouterVO
      */
-    public List<DomainRouterVO> listVirtualByHostId(Long hostId);
-    
-    /**
-     * list virtual machine routers by host id.  exclude destroyed, stopped, expunging VM, 
-     * pass in null to get all
-     * virtual machine routers.
-     * @param hostId id of the host.  null if to get all.
-     * @return list of DomainRouterVO
-     */
-    public List<DomainRouterVO> listVirtualUpByHostId(Long hostId);
+    public List<DomainRouterVO> listIsolatedByHostId(Long hostId);
     
 	/**
 	 * Find the list of domain routers for a domain
@@ -101,4 +92,17 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
     List<DomainRouterVO> listByNetworkAndRole(long networkId, Role role);
     
     List<DomainRouterVO> listByElementId(long elementId);
+    
+    /**
+     * Persists the domain router instance + creates the reference to the guest network (if not null)
+     * @param guestNetwork TODO
+     * @return
+     */    
+    DomainRouterVO persist(DomainRouterVO router, Network guestNetwork);
+
+    /**
+     * @param routerId
+     * @return
+     */
+    List<Long> getRouterNetworks(long routerId);
 }

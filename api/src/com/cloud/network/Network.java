@@ -287,5 +287,5 @@ public interface Network extends ControlledEntity {
     /**
      * @return
      */
-    long getVpcId();
+    Long getVpcId();
 }
