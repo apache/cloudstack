@@ -30,7 +30,7 @@ def get_url(url, api_key, secret_key, action, query):
         urllib2.urlopen(url)
 	if action == 'SetCertificate':
 		print 'User registration is successful!'
-		return True
+	return True
     except urllib2.HTTPError, e:
 		print  'User registration failed with http error code:' , e.code
 		return False
