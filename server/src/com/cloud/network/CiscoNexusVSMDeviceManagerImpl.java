@@ -109,6 +109,8 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     		throw new CloudRuntimeException(msg);
     	}
 
+    	// Disconnect from the VSM. A VSM has a default of 8 maximum parallel connections that it allows.
+    	netconfClient.disconnect();
 
     	// Now, go ahead and associate the cluster with this VSM.
     	// First, check if VSM already exists in the table "virtual_supervisor_module".
@@ -126,9 +128,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     	} catch (Exception e) {
     		throw new CloudRuntimeException(e.getMessage());
     	}
-    	
-    	//CiscoNexusVSMDeviceVO VSMObj = _ciscoNexusVSMDeviceDao.getVSMbyDomainId(1);
-    	
+
     	if (VSMObj == null) {    		
     		// Create the VSM record. For now, we aren't using the vsmName field.
     		VSMObj = new CiscoNexusVSMDeviceVO(ipaddress, username, password, vCenterIpaddr, vCenterDcName);

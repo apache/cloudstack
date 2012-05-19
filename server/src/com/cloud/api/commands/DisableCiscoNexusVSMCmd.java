@@ -21,7 +21,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -36,9 +36,10 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.event.EventTypes;
 
 @Implementation(responseObject=SuccessResponse.class, description="disable a Cisco Nexus VSM device")
-public class DisableCiscoNexusVSMCmd extends BaseCmd {
+public class DisableCiscoNexusVSMCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(DisableCiscoNexusVSMCmd.class.getName());
     private static final String s_name = "disablecisconexusvsmresponse";
@@ -73,12 +74,12 @@ public class DisableCiscoNexusVSMCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to disable Cisco Nexus VSM device");
+                throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, "Failed to disable Cisco Nexus VSM device");
             }
         }  catch (InvalidParameterValueException invalidParamExcp) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, invalidParamExcp.getMessage());
+            throw new ServerApiException(BaseAsyncCmd.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
+            throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
     }
 
@@ -91,4 +92,14 @@ public class DisableCiscoNexusVSMCmd extends BaseCmd {
     public long getEntityOwnerId() {
         return UserContext.current().getCaller().getId();
     }
+
+    @Override
+    public String getEventDescription() {
+    	return "Disabling a Cisco Nexus VSM device";
+    }
+
+    @Override
+    public String getEventType() {
+    	return EventTypes.EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_DISABLE;
+    }    
 }

@@ -22,7 +22,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -40,7 +39,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Implementation(responseObject=SuccessResponse.class, description="Enable a Cisco Nexus VSM device")
-public class EnableCiscoNexusVSMCmd extends BaseCmd {
+public class EnableCiscoNexusVSMCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(EnableCiscoNexusVSMCmd.class.getName());
     private static final String s_name = "enablecisconexusvsmresponse";
@@ -75,12 +74,12 @@ public class EnableCiscoNexusVSMCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to enable Cisco Nexus VSM device");
+                throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, "Failed to enable Cisco Nexus VSM device");
             }
         }  catch (InvalidParameterValueException invalidParamExcp) {
-            throw new ServerApiException(BaseCmd.PARAM_ERROR, invalidParamExcp.getMessage());
+            throw new ServerApiException(BaseAsyncCmd.PARAM_ERROR, invalidParamExcp.getMessage());
         } catch (CloudRuntimeException runtimeExcp) {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
+            throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
         }
     }
 
@@ -92,5 +91,15 @@ public class EnableCiscoNexusVSMCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return UserContext.current().getCaller().getId();
+    }
+
+    @Override
+    public String getEventDescription() {
+    	return "Enabling a Cisco Nexus VSM device";
+    }
+
+    @Override
+    public String getEventType() {
+    	return EventTypes.EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_ENABLE;
     }
 }
