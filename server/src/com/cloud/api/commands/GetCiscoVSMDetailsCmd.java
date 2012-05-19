@@ -20,7 +20,6 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
@@ -75,7 +74,7 @@ public class GetCiscoVSMDetailsCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, "Failed to retrieve Cisco Nexus Virtual Switch Manager for the specified cluster due to an internal error.");
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to retrieve Cisco Nexus Virtual Switch Manager for the specified cluster due to an internal error.");
             }
         }  catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(BaseCmd.PARAM_ERROR, invalidParamExcp.getMessage());

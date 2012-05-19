@@ -35,15 +35,13 @@ public class PortProfileManagerImpl {
     @DB    
     public PortProfileVO addPortProfile(String portProfName, long vsmId, int vlanId, PortType pType, BindingType bType) {
 
-    	// In this function, we create a port profile record in the port_profile table.
-    	s_logger.info("Inside addPortProfile.. name --> " + portProfName + " vsmId --> " + vsmId + " vlan id --> " + vlanId + " pType --> " + pType + "btype --> " + bType);
+    	// In this function, we create a port profile record in the port_profile table.    	
     	// First, check if a port profile with the given name already exists. If it does, throw an exception.
     	
     	if (_portProfileDao.findByName(portProfName) != null) {
     		s_logger.info("Port Profile with specified name: " + portProfName + " already exists");
     		throw new InvalidParameterValueException("Port Profile with specified name: " + portProfName + " already exists");
     	}
-    	s_logger.info("Ok didn't find a portprofile by name " + portProfName);
     	// Check if the VSM id is a valid one.
     	
     	// TODO: Should we also check whether a port profile for the specified vlanId already exists, and if so,
