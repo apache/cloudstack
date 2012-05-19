@@ -224,7 +224,7 @@ public class ElasticLoadBalancerManagerImpl implements
         Pod pod = podId == null?null:_podDao.findById(podId);
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(
                 1);
-        params.put(VirtualMachineProfile.Param.ReProgramNetwork, true);
+        params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
         Account owner = _accountService.getActiveAccountByName("system", new Long(1));
         DeployDestination dest = new DeployDestination(dc, pod, null, null);
         s_logger.debug("About to deploy ELB vm ");
@@ -513,7 +513,7 @@ public class ElasticLoadBalancerManagerImpl implements
                 }
                
                 elbVm = new DomainRouterVO(id, _elasticLbVmOffering.getId(), vrProvider.getId(), VirtualMachineName.getSystemVmName(id, _instance, _elbVmNamePrefix), template.getId(), template.getHypervisorType(),
-                        template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, false, RedundantState.UNKNOWN, _elasticLbVmOffering.getOfferHA(), false, VirtualMachine.Type.ElasticLoadBalancerVm);
+                        template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false, RedundantState.UNKNOWN, _elasticLbVmOffering.getOfferHA(), false, VirtualMachine.Type.ElasticLoadBalancerVm);
                 elbVm.setRole(Role.LB);
                 elbVm = _itMgr.allocate(elbVm, template, _elasticLbVmOffering, networks, plan, null, owner);
                 //TODO: create usage stats
@@ -801,7 +801,17 @@ public class ElasticLoadBalancerManagerImpl implements
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
         DomainRouterVO elbVm = profile.getVirtualMachine();
-        NetworkVO network = _networkDao.findById(elbVm.getNetworkId());
+        
+        List<NicProfile> elbNics = profile.getNics();
+        Long guestNtwkId = null;
+        for (NicProfile routerNic : elbNics) {
+            if (routerNic.getTrafficType() == TrafficType.Guest) {
+                guestNtwkId = routerNic.getNetworkId();
+                break;
+            }
+        }
+        
+        NetworkVO guestNetwork = _networkDao.findById(guestNtwkId);
 
         DataCenter dc = dest.getDataCenter();
 
@@ -847,7 +857,7 @@ public class ElasticLoadBalancerManagerImpl implements
                 controlNic = nic;
             }
         }
-        String domain = network.getNetworkDomain();
+        String domain = guestNetwork.getNetworkDomain();
         if (domain != null) {
             buf.append(" domain=" + domain);
         }  
