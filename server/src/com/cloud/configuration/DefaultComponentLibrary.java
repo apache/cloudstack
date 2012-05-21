@@ -70,7 +70,6 @@ import com.cloud.maint.UpgradeManagerImpl;
 import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.ExternalLoadBalancerUsageManagerImpl;
 import com.cloud.network.NetworkManagerImpl;
-import com.cloud.network.RouterNetworkDaoImpl;
 import com.cloud.network.StorageNetworkManagerImpl;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl;
 import com.cloud.network.dao.ExternalFirewallDeviceDaoImpl;
@@ -113,6 +112,7 @@ import com.cloud.network.ovs.OvsTunnelManagerImpl;
 import com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl;
 import com.cloud.network.router.VirtualNetworkApplianceManagerImpl;
+import com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl;
 import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
 import com.cloud.network.security.SecurityGroupManagerImpl2;
@@ -392,6 +392,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("ExternalLoadBalancerUsageManager", ExternalLoadBalancerUsageManagerImpl.class);
         addManager("HA Manager", HighAvailabilityManagerImpl.class);
         addManager("VPC Manager", VpcManagerImpl.class);
+        addManager("VpcVirtualRouterManager", VpcVirtualNetworkApplianceManagerImpl.class);
     }
 
     @Override

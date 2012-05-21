@@ -71,6 +71,9 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Column(name="scripts_version")
     private String scriptsVersion;
     
+    @Column(name="vpc_id")
+    private Long vpcId;
+    
     public DomainRouterVO(long id,
             long serviceOfferingId,
             long elementId,
@@ -239,5 +242,10 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     
     public void setScriptsVersion(String scriptsVersion) {
         this.scriptsVersion = scriptsVersion;
+    }
+
+    @Override
+    public Long getVpcId() {
+        return vpcId;
     }
 }

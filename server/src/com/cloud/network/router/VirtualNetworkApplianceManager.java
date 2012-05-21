@@ -59,7 +59,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
     boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, 
             List<? extends VirtualRouter> routers) throws ResourceUnavailableException;
     	
-	List<DomainRouterVO> deployVirtualRouter(Network guestNetwork, DeployDestination dest, Account owner, 
+	List<DomainRouterVO> deployVirtualRouterInGuestNetwork(Network guestNetwork, DeployDestination dest, Account owner, 
 	        Map<VirtualMachineProfile.Param, Object> params, boolean isRedundant) throws InsufficientCapacityException,
 	        ResourceUnavailableException, ConcurrentOperationException;
 	

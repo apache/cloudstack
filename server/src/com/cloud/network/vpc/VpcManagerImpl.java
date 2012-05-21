@@ -27,15 +27,22 @@ import org.apache.log4j.Logger;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
+import com.cloud.deploy.DeployDestination;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.element.NetworkElement;
+import com.cloud.network.element.VpcProvider;
 import com.cloud.network.vpc.VpcOffering.State;
 import com.cloud.network.vpc.Dao.VpcDao;
 import com.cloud.network.vpc.Dao.VpcOfferingDao;
@@ -44,6 +51,7 @@ import com.cloud.org.Grouping;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
@@ -53,7 +61,10 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.ReservationContext;
+import com.cloud.vm.ReservationContextImpl;
 
 /**
  * @author Alena Prokharchyk
@@ -76,6 +87,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
     AccountManager _accountMgr;
     @Inject
     NetworkDao _ntwkDao;
+    @Inject
+    NetworkManager _ntwkMgr;
     
     String _name;
 
@@ -100,7 +113,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
             createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap, 
                     true, State.Enabled);
         }
-        
+                
         txn.commit();
         
         return true;
@@ -119,12 +132,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @Override
     public String getName() {
         return _name;
-    }
-
-    @Override
-    public Vpc createVpc(long zoneId, String name, String cidr, long ownerId) {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override
@@ -185,7 +192,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         Transaction txn = Transaction.currentTxn();
         txn.start();
         // create vpc offering object
-        VpcOfferingVO offering  = new VpcOfferingVO(name, displayText, isDefault);
+        VpcOfferingVO offering  = new VpcOfferingVO(name, displayText, isDefault, null);
         
         if (state != null) {
             offering.setState(state);
@@ -399,7 +406,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         Account owner = _accountMgr.getAccount(vpcOwnerId);
         
         //Verify that caller can perform actions in behalf of vpc owner
-        _accountMgr.checkAccess(caller, null, true, owner);
+        _accountMgr.checkAccess(caller, null, false, owner);
         
         // Validate vpc offering
         VpcOfferingVO vpcOff = _vpcOffDao.findById(vpcOffId);
@@ -604,5 +611,36 @@ public class VpcManagerImpl implements VpcManager, Manager{
        services.add(Network.Service.Gateway);
        services.add(Network.Service.Vpn);
        return services;
+    }
+    
+    @Override
+    public Vpc startVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        UserContext ctx = UserContext.current();
+        Account caller = ctx.getCaller();
+        User callerUser = _accountMgr.getActiveUser(ctx.getCallerUserId());
+        
+        //check if vpc exists
+        Vpc vpc = getVpc(vpcId);
+        if (vpc == null) {
+            throw new InvalidParameterValueException("Unable to find vpc by id " + vpcId);
+        }
+        
+        //permission check
+        _accountMgr.checkAccess(caller, null, false, vpc);
+        
+        DataCenter dc = _configMgr.getZone(vpc.getZoneId());
+     
+        DeployDestination dest = new DeployDestination(dc, null, null, null);
+        ReservationContext context = new ReservationContextImpl(null, null, callerUser, _accountMgr.getAccount(vpc.getAccountId()));
+
+        //deploy provider
+        if (((VpcProvider)_ntwkMgr.getElementImplementingProvider(Provider.VirtualRouter.getName())).startVpc(vpc, dest, context)) {
+            s_logger.debug("Vpc " + vpc + " has started succesfully");
+            return getVpc(vpc.getId());
+        } else {
+            throw new CloudRuntimeException("Failed to start vpc " + vpc);
+            //FIXME - add cleanup logic here
+        }
+        
     }
 }

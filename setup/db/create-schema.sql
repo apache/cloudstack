@@ -920,6 +920,7 @@ CREATE TABLE  `cloud`.`user_ip_address` (
   `network_id` bigint unsigned COMMENT 'network this public ip address is associated with',
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'physical network id that this configuration is based on',
   `is_system` int(1) unsigned NOT NULL default '0',
+  `vpc_id` bigint unsigned COMMENT 'vpc the ip address is associated with',
   PRIMARY KEY (`id`),
   UNIQUE (`public_ip_address`, `source_network_id`),
   CONSTRAINT `fk_user_ip_address__source_network_id` FOREIGN KEY (`source_network_id`) REFERENCES `networks`(`id`),
@@ -930,6 +931,7 @@ CREATE TABLE  `cloud`.`user_ip_address` (
   CONSTRAINT `fk_user_ip_address__data_center_id` FOREIGN KEY (`data_center_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
   CONSTRAINT `uc_user_ip_address__uuid` UNIQUE (`uuid`),
   CONSTRAINT `fk_user_ip_address__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_user_ip_address__vpc_id` FOREIGN KEY (`vpc_id`) REFERENCES `vpc`(`id`) ON DELETE CASCADE,
   INDEX `i_user_ip_address__allocated`(`allocated`),
   INDEX `i_user_ip_address__source_nat`(`source_nat`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1079,9 +1081,11 @@ CREATE TABLE `cloud`.`domain_router` (
   `role` varchar(64) NOT NULL COMMENT 'type of role played by this router',
   `template_version` varchar(100) COMMENT 'template version',
   `scripts_version` varchar(100) COMMENT 'scripts version',
+ `vpc_id` bigint unsigned COMMENT 'correlated virtual router vpc ID',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_domain_router__id` FOREIGN KEY `fk_domain_router__id` (`id`) REFERENCES `vm_instance`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_domain_router__element_id` FOREIGN KEY `fk_domain_router__element_id`(`element_id`) REFERENCES `virtual_router_providers`(`id`)
+  CONSTRAINT `fk_domain_router__element_id` FOREIGN KEY `fk_domain_router__element_id`(`element_id`) REFERENCES `virtual_router_providers`(`id`),
+  CONSTRAINT `fk_domain_router__vpc_id` FOREIGN KEY `fk_domain_router__vpc_id`(`vpc_id`) REFERENCES `vpc`(`id`)
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8 COMMENT = 'information about the domR instance';
 
 CREATE TABLE  `cloud`.`upload` (
@@ -2158,10 +2162,11 @@ CREATE TABLE `cloud`.`vpc_offerings` (
   `default` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if vpc offering is default',
   `removed` datetime COMMENT 'date removed if not null',
   `created` datetime NOT NULL COMMENT 'date created',
+  `service_offering_id` bigint unsigned COMMENT 'service offering id that virtual router is tied to',
   PRIMARY KEY  (`id`),
-  INDEX `i_vpc__removed`(`removed`)
+  INDEX `i_vpc__removed`(`removed`),
+  CONSTRAINT `fk_vpc_offerings__service_offering_id` FOREIGN KEY `fk_vpc_offerings__service_offering_id` (`service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 
 CREATE TABLE  `cloud`.`vpc_offering_service_map` (
   `id` bigint unsigned NOT NULL auto_increment,

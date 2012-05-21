@@ -40,6 +40,7 @@ public class VpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> impl
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), Op.EQ);
         AllFieldsSearch.and("uName", AllFieldsSearch.entity().getUniqueName(), Op.EQ);
         AllFieldsSearch.and("displayText", AllFieldsSearch.entity().getDisplayText(), Op.EQ);
+        AllFieldsSearch.and("svcOffId", AllFieldsSearch.entity().getServiceOfferingId(), Op.EQ);
         AllFieldsSearch.done();
         
     }
@@ -62,7 +63,6 @@ public class VpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> impl
     public VpcOfferingVO findByUniqueName(String uniqueName) {
         SearchCriteria<VpcOfferingVO> sc = AllFieldsSearch.create();
         sc.setParameters("uName", uniqueName);
-       
         return findOneBy(sc);
     }
 }

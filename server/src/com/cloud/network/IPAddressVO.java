@@ -28,7 +28,6 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.api.Identity;
-import com.cloud.network.IpAddress;
 import com.cloud.utils.net.Ip;
 
 /**
@@ -101,6 +100,9 @@ public class IPAddressVO implements IpAddress, Identity {
 	@Transient
     @Column(name="domain_id")
     private Long domainId = null;
+	
+    @Column(name="vpc_id")
+    private Long vpcId;
 
 	protected IPAddressVO() {
 		this.uuid = UUID.randomUUID().toString();
@@ -272,4 +274,14 @@ public class IPAddressVO implements IpAddress, Identity {
 	public void setSystem(boolean isSystem) {
 		this.system = isSystem;
 	}
+
+	@Override
+    public Long getVpcId() {
+        return vpcId;
+    }
+
+	@Override
+    public void setVpcId(Long vpcId) {
+        this.vpcId = vpcId;
+    }
 }

@@ -63,6 +63,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         AllFieldsSearch.join("networkRouter", joinRouterNetwork, joinRouterNetwork.entity().getRouterId(), AllFieldsSearch.entity().getId(), JoinType.INNER);
         AllFieldsSearch.and("podId", AllFieldsSearch.entity().getPodIdToDeployIn(), Op.EQ);
         AllFieldsSearch.and("elementId", AllFieldsSearch.entity().getElementId(), Op.EQ);
+        AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), Op.EQ);
         AllFieldsSearch.done();
 
         IdNetworkIdStatesSearch = createSearchBuilder();
@@ -278,6 +279,14 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     @Override
     public List<Long> getRouterNetworks(long routerId) {
         return _routerNetworkDao.getRouterNetworks(routerId);
+    }
+    
+    @Override
+    public List<DomainRouterVO> listRoutersByVpcId(long vpcId) {
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vpcId", vpcId);
+        sc.setParameters("role", Role.VIRTUAL_ROUTER);
+        return listBy(sc);
     }
     
 }

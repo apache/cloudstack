@@ -16,6 +16,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -30,9 +33,7 @@ public interface VpcService {
     public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices);
     
     public Vpc getVpc(long vpcId);
-    
-    public Vpc createVpc(long zoneId, String name, String cidr, long ownerId);
-    
+        
     public List<Network> getVpcNetworks(long vpcId);
     
     Map<Service, Set<Provider>> getVpcOffSvcProvidersMap(long vpcOffId);
@@ -101,5 +102,14 @@ public interface VpcService {
     public List<? extends Vpc> listVpcs(Long id, String vpcName, String displayText, 
             List<String> supportedServicesStr, String cidr, Long vpcOffId, String state, String accountName, Long domainId,
             String keyword, Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll);
+
+    /**
+     * @param vpcId
+     * @return
+     * @throws InsufficientCapacityException 
+     * @throws ResourceUnavailableException 
+     * @throws ConcurrentOperationException 
+     */
+    Vpc startVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
 }
