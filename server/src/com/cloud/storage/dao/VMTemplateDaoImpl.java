@@ -539,7 +539,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         	    }
         	}
             
-            if (!permittedAccounts.isEmpty() && !(templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community)  && !isAdmin(caller.getType()) ) {
+            if (!permittedAccounts.isEmpty() && !(templateFilter == TemplateFilter.featured || 
+                    templateFilter == TemplateFilter.community || templateFilter == TemplateFilter.executable)  && !isAdmin(caller.getType()) ) {
             	whereClause += attr + "t.account_id IN (" + permittedAccountsStr + ")";
             }
 
