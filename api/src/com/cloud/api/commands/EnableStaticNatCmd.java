@@ -78,7 +78,7 @@ public class EnableStaticNatCmd extends BaseCmd{
     @Override
     public void execute() throws ResourceUnavailableException{ 
         try {
-            boolean result = _rulesService.enableStaticNat(ipAddressId, virtualMachineId);
+            boolean result = _rulesService.enableStaticNat(ipAddressId, virtualMachineId, false);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);

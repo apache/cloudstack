@@ -68,6 +68,7 @@ import com.cloud.utils.net.Ip;
 import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -321,23 +322,24 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    public boolean enableStaticNat(long ipId, long vmId) throws NetworkRuleConflictException, ResourceUnavailableException {
+    public boolean enableStaticNat(long ipId, long vmId, boolean isSystemVm) throws NetworkRuleConflictException, ResourceUnavailableException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
-
-        // Verify input parameters
-        UserVmVO vm = _vmDao.findById(vmId);
-        if (vm == null) {
-            throw new InvalidParameterValueException("Can't enable static nat for the address id=" + ipId + ", invalid virtual machine id specified (" + vmId + ").");
-        }
 
         IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
         if (ipAddress == null) {
             throw new InvalidParameterValueException("Unable to find ip address by id " + ipId);
         }
 
-        // Check permissions
-        checkIpAndUserVm(ipAddress, vm, caller);
+        // Verify input parameters
+        if (!isSystemVm) {
+            UserVmVO vm = _vmDao.findById(vmId);
+            if (vm == null) {
+                throw new InvalidParameterValueException("Can't enable static nat for the address id=" + ipId + ", invalid virtual machine id specified (" + vmId + ").");
+            }
+            // Check permissions
+            checkIpAndUserVm(ipAddress, vm, caller);
+        }
 
         // Verify that the ip is associated with the network and static nat service is supported for the network
         Long networkId = ipAddress.getAssociatedWithNetworkId();
@@ -1177,7 +1179,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    public void getSystemIpAndEnableStaticNatForVm(UserVm vm, boolean getNewIp) throws InsufficientAddressCapacityException {
+    public void getSystemIpAndEnableStaticNatForVm(VirtualMachine vm, boolean getNewIp) throws InsufficientAddressCapacityException {
         boolean success = true;
 
         // enable static nat if eIp capability is supported
@@ -1201,8 +1203,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
                 s_logger.debug("Allocated system ip " + ip + ", now enabling static nat on it for vm " + vm);
 
+                boolean isSystemVM = (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm);
                 try {
-                    success = enableStaticNat(ip.getId(), vm.getId());
+                    success = enableStaticNat(ip.getId(), vm.getId(), isSystemVM);
                 } catch (NetworkRuleConflictException ex) {
                     s_logger.warn("Failed to enable static nat as a part of enabling elasticIp and staticNat for vm " + vm + " in guest network " + guestNetwork + " due to exception ", ex);
                     success = false;
