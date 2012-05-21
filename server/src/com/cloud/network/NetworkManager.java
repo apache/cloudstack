@@ -263,7 +263,7 @@ public interface NetworkManager extends NetworkService {
 
     PhysicalNetworkServiceProvider addDefaultSecurityGroupProviderToPhysicalNetwork(
             long physicalNetworkId);
-
+    
     List<PhysicalNetworkSetupInfo> getPhysicalNetworkInfo(long dcId,
             HypervisorType hypervisorType);
 

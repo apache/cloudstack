@@ -4702,6 +4702,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             // add security group provider to the physical network
             addDefaultSecurityGroupProviderToPhysicalNetwork(pNetwork.getId());
+            
+            // add baremetal pxe/dhcp provider to the physical network
+            addDefaultBaremetalProvidersToPhysicalNetwork(pNetwork.getId());
 
             txn.commit();
             return pNetwork;
@@ -6066,6 +6069,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, Network.Provider.SecurityGroupProvider.getName(), null, null);
 
         return nsp;
+    }
+    
+    private PhysicalNetworkServiceProvider addDefaultBaremetalProvidersToPhysicalNetwork(long physicalNetworkId) {
+    	PhysicalNetworkVO pvo = _physicalNetworkDao.findById(physicalNetworkId);
+    	DataCenterVO dvo = _dcDao.findById(pvo.getDataCenterId());
+    	if (dvo.getNetworkType() == NetworkType.Basic) {
+    		addProviderToPhysicalNetwork(physicalNetworkId, "BaremetalDhcpProvider", null, null);
+    		addProviderToPhysicalNetwork(physicalNetworkId, "BaremetalPxeProvider", null, null);
+    	}
+    	return null;
     }
 
     @Override

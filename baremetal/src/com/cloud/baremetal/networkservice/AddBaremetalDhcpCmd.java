@@ -11,7 +11,6 @@ import com.cloud.api.PlugService;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.baremetal.database.BaremetalDhcpVO;
-import com.cloud.baremetal.manager.BaremetalDhcpManager;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;

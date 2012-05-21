@@ -157,14 +157,14 @@
             <adapter name="BasicAgentAuthorizer" class="com.cloud.agent.manager.authn.impl.BasicAgentAuthManager"/>
         </adapters>
 
-        <manager name="BarmetalDhcpManager" class="com.cloud.baremetal.manager.BaremetalDhcpManagerImpl" />
+        <manager name="BarmetalDhcpManager" class="com.cloud.baremetal.networkservice.BaremetalDhcpManagerImpl" />
         <manager name="BaremetalManager" class="com.cloud.baremetal.manager.BaremetalManagerImpl" />
         <manager name="BaremetalPxeManager" class="com.cloud.baremetal.networkservice.BaremetalPxeManagerImpl" />
         <dao name="BaremetalPxeDao" class="com.cloud.baremetal.database.BaremetalPxeDaoImpl"/>
         <dao name="BaremetalDhcpDao" class="com.cloud.baremetal.database.BaremetalDhcpDaoImpl"/>
         
-        <pluggableservice name="VirtualRouterElementService" key="com.cloud.network.element.VirtualRouterElementService" class="com.cloud.network.element.VirtualRouterElement"/>
-        <pluggableservice name="BaremetalPxeService" key="com.cloud.baremetal.networkservice.BaremetalPxeManagerImpl" class="com.cloud.baremetal.networkservice.BaremetalPxeManagerImpl"/>
+        <pluggableservice name="BaremetalPxeService" key="com.cloud.baremetal.networkservice.BaremetalPxeManager" class="com.cloud.baremetal.networkservice.BaremetalPxeManagerImpl"/>
+        <pluggableservice name="BaremetalDhcpService" key="com.cloud.baremetal.networkservice.BaremetalDhcpManager" class="com.cloud.baremetal.networkservice.BaremetalDhcpManagerImpl"/>
         <pluggableservice name="VirtualRouterElementService" key="com.cloud.network.element.VirtualRouterElementService" class="com.cloud.network.element.VirtualRouterElement"/>
     </management-server>
 

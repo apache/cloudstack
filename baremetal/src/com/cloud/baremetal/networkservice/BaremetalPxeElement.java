@@ -10,7 +10,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.baremetal.database.BaremetalDhcpVO;
 import com.cloud.baremetal.database.BaremetalPxeVO;
-import com.cloud.baremetal.manager.BaremetalDhcpManager;
 import com.cloud.dc.Pod;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
