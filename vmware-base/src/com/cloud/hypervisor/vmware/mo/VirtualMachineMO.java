@@ -650,6 +650,11 @@ public class VirtualMachineMO extends BaseMO {
 
 		int gcTagKey = getCustomFieldKey("Network", CustomFieldConstants.CLOUD_GC);
 		
+		if(gcTagKey == 0) {
+			gcTagKey = getCustomFieldKey("DistributedVirtualPortgroup", CustomFieldConstants.CLOUD_GC_DVP);
+			s_logger.debug("The custom key for dvPortGroup is : " + gcTagKey);
+		}
+		
 		PropertySpec pSpec = new PropertySpec();
 		pSpec.setType("Network");
 		pSpec.setPathSet(new String[] {"name", "vm", String.format("value[%d]", gcTagKey)});
@@ -694,8 +699,9 @@ public class VirtualMachineMO extends BaseMO {
 	    			(morVms != null ? morVms.getManagedObjectReference() : null), 
 	    			gcTagValue);
 	    		
-	    		networks.add(details);
+	    		networks.add(details);	    		
 	    	}
+	    	s_logger.debug("Retrieved " + networks.size() + " networks with key : " + gcTagKey);
 	    }
 		
 		return networks;

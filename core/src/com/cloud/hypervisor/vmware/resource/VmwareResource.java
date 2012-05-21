@@ -4021,7 +4021,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(context, context.getServiceContent().getCustomFieldsManager());
             cfmMo.ensureCustomFieldDef("Datastore", CustomFieldConstants.CLOUD_UUID);
-            cfmMo.ensureCustomFieldDef("Network", CustomFieldConstants.CLOUD_GC);
+            if (mgr.getNexusVSwitchGlobalParameter()) {
+            	cfmMo.ensureCustomFieldDef("DistributedVirtualPortgroup", CustomFieldConstants.CLOUD_GC_DVP);
+            } else {
+            	cfmMo.ensureCustomFieldDef("Network", CustomFieldConstants.CLOUD_GC);
+            }
             cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_UUID);
             cfmMo.ensureCustomFieldDef("VirtualMachine", CustomFieldConstants.CLOUD_NIC_MASK);
 
