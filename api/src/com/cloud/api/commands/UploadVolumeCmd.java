@@ -15,6 +15,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
@@ -30,7 +31,7 @@ import com.cloud.storage.Volume;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Uploads a data disk.", responseObject=VolumeResponse.class)
-public class UploadVolumeCmd extends BaseCmd {
+public class UploadVolumeCmd extends BaseAsyncCmd {
 	public static final Logger s_logger = Logger.getLogger(UploadVolumeCmd.class.getName());
     private static final String s_name = "uploadvolumeresponse";
 	
@@ -126,6 +127,16 @@ public class UploadVolumeCmd extends BaseCmd {
         }
         
         return accountId;
+	}
+
+	@Override
+	public String getEventDescription() {
+		return  "uploading volume: " + getVolumeName() + " in the zone " + getZoneId(); 		
+	}
+
+	@Override
+	public String getEventType() {
+        return EventTypes.EVENT_VOLUME_UPLOAD;
 	}
 
 }
