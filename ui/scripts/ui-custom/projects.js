@@ -533,6 +533,7 @@
                 .append($('<input>').attr({ type: 'submit' }).val(''))
             );
       var $projectSelect = args.$projectSelect;
+      var $cancel = $('<div>').addClass('button cancel').html(_l('label.cancel'));
 
       // Get project data
       var loadData = function(complete) {
@@ -581,6 +582,13 @@
 
         return false;
       });
+
+      //Cancel button
+      $cancel.click(function() {
+        $(':ui-dialog, .overlay').remove();
+        $('.select.default-view').click();
+      });
+
 
       // Initial load
       loadData(function() {
@@ -639,7 +647,8 @@
 
       return $selector
         .append($toolbar)
-        .append($list);
+        .append($list)
+        .append($cancel);
     }
   };
 
