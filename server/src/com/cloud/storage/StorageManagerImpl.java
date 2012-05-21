@@ -1686,13 +1686,12 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
     
     /*
-     * Just allocate a volume in the database, don't send the createvolume cmd to hypervisor. The volume will be finally
-     * created
+     * Upload the volume to secondary storage.
      * 
      */
     @Override
     @DB
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPLOAD, eventDescription = "creating volume", create = true)
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPLOAD, eventDescription = "uploading volume", async = true)
     public VolumeVO uploadVolume(UploadVolumeCmd cmd) throws ResourceAllocationException{
     	Account caller = UserContext.current().getCaller();
         long ownerId = cmd.getEntityOwnerId();
@@ -1704,8 +1703,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     	validateVolume(caller, ownerId, zoneId, volumeName, url, format);
     	VolumeVO volume = persistVolume(caller, ownerId, zoneId, volumeName, url, cmd.getFormat());
     	_downloadMonitor.downloadVolumeToStorage(volume, zoneId, url, cmd.getChecksum(), ImageFormat.valueOf(format.toUpperCase()));
-		return volume;
-    	
+		return volume;    	
     }
     
     private boolean validateVolume(Account caller, long ownerId, Long zoneId, String volumeName, String url, String format) throws ResourceAllocationException{
