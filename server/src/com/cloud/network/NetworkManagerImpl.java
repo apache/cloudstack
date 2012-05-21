@@ -972,8 +972,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "allocating Ip", create = true)
+    public IpAddress allocateIP(long networkId, Account ipOwner)  throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
+        return allocateIP(networkId, ipOwner, false);
+    }
+
+    @DB
     public IpAddress allocateIP(long networkId, Account ipOwner, boolean isSystem) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
         long userId = UserContext.current().getCallerUserId();
@@ -1080,9 +1084,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    @DB
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "associating Ip", async = true)
     public IpAddress associateIP(long ipId) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException, ConcurrentOperationException {
+        return associateIP(ipId, false);
+    }
+
+    @DB
+    private IpAddress associateIP(long ipId, boolean isSystem) throws ResourceAllocationException, ResourceUnavailableException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
         Account owner = null;
 

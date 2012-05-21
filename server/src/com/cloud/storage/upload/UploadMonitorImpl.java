@@ -279,12 +279,7 @@ public class UploadMonitorImpl implements UploadMonitor {
             uploadJob.setUploadState(Status.DOWNLOAD_URL_NOT_CREATED);
             uploadJob.setLastUpdated(new Date());
             _uploadDao.update(uploadJob.getId(), uploadJob);
-            
-            List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running);
-            if (ssVms.size() == 0){
-            	errorString = "Couldnt find a running SSVM in the zone" + dataCenterId+ ". Couldnt create the extraction URL.";
-                throw new CloudRuntimeException(errorString);
-            }
+
             // Create Symlink at ssvm
             String uuid = UUID.randomUUID().toString() + path.substring(path.length() - 4) ; // last 4 characters of the path specify the format like .vhd
             HostVO secStorage = ApiDBUtils.findHostById(ApiDBUtils.findUploadById(uploadId).getHostId());
@@ -303,16 +298,26 @@ public class UploadMonitorImpl implements UploadMonitor {
                 throw new CloudRuntimeException(errorString);
             }
 
-            //Construct actual URL locally now that the symlink exists at SSVM
-            String extractURL = generateCopyUrl(ssvm.getPublicIpAddress(), uuid);
-            UploadVO vo = _uploadDao.createForUpdate();
-            vo.setLastUpdated(new Date());
-            vo.setUploadUrl(extractURL);
-            vo.setUploadState(Status.DOWNLOAD_URL_CREATED);
-            _uploadDao.update(uploadId, vo);
-            success = true;
-            return;
-                        
+            List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, dataCenterId, State.Running);
+    	    if (ssVms.size() > 0) {
+                SecondaryStorageVmVO ssVm = ssVms.get(0);
+                if (ssVm.getPublicIpAddress() == null) {
+                    errorString = "A running secondary storage vm has a null public ip?";
+                    s_logger.error(errorString);
+                    throw new CloudRuntimeException(errorString);
+                }
+                //Construct actual URL locally now that the symlink exists at SSVM
+                String extractURL = generateCopyUrl(ssVm.getPublicIpAddress(), uuid);
+                UploadVO vo = _uploadDao.createForUpdate();
+                vo.setLastUpdated(new Date());
+                vo.setUploadUrl(extractURL);
+                vo.setUploadState(Status.DOWNLOAD_URL_CREATED);
+                _uploadDao.update(uploadId, vo);
+                success = true;
+                return;
+            }
+            errorString = "Couldnt find a running SSVM in the zone" + dataCenterId+ ". Couldnt create the extraction URL.";
+            throw new CloudRuntimeException(errorString);
 	    }finally{
 	        if(!success){
 	            UploadVO uploadJob = _uploadDao.createForUpdate(uploadId);
