@@ -684,6 +684,7 @@
         }
 				
 				//???
+				/*
 				if("pollAgainIfValueIsIn" in value) {				  
 					if ((content in value.pollAgainIfValueIsIn) && (value.pollAgainFn != null)) {
 					  //poll again 
@@ -693,9 +694,10 @@
 							  clearInterval(intervalKey);		
 								$('.detail-view .toolbar .button.refresh').click();	 //click Refresh button to refresh detailView				
 							}
-						}, 5000);						            
+						}, 2000);						            
 					}
 				}
+				*/
 								
         $name.html(_l(value.label));
         $value.html(_s(content));
