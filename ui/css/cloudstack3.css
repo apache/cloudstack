@@ -7987,6 +7987,31 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   left: 0;
 }
 
+.project-selector .button.cancel {
+  color: #808080;
+  background: url("../images/gradients.png") repeat scroll 0 -480px #B6B6B6;
+  border: 1px solid #AAAAAA;
+  border-radius: 4px 4px 4px 4px;
+  font-size: 13px;
+  font-weight: bold;
+  float: none;
+  cursor: pointer;
+  color: #838181;
+  /*+placement:shift 488px 9px;*/
+  position: relative;
+  left: 170px;
+  top: -8px;
+  margin: 19px 0 0 0px;
+  width: 54px;
+
+}
+
+.project-selector .button.cancel:hover {
+  color: #3A3A3A;
+
+}
+
+
 /*** Resource management*/
 .project-dashboard .resources {
 }
