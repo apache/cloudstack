@@ -424,7 +424,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             }
         }
         
-        String msg = "Only support XCP 1.0.0, 1.1.0, 1.5 beta; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0 but this one is " + prodBrand + " " + prodVersion;
+        String msg = "Only support XCP 1.0.0, 1.1.0, 1.5 beta; XenServer 5.6,  XenServer 5.6 FP1, XenServer 5.6 SP2, Xenserver 6.0, 6.0.2 but this one is " + prodBrand + " " + prodVersion;
         _alertMgr.sendAlert(AlertManager.ALERT_TYPE_HOST, dcId, podId, msg, msg);
         s_logger.debug(msg);
         throw new RuntimeException(msg);
@@ -569,7 +569,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             }
         }
         if( resource == null ){
-            String msg = "Only support XCP 1.0.0, 1.1.0, 1.5 beta; XenServer 5.6, 5.6 FP1, 5.6 SP2 and Xenserver 6.0 but this one is " + prodBrand + " " + prodVersion;
+            String msg = "Only support XCP 1.0.0, 1.1.0, 1.5 beta; XenServer 5.6, 5.6 FP1, 5.6 SP2 and Xenserver 6.0 , 6.0.2 but this one is " + prodBrand + " " + prodVersion;
             s_logger.debug(msg);
             throw new RuntimeException(msg);
         }
