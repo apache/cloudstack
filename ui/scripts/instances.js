@@ -1549,11 +1549,31 @@
             },
 
             fields: [
-              {                       
-                
+              {  
                 displayname: { label: 'label.display.name', isEditable: true },		
                 instancename: { label: 'label.internal.name' },								
-                state: { label: 'label.state' },                       
+                state: { 
+								  label: 'label.state',
+									pollAgainIfValueIsIn: { 
+										'Starting': 1,
+										'Stopping': 1
+									},
+									pollAgainFn: function(context) { //???	
+                    var toClearInterval = false; 								  
+										$.ajax({
+											url: createURL("listVirtualMachines&id=" + context.instances[0].id),
+											dataType: "json",
+											async: false,
+											success: function(json) {	
+												var jsonObj = json.listvirtualmachinesresponse.virtualmachine[0];   
+												if(jsonObj.state != context.instances[0].state) { 
+													toClearInterval = true;	//to clear interval	
+												}						
+											}
+										});	
+                    return toClearInterval;										
+									}								
+								},                       
                 hypervisor: { label: 'label.hypervisor' },
                 templatename: { label: 'label.template' },
                 guestosid: {

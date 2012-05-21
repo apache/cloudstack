@@ -33,14 +33,17 @@
           fields: {
             name: { label: 'label.name' },
             type: { label: 'label.type' },
-            //hypervisor: { label: 'label.hypervisor' },	
-            //vmdisplayname: { label: 'label.vm.display.name' },
-            state: { 
+            hypervisor: { label: 'label.hypervisor' },	
+            vmdisplayname: { label: 'label.vm.display.name' },
+            						
+						/*
+						state: { 
 						  label: 'State',
 							indicator: {               
                 'Ready': 'on'
               }
 						}
+						*/
           },
 
           // List view actions
@@ -943,7 +946,27 @@
                   {
                     id: { label: 'ID' },
                     zonename: { label: 'label.zone' },                    
-                    state: { label: 'label.state' },
+                    state: { 
+										  label: 'label.state',
+											pollAgainIfValueIsIn: { 
+											  'UploadNotStarted': 1
+											},
+											pollAgainFn: function(context) {  //???											 
+												var toClearInterval = false; 				
+												$.ajax({
+													url: createURL("listVolumes&id=" + context.volumes[0].id),
+													dataType: "json",
+													async: false,
+													success: function(json) {	
+														var jsonObj = json.listvolumesresponse.volume[0];   
+														if(jsonObj.state != context.volumes[0].state) {	
+															toClearInterval = true;	//to clear interval	
+														}
+													}
+												});		
+                        return toClearInterval;												
+											}											
+										},
                     type: { label: 'label.type' },
                     storagetype: { label: 'label.storage.type' },   
                     hypervisor: { label: 'label.hypervisor' },										
