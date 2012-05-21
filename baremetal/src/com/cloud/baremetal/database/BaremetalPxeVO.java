@@ -10,7 +10,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="external_pxe_devices")
+@Table(name="baremetal_pxe_devices")
 public class BaremetalPxeVO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

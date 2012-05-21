@@ -2124,5 +2124,35 @@ CREATE TABLE `cloud`.`port_profile` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`baremetal_dhcp_devices` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40) UNIQUE,
+  `nsp_id` bigint unsigned NOT NULL COMMENT 'Network Service Provider ID',
+  `pod_id` bigint unsigned NOT NULL COMMENT 'Pod id where this dhcp server in',
+  `device_type` varchar(255) NOT NULL COMMENT 'type of the external device',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which external dhcp device is added',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external dhcp device',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_external_dhcp_devices_nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_dhcp_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_dhcp_devices_pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_dhcp_devices_physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`baremetal_pxe_devices` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40) UNIQUE,
+  `nsp_id` bigint unsigned NOT NULL COMMENT 'Network Service Provider ID',
+  `pod_id` bigint unsigned NOT NULL COMMENT 'Pod id where this pxe server in',
+  `device_type` varchar(255) NOT NULL COMMENT 'type of the pxe device',
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which external pxe device is added',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external pxe device',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_external_pxe_devices_nsp_id` FOREIGN KEY (`nsp_id`) REFERENCES `physical_network_service_providers` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_pxe_devices_pod_id` FOREIGN KEY (`pod_id`) REFERENCES `host_pod_ref`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_pxe_devices_host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_pxe_devices_physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 SET foreign_key_checks = 1;

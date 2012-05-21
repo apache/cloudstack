@@ -12,7 +12,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="external_dhcp_devices")
+@Table(name="baremetal_dhcp_devices")
 public class BaremetalDhcpVO {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
