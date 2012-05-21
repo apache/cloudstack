@@ -105,4 +105,10 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      * @return
      */
     List<Long> getRouterNetworks(long routerId);
+
+    /**
+     * @param vpcId
+     * @return
+     */
+    List<DomainRouterVO> listRoutersByVpcId(long vpcId);
 }

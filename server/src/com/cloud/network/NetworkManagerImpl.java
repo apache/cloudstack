@@ -327,6 +327,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     private static HashMap<Service, List<Provider>> s_serviceToImplementedProvidersMap = new HashMap<Service, List<Provider>>();
     private static HashMap<String, String> s_providerToNetworkElementMap = new HashMap<String, String>();
 
+    @Override
     public NetworkElement getElementImplementingProvider(String providerName) {
         String elementName = s_providerToNetworkElementMap.get(providerName);
         NetworkElement element = _networkElements.get(elementName);
@@ -1782,12 +1783,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     private void implementNetworkElementsAndResources(DeployDestination dest, ReservationContext context, NetworkVO network, NetworkOfferingVO offering)
             throws ConcurrentOperationException, InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException {
         // If this is a 1) guest virtual network 2) network has sourceNat service 3) network offering does not support a
-// Shared source NAT rule,
+        // Shared source NAT rule,
         // associate a source NAT IP (if one isn't already associated with the network)
 
         boolean sharedSourceNat = offering.getSharedSourceNat();
 
-        if (network.getGuestType() == Network.GuestType.Isolated && areServicesSupportedInNetwork(network.getId(), Service.SourceNat) && !sharedSourceNat) {
+        if (network.getGuestType() == Network.GuestType.Isolated && areServicesSupportedInNetwork(network.getId(), Service.SourceNat) 
+                && !sharedSourceNat) {
             List<IPAddressVO> ips = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
 
             if (ips.isEmpty()) {

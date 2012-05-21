@@ -22,7 +22,10 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.VpcResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.UserContext;
 
@@ -111,7 +114,20 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
     @Override
     public void execute() {
         //TODO - prepare vpc here (call start() method, it should start the VR, associate source nat ip address, etc)
-        Vpc vpc = _vpcService.getVpc(this.getEntityId());
+        Vpc vpc = null;
+        try {
+            vpc = _vpcService.startVpc(this.getEntityId());
+        } catch (ResourceUnavailableException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+        } catch (ConcurrentOperationException ex) {
+            s_logger.warn("Exception: ", ex);
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage()); 
+        } catch (InsufficientCapacityException ex) {
+            s_logger.info(ex);
+            s_logger.trace(ex);
+            throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
+        }
         if (vpc != null) {
             VpcResponse response = _responseGenerator.createVpcResponse(vpc);
             response.setResponseName(getCommandName());

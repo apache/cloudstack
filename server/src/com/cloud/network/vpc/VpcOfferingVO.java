@@ -64,20 +64,24 @@ public class VpcOfferingVO implements VpcOffering{
     @Column(name = GenericDao.CREATED_COLUMN)
     Date created;
     
+    @Column(name = "service_offering_id")
+    Long serviceOfferingId;
+    
     public VpcOfferingVO() {
         this.uuid = UUID.randomUUID().toString();
     }
     
-    public VpcOfferingVO(String name, String displayText) {
+    public VpcOfferingVO(String name, String displayText, Long serviceOfferingId) {
         this.name = name;
         this.displayText = displayText;
         this.uniqueName = name;
+        this.serviceOfferingId = serviceOfferingId;
         this.uuid = UUID.randomUUID().toString();
         this.state = State.Disabled;
     }
     
-    public VpcOfferingVO(String name, String displayText, boolean isDefault) {
-        this(name, displayText);
+    public VpcOfferingVO(String name, String displayText, boolean isDefault, Long serviceOfferingId) {
+        this(name, displayText, serviceOfferingId);
         this.isDefault = isDefault;
     }
     
@@ -136,8 +140,12 @@ public class VpcOfferingVO implements VpcOffering{
         this.displayText = displayText;
     }
 
-
     public void setState(State state) {
         this.state = state;
+    }
+
+    @Override
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
     }
 }

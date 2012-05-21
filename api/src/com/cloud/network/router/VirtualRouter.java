@@ -38,4 +38,8 @@ public interface VirtualRouter extends VirtualMachine {
     String getPublicIpAddress();
     boolean isStopPending();
     void setStopPending(boolean stopPending);
+    /**
+     * @return
+     */
+    Long getVpcId();
 }

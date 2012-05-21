@@ -36,6 +36,7 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
@@ -307,4 +308,10 @@ public interface NetworkManager extends NetworkService {
     String getDefaultPublicTrafficLabel(long dcId, HypervisorType vmware);
 
     String getDefaultGuestTrafficLabel(long dcId, HypervisorType vmware);
+
+    /**
+     * @param providerName
+     * @return
+     */
+    NetworkElement getElementImplementingProvider(String providerName);
 }
