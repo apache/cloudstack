@@ -950,7 +950,22 @@
 										  label: 'label.state',
 											pollAgainIfValueIsIn: { 
 											  'UploadNotStarted': 1
-											}
+											},
+											pollAgainFn: function(context) {  //???											 
+												var toClearInterval = false; 				
+												$.ajax({
+													url: createURL("listVolumes&id=" + context.volumes[0].id),
+													dataType: "json",
+													async: false,
+													success: function(json) {	
+														var jsonObj = json.listvolumesresponse.volume[0];   
+														if(jsonObj.state != context.volumes[0].state) {	
+															toClearInterval = true;	//to clear interval	
+														}
+													}
+												});		
+                        return toClearInterval;												
+											}											
 										},
                     type: { label: 'label.type' },
                     storagetype: { label: 'label.storage.type' },   
