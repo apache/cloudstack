@@ -23,7 +23,7 @@ CREATE TABLE shost (
 	MHostID BIGINT,						-- when host type is local, MHostID points to its owner management host												
 	
 	UserOnHost VARCHAR(64),
-	UserPasssword VARCHAR(128),
+	UserPassword VARCHAR(128),
 	PRIMARY KEY(ID)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
