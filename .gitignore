@@ -31,3 +31,4 @@ deps/cloud.userlibraries
 .idea
 *.iml
 *.swp
+*.pydevproject

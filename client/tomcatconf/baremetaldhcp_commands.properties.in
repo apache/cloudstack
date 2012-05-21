@@ -1,0 +1,8 @@
+### bitmap of permissions at the end of each classname, 1 = ADMIN, 2 = RESOURCE_DOMAIN_ADMIN, 4 = DOMAIN_ADMIN, 8 = USER
+### Please standardize naming conventions to camel-case (even for acronyms).
+
+### baremetal dhcp commands
+addBaremetalDhcp=com.cloud.baremetal.networkservice.AddBaremetalDhcpCmd;1
+addBaremetalPxePingServer=com.cloud.baremetal.networkservice.AddBaremetalPxePingServerCmd;1
+listBaremetalDhcp=com.cloud.baremetal.networkservice.ListBaremetalDhcpCmd;1
+listBaremetalPxePingServer=com.cloud.baremetal.networkservice.ListBaremetalPxePingServersCmd;1

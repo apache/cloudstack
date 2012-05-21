@@ -463,7 +463,7 @@
 
   <target name="build-servers" depends="-init, build-server" />
 
-  <target name="build-opensource" depends="-init, build-server, build-agent, build-console-proxy, build-scripts, build-ui, build-ovm, package-oss-systemvm-iso">
+  <target name="build-opensource" depends="-init, build-server, build-agent, build-console-proxy, build-scripts, build-ui, build-ovm, package-oss-systemvm-iso, build-baremetal">
     <copy overwrite="true" todir="${dist.dir}">
       <fileset dir="${base.dir}/build/deploy/">
         <include name="deploy-agent.sh" />
@@ -582,7 +582,21 @@
     <compile-java jar.name="${ovm.jar}" top.dir="${ovm.dir}" classpath="ovm.classpath" />
   </target>
 
-  <target name="compile-all" description="Compile all of the jars" depends="compile-utils, compile-api, compile-core, compile-server, compile-ovm"/>
+  <target name="build-baremetal" depends="compile-baremetal" />
+
+  <!-- ===================== Baremetal.Jar ===================== -->
+  <property name="baremetal.jar" value="cloud-baremetal.jar" />
+  <property name="baremetal.dir" location="${base.dir}/baremetal" />
+  <property name="baremetal-scripts.dir" location="${baremetal.dir}/scripts" />
+  <path id="baremetal.classpath" >
+    <path refid="deps.classpath" />
+    <path refid="dist.classpath" />
+  </path>
+  <target name="compile-baremetal" depends="-init, compile-server" description="Compile Baremetal">
+    <compile-java jar.name="${baremetal.jar}" top.dir="${baremetal.dir}" classpath="baremetal.classpath" />
+  </target>
+
+  <target name="compile-all" description="Compile all of the jars" depends="compile-utils, compile-api, compile-core, compile-server, compile-ovm, compile-baremetal"/>
 
   <target name="clean-all" depends="clean, clean-awsapi" description="Clean all of the generated files, including dependency cache and javadoc">
     <delete dir="${target.dir}" />
