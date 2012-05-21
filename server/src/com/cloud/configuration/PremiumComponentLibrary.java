@@ -15,13 +15,6 @@ package com.cloud.configuration;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.cloud.baremetal.BareMetalPingServiceImpl;
-import com.cloud.baremetal.BareMetalTemplateAdapter;
-import com.cloud.baremetal.BareMetalVmManagerImpl;
-import com.cloud.baremetal.ExternalDhcpManagerImpl;
-import com.cloud.baremetal.PxeServerManager.PxeServerType;
-import com.cloud.baremetal.PxeServerManagerImpl;
-import com.cloud.baremetal.PxeServerService;
 import com.cloud.ha.HighAvailabilityManagerExtImpl;
 import com.cloud.hypervisor.vmware.VmwareManagerImpl;
 import com.cloud.netapp.NetappManagerImpl;
@@ -62,9 +55,6 @@ public class PremiumComponentLibrary extends DefaultComponentLibrary {
         addManager("HA Manager", HighAvailabilityManagerExtImpl.class);
         addManager("VMWareManager", VmwareManagerImpl.class);
         addManager("ExternalNetworkManager", ExternalNetworkDeviceManagerImpl.class);
-        addManager("BareMetalVmManager", BareMetalVmManagerImpl.class);
-        addManager("ExternalDhcpManager", ExternalDhcpManagerImpl.class);
-        addManager("PxeServerManager", PxeServerManagerImpl.class);
         addManager("NetworkUsageManager", NetworkUsageManagerImpl.class);
         addManager("NetappManager", NetappManagerImpl.class);
     }
@@ -72,7 +62,5 @@ public class PremiumComponentLibrary extends DefaultComponentLibrary {
     @Override
     protected void populateAdapters() {
     	super.populateAdapters();
-    	addAdapter(PxeServerService.class, PxeServerType.PING.getName(), BareMetalPingServiceImpl.class);
-    	addAdapter(TemplateAdapter.class, TemplateAdapterType.BareMetal.getName(), BareMetalTemplateAdapter.class);
     }
 }

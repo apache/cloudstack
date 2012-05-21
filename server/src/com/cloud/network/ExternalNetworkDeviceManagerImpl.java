@@ -31,10 +31,6 @@ import com.cloud.api.PlugService;
 import com.cloud.api.commands.AddNetworkDeviceCmd;
 import com.cloud.api.commands.DeleteNetworkDeviceCmd;
 import com.cloud.api.commands.ListNetworkDeviceCmd;
-import com.cloud.baremetal.ExternalDhcpManager;
-import com.cloud.baremetal.PxeServerManager;
-import com.cloud.baremetal.PxeServerProfile;
-import com.cloud.baremetal.PxeServerManager.PxeServerType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
@@ -79,8 +75,6 @@ import com.cloud.vm.dao.NicDao;
 @Local(value = {ExternalNetworkDeviceManager.class})
 public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceManager {
 
-    @Inject ExternalDhcpManager _dhcpMgr;
-    @Inject PxeServerManager _pxeMgr;
     @Inject AgentManager _agentMgr;
     @Inject NetworkManager _networkMgr;
     @Inject HostDao _hostDao;
@@ -147,35 +141,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     
         Collection paramsCollection = paramList.values();
         HashMap params = (HashMap) (paramsCollection.toArray())[0];
-        if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.ExternalDhcp.getName())) {
-            //Long zoneId = _identityService.getIdentityId("data_center", (String) params.get(ApiConstants.ZONE_ID));
-            //Long podId = _identityService.getIdentityId("host_pod_ref", (String)params.get(ApiConstants.POD_ID));
-        	Long zoneId = Long.valueOf((String) params.get(ApiConstants.ZONE_ID));
-        	Long podId = Long.valueOf((String)params.get(ApiConstants.POD_ID));
-            String type = (String) params.get(ApiConstants.DHCP_SERVER_TYPE);
-            String url = (String) params.get(ApiConstants.URL);
-            String username = (String) params.get(ApiConstants.USERNAME);
-            String password = (String) params.get(ApiConstants.PASSWORD);
-
-            return _dhcpMgr.addDhcpServer(zoneId, podId, type, url, username, password);
-        } else if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.PxeServer.getName())) {
-            Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
-            Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
-            //Long zoneId = _identityService.getIdentityId("data_center", (String) params.get(ApiConstants.ZONE_ID));
-            //Long podId = _identityService.getIdentityId("host_pod_ref", (String)params.get(ApiConstants.POD_ID));
-            String type = (String) params.get(ApiConstants.PXE_SERVER_TYPE);
-            String url = (String) params.get(ApiConstants.URL);
-            String username = (String) params.get(ApiConstants.USERNAME);
-            String password = (String) params.get(ApiConstants.PASSWORD);
-            String pingStorageServerIp = (String) params.get(ApiConstants.PING_STORAGE_SERVER_IP);
-            String pingDir = (String) params.get(ApiConstants.PING_DIR);
-            String tftpDir = (String) params.get(ApiConstants.TFTP_DIR);
-            String pingCifsUsername = (String) params.get(ApiConstants.PING_CIFS_USERNAME);
-            String pingCifsPassword = (String) params.get(ApiConstants.PING_CIFS_PASSWORD);
-            PxeServerProfile profile = new PxeServerProfile(zoneId, podId, url, username, password, type, pingStorageServerIp, pingDir, tftpDir,
-                    pingCifsUsername, pingCifsPassword);
-            return _pxeMgr.addPxeServer(profile);
-        } else if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
+       if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
             Long physicalNetworkId = (params.get(ApiConstants.PHYSICAL_NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.PHYSICAL_NETWORK_ID)):null;
             String url = (String) params.get(ApiConstants.URL);
             String username = (String) params.get(ApiConstants.USERNAME);
@@ -225,29 +191,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         NetworkDeviceResponse response;
         HostVO host = (HostVO)device;
         _hostDao.loadDetails(host);
-        if (host.getType() == Host.Type.ExternalDhcp) {
-            NwDeviceDhcpResponse r = new NwDeviceDhcpResponse();
-            r.setZoneId(host.getDataCenterId());
-            r.setPodId(host.getPodId());
-            r.setUrl(host.getPrivateIpAddress());
-            r.setType(host.getDetail("type"));
-            response = r;
-        } else if (host.getType() == Host.Type.PxeServer) {
-            String pxeType = host.getDetail("type");
-            if (pxeType.equalsIgnoreCase(PxeServerType.PING.getName())) {
-                PxePingResponse r = new PxePingResponse();
-                r.setZoneId(host.getDataCenterId());
-                r.setPodId(host.getPodId());
-                r.setUrl(host.getPrivateIpAddress());
-                r.setType(pxeType);
-                r.setStorageServerIp(host.getDetail("storageServer"));
-                r.setPingDir(host.getDetail("pingDir"));
-                r.setTftpDir(host.getDetail("tftpDir"));
-                response = r;
-            } else {
-                throw new CloudRuntimeException("Unsupported PXE server type:" + pxeType);
-            }
-        } else if (host.getType() == Host.Type.ExternalLoadBalancer) {
+        if (host.getType() == Host.Type.ExternalLoadBalancer) {
             ExternalLoadBalancerDeviceManager lbDeviceMgr = (ExternalLoadBalancerDeviceManager) _f5LbElementService;
             response = _f5LbElementService.createExternalLoadBalancerResponse(host);
         } else if (host.getType() == Host.Type.ExternalFirewall) {
