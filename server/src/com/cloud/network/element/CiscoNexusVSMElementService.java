@@ -18,13 +18,11 @@
 
 package com.cloud.network.element;
 
-import java.util.List;
 import com.cloud.api.commands.DeleteCiscoNexusVSMCmd;
 import com.cloud.api.commands.EnableCiscoNexusVSMCmd;
 import com.cloud.api.commands.DisableCiscoNexusVSMCmd;
 import com.cloud.api.commands.GetCiscoVSMByClusterIdCmd;
 import com.cloud.api.commands.GetCiscoVSMDetailsCmd;
-import com.cloud.api.commands.ListCiscoNexusVSMCmd;
 import com.cloud.api.response.CiscoNexusVSMResponse;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
 import com.cloud.utils.component.PluggableService;
@@ -36,13 +34,6 @@ public interface CiscoNexusVSMElementService extends PluggableService {
      * @return true if VSM is deleted successfully
      */
     public boolean deleteCiscoNexusVSM(DeleteCiscoNexusVSMCmd cmd);
-
-    /**
-     * lists all the VSMs the Mgmt Server knows of.
-     * @param ListCiscoNexusVSMCmd
-     * @return list of CiscoNexusVSMDeviceVO for the VSMs the mgmt server knows of.
-     */
-    public List<CiscoNexusVSMDeviceVO> listCiscoNexusVSMs(ListCiscoNexusVSMCmd cmd);
 
     /**
      * Enables a Cisco Nexus VSM. 
