@@ -5997,7 +5997,7 @@
             hypervisortype: { label: 'label.hypervisor' },
             //allocationstate: { label: 'label.allocation.state' },
             //managedstate: { label: 'Managed State' },
-						state: {
+		allocationstate: {
               converter: function(str) {
                 // For localization
                 return str;
