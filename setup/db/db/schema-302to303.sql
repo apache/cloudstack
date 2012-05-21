@@ -126,3 +126,48 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.public.network.vswitch.type', 'standard', 'Specify type of (standard/nexus) virtual switch designated for public traffic');
 ALTER TABLE `cloud`.`account` ADD COLUMN `default_zone_id` bigint unsigned;
 ALTER TABLE `cloud`.`account` ADD CONSTRAINT `fk_account__default_zone_id` FOREIGN KEY `fk_account__default_zone_id`(`default_zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
+
+DROP TABLE IF EXISTS `cloud`.`cluster_vsm_map`;
+DROP TABLE IF EXISTS `cloud`.`virtual_supervisor_module`;
+DROP TABLE IF EXISTS `cloud`.`port_profile`;
+
+CREATE TABLE  `cloud`.`cluster_vsm_map` (
+  `cluster_id` bigint unsigned NOT NULL,
+  `vsm_id` bigint unsigned NOT NULL,
+  PRIMARY KEY (`cluster_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`virtual_supervisor_module` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40),
+  `host_id` bigint NOT NULL,
+  `vsm_name` varchar(255),
+  `username` varchar(255) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `ipaddr` varchar(80) NOT NULL,
+  `vcenteripaddr` varchar(80) NOT NULL,
+  `vcenterdcname` varchar(255) NOT NULL,
+  `management_vlan` int(32),
+  `control_vlan` int(32),
+  `packet_vlan` int(32),
+  `storage_vlan` int(32),
+  `vsmDomainId` bigint unsigned,
+  `config_mode` varchar(20),
+  `ConfigState` varchar(20),
+  `vsmDeviceState` varchar(20) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`port_profile` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40),
+  `port_profile_name` varchar(255),
+  `port_mode` varchar(10),
+  `vsm_id` bigint unsigned NOT NULL,
+  `trunk_low_vlan_id` int,
+  `trunk_high_vlan_id` int,
+  `access_vlan_id` int,
+  `port_type` varchar(20) NOT NULL,
+  `port_binding` varchar(20),
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
