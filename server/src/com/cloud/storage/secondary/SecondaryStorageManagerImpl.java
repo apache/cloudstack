@@ -68,10 +68,13 @@ import com.cloud.info.RunningHostCountInfo;
 import com.cloud.info.RunningHostInfoAgregator;
 import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.keystore.KeystoreManager;
+import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.rules.RulesManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -96,6 +99,7 @@ import com.cloud.storage.template.TemplateConstants;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
+import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -215,8 +219,11 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
     NetworkDao _networkDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao;
+    @Inject
+    protected IPAddressDao _ipAddressDao = null;
+    @Inject
+    protected RulesManager _rulesMgr;
     
-
     @Inject
     KeystoreManager _keystoreMgr;
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
@@ -1181,11 +1188,36 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             return false;
         }
 
+        try {
+            //get system ip and create static nat rule for the vm in case of basic networking with EIP/ELB
+            _rulesMgr.getSystemIpAndEnableStaticNatForVm(profile.getVirtualMachine(), false);
+            IPAddressVO ipaddr = _ipAddressDao.findByAssociatedVmId(profile.getVirtualMachine().getId());
+            if (ipaddr != null && ipaddr.getSystem()) {
+                SecondaryStorageVmVO secVm = profile.getVirtualMachine();
+                // override SSVM guest IP with EIP, so that download url's with be prepared with EIP
+                secVm.setPublicIpAddress(ipaddr.getAddress().addr());
+                _secStorageVmDao.update(secVm.getId(), secVm);
+            }
+        } catch (Exception ex) {
+            s_logger.warn("Failed to get system ip and enable static nat for the vm " + profile.getVirtualMachine() + " due to exception ", ex);
+            return false;
+        }
+
         return true;
     }
 
     @Override
     public void finalizeStop(VirtualMachineProfile<SecondaryStorageVmVO> profile, StopAnswer answer) {
+        //release elastic IP here
+        IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(profile.getId());
+        if (ip != null && ip.getSystem()) {
+            UserContext ctx = UserContext.current();
+            try {
+                _rulesMgr.disableStaticNat(ip.getId(), ctx.getCaller(), ctx.getCallerUserId(), true);
+            } catch (Exception ex) {
+                s_logger.warn("Failed to disable static nat and release system ip " + ip + " as a part of vm " + profile.getVirtualMachine() + " stop due to exception ", ex);
+            }
+        }
     }
 
     @Override

@@ -81,10 +81,13 @@ import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.keystore.KeystoreDao;
 import com.cloud.keystore.KeystoreManager;
 import com.cloud.keystore.KeystoreVO;
+import com.cloud.network.IPAddressVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.rules.RulesManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -108,6 +111,7 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
+import com.cloud.user.UserContext;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -129,6 +133,7 @@ import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.SystemVmLoadScanHandler;
 import com.cloud.vm.SystemVmLoadScanner;
 import com.cloud.vm.SystemVmLoadScanner.AfterScanAction;
@@ -214,7 +219,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     IdentityDao _identityDao;
     @Inject
     NetworkDao _networkDao;
-
+    @Inject
+    RulesManager _rulesMgr;
+    @Inject
+    IPAddressDao _ipAddressDao;
+    
     private ConsoleProxyListener _listener;
 
     private ServiceOfferingVO _serviceOffering;
@@ -1677,6 +1686,21 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             return false;
         }
 
+        try {
+            //get system ip and create static nat rule for the vm in case of basic networking with EIP/ELB
+            _rulesMgr.getSystemIpAndEnableStaticNatForVm(profile.getVirtualMachine(), false);
+            IPAddressVO ipaddr = _ipAddressDao.findByAssociatedVmId(profile.getVirtualMachine().getId());
+            if (ipaddr != null && ipaddr.getSystem()) {
+                ConsoleProxyVO consoleVm = profile.getVirtualMachine();
+                // override CPVM guest IP with EIP, so that console url's will be prepared with EIP
+                consoleVm.setPublicIpAddress(ipaddr.getAddress().addr());
+                _consoleProxyDao.update(consoleVm.getId(), consoleVm);
+            }
+        } catch (Exception ex) {
+            s_logger.warn("Failed to get system ip and enable static nat for the vm " + profile.getVirtualMachine() + " due to exception ", ex);
+            return false;
+        }
+
         return true;
     }
 
@@ -1757,6 +1781,16 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 
     @Override
     public void finalizeStop(VirtualMachineProfile<ConsoleProxyVO> profile, StopAnswer answer) {
+        //release elastic IP here if assigned
+        IPAddressVO ip = _ipAddressDao.findByAssociatedVmId(profile.getId());
+        if (ip != null && ip.getSystem()) {
+            UserContext ctx = UserContext.current();
+            try {
+                _rulesMgr.disableStaticNat(ip.getId(), ctx.getCaller(), ctx.getCallerUserId(), true);
+            } catch (Exception ex) {
+                s_logger.warn("Failed to disable static nat and release system ip " + ip + " as a part of vm " + profile.getVirtualMachine() + " stop due to exception ", ex);
+            }
+        }
     }
 
     @Override

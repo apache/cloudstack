@@ -20,6 +20,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.vm.VirtualMachine;
 
 /**
  * Rules Manager manages the network rules created for different networks.
@@ -69,7 +70,7 @@ public interface RulesManager extends RulesService {
 
     boolean applyStaticNatsForNetwork(long networkId, boolean continueOnError, Account caller);
 
-    void getSystemIpAndEnableStaticNatForVm(UserVm vm, boolean getNewIp) throws InsufficientAddressCapacityException;
+    void getSystemIpAndEnableStaticNatForVm(VirtualMachine vm, boolean getNewIp) throws InsufficientAddressCapacityException;
 
     boolean disableStaticNat(long ipAddressId, Account caller, long callerUserId, boolean releaseIpIfElastic) throws ResourceUnavailableException;
 
