@@ -33,14 +33,17 @@
           fields: {
             name: { label: 'label.name' },
             type: { label: 'label.type' },
-            //hypervisor: { label: 'label.hypervisor' },	
-            //vmdisplayname: { label: 'label.vm.display.name' },
-            state: { 
+            hypervisor: { label: 'label.hypervisor' },	
+            vmdisplayname: { label: 'label.vm.display.name' },
+            						
+						/*
+						state: { 
 						  label: 'State',
 							indicator: {               
                 'Ready': 'on'
               }
 						}
+						*/
           },
 
           // List view actions
@@ -943,7 +946,12 @@
                   {
                     id: { label: 'ID' },
                     zonename: { label: 'label.zone' },                    
-                    state: { label: 'label.state' },
+                    state: { 
+										  label: 'label.state',
+											pollAgainIfValueIsIn: { 
+											  'UploadNotStarted': 1
+											}
+										},
                     type: { label: 'label.type' },
                     storagetype: { label: 'label.storage.type' },   
                     hypervisor: { label: 'label.hypervisor' },										

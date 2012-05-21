@@ -680,7 +680,29 @@
         } else if (key != 'name') {
           isOddRow = true;
         }
-
+				
+				//???
+				if("pollAgainIfValueIsIn" in value) {				  
+					if (content in value.pollAgainIfValueIsIn) {
+					  //poll again            						
+						var intervalKey = setInterval(function() { 
+							$.ajax({
+								url: createURL("listVolumes&id=" + context.volumes[0].id),
+								dataType: "json",
+								async: true,
+								success: function(json) {		
+									var jsonObj = json.listvolumesresponse.volume[0];   
+									if(jsonObj[key] != content) {	
+									//if(jsonObj[key] == content) {	//for testing, remove it before check in                    							
+										clearInterval(intervalKey);		
+                    $('.detail-view .toolbar .button.refresh').click();	 //click Refresh button to refresh detailView								
+									}
+								}
+							});									
+						}, 5000);						            
+					}
+				}
+								
         $name.html(_l(value.label));
         $value.html(_s(content));
 
