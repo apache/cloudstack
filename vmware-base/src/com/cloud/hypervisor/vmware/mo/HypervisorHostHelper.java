@@ -176,6 +176,10 @@ public class HypervisorHostHelper {
             } catch (CloudRuntimeException e) {
                 msg = "Failed to modify ethernet port profile " + ethPortProfileName + " with parameters " + params.toString();
                 s_logger.error(msg);
+                if(netconfClient != null) {
+                	netconfClient.disconnect();
+                	s_logger.debug("Disconnected VSM session.");
+                }
                 throw new CloudRuntimeException(msg);
             }
         }
@@ -188,12 +192,18 @@ public class HypervisorHostHelper {
                 s_logger.info("Adding port profile configured over VLAN : " + vlanId.toString());
                 netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, vlanId.intValue());
             }
+            
         } catch (CloudRuntimeException e) {
             msg = "Failed to add vEthernet port profile " + networkName + ". Exception: " + e.toString();
 			s_logger.error(msg);
 			if(vlanId == null) {
                 s_logger.warn("Ignoring exception : " + e.toString());
                 // throw new CloudRuntimeException(msg);
+			}
+		} finally {
+			if(netconfClient != null) {
+            	netconfClient.disconnect();
+            	s_logger.debug("Disconnected VSM session.");
 			}
 		}
 	}
@@ -224,11 +234,16 @@ public class HypervisorHostHelper {
         params.add(new Pair<OperationType, String>(OperationType.addvlanid, vlanId.toString()));
 		
 		try {
-			netconfClient.updatePortProfile(ethPortProfileName, SwitchPortMode.access, params); 
+			netconfClient.updatePortProfile(ethPortProfileName, SwitchPortMode.trunk, params); 
 		} catch(CloudRuntimeException e) {
 			msg = "Failed to modify ethernet port profile " + ethPortProfileName + " with parameters " + params.toString();
 			s_logger.error(msg);
 			throw new CloudRuntimeException(msg);
+		} finally {
+			if(netconfClient != null) {
+            	netconfClient.disconnect();
+            	s_logger.debug("Disconnected VSM session.");
+			}
 		}
 	}
 	
@@ -339,7 +354,8 @@ public class HypervisorHostHelper {
         
         if(createGCTag) {
             NetworkMO networkMo = new NetworkMO(hostMo.getContext(), morNetwork);
-            networkMo.setCustomFieldValue(CustomFieldConstants.CLOUD_GC, "true");
+            networkMo.setCustomFieldValue(CustomFieldConstants.CLOUD_GC_DVP, "true");
+            s_logger.debug("Added custom field : " + CustomFieldConstants.CLOUD_GC_DVP);
         }
 				
 		return new Pair<ManagedObjectReference, String>(morNetwork, networkName);

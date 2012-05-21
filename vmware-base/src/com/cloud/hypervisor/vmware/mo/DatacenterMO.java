@@ -444,31 +444,6 @@ public class DatacenterMO extends BaseMO {
 
     public String getDvSwitchUuid(ManagedObjectReference dvSwitchMor) throws Exception {
         assert (dvSwitchMor != null);
-        PropertySpec pSpec = new PropertySpec();
-        pSpec.setType("DistributedVirtualSwitch");
-        pSpec.setPathSet(new String[] { "uuid" });
-
-        ObjectSpec oSpec = new ObjectSpec();
-        oSpec.setObj(dvSwitchMor);
-        oSpec.setSkip(Boolean.FALSE);
-        oSpec.setSelectSet(new SelectionSpec[] {});
-
-        PropertyFilterSpec pfSpec = new PropertyFilterSpec();
-        pfSpec.setPropSet(new PropertySpec[] { pSpec });
-        pfSpec.setObjectSet(new ObjectSpec[] { oSpec });
-
-        ObjectContent[] ocs = _context.getService().retrieveProperties(
-                _context.getServiceContent().getPropertyCollector(),
-                new PropertyFilterSpec[] { pfSpec });
-
-        if (ocs != null) {
-            for (ObjectContent oc : ocs) {
-                DynamicProperty[] props = oc.getPropSet();
-                if (props != null) {
-                    return (String) props[0].getVal();
-                }
-            }
-        }
-        return null;
+        return (String) _context.getServiceUtil().getDynamicProperty(dvSwitchMor, "uuid");
     }
 }
