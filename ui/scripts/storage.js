@@ -33,8 +33,8 @@
           fields: {
             name: { label: 'label.name' },
             type: { label: 'label.type' },
-            hypervisor: { label: 'label.hypervisor' },	
-            vmdisplayname: { label: 'label.vm.display.name' },
+            //hypervisor: { label: 'label.hypervisor' },	
+            //vmdisplayname: { label: 'label.vm.display.name' },
             state: { 
 						  label: 'State',
 							indicator: {               
@@ -233,9 +233,20 @@
                   url: createURL("uploadVolume" + array1.join("")),
                   dataType: "json",
                   async: true,
-                  success: function(json) {	
-                    var items = json.uploadvolumeresponse.volume;  
-                    args.response.success({data:items[0]});
+                  success: function(json) {										  
+										var jid = json.uploadvolumeresponse.jobid;
+										args.response.success(
+											{_custom:
+											 {jobId: jid,
+												getUpdatedItem: function(json) {												 
+													return json.queryasyncjobresultresponse.jobresult.volume;													
+												},
+												getActionFilter: function() {
+													return volumeActionfilter;
+												}
+											 }
+											}
+										);																	
                   },
                   error: function(json) {
                     args.response.error(parseXMLHttpResponse(json));
@@ -244,9 +255,7 @@
               },
 
               notification: {
-                poll: function(args) {
-                  args.complete();
-                }
+                poll: pollAsyncJobResult
               }
             }
 							
