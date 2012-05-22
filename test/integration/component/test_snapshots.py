@@ -860,7 +860,7 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
                                                 self.services["sub_lvl_dir2"],
                                                 self.services["random_data"]
                                             ),
-		    "sync",
+		            "sync",
                 ]
             for c in cmds:
                 self.debug(ssh_client.execute(c))

@@ -21,7 +21,6 @@ from marvin.remoteSSHClient import remoteSSHClient
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
-
 #Import System modules
 import time
 
@@ -57,7 +56,7 @@ class Services:
                                         "username": "testuser",
                                         "password": "fr3sca",
                                         },
-                         "ostypeid":'5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                         "ostypeid":'946b031b-0e10-4f4a-a3fc-d212ae2ea07f',
                          "sleep": 60,
                          "timeout": 10,
                          "mode": 'advanced', #Networking mode: Basic, Advanced

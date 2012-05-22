@@ -743,7 +743,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
                                                     iso.id, 
                                                     self.account.account.name
                                                     ))
-        self.cleanup.append(iso)
+
         try:
             self.debug("Downloading ISO with ID: %s" % iso.id)
             iso.download(self.apiclient)
