@@ -8,7 +8,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.ls.DOMImplementationLS;
 import org.w3c.dom.ls.LSSerializer;
@@ -73,7 +72,10 @@ public abstract class VsmResponse {
         _tag = ErrorTag.InUse;
         _type = ErrorType.rpc;
         _severity = ErrorSeverity.error;
+        _docResponse = null;
+    }
 
+    protected void initialize() {
         try {
             DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
             docFactory.setNamespaceAware(true);

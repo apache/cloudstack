@@ -7,6 +7,7 @@ public class VsmOkResponse extends VsmResponse {
 
     VsmOkResponse(String response) {
         super(response);
+        initialize();
     }
 
     protected void parse(Element root) {
