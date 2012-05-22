@@ -125,7 +125,7 @@ public class BaremetalDhcpManagerImpl implements BaremetalDhcpManager, ResourceS
             DeployDestination dest, ReservationContext context) throws ResourceUnavailableException {
         Long zoneId = profile.getVirtualMachine().getDataCenterIdToDeployIn();
         Long podId = profile.getVirtualMachine().getPodIdToDeployIn();
-        List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(Type.ExternalDhcp, null, podId, zoneId);
+        List<HostVO> hosts = _resourceMgr.listAllUpAndEnabledHosts(Type.BaremetalDhcp, null, podId, zoneId);
         if (hosts.size() == 0) {
             throw new CloudRuntimeException("No external Dhcp found in zone " + zoneId + " pod " + podId);
         }
@@ -173,7 +173,7 @@ public class BaremetalDhcpManagerImpl implements BaremetalDhcpManager, ResourceS
             return null;
         }
 
-        host.setType(Host.Type.ExternalDhcp);
+        host.setType(Host.Type.BaremetalDhcp);
         return host;
     }
 
@@ -205,11 +205,10 @@ public class BaremetalDhcpManagerImpl implements BaremetalDhcpManager, ResourceS
         zoneId = pNetwork.getDataCenterId();
         DataCenterVO zone = _dcDao.findById(zoneId);
 
-        NetworkDevice ntwkDevice = NetworkDevice.ExternalDhcp;
         PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(),
-                ntwkDevice.getNetworkServiceProvder());
+        		BaremetalDhcpManager.BAREMETAL_DHCP_SERVICE_PROVIDER.getName());
         if (ntwkSvcProvider == null) {
-            throw new CloudRuntimeException("Network Service Provider: " + ntwkDevice.getNetworkServiceProvder() + " is not enabled in the physical network: "
+            throw new CloudRuntimeException("Network Service Provider: " + BaremetalDhcpManager.BAREMETAL_DHCP_SERVICE_PROVIDER.getName() + " is not enabled in the physical network: "
                     + cmd.getPhysicalNetworkId() + "to add this device");
         } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
             throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName()
@@ -221,7 +220,7 @@ public class BaremetalDhcpManagerImpl implements BaremetalDhcpManager, ResourceS
             throw new InvalidParameterValueException("Could not find pod with ID: " + cmd.getPodId());
         }
 
-        List<HostVO> dhcps = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.ExternalDhcp, null, cmd.getPodId(), zoneId);
+        List<HostVO> dhcps = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.BaremetalDhcp, null, cmd.getPodId(), zoneId);
         if (dhcps.size() != 0) {
             throw new InvalidParameterValueException("Already had a DHCP server in Pod: " + cmd.getPodId() + " zone: " + zoneId);
         }
@@ -267,7 +266,7 @@ public class BaremetalDhcpManagerImpl implements BaremetalDhcpManager, ResourceS
             throw new CloudRuntimeException(e.getMessage());
         }
 
-        Host dhcpServer = _resourceMgr.addHost(zoneId, resource, Host.Type.ExternalDhcp, params);
+        Host dhcpServer = _resourceMgr.addHost(zoneId, resource, Host.Type.BaremetalDhcp, params);
         if (dhcpServer == null) {
             throw new CloudRuntimeException("Cannot add external Dhcp server as a host");
         }
@@ -298,7 +297,9 @@ public class BaremetalDhcpManagerImpl implements BaremetalDhcpManager, ResourceS
     @Override
     public List<BaremetalDhcpResponse> listBaremetalDhcps(ListBaremetalDhcpCmd cmd) {
         SearchCriteriaService<BaremetalDhcpVO, BaremetalDhcpVO> sc = SearchCriteria2.create(BaremetalDhcpVO.class);
-        sc.addAnd(sc.getEntity().getDeviceType(), Op.EQ, cmd.getDeviceType());
+        if (cmd.getDeviceType() != null) {
+        	sc.addAnd(sc.getEntity().getDeviceType(), Op.EQ, cmd.getDeviceType());
+        }
         if (cmd.getPodId() != null) {
             sc.addAnd(sc.getEntity().getPodId(), Op.EQ, cmd.getPodId());
             if (cmd.getId() != null) {

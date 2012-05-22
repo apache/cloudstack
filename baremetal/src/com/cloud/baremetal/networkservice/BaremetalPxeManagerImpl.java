@@ -121,7 +121,7 @@ public class BaremetalPxeManagerImpl implements BaremetalPxeManager, ResourceSta
             return null;
         }
         
-        host.setType(Host.Type.PxeServer);
+        host.setType(Host.Type.BaremetalPxe);
         return host;
     }
 

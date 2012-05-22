@@ -19,21 +19,28 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
+import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupExternalDhcpCommand;
 import com.cloud.agent.api.baremetal.PreparePxeServerAnswer;
 import com.cloud.agent.api.baremetal.PreparePxeServerCommand;
 import com.cloud.agent.api.baremetal.prepareCreateTemplateCommand;
+import com.cloud.api.ApiConstants;
 import com.cloud.baremetal.networkservice.BaremetalPxeService;
+import com.cloud.host.Host.Type;
+import com.cloud.resource.ServerResource;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.vm.VirtualMachine.State;
 import com.trilead.ssh2.SCPClient;
 
-public class BaremetalPingPxeResource extends BareMetalResourceBase {
+public class BaremetalPingPxeResource extends BaremetalPxeResourceBase {
 	private static final Logger s_logger = Logger.getLogger(BaremetalPingPxeResource.class);
+	private static final String _name = "BaremetalPingPxeResource";
 	String _storageServer;
 	String _pingDir;
 	String _share;
@@ -45,7 +52,6 @@ public class BaremetalPingPxeResource extends BareMetalResourceBase {
 	@Override
 	public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 		super.configure(name, params);
-		
 		_storageServer = (String)params.get(BaremetalPxeService.PXE_PARAM_PING_STORAGE_SERVER_IP);
 		_pingDir = (String)params.get(BaremetalPxeService.PXE_PARAM_PING_ROOT_DIR);
 		_tftpDir = (String)params.get(BaremetalPxeService.PXE_PARAM_TFTP_DIR);

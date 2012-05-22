@@ -47,7 +47,6 @@ import com.cloud.vm.VirtualMachineProfile;
 public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProvider {
     private static final Logger s_logger = Logger.getLogger(BaremetalDhcpElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities;
-    private static final Provider provider = new Provider("BaremetalDhcpProvider", true);
     
     @Inject NicDao _nicDao;
     @Inject BaremetalDhcpManager _dhcpMgr;
@@ -67,7 +66,7 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
 
     @Override
     public Provider getProvider() {
-        return provider;
+        return BaremetalDhcpManager.BAREMETAL_DHCP_SERVICE_PROVIDER;
     }
 
     private boolean canHandle(DeployDestination dest, TrafficType trafficType, GuestType networkType) {
@@ -155,5 +154,4 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
         }
         return _dhcpMgr.addVirtualMachineIntoNetwork(network, nic, vm, dest, context);
     }
-
 }

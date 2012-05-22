@@ -28,6 +28,7 @@ import com.cloud.agent.api.baremetal.PreparePxeServerAnswer;
 import com.cloud.agent.api.baremetal.PreparePxeServerCommand;
 import com.cloud.agent.api.baremetal.prepareCreateTemplateCommand;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand.BootDev;
+import com.cloud.baremetal.database.BaremetalPxeDao;
 import com.cloud.baremetal.database.BaremetalPxeVO;
 import com.cloud.baremetal.networkservice.BaremetalPxeService;
 import com.cloud.baremetal.networkservice.BaremetalPxeManager.BaremetalPxeType;
@@ -67,6 +68,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
 	@Inject PhysicalNetworkDao _physicalNetworkDao;
 	@Inject PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
 	@Inject HostDetailsDao _hostDetailsDao;
+	@Inject BaremetalPxeDao _pxeDao;
 	
 	
 	@Override
@@ -170,10 +172,9 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         }
         zoneId = pNetwork.getDataCenterId();
         
-        NetworkDevice ntwkDevice = NetworkDevice.PxeServer;
-        PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
+        PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), BaremetalPxeManager.BAREMETAL_PXE_SERVICE_PROVIDER.getName());
         if (ntwkSvcProvider == null) {
-            throw new CloudRuntimeException("Network Service Provider: " + ntwkDevice.getNetworkServiceProvder() +
+            throw new CloudRuntimeException("Network Service Provider: " + BaremetalPxeManager.BAREMETAL_PXE_SERVICE_PROVIDER.getName() +
                     " is not enabled in the physical network: " + cmd.getPhysicalNetworkId() + "to add this device");
         } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
             throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() +
@@ -185,7 +186,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
             throw new InvalidParameterValueException("Could not find pod with ID: " + cmd.getPodId());
         } 
         
-        List<HostVO> pxes = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.PxeServer, null, cmd.getPodId(), zoneId);
+        List<HostVO> pxes = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.BaremetalPxe, null, cmd.getPodId(), zoneId);
         if (pxes.size() != 0) {
             throw new InvalidParameterValueException("Already had a PXE server in Pod: " + cmd.getPodId() + " zone: " + zoneId);
         }
@@ -226,7 +227,6 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         
         ServerResource resource = null;
         Map params = new HashMap<String, String>();
-        params.put(BaremetalPxeService.PXE_PARAM_ZONE, BaremetalPxeType.PING.toString());
         params.put(BaremetalPxeService.PXE_PARAM_ZONE, Long.toString(zoneId));
         params.put(BaremetalPxeService.PXE_PARAM_POD, String.valueOf(pod.getId()));
         params.put(BaremetalPxeService.PXE_PARAM_IP, ipAddress);
@@ -247,7 +247,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
             throw new CloudRuntimeException(e.getMessage());
         }
         
-        Host pxeServer = _resourceMgr.addHost(zoneId, resource, Host.Type.PxeServer, params);
+        Host pxeServer = _resourceMgr.addHost(zoneId, resource, Host.Type.BaremetalPxe, params);
         if (pxeServer == null) {
             throw new CloudRuntimeException("Cannot add PXE server as a host");
         }
@@ -259,6 +259,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         vo.setPodId(pod.getId());
         vo.setPhysicalNetworkId(pcmd.getPhysicalNetworkId());
         vo.setDeviceType(BaremetalPxeType.PING.toString());
+        _pxeDao.persist(vo);
         txn.commit();
         return vo;
     }

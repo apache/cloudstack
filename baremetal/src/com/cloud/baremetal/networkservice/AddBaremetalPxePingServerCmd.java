@@ -15,10 +15,10 @@ public class AddBaremetalPxePingServerCmd extends AddBaremetalPxeCmd {
     @Parameter(name=ApiConstants.TFTP_DIR, type=CommandType.STRING, required = true, description="Tftp root directory of PXE server")
     private String tftpDir;
     
-    @Parameter(name=ApiConstants.PING_CIFS_USERNAME, type=CommandType.STRING, required = true, description="Username of PING storage server")
+    @Parameter(name=ApiConstants.PING_CIFS_USERNAME, type=CommandType.STRING, description="Username of PING storage server")
     private String pingStorageServerUserName;
     
-    @Parameter(name=ApiConstants.PING_CIFS_PASSWORD, type=CommandType.STRING, required = true, description="Password of PING storage server")
+    @Parameter(name=ApiConstants.PING_CIFS_PASSWORD, type=CommandType.STRING, description="Password of PING storage server")
     private String pingStorageServerPassword;
 
     public String getPingStorageServerIp() {

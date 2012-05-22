@@ -19,6 +19,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Provider;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
@@ -43,4 +44,5 @@ public interface BaremetalDhcpManager extends Manager, PluggableService {
 	
 	public static final String BAREMETAL_DHCP_SERVICE_CAPABITLITY = "BaremetalDhcp";
 	public static final String BAREMETAL_DHCP_SERVICE_PROPERTIES = "baremetaldhcp_commands.properties";
+	public static final Provider BAREMETAL_DHCP_SERVICE_PROVIDER = new Provider("BaremetalDhcpProvider", true);
 }

@@ -42,7 +42,6 @@ import com.cloud.vm.VirtualMachine.Type;
 public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
     private static final Logger s_logger = Logger.getLogger(BaremetalPxeElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities;
-    private static final Provider provider = new Provider("BaremetalPxeProvider", true);
     
     @Inject BaremetalPxeManager _pxeMgr;;
     
@@ -61,7 +60,7 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
 
     @Override
     public Provider getProvider() {
-        return provider;
+    	return BaremetalPxeManager.BAREMETAL_PXE_SERVICE_PROVIDER;
     }
 
     private boolean canHandle(DeployDestination dest, TrafficType trafficType, GuestType networkType) {

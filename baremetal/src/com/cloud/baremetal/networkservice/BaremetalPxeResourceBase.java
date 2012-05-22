@@ -99,7 +99,7 @@ public class BaremetalPxeResourceBase implements ServerResource {
 
 	@Override
 	public Type getType() {
-		return Type.PxeServer;
+		return Type.BaremetalPxe;
 	}
 
 	@Override

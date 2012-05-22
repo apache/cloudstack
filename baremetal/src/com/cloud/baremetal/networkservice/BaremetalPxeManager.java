@@ -18,6 +18,7 @@ import com.cloud.baremetal.database.BaremetalPxeVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.host.HostVO;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Provider;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
@@ -45,4 +46,5 @@ public interface BaremetalPxeManager extends Manager, PluggableService {
 	public static final Network.Service BAREMETAL_PXE_SERVICE = new Network.Service("BaremetalPxeService");
 	public static final String BAREMETAL_PXE_CAPABILITY = "BaremetalPxe";
 	public static final String BAREMETAL_PXE_SERVICE_PROPERTIES = "baremetalpxe_commands.properties";
+	public static final Provider BAREMETAL_PXE_SERVICE_PROVIDER = new Provider("BaremetalPxeProvider", true);;
 }

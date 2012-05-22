@@ -112,7 +112,7 @@ public class BaremetalDhcpResourceBase implements ServerResource {
 
 	@Override
 	public Type getType() {
-		return Type.ExternalDhcp;
+		return Type.BaremetalDhcp;
 	}
 
 	@Override

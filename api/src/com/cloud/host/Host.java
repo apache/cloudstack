@@ -32,10 +32,10 @@ public interface Host extends StateObject<Status> {
         ExternalFirewall(false),
         ExternalLoadBalancer(false),
         ExternalVirtualSwitchSupervisor(false),
-        PxeServer(false),
         TrafficMonitor(false),
 
-        ExternalDhcp(false),
+        BaremetalPxe(false),
+        BaremetalDhcp(false),
         SecondaryStorageVM(true),
         LocalSecondaryStorage(false);
         boolean _virtual;

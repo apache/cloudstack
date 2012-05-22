@@ -32,12 +32,12 @@ public class ListBaremetalPxePingServersCmd extends BaseListCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName = "external_pxe_devices")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "Ping pxe server device ID")
+    @IdentityMapper(entityTableName = "baremetal_pxe_devices")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "Ping pxe server device ID")
     private Long id;
     
     @IdentityMapper(entityTableName = "host_pod_ref")
-    @Parameter(name = ApiConstants.POD_ID, type = CommandType.LONG, required = true, description = "Pod ID where pxe server is in")
+    @Parameter(name = ApiConstants.POD_ID, type = CommandType.LONG, description = "Pod ID where pxe server is in")
     private Long podId;
 
     public Long getId() {

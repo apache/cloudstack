@@ -16,6 +16,6 @@ import com.cloud.host.Host;
 
 public class StartupExternalDhcpCommand extends StartupCommand {
 	public StartupExternalDhcpCommand() {
-		super(Host.Type.ExternalDhcp);
+		super(Host.Type.BaremetalDhcp);
 	}
 }

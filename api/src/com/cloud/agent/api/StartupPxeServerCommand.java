@@ -16,6 +16,6 @@ import com.cloud.host.Host;
 
 public class StartupPxeServerCommand extends StartupCommand {
 	public StartupPxeServerCommand() {
-		super(Host.Type.PxeServer);
+		super(Host.Type.BaremetalPxe);
 	}
 }

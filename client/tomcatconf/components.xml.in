@@ -163,6 +163,10 @@
         <dao name="BaremetalPxeDao" class="com.cloud.baremetal.database.BaremetalPxeDaoImpl"/>
         <dao name="BaremetalDhcpDao" class="com.cloud.baremetal.database.BaremetalDhcpDaoImpl"/>
         
+        <adapters key="com.cloud.baremetal.networkservice.BaremetalPxeService">
+            <adapter name="PING" class="com.cloud.baremetal.networkservice.BareMetalPingServiceImpl" />
+        </adapters>
+
         <pluggableservice name="BaremetalPxeService" key="com.cloud.baremetal.networkservice.BaremetalPxeManager" class="com.cloud.baremetal.networkservice.BaremetalPxeManagerImpl"/>
         <pluggableservice name="BaremetalDhcpService" key="com.cloud.baremetal.networkservice.BaremetalDhcpManager" class="com.cloud.baremetal.networkservice.BaremetalDhcpManagerImpl"/>
         <pluggableservice name="VirtualRouterElementService" key="com.cloud.network.element.VirtualRouterElementService" class="com.cloud.network.element.VirtualRouterElement"/>

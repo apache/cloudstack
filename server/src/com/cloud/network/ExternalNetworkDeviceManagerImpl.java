@@ -235,11 +235,11 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
         if (NetworkDevice.ExternalDhcp.getName().equalsIgnoreCase(cmd.getDeviceType())) {
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
             Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
-            res = listNetworkDevice(zoneId, null, podId, Host.Type.ExternalDhcp);
+            res = listNetworkDevice(zoneId, null, podId, Host.Type.BaremetalDhcp);
         } else if (NetworkDevice.PxeServer.getName().equalsIgnoreCase(cmd.getDeviceType())) {
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
             Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
-            res = listNetworkDevice(zoneId, null, podId, Host.Type.PxeServer);
+            res = listNetworkDevice(zoneId, null, podId, Host.Type.BaremetalPxe);
         } else if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.NetscalerMPXLoadBalancer.getName()) ||
                 cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.NetscalerVPXLoadBalancer.getName()) ||
                 cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.NetscalerSDXLoadBalancer.getName()) ||
@@ -257,8 +257,8 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
             Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
             Long physicalNetworkId = (params.get(ApiConstants.PHYSICAL_NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.PHYSICAL_NETWORK_ID)):null;            
-            List<Host> res1 = listNetworkDevice(zoneId, physicalNetworkId, podId, Host.Type.PxeServer);
-            List<Host> res2 = listNetworkDevice(zoneId, physicalNetworkId, podId, Host.Type.ExternalDhcp);
+            List<Host> res1 = listNetworkDevice(zoneId, physicalNetworkId, podId, Host.Type.BaremetalDhcp);
+            List<Host> res2 = listNetworkDevice(zoneId, physicalNetworkId, podId, Host.Type.BaremetalPxe);
             List<Host> res3 = listNetworkDevice(zoneId, physicalNetworkId, podId, Host.Type.ExternalLoadBalancer);
             List<Host> res4 = listNetworkDevice(zoneId, physicalNetworkId, podId, Host.Type.ExternalFirewall);
             List<Host> deviceAll = new ArrayList<Host>();

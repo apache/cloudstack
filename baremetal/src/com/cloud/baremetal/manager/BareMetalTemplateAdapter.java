@@ -56,13 +56,13 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 		if (profile.getZoneId() == null || profile.getZoneId() == -1) {
 			List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
 			for (DataCenterVO dc : dcs) {
-				List<HostVO> pxeServers = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.PxeServer, dc.getId());
+				List<HostVO> pxeServers = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.BaremetalPxe, dc.getId());
 				if (pxeServers.size() == 0) {
 					throw new CloudRuntimeException("Please add PXE server before adding baremetal template in zone " + dc.getName());
 				}
 			}
 		} else {
-			List<HostVO> pxeServers = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.PxeServer, profile.getZoneId());
+			List<HostVO> pxeServers = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.BaremetalPxe, profile.getZoneId());
 			if (pxeServers.size() == 0) {
 				throw new CloudRuntimeException("Please add PXE server before adding baremetal template in zone " + profile.getZoneId());
 			}
@@ -99,7 +99,7 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 		if (zoneId == null || zoneId == -1) {
 			List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
 			for (DataCenterVO dc : dcs) {
-				HostVO pxe = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.PxeServer, dc.getId()).get(0);
+				HostVO pxe = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.BaremetalPxe, dc.getId()).get(0);
 
 				vmTemplateHost = _tmpltHostDao.findByHostTemplate(dc.getId(), template.getId());
 				if (vmTemplateHost == null) {
@@ -110,7 +110,7 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 				}
 			}
 		} else {
-			HostVO pxe = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.PxeServer, zoneId).get(0);
+			HostVO pxe = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.BaremetalPxe, zoneId).get(0);
 			vmTemplateHost = new VMTemplateHostVO(pxe.getId(), template.getId(), new Date(), 100,
 					Status.DOWNLOADED, null, null, null, null, template.getUrl());
 			_tmpltHostDao.persist(vmTemplateHost);
