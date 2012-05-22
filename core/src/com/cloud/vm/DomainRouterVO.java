@@ -248,4 +248,9 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     public Long getVpcId() {
         return vpcId;
     }
+    
+    @Override
+    public boolean canPlugNics() {
+        return true;
+    }
 }

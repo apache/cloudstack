@@ -19,6 +19,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
@@ -39,7 +40,20 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner, Map<Param, Object> params) throws InsufficientCapacityException, ConcurrentOperationException,
+    List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner, Map<Param, Object> params)
+            throws InsufficientCapacityException, ConcurrentOperationException,
             ResourceUnavailableException;
+
+    /**
+     * @param network
+     * @return
+     */
+    boolean addVpcElementToNetwork(Network network);
+
+    /**
+     * @param network
+     * @return
+     */
+    boolean removeVpcElementFromNetwork(Network network);
 
 }

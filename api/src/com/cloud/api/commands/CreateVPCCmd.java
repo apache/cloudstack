@@ -69,6 +69,9 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
     @Parameter(name=ApiConstants.VPC_OFF_ID, type=CommandType.LONG, required=true, description="the ID of the VPC offering")
     private Long vpcOffering;
     
+    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
+    private String networkDomain;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -100,10 +103,15 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
     public Long getVpcOffering() {
         return vpcOffering;
     }
+    
+    public String getNetworkDomain() {
+        return networkDomain;
+    }
 
     @Override
     public void create() throws ResourceAllocationException {
-        Vpc vpc = _vpcService.createVpc(getZoneId(), getVpcOffering(), getEntityOwnerId(), getVpcName(), getDisplayText(), getCidr());
+        Vpc vpc = _vpcService.createVpc(getZoneId(), getVpcOffering(), getEntityOwnerId(), getVpcName(), getDisplayText(),
+                getCidr(), getNetworkDomain());
         if (vpc != null) {
             this.setEntityId(vpc.getId());
         } else {

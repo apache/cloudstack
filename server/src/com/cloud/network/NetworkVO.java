@@ -160,7 +160,8 @@ public class NetworkVO implements Network, Identity {
      * @param dataCenterId
      * @param physicalNetworkId TODO
      */
-    public NetworkVO(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, State state, long dataCenterId, Long physicalNetworkId) {
+    public NetworkVO(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId,
+            State state, long dataCenterId, Long physicalNetworkId) {
         this.trafficType = trafficType;
         this.mode = mode;
         this.broadcastDomainType = broadcastDomainType;
@@ -176,8 +177,11 @@ public class NetworkVO implements Network, Identity {
     	this.uuid = UUID.randomUUID().toString();
     }
 
-    public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, long related, String name, String displayText, String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges) {
-        this(id, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, domainId, accountId, related, name, displayText, networkDomain, guestType, dcId, physicalNetworkId, aclType, specifyIpRanges);
+    public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, 
+            long related, String name, String displayText, String networkDomain, GuestType guestType, long dcId, 
+            Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges) {
+        this(id, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, domainId, accountId,
+                related, name, displayText, networkDomain, guestType, dcId, physicalNetworkId, aclType, specifyIpRanges);
         this.gateway = that.getGateway();
         this.cidr = that.getCidr();
         this.broadcastUri = that.getBroadcastUri();
@@ -206,7 +210,9 @@ public class NetworkVO implements Network, Identity {
      * @param specifyIpRanges TODO
      * @param dataCenterId
      */
-    public NetworkVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long domainId, long accountId, long related, String name, String displayText, String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges) {
+    public NetworkVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, 
+            long networkOfferingId, long domainId, long accountId, long related, String name, String displayText, 
+            String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges) {
         this(trafficType, mode, broadcastDomainType, networkOfferingId, State.Allocated, dcId, physicalNetworkId);
         this.domainId = domainId;
         this.accountId = accountId;

@@ -234,13 +234,6 @@ public class NicProfile {
         }
     }
 
-    public NicProfile(long id, BroadcastDomainType type, Mode mode, long vmId) {
-        this.id = id;
-        this.broadcastType = type;
-        this.mode = mode;
-        this.vmId = vmId;
-    }
-
     public NicProfile(ReservationStrategy strategy, String ip4Address, String macAddress, String gateway, String netmask) {
         this.format = AddressFormat.Ip4;
         this.ip4Address = ip4Address;

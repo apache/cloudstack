@@ -62,16 +62,19 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID the network belongs to")
     private Long physicalNetworkId;
 
-    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway of the network")
+    @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, description="the gateway of the network. Required " +
+    		"for Shared networks and Isolated networks when it belongs to VPC")
     private String gateway;
     
-    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, description="the netmask of the network")
+    @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, description="the netmask of the network. Required " +
+            "for Shared networks and Isolated networks when it belongs to VPC")
     private String netmask;
     
     @Parameter(name=ApiConstants.START_IP, type=CommandType.STRING, description="the beginning IP address in the network IP range")
     private String startIp;
     
-    @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address in the network IP range. If not specified, will be defaulted to startIP")
+    @Parameter(name=ApiConstants.END_IP, type=CommandType.STRING, description="the ending IP address in the network IP" +
+    		" range. If not specified, will be defaulted to startIP")
     private String endIp;
 
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the network")
@@ -80,7 +83,9 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
     private String networkDomain;
     
-    @Parameter(name=ApiConstants.ACL_TYPE, type=CommandType.STRING, description="Access control type; supported values are account and domain. In 3.0 all shared networks should have aclType=Domain, and all Isolated networks - Account. Account means that only the account owner can use the network, domain - all accouns in the domain can use the network")
+    @Parameter(name=ApiConstants.ACL_TYPE, type=CommandType.STRING, description="Access control type; supported values" +
+    		" are account and domain. In 3.0 all shared networks should have aclType=Domain, and all Isolated networks" +
+    		" - Account. Account means that only the account owner can use the network, domain - all accouns in the domain can use the network")
     private String aclType;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="account who will own the network")
@@ -94,9 +99,13 @@ public class CreateNetworkCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID of the account owning a network")
     private Long domainId;
    
-    @Parameter(name=ApiConstants.SUBDOMAIN_ACCESS, type=CommandType.BOOLEAN, description="Defines whether to allow subdomains to use networks dedicated to their parent domain(s). Should be used with aclType=Domain, defaulted to allow.subdomain.network.access global config if not specified")
+    @Parameter(name=ApiConstants.SUBDOMAIN_ACCESS, type=CommandType.BOOLEAN, description="Defines whether to allow" +
+    		" subdomains to use networks dedicated to their parent domain(s). Should be used with aclType=Domain, defaulted to allow.subdomain.network.access global config if not specified")
     private Boolean subdomainAccess;
     
+    @IdentityMapper(entityTableName="vpc")
+    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="the VPC network belongs to")
+    private Long vpcId;
 
 
     /////////////////////////////////////////////////////
@@ -158,7 +167,11 @@ public class CreateNetworkCmd extends BaseCmd {
 		return subdomainAccess;
 	}
 
-	public Long getZoneId() {
+	public Long getVpcId() {
+        return vpcId;
+    }
+
+    public Long getZoneId() {
         Long physicalNetworkId = getPhysicalNetworkId();
         
         if (physicalNetworkId == null && zoneId == null) {
@@ -209,7 +222,7 @@ public class CreateNetworkCmd extends BaseCmd {
     @Override
 	// an exception thrown by createNetwork() will be caught by the dispatcher. 
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException{
-        Network result = _networkService.createNetwork(this);
+        Network result = _networkService.createGuestNetwork(this);
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);
             response.setResponseName(getCommandName());

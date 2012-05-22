@@ -74,11 +74,15 @@ public class VpcVO implements Vpc, Identity {
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
     
+    @Column(name="network_domain")
+    String networkDomain;
+    
     public VpcVO() {
         this.uuid = UUID.randomUUID().toString();
     }
     
-    public VpcVO(long zoneId, String name, String displayText, long accountId, long domainId, long vpcOffId, String cidr) {
+    public VpcVO(long zoneId, String name, String displayText, long accountId, long domainId, long vpcOffId, String cidr,
+            String networkDomain) {
         this.zoneId = zoneId;
         this.name = name;
         this.displayText = displayText;
@@ -87,6 +91,7 @@ public class VpcVO implements Vpc, Identity {
         this.cidr = cidr;
         this.uuid = UUID.randomUUID().toString();
         this.state = State.Enabled;
+        this.networkDomain = networkDomain;
         this.vpcOfferingId = vpcOffId;
     }
     

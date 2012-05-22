@@ -16,9 +16,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.vpc.VpcOffering.State;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 
 
@@ -52,10 +54,22 @@ public interface VpcManager extends VpcService{
      * @param vpcName
      * @param displayText
      * @param cidr
+     * @param networkDomain TODO
      * @return
      */
-    Vpc createVpc(long zoneId, long vpcOffId, Account vpcOwner, String vpcName, String displayText, String cidr);
+    Vpc createVpc(long zoneId, long vpcOffId, Account vpcOwner, String vpcName, String displayText, String cidr, String networkDomain);
     
     List<Service> getSupportedServices();
+
+    /**
+     * @param guestNtwkOff
+     * @param cidr
+     * @param networkDomain
+     * @param networkOwner
+     * @param vpc TODO
+     * @return
+     * @throws ConcurrentOperationException 
+     */
+    void validateGuestNtkwForVpc(NetworkOffering guestNtwkOff, String cidr, String networkDomain, Account networkOwner, Vpc vpc) throws ConcurrentOperationException;
 
 }

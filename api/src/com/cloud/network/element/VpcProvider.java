@@ -17,8 +17,12 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * @author Alena Prokharchyk
@@ -31,5 +35,33 @@ public interface VpcProvider extends NetworkElement{
      */
     boolean startVpc(Vpc vpc, DeployDestination dest, ReservationContext context) 
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    
+    /**
+     * Prepare for a nic to be plugged into the network.
+     * @param network
+     * @param nic
+     * @param vm
+     * @param context
+     * @return
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     * @throws InsufficientNetworkCapacityException
+     */
+    boolean plugNic(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, 
+            ReservationContext context) throws ConcurrentOperationException, 
+            ResourceUnavailableException, InsufficientCapacityException;
+    
+    /**
+     * A nic is unplugged from this network.
+     * @param network
+     * @param nic
+     * @param vm
+     * @param context
+     * @return
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     */
+    boolean unplugNic(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, 
+            ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException;
 
 }
