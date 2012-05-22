@@ -1079,6 +1079,15 @@
 										//hide/show service fields upon guestIpType(Shared/Isolated) and zoneType(Advanced/Basic) ***** (begin) *****						
 										var serviceFieldsToHide = [];										
 										if($guestTypeField.val() == 'Shared') { //Shared network offering
+										  serviceFieldsToHide = [
+												'service.SourceNat.isEnabled',													
+												'service.PortForwarding.isEnabled',													
+												'service.Firewall.isEnabled', 
+												'service.Vpn.isEnabled' 
+											];			
+										  
+											//CS-14206
+											/*
 										  if (hasAdvancedZones) { //advanced zone
 											  serviceFieldsToHide = [
 													'service.SourceNat.isEnabled',
@@ -1097,6 +1106,8 @@
 													'service.Vpn.isEnabled' 
 												];					
 											}
+											*/
+											
 										}
 										else { //Isolated network offering (which supports all services)
 										  serviceFieldsToHide = [];
