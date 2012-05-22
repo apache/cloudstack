@@ -207,6 +207,7 @@
 									  label: 'label.format',
 										select: function(args) {
 										  var items = [];
+                      items.push({ id: 'RAW', description: 'RAW' });
 											items.push({ id: 'VHD', description: 'VHD' });
 											items.push({ id: 'OVA', description: 'OVA' });
 											items.push({ id: 'QCOW2', description: 'QCOW2' });
