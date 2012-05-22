@@ -25,6 +25,7 @@ import com.cloud.api.commands.GetCiscoVSMByClusterIdCmd;
 import com.cloud.api.commands.GetCiscoVSMDetailsCmd;
 import com.cloud.api.response.CiscoNexusVSMResponse;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
+import com.cloud.network.CiscoNexusVSMDevice;
 import com.cloud.utils.component.PluggableService;
 
 public interface CiscoNexusVSMElementService extends PluggableService {
@@ -66,12 +67,12 @@ public interface CiscoNexusVSMElementService extends PluggableService {
      * @return CiscoNexusVSMResponse
      */
     
-    public CiscoNexusVSMResponse createCiscoNexusVSMResponse(CiscoNexusVSMDeviceVO vsmDeviceVO);
+    public CiscoNexusVSMResponse createCiscoNexusVSMResponse(CiscoNexusVSMDevice vsmDeviceVO);
     
     /**
      * Creates a detailed API response object for Cisco Nexus VSMs
      * @param CiscoNexusVSMDeviceVO
      * @return CiscoNexusVSMResponse
      */
-    public CiscoNexusVSMResponse createCiscoNexusVSMDetailedResponse(CiscoNexusVSMDeviceVO vsmDeviceVO);
+    public CiscoNexusVSMResponse createCiscoNexusVSMDetailedResponse(CiscoNexusVSMDevice vsmDeviceVO);
 }

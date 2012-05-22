@@ -33,7 +33,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.CiscoNexusVSMDeviceVO;
+import com.cloud.network.CiscoNexusVSMDevice;
 import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -71,9 +71,9 @@ public class GetCiscoVSMByClusterIdCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
-            CiscoNexusVSMDeviceVO vsmDeviceVO = _ciscoNexusVSMService.getCiscoNexusVSMByClusId(this);
-            if (vsmDeviceVO != null) {
-                CiscoNexusVSMResponse response = _ciscoNexusVSMService.createCiscoNexusVSMResponse(vsmDeviceVO);
+            CiscoNexusVSMDevice vsmDevice = _ciscoNexusVSMService.getCiscoNexusVSMByClusId(this);
+            if (vsmDevice != null) {
+                CiscoNexusVSMResponse response = _ciscoNexusVSMService.createCiscoNexusVSMResponse(vsmDevice);
                 response.setObjectName("cisconexusvsm");
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
