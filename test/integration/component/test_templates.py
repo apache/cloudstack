@@ -20,6 +20,7 @@ from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
+from marvin.remoteSSHClient import remoteSSHClient
 import urllib
 from random import random
 #Import System modules

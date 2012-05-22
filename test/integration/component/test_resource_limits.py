@@ -15,6 +15,7 @@
 """
 #Import Local Modules
 import marvin
+from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
