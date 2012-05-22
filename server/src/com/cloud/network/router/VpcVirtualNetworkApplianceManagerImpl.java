@@ -25,9 +25,11 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.Dao.VpcDao;
 import com.cloud.network.vpc.Dao.VpcOfferingDao;
@@ -50,6 +52,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     VpcDao _vpcDao = null;
     @Inject
     VpcOfferingDao _vpcOffDao = null;
+    @Inject
+    PhysicalNetworkDao _pNtwkDao = null;
     
     @Override
     public List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner, 
@@ -90,7 +94,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         //3) Deploy Virtual Router
         try {
             //FIXME - remove hardcoded provider type when decide if we want cross physical networks vpcs
-            VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(1, VirtualRouterProviderType.VirtualRouter);
+            List<? extends PhysicalNetwork> pNtwks = _pNtwkDao.listByZone(vpc.getZoneId());
+            
+            VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(pNtwks.get(0).getId(), VirtualRouterProviderType.VirtualRouter);
             
             PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddressToVpc(owner, vpc);
             DomainRouterVO router = deployRouter(owner, dest, plan, params, true, null, false,
