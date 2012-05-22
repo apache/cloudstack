@@ -380,7 +380,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         IPAddressVO sourceNatIp = null;
         if (!sharedSourceNat) {
             // Get the source NAT IP address for this network          
-            List<IPAddressVO> sourceNatIps = _networkMgr.listPublicIpAddressesInVirtualNetwork(network.getAccountId(), zoneId, true, null);
+            List<IPAddressVO> sourceNatIps = _networkMgr.listPublicIpsAssignedToGuestNtwk(network.getAccountId(), zoneId, true, null);
 
             if (sourceNatIps.size() != 1) {
                 String errorMsg = "External firewall was unable to find the source NAT IP address for account " + account.getAccountName();

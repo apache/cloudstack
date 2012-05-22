@@ -27,6 +27,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.Dao.VpcDao;
 import com.cloud.network.vpc.Dao.VpcOfferingDao;
@@ -65,6 +66,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             Map<Param, Object> params) throws ConcurrentOperationException, 
             InsufficientCapacityException, ResourceUnavailableException {
 
+        s_logger.debug("Deploying Virtual Router in VPC "+ vpc);
         Vpc vpcLock = _vpcDao.acquireInLockTable(vpc.getId());
         if (vpcLock == null) {
             throw new ConcurrentOperationException("Unable to lock vpc " + vpc.getId());
@@ -89,8 +91,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         try {
             //FIXME - remove hardcoded provider type when decide if we want cross physical networks vpcs
             VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(1, VirtualRouterProviderType.VirtualRouter);
+            
+            PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddressToVpc(owner, vpc);
             DomainRouterVO router = deployRouter(owner, dest, plan, params, true, null, false,
-                    vrProvider, offeringId);
+                    vrProvider, offeringId, sourceNatIp);
             routers.add(router);
             
         } finally {

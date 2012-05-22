@@ -1249,9 +1249,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         //3) Deploy Virtual Router(s)
         try {
             int count = routerCount - routers.size();
+            PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
             for (int i = 0; i < count; i++) {
                 DomainRouterVO router = deployRouter(owner, dest, plan, params, publicNetwork, guestNetwork, isRedundant,
-                        vrProvider, offeringId);
+                        vrProvider, offeringId, sourceNatIp);
                 routers.add(router);
             }
         } finally {
@@ -1264,7 +1265,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     protected DomainRouterVO deployRouter(Account owner, DeployDestination dest, DeploymentPlan plan, Map<Param, Object> params,
             boolean setupPublicNetwork, Network guestNetwork, boolean isRedundant,
-            VirtualRouterProvider vrProvider, long svcOffId) throws ConcurrentOperationException, 
+            VirtualRouterProvider vrProvider, long svcOffId, PublicIp sourceNatIp) throws ConcurrentOperationException, 
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException, 
             StorageUnavailableException, ResourceUnavailableException {
         
@@ -1275,7 +1276,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         //1) Create router networks
         List<Pair<NetworkVO, NicProfile>> networks = createRouterNetworks(owner, setupPublicNetwork, guestNetwork, 
-                isRedundant, plan);
+                isRedundant, plan, sourceNatIp);
 
        
         ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(svcOffId);
@@ -1365,38 +1366,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     protected List<Pair<NetworkVO, NicProfile>> createRouterNetworks(Account owner, boolean setupPublicNetwork, 
-            Network guestNetwork, boolean isRedundant, DeploymentPlan plan) throws ConcurrentOperationException,
+            Network guestNetwork, boolean isRedundant, DeploymentPlan plan, PublicIp sourceNatIp) throws ConcurrentOperationException,
             InsufficientAddressCapacityException {
         //Form networks
-        //1) Public network
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
-        if (setupPublicNetwork) {
-            s_logger.debug("Adding nic for Virtual Router in Public network ");
-            //if source nat service is supported by the network, get the source nat ip address
-            PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddress(owner, guestNetwork, _accountMgr.getSystemUser().getId());
-            NicProfile defaultNic = new NicProfile();
-            defaultNic.setDefaultNic(true);
-            defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
-            defaultNic.setGateway(sourceNatIp.getGateway());
-            defaultNic.setNetmask(sourceNatIp.getNetmask());
-            defaultNic.setMacAddress(sourceNatIp.getMacAddress());
-            defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
-            defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
-            defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
-            defaultNic.setDeviceId(2);
-            NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
-            List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
-            networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
-        }
-
-        //2) Control network
-        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
-        NetworkOfferingVO controlOffering = offerings.get(0);
-        NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
-        s_logger.debug("Adding nic for Virtual Router in Control network ");
-        networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
         
-        //3) Guest network
+        //1) Guest network
         if (guestNetwork != null) {
             String defaultNetworkStartIp = null;
             s_logger.debug("Adding nic for Virtual Router in Guest network " + guestNetwork);
@@ -1409,6 +1384,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                             " is already allocated, can't use it for domain router; will get random ip address from the range");
                 }
             }
+            
+            
 
             NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp);
             if (setupPublicNetwork) {
@@ -1427,6 +1404,31 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 gatewayNic.setDefaultNic(true);
             }
             networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
+        }
+        
+        //2) Control network
+        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
+        NetworkOfferingVO controlOffering = offerings.get(0);
+        NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
+        s_logger.debug("Adding nic for Virtual Router in Control network ");
+        networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
+        
+        //3) Public network
+        if (setupPublicNetwork) {
+            s_logger.debug("Adding nic for Virtual Router in Public network ");
+            //if source nat service is supported by the network, get the source nat ip address
+            NicProfile defaultNic = new NicProfile();
+            defaultNic.setDefaultNic(true);
+            defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
+            defaultNic.setGateway(sourceNatIp.getGateway());
+            defaultNic.setNetmask(sourceNatIp.getNetmask());
+            defaultNic.setMacAddress(sourceNatIp.getMacAddress());
+            defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
+            defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
+            defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
+            NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
+            List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
+            networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
         }
 
         return networks;
@@ -1566,6 +1568,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, 
             ReservationContext context) {
         DataCenterVO dc = _dcDao.findById(dest.getDataCenter().getId());
+        _dcDao.loadDetails(dc);
 
         //1) Set router details
         DomainRouterVO router = profile.getVirtualMachine();
@@ -1848,7 +1851,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 long ownerId = router.getAccountId();
                 long zoneId = router.getDataCenterIdToDeployIn();
 
-                final List<IPAddressVO> userIps = _networkMgr.listPublicIpAddressesInVirtualNetwork(ownerId, zoneId, null, guestNetworkId);
+                final List<IPAddressVO> userIps = _networkMgr.listPublicIpsAssignedToGuestNtwk(ownerId, zoneId, null, guestNetworkId);
                 List<PublicIp> allPublicIps = new ArrayList<PublicIp>();
                 if (userIps != null && !userIps.isEmpty()) {
                     for (IPAddressVO userIp : userIps) {
