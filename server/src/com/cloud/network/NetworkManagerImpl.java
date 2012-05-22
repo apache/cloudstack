@@ -149,6 +149,7 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StaticNatRuleImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -353,11 +354,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException {
-        return fetchNewPublicIp(dcId, podId, null, owner, type, networkId, false, true, requestedIp, isSystem);
+        return fetchNewPublicIp(dcId, podId, null, owner, type, networkId, false, true, requestedIp, isSystem, null);
     }
 
     @DB
-    public PublicIp fetchNewPublicIp(long dcId, Long podId, Long vlanDbId, Account owner, VlanType vlanUse, Long networkId, boolean sourceNat, boolean assign, String requestedIp, boolean isSystem)
+    public PublicIp fetchNewPublicIp(long dcId, Long podId, Long vlanDbId, Account owner, VlanType vlanUse, 
+            Long guestNetworkId, boolean sourceNat, boolean assign, String requestedIp, boolean isSystem, Long vpcId)
             throws InsufficientAddressCapacityException {
         StringBuilder errorMessage = new StringBuilder("Unable to get ip adress in ");
         Transaction txn = Transaction.currentTxn();
@@ -383,8 +385,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // for direct network take ip addresses only from the vlans belonging to the network
         if (vlanUse == VlanType.DirectAttached) {
-            sc.setJoinParameters("vlan", "networkId", networkId);
-            errorMessage.append(", network id=" + networkId);
+            sc.setJoinParameters("vlan", "networkId", guestNetworkId);
+            errorMessage.append(", network id=" + guestNetworkId);
         }
         sc.setJoinParameters("vlan", "type", vlanUse);
 
@@ -427,7 +429,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         addr.setState(assign ? IpAddress.State.Allocated : IpAddress.State.Allocating);
 
         if (vlanUse != VlanType.DirectAttached || zone.getNetworkType() == NetworkType.Basic) {
-            addr.setAssociatedWithNetworkId(networkId);
+            addr.setAssociatedWithNetworkId(guestNetworkId);
+            addr.setVpcId(vpcId);
         }
 
         _ipAddressDao.update(addr.getId(), addr);
@@ -472,17 +475,80 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         txn.commit();
     }
-
+    
+    
     @Override
+    public PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException {
+        long dcId = vpc.getZoneId();
+        
+        List<IPAddressVO> addrs = listPublicIpsAssignedToVpc(owner.getId(), true, vpc.getId());
+        
+        PublicIp ipToReturn = null;
+        if (!addrs.isEmpty()) {
+            IPAddressVO sourceNatIp = null;
+            // Account already has ip addresses
+            for (IPAddressVO addr : addrs) {
+                if (addr.isSourceNat()) {
+                    sourceNatIp = addr;
+                    break;
+                }
+            }
+
+            assert (sourceNatIp != null) : "How do we get a bunch of ip addresses but none of them are source nat? " +
+                    "account=" + owner.getId() + "; vpc=" + vpc;
+            ipToReturn = new PublicIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()), 
+                    NetUtils.createSequenceBasedMacAddress(sourceNatIp.getMacAddress()));
+        } else {
+            ipToReturn = assignSourceNatIpAddress(owner, null, vpc.getId(), dcId);
+        }
+        
+        return ipToReturn;
+    } 
+    
+    @Override
+    public PublicIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) throws InsufficientAddressCapacityException, ConcurrentOperationException {
+        assert (guestNetwork.getTrafficType() != null) : "You're asking for a source nat but your network " +
+        		"can't participate in source nat.  What do you have to say for yourself?";
+        long dcId = guestNetwork.getDataCenterId();
+        List<IPAddressVO> addrs = listPublicIpsAssignedToGuestNtwk(owner.getId(), dcId, null, guestNetwork.getId());
+        
+        PublicIp ipToReturn = null;
+        if (!addrs.isEmpty()) {
+            IPAddressVO sourceNatIp = null;
+            // Account already has ip addresses
+            for (IPAddressVO addr : addrs) {
+                if (addr.isSourceNat()) {
+                    sourceNatIp = addr;
+                    break;
+                }
+            }
+
+            assert (sourceNatIp != null) : "How do we get a bunch of ip addresses but none of them are source nat? " +
+                    "account=" + owner.getId() + "; guestNetwork=" + guestNetwork;
+            ipToReturn = new PublicIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()), 
+                    NetUtils.createSequenceBasedMacAddress(sourceNatIp.getMacAddress()));
+        } else {
+            ipToReturn = assignSourceNatIpAddress(owner, guestNetwork.getId(), null, dcId);
+        }
+        
+        return ipToReturn;
+    }
+
     @DB
-    public PublicIp assignSourceNatIpAddress(Account owner, Network network, long callerId) throws ConcurrentOperationException, InsufficientAddressCapacityException {
-        assert (network.getTrafficType() != null) : "You're asking for a source nat but your network can't participate in source nat.  What do you have to say for yourself?";
+    public PublicIp assignSourceNatIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId) 
+            throws ConcurrentOperationException, InsufficientAddressCapacityException {
 
-        long dcId = network.getDataCenterId();
         long ownerId = owner.getId();
-
+        
+        // Check that the maximum number of public IPs for the given accountId will not be exceeded
+        try {
+            _resourceLimitMgr.checkResourceLimit(owner, ResourceType.public_ip);
+        } catch (ResourceAllocationException ex) {
+            s_logger.warn("Failed to allocate resource of type " + ex.getResourceType() + " for account " + owner);
+            throw new AccountLimitException("Maximum number of public IP addresses for account: " + owner.getAccountName() + " has been exceeded.");
+        }
+        
         PublicIp ip = null;
-
         Transaction txn = Transaction.currentTxn();
         try {
             txn.start();
@@ -499,47 +565,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("lock account " + ownerId + " is acquired");
             }
-
-            IPAddressVO sourceNat = null;
-            List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(ownerId, dcId, null, network.getId());
-            if (addrs.size() == 0) {
-
-                // Check that the maximum number of public IPs for the given accountId will not be exceeded
-                try {
-                    _resourceLimitMgr.checkResourceLimit(owner, ResourceType.public_ip);
-                } catch (ResourceAllocationException ex) {
-                    s_logger.warn("Failed to allocate resource of type " + ex.getResourceType() + " for account " + owner);
-                    throw new AccountLimitException("Maximum number of public IP addresses for account: " + owner.getAccountName() + " has been exceeded.");
-                }
-
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("assigning a new ip address in " + dcId + " to " + owner);
-                }
-
-                // If account has Account specific ip ranges, try to allocate ip from there
-                Long vlanId = null;
-                List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(ownerId);
-                if (maps != null && !maps.isEmpty()) {
-                    vlanId = maps.get(0).getVlanDbId();
-                }
-
-                ip = fetchNewPublicIp(dcId, null, vlanId, owner, VlanType.VirtualNetwork, network.getId(), true, false, null, false);
-                sourceNat = ip.ip();
-
-                markPublicIpAsAllocated(sourceNat);
-                _ipAddressDao.update(sourceNat.getId(), sourceNat);
-            } else {
-                // Account already has ip addresses
-                for (IPAddressVO addr : addrs) {
-                    if (addr.isSourceNat()) {
-                        sourceNat = addr;
-                        break;
-                    }
-                }
-
-                assert (sourceNat != null) : "How do we get a bunch of ip addresses but none of them are source nat? account=" + ownerId + "; dc=" + dcId;
-                ip = new PublicIp(sourceNat, _vlanDao.findById(sourceNat.getVlanId()), NetUtils.createSequenceBasedMacAddress(sourceNat.getMacAddress()));
+            
+            // If account has Account specific ip ranges, try to allocate ip from there
+            Long vlanId = null;
+            List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(ownerId);
+            if (maps != null && !maps.isEmpty()) {
+                vlanId = maps.get(0).getVlanDbId();
             }
+
+            ip = fetchNewPublicIp(dcId, null, vlanId, owner, VlanType.VirtualNetwork, guestNtwkId, 
+                    true, false, null, false, vpcId);
+            IPAddressVO sourceNatIp = ip.ip();
+
+            markPublicIpAsAllocated(sourceNatIp);
+            _ipAddressDao.update(sourceNatIp.getId(), sourceNatIp);
 
             txn.commit();
             return ip;
@@ -1009,8 +1048,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         // Check that network belongs to IP owner - skip this check for Basic zone as there is just one guest network,
-// and it
-        // belongs to the system
+        // and it belongs to the system
         if (zone.getNetworkType() != NetworkType.Basic && network.getAccountId() != ipOwner.getId()) {
             throw new InvalidParameterValueException("The owner of the network is not the same as owner of the IP");
         }
@@ -1056,14 +1094,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             if (!sharedSourceNat) {
                 // First IP address should be source nat when it's being associated with Guest Virtual network
-                List<IPAddressVO> addrs = listPublicIpAddressesInVirtualNetwork(ownerId, zone.getId(), true, networkId);
+                List<IPAddressVO> addrs = listPublicIpsAssignedToGuestNtwk(ownerId, zone.getId(), true, networkId);
 
                 if (addrs.isEmpty() && network.getGuestType() == Network.GuestType.Isolated) {
                     isSourceNat = true;
                 }
             }
 
-            ip = fetchNewPublicIp(zone.getId(), null, null, ipOwner, vlanType, network.getId(), isSourceNat, assign, null, isSystem);
+            ip = fetchNewPublicIp(zone.getId(), null, null, ipOwner, vlanType, network.getId(), 
+                    isSourceNat, assign, null, isSystem, network.getVpcId());
 
             if (ip == null) {
             	InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Unable to find available public IP addresses", DataCenter.class, zone.getId());
@@ -1337,6 +1376,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         IpAddressSearch = _ipAddressDao.createSearchBuilder();
         IpAddressSearch.and("accountId", IpAddressSearch.entity().getAllocatedToAccountId(), Op.EQ);
         IpAddressSearch.and("dataCenterId", IpAddressSearch.entity().getDataCenterId(), Op.EQ);
+        IpAddressSearch.and("vpcId", IpAddressSearch.entity().getVpcId(), Op.EQ);
         IpAddressSearch.and("associatedWithNetworkId", IpAddressSearch.entity().getAssociatedWithNetworkId(), Op.EQ);
         SearchBuilder<VlanVO> virtualNetworkVlanSB = _vlanDao.createSearchBuilder();
         virtualNetworkVlanSB.and("vlanType", virtualNetworkVlanSB.entity().getVlanType(), Op.EQ);
@@ -1408,13 +1448,26 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat, Long associatedNetworkId) {
+    public List<IPAddressVO> listPublicIpsAssignedToGuestNtwk(long accountId, long dcId, Boolean sourceNat, Long associatedNetworkId) {
         SearchCriteria<IPAddressVO> sc = IpAddressSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("dataCenterId", dcId);
         if (associatedNetworkId != null) {
             sc.setParameters("associatedWithNetworkId", associatedNetworkId);
         }
+
+        if (sourceNat != null) {
+            sc.addAnd("sourceNat", SearchCriteria.Op.EQ, sourceNat);
+        }
+        sc.setJoinParameters("virtualNetworkVlanSB", "vlanType", VlanType.VirtualNetwork);
+
+        return _ipAddressDao.search(sc, null);
+    }
+    
+    protected List<IPAddressVO> listPublicIpsAssignedToVpc(long accountId, Boolean sourceNat, long vpcId) {
+        SearchCriteria<IPAddressVO> sc = IpAddressSearch.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("vpcId", vpcId);
 
         if (sourceNat != null) {
             sc.addAnd("sourceNat", SearchCriteria.Op.EQ, sourceNat);
@@ -1601,7 +1654,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             nics.add(vo);
 
             Integer networkRate = getNetworkRate(config.getId(), vm.getId());
-            vm.addNic(new NicProfile(vo, network.first(), vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network.first()), getNetworkTag(vm.getHypervisorType(),
+            vm.addNic(new NicProfile(vo, network.first(), vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, 
+                    isSecurityGroupSupportedInNetwork(network.first()), getNetworkTag(vm.getHypervisorType(),
                     network.first())));
         }
 
@@ -1783,7 +1837,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (ips.isEmpty()) {
                 s_logger.debug("Creating a source nat ip for " + network);
                 Account owner = _accountMgr.getAccount(network.getAccountId());
-                assignSourceNatIpAddress(owner, network, context.getCaller().getId());
+                assignSourceNatIpAddressToGuestNetwork(owner, network);
             }
         }
 

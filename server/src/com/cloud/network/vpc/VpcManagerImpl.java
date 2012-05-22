@@ -31,17 +31,19 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.vpc.VpcOffering.State;
 import com.cloud.network.vpc.Dao.VpcDao;
@@ -641,6 +643,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
             throw new CloudRuntimeException("Failed to start vpc " + vpc);
             //FIXME - add cleanup logic here
         }
-        
     }
+     
 }

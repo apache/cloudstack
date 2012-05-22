@@ -180,7 +180,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
 
     @Override
-    public PublicIp assignSourceNatIpAddress(Account owner, Network network, long callerId) throws ConcurrentOperationException, InsufficientAddressCapacityException {
+    public PublicIp assignSourceNatIpAddress(Account owner, Network guestNetwork) throws ConcurrentOperationException, InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -192,7 +192,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public List<IPAddressVO> listPublicIpAddressesInVirtualNetwork(long accountId, long dcId, Boolean sourceNat, Long associatedNetworkId) {
+    public List<IPAddressVO> listPublicIpsAssignedToGuestNtwk(long accountId, long dcId, Boolean sourceNat, Long associatedNetworkId) {
         // TODO Auto-generated method stub
         return null;
     }
