@@ -46,6 +46,7 @@ public class EC2InstanceFilterSet {
 		filterTypes.put( "owner-id",             "string"  );	
 		filterTypes.put( "root-device-name",     "string"  );
 		filterTypes.put( "private-ip-address",   "string"  );
+        filterTypes.put( "group-id",             "string"  );
 	}
 	
 	
@@ -154,6 +155,13 @@ public class EC2InstanceFilterSet {
 	    {
 	         return containsDevice( vm.getRootDeviceId(), valueSet );	
 	    }
+        else if (filterName.equalsIgnoreCase( "group-id"))
+        {
+            String[] groupSet = vm.getGroupSet();
+            for (String group : groupSet)
+                if (containsString(group, valueSet)) return true;
+            return false;
+        }
 	    else return false;
 	}
 	
