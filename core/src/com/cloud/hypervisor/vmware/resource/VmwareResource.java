@@ -4194,7 +4194,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     @Override
     public synchronized void invalidateServiceContext(VmwareContext context) {
-        if (_serviceContext == null) {
+        if (_serviceContext != null) {
             _serviceContext.close();
         }
         _serviceContext = null;
