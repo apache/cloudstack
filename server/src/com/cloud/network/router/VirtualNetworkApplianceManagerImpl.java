@@ -1372,6 +1372,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
         
         //1) Guest network
+        boolean hasGuestNetwork = false;
         if (guestNetwork != null) {
             String defaultNetworkStartIp = null;
             s_logger.debug("Adding nic for Virtual Router in Guest network " + guestNetwork);
@@ -1404,16 +1405,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 gatewayNic.setDefaultNic(true);
             }
             networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
+            hasGuestNetwork = true;
         }
         
-        //2) Control network
-        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
-        NetworkOfferingVO controlOffering = offerings.get(0);
-        NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
-        s_logger.debug("Adding nic for Virtual Router in Control network ");
-        networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
-        
-        //3) Public network
+        //2) Public network
         if (setupPublicNetwork) {
             s_logger.debug("Adding nic for Virtual Router in Public network ");
             //if source nat service is supported by the network, get the source nat ip address
@@ -1426,11 +1421,21 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
             defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
             defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
+            if (hasGuestNetwork) {
+                defaultNic.setDeviceId(2);
+            }
             NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
             List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
             networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
         }
-
+        
+        //3) Control network
+        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
+        NetworkOfferingVO controlOffering = offerings.get(0);
+        NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
+        s_logger.debug("Adding nic for Virtual Router in Control network ");
+        networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
+        
         return networks;
     }
 
@@ -1588,6 +1593,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         NicProfile controlNic = null;
         String defaultDns1 = null;
         String defaultDns2 = null;
+        boolean publicNetwork = false;
         
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
@@ -1632,47 +1638,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             } else if (nic.getTrafficType() == TrafficType.Guest) {
                 //build bootloader parameter for the guest
                 createGuestBootLoadArgs(profile, nic, defaultDns1, defaultDns2);
+            } else if (nic.getTrafficType() == TrafficType.Public) {
+                publicNetwork = true;
+
             }
         }
         
         if (controlNic == null) {
             throw new CloudRuntimeException("Didn't start a control port");
-        }
-        
-
-        String domain_suffix = dc.getDetail(ZoneConfig.DnsSearchOrder.getName());
-        if (domain_suffix != null) {
-            buf.append(" dnssearchorder=").append(domain_suffix);
-        }
-
-        if (profile.getHypervisorType() == HypervisorType.VMware) {
-            buf.append(" extra_pubnics=" + _routerExtraPublicNics);
-        }
-         
-       
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
-        }
-
-        return true;
-    }
-    
-    protected void createGuestBootLoadArgs(VirtualMachineProfile<DomainRouterVO> profile, NicProfile nic, 
-            String defaultDns1, String defaultDns2) {
-        long guestNetworkId = nic.getNetworkId();
-        NetworkVO guestNetwork = _networkDao.findById(guestNetworkId);
-        DomainRouterVO router = profile.getVirtualMachine();
-        String type = null;
-        String dhcpRange = null;
-        String rpFilter = " ";
-        DataCenterVO dc = _dcDao.findById(guestNetwork.getDataCenterId());
-
-        if (dc.getNetworkType() == NetworkType.Advanced) {
-            String cidr = guestNetwork.getCidr();
-            if (cidr != null) {
-                dhcpRange = NetUtils.getDhcpRange(cidr);
-            }
         }
         
         String rpValue = _configDao.getValue(Config.NetworkRouterRpFilter.key());
@@ -1682,11 +1655,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             _disable_rp_filter = false;
         }
 
-        boolean publicNetwork = false;
-        if (_networkMgr.isProviderSupportServiceInNetwork(guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter)) {
-            publicNetwork = true;
-        }
-        
+        String rpFilter = " ";
+        String type = null;
         if (!publicNetwork) {
             type = "dhcpsrvr";
         } else {
@@ -1695,10 +1665,42 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 rpFilter=" disable_rp_filter=true";
             }
         }
+        
+        buf.append(" type=" + type + rpFilter);
+
+        String domain_suffix = dc.getDetail(ZoneConfig.DnsSearchOrder.getName());
+        if (domain_suffix != null) {
+            buf.append(" dnssearchorder=").append(domain_suffix);
+        }
+
+        if (profile.getHypervisorType() == HypervisorType.VMware) {
+            buf.append(" extra_pubnics=" + _routerExtraPublicNics);
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
+        }
+
+        return true;
+    }
+    
+    protected void createGuestBootLoadArgs(VirtualMachineProfile<DomainRouterVO> profile, NicProfile guestNic, 
+            String defaultDns1, String defaultDns2) {
+        long guestNetworkId = guestNic.getNetworkId();
+        NetworkVO guestNetwork = _networkDao.findById(guestNetworkId);
+        DomainRouterVO router = profile.getVirtualMachine();
+        String dhcpRange = null;
+        DataCenterVO dc = _dcDao.findById(guestNetwork.getDataCenterId());
+
+        if (dc.getNetworkType() == NetworkType.Advanced) {
+            String cidr = guestNetwork.getCidr();
+            if (cidr != null) {
+                dhcpRange = NetUtils.getDhcpRange(cidr);
+            }
+        }
 
         StringBuilder buf = profile.getBootArgsBuilder();
-        buf.append(" type=" + type + rpFilter);
-        
+
         boolean isRedundant = router.getIsRedundantRouter();
         if (isRedundant) {
             buf.append(" redundant_router=1");
@@ -1712,9 +1714,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
         }
         
-        if (nic.isDefaultNic() && dc.getNetworkType() == NetworkType.Basic) {
-            long cidrSize = NetUtils.getCidrSize(nic.getNetmask());
-            String cidr = NetUtils.getCidrSubNet(nic.getGateway(), cidrSize);
+        if (guestNic.isDefaultNic() && dc.getNetworkType() == NetworkType.Basic) {
+            long cidrSize = NetUtils.getCidrSize(guestNic.getNetmask());
+            String cidr = NetUtils.getCidrSubNet(guestNic.getGateway(), cidrSize);
             if (cidr != null) {
                 dhcpRange = NetUtils.getIpRangeStartIpFromCidr(cidr, cidrSize);
             }
@@ -1725,11 +1727,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         
         if (isRedundant) {
-            Network net = _networkMgr.getNetwork(nic.getNetworkId());
+            Network net = _networkMgr.getNetwork(guestNic.getNetworkId());
             buf.append(" guestgw=").append(net.getGateway());
-            String brd = NetUtils.long2Ip(NetUtils.ip2Long(nic.getIp4Address()) | ~NetUtils.ip2Long(nic.getNetmask()));
+            String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIp4Address()) | ~NetUtils.ip2Long(guestNic.getNetmask()));
             buf.append(" guestbrd=").append(brd);
-            buf.append(" guestcidrsize=").append(NetUtils.getCidrSize(nic.getNetmask()));
+            buf.append(" guestcidrsize=").append(NetUtils.getCidrSize(guestNic.getNetmask()));
             buf.append(" router_pr=").append(router.getPriority());
         }
         
@@ -1740,10 +1742,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         boolean dnsProvided = false;
         boolean dhcpProvided = false;
-        if (nic.getTrafficType() == TrafficType.Guest) {
+        if (guestNic.getTrafficType() == TrafficType.Guest) {
             //FiXME - for multiple guest network case this should be set individually
-            dnsProvided = _networkMgr.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.Dns, Provider.VirtualRouter);
-            dhcpProvided = _networkMgr.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.Dhcp, Provider.VirtualRouter);
+            dnsProvided = _networkMgr.isProviderSupportServiceInNetwork(guestNic.getNetworkId(), Service.Dns, Provider.VirtualRouter);
+            dhcpProvided = _networkMgr.isProviderSupportServiceInNetwork(guestNic.getNetworkId(), Service.Dhcp, Provider.VirtualRouter);
         }
         /* If virtual router didn't provide DNS service but provide DHCP service, we need to override the DHCP response 
          * to return DNS server rather than 

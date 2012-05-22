@@ -3,7 +3,7 @@
 
 # the following two variables are used by the target "waf dist"
 # if you change 'em here, you need to change it also in cloud.spec, add a %changelog entry there, and add an entry in debian/changelog
-VERSION = '3.0.3.2012-05-22T00:32:35Z'
+VERSION = '3.0.3.2012-05-22T00:59:20Z'
 APPNAME = 'cloud'
 
 import shutil,os
