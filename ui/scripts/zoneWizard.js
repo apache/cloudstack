@@ -2398,9 +2398,17 @@
               dataType: "json",
               success: function(json) {
                 args.data.returnedGuestNetwork.returnedVlanIpRange = json.createvlaniprangeresponse.vlan;
-                stepFns.addCluster({
-                  data: args.data
-                });
+                
+								//???								
+								if(args.data.cluster.hypervisor == "BareMetal") {
+								  alert('Frank, zone creation is done. Please refresh this page.');
+								}								
+								else {
+									stepFns.addCluster({
+										data: args.data
+									});
+								}
+								//???
               },
               error: function(XMLHttpResponse) {
                 var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
