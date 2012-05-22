@@ -34,7 +34,7 @@
             name: { label: 'label.name' },
             type: { label: 'label.type' },
             hypervisor: { label: 'label.hypervisor' },	
-            vmdisplayname: { label: 'label.vm.display.name' },
+            vmdisplayname: { label: 'label.vm.display.name' }
             						
 						/*
 						state: { 
