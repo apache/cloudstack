@@ -27,6 +27,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.api.Identity;
+
 /**
  * CiscoNexusVSMDeviceVO contains information on external Cisco Nexus 1000v VSM devices added into a deployment.
  * This should be probably made as a more generic class so that we can handle multiple versions of Nexus VSMs
@@ -35,7 +37,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name="virtual_supervisor_module")
-public class CiscoNexusVSMDeviceVO {
+public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity{
 	
 	// We need to know what properties a VSM has. Put them here.
 	
@@ -91,28 +93,7 @@ public class CiscoNexusVSMDeviceVO {
     private VSMConfigState vsmConfigState;
     
     @Column(name = "vsmDeviceState")
-    private VSMDeviceState vsmDeviceState;    
-
-    // This tells us whether the VSM is currently enabled or disabled. We may
-    // need this if we would like to carry out any sort of maintenance on the
-    // VSM or CS.
-    public enum VSMDeviceState {
-    	Enabled,
-    	Disabled
-    }    
-    
-    // This tells us whether the VSM is currently configured with a standby (HA)
-    // or does not have any standby (Standalone).
-    public enum VSMConfigMode {
-        Standalone,
-        HA
-    }
-    
-    // This tells us whether the VSM is currently a primary or a standby VSM.
-    public enum VSMConfigState {
-        Primary,
-        Standby
-    }
+    private VSMDeviceState vsmDeviceState;
 
     // Accessor methods
     public long getId() {

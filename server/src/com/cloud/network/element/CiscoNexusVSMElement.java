@@ -36,6 +36,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
+import com.cloud.network.CiscoNexusVSMDevice;
 import com.cloud.network.CiscoNexusVSMDeviceManagerImpl;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
@@ -169,8 +170,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     		throw new CloudRuntimeException("Failed to delete specified VSM");
     	}
     	return result;
-    }
-    
+    }    
 
     @Override
     public boolean enableCiscoNexusVSM(EnableCiscoNexusVSMCmd cmd) {
@@ -205,14 +205,14 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     }
     
     @Override
-    public CiscoNexusVSMResponse createCiscoNexusVSMResponse(CiscoNexusVSMDeviceVO vsmDeviceVO) {    		
+    public CiscoNexusVSMResponse createCiscoNexusVSMResponse(CiscoNexusVSMDevice vsmDeviceVO) {
             CiscoNexusVSMResponse response = new CiscoNexusVSMResponse();
-            response.setId(vsmDeviceVO.getId());
+            response.setId(vsmDeviceVO.getId());            
             response.setMgmtIpAddress(vsmDeviceVO.getipaddr());
             return response;
         }
     
-    public CiscoNexusVSMResponse createCiscoNexusVSMDetailedResponse(CiscoNexusVSMDeviceVO vsmDeviceVO) {
+    public CiscoNexusVSMResponse createCiscoNexusVSMDetailedResponse(CiscoNexusVSMDevice vsmDeviceVO) {
     	CiscoNexusVSMResponse response = new CiscoNexusVSMResponse();
     	response.setId(vsmDeviceVO.getId());
     	response.setDeviceName(vsmDeviceVO.getvsmName());
