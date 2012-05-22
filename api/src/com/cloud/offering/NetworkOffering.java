@@ -42,6 +42,8 @@ public interface NetworkOffering {
     public final static String DefaultSharedNetworkOffering = "DefaultSharedNetworkOffering";
     public final static String DefaultIsolatedNetworkOffering = "DefaultIsolatedNetworkOffering";
     public final static String DefaultSharedEIPandELBNetworkOffering = "DefaultSharedNetscalerEIPandELBNetworkOffering";
+    public final static String DefaultIsolatedNetworkOfferingForVpcNetworks = "DefaultIsolatedNetworkOfferingForVpcNetworks";
+
 
     long getId();
 

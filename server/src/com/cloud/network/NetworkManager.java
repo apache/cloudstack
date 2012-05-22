@@ -152,8 +152,8 @@ public interface NetworkManager extends NetworkService {
 
     boolean destroyNetwork(long networkId, ReservationContext context);
 
-    Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, boolean isSecurityGroupEnabled, Long domainId,
-            PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
+    Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork physicalNetwork,
+            long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     /**
      * @throws ResourceAllocationException TODO
@@ -323,4 +323,25 @@ public interface NetworkManager extends NetworkService {
      * @throws InsufficientAddressCapacityException 
      */
     PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException;
+
+
+    /**
+     * @param accountId
+     * @param zoneId
+     * @return
+     */
+    String getAccountNetworkDomain(long accountId, long zoneId);
+
+
+    /**
+     * @return
+     */
+    String getDefaultNetworkDomain();
+
+
+    /**
+     * @param networkId
+     * @return
+     */
+    List<Provider> getNtwkOffDistinctProviders(long networkId);
 }

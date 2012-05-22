@@ -249,23 +249,28 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     
     @Override
     @DB
-    public DomainRouterVO persist(DomainRouterVO router, Network guestNetwork) {
+    public DomainRouterVO persist(DomainRouterVO router, List<Network> guestNetworks) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
         // 1) create network
         DomainRouterVO newRouter = super.persist(router);
-        // 2) add router to the network
-        addRouterToNetwork(router.getId(), guestNetwork);
-        // 3) create user stats entry
-        UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn(), 
-                guestNetwork.getId(), null, router.getId(), router.getType().toString());
-        if (stats == null) {
-            stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), null, router.getId(),
-                    router.getType().toString(), guestNetwork.getId());
-            _userStatsDao.persist(stats);
+        
+        if (guestNetworks != null && !guestNetworks.isEmpty()) {
+            // 2) add router to the network
+            for (Network guestNetwork : guestNetworks) {
+                addRouterToNetwork(router.getId(), guestNetwork);
+                // 3) create user stats entry
+                UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn(), 
+                        guestNetwork.getId(), null, router.getId(), router.getType().toString());
+                if (stats == null) {
+                    stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), null, router.getId(),
+                            router.getType().toString(), guestNetwork.getId());
+                    _userStatsDao.persist(stats);
+                }
+            }
         }
-
+       
         txn.commit();
         return newRouter;
     }

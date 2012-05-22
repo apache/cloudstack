@@ -347,6 +347,7 @@ public class ApiConstants {
     public static final String VSM_IPADDRESS = "vsmipaddress";
     public static final String VPC_OFF_ID = "vpcofferingid";
     public static final String NETWORK = "network";
+    public static final String VPC_ID = "vpcid";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

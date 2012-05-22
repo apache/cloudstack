@@ -63,9 +63,10 @@ public interface VpcService {
      * @param vpcName
      * @param displayText
      * @param cidr
+     * @param networkDomain TODO
      * @return
      */
-    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr);
+    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain);
 
     /**
      * @param vpcId

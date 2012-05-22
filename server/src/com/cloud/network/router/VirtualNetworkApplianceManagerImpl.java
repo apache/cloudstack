@@ -1613,7 +1613,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 // DOMR control command is sent over management server in VMware
                 if (dest.getHost().getHypervisorType() == HypervisorType.VMware) {
                     if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Check if we need to add management server explicit route to DomR. pod cidr: " + dest.getPod().getCidrAddress() + "/" + dest.getPod().getCidrSize()
+                        s_logger.info("Check if we need to add management server explicit route to DomR. pod cidr: " 
+                    + dest.getPod().getCidrAddress() + "/" + dest.getPod().getCidrSize()
                                 + ", pod gateway: " + dest.getPod().getGateway() + ", management host: " + _mgmt_host);
                     }
 
@@ -1637,10 +1638,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 }
             } else if (nic.getTrafficType() == TrafficType.Guest) {
                 //build bootloader parameter for the guest
-                createGuestBootLoadArgs(profile, nic, defaultDns1, defaultDns2);
+                buf.append(createGuestBootLoadArgs(nic, defaultDns1, defaultDns2, router));
             } else if (nic.getTrafficType() == TrafficType.Public) {
                 publicNetwork = true;
-
             }
         }
         
@@ -1684,11 +1684,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return true;
     }
     
-    protected void createGuestBootLoadArgs(VirtualMachineProfile<DomainRouterVO> profile, NicProfile guestNic, 
-            String defaultDns1, String defaultDns2) {
+    protected StringBuilder createGuestBootLoadArgs(NicProfile guestNic, String defaultDns1, 
+            String defaultDns2, DomainRouterVO router) {
         long guestNetworkId = guestNic.getNetworkId();
         NetworkVO guestNetwork = _networkDao.findById(guestNetworkId);
-        DomainRouterVO router = profile.getVirtualMachine();
         String dhcpRange = null;
         DataCenterVO dc = _dcDao.findById(guestNetwork.getDataCenterId());
 
@@ -1699,7 +1698,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
         }
 
-        StringBuilder buf = profile.getBootArgsBuilder();
+        StringBuilder buf = new StringBuilder();
 
         boolean isRedundant = router.getIsRedundantRouter();
         if (isRedundant) {
@@ -1713,6 +1712,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 throw new CloudRuntimeException("Failed to get update priority!");
             }
         }
+        
         
         if (guestNic.isDefaultNic() && dc.getNetworkType() == NetworkType.Basic) {
             long cidrSize = NetUtils.getCidrSize(guestNic.getNetmask());
@@ -1767,6 +1767,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 buf.append(" useextdns=true");
             }
         }
+        
+        return buf;
     }
 
     @Override
@@ -1985,16 +1987,16 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean finalizeStart(VirtualMachineProfile<DomainRouterVO> profile, long hostId, Commands cmds, ReservationContext context) {
+    public boolean finalizeStart(VirtualMachineProfile<DomainRouterVO> profile, long hostId, Commands cmds,
+            ReservationContext context) {
         DomainRouterVO router = profile.getVirtualMachine();
         
         //Get guest nic info
         List<NicProfile> routerNics = profile.getNics();
-        Network guestNetwork = null;
+        List<Network> guestNetworks = new ArrayList<Network>();
         for (NicProfile routerNic : routerNics) {
             if (routerNic.getTrafficType() == TrafficType.Guest) {
-                guestNetwork = _networkMgr.getNetwork(routerNic.getNetworkId());
-                break;
+                guestNetworks.add(_networkMgr.getNetwork(routerNic.getNetworkId()));
             }
         }
         
@@ -2018,11 +2020,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer)answer;
             if (answer == null || !answer.getResult()) {
                 /* Try to push on because it's not a critical error */
-                s_logger.warn("Unable to get the template/scripts version of router " + router.getInstanceName() + " due to: " + versionAnswer.getDetails() + ", but we would continue");
+                s_logger.warn("Unable to get the template/scripts version of router " + router.getInstanceName() + 
+                        " due to: " + versionAnswer.getDetails() + ", but we would continue");
             } else {
                 router.setTemplateVersion(versionAnswer.getTemplateVersion());
                 router.setScriptsVersion(versionAnswer.getScriptsVersion());
-                router = _routerDao.persist(router, guestNetwork);
+                router = _routerDao.persist(router, guestNetworks);
             }
         }
 

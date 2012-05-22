@@ -34,6 +34,8 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
     final SearchBuilder<NetworkOfferingServiceMapVO> MultipleServicesSearch;
     final GenericSearchBuilder<NetworkOfferingServiceMapVO, String> ProvidersSearch;
     final GenericSearchBuilder<NetworkOfferingServiceMapVO, String> ServicesSearch;
+    final GenericSearchBuilder<NetworkOfferingServiceMapVO, String> DistinctProvidersSearch;
+
     
     protected NetworkOfferingServiceMapDaoImpl() {
         super();
@@ -59,6 +61,12 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
         ServicesSearch.and("networkOfferingId", ServicesSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
         ServicesSearch.select(null, Func.DISTINCT, ServicesSearch.entity().getService());
         ServicesSearch.done();
+        
+        DistinctProvidersSearch = createSearchBuilder(String.class);
+        DistinctProvidersSearch.and("offId", DistinctProvidersSearch.entity().getNetworkOfferingId(), SearchCriteria.Op.EQ);
+        DistinctProvidersSearch.and("provider", DistinctProvidersSearch.entity().getProvider(), SearchCriteria.Op.EQ);
+        DistinctProvidersSearch.selectField(DistinctProvidersSearch.entity().getProvider());
+        DistinctProvidersSearch.done();
     }
     
     @Override
@@ -146,4 +154,11 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
         return mappingInDb!=null? mappingInDb : super.persist(entity); 
 	}
     
+    @Override
+    public List<String> getDistinctProviders(long offId) {
+        SearchCriteria<String> sc = DistinctProvidersSearch.create();
+        sc.setParameters("offId", offId);
+        List<String> results = customSearch(sc, null);
+        return results;
+    }
 }

@@ -2141,6 +2141,7 @@ CREATE TABLE `cloud`.`vpc` (
   `state` varchar(32) NOT NULL COMMENT 'state of the VP (can be Enabled and Disabled)',
   `domain_id` bigint unsigned NOT NULL COMMENT 'domain the vpc belongs to',
   `account_id` bigint unsigned NOT NULL COMMENT 'owner of this vpc',
+  `network_domain` varchar(255) COMMENT 'network domain',
   `removed` datetime COMMENT 'date removed if not null',
   `created` datetime NOT NULL COMMENT 'date created',
   PRIMARY KEY  (`id`),

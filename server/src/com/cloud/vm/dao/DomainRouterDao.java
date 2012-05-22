@@ -95,10 +95,10 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
     
     /**
      * Persists the domain router instance + creates the reference to the guest network (if not null)
-     * @param guestNetwork TODO
+     * @param guestNetworks TODO
      * @return
      */    
-    DomainRouterVO persist(DomainRouterVO router, Network guestNetwork);
+    DomainRouterVO persist(DomainRouterVO router, List<Network> guestNetworks);
 
     /**
      * @param routerId

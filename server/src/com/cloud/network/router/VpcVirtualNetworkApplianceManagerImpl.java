@@ -25,6 +25,8 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkService;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
@@ -54,6 +56,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     VpcOfferingDao _vpcOffDao = null;
     @Inject
     PhysicalNetworkDao _pNtwkDao = null;
+    @Inject
+    NetworkService _ntwkService = null;
     
     @Override
     public List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner, 
@@ -96,7 +100,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             //FIXME - remove hardcoded provider type when decide if we want cross physical networks vpcs
             List<? extends PhysicalNetwork> pNtwks = _pNtwkDao.listByZone(vpc.getZoneId());
             
-            VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(pNtwks.get(0).getId(), VirtualRouterProviderType.VirtualRouter);
+            VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(pNtwks.get(0).getId(), 
+                    VirtualRouterProviderType.VirtualRouter);
             
             PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddressToVpc(owner, vpc);
             DomainRouterVO router = deployRouter(owner, dest, plan, params, true, null, false,
@@ -111,12 +116,70 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         return routers;
     }
     
-    protected Pair<DeploymentPlan, List<DomainRouterVO>> getDeploymentPlanAndRouters(long vpcId,DeployDestination dest) {
+    protected Pair<DeploymentPlan, List<DomainRouterVO>> getDeploymentPlanAndRouters(long vpcId, DeployDestination dest) {
         long dcId = dest.getDataCenter().getId();
         
         DeploymentPlan plan = new DataCenterDeployment(dcId);
         List<DomainRouterVO> routers = _routerDao.listRoutersByVpcId(vpcId);
         
         return new Pair<DeploymentPlan, List<DomainRouterVO>>(plan, routers);
+    }
+    
+    @Override
+    public boolean addVpcElementToNetwork(Network network) {
+        boolean success = true;
+        Long vpcId = network.getVpcId();
+        if (vpcId == null) {
+            s_logger.debug("Network " + network + " doesn't belong to any vpc, so skipping plug nic part");
+            return success;
+        }
+        
+        List<? extends VirtualRouter> routers = _routerDao.listRoutersByVpcId(vpcId);
+        for (VirtualRouter router : routers) {
+            //1) Check if router is already a part of the network
+            if (_ntwkService.isVmPartOfNetwork(router.getId(), network.getId())) {
+                s_logger.debug("Router " + router + " is already part of the network " + network);
+                continue;
+            }
+            //2) Call plugNics in the network service
+            success = success && _ntwkService.addVmToNetwork(router, network);
+        }
+        
+        if (!success) {
+            s_logger.warn("Failed to plug nic in network " + network + " for virtual router in vpc id=" + vpcId);
+        } else {
+            s_logger.debug("Successfully plugged nic in network " + network + " for virtual router in vpc id=" + vpcId);
+        }
+        
+        return success;
+    }
+    
+    @Override
+    public boolean removeVpcElementFromNetwork(Network network) {
+        boolean success = true;
+        Long vpcId = network.getVpcId();
+        if (vpcId == null) {
+            s_logger.debug("Network " + network + " doesn't belong to any vpc, so skipping unplug nic part");
+            return success;
+        }
+        
+        List<? extends VirtualRouter> routers = _routerDao.listRoutersByVpcId(vpcId);
+        for (VirtualRouter router : routers) {
+            //1) Check if router is already a part of the network
+            if (!_ntwkService.isVmPartOfNetwork(router.getId(), network.getId())) {
+                s_logger.debug("Router " + router + " is not a part the network " + network);
+                continue;
+            }
+            //2) Call unplugNics in the network service
+            success = success && _ntwkService.removeVmFromNetwork(router, network);
+        }
+        
+        if (!success) {
+            s_logger.warn("Failed to unplug nic in network " + network + " for virtual router in vpc id=" + vpcId);
+        } else {
+            s_logger.debug("Successfully unplugged nic in network " + network + " for virtual router in vpc id=" + vpcId);
+        }
+        
+        return success;
     }
 }

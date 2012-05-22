@@ -3563,19 +3563,23 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 }
             }
             if (availability == null) {
-                throw new InvalidParameterValueException("Invalid value for Availability. Supported types: " + Availability.Required + ", " + Availability.Optional);
+                throw new InvalidParameterValueException("Invalid value for Availability. Supported types: " 
+            + Availability.Required + ", " + Availability.Optional);
             } else {
                 if (availability == NetworkOffering.Availability.Required) {
-                    boolean canOffBeRequired = (offeringToUpdate.getGuestType() == GuestType.Isolated && _networkMgr.areServicesSupportedByNetworkOffering(offeringToUpdate.getId(), Service.SourceNat));
+                    boolean canOffBeRequired = (offeringToUpdate.getGuestType() == GuestType.Isolated 
+                            && _networkMgr.areServicesSupportedByNetworkOffering(offeringToUpdate.getId(), Service.SourceNat));
                     if (!canOffBeRequired) {
-                        throw new InvalidParameterValueException("Availability can be " + NetworkOffering.Availability.Required + " only for networkOfferings of type " + GuestType.Isolated + " and with "
+                        throw new InvalidParameterValueException("Availability can be " + 
+                    NetworkOffering.Availability.Required + " only for networkOfferings of type " + GuestType.Isolated + " and with "
                                 + Service.SourceNat.getName() + " enabled");
                     }
 
                     // only one network offering in the system can be Required
                     List<NetworkOfferingVO> offerings = _networkOfferingDao.listByAvailability(Availability.Required, false);
                     if (!offerings.isEmpty() && offerings.get(0).getId() != offeringToUpdate.getId()) {
-                        throw new InvalidParameterValueException("System already has network offering id=" + offerings.get(0).getId() + " with availability " + Availability.Required);
+                        throw new InvalidParameterValueException("System already has network offering id=" + 
+                    offerings.get(0).getId() + " with availability " + Availability.Required);
                     }
                 }
                 offering.setAvailability(availability);
@@ -3590,7 +3594,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_MARK_DEFAULT_ZONE, eventDescription = "Marking account with the default zone", async=true)
+    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_MARK_DEFAULT_ZONE, eventDescription = "Marking account with the " +
+    		"default zone", async=true)
     public AccountVO markDefaultZone(String accountName, long domainId, long defaultZoneId) {
     	
     	// Check if the account exists

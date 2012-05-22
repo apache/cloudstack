@@ -31,24 +31,23 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
-import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.vpc.VpcOffering.State;
 import com.cloud.network.vpc.Dao.VpcDao;
 import com.cloud.network.vpc.Dao.VpcOfferingDao;
 import com.cloud.network.vpc.Dao.VpcOfferingServiceMapDao;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.user.Account;
@@ -92,6 +91,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @Inject
     NetworkManager _ntwkMgr;
     
+    private VpcProvider vpcElement = null;
+    
     String _name;
 
     @Override
@@ -108,7 +109,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
             
             Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
             Set<Provider> provider = new HashSet<Provider>();
-            provider.add(Provider.VirtualRouter);
+            provider.add(Provider.VPCVirtualRouter);
             for (Service svc : getSupportedServices()) {
                 svcProviderMap.put(svc, provider);
             }
@@ -152,7 +153,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices) {
         Map<Network.Service, Set<Network.Provider>> svcProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
         Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
-        defaultProviders.add(Provider.VirtualRouter);
+        defaultProviders.add(Provider.VPCVirtualRouter);
 
         boolean sourceNatSvc = false;
         boolean firewallSvs = false;
@@ -403,7 +404,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc")
-    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr) {
+    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, 
+            String networkDomain) {
         Account caller = UserContext.current().getCaller();
         Account owner = _accountMgr.getAccount(vpcOwnerId);
         
@@ -427,17 +429,41 @@ public class VpcManagerImpl implements VpcManager, Manager{
             throw ex;
         }
         
-        //validate cidr
-        return createVpc(zoneId, vpcOffId, owner, vpcName, displayText, cidr);
+        if (networkDomain == null) {
+            // 1) Get networkDomain from the corresponding account
+            networkDomain = _ntwkMgr.getAccountNetworkDomain(owner.getId(), zoneId);
+
+
+            // 2) If null, generate networkDomain using domain suffix from the global config variables
+            if (networkDomain == null) {
+                networkDomain = "cs" + Long.toHexString(owner.getId()) + _ntwkMgr.getDefaultNetworkDomain();
+            }
+        } 
+        
+        return createVpc(zoneId, vpcOffId, owner, vpcName, displayText, cidr, networkDomain);
     }
     
     @Override
-    public Vpc createVpc(long zoneId, long vpcOffId, Account vpcOwner, String vpcName, String displayText, String cidr) {
+    public Vpc createVpc(long zoneId, long vpcOffId, Account vpcOwner, String vpcName, String displayText, String cidr, 
+            String networkDomain) {
+        
+        //Validate CIDR
         if (!NetUtils.isValidCIDR(cidr)) {
             throw new InvalidParameterValueException("Invalid CIDR specified " + cidr);
         }
+
+        // validate network domain
+        if (!NetUtils.verifyDomainName(networkDomain)) {
+            throw new InvalidParameterValueException(
+                    "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain " +
+                    "label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', " +
+                    "the digits '0' through '9', "
+                            + "and the hyphen ('-'); can't start or end with \"-\"");
+        }
         
-        VpcVO vpc = new VpcVO (zoneId, vpcName, displayText, vpcOwner.getId(), vpcOwner.getDomainId(), vpcOffId, cidr);
+        
+        VpcVO vpc = new VpcVO (zoneId, vpcName, displayText, vpcOwner.getId(), vpcOwner.getDomainId(), vpcOffId, cidr, 
+                networkDomain);
         vpc = _vpcDao.persist(vpc);
         
         if (vpc != null) {
@@ -616,7 +642,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
     }
     
     @Override
-    public Vpc startVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public Vpc startVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, 
+    InsufficientCapacityException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
         User callerUser = _accountMgr.getActiveUser(ctx.getCallerUserId());
@@ -633,10 +660,11 @@ public class VpcManagerImpl implements VpcManager, Manager{
         DataCenter dc = _configMgr.getZone(vpc.getZoneId());
      
         DeployDestination dest = new DeployDestination(dc, null, null, null);
-        ReservationContext context = new ReservationContextImpl(null, null, callerUser, _accountMgr.getAccount(vpc.getAccountId()));
+        ReservationContext context = new ReservationContextImpl(null, null, callerUser, 
+                _accountMgr.getAccount(vpc.getAccountId()));
 
         //deploy provider
-        if (((VpcProvider)_ntwkMgr.getElementImplementingProvider(Provider.VirtualRouter.getName())).startVpc(vpc, dest, context)) {
+        if (getVpcElement().startVpc(vpc, dest, context)) {
             s_logger.debug("Vpc " + vpc + " has started succesfully");
             return getVpc(vpc.getId());
         } else {
@@ -644,5 +672,77 @@ public class VpcManagerImpl implements VpcManager, Manager{
             //FIXME - add cleanup logic here
         }
     }
+    
+    @Override
+    @DB
+    public void validateGuestNtkwForVpc(NetworkOffering guestNtwkOff, String cidr, String networkDomain, 
+            Account networkOwner, Vpc vpc) throws ConcurrentOperationException {
+        
+        Vpc locked = _vpcDao.acquireInLockTable(vpc.getId());
+        if (locked == null) {
+            throw new ConcurrentOperationException("Unable to acquire lock on " + vpc);
+        }
+        
+        try {
+          //1) CIDR is required
+            if (cidr == null) {
+                throw new InvalidParameterValueException("CIDR is required when create network for VPC");
+            }
+            
+            //2) Network cidr should be within vpcCidr
+            if (!NetUtils.isNetworkAWithinNetworkB(cidr, vpc.getCidr())) {
+                throw new InvalidParameterValueException("Network cidr " + cidr + " is not within vpc " + vpc + " cidr");
+            }
+            
+            //3) Network cidr shouldn't cross the cidr of other vpc network cidrs
+            List<? extends Network> ntwks = _ntwkDao.listByVpc(vpc.getId());
+            for (Network ntwk : ntwks) {
+                assert (cidr != null) : "Why the network cidr is null when it belongs to vpc?";
+                
+                if (NetUtils.isNetworkAWithinNetworkB(ntwk.getCidr(), vpc.getCidr()) 
+                        || NetUtils.isNetworkAWithinNetworkB(vpc.getCidr(), ntwk.getCidr())) {
+                    throw new InvalidParameterValueException("Network cidr " + cidr + " crosses other network cidr " + ntwk + 
+                            " belonging to the same vpc " + vpc);
+                }
+            }
+            
+            //4) vpc and network should belong to the same owner
+            if (vpc.getAccountId() != networkOwner.getId()) {
+                throw new InvalidParameterValueException("Vpc " + vpc + " owner is different from the network owner " + networkOwner);
+            }
+            
+            //5) Only Isolated networks with Source nat service enabled can be added to vpc
+            if (!(guestNtwkOff.getGuestType() == GuestType.Isolated 
+                    && _ntwkMgr.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.SourceNat))) {
+                
+                throw new InvalidParameterValueException("Only networks of type " + GuestType.Isolated + " with service " + Service.SourceNat + 
+                        " can be added as a part of VPC");
+            }
+            
+            //6) Only VPC VR can be a provider for the network offering
+            List<Provider> ntwkOffProviders = _ntwkMgr.getNtwkOffDistinctProviders(guestNtwkOff.getId());
+            for (Provider provider : ntwkOffProviders) {
+                if (provider != Provider.VPCVirtualRouter) {
+                    throw new InvalidParameterValueException("Only VPCVirtualRouter provider is supported in VPC network;" +
+                    		" while network offering " + guestNtwkOff + " has " + provider.getName() + " enabled.");
+                }
+            }
+            
+            //7) No redundant router support
+            if (guestNtwkOff.getRedundantRouter()) {
+                throw new InvalidParameterValueException("No redunant router support when network belnogs to VPC");
+            }
+        } finally {
+            s_logger.debug("Releasing lock for " + locked);
+            _vpcDao.releaseFromLockTable(locked.getId());
+        }
+    }
      
+    private VpcProvider getVpcElement() {
+        if (vpcElement == null) {
+            vpcElement = ((VpcProvider)_ntwkMgr.getElementImplementingProvider(Provider.VPCVirtualRouter.getName()));
+        }
+        
+        return vpcElement;
+    }
 }
