@@ -23,13 +23,14 @@ import com.cloud.agent.AgentManager;
 import com.cloud.api.commands.DeleteCiscoNexusVSMCmd;
 import com.cloud.api.commands.EnableCiscoNexusVSMCmd;
 import com.cloud.api.commands.DisableCiscoNexusVSMCmd;
-import com.cloud.api.commands.GetCiscoVSMByClusterIdCmd;
-import com.cloud.api.commands.GetCiscoVSMDetailsCmd;
+import com.cloud.api.commands.ListCiscoVSMDetailsCmd;
 import com.cloud.api.response.CiscoNexusVSMResponse;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -55,6 +56,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.db.DB;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -159,7 +161,9 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     	return true;
     }
 
+
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_DELETE, eventDescription = "deleting VSM", async = true)   
     public boolean deleteCiscoNexusVSM(DeleteCiscoNexusVSMCmd cmd) {
     	boolean result;
     	try {
@@ -185,18 +189,9 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     	result = disableCiscoNexusVSM(cmd.getCiscoNexusVSMDeviceId());
     	return result;
     }
-
-    @Override
-    public CiscoNexusVSMDeviceVO getCiscoNexusVSMDetails(GetCiscoVSMDetailsCmd cmd) {
-    	CiscoNexusVSMDeviceVO result = getCiscoVSMbyVSMId(cmd.getVSMId());
-    	if (result == null) {
-    		throw new CloudRuntimeException("Cisco VSM with specified Id found");
-    	}
-    	return result;
-    }
     
     @Override
-    public CiscoNexusVSMDeviceVO getCiscoNexusVSMByClusId(GetCiscoVSMByClusterIdCmd cmd) {
+    public CiscoNexusVSMDeviceVO getCiscoNexusVSMByClusId(ListCiscoVSMDetailsCmd cmd) {
     	CiscoNexusVSMDeviceVO result = getCiscoVSMbyClusId(cmd.getClusterId());
     	if (result == null) {
     		throw new CloudRuntimeException("No Cisco VSM associated with specified Cluster Id");

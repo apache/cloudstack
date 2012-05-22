@@ -31,12 +31,11 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.CiscoNexusVSMElementService;
+import com.cloud.user.Account;
 import com.cloud.user.UserContext;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 @Implementation(responseObject=SuccessResponse.class, description=" delete a Cisco Nexus VSM device")
 public class DeleteCiscoNexusVSMCmd extends BaseAsyncCmd {
@@ -67,19 +66,13 @@ public class DeleteCiscoNexusVSMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
-        try {
-            boolean result = _ciscoNexusVSMService.deleteCiscoNexusVSM(this);
-            if (result) {
-                SuccessResponse response = new SuccessResponse(getCommandName());
-                response.setResponseName(getCommandName());
-                this.setResponseObject(response);
-            } else {
-                throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, "Failed to delete Cisco Nexus VSM device");
-            }
-        }  catch (InvalidParameterValueException invalidParamExcp) {
-            throw new ServerApiException(BaseAsyncCmd.PARAM_ERROR, invalidParamExcp.getMessage());
-        } catch (CloudRuntimeException runtimeExcp) {
-            throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, runtimeExcp.getMessage());
+    	boolean result = _ciscoNexusVSMService.deleteCiscoNexusVSM(this);
+        if (result) {
+        	SuccessResponse response = new SuccessResponse(getCommandName());
+        	response.setResponseName(getCommandName());
+        	this.setResponseObject(response);
+        } else {
+        	throw new ServerApiException(BaseAsyncCmd.INTERNAL_ERROR, "Failed to delete Cisco Nexus VSM device");
         }
     }
 
@@ -90,7 +83,7 @@ public class DeleteCiscoNexusVSMCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return UserContext.current().getCaller().getId();
+        return Account.ACCOUNT_ID_SYSTEM;
     }
     
     @Override
