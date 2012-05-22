@@ -382,11 +382,11 @@
       url: 'eula.' + g_lang + '.html',
       dataType: 'html',
       success: function(html) {
-        $('title').html('CloudPlatform');
+        document.title = 'CloudPlatform';
         cloudStack.uiCustom.login($.extend(loginArgs, { eula: html, hasLogo: true }));
       },
       error: function() {
-        $('title').html('CloudStack');
+        document.title = 'CloudStack';
         cloudStack.uiCustom.login(loginArgs);
       },	
 			beforeSend : function(XMLHttpResponse) {
