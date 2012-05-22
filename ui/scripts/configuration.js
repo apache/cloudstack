@@ -1084,33 +1084,12 @@
 												'service.PortForwarding.isEnabled',													
 												'service.Firewall.isEnabled', 
 												'service.Vpn.isEnabled' 
-											];			
-										  
-											//CS-14206
-											/*
-										  if (hasAdvancedZones) { //advanced zone
-											  serviceFieldsToHide = [
-													'service.SourceNat.isEnabled',
-													'service.StaticNat.isEnabled',
-													'service.PortForwarding.isEnabled',
-													'service.Lb.isEnabled',
-													'service.Firewall.isEnabled', 
-													'service.Vpn.isEnabled' 
-												];											
-											}
-											else { //basic zone
-											  serviceFieldsToHide = [
-													'service.SourceNat.isEnabled',													
-													'service.PortForwarding.isEnabled',													
-													'service.Firewall.isEnabled', 
-													'service.Vpn.isEnabled' 
-												];					
-											}
-											*/
-											
+											];		
 										}
-										else { //Isolated network offering (which supports all services)
-										  serviceFieldsToHide = [];
+										else { //Isolated network offering 
+										  serviceFieldsToHide = [
+											  'service.SecurityGroup.isEnabled'
+											];
 										}
                      											
 										//hide service fields that are included in serviceFieldsToHide
