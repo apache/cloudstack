@@ -73,20 +73,6 @@ public class AddClusterCmd extends BaseCmd {
     @Parameter(name = ApiConstants.VSM_IPADDRESS, type = CommandType.STRING, required = false, description = "the ipaddress of the VSM associated with this cluster")
     private String vsmipaddress;
     
-    @Parameter(name = ApiConstants.VCENTER_IP_ADDRESS, type = CommandType.STRING, required = false, description = "the ipaddress of the vCenter the VSM associated with this cluster will connect to")
-    private String vcenteripaddr;
-    
-    @Parameter(name = ApiConstants.VCENTER_DC_NAME, type = CommandType.STRING, required = false, description = "the name of the vCenter Data Center the VSM associated with this cluster will serve")
-    private String vcenterdcname;
-    
-    public String getvCenterDCName() {
-    	return vcenterdcname;
-    }
-
-    public String getvCenterIPAddr() {
-    	return vcenteripaddr;
-    }
-    
     public String getVSMIpaddress() {
         return vsmipaddress;
     }

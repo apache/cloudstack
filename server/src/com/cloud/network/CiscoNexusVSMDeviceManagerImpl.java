@@ -131,7 +131,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
 
     	if (VSMObj == null) {    		
     		// Create the VSM record. For now, we aren't using the vsmName field.
-    		VSMObj = new CiscoNexusVSMDeviceVO(ipaddress, username, password, vCenterIpaddr, vCenterDcName);
+    		VSMObj = new CiscoNexusVSMDeviceVO(ipaddress, username, password);
     		Transaction txn = Transaction.currentTxn();
     		try {
    				txn.start();

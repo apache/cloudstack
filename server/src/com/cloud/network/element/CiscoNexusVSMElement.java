@@ -216,8 +216,6 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     	response.setDeviceName(vsmDeviceVO.getvsmName());
     	response.setDeviceState(vsmDeviceVO.getvsmDeviceState().toString());    	
     	response.setMgmtIpAddress(vsmDeviceVO.getipaddr());
-    	response.setvCenterDcName(vsmDeviceVO.getvCenterDCName());    	
-    	response.setvCenterIpAddress(vsmDeviceVO.getvCenterIPAddr());
     	// The following values can be null, so check for that.
     	if(vsmDeviceVO.getvsmConfigMode() != null)
     		response.setVSMConfigMode(vsmDeviceVO.getvsmConfigMode().toString());

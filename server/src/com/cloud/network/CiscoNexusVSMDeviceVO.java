@@ -64,13 +64,6 @@ public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity{
     @Column(name = "ipaddr")
     private String ipaddr;
     
-    @Column(name = "vcenter_ipaddr")
-    private String vCenterIPAddr;
-    
-    // Name of the DataCenter (as seen in vCenter) that this VSM manages.
-    @Column(name = "vcenter_dc_name")
-    private String vCenterDCName;
-    
     @Column(name = "management_vlan")
     private int managementVlan;
 
@@ -118,14 +111,6 @@ public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity{
 
     public String getipaddr() {
     	return ipaddr;
-    }
-    
-    public String getvCenterIPAddr() {
-    	return vCenterIPAddr;
-    }
-    
-    public String getvCenterDCName() {
-    	return vCenterDCName;
     }
     
     public int getManagementVlan() {
@@ -186,14 +171,6 @@ public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity{
     	this.ipaddr = ipaddr;
     }
     
-    public void setvCenterIPAddr(String ipaddr) {
-    	this.vCenterIPAddr = ipaddr;
-    }
-    
-    public void setvCenterDCName(String dcname) {
-    	this.vCenterDCName = dcname;
-    }
-    
     public void setManagementVlan(int vlan) {
     	this.managementVlan = vlan;
     }
@@ -227,21 +204,9 @@ public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity{
     }
  
         
-    // Constructor methods.
+    // Constructors.
     
-    public CiscoNexusVSMDeviceVO(String vsmIpAddr, String username, String password, String vCenterIpaddr, String vCenterDcName) {    	
-    	// Set all the VSM's properties here.
-        this.uuid = UUID.randomUUID().toString();
-        this.setMgmtIpAddr(vsmIpAddr);
-        this.setVsmUserName(username);
-        this.setVsmPassword(password);
-        this.setvCenterIPAddr(vCenterIpaddr);
-        this.setvCenterDCName(vCenterDcName);
-        // By default, enable a VSM.
-        this.setVsmDeviceState(VSMDeviceState.Enabled);
-    }
-    
-    public CiscoNexusVSMDeviceVO(String vsmIpAddr, String username, String password, long dummy) {    	
+    public CiscoNexusVSMDeviceVO(String vsmIpAddr, String username, String password) {    	
     	// Set all the VSM's properties here.
         this.uuid = UUID.randomUUID().toString();
         this.setMgmtIpAddr(vsmIpAddr);
