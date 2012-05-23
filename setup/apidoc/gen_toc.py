@@ -82,6 +82,7 @@ known_categories = {
     'Zone': 'Zone',
     'NetworkOffering': 'Network Offering',
     'Network': 'Network',
+    'CiscoNexus': 'Network',
     'Vpn': 'VPN',
     'Limit': 'Limit',
     'ResourceCount': 'Limit',
@@ -124,7 +125,8 @@ def choose_category(fn):
     for k, v in known_categories.iteritems():
         if k in fn:
             return v
-    raise Exception(fn)
+    raise Exception('Need to add a category for %s to %s:known_categories' %
+                    (fn, __file__))
 
 
 for f in sys.argv:
