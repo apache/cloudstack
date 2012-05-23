@@ -46,11 +46,25 @@ public class AddTrafficMonitorCmd extends BaseCmd {
 	
 	@Parameter(name=ApiConstants.URL, type=CommandType.STRING, required = true, description="URL of the traffic monitor Host")
 	private String url;	 
+
+	@Parameter(name=ApiConstants.INCL_ZONES, type=CommandType.STRING, description="Traffic going into the listed zones will be metered")
+	private String inclZones;	 
+	
+	@Parameter(name=ApiConstants.EXCL_ZONES, type=CommandType.STRING, description="Traffic going into the listed zones will not be metered")
+	private String exclZones;	 
 	
 	///////////////////////////////////////////////////
 	/////////////////// Accessors ///////////////////////
 	/////////////////////////////////////////////////////
 	 
+	public String getInclZones() {
+		return inclZones;
+	}
+	
+	public String getExclZones() {
+		return exclZones;
+	}
+
 	public Long getZoneId() {
 	    return zoneId;
 	}

@@ -45,7 +45,6 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupTrafficMonitorCommand;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.ExecutionException;
 
 public class TrafficSentinelResource implements ServerResource {
@@ -55,8 +54,8 @@ public class TrafficSentinelResource implements ServerResource {
     private String _ip;
     private String _guid;
     private String _url;
-    private static Integer _numRetries;
-    private static Integer _timeoutInSeconds;
+    private String _inclZones;
+    private String _exclZones;
 	
 	
 	private static final Logger s_logger = Logger.getLogger(TrafficSentinelResource.class);
@@ -87,9 +86,8 @@ public class TrafficSentinelResource implements ServerResource {
                 throw new ConfigurationException("Unable to find url");
             }
             
-            _numRetries = NumbersUtil.parseInt((String) params.get("numRetries"), 1);
-            
-            _timeoutInSeconds = NumbersUtil.parseInt((String) params.get("timeoutInSeconds"), 300);
+            _inclZones = (String)params.get("inclZones");
+            _exclZones = (String)params.get("exclZones");
 
     		return true;
     	} catch (Exception e) {
@@ -193,6 +191,15 @@ public class TrafficSentinelResource implements ServerResource {
 		try {
 		  //Direct Network Usage
             URL trafficSentinel;
+            //Use Global include/exclude zones if there are no per TS zones 
+            if(_inclZones == null){
+            	_inclZones = cmd.getIncludeZones();
+            }
+            
+            if(_exclZones == null){
+            	_exclZones = cmd.getExcludeZones();
+            }
+            
             try {
                 //Query traffic Sentinel
                 trafficSentinel = new URL(_url+"/inmsf/Query?script="+URLEncoder.encode(getScript(cmd.getPublicIps(), cmd.getStart(), cmd.getEnd()),"UTF-8")
@@ -243,12 +250,28 @@ public class TrafficSentinelResource implements ServerResource {
 	            IpAddresses += ",";
 	        }
 	    }
+	    String destZoneCondition = "";
+	    if(_inclZones !=null && !_inclZones.isEmpty()){
+	    	destZoneCondition = " & destinationzone = "+_inclZones; 
+	    }
+	    if(_exclZones !=null && !_exclZones.isEmpty()){
+	    	destZoneCondition += " & destinationzone != "+_exclZones; 
+	    }
+	    
+	    String srcZoneCondition = "";
+	    if(_inclZones !=null && !_inclZones.isEmpty()){
+	    	srcZoneCondition = " & sourcezone = "+_inclZones; 
+	    }
+	    if(_exclZones !=null && !_exclZones.isEmpty()){
+	    	srcZoneCondition += " & sourcezone != "+_exclZones; 
+	    }
+	    
 	    String startDate = getDateString(start);
 	    String endtDate = getDateString(end);
 	    StringBuffer sb = new StringBuffer();
 	    sb.append("var q = Query.topN(\"historytrmx\",");
 	    sb.append("                 \"ipsource,bytes\",");
-        sb.append("                 \"ipsource = "+IpAddresses+" & destinationzone = EXTERNAL\",");
+        sb.append("                 \"ipsource = "+IpAddresses+destZoneCondition+"\",");
         sb.append("                 \""+startDate+", "+endtDate+"\",");
 	    sb.append("                 \"bytes\",");
 	    sb.append("                 100000);");
@@ -261,7 +284,7 @@ public class TrafficSentinelResource implements ServerResource {
 	    sb.append("  });");
         sb.append("var q = Query.topN(\"historytrmx\",");
         sb.append("                 \"ipdestination,bytes\",");
-        sb.append("                 \"ipdestination = "+IpAddresses+" & sourcezone = EXTERNAL\",");
+        sb.append("                 \"ipdestination = "+IpAddresses+srcZoneCondition+"\",");
         sb.append("                 \""+startDate+", "+endtDate+"\",");
         sb.append("                 \"bytes\",");
         sb.append("                 100000);");	    

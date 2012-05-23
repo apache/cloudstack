@@ -270,6 +270,8 @@ public enum Config {
     DirectNetworkStatsInterval("Usage", ManagementServer.class, Integer.class, "direct.network.stats.interval", "86400", "Interval (in seconds) to collect stats from Traffic Monitor", null),
     UsageSanityCheckInterval("Usage", ManagementServer.class, Integer.class, "usage.sanity.check.interval", null, "Interval (in days) to check sanity of usage data", null),
     UsageAggregationTimezone("Usage", ManagementServer.class, String.class, "usage.aggregation.timezone", "GMT", "The timezone to use for usage stats aggregation", null),
+    TrafficSentinelIncludeZones("Usage", ManagementServer.class, Integer.class, "traffic.sentinel.include.zones", "EXTERNAL", "Traffic going into specified list of zones is metered. For metering all traffic leave this parameter empty", null),
+    TrafficSentinelExcludeZones("Usage", ManagementServer.class, Integer.class, "traffic.sentinel.exclude.zones", "", "Traffic going into specified list of zones is not metered.", null),
     
 	// Hidden
 	UseSecondaryStorageVm("Hidden", ManagementServer.class, Boolean.class, "secondary.storage.vm", "false", "Deploys a VM per zone to manage secondary storage if true, otherwise secondary storage is mounted on management server", null),

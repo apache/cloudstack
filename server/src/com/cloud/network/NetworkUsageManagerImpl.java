@@ -104,6 +104,8 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
 	@Inject ResourceManager _resourceMgr;
     ScheduledExecutorService _executor;
     int _networkStatsInterval;
+    String _TSinclZones;
+    String _TSexclZones;
     protected SearchBuilder<IPAddressVO> AllocatedIpSearch;
 
     @Override
@@ -144,8 +146,8 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
         hostParams.put("zone", String.valueOf(zoneId));
         hostParams.put("ipaddress", ipAddress);
         hostParams.put("url", cmd.getUrl());
-        //hostParams("numRetries", numRetries);
-        //hostParams("timeout", timeout);
+        hostParams.put("inclZones", (cmd.getInclZones() != null) ? cmd.getInclZones() : _TSinclZones);
+        hostParams.put("exclZones", (cmd.getExclZones() != null) ? cmd.getExclZones() : _TSexclZones);
         hostParams.put("guid", guid);
         hostParams.put("name", guid);
 
@@ -158,7 +160,14 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
         Map<String, String> hostDetails = new HashMap<String, String>();
         hostDetails.put("url", cmd.getUrl());
         hostDetails.put("last_collection", ""+System.currentTimeMillis());
-
+        if(cmd.getInclZones() != null){
+        	hostDetails.put("inclZones", cmd.getInclZones());
+        }
+        if(cmd.getExclZones() != null){
+        	hostDetails.put("exclZones", cmd.getExclZones());
+        }
+        
+        
         Host trafficMonitor = _resourceMgr.addHost(zoneId, resource, Host.Type.TrafficMonitor, hostDetails);
         return trafficMonitor;
     }
@@ -218,6 +227,8 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
         AllocatedIpSearch.done();
         
         _networkStatsInterval = NumbersUtil.parseInt(_configDao.getValue(Config.DirectNetworkStatsInterval.key()), 86400);
+        _TSinclZones = _configDao.getValue(Config.TrafficSentinelIncludeZones.key());
+        _TSexclZones = _configDao.getValue(Config.TrafficSentinelExcludeZones.key());
         _agentMgr.registerForHostEvents(new DirectNetworkStatsListener( _networkStatsInterval), true, false, false);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
@@ -368,7 +379,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
             
             //Get usage for Ips which were assigned for the entire duration
             if(fullDurationIpUsage.size() > 0){
-                DirectNetworkUsageCommand cmd = new DirectNetworkUsageCommand(IpList, lastCollection, now);
+                DirectNetworkUsageCommand cmd = new DirectNetworkUsageCommand(IpList, lastCollection, now, _TSinclZones, _TSexclZones);
                 DirectNetworkUsageAnswer answer = (DirectNetworkUsageAnswer) _agentMgr.easySend(host.getId(), cmd);
                 if (answer == null || !answer.getResult()) {
                     String details = (answer != null) ? answer.getDetails() : "details unavailable";
@@ -401,7 +412,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
             for(UsageIPAddressVO usageIp : IpPartialUsage){
                 IpList = new ArrayList<String>() ;
                 IpList.add(usageIp.getAddress());
-                DirectNetworkUsageCommand cmd = new DirectNetworkUsageCommand(IpList, usageIp.getAssigned(), usageIp.getReleased());
+                DirectNetworkUsageCommand cmd = new DirectNetworkUsageCommand(IpList, usageIp.getAssigned(), usageIp.getReleased(), _TSinclZones, _TSexclZones);
                 DirectNetworkUsageAnswer answer = (DirectNetworkUsageAnswer) _agentMgr.easySend(host.getId(), cmd);
                 if (answer == null || !answer.getResult()) {
                     String details = (answer != null) ? answer.getDetails() : "details unavailable";
@@ -528,8 +539,11 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
 
 	@Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
-	    // TODO Auto-generated method stub
-	    return null;
+		if(host.getType() != Host.Type.TrafficMonitor){
+			return null;
+		}
+		
+		return new DeleteHostAnswer(true);
     }
 
 }

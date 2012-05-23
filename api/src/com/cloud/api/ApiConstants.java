@@ -353,6 +353,8 @@ public class ApiConstants {
     public static final String VSM_CONFIG_MODE = "vsmconfigmode";
     public static final String VSM_CONFIG_STATE = "vsmconfigstate";
     public static final String VSM_DEVICE_STATE = "vsmdevicestate";
+    public static final String INCL_ZONES = "includezones";
+    public static final String EXCL_ZONES = "excludezones";
     
     public enum HostDetails {
         all, capacity, events, stats, min;
