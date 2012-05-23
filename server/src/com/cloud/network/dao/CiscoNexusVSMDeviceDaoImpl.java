@@ -32,6 +32,7 @@ public class CiscoNexusVSMDeviceDaoImpl extends GenericDaoBase<CiscoNexusVSMDevi
     final SearchBuilder<CiscoNexusVSMDeviceVO> nameSearch;
     final SearchBuilder<CiscoNexusVSMDeviceVO> ipaddrSearch;
     final SearchBuilder<CiscoNexusVSMDeviceVO> genericVlanIdSearch;
+    final SearchBuilder<CiscoNexusVSMDeviceVO> fullTableSearch;
     // We will add more searchbuilder objects.
     
     
@@ -61,6 +62,9 @@ public class CiscoNexusVSMDeviceDaoImpl extends GenericDaoBase<CiscoNexusVSMDevi
         ipaddrSearch.and("ipaddr", ipaddrSearch.entity().getipaddr(), Op.EQ);
         ipaddrSearch.done();
         
+        fullTableSearch = createSearchBuilder();
+        fullTableSearch.done();
+        
         // We may add more and conditions by specifying more fields, like say, accountId.
     }
     
@@ -86,6 +90,11 @@ public class CiscoNexusVSMDeviceDaoImpl extends GenericDaoBase<CiscoNexusVSMDevi
         SearchCriteria<CiscoNexusVSMDeviceVO> sc = mgmtVlanIdSearch.create();
         sc.setParameters("managementVlan", vlanId);        
         return search(sc, null);
+    }
+    
+    public List<CiscoNexusVSMDeviceVO> listAllVSMs() {
+    	SearchCriteria<CiscoNexusVSMDeviceVO> sc = fullTableSearch.create();
+    	return search(sc, null);
     }
 
     public List<CiscoNexusVSMDeviceVO> listByVlanId(int vlanId) {

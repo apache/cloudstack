@@ -20,13 +20,14 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd;
+import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.PlugService;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.CiscoNexusVSMResponse;
+import com.cloud.api.response.ListResponse;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
@@ -34,13 +35,22 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.CiscoNexusVSMDevice;
 import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Implementation(responseObject=CiscoNexusVSMResponse.class, description="Retrieves a Cisco Nexus 1000v Virtual Switch Manager device associated with a Cluster")
-public class ListCiscoVSMDetailsCmd extends BaseCmd {
+public class ListCiscoNexusVSMsCmd extends BaseListCmd {
 
-    public static final Logger s_logger = Logger.getLogger(ListCiscoVSMDetailsCmd.class.getName());
-    private static final String s_name = "listciscovsmdetailscmdresponse";
+	/**
+	 * This command returns a list of all the VSMs configured in the management server.
+	 * If a clusterId is specified, it will return a list containing only that VSM 
+	 * that is associated with that cluster. If a zone is specified, it will pull
+	 * up all the clusters of type vmware in that zone, and prepare a list of VSMs
+	 * associated with those clusters.
+	 */
+    public static final Logger s_logger = Logger.getLogger(ListCiscoNexusVSMsCmd.class.getName());
+    private static final String s_name = "listcisconexusvsmscmdresponse";
     @PlugService CiscoNexusVSMElementService _ciscoNexusVSMService;
 
     /////////////////////////////////////////////////////
@@ -48,8 +58,12 @@ public class ListCiscoVSMDetailsCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="cluster")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required = true, description="Id of the CloudStack cluster in which the Cisco Nexus 1000v VSM appliance.")
+    @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, required = false, description="Id of the CloudStack cluster in which the Cisco Nexus 1000v VSM appliance.")
     private long clusterId;
+    
+    @IdentityMapper(entityTableName="data_center")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required = false, description="Id of the CloudStack cluster in which the Cisco Nexus 1000v VSM appliance.")
+    private long zoneId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -57,6 +71,10 @@ public class ListCiscoVSMDetailsCmd extends BaseCmd {
     
     public long getClusterId() {
     	return clusterId;
+    }
+    
+    public long getZoneId() {
+    	return zoneId;
     }
 
     /////////////////////////////////////////////////////
@@ -68,14 +86,22 @@ public class ListCiscoVSMDetailsCmd extends BaseCmd {
     // is invoked. That's the reason why we don't have any uuid-dbid translation code here.
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
-    	CiscoNexusVSMDevice vsmDevice = _ciscoNexusVSMService.getCiscoNexusVSMByClusId(this);
-        if (vsmDevice != null) {
-        	CiscoNexusVSMResponse response = _ciscoNexusVSMService.createCiscoNexusVSMDetailedResponse(vsmDevice);
-        	response.setObjectName("cisconexusvsm");
-        	response.setResponseName(getCommandName());
-        	this.setResponseObject(response);
-        } else {
-        	throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to retrieve Cisco Nexus Virtual Switch Manager for the specified cluster due to an internal error.");
+    	List<? extends CiscoNexusVSMDevice> vsmDeviceList = _ciscoNexusVSMService.getCiscoNexusVSMs(this);
+    	
+    	if (vsmDeviceList.size() > 0) {
+    		ListResponse<CiscoNexusVSMResponse> response = new ListResponse<CiscoNexusVSMResponse>();
+    		List<CiscoNexusVSMResponse> vsmResponses = new ArrayList<CiscoNexusVSMResponse>();
+    		for (CiscoNexusVSMDevice vsmDevice : vsmDeviceList) {
+    			CiscoNexusVSMResponse vsmresponse = _ciscoNexusVSMService.createCiscoNexusVSMDetailedResponse(vsmDevice);
+    			vsmresponse.setObjectName("cisconexusvsm");
+    			response.setResponseName(getCommandName());
+    			vsmResponses.add(vsmresponse);
+    		}
+    		response.setResponses(vsmResponses);
+    		response.setResponseName(getCommandName());
+    		this.setResponseObject(response);
+    	} else {
+        	throw new ServerApiException(BaseListCmd.INTERNAL_ERROR, "No VSM found.");
         }
     }
  

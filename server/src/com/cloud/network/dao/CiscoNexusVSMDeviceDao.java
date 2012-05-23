@@ -54,6 +54,13 @@ public interface CiscoNexusVSMDeviceDao extends GenericDao<CiscoNexusVSMDeviceVO
     List<CiscoNexusVSMDeviceVO> listByMgmtVlan(int vlanId);
     
     /**
+     * Lists all configured VSMs on the management server.
+     * @return
+     */
+    List<CiscoNexusVSMDeviceVO> listAllVSMs();
+    
+    
+    /**
      * Below is a big list of other functions that we may need, but will declare/define/implement once we implement
      * the functions above. Pasting those below to not lose track of them.
      * 

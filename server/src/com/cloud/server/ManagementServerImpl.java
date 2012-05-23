@@ -160,7 +160,7 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.offering.ServiceOffering;
+import com.cloud.org.Cluster;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -791,7 +791,20 @@ public class ManagementServerImpl implements ManagementServer {
 
         return sol;
     }
+    
+    @Override
+    public List<? extends Cluster> searchForClusters(long zoneId, Long startIndex, Long pageSizeVal, String hypervisorType) {
+    	Filter searchFilter = new Filter(ClusterVO.class, "id", true, startIndex, pageSizeVal);
+    	SearchCriteria<ClusterVO> sc = _clusterDao.createSearchCriteria();
+    	
+    	zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
 
+    	sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+    	sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hypervisorType);
+    	
+    	return _clusterDao.search(sc, searchFilter);
+    }
+    
     @Override
     public List<ClusterVO> searchForClusters(ListClustersCmd cmd) {
         Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());

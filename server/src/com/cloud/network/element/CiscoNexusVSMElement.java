@@ -14,40 +14,32 @@ package com.cloud.network.element;
 
 import java.util.List;
 import java.util.Map;
+import java.util.ArrayList;
 
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.AgentManager;
 import com.cloud.api.commands.DeleteCiscoNexusVSMCmd;
 import com.cloud.api.commands.EnableCiscoNexusVSMCmd;
 import com.cloud.api.commands.DisableCiscoNexusVSMCmd;
-import com.cloud.api.commands.ListCiscoVSMDetailsCmd;
+import com.cloud.api.commands.ListCiscoNexusVSMsCmd;
 import com.cloud.api.response.CiscoNexusVSMResponse;
-import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
 import com.cloud.network.CiscoNexusVSMDevice;
 import com.cloud.network.CiscoNexusVSMDeviceManagerImpl;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkManager;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -55,10 +47,11 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.org.Cluster;
 import com.cloud.utils.component.Manager;
-import com.cloud.utils.db.DB;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.server.ManagementService;
 
 @Local(value = NetworkElement.class)
 public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl implements CiscoNexusVSMElementService, NetworkElement, Manager {
@@ -66,30 +59,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     private static final Logger s_logger = Logger.getLogger(CiscoNexusVSMElement.class);
 
     @Inject
-    NetworkManager _networkManager;
-    @Inject
-    ConfigurationManager _configMgr;
-    @Inject
-    NetworkServiceMapDao _ntwkSrvcDao;
-    @Inject
-    AgentManager _agentMgr;
-    @Inject
-    NetworkManager _networkMgr;
-    @Inject
-    HostDao _hostDao;
-    @Inject
-    DataCenterDao _dcDao;
-    @Inject
-    HostDetailsDao _hostDetailDao;    
-    @Inject
-    PhysicalNetworkDao _physicalNetworkDao;
-    @Inject
-    NetworkDao _networkDao;
-    @Inject
-    HostDetailsDao _detailsDao;
-    @Inject
-    ConfigurationDao _configDao;
-    
+    CiscoNexusVSMDeviceDao _vsmDao;    
 
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
@@ -161,7 +131,6 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     	return true;
     }
 
-
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_DELETE, eventDescription = "deleting VSM", async = true)   
     public boolean deleteCiscoNexusVSM(DeleteCiscoNexusVSMCmd cmd) {
@@ -178,7 +147,7 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
 
     @Override
     public boolean enableCiscoNexusVSM(EnableCiscoNexusVSMCmd cmd) {
-    	boolean result;    	
+    	boolean result;
     	result = enableCiscoNexusVSM(cmd.getCiscoNexusVSMDeviceId());
     	return result;
     }
@@ -191,11 +160,45 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     }
     
     @Override
-    public CiscoNexusVSMDeviceVO getCiscoNexusVSMByClusId(ListCiscoVSMDetailsCmd cmd) {
-    	CiscoNexusVSMDeviceVO result = getCiscoVSMbyClusId(cmd.getClusterId());
-    	if (result == null) {
-    		throw new CloudRuntimeException("No Cisco VSM associated with specified Cluster Id");
+    public List<CiscoNexusVSMDeviceVO> getCiscoNexusVSMs(ListCiscoNexusVSMsCmd cmd) {
+    	// If clusterId is defined, then it takes precedence, and we will return
+    	// the VSM associated with this cluster.    	
+
+    	Long clusterId = cmd.getClusterId();
+    	Long zoneId = cmd.getZoneId();
+    	List<CiscoNexusVSMDeviceVO> result = new ArrayList<CiscoNexusVSMDeviceVO>();
+    	if (clusterId != null && clusterId.longValue() != 0) {    		
+    		// Find the VSM associated with this clusterId and return a list.
+    		CiscoNexusVSMDeviceVO vsm = getCiscoVSMbyClusId(cmd.getClusterId());
+    		if (vsm == null) {
+        		throw new CloudRuntimeException("No Cisco VSM associated with specified Cluster Id");
+        	}
+    		// Else, add it to a list and return the list.
+    		result.add(vsm);
+    		return result;
+    	}    	
+    	// Else if there is only a zoneId defined, get a list of all vmware clusters
+    	// in the zone, and then for each cluster, pull the VSM and prepare a list.
+    	if (zoneId != null && zoneId.longValue() != 0) {
+    		ManagementService ref = cmd.getMgmtServiceRef();    	
+    		List<? extends Cluster> clusterList = ref.searchForClusters(zoneId, cmd.getStartIndex(), cmd.getPageSizeVal(), "VMware");
+    	
+    		if (clusterList.size() == 0) {
+    			throw new CloudRuntimeException("No VMWare clusters found in the specified zone!");
+    		}
+    		// Else, iterate through each vmware cluster, pull its VSM if it has one, and add to the list.
+    		for (Cluster clus : clusterList) {
+    			CiscoNexusVSMDeviceVO vsm = getCiscoVSMbyClusId(clus.getId());
+    			if (vsm != null)
+    				result.add(vsm);
+    		}
+    		return result;
     	}
+    	
+    	// If neither is defined, we will simply return the entire list of VSMs
+    	// configured in the management server.
+    	// TODO: Is this a safe thing to do? Only ROOT admin can invoke this call.
+    	result = _vsmDao.listAllVSMs();    	
     	return result;
     }
     
