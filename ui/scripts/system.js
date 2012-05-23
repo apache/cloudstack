@@ -6227,9 +6227,12 @@
                 if(args.data.hypervisor == "VMware") {
                   array1.push("&username=" + todb(args.data.vCenterUsername));
                   array1.push("&password=" + todb(args.data.vCenterPassword));
-                  array1.push('&vsmipaddress=' + args.data.vsmipaddress);
-                  array1.push('&vsmusername=' + args.data.vsmusername);
-                  array1.push('&vsmpassword=' + args.data.vsmpassword);
+
+                  if (args.data.vsmipaddress) {
+                    array1.push('&vsmipaddress=' + args.data.vsmipaddress);
+                    array1.push('&vsmusername=' + args.data.vsmusername);
+                    array1.push('&vsmpassword=' + args.data.vsmpassword);
+                  }
 
                   var hostname = args.data.vCenterHost;
                   var dcName = args.data.vCenterDatacenter;
