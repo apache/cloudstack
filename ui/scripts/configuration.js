@@ -1126,7 +1126,7 @@
 										if((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true)
 										   &&(args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'Netscaler' 
 											    || args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'F5BigIp')
-											 &&(args.$form.find('.form-item[rel=\"guestIpType\"]').find('select').val() == 'Isolated')) {										  
+											 ) {										  
 											args.$form.find('.form-item[rel=\"service.Lb.lbIsolationDropdown\"]').css('display', 'inline-block');	
 										}
 										else {										  
