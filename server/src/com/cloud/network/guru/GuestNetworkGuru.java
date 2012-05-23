@@ -42,11 +42,11 @@ import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -312,16 +312,21 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         if (nic.getIp4Address() == null) {
             nic.setBroadcastUri(network.getBroadcastUri());
             nic.setIsolationUri(network.getBroadcastUri());
-            nic.setGateway(network.getGateway());
 
             String guestIp = null;
             if (network.getSpecifyIpRanges()) {
                 _networkMgr.allocateDirectIp(nic, dc, vm, network, nic.getRequestedIp());
             } else {
-                guestIp = _networkMgr.acquireGuestIpAddress(network, nic.getRequestedIp());
-                if (guestIp == null) {
-                    throw new InsufficientVirtualNetworkCapcityException("Unable to acquire Guest IP" +
-                    		" address for network " + network, DataCenter.class, dc.getId());
+                //if Vm is router vm, set ip4 to the network gateway
+                if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter) {
+                    guestIp = network.getGateway();
+                } else {
+                    nic.setGateway(network.getGateway());
+                    guestIp = _networkMgr.acquireGuestIpAddress(network, nic.getRequestedIp());
+                    if (guestIp == null) {
+                        throw new InsufficientVirtualNetworkCapcityException("Unable to acquire Guest IP" +
+                                " address for network " + network, DataCenter.class, dc.getId());
+                    }
                 }
 
                 nic.setIp4Address(guestIp);

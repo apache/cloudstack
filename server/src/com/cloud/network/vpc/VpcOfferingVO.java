@@ -130,7 +130,6 @@ public class VpcOfferingVO implements VpcOffering{
         return buf.append(id).append("-").append(name).append("]").toString();
     }
 
-
     public void setName(String name) {
         this.name = name;
     }

@@ -165,5 +165,11 @@ public class VpcVO implements Vpc, Identity {
     public void setDisplayText(String displayText) {
         this.displayText = displayText;
     }
+    
+    @Override
+    public String toString() {
+        StringBuilder buf = new StringBuilder("[VPC [");
+        return buf.append(id).append("-").append(name).append("]").toString();
+    }
 
 }

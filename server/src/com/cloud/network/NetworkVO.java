@@ -179,9 +179,9 @@ public class NetworkVO implements Network, Identity {
 
     public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, 
             long related, String name, String displayText, String networkDomain, GuestType guestType, long dcId, 
-            Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges) {
+            Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges, Long vpcId) {
         this(id, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, domainId, accountId,
-                related, name, displayText, networkDomain, guestType, dcId, physicalNetworkId, aclType, specifyIpRanges);
+                related, name, displayText, networkDomain, guestType, dcId, physicalNetworkId, aclType, specifyIpRanges, vpcId);
         this.gateway = that.getGateway();
         this.cidr = that.getCidr();
         this.broadcastUri = that.getBroadcastUri();
@@ -208,11 +208,12 @@ public class NetworkVO implements Network, Identity {
      * @param guestType TODO
      * @param aclType TODO
      * @param specifyIpRanges TODO
+     * @param vpcId TODO
      * @param dataCenterId
      */
     public NetworkVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, 
             long networkOfferingId, long domainId, long accountId, long related, String name, String displayText, 
-            String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges) {
+            String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges, Long vpcId) {
         this(trafficType, mode, broadcastDomainType, networkOfferingId, State.Allocated, dcId, physicalNetworkId);
         this.domainId = domainId;
         this.accountId = accountId;
@@ -225,6 +226,7 @@ public class NetworkVO implements Network, Identity {
     	this.uuid = UUID.randomUUID().toString();
         this.guestType = guestType;
         this.specifyIpRanges = specifyIpRanges;
+        this.vpcId = vpcId;
     }
 
     @Override
