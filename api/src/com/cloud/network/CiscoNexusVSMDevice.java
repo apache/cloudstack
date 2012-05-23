@@ -46,10 +46,6 @@ public interface CiscoNexusVSMDevice {
 
     public String getipaddr();
     
-    public String getvCenterIPAddr();
-    
-    public String getvCenterDCName();
-    
     public int getManagementVlan();
     
     public int getControlVlan();

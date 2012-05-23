@@ -117,7 +117,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         String guestTrafficLabel = null;
         Map<String, String> vsmCredentials = null;
         if (_vmwareMgr.getNexusVSwitchGlobalParameter()) {
-            if (_vmwareMgr.getPrivateVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus")) {
+            if (_vmwareMgr.getPrivateVSwitchTypeGlobalParameter() != null && _vmwareMgr.getPrivateVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus")) {
                 // Get physical network label
                 privateTrafficLabel = _netmgr.getDefaultManagementTrafficLabel(dcId, HypervisorType.VMware);
                 if (privateTrafficLabel != null) {
@@ -128,7 +128,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
             DataCenterVO zone = _dcDao.findById(dcId);
             NetworkType zoneType = zone.getNetworkType();
 
-            if (zoneType != NetworkType.Basic && _vmwareMgr.getPublicVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus")) {
+            if (zoneType != NetworkType.Basic && _vmwareMgr.getPublicVSwitchTypeGlobalParameter() != null && _vmwareMgr.getPublicVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus")) {
                 // Get physical network label
                 publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId, HypervisorType.VMware);
                 if (publicTrafficLabel != null) {
@@ -139,7 +139,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
                 s_logger.info("Skipping detection of public traffic label as zone type is Basic.");
             }
 
-            if (_vmwareMgr.getGuestVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus")) {
+            if (_vmwareMgr.getGuestVSwitchTypeGlobalParameter() != null && _vmwareMgr.getGuestVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus")) {
                 // Get physical network label
                 guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(dcId, HypervisorType.VMware);
                 if (guestTrafficLabel != null) {
