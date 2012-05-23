@@ -378,7 +378,6 @@
   <target name="build-apidocs" description="Generate api documentation" depends="build-all">
       <property name="commands.file" location="${dist.dir}/client/conf/commands.properties" /> 
       <property name="commands.ext.file" location="${dist.dir}/client/conf/commands-ext.properties" />
-      <property name="commands.simulator.file" location="${dist.dir}/client/conf/commands-simulator.properties" />
   
 	<echo message="build-apidocs" />
     <exec dir="${apidoc.scripts.dir}" executable="bash">
