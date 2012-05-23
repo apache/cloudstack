@@ -18,7 +18,7 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.remoteSSHClient import remoteSSHClient
+from remoteSSHClient import remoteSSHClient
 from utils import *
 from base import *
 

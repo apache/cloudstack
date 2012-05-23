@@ -16,7 +16,7 @@
 
 import marvin
 import time
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin import remoteSSHClient
 from marvin.cloudstackAPI import *
 from marvin import cloudstackConnection
 #from cloudstackConnection import cloudConnection
