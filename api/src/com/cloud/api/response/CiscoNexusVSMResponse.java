@@ -32,12 +32,6 @@ public class CiscoNexusVSMResponse extends BaseResponse {
     
     @SerializedName(ApiConstants.EXTERNAL_SWITCH_MGMT_DEVICE_STATE) @Param(description="device state")
     private String deviceState;
-
-    @SerializedName(ApiConstants.VCENTER_IP_ADDRESS) @Param(description="ipaddress of vCenter the VSM connects to")
-    private String vcenteripaddress;
-    
-    @SerializedName(ApiConstants.VCENTER_DC_NAME) @Param(description="name of the vCenter Data Center the VSM is associated with")
-    private String vcenterdcname;
     
     @SerializedName(ApiConstants.VSM_MGMT_VLAN_ID) @Param(description="management vlan id of the VSM")
     private String vsmmgmtvlanid;
@@ -78,14 +72,6 @@ public class CiscoNexusVSMResponse extends BaseResponse {
     
     public void setDeviceState(String deviceState) {
     	this.deviceState = deviceState;
-    }
-    
-    public void setvCenterIpAddress(String ipaddress) {
-    	this.vcenteripaddress = ipaddress;
-    }
-    
-    public void setvCenterDcName(String dcName) {
-    	this.vcenterdcname = dcName;
     }
     
     public void setVSMMgmtVlanId(String vlanId) {

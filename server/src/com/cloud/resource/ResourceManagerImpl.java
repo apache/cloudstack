@@ -420,8 +420,6 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         	String vsmIp = cmd.getVSMIpaddress();
             String vsmUser = cmd.getVSMUsername();
             String vsmPassword = cmd.getVSMPassword();
-            String vCenterIpaddr = cmd.getvCenterIPAddr();
-            String vCenterDcName = cmd.getvCenterDCName();
 
         	if(vsmIp != null && vsmUser != null && vsmPassword != null) {
 	            NetconfHelper netconfClient;
@@ -435,7 +433,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 	                throw new CloudRuntimeException(msg);
 	            }
 	            // persist credentials to database
-	            CiscoNexusVSMDeviceVO vsm = new CiscoNexusVSMDeviceVO(vsmIp, vsmUser, vsmPassword, vCenterIpaddr, vCenterDcName);
+	            CiscoNexusVSMDeviceVO vsm = new CiscoNexusVSMDeviceVO(vsmIp, vsmUser, vsmPassword);
 	            
 	            Transaction txn = Transaction.currentTxn();
 	            try {
