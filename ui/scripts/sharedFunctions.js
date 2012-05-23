@@ -232,7 +232,7 @@ cloudStack.preFilter = {
     }
   },
 	addLoadBalancerDevice: function(args) { //add netscaler device OR add F5 device	  
-		args.$form.bind('change', function() { 		  
+		args.$form.find('.form-item[rel=dedicated]').bind('change', function() { 		  
 			var $dedicated = args.$form.find('.form-item[rel=dedicated]');
 			var $capacity = args.$form.find('.form-item[rel=capacity]');											
 			if($dedicated.find('input[type=checkbox]:checked').length > 0) {												
@@ -240,7 +240,8 @@ cloudStack.preFilter = {
 				$capacity.find('input[type=text]').val('1');
 			}
 			else if($dedicated.find('input[type=checkbox]:unchecked').length > 0) {
-				$capacity.css('display', 'inline-block');												
+				$capacity.css('display', 'inline-block');
+                                $capacity.find('input[type=text]').val('');												
 			}			
 		});			
 		args.$form.change();		
