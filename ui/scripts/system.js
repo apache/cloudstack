@@ -6079,6 +6079,8 @@
                   hypervisor: {
                     label: 'label.hypervisor',
                     select: function(args) {
+                      var vSwitchEnabled = false;
+
                       $.ajax({
                         url: createURL("listHypervisors"),
                         dataType: "json",
@@ -6093,31 +6095,47 @@
                         }
                       });
 
+                      // Check whether vSwitch capability is enabled
+                      $.ajax({
+                        url: createURL('listConfigurations'),
+                        data: {
+                          name: 'vmware.use.nexus.vswitch'
+                        },
+                        async: false,
+                        success: function(json) {
+                          if (json.listconfigurationsresponse.configuration[0].value == 'true') {
+                            vSwitchEnabled = true;
+                          }
+                        }
+                      });
+
                       args.$select.bind("change", function(event) {
                         var $form = $(this).closest('form');
-                        if($(this).val() == "VMware") {
+                        var $vsmFields = $.merge(
+                          $form.find('.form-item[rel=vsmipaddress]'),
+                          $form.find('.form-item[rel=vsmusername]'),
+                          $form.find('.form-item[rel=vsmpassword]')  
+                        );
+                        
+                        if ($(this).val() == "VMware") {
                           //$('li[input_sub_group="external"]', $dialogAddCluster).show();
                           $form.find('.form-item[rel=vCenterHost]').css('display', 'inline-block');
                           $form.find('.form-item[rel=vCenterUsername]').css('display', 'inline-block');
                           $form.find('.form-item[rel=vCenterPassword]').css('display', 'inline-block');
                           $form.find('.form-item[rel=vCenterDatacenter]').css('display', 'inline-block');
-                          $form.find('.form-item[rel=enableNexusVswitch]').css('display', 'inline-block');
 
-                          //$("#cluster_name_label", $dialogAddCluster).text("vCenter Cluster:");
-                        }
-                        else {
-                          //$('li[input_group="vmware"]', $dialogAddCluster).hide();
+                          if (vSwitchEnabled) {
+                            $vsmFields.css('display', 'inline-block');
+                          } else {
+                            $vsmFields.css('display', 'none'); 
+                          }
+                        } else {
                           $form.find('.form-item[rel=vCenterHost]').css('display', 'none');
                           $form.find('.form-item[rel=vCenterUsername]').css('display', 'none');
                           $form.find('.form-item[rel=vCenterPassword]').css('display', 'none');
                           $form.find('.form-item[rel=vCenterDatacenter]').css('display', 'none');
                           $form.find('.form-item[rel=enableNexusVswitch]').css('display', 'none');
-                          $('.form-item[rel=enableNexusVswitch] input').attr('checked', false);
-                          $form.find('.form-item[rel=nexusVswitchIpAddress]').css('display', 'none');
-                          $form.find('.form-item[rel=nexusVswitchUsername]').css('display', 'none');
-                          $form.find('.form-item[rel=nexusVswitchPassword]').css('display', 'none');
-
-                          //$("#cluster_name_label", $dialogAddCluster).text("Cluster:");
+                          $vsmFields.css('display', 'none');
                         }
                       });
                     }
@@ -6167,25 +6185,18 @@
                     label: 'label.vcenter.datacenter',
                     validation: { required: true }
                   },
-                  enableNexusVswitch: {
-                    label: 'Add Nexus vSwitch',
-                    isBoolean: true
-                  },
                   vsmipaddress: {
                     label: 'vSwitch IP Address',
-                    dependsOn: 'enableNexusVswitch',
                     validation: { required: true },
                     isHidden: true
                   },
                   vsmusername: {
                     label: 'vSwitch Username',
-                    dependsOn: 'enableNexusVswitch',
                     validation: { required: true },
                     isHidden: true
                   },
                   vsmpassword: {
                     label: 'vSwitch Password',
-                    dependsOn: 'enableNexusVswitch',
                     validation: { required: true },
                     isPassword: true,
                     isHidden: true

@@ -34,7 +34,7 @@ class Services:
 
     def __init__(self):
         self.services = {
-                "disk_offering": {
+                "disk_offering":{
                     "displaytext": "Small",
                     "name": "Small",
                     "disksize": 1
@@ -64,8 +64,8 @@ class Services:
                     "name": "Tiny Instance",
                     "displaytext": "Tiny Instance",
                     "cpunumber": 1,
-                    "cpuspeed": 100,  # in MHz
-                    "memory": 64,  # In MBs
+                    "cpuspeed": 100, # in MHz
+                    "memory": 64, # In MBs
                 },
                 "security_group": {
                     "name": 'SSH',
@@ -107,9 +107,8 @@ class Services:
                     "protocol": 'TCP',
                     "startport": 22,
                     "endport": 22,
-                    "cidrlist": '0.0.0.0/0',
                 },
-        "mgmt_server": {
+		"mgmt_server": {
                     "username": "root",
                     "password": "fr3sca",
                     "ipaddress": "192.168.100.21"
@@ -118,7 +117,7 @@ class Services:
             # CentOS 5.3 (64-bit)
             "sleep": 60,
             "timeout": 10,
-            "mode": 'basic',
+            "mode":'basic',
             # Networking mode: Basic or Advanced
         }
 
@@ -801,7 +800,7 @@ class TestDefaultGroupEgressAfterDeploy(cloudstackTestCase):
             # --- www.l.google.com ping statistics ---
             # 1 packets transmitted, 1 received, 0% packet loss, time 0ms
             # rtt min/avg/max/mdev = 25.970/25.970/25.970/0.000 ms
-            self.debug("SSH result: %s" %str(res))
+	    self.debug("SSH result: %s" % str(res))
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
                       (self.virtual_machine.ipaddress, e)
@@ -985,7 +984,7 @@ class TestRevokeEgressRule(cloudstackTestCase):
             # --- www.l.google.com ping statistics ---
             # 1 packets transmitted, 1 received, 0% packet loss, time 0ms
             # rtt min/avg/max/mdev = 25.970/25.970/25.970/0.000 ms
-            self.debug("SSH result: %s" % str(res))
+	    self.debug("SSH result: %s" % str(res))
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
                       (self.virtual_machine.ipaddress, e)
@@ -1026,7 +1025,7 @@ class TestRevokeEgressRule(cloudstackTestCase):
 
         result = security_group.revokeEgress(
                                 self.apiclient,
-                                id=ssh_egress_rule["ruleid"]
+                                id = ssh_egress_rule["ruleid"]
                                 )
         self.debug("Revoke egress rule result: %s" % result)
 
@@ -1319,14 +1318,14 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
                 "Authorizing egress rule for sec group ID: %s for ssh access"
                                                         % security_group.id)
         # Authorize to only account not CIDR
-        user_secgrp_list = {self.accountB.account.name: 'default'}
+	user_secgrp_list = {self.accountB.account.name: 'default'}
 
         egress_rule = security_group.authorizeEgress(
                                         self.apiclient,
                                         self.services["sg_account"],
                                         account=self.accountA.account.name,
                                         domainid=self.accountA.account.domainid,
-                    user_secgrp_list=user_secgrp_list
+					user_secgrp_list=user_secgrp_list
                                         )
 
         self.assertEqual(
@@ -1422,7 +1421,7 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
 
         try:
             self.debug("SSHing into VM type B from VM A")
-            self.debug("VM IP: %s" % self.virtual_machineB.ssh_ip)
+	    self.debug("VM IP: %s" % self.virtual_machineB.ssh_ip)
             res = ssh.execute("ssh %s@%s" % (
                                 self.services["virtual_machine"]["username"],
                                 self.virtual_machineB.ssh_ip
@@ -1592,14 +1591,14 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
                 "Authorizing egress rule for sec group ID: %s for ssh access"
                                                         % security_groupA.id)
         # Authorize to only account not CIDR
-        user_secgrp_list = {self.accountB.account.name: security_groupB.name}
+	user_secgrp_list = {self.accountB.account.name: security_groupB.name}
 
         egress_rule = security_groupA.authorizeEgress(
                                         self.apiclient,
                                         self.services["sg_account"],
                                         account=self.accountA.account.name,
                                         domainid=self.accountA.account.domainid,
-                    user_secgrp_list=user_secgrp_list
+					user_secgrp_list=user_secgrp_list
                                         )
 
         self.assertEqual(
@@ -1716,7 +1715,7 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
 
         try:
             self.debug("SSHing into VB type B from VM A")
-            self.debug("VM IP: %s" % self.virtual_machineB.ssh_ip)
+	    self.debug("VM IP: %s" % self.virtual_machineB.ssh_ip)
 
             res = ssh.execute("ssh %s@%s" % (
                                 self.services["virtual_machine"]["username"],
@@ -1944,7 +1943,6 @@ class TestStartStopVMWithEgressRule(cloudstackTestCase):
                       (self.virtual_machine.ipaddress, e)
                       )
         return
-
 
 @unittest.skip("Valid bug- ID: CS-12647")
 class TestInvalidParametersForEgress(cloudstackTestCase):
@@ -2306,12 +2304,12 @@ class TestEgressAfterHostMaintainance(cloudstackTestCase):
                     )
         vm = vms[0]
 
-        self.debug("Enabling host maintainance for ID: %s" % vm.hostid)
+        self.debug("Enabling host maintainance for ID: %s" % host.id)
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = vm.hostid
         self.apiclient.prepareHostForMaintenance(cmd)
 
-        self.debug("Canceling host maintainance for ID: %s" % vm.hostid)
+        self.debug("Canceling host maintainance for ID: %s" % host.id)
         cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
         cmd.id = vm.hostid
         self.apiclient.cancelHostMaintenance(cmd)

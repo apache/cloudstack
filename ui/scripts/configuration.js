@@ -1079,27 +1079,17 @@
 										//hide/show service fields upon guestIpType(Shared/Isolated) and zoneType(Advanced/Basic) ***** (begin) *****						
 										var serviceFieldsToHide = [];										
 										if($guestTypeField.val() == 'Shared') { //Shared network offering
-										  if (hasAdvancedZones) { //advanced zone
-											  serviceFieldsToHide = [
-													'service.SourceNat.isEnabled',
-													'service.StaticNat.isEnabled',
-													'service.PortForwarding.isEnabled',
-													'service.Lb.isEnabled',
-													'service.Firewall.isEnabled', 
-													'service.Vpn.isEnabled' 
-												];											
-											}
-											else { //basic zone
-											  serviceFieldsToHide = [
-													'service.SourceNat.isEnabled',													
-													'service.PortForwarding.isEnabled',													
-													'service.Firewall.isEnabled', 
-													'service.Vpn.isEnabled' 
-												];					
-											}
+										  serviceFieldsToHide = [
+												'service.SourceNat.isEnabled',													
+												'service.PortForwarding.isEnabled',													
+												'service.Firewall.isEnabled', 
+												'service.Vpn.isEnabled' 
+											];		
 										}
-										else { //Isolated network offering (which supports all services)
-										  serviceFieldsToHide = [];
+										else { //Isolated network offering 
+										  serviceFieldsToHide = [
+											  'service.SecurityGroup.isEnabled'
+											];
 										}
                      											
 										//hide service fields that are included in serviceFieldsToHide
