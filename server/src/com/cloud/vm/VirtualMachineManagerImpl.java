@@ -57,6 +57,7 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupRoutingCommand.VmState;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.agent.manager.allocator.HostAllocator;
@@ -103,6 +104,7 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
@@ -217,6 +219,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     protected StoragePoolDao _storagePoolDao;
     @Inject
     protected HypervisorGuruManager _hvGuruMgr;
+    @Inject
+    protected NetworkDao _networkDao;
 
     @Inject(adapter = DeploymentPlanner.class)
     protected Adapters<DeploymentPlanner> _planners;
@@ -748,11 +752,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                         reuseVolume = true;
                     }
                     
-                    VirtualMachineTO vmTO = null;
                     Commands cmds = null;
                     vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
 
-                    vmTO = hvGuru.implement(vmProfile);
+                    VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
 
                     cmds = new Commands(OnError.Stop);
                     cmds.addCommand(new StartCommand(vmTO));
@@ -2426,4 +2429,53 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         vmForUpdate.setServiceOfferingId(newSvcOff.getId());
         return _vmDao.update(vmId, vmForUpdate);
     }
+    
+    @Override
+    public boolean addVmToNetwork(VirtualMachine vm, Network network) throws ConcurrentOperationException, 
+                                                    ResourceUnavailableException, InsufficientCapacityException {
+        
+        VMInstanceVO vmVO = _vmDao.findById(vm.getId());
+        NetworkVO networkVO = _networkDao.findById(network.getId());
+        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM), 
+                _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
+        
+        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null, 
+                null, null, null);
+        
+        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
+        Host host = _hostDao.findById(vm.getHostId()); 
+        DeployDestination dest = new DeployDestination(dc, null, null, host);
+        
+        s_logger.debug("Adding vm " + vm + " to network " + network);
+        
+        //1) allocate nic
+        NicProfile nic = _networkMgr.allocateNic(null, network, false, 
+                100, vmProfile).first();
+        
+        //2) Prepare nic
+        nic = _networkMgr.prepareNic(vmProfile, dest, context, nic.getId(), networkVO);
+        
+        //3) plug the nic to the vm
+        VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
+        
+        //4) Convert vmProfile to vmTO
+        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
+        VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
+        
+        //5) Convert nicProfile to NicTO
+        NicTO nicTO = hvGuru.toNicTO(nic);
+        
+        return vmGuru.plugNic(network, nicTO, vmTO, context, null);
+        
+    }
+    
+    @Override
+    public boolean removeVmFromNetwork(VirtualMachine vm, Network network) {
+        //1) TODO - release the nic
+        
+        //2) TODO - unplug the nic
+        
+        return true;
+    }
+   
 }

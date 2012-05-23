@@ -14,6 +14,7 @@ package com.cloud.network.element;
 
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -29,8 +30,10 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkService;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcVirtualNetworkApplianceService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
@@ -45,9 +48,10 @@ import com.cloud.vm.VirtualMachineProfile;
 public class VpcVirtualRouterElement extends VirtualRouterElement implements VpcProvider{
     private static final Logger s_logger = Logger.getLogger(VpcVirtualRouterElement.class);
     @Inject 
-    NetworkService _ntwkSvc;
+    NetworkService _ntwkService;
     @Inject
-    VpcVirtualNetworkApplianceManager _vpcElementMgr;
+    VpcVirtualNetworkApplianceService _vpcElementService;
+    
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
         
@@ -71,17 +75,34 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             throws ResourceUnavailableException, ConcurrentOperationException,
             InsufficientCapacityException {
         
-       if (network.getVpcId() == null) {
+       Long vpcId = network.getVpcId();
+       if (vpcId == null) {
            s_logger.warn("Network " + network + " is not associated with any VPC");
            return false;
        }
+       
        boolean success = super.implement(network, offering, dest, context);
        
        if (success) {
-           success = success && _vpcElementMgr.addVpcElementToNetwork(network);
+           List<? extends VirtualRouter> routers = _routerDao.listRoutersByVpcId(vpcId);
+           for (VirtualRouter router : routers) {
+               //1) Check if router is already a part of the network
+               if (_ntwkService.isVmPartOfNetwork(router.getId(), network.getId())) {
+                   s_logger.debug("Router " + router + " is already part of the network " + network);
+                   continue;
+               }
+               //2) Call plugNics in the network service
+               success = success && _vpcElementService.addVmToNetwork(router, network);
+           }
+           
+           if (!success) {
+               s_logger.warn("Failed to plug nic in network " + network + " for virtual router in vpc id=" + vpcId);
+           } else {
+               s_logger.debug("Successfully plugged nic in network " + network + " for virtual router in vpc id=" + vpcId);
+           }
        }
-       
-       return success;
+      
+       return success;       
     }
     
     @Override
@@ -89,30 +110,92 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             DeployDestination dest, ReservationContext context) 
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
        
-        if (network.getVpcId() == null) {
+        Long vpcId = network.getVpcId();
+        if (vpcId == null) {
             s_logger.warn("Network " + network + " is not associated with any VPC");
             return false;
         }
+        
         boolean success = super.prepare(network, nic, vm, dest, context);
         
         if (success) {
-            success = success && _vpcElementMgr.addVpcElementToNetwork(network);
+            List<? extends VirtualRouter> routers = _routerDao.listRoutersByVpcId(vpcId);
+            for (VirtualRouter router : routers) {
+                //1) Check if router is already a part of the network
+                if (_ntwkService.isVmPartOfNetwork(router.getId(), network.getId())) {
+                    s_logger.debug("Router " + router + " is already part of the network " + network);
+                    continue;
+                }
+                //2) Call plugNics in the network service
+                success = success && _vpcElementService.addVmToNetwork(router, network);
+            }
+            
+            if (!success) {
+                s_logger.warn("Failed to plug nic in network " + network + " for virtual router in vpc id=" + vpcId);
+            } else {
+                s_logger.debug("Successfully plugged nic in network " + network + " for virtual router in vpc id=" + vpcId);
+            }
         }
-        
         return success;
     }
     
     @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) 
             throws ConcurrentOperationException, ResourceUnavailableException {
-      
-        return _vpcElementMgr.removeVpcElementFromNetwork(network);
+        boolean success = true;
+        Long vpcId = network.getVpcId();
+        if (vpcId == null) {
+            s_logger.debug("Network " + network + " doesn't belong to any vpc, so skipping unplug nic part");
+            return success;
+        }
+        
+        List<? extends VirtualRouter> routers = _routerDao.listRoutersByVpcId(vpcId);
+        for (VirtualRouter router : routers) {
+            //1) Check if router is already a part of the network
+            if (!_ntwkService.isVmPartOfNetwork(router.getId(), network.getId())) {
+                s_logger.debug("Router " + router + " is not a part the network " + network);
+                continue;
+            }
+            //2) Call unplugNics in the network service
+            success = success && _vpcElementService.removeVmFromNetwork(router, network);
+        }
+        
+        if (!success) {
+            s_logger.warn("Failed to unplug nic in network " + network + " for virtual router in vpc id=" + vpcId);
+        } else {
+            s_logger.debug("Successfully unplugged nic in network " + network + " for virtual router in vpc id=" + vpcId);
+        }
+        
+        return success;
     }
 
     @Override
     public boolean destroy(Network config) throws ConcurrentOperationException, ResourceUnavailableException {
-
-       return _vpcElementMgr.removeVpcElementFromNetwork(config);
+        boolean success = true;
+        Long vpcId = config.getVpcId();
+        if (vpcId == null) {
+            s_logger.debug("Network " + config + " doesn't belong to any vpc, so skipping unplug nic part");
+            return success;
+        }
+        
+        List<? extends VirtualRouter> routers = _routerDao.listRoutersByVpcId(vpcId);
+        for (VirtualRouter router : routers) {
+            //1) Check if router is already a part of the network
+            if (!_ntwkService.isVmPartOfNetwork(router.getId(), config.getId())) {
+                s_logger.debug("Router " + router + " is not a part the network " + config);
+                continue;
+            }
+            //2) Call unplugNics in the network service
+            success = success && _vpcElementService.removeVmFromNetwork(router, config);
+        }
+        
+        if (!success) {
+            s_logger.warn("Failed to unplug nic in network " + config + " for virtual router in vpc id=" + vpcId);
+        } else {
+            s_logger.debug("Successfully unplugged nic in network " + config + " for virtual router in vpc id=" + vpcId);
+        }
+        
+        return success;
     }
     
     @Override
@@ -133,22 +216,6 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
         return capabilities;
-    }
-
-
-    @Override
-    public boolean plugNic(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, 
-            ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public boolean unplugNic(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm,
-            ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
     }
 
 }

@@ -15,6 +15,7 @@ package com.cloud.vm;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.AgentUnavailableException;
@@ -26,6 +27,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
@@ -131,5 +133,23 @@ public interface VirtualMachineManager extends Manager {
      * @return
      */
     boolean upgradeVmDb(long vmId, long serviceOfferingId);
+
+    /**
+     * @param vm
+     * @param network
+     * @return
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     * @throws InsufficientCapacityException
+     */
+    boolean addVmToNetwork(VirtualMachine vm, Network network) throws ConcurrentOperationException, 
+                ResourceUnavailableException, InsufficientCapacityException;
+
+    /**
+     * @param vm
+     * @param network
+     * @return
+     */
+    boolean removeVmFromNetwork(VirtualMachine vm, Network network);
 
 }

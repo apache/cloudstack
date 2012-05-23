@@ -47,7 +47,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     HostDaoImpl _hostsDao = ComponentLocator.inject(HostDaoImpl.class);
     RouterNetworkDaoImpl _routerNetworkDao = ComponentLocator.inject(RouterNetworkDaoImpl.class);
     UserStatisticsDaoImpl _userStatsDao = ComponentLocator.inject(UserStatisticsDaoImpl.class);
-
+    protected final SearchBuilder<DomainRouterVO> VpcSearch;
     
     protected DomainRouterDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -65,6 +65,11 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         AllFieldsSearch.and("elementId", AllFieldsSearch.entity().getElementId(), Op.EQ);
         AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), Op.EQ);
         AllFieldsSearch.done();
+        
+        VpcSearch = createSearchBuilder();
+        VpcSearch.and("role", VpcSearch.entity().getRole(), Op.EQ);
+        VpcSearch.and("vpcId", VpcSearch.entity().getVpcId(), Op.EQ);
+        VpcSearch.done();
 
         IdNetworkIdStatesSearch = createSearchBuilder();
         IdNetworkIdStatesSearch.and("id", IdNetworkIdStatesSearch.entity().getId(), Op.EQ);
@@ -259,15 +264,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         if (guestNetworks != null && !guestNetworks.isEmpty()) {
             // 2) add router to the network
             for (Network guestNetwork : guestNetworks) {
-                addRouterToNetwork(router.getId(), guestNetwork);
-                // 3) create user stats entry
-                UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn(), 
-                        guestNetwork.getId(), null, router.getId(), router.getType().toString());
-                if (stats == null) {
-                    stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), null, router.getId(),
-                            router.getType().toString(), guestNetwork.getId());
-                    _userStatsDao.persist(stats);
-                }
+                addRouterToNetwork(router, guestNetwork);
             }
         }
        
@@ -275,10 +272,21 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         return newRouter;
     }
     
-    
-    protected void addRouterToNetwork(long routerId, Network guestNetwork) {
-        RouterNetworkVO routerNtwkMap = new RouterNetworkVO(routerId, guestNetwork.getId(), guestNetwork.getGuestType());
+    @Override
+    @DB
+    public void addRouterToNetwork(DomainRouterVO router, Network guestNetwork) {
+        
+        //1) add router to network
+        RouterNetworkVO routerNtwkMap = new RouterNetworkVO(router.getId(), guestNetwork.getId(), guestNetwork.getGuestType());
         _routerNetworkDao.persist(routerNtwkMap);
+        //2) create user stats entry for the network
+        UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn(), 
+                guestNetwork.getId(), null, router.getId(), router.getType().toString());
+        if (stats == null) {
+            stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), null, router.getId(),
+                    router.getType().toString(), guestNetwork.getId());
+            _userStatsDao.persist(stats);
+        }
     }
     
     @Override
@@ -288,7 +296,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     
     @Override
     public List<DomainRouterVO> listRoutersByVpcId(long vpcId) {
-        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+        SearchCriteria<DomainRouterVO> sc = VpcSearch.create();
         sc.setParameters("vpcId", vpcId);
         sc.setParameters("role", Role.VIRTUAL_ROUTER);
         return listBy(sc);

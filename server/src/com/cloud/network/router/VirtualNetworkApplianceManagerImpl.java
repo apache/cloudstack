@@ -67,8 +67,10 @@ import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.LoadBalancerTO;
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.commands.UpgradeRouterCmd;
@@ -1252,7 +1254,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
             for (int i = 0; i < count; i++) {
                 DomainRouterVO router = deployRouter(owner, dest, plan, params, publicNetwork, guestNetwork, isRedundant,
-                        vrProvider, offeringId, sourceNatIp);
+                        vrProvider, offeringId, sourceNatIp, null);
                 routers.add(router);
             }
         } finally {
@@ -1265,7 +1267,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     protected DomainRouterVO deployRouter(Account owner, DeployDestination dest, DeploymentPlan plan, Map<Param, Object> params,
             boolean setupPublicNetwork, Network guestNetwork, boolean isRedundant,
-            VirtualRouterProvider vrProvider, long svcOffId, PublicIp sourceNatIp) throws ConcurrentOperationException, 
+            VirtualRouterProvider vrProvider, long svcOffId, PublicIp sourceNatIp, Long vpcId) throws ConcurrentOperationException, 
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException, 
             StorageUnavailableException, ResourceUnavailableException {
         
@@ -1332,7 +1334,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 router = new DomainRouterVO(id, routerOffering.getId(), vrProvider.getId(), 
                         VirtualMachineName.getRouterName(id, _instance), template.getId(), template.getHypervisorType(),
                         template.getGuestOSId(), owner.getDomainId(), owner.getId(), isRedundant, 0, false, 
-                        RedundantState.UNKNOWN, offerHA, false);
+                        RedundantState.UNKNOWN, offerHA, false, vpcId);
                 router.setRole(Role.VIRTUAL_ROUTER);
                 router = _itMgr.allocate(router, template, routerOffering, networks, plan, null, owner);
             } catch (InsufficientCapacityException ex) {
@@ -1374,8 +1376,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         //1) Guest network
         boolean hasGuestNetwork = false;
         if (guestNetwork != null) {
-            String defaultNetworkStartIp = null;
             s_logger.debug("Adding nic for Virtual Router in Guest network " + guestNetwork);
+            String defaultNetworkStartIp = null;
             if (guestNetwork.getCidr() != null && !setupPublicNetwork) {
                 String startIp = _networkMgr.getStartIpAddress(guestNetwork.getId());
                 if (startIp != null && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
@@ -1385,8 +1387,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                             " is already allocated, can't use it for domain router; will get random ip address from the range");
                 }
             }
-            
-            
 
             NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp);
             if (setupPublicNetwork) {
@@ -1572,6 +1572,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, 
             ReservationContext context) {
+        
+        boolean dnsProvided = true;
+        boolean dhcpProvided = true;
         DataCenterVO dc = _dcDao.findById(dest.getDataCenter().getId());
         _dcDao.loadDetails(dc);
 
@@ -1637,6 +1640,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     }
                 }
             } else if (nic.getTrafficType() == TrafficType.Guest) {
+                dnsProvided = _networkMgr.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.Dns, Provider.VirtualRouter);
+                dhcpProvided = _networkMgr.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.Dhcp, Provider.VirtualRouter);
                 //build bootloader parameter for the guest
                 buf.append(createGuestBootLoadArgs(nic, defaultDns1, defaultDns2, router));
             } else if (nic.getTrafficType() == TrafficType.Public) {
@@ -1676,77 +1681,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (profile.getHypervisorType() == HypervisorType.VMware) {
             buf.append(" extra_pubnics=" + _routerExtraPublicNics);
         }
+        
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
-        }
-
-        return true;
-    }
-    
-    protected StringBuilder createGuestBootLoadArgs(NicProfile guestNic, String defaultDns1, 
-            String defaultDns2, DomainRouterVO router) {
-        long guestNetworkId = guestNic.getNetworkId();
-        NetworkVO guestNetwork = _networkDao.findById(guestNetworkId);
-        String dhcpRange = null;
-        DataCenterVO dc = _dcDao.findById(guestNetwork.getDataCenterId());
-
-        if (dc.getNetworkType() == NetworkType.Advanced) {
-            String cidr = guestNetwork.getCidr();
-            if (cidr != null) {
-                dhcpRange = NetUtils.getDhcpRange(cidr);
-            }
-        }
-
-        StringBuilder buf = new StringBuilder();
-
-        boolean isRedundant = router.getIsRedundantRouter();
-        if (isRedundant) {
-            buf.append(" redundant_router=1");
-            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(guestNetwork.getId(), Role.VIRTUAL_ROUTER);
-            try {
-                int priority = getUpdatedPriority(guestNetwork, routers, router);
-                router.setPriority(priority);
-            } catch (InsufficientVirtualNetworkCapcityException e) {
-                s_logger.error("Failed to get update priority!", e);
-                throw new CloudRuntimeException("Failed to get update priority!");
-            }
-        }
-        
-        
-        if (guestNic.isDefaultNic() && dc.getNetworkType() == NetworkType.Basic) {
-            long cidrSize = NetUtils.getCidrSize(guestNic.getNetmask());
-            String cidr = NetUtils.getCidrSubNet(guestNic.getGateway(), cidrSize);
-            if (cidr != null) {
-                dhcpRange = NetUtils.getIpRangeStartIpFromCidr(cidr, cidrSize);
-            }
-        }
-        
-        if (dhcpRange != null) {
-            buf.append(" dhcprange=" + dhcpRange);
-        }
-        
-        if (isRedundant) {
-            Network net = _networkMgr.getNetwork(guestNic.getNetworkId());
-            buf.append(" guestgw=").append(net.getGateway());
-            String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIp4Address()) | ~NetUtils.ip2Long(guestNic.getNetmask()));
-            buf.append(" guestbrd=").append(brd);
-            buf.append(" guestcidrsize=").append(NetUtils.getCidrSize(guestNic.getNetmask()));
-            buf.append(" router_pr=").append(router.getPriority());
-        }
-        
-        String domain = guestNetwork.getNetworkDomain();
-        if (domain != null) {
-            buf.append(" domain=" + domain);
-        }
-        
-        boolean dnsProvided = false;
-        boolean dhcpProvided = false;
-        if (guestNic.getTrafficType() == TrafficType.Guest) {
-            //FiXME - for multiple guest network case this should be set individually
-            dnsProvided = _networkMgr.isProviderSupportServiceInNetwork(guestNic.getNetworkId(), Service.Dns, Provider.VirtualRouter);
-            dhcpProvided = _networkMgr.isProviderSupportServiceInNetwork(guestNic.getNetworkId(), Service.Dhcp, Provider.VirtualRouter);
-        }
         /* If virtual router didn't provide DNS service but provide DHCP service, we need to override the DHCP response 
          * to return DNS server rather than 
          * virtual router itself. */
@@ -1766,6 +1702,67 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             if (useExtDns) {
                 buf.append(" useextdns=true");
             }
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Boot Args for " + profile + ": " + buf.toString());
+        }
+
+        return true;
+    }
+    
+    protected StringBuilder createGuestBootLoadArgs(NicProfile guestNic, String defaultDns1, 
+            String defaultDns2, DomainRouterVO router) {
+        long guestNetworkId = guestNic.getNetworkId();
+        NetworkVO guestNetwork = _networkDao.findById(guestNetworkId);
+        String dhcpRange = null;
+        DataCenterVO dc = _dcDao.findById(guestNetwork.getDataCenterId());
+
+        StringBuilder buf = new StringBuilder();
+        
+        boolean isRedundant = router.getIsRedundantRouter();
+        if (isRedundant) {
+            buf.append(" redundant_router=1");
+            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(guestNetwork.getId(), Role.VIRTUAL_ROUTER);
+            try {
+                int priority = getUpdatedPriority(guestNetwork, routers, router);
+                router.setPriority(priority);
+            } catch (InsufficientVirtualNetworkCapcityException e) {
+                s_logger.error("Failed to get update priority!", e);
+                throw new CloudRuntimeException("Failed to get update priority!");
+            }
+            Network net = _networkMgr.getNetwork(guestNic.getNetworkId());
+            buf.append(" guestgw=").append(net.getGateway());
+            String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIp4Address()) | ~NetUtils.ip2Long(guestNic.getNetmask()));
+            buf.append(" guestbrd=").append(brd);
+            buf.append(" guestcidrsize=").append(NetUtils.getCidrSize(guestNic.getNetmask()));
+            buf.append(" router_pr=").append(router.getPriority());
+        }
+
+        //setup network domain
+        String domain = guestNetwork.getNetworkDomain();
+        if (domain != null) {
+            buf.append(" domain=" + domain);
+        }
+        
+        //setup dhcp range
+        if (dc.getNetworkType() == NetworkType.Basic) {
+            if (guestNic.isDefaultNic()) {
+                long cidrSize = NetUtils.getCidrSize(guestNic.getNetmask());
+                String cidr = NetUtils.getCidrSubNet(guestNic.getGateway(), cidrSize);
+                if (cidr != null) {
+                    dhcpRange = NetUtils.getIpRangeStartIpFromCidr(cidr, cidrSize);
+                }
+            }  
+        } else if (dc.getNetworkType() == NetworkType.Advanced) {
+            String cidr = guestNetwork.getCidr();
+            if (cidr != null) {
+                dhcpRange = NetUtils.getDhcpRange(cidr);
+            }
+        }
+        
+        if (dhcpRange != null) {
+            buf.append(" dhcprange=" + dhcpRange);
         }
         
         return buf;
@@ -3054,5 +3051,21 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
             
         return routerControlIpAddress;
+    }
+    
+    @Override
+    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm,
+            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
+        //not supported
+        throw new UnsupportedOperationException("Plug nic is not supported for vm of type " + vm.getType());
+    }
+
+
+    @Override
+    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm,
+            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
+        //not supported
+        throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
     }
 }

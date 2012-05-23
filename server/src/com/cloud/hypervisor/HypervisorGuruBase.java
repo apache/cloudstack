@@ -35,7 +35,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         super();
     }
 
-    protected NicTO toNicTO(NicProfile profile) {
+    @Override
+    public NicTO toNicTO(NicProfile profile) {
         NicTO to = new NicTO();
         to.setDeviceId(profile.getDeviceId());
         to.setBroadcastType(profile.getBroadcastType());

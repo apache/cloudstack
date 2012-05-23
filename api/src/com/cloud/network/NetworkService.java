@@ -36,7 +36,6 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
-import com.cloud.vm.VirtualMachine;
 
 public interface NetworkService {
 
@@ -149,10 +148,5 @@ public interface NetworkService {
     
     List<? extends Network> listNetworksByVpc(long vpcId);
     
-    boolean addVmToNetwork(VirtualMachine vm, Network network);
-    
-    boolean removeVmFromNetwork(VirtualMachine vm, Network network);
-    
     boolean isVmPartOfNetwork(long vmId, long ntwkId);
-
 }

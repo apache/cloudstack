@@ -201,7 +201,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean errorIfAlreadySetup, Long domainId,
-            ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException {
+            ACLType aclType, Boolean subdomainAccess, Long vpcId) throws ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }

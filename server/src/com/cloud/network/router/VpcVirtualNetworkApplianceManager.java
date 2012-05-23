@@ -19,8 +19,8 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcVirtualNetworkApplianceService;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineProfile.Param;
@@ -28,7 +28,7 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 /**
  * @author Alena Prokharchyk
  */
-public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplianceManager{
+public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplianceManager, VpcVirtualNetworkApplianceService{
 
     /**
      * @param vpc
@@ -43,17 +43,5 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
     List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner, Map<Param, Object> params)
             throws InsufficientCapacityException, ConcurrentOperationException,
             ResourceUnavailableException;
-
-    /**
-     * @param network
-     * @return
-     */
-    boolean addVpcElementToNetwork(Network network);
-
-    /**
-     * @param network
-     * @return
-     */
-    boolean removeVpcElementFromNetwork(Network network);
 
 }

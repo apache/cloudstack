@@ -188,6 +188,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -1513,16 +1514,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
+    public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, 
+            String displayText, boolean isDefault)
             throws ConcurrentOperationException {
-        return setupNetwork(owner, offering, null, plan, name, displayText, false, null, null, null);
+        return setupNetwork(owner, offering, null, plan, name, displayText, false, null, null, null, null);
     }
 
     @Override
     @DB
     public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan 
             plan, String name, String displayText, boolean errorIfAlreadySetup, Long domainId,
-            ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException {
+            ACLType aclType, Boolean subdomainAccess, Long vpcId) throws ConcurrentOperationException {
         
         Account locked = _accountDao.acquireInLockTable(owner.getId());
         if (locked == null) {
@@ -1594,9 +1596,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 Transaction txn = Transaction.currentTxn();
                 txn.start();
 
-                NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), related, name, displayText, predefined.getNetworkDomain(),
-                        offering.getGuestType(), plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType, offering.getSpecifyIpRanges());
-                networks.add(_networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated, finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId())));
+                NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(),
+                        related, name, displayText, predefined.getNetworkDomain(), offering.getGuestType(), 
+                        plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType, offering.getSpecifyIpRanges(), vpcId);
+                networks.add(_networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated, 
+                        finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId())));
 
                 if (domainId != null && aclType == ACLType.Domain) {
                     _networksDao.addDomainToNetwork(id, domainId, subdomainAccess);
@@ -1634,7 +1638,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @DB
-    public void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkVO, NicProfile>> networks) throws InsufficientCapacityException, ConcurrentOperationException {
+    public void allocate(VirtualMachineProfile<? extends VMInstanceVO> vm, List<Pair<NetworkVO, NicProfile>> networks) 
+            throws InsufficientCapacityException, ConcurrentOperationException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
@@ -1643,64 +1648,53 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         boolean[] deviceIds = new boolean[networks.size()];
         Arrays.fill(deviceIds, false);
 
-        List<NicVO> nics = new ArrayList<NicVO>(networks.size());
-        NicVO defaultNic = null;
+        List<NicProfile> nics = new ArrayList<NicProfile>(networks.size());
+        NicProfile defaultNic = null;
 
         for (Pair<NetworkVO, NicProfile> network : networks) {
             NetworkVO config = network.first();
-            NetworkGuru guru = _networkGurus.get(config.getGuruName());
             NicProfile requested = network.second();
-            if (requested != null && requested.getMode() == null) {
-                requested.setMode(config.getMode());
+            
+            Boolean isDefaultNic = false;
+            if (vm != null && (requested != null && requested.isDefaultNic())) {
+                isDefaultNic = true;
             }
-            NicProfile profile = guru.allocate(config, requested, vm);
-
-            if (vm != null && vm.getVirtualMachine().getType() == Type.User && (requested != null && requested.isDefaultNic())) {
-                profile.setDefaultNic(true);
-            }
-
-            if (profile == null) {
-                continue;
-            }
-
-            if (requested != null && requested.getMode() == null) {
-                profile.setMode(requested.getMode());
-            } else {
-                profile.setMode(config.getMode());
-            }
-
-            NicVO vo = new NicVO(guru.getName(), vm.getId(), config.getId(), vm.getType());
-
+            
             while (deviceIds[deviceId] && deviceId < deviceIds.length) {
                 deviceId++;
             }
-
-            deviceId = applyProfileToNic(vo, profile, deviceId);
-
-            vo = _nicDao.persist(vo);
-
-            if (vo.isDefaultNic()) {
-                if (defaultNic != null) {
-                    throw new IllegalArgumentException("You cannot specify two nics as default nics: nic 1 = " + defaultNic + "; nic 2 = " + vo);
-                }
-                defaultNic = vo;
+            
+            Pair<NicProfile,Integer> vmNicPair = allocateNic(requested, config, isDefaultNic, 
+                    deviceId, vm);
+            
+            NicProfile vmNic = vmNicPair.first();
+            if (vmNic == null) {
+                continue;
             }
-
-            int devId = vo.getDeviceId();
+            
+            deviceId = vmNicPair.second();
+            
+            int devId = vmNic.getDeviceId();
             if (devId > deviceIds.length) {
-                throw new IllegalArgumentException("Device id for nic is too large: " + vo);
+                throw new IllegalArgumentException("Device id for nic is too large: " + vmNic);
             }
             if (deviceIds[devId]) {
-                throw new IllegalArgumentException("Conflicting device id for two different nics: " + devId);
+                throw new IllegalArgumentException("Conflicting device id for two different nics: " + vmNic);
             }
 
             deviceIds[devId] = true;
-            nics.add(vo);
-
-            Integer networkRate = getNetworkRate(config.getId(), vm.getId());
-            vm.addNic(new NicProfile(vo, network.first(), vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, 
-                    isSecurityGroupSupportedInNetwork(network.first()), getNetworkTag(vm.getHypervisorType(),
-                    network.first())));
+            
+            if (vmNic.isDefaultNic()) {
+                if (defaultNic != null) {
+                    throw new IllegalArgumentException("You cannot specify two nics as default nics: nic 1 = " + 
+                defaultNic + "; nic 2 = " + vmNic);
+                }
+                defaultNic = vmNic;
+            }
+            
+            nics.add(vmNic);
+            vm.addNic(vmNic);
+            
         }
 
         if (nics.size() != networks.size()) {
@@ -1714,6 +1708,49 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         txn.commit();
     }
+    
+    
+    @DB
+    @Override
+    public Pair<NicProfile,Integer> allocateNic(NicProfile requested, Network network, Boolean isDefaultNic, 
+            int deviceId, VirtualMachineProfile<? extends VMInstanceVO> vm) throws InsufficientVirtualNetworkCapcityException,
+            InsufficientAddressCapacityException, ConcurrentOperationException{
+        
+        NetworkVO ntwkVO = _networksDao.findById(network.getId());
+        s_logger.debug("Allocating nic for vm " + vm.getVirtualMachine() + " in network " + network);
+        NetworkGuru guru = _networkGurus.get(ntwkVO.getGuruName());
+
+        if (requested != null && requested.getMode() == null) {
+            requested.setMode(network.getMode());
+        }
+        NicProfile profile = guru.allocate(network, requested, vm);
+        if (isDefaultNic != null) {
+            profile.setDefaultNic(isDefaultNic);
+        }
+
+        if (profile == null) {
+            return null;
+        }
+
+        if (requested != null && requested.getMode() == null) {
+            profile.setMode(requested.getMode());
+        } else {
+            profile.setMode(network.getMode());
+        }
+
+        NicVO vo = new NicVO(guru.getName(), vm.getId(), network.getId(), vm.getType());
+
+        deviceId = applyProfileToNic(vo, profile, deviceId);
+
+        vo = _nicDao.persist(vo);
+    
+        Integer networkRate = getNetworkRate(network.getId(), vm.getId());
+        NicProfile vmNic = new NicProfile(vo, network, vo.getBroadcastUri(), vo.getIsolationUri(), networkRate, 
+                isSecurityGroupSupportedInNetwork(network), getNetworkTag(vm.getHypervisorType(),
+                network));
+        
+        return new Pair<NicProfile,Integer>(vmNic, Integer.valueOf(deviceId));
+    }    
 
     protected Integer applyProfileToNic(NicVO vo, NicProfile profile, Integer deviceId) {
         if (profile.getDeviceId() != null) {
@@ -1799,7 +1836,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         Integer networkRate = getNetworkRate(config.getId(), null);
         to.setNetworkRateMbps(networkRate);
-
+        
         return to;
     }
 
@@ -1963,9 +2000,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
 
         // we have to implement default nics first - to ensure that default network elements start up first in multiple
-// nics
-        // case)
-        // (need for setting DNS on Dhcp to domR's Ip4 address)
+        // nics case)(need for setting DNS on Dhcp to domR's Ip4 address)
         Collections.sort(nics, new Comparator<NicVO>() {
 
             @Override
@@ -1979,57 +2014,72 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         for (NicVO nic : nics) {
             Pair<NetworkGuru, NetworkVO> implemented = implementNetwork(nic.getNetworkId(), dest, context);
-            NetworkGuru guru = implemented.first();
-            NetworkVO network = implemented.second();
-            Integer networkRate = getNetworkRate(network.getId(), vmProfile.getId());
-            NicProfile profile = null;
-            if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {
-                nic.setState(Nic.State.Reserving);
-                nic.setReservationId(context.getReservationId());
-                _nicDao.update(nic.getId(), nic);
-                URI broadcastUri = nic.getBroadcastUri();
-                if (broadcastUri == null) {
-                    broadcastUri = network.getBroadcastUri();
-                }
-
-                URI isolationUri = nic.getIsolationUri();
-
-                profile = new NicProfile(nic, network, broadcastUri, isolationUri, networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getHypervisorType(), network));
-                guru.reserve(profile, network, vmProfile, dest, context);
-                nic.setIp4Address(profile.getIp4Address());
-                nic.setAddressFormat(profile.getFormat());
-                nic.setIp6Address(profile.getIp6Address());
-                nic.setMacAddress(profile.getMacAddress());
-                nic.setIsolationUri(profile.getIsolationUri());
-                nic.setBroadcastUri(profile.getBroadCastUri());
-                nic.setReserver(guru.getName());
-                nic.setState(Nic.State.Reserved);
-                nic.setNetmask(profile.getNetmask());
-                nic.setGateway(profile.getGateway());
-
-                if (profile.getStrategy() != null) {
-                    nic.setReservationStrategy(profile.getStrategy());
-                }
-
-                updateNic(nic, network.getId(), 1);
-            } else {
-                profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getHypervisorType(), network));
-                guru.updateNicProfile(profile, network);
-                nic.setState(Nic.State.Reserved);
-                updateNic(nic, network.getId(), 1);
-            }
             
-            for (NetworkElement element : _networkElements) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
-                }
-                prepareElement(element, network, profile, vmProfile, dest, context);
-            }
-
-            profile.setSecurityGroupEnabled(isSecurityGroupSupportedInNetwork(network));
-            guru.updateNicProfile(profile, network);
+            NetworkVO network = implemented.second();
+            NicProfile profile = prepareNic(vmProfile, dest, context, nic.getId(), network);
             vmProfile.addNic(profile);
         }
+    }
+
+    @Override
+    public NicProfile prepareNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination 
+            dest, ReservationContext context, long nicId, NetworkVO network)
+            throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, 
+            ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        
+        Integer networkRate = getNetworkRate(network.getId(), vmProfile.getId());
+        NetworkGuru guru = _networkGurus.get(network.getGuruName());
+        NicVO nic = _nicDao.findById(nicId);
+        
+        NicProfile profile = null;
+        if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {
+            nic.setState(Nic.State.Reserving);
+            nic.setReservationId(context.getReservationId());
+            _nicDao.update(nic.getId(), nic);
+            URI broadcastUri = nic.getBroadcastUri();
+            if (broadcastUri == null) {
+                broadcastUri = network.getBroadcastUri();
+            }
+
+            URI isolationUri = nic.getIsolationUri();
+
+            profile = new NicProfile(nic, network, broadcastUri, isolationUri, 
+                    networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getHypervisorType(), network));
+            guru.reserve(profile, network, vmProfile, dest, context);
+            nic.setIp4Address(profile.getIp4Address());
+            nic.setAddressFormat(profile.getFormat());
+            nic.setIp6Address(profile.getIp6Address());
+            nic.setMacAddress(profile.getMacAddress());
+            nic.setIsolationUri(profile.getIsolationUri());
+            nic.setBroadcastUri(profile.getBroadCastUri());
+            nic.setReserver(guru.getName());
+            nic.setState(Nic.State.Reserved);
+            nic.setNetmask(profile.getNetmask());
+            nic.setGateway(profile.getGateway());
+
+            if (profile.getStrategy() != null) {
+                nic.setReservationStrategy(profile.getStrategy());
+            }
+
+            updateNic(nic, network.getId(), 1);
+        } else {
+            profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
+                    networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getHypervisorType(), network));
+            guru.updateNicProfile(profile, network);
+            nic.setState(Nic.State.Reserved);
+            updateNic(nic, network.getId(), 1);
+        }
+        
+        for (NetworkElement element : _networkElements) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
+            }
+            prepareElement(element, network, profile, vmProfile, dest, context);
+        }
+
+        profile.setSecurityGroupEnabled(isSecurityGroupSupportedInNetwork(network));
+        guru.updateNicProfile(profile, network);
+        return profile;
     }
 
     @Override
@@ -2052,36 +2102,42 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
         for (NicVO nic : nics) {
             NetworkVO network = _networksDao.findById(nic.getNetworkId());
-            if (nic.getState() == Nic.State.Reserved || nic.getState() == Nic.State.Reserving) {
-                Nic.State originalState = nic.getState();
-                if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {
-                    NetworkGuru guru = _networkGurus.get(network.getGuruName());
-                    nic.setState(Nic.State.Releasing);
-                    _nicDao.update(nic.getId(), nic);
-                    NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getHypervisorType(), network));
-                    if (guru.release(profile, vmProfile, nic.getReservationId())) {
-                        applyProfileToNicForRelease(nic, profile);
-                        nic.setState(Nic.State.Allocated);
-                        if (originalState == Nic.State.Reserved) {
-                            updateNic(nic, network.getId(), -1);
-                        } else {
-                            _nicDao.update(nic.getId(), nic);
-                        }
-                    }
-                    // Perform release on network elements
-                    for (NetworkElement element : _networkElements) {
-                        if (s_logger.isDebugEnabled()) {
-                            s_logger.debug("Asking " + element.getName() + " to release " + nic);
-                        }
-                        //NOTE: Context appear to never be used in release method 
-                        //implementations. Consider removing it from interface Element
-                        element.release(network, profile, vmProfile, null);
-                    }
-                                        
-                } else {
+            releaseNic(vmProfile, nic, network);
+        }
+    }
+
+    protected void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NicVO nic, NetworkVO network) 
+            throws ConcurrentOperationException, ResourceUnavailableException {
+        if (nic.getState() == Nic.State.Reserved || nic.getState() == Nic.State.Reserving) {
+            Nic.State originalState = nic.getState();
+            if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {
+                NetworkGuru guru = _networkGurus.get(network.getGuruName());
+                nic.setState(Nic.State.Releasing);
+                _nicDao.update(nic.getId(), nic);
+                NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null,
+                        isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getHypervisorType(), network));
+                if (guru.release(profile, vmProfile, nic.getReservationId())) {
+                    applyProfileToNicForRelease(nic, profile);
                     nic.setState(Nic.State.Allocated);
-                    updateNic(nic, network.getId(), -1);
+                    if (originalState == Nic.State.Reserved) {
+                        updateNic(nic, network.getId(), -1);
+                    } else {
+                        _nicDao.update(nic.getId(), nic);
+                    }
                 }
+                // Perform release on network elements
+                for (NetworkElement element : _networkElements) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Asking " + element.getName() + " to release " + nic);
+                    }
+                    //NOTE: Context appear to never be used in release method 
+                    //implementations. Consider removing it from interface Element
+                    element.release(network, profile, vmProfile, null);
+                }
+                                    
+            } else {
+                nic.setState(Nic.State.Allocated);
+                updateNic(nic, network.getId(), -1);
             }
         }
     }
@@ -2567,16 +2623,28 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return network;
     }
     
-    public Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, 
+    @DB
+    protected Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, 
             String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
             PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId) 
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
         
+        //1) Validate if network can be created for VPC
         _vpcMgr.validateGuestNtkwForVpc(_configMgr.getNetworkOffering(ntwkOffId), cidr, networkDomain, owner, 
                 _vpcMgr.getVpc(vpcId));
         
-        return createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, 
+        //2) Create network
+        Network guestNetwork = createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, 
                 networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId);
+        
+        //3) Add network to all VPC's routers
+        List<DomainRouterVO> routers = _routerDao.listRoutersByVpcId(vpcId);
+        for (DomainRouterVO router : routers) {
+            s_logger.debug("Adding router " + router + " to network " + guestNetwork);
+            _routerDao.addRouterToNetwork(router, guestNetwork);
+        }
+        
+        return guestNetwork;
     }
 
     @Override
@@ -2779,7 +2847,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         List<NetworkVO> networks = setupNetwork(owner, ntwkOff, userNetwork, plan, name, displayText, true, domainId,
-                aclType, subdomainAccess);
+                aclType, subdomainAccess, vpcId);
 
         Network network = null;
         if (networks == null || networks.isEmpty()) {
@@ -4911,6 +4979,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             // add security group provider to the physical network
             addDefaultSecurityGroupProviderToPhysicalNetwork(pNetwork.getId());
+            
+            // add VPCVirtualRouter as the defualt network service provider
+            addDefaultVpcVirtualRouterToPhysicalNetwork(pNetwork.getId());
 
             txn.commit();
             return pNetwork;
@@ -6254,7 +6325,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } else {
                 // locate physicalNetwork with supported traffic type
                 // We can make this assumptions based on the fact that Public/Management/Control traffic types are
-// supported only in one physical network in the zone in 3.0
+                // supported only in one physical network in the zone in 3.0
                 for (PhysicalNetworkVO pNtwk : pNtwks) {
                     if (_pNTrafficTypeDao.isTrafficTypeSupported(pNtwk.getId(), network.getTrafficType())) {
                         physicalNetworkId = pNtwk.getId();
@@ -6281,8 +6352,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return networks.get(0);
     }
 
-    @Override
-    public PhysicalNetworkServiceProvider addDefaultVirtualRouterToPhysicalNetwork(long physicalNetworkId) {
+    protected PhysicalNetworkServiceProvider addDefaultVirtualRouterToPhysicalNetwork(long physicalNetworkId) {
 
         PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, Network.Provider.VirtualRouter.getName(), null, null);
         // add instance of the provider
@@ -6294,9 +6364,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         return nsp;
     }
+    
+    protected PhysicalNetworkServiceProvider addDefaultVpcVirtualRouterToPhysicalNetwork(long physicalNetworkId) {
 
-    @Override
-    public PhysicalNetworkServiceProvider addDefaultSecurityGroupProviderToPhysicalNetwork(long physicalNetworkId) {
+        PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, 
+                Network.Provider.VPCVirtualRouter.getName(), null, null);
+
+        return nsp;
+    }
+
+    protected PhysicalNetworkServiceProvider addDefaultSecurityGroupProviderToPhysicalNetwork(long physicalNetworkId) {
 
         PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, Network.Provider.SecurityGroupProvider.getName(), null, null);
 
@@ -6323,7 +6400,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         for (NetworkOfferingServiceMapVO serviceMap : servicesMap) {
             if (svcProviders.containsKey(serviceMap.getService())) {
                 // FIXME - right now we pick up the first provider from the list, need to add more logic based on
-// provider load, etc
+                // provider load, etc
                 continue;
             }
 
@@ -6337,7 +6414,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             // check that provider is supported
             if (checkPhysicalNetwork) {
                 if (!_pNSPDao.isServiceProviderEnabled(physicalNetworkId, provider, service)) {
-                    throw new UnsupportedServiceException("Provider " + provider + " is either not enabled or doesn't support service " + service + " in physical network id=" + physicalNetworkId);
+                    throw new UnsupportedServiceException("Provider " + provider + " is either not enabled or doesn't " +
+                    		"support service " + service + " in physical network id=" + physicalNetworkId);
                 }
             }
 
@@ -6703,7 +6781,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         } catch (Exception ex) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Failed to retrieve the default label for guest traffic." + "zone: " + dcId + " hypervisor: " + hypervisorType + " due to: " + ex.getMessage());
+                s_logger.debug("Failed to retrive the default label for management traffic:" + "zone: " + dcId + 
+                        " hypervisor: " + hypervisorType + " due to:" + ex.getMessage());
             }
         }
         return null;
@@ -6746,18 +6825,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return providers;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#addVmToNetwork(com.cloud.vm.VirtualMachine, com.cloud.network.Network)
-     */
-    @Override
-    public boolean addVmToNetwork(VirtualMachine vm, Network network) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#isVmPartOfNetwork(com.cloud.vm.VirtualMachine, com.cloud.network.Network)
-     */
     @Override
     public boolean isVmPartOfNetwork(long vmId, long ntwkId) {
         if (_nicDao.findByInstanceIdAndNetworkId(ntwkId, vmId) != null) {
@@ -6766,12 +6833,4 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return false;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#removeVmFromNetwork(com.cloud.vm.VirtualMachine, com.cloud.network.Network)
-     */
-    @Override
-    public boolean removeVmFromNetwork(VirtualMachine vm, Network network) {
-        // TODO Auto-generated method stub
-        return false;
-    }
 }

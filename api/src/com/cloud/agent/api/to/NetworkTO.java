@@ -177,5 +177,4 @@ public class NetworkTO {
     public boolean isSecurityGroupEnabled() {
         return this.isSecurityGroupEnabled;
     }
-
 }

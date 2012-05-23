@@ -686,7 +686,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         try {
           //1) CIDR is required
             if (cidr == null) {
-                throw new InvalidParameterValueException("CIDR is required when create network for VPC");
+                throw new InvalidParameterValueException("Gateway/netmask are required when create network for VPC");
             }
             
             //2) Network cidr should be within vpcCidr
@@ -738,7 +738,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
     }
      
-    private VpcProvider getVpcElement() {
+    @Override
+    public VpcProvider getVpcElement() {
         if (vpcElement == null) {
             vpcElement = ((VpcProvider)_ntwkMgr.getElementImplementingProvider(Provider.VPCVirtualRouter.getName()));
         }

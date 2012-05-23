@@ -19,6 +19,7 @@ import java.util.Set;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.element.VpcProvider;
 import com.cloud.network.vpc.VpcOffering.State;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
@@ -70,6 +71,11 @@ public interface VpcManager extends VpcService{
      * @return
      * @throws ConcurrentOperationException 
      */
-    void validateGuestNtkwForVpc(NetworkOffering guestNtwkOff, String cidr, String networkDomain, Account networkOwner, Vpc vpc) throws ConcurrentOperationException;
+    void validateGuestNtkwForVpc(NetworkOffering guestNtwkOff, String cidr, String networkDomain, Account networkOwner, 
+            Vpc vpc) throws ConcurrentOperationException;
 
+    /**
+     * @return
+     */
+    VpcProvider getVpcElement();
 }

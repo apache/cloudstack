@@ -39,6 +39,8 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.configuration.Config;
@@ -512,8 +514,10 @@ public class ElasticLoadBalancerManagerImpl implements
                     throw new CloudRuntimeException("Cannot find virtual router provider " + typeString + " as service provider " + provider.getId());
                 }
                
-                elbVm = new DomainRouterVO(id, _elasticLbVmOffering.getId(), vrProvider.getId(), VirtualMachineName.getSystemVmName(id, _instance, _elbVmNamePrefix), template.getId(), template.getHypervisorType(),
-                        template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false, RedundantState.UNKNOWN, _elasticLbVmOffering.getOfferHA(), false, VirtualMachine.Type.ElasticLoadBalancerVm);
+                elbVm = new DomainRouterVO(id, _elasticLbVmOffering.getId(), vrProvider.getId(), 
+                        VirtualMachineName.getSystemVmName(id, _instance, _elbVmNamePrefix), template.getId(), template.getHypervisorType(),
+                        template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false, RedundantState.UNKNOWN,
+                        _elasticLbVmOffering.getOfferHA(), false, VirtualMachine.Type.ElasticLoadBalancerVm, null);
                 elbVm.setRole(Role.LB);
                 elbVm = _itMgr.allocate(elbVm, template, _elasticLbVmOffering, networks, plan, null, owner);
                 //TODO: create usage stats
@@ -984,7 +988,6 @@ public class ElasticLoadBalancerManagerImpl implements
         
     }
 
-
     @Override
     public Long convertToId(String vmName) {
         if (!VirtualMachineName.isValidSystemVmName(vmName, _instance, _elbVmNamePrefix)) {
@@ -992,5 +995,21 @@ public class ElasticLoadBalancerManagerImpl implements
         }
 
         return VirtualMachineName.getSystemVmId(vmName);
+    }
+    
+    @Override
+    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm,
+            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
+        //not supported
+        throw new UnsupportedOperationException("Plug nic is not supported for vm of type " + vm.getType());
+    }
+
+
+    @Override
+    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm,
+            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
+        //not supported
+        throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
     }
 }

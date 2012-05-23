@@ -109,7 +109,7 @@ public interface NetworkManager extends NetworkService {
             throws ConcurrentOperationException;
 
     List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, Network predefined, DeploymentPlan plan, String name, String displayText, boolean errorIfAlreadySetup, Long domainId,
-            ACLType aclType, Boolean subdomainAccess) throws ConcurrentOperationException;
+            ACLType aclType, Boolean subdomainAccess, Long vpcId) throws ConcurrentOperationException;
 
     List<NetworkOfferingVO> getSystemAccountNetworkOfferings(String... offeringNames);
 
@@ -231,8 +231,6 @@ public interface NetworkManager extends NetworkService {
 
     boolean canElementEnableIndividualServices(Provider provider);
 
-    PhysicalNetworkServiceProvider addDefaultVirtualRouterToPhysicalNetwork(long physicalNetworkId);
-
     boolean areServicesSupportedInNetwork(long networkId, Service... services);
 
     boolean isNetworkSystem(Network network);
@@ -251,9 +249,6 @@ public interface NetworkManager extends NetworkService {
     boolean isProviderForNetworkOffering(Provider provider, long networkOfferingId);
 
     void canProviderSupportServices(Map<Provider, Set<Service>> providersMap);
-
-    PhysicalNetworkServiceProvider addDefaultSecurityGroupProviderToPhysicalNetwork(
-            long physicalNetworkId);
 
     List<PhysicalNetworkSetupInfo> getPhysicalNetworkInfo(long dcId,
             HypervisorType hypervisorType);
@@ -344,4 +339,37 @@ public interface NetworkManager extends NetworkService {
      * @return
      */
     List<Provider> getNtwkOffDistinctProviders(long networkId);
+
+
+    /**
+     * @param requested
+     * @param network
+     * @param isDefaultNic
+     * @param deviceId
+     * @param vm
+     * @return
+     * @throws InsufficientVirtualNetworkCapcityException
+     * @throws InsufficientAddressCapacityException
+     * @throws ConcurrentOperationException
+     */
+    Pair<NicProfile,Integer> allocateNic(NicProfile requested, Network network, Boolean isDefaultNic, int deviceId, 
+            VirtualMachineProfile<? extends VMInstanceVO> vm) throws InsufficientVirtualNetworkCapcityException,
+            InsufficientAddressCapacityException, ConcurrentOperationException;
+
+
+    /**
+     * @param vmProfile
+     * @param dest
+     * @param context
+     * @param nicId
+     * @param network
+     * @return
+     * @throws InsufficientVirtualNetworkCapcityException
+     * @throws InsufficientAddressCapacityException
+     * @throws ConcurrentOperationException
+     * @throws InsufficientCapacityException
+     * @throws ResourceUnavailableException
+     */
+    NicProfile prepareNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, ReservationContext context, long nicId, NetworkVO network) throws InsufficientVirtualNetworkCapcityException,
+            InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
 }

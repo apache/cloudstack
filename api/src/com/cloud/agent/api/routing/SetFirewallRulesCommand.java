@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.Set;
 
 import com.cloud.agent.api.to.FirewallRuleTO;
-import com.cloud.agent.api.to.LoadBalancerTO;
-import com.cloud.utils.StringUtils;
 
 /**
  * 
