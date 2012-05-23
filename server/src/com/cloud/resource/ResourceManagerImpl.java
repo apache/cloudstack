@@ -415,7 +415,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         clusterId = cluster.getId();
         result.add(cluster);
         
-        if (cmd.getAddVSMFlag().equalsIgnoreCase("true")) {
+        if (cmd.getAddVSMFlag() != null && cmd.getAddVSMFlag().equalsIgnoreCase("true")) {
 
         	String vsmIp = cmd.getVSMIpaddress();
         	String vsmUser = cmd.getVSMUsername();
