@@ -385,7 +385,7 @@
       <arg value="${target.dir}/jar" />
       <arg value="${deps.dir}" />
       <arg value="${dist.dir}" />
-      <arg value="-f ${commands.file},${commands.ext.file},${commands.simulator.file}" />
+      <arg value="-f ${commands.file},${commands.ext.file}" />
     </exec>
     <echo message="Result locates at ${dist.dir}/commands.xml" />
     
