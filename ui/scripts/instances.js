@@ -105,12 +105,22 @@
                     }
                   });
 
+									
+									//***** get templates/ISOs (begin) *****
+									var hypervisorArray = [];
+									$(hypervisorObjs).each(function(index, item) {									 
+										hypervisorArray.push(item.name);
+									});
+																		
                   $.ajax({
                     url: createURL("listTemplates&templatefilter=featured&zoneid="+args.currentData.zoneid),
                     dataType: "json",
                     async: false,
-                    success: function(json) {
-                      featuredTemplateObjs = json.listtemplatesresponse.template;
+                    success: function(json) {										  
+										  featuredTemplateObjs = $.grep(json.listtemplatesresponse.template, function(item, index) {											  
+											  if($.inArray(item.hypervisor, hypervisorArray) > -1)
+											    return true;
+											});	
                     }
                   });
                   $.ajax({
@@ -118,7 +128,10 @@
                     dataType: "json",
                     async: false,
                     success: function(json) {
-                      communityTemplateObjs = json.listtemplatesresponse.template;
+                      communityTemplateObjs = $.grep(json.listtemplatesresponse.template, function(item, index) {											  
+											  if($.inArray(item.hypervisor, hypervisorArray) > -1)
+											    return true;
+											});	
                     }
                   });
                   $.ajax({
@@ -126,10 +139,12 @@
                     dataType: "json",
                     async: false,
                     success: function(json) {
-                      myTemplateObjs = json.listtemplatesresponse.template;
+                      myTemplateObjs = $.grep(json.listtemplatesresponse.template, function(item, index) {											  
+											  if($.inArray(item.hypervisor, hypervisorArray) > -1)
+											    return true;
+											});	
                     }
                   });
-
 									
 									$.ajax({
                     url: createURL("listIsos&isofilter=featured&zoneid=" + args.currentData.zoneid + "&bootable=true"),
@@ -155,7 +170,9 @@
                       myIsoObjs = json.listisosresponse.iso;
                     }
                   });		
-																		
+									//***** get templates/ISOs (end) *****
+
+									
                   args.response.success({
                     hypervisor: {
                       idField: 'name',
