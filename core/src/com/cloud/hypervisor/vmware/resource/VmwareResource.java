@@ -2018,7 +2018,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         Long bytesRcvd = 0L;
 
                         if (VirtualMachineName.isValidRouterName(cmd.getVmName())) {
-                            if (cmd.getPrivateRouterIpAddress() != null) {
+                        	//Private IP is 0.0.0.0 for Direct Network virtual router and network usage is not metered for Direct network from Virtual Router
+                            if (cmd.getPrivateRouterIpAddress() != null && !"0.0.0.0".equals(cmd.getPrivateRouterIpAddress())) {
                                 long[] stats = getNetworkStats(cmd.getPrivateRouterIpAddress());
                                 bytesSent = stats[0];
                                 bytesRcvd = stats[1];
