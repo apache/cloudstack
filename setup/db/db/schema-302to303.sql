@@ -117,3 +117,5 @@ DELETE FROM `cloud`.`configuration` WHERE name='xen.max.xapi.version';
 DELETE FROM `cloud`.`configuration` WHERE name='xen.min.product.version';
 DELETE FROM `cloud`.`configuration` WHERE name='xen.min.version';
 DELETE FROM `cloud`.`configuration` WHERE name='xen.min.xapi.version';
+
+DELETE FROM `cloud`.`storage_pool_host_ref` WHERE pool_id IN (SELECT id FROM storage_pool WHERE removed IS NOT NULL);
