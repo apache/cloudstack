@@ -145,16 +145,16 @@ CREATE TABLE `cloud`.`virtual_supervisor_module` (
   `username` varchar(255) NOT NULL,
   `password` varchar(255) NOT NULL,
   `ipaddr` varchar(80) NOT NULL,
-  `vcenteripaddr` varchar(80) NOT NULL,
-  `vcenterdcname` varchar(255) NOT NULL,
+  `vcenter_ipaddr` varchar(80) NOT NULL,
+  `vcenter_dc_name` varchar(255) NOT NULL,
   `management_vlan` int(32),
   `control_vlan` int(32),
   `packet_vlan` int(32),
   `storage_vlan` int(32),
-  `vsmDomainId` bigint unsigned,
+  `vsm_domain_id` bigint unsigned,
   `config_mode` varchar(20),
-  `ConfigState` varchar(20),
-  `vsmDeviceState` varchar(20) NOT NULL,
+  `config_state` varchar(20),
+  `vsm_device_state` varchar(20) NOT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
