@@ -393,6 +393,8 @@ public class ApiConstants {
     public static final String S3_CONNECTION_TIMEOUT = "connectiontimeout";
     public static final String S3_MAX_ERROR_RETRY = "maxerrorretry";
     public static final String S3_SOCKET_TIMEOUT = "sockettimeout";
+    public static final String INCL_ZONES = "includezones";
+    public static final String EXCL_ZONES = "excludezones";
     
     public static final String SOURCE = "source";
     public static final String COUNTER_ID = "counterid";
