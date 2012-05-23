@@ -649,8 +649,34 @@
                 }
               });
 
+              var vSwitchEnabled = false;
+
+              // Check whether vSwitch capability is enabled
+              $.ajax({
+                url: createURL('listConfigurations'),
+                data: {
+                  name: 'vmware.use.nexus.vswitch'
+                },
+                async: false,
+                success: function(json) {
+                  if (json.listconfigurationsresponse.configuration[0].value == 'true') {
+                    vSwitchEnabled = true;
+                  }
+                }
+              });
+
               args.$select.bind("change", function(event) {
                 var $form = $(this).closest('form');
+                var $vsmFields = $form.find('[rel]').filter(function() {
+                  var vsmFields = [
+                    'vsmipaddress',
+                    'vsmusername',
+                    'vsmpassword'
+                  ];
+
+                  return $.inArray($(this).attr('rel'), vsmFields) > -1;
+                }); 
+
                 if($(this).val() == "VMware") {
                   //$('li[input_sub_group="external"]', $dialogAddCluster).show();
                   $form.find('[rel=vCenterHost]').css('display', 'block');
@@ -658,6 +684,11 @@
                   $form.find('[rel=vCenterPassword]').css('display', 'block');
                   $form.find('[rel=vCenterDatacenter]').css('display', 'block');
 
+                  if (vSwitchEnabled) {
+                    $vsmFields.css('display', 'block');
+                  } else {
+                    $vsmFields.css('display', 'none'); 
+                  } 
                   //$("#cluster_name_label", $dialogAddCluster).text("vCenter Cluster:");
                 }
                 else {
@@ -694,7 +725,23 @@
           vCenterDatacenter: {
             label: 'label.vcenter.datacenter',
             validation: { required: true }
-          }
+          },
+          vsmipaddress: {
+            label: 'vSwitch IP Address',
+            validation: { required: true },
+            isHidden: true
+          },
+          vsmusername: {
+            label: 'vSwitch Username',
+            validation: { required: true },
+            isHidden: true
+          },
+          vsmpassword: {
+            label: 'vSwitch Password',
+            validation: { required: true },
+            isPassword: true,
+            isHidden: true
+          } 
           //hypervisor==VMWare ends here
         }
       },
@@ -2505,6 +2552,12 @@
           if(args.data.cluster.hypervisor == "VMware") {
             array1.push("&username=" + todb(args.data.cluster.vCenterUsername));
             array1.push("&password=" + todb(args.data.cluster.vCenterPassword));
+
+            if (args.data.cluster.vsmipaddress) { // vSwitch is enabled
+              array1.push('&vsmipaddress=' + args.data.cluster.vsmipaddress);
+              array1.push('&vsmusername=' + args.data.cluster.vsmusername);
+              array1.push('&vsmpassword=' + args.data.cluster.vsmpassword);
+            }
 
             var hostname = args.data.cluster.vCenterHost;
             var dcName = args.data.cluster.vCenterDatacenter;
