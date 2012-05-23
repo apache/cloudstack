@@ -79,6 +79,13 @@ public class AddClusterCmd extends BaseCmd {
     @Parameter(name = ApiConstants.VCENTER_DC_NAME, type = CommandType.STRING, required = false, description = "the name of the vCenter Data Center the VSM associated with this cluster will serve")
     private String vcenterdcname;
     
+    @Parameter(name = ApiConstants.ADD_VSM_FLAG, type = CommandType.STRING, required = false, description = "flag that indicates a Cisco Nexus 1000v VSM is being associated with this cluster")
+    private String addVSMFlag;
+    
+    public String getAddVSMFlag() {
+    	return addVSMFlag;
+    }
+    
     public String getvCenterDCName() {
     	return vcenterdcname;
     }
