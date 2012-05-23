@@ -6193,18 +6193,18 @@
                   vsmipaddress: {
                     label: 'Nexus dvSwitch IP Address',
                     validation: { required: true },
-                    isHidden: true
+                    isHidden: false
                   },
                   vsmusername: {
                     label: 'Nexus dvSwitch Username',
                     validation: { required: true },
-                    isHidden: true
+                    isHidden: false
                   },
                   vsmpassword: {
                     label: 'Nexus dvSwitch Password',
                     validation: { required: true },
                     isPassword: true,
-                    isHidden: true
+                    isHidden: false
                   }
                   //hypervisor==VMWare ends here
                 }
@@ -6229,11 +6229,9 @@
                   array1.push("&username=" + todb(args.data.vCenterUsername));
                   array1.push("&password=" + todb(args.data.vCenterPassword));
 
-                  if (args.data.vsmipaddress) {
-                    array1.push('&vsmipaddress=' + args.data.vsmipaddress);
-                    array1.push('&vsmusername=' + args.data.vsmusername);
-                    array1.push('&vsmpassword=' + args.data.vsmpassword);
-                  }
+                  array1.push('&vsmipaddress=' + args.data.vsmipaddress);
+                  array1.push('&vsmusername=' + args.data.vsmusername);
+                  array1.push('&vsmpassword=' + args.data.vsmpassword);
 
                   var hostname = args.data.vCenterHost;
                   var dcName = args.data.vCenterDatacenter;
