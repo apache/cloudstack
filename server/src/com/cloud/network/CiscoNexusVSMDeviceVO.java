@@ -64,11 +64,11 @@ public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity{
     @Column(name = "ipaddr")
     private String ipaddr;
     
-    @Column(name = "vcenteripaddr")
+    @Column(name = "vcenter_ipaddr")
     private String vCenterIPAddr;
     
     // Name of the DataCenter (as seen in vCenter) that this VSM manages.
-    @Column(name = "vcenterdcname")
+    @Column(name = "vcenter_dc_name")
     private String vCenterDCName;
     
     @Column(name = "management_vlan")
@@ -83,16 +83,16 @@ public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity{
     @Column(name = "storage_vlan")
     private int storageVlan;
     
-    @Column(name = "vsmDomainId")
+    @Column(name = "vsm_domain_id")
     private long vsmDomainId;
     
     @Column(name = "config_mode")
     private VSMConfigMode vsmConfigMode;
     
-    @Column(name = "ConfigState")
+    @Column(name = "config_state")
     private VSMConfigState vsmConfigState;
     
-    @Column(name = "vsmDeviceState")
+    @Column(name = "vsm_device_state")
     private VSMDeviceState vsmDeviceState;
 
     // Accessor methods
