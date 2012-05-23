@@ -58,8 +58,15 @@ doHairpinNat () {
   logger -t cloud "$(basename $0): create HairPin entry : public ip=$publicIp \
   instance ip=$guestVmIp proto=$proto portRange=$guestPort op=$op"
 
-  (sudo iptables -t nat $op PREROUTING -d $publicIp -i eth0 -p $prot --dport $port -j DNAT --to-destination $guestVmIp:$guestPort &>> $OUTFILE || [ "$op" == "-D" ]) &&
-  (sudo iptables -t nat $op POSTROUTING -s $vrGuestIPNetwork -p $prot --dport $port -d $guestVmIp -j SNAT -o eth0 --to-source $vrGuestIP &>> $OUTFILE || [ "$op" == "-D" ])
+  if [ "$prot" == "all" ]
+	then
+  		logger -t cloud "creating hairpin nat rules for static nat" 
+  		(sudo iptables -t nat $op PREROUTING -d $publicIp -i eth0 -j DNAT --to-destination $guestVmIp &>> $OUTFILE || [ "$op" == "-D" ]) &&
+  		(sudo iptables -t nat $op POSTROUTING -s $vrGuestIPNetwork -d $guestVmIp -j SNAT -o eth0 --to-source $vrGuestIP &>> $OUTFILE || [ "$op" == "-D" ])
+	else
+  		(sudo iptables -t nat $op PREROUTING -d $publicIp -i eth0 -p $prot --dport $port -j DNAT --to-destination $guestVmIp:$guestPort &>> $OUTFILE || [ "$op" == "-D" ]) &&
+  		(sudo iptables -t nat $op POSTROUTING -s $vrGuestIPNetwork -p $prot --dport $port -d $guestVmIp -j SNAT -o eth0 --to-source $vrGuestIP &>> $OUTFILE || [ "$op" == "-D" ])
+	fi
 }
 
 #Port (address translation) forwarding for tcp or udp
@@ -185,6 +192,8 @@ static_nat() {
   local op=$3
   local op2="-D"
   local rulenum=
+  local proto="all"
+
   logger -t cloud "$(basename $0): static nat: public ip=$publicIp \
   instance ip=$instIp  op=$op"
   
@@ -217,7 +226,8 @@ static_nat() {
   (sudo iptables $op FORWARD -i $dev -o eth0 -d $instIp  -m state \
            --state NEW -j ACCEPT &>>  $OUTFILE || [ "$op" == "-D" ]) &&
   (sudo iptables -t nat $op2 POSTROUTING $rulenum -s $instIp -j SNAT \
-           -o $dev --to-source $publicIp &>> $OUTFILE || [ "$op" == "-D" ])
+           -o $dev --to-source $publicIp &>> $OUTFILE || [ "$op" == "-D" ]) &&
+  (doHairpinNat $publicIp $proto "all" $instIp "0:65535" $op)
 
   result=$?
   logger -t cloud "$(basename $0): done static nat entry public ip=$publicIp op=$op result=$result"

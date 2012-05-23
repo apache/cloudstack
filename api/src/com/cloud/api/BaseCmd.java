@@ -183,6 +183,10 @@ public abstract class BaseCmd {
         _responseObject = responseObject;
     }
 
+    public ManagementService getMgmtServiceRef() {
+    	return _mgr;
+    }
+    
     public static String getDateString(Date date) {
         if (date == null) {
             return "";

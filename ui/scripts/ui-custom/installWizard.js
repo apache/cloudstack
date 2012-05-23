@@ -20,6 +20,18 @@
     var launchStart; // Holds last launch callback, in case of error
     var $launchState;
 
+    // Checking if title should be ‘CloudStack’ or ‘CloudPlatform’ – replacing occurrences thereby
+    var checkTitle = function(str) {
+     // Getting the flag that indicates if EULA is present
+     if (eulaHTML && eulaHTML.length) { return str.replace(/CloudStack/ig,'CloudPlatform'); }
+     else { return str; }
+     }
+
+   /*  var data = $("p");
+     $(data).each(function() {
+        $(this).html(checkTitle($(this).html()));
+      }); 
+*/
     /**
      * Successful installation action
      */
@@ -39,7 +51,7 @@
       cloudStack.installWizard.copy[id]({
         response: {
           success: function(args) {
-            $elem.append(_l(args.text));
+            $elem.append(checkTitle(_l(args.text)));
           }
         }
       });
@@ -87,9 +99,9 @@
 
         var $intro = $('<div></div>').addClass('intro');
         var $title = $('<div></div>').addClass('title')
-              .html(title);
+              .html(checkTitle(title));
         var $subtitle = $('<div></div>').addClass('subtitle')
-              .html(subtitle);
+              .html(checkTitle(subtitle));
         var $copy = getCopy(copyID, $('<p></p>'));
         var $prev = elems.prevButton(_l('label.back'));
         var $continue = elems.nextButton('OK');
@@ -202,8 +214,8 @@
       tooltip: function(title, content) {
         return $('<div>').addClass('tooltip-info').append(
           $('<div>').addClass('arrow'),
-          $('<div>').addClass('title').html(_l(title)),
-          $('<div>').addClass('content').append($('<p>').html(_l(content)))
+          $('<div>').addClass('title').html(checkTitle(_l(title))),
+          $('<div>').addClass('content').append($('<p>').html(checkTitle(_l(content))))
         );
       },
 
@@ -214,8 +226,8 @@
         return $('<div></div>').addClass('header')
           .append(
             $.merge(
-              $('<h2></h2>').html(_l('label.installWizard.title')),
-              $('<h3></h3>').html(_l('label.installWizard.subtitle'))
+              $('<h2></h2>').html(checkTitle(_l('label.installWizard.title'))),
+              $('<h3></h3>').html(checkTitle(_l('label.installWizard.subtitle')))
             )
           );
       },
@@ -297,8 +309,8 @@
     var steps = {
       eula: function(args) {
         var $intro = $('<div></div>').addClass('intro eula');
-        var $title = $('<div></div>').addClass('title').html(_l('label.license.agreement'));
-        var $subtitle = $('<div></div>').addClass('subtitle').html(_l('label.license.agreement.subtitle'));
+        var $title = $('<div></div>').addClass('title').html(checkTitle(_l('label.license.agreement')));
+        var $subtitle = $('<div></div>').addClass('subtitle').html(checkTitle(_l('label.license.agreement.subtitle')));
         var $copy = $('<div></div>').addClass('eula-copy').html(eulaHTML);
         var $continue = elems.nextButton(_l('label.agree'));
 
@@ -314,12 +326,17 @@
       },
 
       intro: function(args) {
-        var $intro = $('<div></div>').addClass('intro what-is-cloudstack');
-        var $title = $('<div></div>').addClass('title').html(_l('label.what.is.cloudstack'));
-        var $subtitle = $('<div></div>').addClass('subtitle').html(_l('label.introduction.to.cloudstack'));
+        if (eulaHTML && eulaHTML.length){
+          var $intro = $('<div></div>').addClass('intro what-is-cloudplatform');                           }
+        else {
+          var $intro = $('<div></div>').addClass('intro what-is-cloudstack');
+
+        }
+        var $title = $('<div></div>').addClass('title').html(checkTitle(_l('label.what.is.cloudstack')));
+        var $subtitle = $('<div></div>').addClass('subtitle').html(checkTitle(_l('label.introduction.to.cloudstack')));
         var $copy = getCopy('whatIsCloudStack', $('<p></p>'));
         var $continue = elems.nextButton(_l('label.continue.basic.install'));
-        var $advanced = elems.nextButton(_l('label.skip.guide')).addClass('advanced-installation');
+        var $advanced = elems.nextButton(checkTitle(_l('label.skip.guide'))).addClass('advanced-installation');
 
         $continue.click(function() {
           goTo('changeUser');
@@ -792,6 +809,7 @@
 
     var initialStep = eulaHTML ?
           steps.eula().addClass('step') : steps.intro().addClass('step');
+    
 
     showDiagram('');
     $('html body').addClass('install-wizard');
@@ -801,7 +819,9 @@
       elems.body().append(initialStep),
       $diagramParts
     ).appendTo($container);
-  };
+    
+
+ };
 
   cloudStack.uiCustom.installWizard = installWizard;
 }(jQuery, cloudStack));

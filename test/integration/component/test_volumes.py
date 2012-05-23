@@ -20,7 +20,7 @@ from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin import remoteSSHClient
 #Import System modules
 import os
 import urllib
@@ -743,7 +743,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
                                                     iso.id, 
                                                     self.account.account.name
                                                     ))
-        self.cleanup.append(iso)
+
         try:
             self.debug("Downloading ISO with ID: %s" % iso.id)
             iso.download(self.apiclient)

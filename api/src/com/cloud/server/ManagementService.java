@@ -127,6 +127,13 @@ public interface ManagementService {
      * @return
      */
     List<? extends Cluster> searchForClusters(ListClustersCmd c);
+    
+    /**
+     * Searches for Clusters by the specified zone Id.
+     * @param zoneId
+     * @return
+     */
+    List<? extends Cluster> searchForClusters(long zoneId, Long startIndex, Long pageSizeVal, String hypervisorType);
 
     /**
      * Searches for Pods by the specified search criteria Can search by: pod name and/or zone name

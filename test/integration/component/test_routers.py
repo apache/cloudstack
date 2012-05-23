@@ -17,7 +17,7 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin import remoteSSHClient
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
@@ -219,7 +219,7 @@ class TestRouterServices(cloudstackTestCase):
                         True,
                         "Check for list networks response return valid data"
                         )
-        
+
         self.assertNotEqual(
                              len(networks),
                              0,
@@ -228,7 +228,7 @@ class TestRouterServices(cloudstackTestCase):
         for network in networks:
             self.assertIn(
                         network.state,
-                        ['Implemented','Allocated'],
+                        ['Implemented', 'Allocated'],
                         "Check list network response for network state"
                     )
             self.debug("Network ID: %s & Network state: %s" % (
@@ -371,7 +371,7 @@ class TestRouterServices(cloudstackTestCase):
         for network in networks:
             self.assertIn(
                         network.state,
-                        ['Implemented','Allocated'],
+                        ['Implemented', 'Allocated'],
                         "Check list network response for network state"
                     )
             self.debug("Network ID: %s & Network state: %s" % (
@@ -486,7 +486,7 @@ class TestRouterServices(cloudstackTestCase):
                                     serviceofferingid=self.service_offering.id
                                     )
         self.debug("Deployed a VM with ID: %s" % vm.id)
-        
+
         virtual_machines = list_virtual_machines(
                                 self.apiclient,
                                 id=vm.id,
@@ -499,7 +499,7 @@ class TestRouterServices(cloudstackTestCase):
                         True,
                         "Check for list virtual machines response return valid data"
                         )
-        
+
         self.assertNotEqual(
                              len(virtual_machines),
                              0,
@@ -524,7 +524,7 @@ class TestRouterServices(cloudstackTestCase):
                         True,
                         "Check for list routers response return valid data"
                         )
-        
+
         self.assertNotEqual(
                              len(routers),
                              0,
@@ -556,7 +556,7 @@ class TestRouterServices(cloudstackTestCase):
                         True,
                         "Check for list VMs response return valid data"
                         )
-        
+
         self.assertNotEqual(
                              len(virtual_machines),
                              0,
@@ -678,7 +678,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
         router = routers[0]
 
         self.debug("Stopping router ID: %s" % router.id)
-        
+
         #Stop the router
         cmd = stopRouter.stopRouterCmd()
         cmd.id = router.id
@@ -714,6 +714,16 @@ class TestRouterStopCreatePF(cloudstackTestCase):
                         "Check for list public IPs response return valid data"
                         )
         public_ip = public_ips[0]
+
+        # Open up firewall port for SSH        
+        fw_rule = FireWallRule.create(
+                            self.apiclient,
+                            ipaddressid=public_ip.id,
+                            protocol=self.services["natrule"]["protocol"],
+                            cidrlist=['0.0.0.0/0'],
+                            startport=self.services["natrule"]["publicport"],
+                            endport=self.services["natrule"]["publicport"]
+                            )
 
         self.debug("Creating NAT rule for VM ID: %s" % self.vm_1.id)
         #Create NAT rule
@@ -766,7 +776,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
         try:
 
             self.debug("SSH into VM with ID: %s" % nat_rule.ipaddress)
-            
+
             self.vm_1.ssh_port = nat_rule.publicport
             self.vm_1.get_ssh_client(nat_rule.ipaddress)
         except Exception as e:
@@ -864,7 +874,7 @@ class TestRouterStopCreateLB(cloudstackTestCase):
                         True,
                         "Check for list routers response return valid data"
                         )
-        
+
         self.assertNotEqual(
                              len(routers),
                              0,
@@ -908,6 +918,16 @@ class TestRouterStopCreateLB(cloudstackTestCase):
                         "Check for list public IPs response return valid data"
                         )
         public_ip = public_ips[0]
+        
+        # Open up firewall port for SSH        
+        fw_rule = FireWallRule.create(
+                            self.apiclient,
+                            ipaddressid=public_ip.id,
+                            protocol=self.services["lbrule"]["protocol"],
+                            cidrlist=['0.0.0.0/0'],
+                            startport=self.services["lbrule"]["publicport"],
+                            endport=self.services["lbrule"]["publicport"]
+                            )
         self.debug("Creating LB rule for public IP: %s" % public_ip.id)
         #Create Load Balancer rule and assign VMs to rule
         lb_rule = LoadBalancerRule.create(
@@ -1071,7 +1091,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                              )
 
         router = routers[0]
-        
+
         self.debug("Stopping the router: %s" % router.id)
         #Stop the router
         cmd = stopRouter.stopRouterCmd()
@@ -1135,7 +1155,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                         True,
                         "Check for list routers response return valid data"
                         )
-        
+
         router = routers[0]
 
         self.assertEqual(
@@ -1153,7 +1173,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                         True,
                         "Check for list FW rules response return valid data"
                         )
-        
+
         self.assertEqual(
                     fw_rules[0].state,
                     'Active',

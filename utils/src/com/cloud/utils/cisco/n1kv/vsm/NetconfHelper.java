@@ -125,7 +125,7 @@ public class NetconfHelper {
 
     public void addPolicyMap(String name, int averageRate, int maxRate, int burstRate)
             throws CloudRuntimeException {
-        String command = VsmCommand.getPolicyMap(name, averageRate, maxRate, burstRate);
+        String command = VsmCommand.getAddPolicyMap(name, averageRate, maxRate, burstRate);
         if (command != null) {
             command = command.concat(SSH_NETCONF_TERMINATOR);
             send(command);
@@ -180,18 +180,39 @@ public class NetconfHelper {
         }
     }
 
-    public void getPortProfileByName(String name) throws CloudRuntimeException {
+    public PortProfile getPortProfileByName(String name) throws CloudRuntimeException {
         String command = VsmCommand.getPortProfile(name);
         if (command != null) {
             command = command.concat(SSH_NETCONF_TERMINATOR);
             send(command);
             // parse the rpc reply.
-            VsmPortProfileResponse response = new VsmPortProfileResponse(receive().trim());
+            String received = receive();
+            VsmPortProfileResponse response = new VsmPortProfileResponse(received.trim());
             if (!response.isResponseOk()) {
                 throw new CloudRuntimeException("Error response while getting the port profile details.");
+            } else {
+                return response.getPortProfile();
             }
         } else {
-            throw new CloudRuntimeException("Error generating rpc request for removing policy map.");
+            throw new CloudRuntimeException("Error generating rpc request for getting port profile.");
+        }
+    }
+
+    public PolicyMap getPolicyMapByName(String name) throws CloudRuntimeException {
+        String command = VsmCommand.getPolicyMap(name);
+        if (command != null) {
+            command = command.concat(SSH_NETCONF_TERMINATOR);
+            send(command);
+            // parse the rpc reply.
+            String received = receive();
+            VsmPolicyMapResponse response = new VsmPolicyMapResponse(received.trim());
+            if (!response.isResponseOk()) {
+                throw new CloudRuntimeException("Error response while getting the port profile details.");
+            } else {
+                return response.getPolicyMap();
+            }
+        } else {
+            throw new CloudRuntimeException("Error generating rpc request for getting policy map.");
         }
     }
 

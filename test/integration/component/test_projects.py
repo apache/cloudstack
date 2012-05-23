@@ -20,7 +20,7 @@ from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin import remoteSSHClient
 import datetime
 
 

@@ -20,7 +20,7 @@ from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin import remoteSSHClient
 
 class Services:
     """Test Snapshots Services
@@ -860,7 +860,7 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
                                                 self.services["sub_lvl_dir2"],
                                                 self.services["random_data"]
                                             ),
-		    "sync",
+		            "sync",
                 ]
             for c in cmds:
                 self.debug(ssh_client.execute(c))

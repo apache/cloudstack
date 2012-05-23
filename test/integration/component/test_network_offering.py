@@ -21,7 +21,7 @@ from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin import remoteSSHClient
 import datetime
 
 
@@ -44,7 +44,7 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100,  # in MHz
+                                    "cpuspeed": 100, # in MHz
                                     "memory": 64, # In MBs
                                     },
                          "network_offering": {
@@ -54,16 +54,16 @@ class Services:
                                     "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
                                     "traffictype": 'GUEST',
                                     "availability": 'Optional',
-                                    "serviceProviderList": {
+                                    "serviceProviderList" : {
                                             "Dhcp": 'VirtualRouter',
                                             "Dns": 'VirtualRouter',
                                             "SourceNat": 'VirtualRouter',
                                             "PortForwarding": 'VirtualRouter',
-                                            "Vpn": 'VirtualRouter',
-                                            "Firewall": 'VirtualRouter',
-                                            "Lb": 'VirtualRouter',
-                                            "UserData": 'VirtualRouter',
-                                            "StaticNat": 'VirtualRouter',
+					                        "Vpn": 'VirtualRouter',
+					                        "Firewall": 'VirtualRouter',
+					                        "Lb": 'VirtualRouter',
+					                        "UserData": 'VirtualRouter',
+					                        "StaticNat": 'VirtualRouter',
                                         },
                                     },
                          "network_offering_netscaler": {
@@ -73,7 +73,7 @@ class Services:
                                     "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
                                     "traffictype": 'GUEST',
                                     "availability": 'Optional',
-                                    "serviceProviderList": {
+                                    "serviceProviderList" : {
                                             "Dhcp": 'VirtualRouter',
                                             "Dns": 'VirtualRouter',
                                             "SourceNat": 'VirtualRouter',
@@ -115,7 +115,7 @@ class Services:
                                     "publicport": 66,
                                     "protocol": "TCP"
                                 },
-                         "fw_rule": {
+                         "fw_rule":{
                                     "startport": 1,
                                     "endport": 6000,
                                     "cidr": '55.55.0.0/11',
@@ -137,7 +137,7 @@ class Services:
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 10,
-                         "mode": 'advanced'
+                         "mode":'advanced'
                     }
 
 
@@ -240,7 +240,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
 
         self.debug("Created n/w offering with ID: %s" %
                                                     self.network_offering.id)
-        # Enable Network offering
+	    # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
 
         # Creating network using the network offering created
@@ -252,7 +252,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                     accountid=self.account.account.name,
                                     domainid=self.account.account.domainid,
                                     networkofferingid=self.network_offering.id,
-                    zoneid=self.zone.id
+				                    zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
@@ -268,6 +268,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                   networkids=[str(self.network.id)]
                                   )
         self.debug("Deployed VM in network: %s" % self.network.id)
+
         src_nat_list = PublicIPAddress.list(
                                         self.apiclient,
                                         associatednetworkid=self.network.id,
@@ -286,7 +287,9 @@ class TestNOVirtualRouter(cloudstackTestCase):
                     0,
                     "Length of response from listPublicIp should not be 0"
                     )
+
         src_nat = src_nat_list[0]
+
         self.debug("Trying to create LB rule on source NAT IP: %s" %
                                                         src_nat.ipaddress)
         # Create Load Balancer rule with source NAT
@@ -326,7 +329,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                         ip_with_nat_rule.ipaddress.ipaddress)
         NATRule.create(
                          self.apiclient,
-                            virtual_machine,
+                       	 virtual_machine,
                          self.services["natrule"],
                          ipaddressid=ip_with_nat_rule.ipaddress.id
                       )
@@ -478,7 +481,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
 
         self.debug("Created n/w offering with ID: %s" %
                                                     self.network_offering.id)
-    # Enable Network offering
+	# Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
 
         # Creating network using the network offering created
@@ -490,7 +493,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                     accountid=self.account.account.name,
                                     domainid=self.account.account.domainid,
                                     networkofferingid=self.network_offering.id,
-                                    zoneid=self.zone.id
+				                    zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
@@ -506,6 +509,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                   networkids=[str(self.network.id)]
                                   )
         self.debug("Deployed VM in network: %s" % self.network.id)
+
         src_nat_list = PublicIPAddress.list(
                                         self.apiclient,
                                         associatednetworkid=self.network.id,
@@ -694,7 +698,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
         vpns = Vpn.list(
                         self.apiclient,
                         publicipid=src_nat.id,
-                        listall=True,
+			listall=True,
                         )
 
         self.assertEqual(
@@ -789,12 +793,13 @@ class TestNOWithNetscaler(cloudstackTestCase):
         # 5. On an ipaddress that has Lb rules , we should NOT allow firewall
         #    rules to be programmed.
         # 6. On an ipaddress that has Lb rules , we should NOT allow PF rules
-        #    to be programmed.
+        #    to be programmed.   
         # 7. We should be allowed to program multiple PF rules on the same Ip
         #    address on different public ports.
         # 8. We should be allowed to program multiple LB rules on the same Ip
-        #    address for different public port ranges.
+        #    address for different public port ranges.   
         # 9. On source NAT ipaddress, we should NOT be allowed to Enable VPN.
+
 
         # Create a network offering with all virtual router services enabled
         self.debug(
@@ -837,6 +842,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
                                   networkids=[str(self.network.id)]
                                   )
         self.debug("Deployed VM in network: %s" % self.network.id)
+
         src_nat_list = PublicIPAddress.list(
                                         self.apiclient,
                                         associatednetworkid=self.network.id,
@@ -882,7 +888,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
                            )
         self.debug("Creating firewall rule on source NAT: %s" %
                                                         src_nat.ipaddress)
-        #Create Firewall rule on source NAT
+        #Create Firewall rule on source NAT       
         fw_rule = FireWallRule.create(
                             self.apiclient,
                             ipaddressid=src_nat.id,
@@ -1056,12 +1062,13 @@ class TestNOWithNetscaler(cloudstackTestCase):
         # 5. On an ipaddress that has Lb rules , we should NOT allow firewall
         #    rules to be programmed.
         # 6. On an ipaddress that has Lb rules , we should NOT allow PF rules
-        #    to be programmed.
+        #    to be programmed.   
         # 7. We should be allowed to program multiple PF rules on the same Ip
         #    address on different public ports.
         # 8. We should be allowed to program multiple LB rules on the same Ip
-        #    address for different public port ranges.
+        #    address for different public port ranges.   
         # 9. On source NAT ipaddress, we should be allowed to Enable VPN.
+
 
         # Create a network offering with all virtual router services enabled
         self.debug(
@@ -1104,6 +1111,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
                                   networkids=[str(self.network.id)]
                                   )
         self.debug("Deployed VM in network: %s" % self.network.id)
+
         src_nat_list = PublicIPAddress.list(
                                         self.apiclient,
                                         associatednetworkid=self.network.id,
@@ -1452,6 +1460,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
                                   networkids=[str(self.network.id)]
                                   )
         self.debug("Deployed VM in network: %s" % self.network.id)
+
         src_nat_list = PublicIPAddress.list(
                                         self.apiclient,
                                         associatednetworkid=self.network.id,
@@ -1535,6 +1544,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
                                             )
         self.cleanup.append(ns_lb_offering)
         ns_lb_offering.update(self.apiclient, state='Enabled')
+
         #Stop all the VMs associated with network to update cidr
         self.debug("Stopping the VM: %s" % virtual_machine.name)
         virtual_machine.stop(self.apiclient)
@@ -1549,6 +1559,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
                             )
 
         self.debug("Network upgrade failed!")
+
         self.debug("Deleting LB Rule: %s" % lb_rule.id)
         lb_rule.delete(self.apiclient)
         self.debug("LB rule deleted")
@@ -1646,6 +1657,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
                                   networkids=[str(self.network.id)]
                                   )
         self.debug("Deployed VM in network: %s" % self.network.id)
+
         src_nat_list = PublicIPAddress.list(
                                         self.apiclient,
                                         associatednetworkid=self.network.id,
@@ -1729,6 +1741,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
                                             )
         self.cleanup.append(ns_lb_offering)
         ns_lb_offering.update(self.apiclient, state='Enabled')
+
         #Stop all the VMs associated with network to update cidr
         self.debug("Stopping the VM: %s" % virtual_machine.name)
         virtual_machine.stop(self.apiclient)
@@ -1743,6 +1756,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
                             )
 
         self.debug("Network upgrade failed!")
+
         self.debug("Deleting LB Rule: %s" % lb_rule.id)
         lb_rule.delete(self.apiclient)
         self.debug("LB rule deleted")
