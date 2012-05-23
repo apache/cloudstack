@@ -430,48 +430,53 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         }
         clusterId = cluster.getId();
         result.add(cluster);
+        
+        if (cmd.getAddVSMFlag().equalsIgnoreCase("true")) {
 
-        String vsmIp = cmd.getVSMIpaddress();
-        String vsmUser = cmd.getVSMUsername();
-        String vsmPassword = cmd.getVSMPassword();
-        String vCenterIpaddr = cmd.getvCenterIPAddr();
-        String vCenterDcName = cmd.getvCenterDCName();
+        	String vsmIp = cmd.getVSMIpaddress();
+        	String vsmUser = cmd.getVSMUsername();
+        	String vsmPassword = cmd.getVSMPassword();
+        	String vCenterIpaddr = cmd.getvCenterIPAddr();
+        	String vCenterDcName = cmd.getvCenterDCName();
 
-        if (vsmIp != null && vsmUser != null && vsmPassword != null) {
-            NetconfHelper netconfClient;
-            try {
-                netconfClient = new NetconfHelper(vsmIp, vsmUser, vsmPassword);
-                netconfClient.disconnect();
-            } catch (CloudRuntimeException e) {
-                String msg = "Invalid credentials supplied for user " + vsmUser + " for Cisco Nexus 1000v VSM at " + vsmIp;
-                s_logger.error(msg);
-                throw new CloudRuntimeException(msg);
-            }
-            // persist credentials in database
-            CiscoNexusVSMDeviceVO vsm = new CiscoNexusVSMDeviceVO(vsmIp, vsmUser, vsmPassword, vCenterIpaddr, vCenterDcName);
+        	if (vsmIp != null && vsmUser != null && vsmPassword != null && vCenterIpaddr != null && vCenterDcName != null) {
+        		NetconfHelper netconfClient;
+        		try {
+        			netconfClient = new NetconfHelper(vsmIp, vsmUser, vsmPassword);
+        			netconfClient.disconnect();
+        		} catch (CloudRuntimeException e) {
+        			String msg = "Invalid credentials supplied for user " + vsmUser + " for Cisco Nexus 1000v VSM at " + vsmIp;
+        			s_logger.error(msg);
+        			throw new CloudRuntimeException(msg);
+        		}
+        		// persist credentials in database
+        		CiscoNexusVSMDeviceVO vsm = new CiscoNexusVSMDeviceVO(vsmIp, vsmUser, vsmPassword, vCenterIpaddr, vCenterDcName);
             
-            Transaction txn = Transaction.currentTxn();
-            try {
-                txn.start();
-                vsm = _vsmDao.persist(vsm);
-                txn.commit();
-            } catch (Exception e) {
-                txn.rollback();
-                s_logger.error("Failed to persist VSM details to database. Exception: " + e.getMessage());
-                throw new CloudRuntimeException(e.getMessage());
-            }
+        		Transaction txn = Transaction.currentTxn();
+        		try {
+        			txn.start();
+        			vsm = _vsmDao.persist(vsm);
+        			txn.commit();
+        		} catch (Exception e) {
+        			txn.rollback();
+        			s_logger.error("Failed to persist VSM details to database. Exception: " + e.getMessage());
+        			throw new CloudRuntimeException(e.getMessage());
+        		}
             
-            ClusterVSMMapVO connectorObj = new ClusterVSMMapVO(clusterId, vsm.getId());
-            txn = Transaction.currentTxn();
-            try {
-                txn.start();
-                _clusterVSMDao.persist(connectorObj);
-                txn.commit();
-            } catch (Exception e) {
-                txn.rollback();
-                s_logger.error("Failed to associate VSM with cluster: " + clusterName + ". Exception: " + e.getMessage());
-                throw new CloudRuntimeException(e.getMessage());
-            }
+        		ClusterVSMMapVO connectorObj = new ClusterVSMMapVO(clusterId, vsm.getId());
+        		txn = Transaction.currentTxn();
+        		try {
+        			txn.start();
+        			_clusterVSMDao.persist(connectorObj);
+        			txn.commit();
+        		} catch (Exception e) {
+        			txn.rollback();
+        			s_logger.error("Failed to associate VSM with cluster: " + clusterName + ". Exception: " + e.getMessage());
+        			throw new CloudRuntimeException(e.getMessage());
+        		}
+        	} else {
+        		throw new CloudRuntimeException("All required parameters for VSM not specified");
+        	}
         }
 
         if (clusterType == Cluster.ClusterType.CloudManaged) {
