@@ -242,10 +242,9 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     }
 
     @DB
-    public boolean enableCiscoNexusVSM(long vsmId) {
+    public CiscoNexusVSMDeviceVO enableCiscoNexusVSM(long vsmId) {
         CiscoNexusVSMDeviceVO cisconexusvsm = _ciscoNexusVSMDeviceDao.findById(vsmId);
         if (cisconexusvsm == null) {
-        	// This entry is already not present. Return success.
         	throw new InvalidParameterValueException("Invalid vsm Id specified");        	
         }
         // Else, check if this db record shows that this VSM is enabled or not.
@@ -269,14 +268,13 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
         obj.addPortProfile("pp1", 1, 4000, PortType.vEthernet, BindingType.Ephemeral);
         ***/
         
-        return true;
+        return cisconexusvsm;
     }
     
-    @DB
-    public boolean disableCiscoNexusVSM(long vsmId) {
+    @DB    
+    public CiscoNexusVSMDeviceVO disableCiscoNexusVSM(long vsmId) {
         CiscoNexusVSMDeviceVO cisconexusvsm = _ciscoNexusVSMDeviceDao.findById(vsmId);
         if (cisconexusvsm == null) {
-        	// This entry is already not present. Return success.
         	throw new InvalidParameterValueException("Invalid vsm Id specified");        	
         }
         // Else, check if this db record shows that this VSM is enabled or not.
@@ -301,7 +299,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
         obj2.deletePortProfile(obj.getId());
         //_ppmgr.addPortProfile("pp1", 1, 4000, PortType.vEthernet, BindingType.Ephemeral);
         **/
-        return true;
+        return cisconexusvsm;
     }
     
     @DB
