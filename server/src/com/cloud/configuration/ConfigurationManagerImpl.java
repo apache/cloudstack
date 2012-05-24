@@ -108,7 +108,6 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.api.commands.MarkDefaultZoneForAccountCmd;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.FirewallRulesDao;
@@ -139,8 +138,8 @@ import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
-import com.cloud.user.AccountVO;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
@@ -2180,23 +2179,12 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         if (forVirtualNetwork) {
             if (vlanOwner != null) {
-                // verify resource limits
-                //long ipResourceLimit = _resourceLimitMgr.findCorrectResourceLimitForAccount(vlanOwner, ResourceType.public_ip);
-                
+
                 long accountIpRange = NetUtils.ip2Long(endIP) - NetUtils.ip2Long(startIP) + 1;
 
                 //check resource limits
                 _resourceLimitMgr.checkResourceLimit(vlanOwner, ResourceType.public_ip, accountIpRange);
                 
-//                if (s_logger.isDebugEnabled()) {
-//                    s_logger.debug(" IPResourceLimit " + ipResourceLimit + " accountIpRange " + accountIpRange);
-//                }
-//                if (ipResourceLimit != -1 && accountIpRange > ipResourceLimit) { // -1
-//                                                                                 // means
-//                                                                                 // infinite
-//                    throw new InvalidParameterValueException(" Public IP Resource Limit is set to " + ipResourceLimit +
-//                            " which is less than the IP range of " + accountIpRange + " provided");
-//                }
                 associateIpRangeToAccount = true;
             }
         }
@@ -2206,7 +2194,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP, endIP, vlanGateway, vlanNetmask, vlanId, vlanOwner);
+        Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP, 
+                endIP, vlanGateway, vlanNetmask, vlanId, vlanOwner);
 
         if (associateIpRangeToAccount) {
             _networkMgr.associateIpAddressListToAccount(userId, vlanOwner.getId(), zoneId, vlan.getId(), null);
