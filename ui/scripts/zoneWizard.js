@@ -727,17 +727,17 @@
             validation: { required: true }
           },
           vsmipaddress: {
-            label: 'vSwitch IP Address',
+            label: 'Nexus dvSwitch IP Address',
             validation: { required: true },
             isHidden: true
           },
           vsmusername: {
-            label: 'vSwitch Username',
+            label: 'Nexus dvSwitch Username',
             validation: { required: true },
             isHidden: true
           },
           vsmpassword: {
-            label: 'vSwitch Password',
+            label: 'Nexus dvSwitch Password',
             validation: { required: true },
             isPassword: true,
             isHidden: true
