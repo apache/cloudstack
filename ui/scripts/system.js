@@ -6604,13 +6604,13 @@
                         
                         dataProvider: function(args) {
                           $.ajax({
-                            url: createURL("listClusters&id=" + args.context.clusters[0].id),
+                            url: createURL("listCiscoNexusVSMs&clusterid=" + args.context.clusters[0].id),
                             dataType: "json",
                             success: function(json) {
-                              var item = json.listclustersresponse.cluster[0];
+                              var item = json.listcisconexusvsmscmdresponse.cisconexusvsm;
                               addExtraPropertiesToClusterObject(item);
                               args.response.success({
-                                actionFilter: clusterActionfilter,
+                                actionFilter: nexusActionfilter,
                                 data: item
                               });
                             },
@@ -6625,12 +6625,12 @@
 
                   dataProvider: function(args) {
                     $.ajax({
-                      url: createURL("getCiscoVSMByClusterId&id=" + args.context.clusters[0].id),
+                      url: createURL("listCiscoNexusVSMs&clusterid=" + args.context.clusters[0].id),
                       dataType: "json",
                       success: function(json) {
-                        var item = json.getciscovsmbyclusteridcmdresponse.cisconexusvsm;
+                        var item = json.listcisconexusvsmscmdresponse.cisconexusvsm;
                         args.response.success({
-                          actionFilter: clusterActionfilter,
+                          actionFilter: nexusActionfilter,
                           data: item
                         });
                       },
