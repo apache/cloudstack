@@ -295,11 +295,12 @@
           response: {
             success: function(args) {
               var data = args.data;
+              var actionFilter = args.actionFilter;
 
               $chart.listView({
                 listView: $.extend(true, {}, cloudStack.sections.system.naas.networks.listView, {
                   dataProvider: function(args) {
-                    args.response.success({ data: data });
+                    args.response.success({ actionFilter: actionFilter, data: data });
                   },
                   detailView: {
                     tabs: {
