@@ -20,7 +20,6 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
 @Local(value=ClusterVSMMapDao.class)
@@ -46,6 +45,14 @@ public class ClusterVSMMapDaoImpl extends GenericDaoBase<ClusterVSMMapVO, Long> 
     public boolean removeByVsmId(long vsmId) {
     	SearchCriteria<ClusterVSMMapVO> sc = VsmSearch.create();
     	sc.setParameters("vsmId", vsmId);
+    	this.remove(sc);
+    	return true;
+    }
+    
+    @Override
+    public boolean removeByClusterId(long clusterId) {
+    	SearchCriteria<ClusterVSMMapVO> sc = ClusterSearch.create();
+    	sc.setParameters("clusterId", clusterId);
     	this.remove(sc);
     	return true;
     }

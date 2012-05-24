@@ -215,6 +215,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     protected VMTemplateDao  _templateDao;
     @Inject
     protected ConfigurationManager 			 _configMgr;
+    @Inject
+    protected ClusterVSMMapDao				 _clusterVSMMapDao;
 
     protected long                           _nodeId  = ManagementServerNode.getManagementServerId();
     
@@ -919,7 +921,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     @DB
     public boolean deleteCluster(DeleteClusterCmd cmd) {
         Transaction txn = Transaction.currentTxn();
-        try {
+        try {        	
             txn.start();
             ClusterVO cluster = _clusterDao.lockRow(cmd.getId(), true);
             if (cluster == null) {
@@ -930,6 +932,8 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 throw new CloudRuntimeException("Cluster: " + cmd.getId() + " does not exist");
             }
 
+            Hypervisor.HypervisorType hypervisorType = cluster.getHypervisorType();
+            
             List<HostVO> hosts = listAllHostsInCluster(cmd.getId());
             if (hosts.size() > 0) {
                 if (s_logger.isDebugEnabled()) {
@@ -951,6 +955,12 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 
             if (_clusterDao.remove(cmd.getId())){
                 _capacityDao.removeBy(null, null, null, cluster.getId(), null);
+                // If this cluster is of type vmware, and if the nexus vswitch global parameter setting is turned
+                // on, remove the row in cluster_vsm_map for this cluster id.
+                if (hypervisorType == HypervisorType.VMware &&
+                		Boolean.parseBoolean(_configDao.getValue(Config.VmwareUseNexusVSwitch.toString()))) {
+                	_clusterVSMMapDao.removeByClusterId(cmd.getId());
+                }
             }
 
             txn.commit();
