@@ -275,16 +275,24 @@ def setLinkLocalIP(session, args):
         txt = util.pread2(cmd)
     except:
         try:
-            cmd = ["brctl", "addbr", brName]
-            txt = util.pread2(cmd)
+            cmd = ['cat', '/etc/xensource/network.conf']
+            result = util.pread2(cmd)
         except:
-            pass
-        
-        try:
-            cmd = ["ovs-vsctl", "add-br", brName]
-            txt = util.pread2(cmd)
-        except:
-            pass
+            return 'can not cat network.conf'
+
+        if result.lower() == "bridge":
+            try:
+                cmd = ["brctl", "addbr", brName]
+                txt = util.pread2(cmd)
+            except:
+                pass
+
+        else:
+            try:
+                cmd = ["ovs-vsctl", "add-br", brName]
+                txt = util.pread2(cmd)
+            except:
+                pass
         
         try:
             cmd = ["ifconfig", brName, "169.254.0.1", "netmask", "255.255.0.0"]
