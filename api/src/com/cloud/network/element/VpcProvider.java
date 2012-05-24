@@ -33,7 +33,7 @@ public interface VpcProvider extends NetworkElement{
      * @param vpc fully specified vpc configuration.
      * @throws InsufficientNetworkCapacityException TODO
      */
-    boolean startVpc(Vpc vpc, DeployDestination dest, ReservationContext context) 
+    boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context) 
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     /**
@@ -42,7 +42,7 @@ public interface VpcProvider extends NetworkElement{
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean stopVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException;
+    boolean shutdownVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException;
     
 
 }

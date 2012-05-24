@@ -476,7 +476,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_DELETE, eventDescription = "deleting VPC")
-    public boolean deleteVpc(long vpcId) {
+    public boolean deleteVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         UserContext.current().setEventDetails(" Id: " + vpcId);
 
         // Verify vpc id
@@ -490,6 +490,9 @@ public class VpcManagerImpl implements VpcManager, Manager{
         if (networksCount > 0) {
             throw new InvalidParameterValueException("Can't delete VPC " + vpcId + " as its used by " + networksCount + " networks");
         }
+        
+        //shutdown VPC
+        shutdownVpc(vpcId);
 
         if (_vpcDao.remove(vpcId)) {
             return true;
@@ -664,12 +667,41 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 _accountMgr.getAccount(vpc.getAccountId()));
 
         //deploy provider
-        if (getVpcElement().startVpc(vpc, dest, context)) {
+        if (getVpcElement().implementVpc(vpc, dest, context)) {
             s_logger.debug("Vpc " + vpc + " has started succesfully");
             return getVpc(vpc.getId());
         } else {
             throw new CloudRuntimeException("Failed to start vpc " + vpc);
             //FIXME - add cleanup logic here
+        }
+    }
+    
+    
+    @Override
+    public Vpc shutdownVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, 
+    InsufficientCapacityException {
+        UserContext ctx = UserContext.current();
+        Account caller = ctx.getCaller();
+        
+        //check if vpc exists
+        Vpc vpc = getVpc(vpcId);
+        if (vpc == null) {
+            throw new InvalidParameterValueException("Unable to find vpc by id " + vpcId);
+        }
+        
+        //permission check
+        _accountMgr.checkAccess(caller, null, false, vpc);
+
+        //shutdown provider
+        boolean success = getVpcElement().shutdownVpc(vpc);
+        
+        //FIXME - once more features are added to vpc (gateway/firewall rules, etc - cleanup them here)
+        
+        if (success) {
+            s_logger.debug("Vpc " + vpc + " has been stopped succesfully");
+            return getVpc(vpc.getId());
+        } else {
+            throw new CloudRuntimeException("Failed to stop vpc " + vpc);
         }
     }
     
