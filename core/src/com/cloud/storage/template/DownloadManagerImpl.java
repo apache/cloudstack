@@ -297,7 +297,7 @@ public class DownloadManagerImpl implements DownloadManager {
             }       
             byte[] md5sum = digest.digest();
             BigInteger bigInt = new BigInteger(1, md5sum);
-            checksum = String.format("%032x",bigInt);
+            checksum = String.format("%032x",bigInt.toString(16));
             return checksum;
         }catch(IOException e) {
         	return null;
