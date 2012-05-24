@@ -64,7 +64,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     VpcVirtualNetworkApplianceManager _vpcRouterMgr;
     
     @Override
-    public boolean startVpc(Vpc vpc, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, 
+    public boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, 
     ResourceUnavailableException, InsufficientCapacityException {
         
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
@@ -76,7 +76,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
     
     @Override
-    public boolean stopVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException {
+    public boolean shutdownVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException {
         List<DomainRouterVO> routers = _routerDao.listRoutersByVpcId(vpc.getId());
         if (routers == null || routers.isEmpty()) {
             return true;

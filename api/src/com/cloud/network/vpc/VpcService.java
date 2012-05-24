@@ -71,8 +71,11 @@ public interface VpcService {
     /**
      * @param vpcId
      * @return
+     * @throws InsufficientCapacityException 
+     * @throws ResourceUnavailableException 
+     * @throws ConcurrentOperationException 
      */
-    public boolean deleteVpc(long vpcId);
+    public boolean deleteVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * @param vpcId
@@ -112,5 +115,14 @@ public interface VpcService {
      * @throws ConcurrentOperationException 
      */
     Vpc startVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+
+    /**
+     * @param vpcId
+     * @return
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     * @throws InsufficientCapacityException
+     */
+    Vpc shutdownVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
 }
