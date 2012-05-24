@@ -536,13 +536,9 @@
             })
           },
 
-          messages: {
-            confirm: function(args) {  //never being called
-              return 'Are you sure you want to deploy an instance?';
-            },
-            notification: function(args) {
-              //return 'Creating new VM: ' + args.name; //args.name is not available
-              return 'Creating new VM';
+          messages: {            
+            notification: function(args) {              
+              return 'label.vm.add'; 
             }
           },
           notification: {

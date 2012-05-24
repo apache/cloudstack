@@ -339,7 +339,7 @@
         var chartItems = {
           // The keys are based on the internal type ID associated with each capacity
           0: { name: _l('label.memory') },
-          1: { name: 'CPU' },
+          1: { name: _l('label.cpu') },
           2: { name: _l('label.storage') },
           3: { name: _l('label.primary.allocated') },
           6: { name: _l('label.secondary.storage') },
@@ -347,7 +347,7 @@
           4: { name: _l('label.public.ips') },
           5: { name: _l('label.management.ips') },
           8: { name: _l('label.direct.ips') },
-          7: { name: 'VLAN' }
+          7: { name: _l('label.vlan') }
         };
 
         $top.append($title);

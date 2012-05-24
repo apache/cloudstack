@@ -358,13 +358,13 @@ cloudStack.converters = {
   toAlertType: function(alertCode) {
     switch (alertCode) {
     case 0 : return _l('label.memory');
-    case 1 : return 'CPU';
+    case 1 : return _l('label.cpu');
     case 2 : return _l('label.storage');
     case 3 : return _l('label.primary.storage');
     case 4 : return _l('label.public.ips');
     case 5 : return _l('label.management.ips');
     case 6 : return _l('label.secondary.storage');
-    case 7 : return 'VLAN';
+    case 7 : return _l('label.vlan');
     case 8 : return _l('label.direct.ips');
     case 9 : return _l('label.local.storage');
 
