@@ -146,15 +146,17 @@ public class CiscoNexusVSMElement extends CiscoNexusVSMDeviceManagerImpl impleme
     }    
 
     @Override
-    public boolean enableCiscoNexusVSM(EnableCiscoNexusVSMCmd cmd) {
-    	boolean result;
+    @ActionEvent(eventType = EventTypes.EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_ENABLE, eventDescription = "deleting VSM", async = true)  
+    public CiscoNexusVSMDeviceVO enableCiscoNexusVSM(EnableCiscoNexusVSMCmd cmd) {
+    	CiscoNexusVSMDeviceVO result;
     	result = enableCiscoNexusVSM(cmd.getCiscoNexusVSMDeviceId());
     	return result;
     }
     
     @Override
-    public boolean disableCiscoNexusVSM(DisableCiscoNexusVSMCmd cmd) {
-    	boolean result;
+    @ActionEvent(eventType = EventTypes.EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_DISABLE, eventDescription = "deleting VSM", async = true)
+    public CiscoNexusVSMDeviceVO disableCiscoNexusVSM(DisableCiscoNexusVSMCmd cmd) {
+    	CiscoNexusVSMDeviceVO result;
     	result = disableCiscoNexusVSM(cmd.getCiscoNexusVSMDeviceId());
     	return result;
     }

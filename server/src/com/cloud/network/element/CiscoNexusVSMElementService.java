@@ -40,13 +40,13 @@ public interface CiscoNexusVSMElementService extends PluggableService {
     /**
      * Enables a Cisco Nexus VSM. 
      */
-    public boolean enableCiscoNexusVSM(EnableCiscoNexusVSMCmd cmd);
+    public CiscoNexusVSMDeviceVO enableCiscoNexusVSM(EnableCiscoNexusVSMCmd cmd);
     
     
     /**
      * Disables a Cisco Nexus VSM.
      */
-    public boolean disableCiscoNexusVSM(DisableCiscoNexusVSMCmd cmd);
+    public CiscoNexusVSMDeviceVO disableCiscoNexusVSM(DisableCiscoNexusVSMCmd cmd);
     
     /**
      * Returns a list of VSMs.
