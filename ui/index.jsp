@@ -944,7 +944,7 @@
           </div>
           <div id="update_ssl_button" class="button action main-action reduced-hide lock">
             <span class="icon">&nbsp;</span>            
-            <span>Update SSL Certificate</span>
+            <span><fmt:message key="label.update.ssl.cert"/></span>
           </div>
         </div>
 
@@ -1190,12 +1190,12 @@
 
             <div class="selects" style="display:none;">
               <div class="select">
-                <label>Zone:</label>
+                <label><fmt:message key="label.zone"/>:</label>
                 <select>
                 </select>
               </div>
               <div class="select">
-                <label>Pods:</label>
+                <label><fmt:message key="label.pods"/>:</label>
                 <select>
                 </select>
               </div>
@@ -1207,7 +1207,7 @@
             <ul data-item="zoneCapacities">
               <li concat-value="25">
                 <div class="label">
-                  Zone: <span data-list-item="zoneName"></span>
+                  <fmt:message key="label.zone"/>: <span data-list-item="zoneName"></span>
                 </div>
                 <div class="pie-chart-container">
                   <div class="percent-label"><span data-list-item="percent"></span>%</div>
