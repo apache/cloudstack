@@ -3095,6 +3095,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 return false;
             }
         }
+        
+        //In Basic zone, make sure that there are no non-removed console proxies and SSVMs using the network
+        DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+        if (zone.getNetworkType() == NetworkType.Basic) {
+            List<VMInstanceVO> systemVms = _vmDao.listNonRemovedVmsByTypeAndNetwork(network.getId(), 
+                    Type.ConsoleProxy, Type.SecondaryStorageVm);
+            if (systemVms != null && !systemVms.isEmpty()) {
+                s_logger.warn("Can't delete the network, not all consoleProxy/secondaryStorage vms are expunged");
+                return false;
+            }
+        }
 
         // Shutdown network first
         shutdownNetwork(networkId, context, false);
