@@ -21,4 +21,5 @@ public interface ClusterVSMMapDao extends GenericDao<ClusterVSMMapVO, Long> {
     ClusterVSMMapVO findByClusterId(long clusterId);
     List<ClusterVSMMapVO> listByVSMId(long vsmId);
     boolean removeByVsmId(long vsmId);
+    boolean removeByClusterId(long clusterId);
 }
