@@ -78,6 +78,14 @@ public class HypervisorHostHelper {
 		return null;
 	}
 	
+	public static ManagedObjectReference findDatastoreWithBackwardsCompatibility(VmwareHypervisorHost hyperHost, String uuidName) throws Exception {
+	    ManagedObjectReference morDs = hyperHost.findDatastore(uuidName.replace("-", ""));
+	    if(morDs == null)
+	        morDs = hyperHost.findDatastore(uuidName);
+	    
+	    return morDs;
+	}
+	
 	public static DatastoreMO getHyperHostDatastoreMO(VmwareHypervisorHost hyperHost, String datastoreName) throws Exception {
 		ObjectContent[] ocs = hyperHost.getDatastorePropertiesOnHyperHost(new String[] { "name"} );
 		if(ocs != null && ocs.length > 0) {
