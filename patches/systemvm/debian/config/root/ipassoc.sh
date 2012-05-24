@@ -139,12 +139,7 @@ copy_routes_from_main() {
 ip_addr_add() {
   local dev="$1"
   local ip="$2"
-  local ipNoMask=$(echo $ip | awk -F'/' '{print $1}')
-  local mask=$(echo $ip | awk -F'/' '{print $2}')
-  local subnet=`TERM=linux ipcalc $ip | grep Network | awk -F' ' '{print $2}' | awk -F'/' '{print $1}'`
-  local brd=`TERM=linux ipcalc $ip|grep Broadcast|awk -F' ' '{print $2}'`
-  sudo ip addr add dev $dev $subnet/$mask broadcast $brd > /dev/null
-  sudo ip addr add dev $dev $ipNoMask/32
+  sudo ip addr add dev $dev $ip > /dev/null
 
 }
 
@@ -284,18 +279,20 @@ add_an_ip () {
 remove_an_ip () {
   local pubIp=$1
   logger -t cloud "$(basename $0):Removing ip $pubIp on interface $ethDev"
-  local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
-  local mask=$(echo $1 | awk -F'/' '{print $2}')
-  local existingIpMask=$(sudo ip addr show dev $ethDev | grep inet | awk '{print $2}'  | grep -w $ipNoMask)
-  [ "$existingIpMask" == "" ] && return 0
   remove_snat $1
-  sudo ip addr del dev $ethDev $existingIpMask
+  local existingIpMask=$(sudo ip addr show dev $ethDev | grep "inet " | awk '{print $2}')
 
-  if [ $result -gt 0  -a $result -ne 2 ]
-  then
-     remove_routing $1
-     return 1
-  fi
+  sudo ip addr del dev $ethDev $pubIp
+
+  for ipMask in $existingIpMask
+  do
+    if [ "$ipMask" == "$pubIp" ]
+    then
+      continue
+    fi
+    sudo ip addr add dev $ethDev $ipMask
+  done
+
   remove_routing $1
   return 0
 }
