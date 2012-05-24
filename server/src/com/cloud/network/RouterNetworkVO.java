@@ -65,4 +65,8 @@ public class RouterNetworkVO{
     public Network.GuestType getGuestType() {
         return guestType;
     }
+
+    public long getId() {
+        return id;
+    }
 }

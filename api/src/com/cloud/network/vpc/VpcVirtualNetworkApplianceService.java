@@ -38,6 +38,8 @@ public interface VpcVirtualNetworkApplianceService {
      * @param router
      * @param network
      * @return
+     * @throws ResourceUnavailableException 
+     * @throws ConcurrentOperationException 
      */
-    boolean removeVmFromNetwork(VirtualRouter router, Network network);
+    boolean removeVmFromNetwork(VirtualRouter router, Network network) throws ConcurrentOperationException, ResourceUnavailableException;
 }

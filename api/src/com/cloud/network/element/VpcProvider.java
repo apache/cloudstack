@@ -35,6 +35,14 @@ public interface VpcProvider extends NetworkElement{
      */
     boolean startVpc(Vpc vpc, DeployDestination dest, ReservationContext context) 
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+
+    /**
+     * @param vpc
+     * @return
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     */
+    boolean stopVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException;
     
 
 }

@@ -2431,6 +2431,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     }
     
     @Override
+    @DB
     public boolean addVmToNetwork(VirtualMachine vm, Network network) throws ConcurrentOperationException, 
                                                     ResourceUnavailableException, InsufficientCapacityException {
         
@@ -2448,34 +2449,80 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         
         s_logger.debug("Adding vm " + vm + " to network " + network);
         
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         //1) allocate nic
         NicProfile nic = _networkMgr.allocateNic(null, network, false, 
                 100, vmProfile).first();
         
+        s_logger.debug("Nic is allocated successfully for vm " + vm + " in network " + network);
+        
         //2) Prepare nic
         nic = _networkMgr.prepareNic(vmProfile, dest, context, nic.getId(), networkVO);
         
-        //3) plug the nic to the vm
-        VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
+        s_logger.debug("Nic is prepared successfully for vm " + vm + " in network " + network);
         
-        //4) Convert vmProfile to vmTO
+        txn.commit();
+        
+        //3) Convert vmProfile to vmTO
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
         VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
         
-        //5) Convert nicProfile to NicTO
+        //4) Convert nicProfile to NicTO
         NicTO nicTO = hvGuru.toNicTO(nic);
         
-        return vmGuru.plugNic(network, nicTO, vmTO, context, null);
+        //5) plug the nic to the vm
+        VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
+        
+        if (vmGuru.plugNic(network, nicTO, vmTO, context, dest)) {
+            s_logger.debug("Nic is plugged successfully for vm " + vm + " in network " + network + ". Vm  is a part of network now");
+            return true;
+        } else {
+            s_logger.warn("Failed to plug nic to the vm " + vm + " in network " + network);
+            return false;
+        }
         
     }
     
     @Override
-    public boolean removeVmFromNetwork(VirtualMachine vm, Network network) {
-        //1) TODO - release the nic
+    public boolean removeVmFromNetwork(VirtualMachine vm, Network network) throws ConcurrentOperationException, ResourceUnavailableException {
+        VMInstanceVO vmVO = _vmDao.findById(vm.getId());
+        NetworkVO networkVO = _networkDao.findById(network.getId());
+        ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM), 
+                _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
+        
+        VirtualMachineProfileImpl<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmVO, null, 
+                null, null, null);
+        
+        DataCenter dc = _configMgr.getZone(network.getDataCenterId());
+        Host host = _hostDao.findById(vm.getHostId()); 
+        DeployDestination dest = new DeployDestination(dc, null, null, host);
+        
+        //1) Release the nic
+        NicProfile nic = _networkMgr.releaseNic(vmProfile, networkVO);
         
         //2) TODO - unplug the nic
+        VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
         
-        return true;
+        //3) Convert vmProfile to vmTO
+        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
+        VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
+        
+        //4) Convert nicProfile to NicTO
+        NicTO nicTO = hvGuru.toNicTO(nic);
+        
+        boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
+        //5) Unplug the nic
+        if (result) {
+            s_logger.debug("Nic is unplugged successfully for vm " + vm + " in network " + network );
+        } else {
+            s_logger.warn("Failed to unplug nic for the vm " + vm + " from network " + network);
+            return false;
+        }
+        
+        //6) Remove the nic
+        _networkMgr.removeNic(vmProfile, network);
+        return result;
     }
    
 }

@@ -21,6 +21,7 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -33,9 +34,11 @@ import com.cloud.network.NetworkService;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpc.VpcVirtualNetworkApplianceService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.Inject;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
@@ -51,6 +54,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     NetworkService _ntwkService;
     @Inject
     VpcVirtualNetworkApplianceService _vpcElementService;
+    @Inject
+    VpcService _vpcService;
     
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -71,6 +76,19 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
     
     @Override
+    public boolean stopVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException {
+        List<DomainRouterVO> routers = _routerDao.listRoutersByVpcId(vpc.getId());
+        if (routers == null || routers.isEmpty()) {
+            return true;
+        }
+        boolean result = true;
+        for (DomainRouterVO router : routers) {
+            result = result && (_routerMgr.destroyRouter(router.getId()) != null);
+        }
+        return result;
+    }
+    
+    @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
             throws ResourceUnavailableException, ConcurrentOperationException,
             InsufficientCapacityException {
@@ -81,26 +99,34 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
            return false;
        }
        
-       boolean success = super.implement(network, offering, dest, context);
+       Vpc vpc = _vpcService.getVpc(vpcId);
        
-       if (success) {
-           List<? extends VirtualRouter> routers = _routerDao.listRoutersByVpcId(vpcId);
-           for (VirtualRouter router : routers) {
-               //1) Check if router is already a part of the network
-               if (_ntwkService.isVmPartOfNetwork(router.getId(), network.getId())) {
-                   s_logger.debug("Router " + router + " is already part of the network " + network);
-                   continue;
-               }
-               //2) Call plugNics in the network service
-               success = success && _vpcElementService.addVmToNetwork(router, network);
-           }
-           
-           if (!success) {
-               s_logger.warn("Failed to plug nic in network " + network + " for virtual router in vpc id=" + vpcId);
-           } else {
-               s_logger.debug("Successfully plugged nic in network " + network + " for virtual router in vpc id=" + vpcId);
-           }
+       Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
+       params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
+       
+       List<DomainRouterVO> routers = _vpcRouterMgr.deployVirtualRouterInVpc(vpc, dest, _accountMgr.getAccount(vpc.getAccountId()), params);
+       if ((routers == null) || (routers.size() == 0)) {
+           throw new ResourceUnavailableException("Can't find at least one running router!",
+                   DataCenter.class, network.getDataCenterId());
        }
+       
+       boolean success = true;
+       for (VirtualRouter router : routers) {
+           //1) Check if router is already a part of the network
+           if (_ntwkService.isVmPartOfNetwork(router.getId(), network.getId())) {
+               s_logger.debug("Router " + router + " is already part of the network " + network);
+               continue;
+           }
+           //2) Call plugNics in the network service
+           success = success && _vpcElementService.addVmToNetwork(router, network);
+       }
+       
+       if (!success) {
+           s_logger.warn("Failed to plug nic in network " + network + " for virtual router in vpc id=" + vpcId);
+       } else {
+           s_logger.debug("Successfully plugged nic in network " + network + " for virtual router in vpc id=" + vpcId);
+       }
+       
       
        return success;       
     }
@@ -116,26 +142,35 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return false;
         }
         
-        boolean success = super.prepare(network, nic, vm, dest, context);
+        Vpc vpc = _vpcService.getVpc(vpcId);
         
-        if (success) {
-            List<? extends VirtualRouter> routers = _routerDao.listRoutersByVpcId(vpcId);
-            for (VirtualRouter router : routers) {
-                //1) Check if router is already a part of the network
-                if (_ntwkService.isVmPartOfNetwork(router.getId(), network.getId())) {
-                    s_logger.debug("Router " + router + " is already part of the network " + network);
-                    continue;
-                }
-                //2) Call plugNics in the network service
-                success = success && _vpcElementService.addVmToNetwork(router, network);
-            }
-            
-            if (!success) {
-                s_logger.warn("Failed to plug nic in network " + network + " for virtual router in vpc id=" + vpcId);
-            } else {
-                s_logger.debug("Successfully plugged nic in network " + network + " for virtual router in vpc id=" + vpcId);
-            }
+        Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
+        params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
+        
+        List<DomainRouterVO> routers = _vpcRouterMgr.deployVirtualRouterInVpc(vpc, dest, _accountMgr.getAccount(vpc.getAccountId()), params);
+        if ((routers == null) || (routers.size() == 0)) {
+            throw new ResourceUnavailableException("Can't find at least one running router!",
+                    DataCenter.class, network.getDataCenterId());
         }
+        
+        boolean success = true;
+        for (VirtualRouter router : routers) {
+            //1) Check if router is already a part of the network
+            if (_ntwkService.isVmPartOfNetwork(router.getId(), network.getId())) {
+                s_logger.debug("Router " + router + " is already part of the network " + network);
+                continue;
+            }
+            //2) Call plugNics in the network service
+            success = success && _vpcElementService.addVmToNetwork(router, network);
+        }
+        
+        if (!success) {
+            s_logger.warn("Failed to plug nic in network " + network + " for virtual router in vpc id=" + vpcId);
+        } else {
+            s_logger.debug("Successfully plugged nic in network " + network + " for virtual router in vpc id=" + vpcId);
+        }
+        
+       
         return success;
     }
     

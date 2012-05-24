@@ -117,4 +117,10 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      * @param guestNetwork
      */
     void addRouterToNetwork(DomainRouterVO router, Network guestNetwork);
+
+    /**
+     * @param routerId
+     * @param guestNetworkId
+     */
+    void removeRouterFromNetwork(long routerId, long guestNetworkId);
 }

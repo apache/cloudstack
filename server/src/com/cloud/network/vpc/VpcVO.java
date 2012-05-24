@@ -172,4 +172,8 @@ public class VpcVO implements Vpc, Identity {
         return buf.append(id).append("-").append(name).append("]").toString();
     }
 
+    @Override
+    public String getNetworkDomain() {
+        return networkDomain;
+    }
 }

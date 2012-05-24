@@ -17,6 +17,7 @@ import java.util.List;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
@@ -25,6 +26,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
  */
 public class RouterNetworkDaoImpl extends GenericDaoBase<RouterNetworkVO, Long> implements GenericDao<RouterNetworkVO, Long>{
     protected final GenericSearchBuilder<RouterNetworkVO, Long> RouterNetworksSearch;
+    protected final SearchBuilder<RouterNetworkVO> AllFieldsSearch;
 
     public RouterNetworkDaoImpl() {
         super();
@@ -33,6 +35,11 @@ public class RouterNetworkDaoImpl extends GenericDaoBase<RouterNetworkVO, Long> 
         RouterNetworksSearch.selectField(RouterNetworksSearch.entity().getNetworkId());
         RouterNetworksSearch.and("routerId", RouterNetworksSearch.entity().getRouterId(), Op.EQ);
         RouterNetworksSearch.done();
+        
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("routerId", AllFieldsSearch.entity().getRouterId(), Op.EQ);
+        AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
+        AllFieldsSearch.done();
     }
     
     public List<Long> getRouterNetworks(long routerId) {
@@ -40,4 +47,12 @@ public class RouterNetworkDaoImpl extends GenericDaoBase<RouterNetworkVO, Long> 
         sc.setParameters("routerId", routerId);
         return customSearch(sc, null);
     }
+    
+    public RouterNetworkVO findByRouterAndNetwork (long routerId, long networkId) {
+        SearchCriteria<RouterNetworkVO> sc = AllFieldsSearch.create();
+        sc.setParameters("routerId", routerId);
+        sc.setParameters("networkId", networkId);
+        return findOneBy(sc);
+    }
+    
 }
