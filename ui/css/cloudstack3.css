@@ -311,10 +311,20 @@ body.login {
   background: transparent url(../images/sprites.png) -563px -747px;
   cursor: pointer;
   border: none;
-  margin: 7px 0 0;
-  width: 68px;
+  margin: 7px 238px 0 -1px;
+  text-align: center;
+  width: 69px;
   height: 25px;
   display: block;
+  color: #FFFFFF;
+  font-weight: bold;
+  float: left;
+  text-indent: -1px;
+  /*+text-shadow:0px 1px 2px #000000;*/
+  -moz-text-shadow: 0px 1px 2px #000000;
+  -webkit-text-shadow: 0px 1px 2px #000000;
+  -o-text-shadow: 0px 1px 2px #000000;
+  text-shadow: 0px 1px 2px #000000;
 }
 
 .login .fields input[type=submit]:hover {
