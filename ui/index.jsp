@@ -52,7 +52,7 @@
             </div>
 
             <!-- Submit (login) -->
-            <input type="submit" value="" />
+            <input type="submit" value="<fmt:message key="label.login"/>" />
 
             <!-- Select language -->
             <div class="select-language">
