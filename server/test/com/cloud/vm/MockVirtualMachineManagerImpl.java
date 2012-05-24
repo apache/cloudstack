@@ -29,6 +29,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
@@ -231,6 +232,24 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
      */
     @Override
     public boolean upgradeVmDb(long vmId, long serviceOfferingId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.vm.VirtualMachineManager#addVmToNetwork(com.cloud.vm.VirtualMachine, com.cloud.network.Network)
+     */
+    @Override
+    public boolean addVmToNetwork(VirtualMachine vm, Network network) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.vm.VirtualMachineManager#removeVmFromNetwork(com.cloud.vm.VirtualMachine, com.cloud.network.Network)
+     */
+    @Override
+    public boolean removeVmFromNetwork(VirtualMachine vm, Network network) {
         // TODO Auto-generated method stub
         return false;
     }

@@ -275,7 +275,8 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     @Override
     @DB
     public void addRouterToNetwork(DomainRouterVO router, Network guestNetwork) {
-        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         //1) add router to network
         RouterNetworkVO routerNtwkMap = new RouterNetworkVO(router.getId(), guestNetwork.getId(), guestNetwork.getGuestType());
         _routerNetworkDao.persist(routerNtwkMap);
@@ -287,6 +288,13 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
                     router.getType().toString(), guestNetwork.getId());
             _userStatsDao.persist(stats);
         }
+        txn.commit();
+    }
+    
+    @Override
+    public void removeRouterFromNetwork(long routerId, long guestNetworkId) {
+        RouterNetworkVO routerNtwkMap = _routerNetworkDao.findByRouterAndNetwork(routerId, guestNetworkId);
+        _routerNetworkDao.remove(routerNtwkMap.getId());
     }
     
     @Override

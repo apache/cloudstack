@@ -2011,10 +2011,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
+    @DB
     public NicProfile prepareNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination 
             dest, ReservationContext context, long nicId, NetworkVO network)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, 
             ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+        
+        
         
         Integer networkRate = getNetworkRate(network.getId(), vmProfile.getId());
         NetworkGuru guru = _networkGurus.get(network.getGuruName());
@@ -2079,7 +2082,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             Integer networkRate = getNetworkRate(network.getId(), vm.getId());
 
             NetworkGuru guru = _networkGurus.get(network.getGuruName());
-            NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vm.getHypervisorType(), network));
+            NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, 
+                    isSecurityGroupSupportedInNetwork(network), getNetworkTag(vm.getHypervisorType(), network));
             guru.updateNicProfile(profile, network);
             vm.addNic(profile);
         }
@@ -2094,6 +2098,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             releaseNic(vmProfile, nic, network);
         }
     }
+    
+    @Override
+    public NicProfile releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NetworkVO network) 
+            throws ConcurrentOperationException, ResourceUnavailableException {
+        NicVO nic = _nicDao.findByInstanceIdAndNetworkId(network.getId(), vmProfile.getId());
+        releaseNic(vmProfile, nic, network);
+        
+        NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, 
+                isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
+        return profile;
+    }
+    
 
     protected void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NicVO nic, NetworkVO network) 
             throws ConcurrentOperationException, ResourceUnavailableException {
@@ -2274,14 +2290,26 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         List<NicVO> nics = _nicDao.listByVmId(vm.getId());
         for (NicVO nic : nics) {
-            nic.setState(Nic.State.Deallocating);
-            _nicDao.update(nic.getId(), nic);
-            NetworkVO network = _networksDao.findById(nic.getNetworkId());
-            NicProfile profile = new NicProfile(nic, network, null, null, null, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vm.getHypervisorType(), network));
-            NetworkGuru guru = _networkGurus.get(network.getGuruName());
-            guru.deallocate(network, profile, vm);
-            _nicDao.remove(nic.getId());
+            removeNic(vm, nic);
         }
+    }
+    
+    @Override
+    public void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, Network network) {
+        NicVO nic = _nicDao.findByInstanceIdAndNetworkId(network.getId(), vm.getVirtualMachine().getId());
+        removeNic(vm, nic);
+    }
+
+    protected void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, NicVO nic) {
+        nic.setState(Nic.State.Deallocating);
+        _nicDao.update(nic.getId(), nic);
+        NetworkVO network = _networksDao.findById(nic.getNetworkId());
+        NicProfile profile = new NicProfile(nic, network, null, null, null,
+                isSecurityGroupSupportedInNetwork(network), getNetworkTag(vm.getHypervisorType(), network));
+        NetworkGuru guru = _networkGurus.get(network.getGuruName());
+        guru.deallocate(network, profile, vm);
+        _nicDao.remove(nic.getId());
+        s_logger.debug("Removed nic id=" + nic.getId());
     }
 
     @Override
@@ -2603,20 +2631,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId) 
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
         
+        Vpc vpc = _vpcMgr.getVpc(vpcId);
         //1) Validate if network can be created for VPC
-        _vpcMgr.validateGuestNtkwForVpc(_configMgr.getNetworkOffering(ntwkOffId), cidr, networkDomain, owner, 
-                _vpcMgr.getVpc(vpcId));
+        _vpcMgr.validateGuestNtkwForVpc(_configMgr.getNetworkOffering(ntwkOffId), cidr, networkDomain, owner, vpc);
+        
+        if (networkDomain == null) {
+            networkDomain = vpc.getNetworkDomain();
+        }
         
         //2) Create network
         Network guestNetwork = createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, 
                 networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId);
-        
-        //3) Add network to all VPC's routers
-        List<DomainRouterVO> routers = _routerDao.listRoutersByVpcId(vpcId);
-        for (DomainRouterVO router : routers) {
-            s_logger.debug("Adding router " + router + " to network " + guestNetwork);
-            _routerDao.addRouterToNetwork(router, guestNetwork);
-        }
         
         return guestNetwork;
     }

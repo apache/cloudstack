@@ -49,6 +49,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -372,4 +373,22 @@ public interface NetworkManager extends NetworkService {
      */
     NicProfile prepareNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, ReservationContext context, long nicId, NetworkVO network) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
+
+
+    /**
+     * @param vmProfile
+     * @param network
+     * @return TODO
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     */
+    NicProfile releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NetworkVO network) throws ConcurrentOperationException, ResourceUnavailableException;
+
+
+    /**
+     * @param vm
+     * @param network
+     */
+    void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, Network network);
+
 }

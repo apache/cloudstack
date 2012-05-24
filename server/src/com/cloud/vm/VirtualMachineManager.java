@@ -149,7 +149,9 @@ public interface VirtualMachineManager extends Manager {
      * @param vm
      * @param network
      * @return
+     * @throws ResourceUnavailableException 
+     * @throws ConcurrentOperationException 
      */
-    boolean removeVmFromNetwork(VirtualMachine vm, Network network);
+    boolean removeVmFromNetwork(VirtualMachine vm, Network network) throws ConcurrentOperationException, ResourceUnavailableException;
 
 }
