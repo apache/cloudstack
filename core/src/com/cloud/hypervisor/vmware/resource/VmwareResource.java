@@ -1639,7 +1639,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (vol.getType() != Volume.Type.ISO) {
                 String poolUuid = vol.getPoolUuid();
                 if(poolMors.get(poolUuid) == null) {
-                    ManagedObjectReference morDataStore = hyperHost.findDatastore(poolUuid);
+                    ManagedObjectReference morDataStore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolUuid);
                     if (morDataStore == null) {
                         String msg = "Failed to get the mounted datastore for the volume's pool " + poolUuid;
                         s_logger.error(msg);
@@ -2305,7 +2305,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception("Unsupported storage pool type " + pool.getType());
             }
 
-            ManagedObjectReference morDatastore = hyperHost.mountDatastore(pool.getType() == StoragePoolType.VMFS, pool.getHost(), pool.getPort(), pool.getPath(), pool.getUuid());
+            ManagedObjectReference morDatastore = hyperHost.mountDatastore(pool.getType() == StoragePoolType.VMFS, pool.getHost(), 
+                pool.getPort(), pool.getPath(), pool.getUuid().replace("-", ""));
 
             assert (morDatastore != null);
             DatastoreSummary summary = new DatastoreMO(getServiceContext(), morDatastore).getSummary();
@@ -2370,7 +2371,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception(msg);
             }
 
-            ManagedObjectReference morDs = hyperHost.findDatastore(cmd.getPoolUuid());
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getPoolUuid());
             if (morDs == null) {
                 String msg = "Unable to find the mounted datastore to execute AttachVolumeCommand, vmName: " + cmd.getVmName();
                 s_logger.error(msg);
@@ -2479,11 +2480,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         URI uri = new URI(storeUrl);
 
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
-        ManagedObjectReference morDatastore = hyperHost.mountDatastore(false, uri.getHost(), 0, uri.getPath(), storeName);
+        ManagedObjectReference morDatastore = hyperHost.mountDatastore(false, uri.getHost(), 0, uri.getPath(), storeName.replace("-", ""));
 
-        if (morDatastore == null) {
+        if (morDatastore == null)
             throw new Exception("Unable to mount secondary storage on host. storeUrl: " + storeUrl);
-        }
 
         return morDatastore;
     }
@@ -2641,7 +2641,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             VmwareContext context = getServiceContext();
             VmwareHypervisorHost hyperHost = getHyperHost(context);
-            ManagedObjectReference morDs = hyperHost.findDatastore(cmd.getStorageId());
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getStorageId());
 
             if (morDs != null) {
                 DatastoreMO datastoreMo = new DatastoreMO(context, morDs);
@@ -2817,7 +2817,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             VolumeTO vol = cmd.getVolume();
 
-            ManagedObjectReference morDs = hyperHost.findDatastore(vol.getPoolUuid());
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, vol.getPoolUuid());
             if (morDs == null) {
                 String msg = "Unable to find datastore based on volume mount point " + cmd.getVolume().getMountPoint();
                 s_logger.error(msg);
@@ -2980,12 +2980,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
 
-            VmwareManager vmwareMgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-
-            ManagedObjectReference morDatastore = hyperHost.findDatastore(pool.getUuid());
-            if (morDatastore == null) {
+            ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, pool.getUuid());
+            if (morDatastore == null)
                 throw new Exception("Unable to find datastore in vSphere");
-            }
+            
             DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
 
             if (cmd.getDiskCharacteristics().getType() == Volume.Type.ROOT) {
