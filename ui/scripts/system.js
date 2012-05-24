@@ -6190,17 +6190,17 @@
                     validation: { required: true }
                   },
                   vsmipaddress: {
-                    label: 'vSwitch IP Address',
+                    label: 'Nexus dvSwitch IP Address',
                     validation: { required: true },
                     isHidden: false
                   },
                   vsmusername: {
-                    label: 'vSwitch Username',
+                    label: 'Nexus dvSwitch Username',
                     validation: { required: true },
                     isHidden: false
                   },
                   vsmpassword: {
-                    label: 'vSwitch Password',
+                    label: 'Nexus dvSwitch Password',
                     validation: { required: true },
                     isPassword: true,
                     isHidden: false
