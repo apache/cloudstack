@@ -39,6 +39,7 @@ import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.hypervisor.vmware.mo.CustomFieldConstants;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
+import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -126,7 +127,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 			if (templateMo == null) {
 			    if(s_logger.isInfoEnabled())
 			        s_logger.info("Template " + templateName + " is not setup yet, setup template from secondary storage with uuid name: " + templateUuidName);
-				ManagedObjectReference morDs = hyperHost.findDatastore(cmd.getPoolUuid());
+				ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getPoolUuid());
 				assert (morDs != null);
 				DatastoreMO primaryStorageDatastoreMo = new DatastoreMO(context, morDs);
 
@@ -173,7 +174,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 		
 		try {
 			VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
-			morDs = hyperHost.findDatastore(cmd.getPool().getUuid());
+			morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getPool().getUuid());
 
 			try {
 				vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
@@ -343,12 +344,12 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 			} else {
 				StorageFilerTO poolTO = cmd.getPool();
 
-				ManagedObjectReference morDatastore = hyperHost.findDatastore(poolTO.getUuid());
+				ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolTO.getUuid());
 				if (morDatastore == null) {
 					morDatastore = hyperHost.mountDatastore(
 							false,
 							poolTO.getHost(), 0, poolTO.getPath(),
-							poolTO.getUuid());
+							poolTO.getUuid().replace("-", ""));
 
 					if (morDatastore == null) {
 						throw new Exception("Unable to mount storage pool on host. storeUrl: " + poolTO.getHost() + ":/" + poolTO.getPath());
@@ -389,7 +390,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
 		try {
 			VmwareHypervisorHost hyperHost = hostService.getHyperHost(context, cmd);
 			
-			ManagedObjectReference morPrimaryDs = hyperHost.findDatastore(primaryStorageNameLabel);
+			ManagedObjectReference morPrimaryDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, primaryStorageNameLabel);
 			if (morPrimaryDs == null) {
 				String msg = "Unable to find datastore: " + primaryStorageNameLabel;
 				s_logger.error(msg);
@@ -783,7 +784,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String exportName = UUID.randomUUID().toString();
 
         try {
-            ManagedObjectReference morDs = hyperHost.findDatastore(poolId);
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolId);
 
             if (morDs == null) {
                 String msg = "Unable to find volumes's storage pool for copy volume operation";
