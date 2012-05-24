@@ -513,7 +513,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 Long vlanId = null;
                 List<AccountVlanMapVO> maps = _accountVlanMapDao.listAccountVlanMapsByAccount(ownerId);
                 if (maps != null && !maps.isEmpty()) {
-                    vlanId = maps.get(0).getVlanDbId();
+                    //check if the ips from this vlan are associated with this network
+                    List<IPAddressVO> ips = _ipAddressDao.listByVlanId(maps.get(0).getVlanDbId());
+                    if (ips != null && !ips.isEmpty() && ips.get(0).getAssociatedWithNetworkId() == network.getId()) {
+                        vlanId = maps.get(0).getVlanDbId();
+                    }
                 }
 
                 ip = fetchNewPublicIp(dcId, null, vlanId, owner, VlanType.VirtualNetwork, network.getId(), true, false, null, false);
