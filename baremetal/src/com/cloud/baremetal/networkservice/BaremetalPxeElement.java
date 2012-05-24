@@ -34,9 +34,11 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = NetworkElement.class)
 public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
@@ -44,6 +46,7 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
     private static final Map<Service, Map<Capability, String>> capabilities;
     
     @Inject BaremetalPxeManager _pxeMgr;;
+    @Inject VMInstanceDao _vmDao;
     
     static {
         Capability cap = new Capability(BaremetalPxeManager.BAREMETAL_PXE_CAPABILITY);
@@ -91,7 +94,11 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
             return false;
         }
         
-        _pxeMgr.prepare(vm, dest, context);
+        VMInstanceVO vo = _vmDao.findById(vm.getId());
+        if (vo.getState() == null) {
+        	/*This vm is just being created */
+        	_pxeMgr.prepare(vm, dest, context);
+        }
         
         return false;
     }
