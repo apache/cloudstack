@@ -27,7 +27,6 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.PlugService;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -35,9 +34,10 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
+import com.cloud.api.response.CiscoNexusVSMResponse;
+import com.cloud.network.CiscoNexusVSMDevice;
 
-@Implementation(responseObject=SuccessResponse.class, description="Enable a Cisco Nexus VSM device")
+@Implementation(responseObject=CiscoNexusVSMResponse.class, description="Enable a Cisco Nexus VSM device")
 public class EnableCiscoNexusVSMCmd extends BaseAsyncCmd {
 
     public static final Logger s_logger = Logger.getLogger(EnableCiscoNexusVSMCmd.class.getName());
@@ -66,9 +66,9 @@ public class EnableCiscoNexusVSMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
-    	boolean result = _ciscoNexusVSMService.enableCiscoNexusVSM(this);
-        if (result) {
-        	SuccessResponse response = new SuccessResponse(getCommandName());
+    	CiscoNexusVSMDevice result = _ciscoNexusVSMService.enableCiscoNexusVSM(this);
+        if (result != null) {
+        	CiscoNexusVSMResponse response = _ciscoNexusVSMService.createCiscoNexusVSMDetailedResponse(result);
         	response.setResponseName(getCommandName());
         	this.setResponseObject(response);
         } else {
