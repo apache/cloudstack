@@ -300,7 +300,7 @@
         // Save and turn back into labels
         $inputs.each(function() {
           var $input = $(this);
-          var $value = $input.closest('td.value');
+          var $value = $input.closest('td.value span');
 
           if ($input.is('input[type=text]'))
             $value.html(_s(
@@ -325,7 +325,7 @@
       var cancelEdits = function($inputs, $editButton) {
         $inputs.each(function() {
           var $input = $(this);
-          var $value = $input.closest('td.value');
+          var $value = $input.closest('td.value span');
           var originalValue = $input.data('original-value');
 
           $value.html(_s(originalValue));
@@ -411,7 +411,7 @@
         }
       });
 
-      $detailView.find('td.value').each(function() {
+      $detailView.find('td.value span').each(function() {
         var name = $(this).closest('tr').data('detail-view-field');
         var $value = $(this);
         if (!$value.data('detail-view-is-editable')) return true;
