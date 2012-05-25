@@ -404,7 +404,7 @@ build_db_files ()
 build_plugins ()
 build_xml_api_description ()
 build_ovm ()
-build_test()
+#build_test()
 build_usage_dir()
 
 # ====================== Magic! =========================================
