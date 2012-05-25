@@ -111,7 +111,7 @@ table th {
   color: #495A76;
   clear: none;
   min-width: 88px;
-  font-size: 12px;
+  font-size: 11px;
   overflow: hidden;
   vertical-align: middle;
 }
@@ -1409,6 +1409,22 @@ div.list-view td.state.off span {
 
 .detail-group .main-groups table td.value {
   text-indent: 0;
+}
+
+.detail-group .main-groups table td.value span {
+  display: block;
+  height: 30px;
+  overflow: auto;
+  position: relative;
+  top: 9px;
+}
+
+.detail-group .main-groups table td.value span {
+  width: 355px;
+}
+
+.panel.always-maximized .detail-group .main-groups table td.value span {
+  width: 565px;
 }
 
 .detail-group.head table td.name {
