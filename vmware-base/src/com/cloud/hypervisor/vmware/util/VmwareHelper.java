@@ -478,7 +478,7 @@ public class VmwareHelper {
 		
 		ResourceAllocationInfo cpuInfo = new ResourceAllocationInfo();
 		if (limitCpuUse) {
-			cpuInfo.setLimit((long)cpuSpeedMHz);
+			cpuInfo.setLimit((long)(cpuSpeedMHz * cpuCount));
 		} else {
 			cpuInfo.setLimit(-1L);
 		}
