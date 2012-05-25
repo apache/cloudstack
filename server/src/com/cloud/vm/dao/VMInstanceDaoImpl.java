@@ -529,7 +529,6 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             NicDao _nicDao = ComponentLocator.getLocator("management-server").getDao(NicDao.class);
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
-            nicSearch.and("ip4Address", nicSearch.entity().getIp4Address(), SearchCriteria.Op.NNULL);
 
             NetworkTypeSearch = createSearchBuilder();
             NetworkTypeSearch.and("types", NetworkTypeSearch.entity().getType(), SearchCriteria.Op.IN);
