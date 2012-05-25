@@ -211,18 +211,19 @@ public class FirstFitAllocator implements HostAllocator {
             }
 
             boolean numCpusGood = host.getCpus().intValue() >= offering.getCpu();
+            boolean cpuFreqGood = host.getSpeed().intValue() >= offering.getSpeed();
     		int cpu_requested = offering.getCpu() * offering.getSpeed();
     		long ram_requested = offering.getRamSize() * 1024L * 1024L;	
     		boolean hostHasCapacity = _capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, false, _factor, considerReservedCapacity);
 
-            if (numCpusGood && hostHasCapacity) {
+            if (numCpusGood && cpuFreqGood && hostHasCapacity) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Found a suitable host, adding to list: " + host.getId());
                 }
                 suitableHosts.add(host);
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Not using host " + host.getId() + "; numCpusGood: " + numCpusGood + ", host has capacity?" + hostHasCapacity);
+                    s_logger.debug("Not using host " + host.getId() + "; numCpusGood: " + numCpusGood + "; cpuFreqGood: " + cpuFreqGood + ", host has capacity?" + hostHasCapacity);
                 }
             }
         }
