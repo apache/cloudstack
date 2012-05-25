@@ -1,0 +1,370 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions
+ targetNamespace="http://s3.amazonaws.com/doc/2006-03-01/"
+ xmlns:tns="http://s3.amazonaws.com/doc/2006-03-01/"
+ xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+ xmlns:wsdlsoap="http://schemas.xmlsoap.org/wsdl/soap/"
+ xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+  <wsdl:types>
+    <xsd:schema
+     elementFormDefault="qualified"
+     targetNamespace="http://s3.amazonaws.com/doc/2006-03-01/">
+      <xsd:include schemaLocation="http://s3.amazonaws.com/doc/2006-03-01/AmazonS3.xsd"/>
+    </xsd:schema>
+  </wsdl:types>
+
+  <wsdl:message name="PutObjectRequest">
+    <wsdl:part element="tns:PutObject" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="PutObjectInlineResponse">
+    <wsdl:part element="tns:PutObjectInlineResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="CreateBucketResponse">
+    <wsdl:part element="tns:CreateBucketResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="GetObjectExtendedResponse">
+    <wsdl:part element="tns:GetObjectExtendedResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="GetObjectRequest">
+    <wsdl:part element="tns:GetObject" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="GetObjectAccessControlPolicyRequest">
+    <wsdl:part element="tns:GetObjectAccessControlPolicy" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="GetBucketAccessControlPolicyRequest">
+    <wsdl:part element="tns:GetBucketAccessControlPolicy" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="SetObjectAccessControlPolicyRequest">
+    <wsdl:part element="tns:SetObjectAccessControlPolicy" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="SetBucketAccessControlPolicyRequest">
+    <wsdl:part element="tns:SetBucketAccessControlPolicy" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="GetBucketLoggingStatusRequest">
+    <wsdl:part element="tns:GetBucketLoggingStatus" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="SetBucketLoggingStatusRequest">
+    <wsdl:part element="tns:SetBucketLoggingStatus" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="ListBucketResponse">
+    <wsdl:part element="tns:ListBucketResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="ListAllMyBucketsResponse">
+    <wsdl:part element="tns:ListAllMyBucketsResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="GetObjectExtendedRequest">
+    <wsdl:part element="tns:GetObjectExtended" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="PutObjectResponse">
+    <wsdl:part element="tns:PutObjectResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="PutObjectInlineRequest">
+    <wsdl:part element="tns:PutObjectInline" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="DeleteObjectResponse">
+    <wsdl:part element="tns:DeleteObjectResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="DeleteBucketRequest">
+    <wsdl:part element="tns:DeleteBucket" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="ListBucketRequest">
+    <wsdl:part element="tns:ListBucket" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="ListAllMyBucketsRequest">
+    <wsdl:part element="tns:ListAllMyBuckets" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="GetObjectResponse">
+    <wsdl:part element="tns:GetObjectResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="GetObjectAccessControlPolicyResponse">
+    <wsdl:part element="tns:GetObjectAccessControlPolicyResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="GetBucketAccessControlPolicyResponse">
+    <wsdl:part element="tns:GetBucketAccessControlPolicyResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="SetObjectAccessControlPolicyResponse">
+    <wsdl:part element="tns:SetObjectAccessControlPolicyResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="SetBucketAccessControlPolicyResponse">
+    <wsdl:part element="tns:SetBucketAccessControlPolicyResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="SetBucketLoggingStatusResponse">
+    <wsdl:part element="tns:SetBucketLoggingStatusResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="GetBucketLoggingStatusResponse">
+    <wsdl:part element="tns:GetBucketLoggingStatusResponse" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="CreateBucketRequest">
+    <wsdl:part element="tns:CreateBucket" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="DeleteObjectRequest">
+    <wsdl:part element="tns:DeleteObject" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="DeleteBucketResponse">
+    <wsdl:part element="tns:DeleteBucketResponse" name="parameters"/>
+  </wsdl:message>
+
+  <wsdl:message name="CopyObjectRequest">
+    <wsdl:part element="tns:CopyObject" name="parameters"/>
+  </wsdl:message>
+  <wsdl:message name="CopyObjectResponse">
+    <wsdl:part element="tns:CopyObjectResponse" name="parameters"/>
+  </wsdl:message>
+
+
+  <wsdl:portType name="AmazonS3">
+    <wsdl:operation name="CreateBucket">
+      <wsdl:input message="tns:CreateBucketRequest" name="CreateBucketRequest"/>
+      <wsdl:output message="tns:CreateBucketResponse" name="CreateBucketResponse"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="DeleteBucket">
+      <wsdl:input message="tns:DeleteBucketRequest" name="DeleteBucketRequest"/>
+      <wsdl:output message="tns:DeleteBucketResponse" name="DeleteBucketResponse"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetObjectAccessControlPolicy">
+      <wsdl:input message="tns:GetObjectAccessControlPolicyRequest" name="GetObjectAccessControlPolicyRequest"/>
+      <wsdl:output message="tns:GetObjectAccessControlPolicyResponse" name="GetObjectAccessControlPolicyResponse"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetBucketAccessControlPolicy">
+      <wsdl:input message="tns:GetBucketAccessControlPolicyRequest" name="GetBucketAccessControlPolicyRequest"/>
+      <wsdl:output message="tns:GetBucketAccessControlPolicyResponse" name="GetBucketAccessControlPolicyResponse"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="SetObjectAccessControlPolicy">
+      <wsdl:input message="tns:SetObjectAccessControlPolicyRequest" name="SetObjectAccessControlPolicyRequest"/>
+      <wsdl:output message="tns:SetObjectAccessControlPolicyResponse" name="SetObjectAccessControlPolicyResponse"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="SetBucketAccessControlPolicy">
+      <wsdl:input message="tns:SetBucketAccessControlPolicyRequest" name="SetBucketAccessControlPolicyRequest"/>
+      <wsdl:output message="tns:SetBucketAccessControlPolicyResponse" name="SetBucketAccessControlPolicyResponse"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetObject">
+      <wsdl:input message="tns:GetObjectRequest" name="GetObjectRequest"/>
+      <wsdl:output message="tns:GetObjectResponse" name="GetObjectResponse"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetObjectExtended">
+      <wsdl:input message="tns:GetObjectExtendedRequest" name="GetObjectExtendedRequest"/>
+      <wsdl:output message="tns:GetObjectExtendedResponse" name="GetObjectExtendedResponse"/>
+    </wsdl:operation>
+    
+    <wsdl:operation name="PutObject">
+      <wsdl:input message="tns:PutObjectRequest" name="PutObjectRequest"/>
+      <wsdl:output message="tns:PutObjectResponse" name="PutObjectResponse"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="PutObjectInline">
+      <wsdl:input message="tns:PutObjectInlineRequest" name="PutObjectInlineRequest"/>
+      <wsdl:output message="tns:PutObjectInlineResponse" name="PutObjectInlineResponse"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="DeleteObject">
+      <wsdl:input message="tns:DeleteObjectRequest" name="DeleteObjectRequest"/>
+      <wsdl:output message="tns:DeleteObjectResponse" name="DeleteObjectResponse"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="ListBucket">
+      <wsdl:input message="tns:ListBucketRequest" name="ListBucketRequest"/>
+      <wsdl:output message="tns:ListBucketResponse" name="ListBucketResponse"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="ListAllMyBuckets">
+      <wsdl:input message="tns:ListAllMyBucketsRequest" name="ListAllMyBucketsRequest"/>
+      <wsdl:output message="tns:ListAllMyBucketsResponse" name="ListAllMyBucketsResponse"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetBucketLoggingStatus">
+      <wsdl:input message="tns:GetBucketLoggingStatusRequest" name="GetBucketLoggingStatusRequest"/>
+      <wsdl:output message="tns:GetBucketLoggingStatusResponse" name="GetBucketLoggingStatusResponse"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="SetBucketLoggingStatus">
+      <wsdl:input message="tns:SetBucketLoggingStatusRequest" name="SetBucketLoggingStatusRequest"/>
+      <wsdl:output message="tns:SetBucketLoggingStatusResponse" name="SetBucketLoggingStatusResponse"/>
+    </wsdl:operation>
+
+    <wsdl:operation name="CopyObject">
+      <wsdl:input message="tns:CopyObjectRequest" name="CopyObjectRequest"/>
+      <wsdl:output message="tns:CopyObjectResponse" name="CopyObjectResponse"/>
+    </wsdl:operation>
+
+  </wsdl:portType>
+
+
+  <wsdl:binding name="AmazonS3SoapBinding" type="tns:AmazonS3">
+    <wsdlsoap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+
+    <wsdl:operation name="CreateBucket">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="CreateBucketRequest">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="CreateBucketResponse">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="DeleteBucket">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="DeleteBucketRequest">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="DeleteBucketResponse">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetObjectAccessControlPolicy">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="GetObjectAccessControlPolicyRequest">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="GetObjectAccessControlPolicyResponse">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetBucketAccessControlPolicy">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="GetBucketAccessControlPolicyRequest">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="GetBucketAccessControlPolicyResponse">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="SetObjectAccessControlPolicy">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="SetObjectAccessControlPolicyRequest">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="SetObjectAccessControlPolicyResponse">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="SetBucketAccessControlPolicy">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="SetBucketAccessControlPolicyRequest">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="SetBucketAccessControlPolicyResponse">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetObject">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="GetObjectRequest">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="GetObjectResponse">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetObjectExtended">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="GetObjectExtendedRequest">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="GetObjectExtendedResponse">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="PutObject">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="PutObjectRequest">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="PutObjectResponse">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="PutObjectInline">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="PutObjectInlineRequest">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="PutObjectInlineResponse">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="DeleteObject">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="DeleteObjectRequest">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="DeleteObjectResponse">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="ListBucket">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="ListBucketRequest">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="ListBucketResponse">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="ListAllMyBuckets">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="ListAllMyBucketsRequest">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="ListAllMyBucketsResponse">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="SetBucketLoggingStatus">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="SetBucketLoggingStatusRequest">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="SetBucketLoggingStatusResponse">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="GetBucketLoggingStatus">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="GetBucketLoggingStatusRequest">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="GetBucketLoggingStatusResponse">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+    <wsdl:operation name="CopyObject">
+      <wsdlsoap:operation soapAction=""/>
+      <wsdl:input name="CopyObjectRequest">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="CopyObjectResponse">
+        <wsdlsoap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+
+</wsdl:binding>
+
+  <wsdl:service name="AmazonS3">
+    <wsdl:port binding="tns:AmazonS3SoapBinding" name="AmazonS3">
+      <wsdlsoap:address location="http://s3.cloud.com/soap"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>

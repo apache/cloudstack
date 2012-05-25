@@ -1,0 +1,45 @@
+#!/usr/bin/env python
+
+"""builds the entire stack"""
+#For every matching build change here, that produces new installable
+#files, the cloud.spec file and the Debian control files must be
+#revised and tested.
+
+import shutil,os
+import Utils,Node,Options,Logs,Scripting,Environment,Build,Configure
+from os import unlink as _unlink, makedirs as _makedirs, getcwd as _getcwd, chdir as _chdir
+from os.path import abspath as _abspath, basename as _basename, dirname as _dirname, exists as _exists, isdir as _isdir, split as _split, join as _join, sep, pathsep, pardir
+from glob import glob as _glob
+try: set([1,2,3])
+except Exception: from Sets import set
+import re
+import zipfile,tarfile
+try:
+  from os import chmod as _chmod,chown as _chown
+  import pwd,stat,grp
+except ImportError:
+  _chmod,_chown,pwd,stat,grp = (None,None,None,None,None)
+
+sourcedir = bld.srcnode.abspath()
+builddir = bld.path.abspath(bld.env)
+filelist = bld.path.ant_glob
+
+# ==================== Java compilation ===========================
+
+ant_args = [
+	"-Dimpl.version=%s"%bld.env.VERSION,
+	"-Dtarget.dir=%s"%Utils.relpath(_join(builddir,"target")),
+	"-Dbuildnumber.dir=%s"%Utils.relpath(_join(builddir)),
+	"-Ddist.dir=%s"%Utils.relpath(builddir),
+]
+
+# FIXME make this depend on appropriate variables, add support for build number command line option, and now that build number autodetection is no longer possible in cloudstack project, remove build number autodetection support altogether, making it cleaner.  and so should the build number support on this project be -- no autodetection
+tgen = bld(
+	rule=Utils.runant,
+	name='runant',
+	source=filelist('src/**',bld=0,src=1,dir=0),
+	target='cloud-bridge.jar cloud-auth-ec2.mar cloud-auth-s3.mar cloud-ec2.aar cloud-s3.aar',
+	anttgts=["build-cloud-bridge"],
+	antargs=ant_args)
+# FIXME declare correct build outputs for installation
+

@@ -1,0 +1,102 @@
+<HTML>
+<HEAD>
+<TITLE>Cloud.com's S3 API User's Guide</TITLE>
+</HEAD>
+<BODY>
+<H1>Cloud.com's S3 API User's Guide</H1>
+3/4/2011                   
+<H2>Table of Contents</H2>
+<UL>
+<LI><A href="#part1">Part 1. Cloud.com's Specific Implementation Details</A></LI>
+   <UL>
+     <LI><A href="#registration">User Registration</A></LI>
+     <LI><A href="#endpoints">Endpoints</LI>
+   </UL>
+<LI><A href="#part2">Part 2. Generic S3 Details</A></LI>
+   <UL>
+     <LI><A href="#functions">List of S3 Functions Implemented</A></LI>
+     <LI><A href="#wsdl">Supported WSDL Version</A><P></LI>
+   </UL>
+<LI><A href="#refs">References</A></LI>
+</UL>
+<P></BR>
+<H2 id="part1">Part 1. Cloud.com's Specific Implementation Details</H2>
+<H3 id="registration">User Registration</H3>
+The S3 service uses the user's Cloud.com API access and secret keys <A href="#ref1">[1]</A> to implement both
+the REST and SOAP authentication algorithms.  This is done by re-using an EC2 provided REST command.   Once
+this URL is invoked the user has registered for both the S3 service and the EC2 REST service.
+<pre>
+http://&lt;fqdn-or-ip>:&lt;port>/bridge/rest/AmazonS3?Action=SetUserKeys&accesskey=&lt;key>&secretkey=&lt;key>
+</pre>
+SetUserKeys is an <I>unauthorized</I> REST call.</br>
+A HTTP 200 result code is returned on success and a 401 on failure.
+<P>
+<P>
+<H3 id="endpoints">Endpoints</H3>
+For SOAP access the endpoint is:  
+<pre>http://&lt;fqdn-or-ip>:&lt;port>/bridge/services/AmazonS3</pre>
+
+For the SOAP PutObject function with a DIME attachment <A href="#ref3">[3]</A>:
+<pre>http://&lt;fqdn-or-ip>:&lt;port>/bridge/dime/AmazonS3</pre>
+
+For REST access the endpoint is:
+<pre>http://&lt;fqdn-or-ip>:&lt;port>/bridge/rest/AmazonS3</pre>
+<P>
+
+<H2 id="part2">Part 2. Generic S3 Details</H2>
+<H3 id="functions">List of S3 Functions Implemented</H3>
+Refer to the Amazon S3 documentation <A href="#ref2">[2]</A> for a description of each function.   
+Also see Part1, section 3 above, for a list of unsupported S3 features.
+<pre>
+REST calls:
+GET Service
+DELETE Bucket
+GET Bucket
+GET Bucket acl
+GET Bucket versioning
+PUT Bucket
+PUT Bucket acl
+PUT Bucket versioning
+List Multipart Uploads
+DELETE Object
+GET Object
+GET Object acl
+HEAD Object
+POST Object
+PUT Object
+PUT Object (Copy)
+Initiate Multipart Upload
+Upload Part
+Complete Multipart Upload
+Abort Multipart Upload
+List Parts
+
+SOAP calls:
+ListAllMyBuckets
+CreateBucket
+DeleteBucket
+ListBucket
+GetBucketAccessControlPolicy
+SetBucketAccessControlPolicy
+PutObjectInline
+PutObject
+CopyObject
+GetObject
+GetObjectExtended
+DeleteObject
+GetObjectAccessControlPolicy
+SetObjectAccessControlPolicy
+</pre>
+<P>
+<H3 id="wsdl">Supported WSDL Version</H3>
+<A href="http://s3.amazonaws.com/doc/2006-03-01/">http://s3.amazonaws.com/doc/2006-03-01/</A></BR>
+<P>
+</BR>
+<H2 id="refs">References</H2>
+<OL>
+<LI id="ref1"><A href="http://cloud.com/community/kb">Cloud.com's Developer API</A></LI>
+<LI id="ref2"><A href="http://aws.amazon.com/documentation/s3/">Amazon's S3 API</A></LI>
+<LI id="ref3"><A href="http://msdn.microsoft.com/en-us/magazine/cc188797.aspx">DIME</A></LI>
+</OL>
+</BODY>
+</HTML>

@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping>
+	<class name="com.cloud.stack.models.CloudStackAccount" table="account"  lazy="true">
+   		<id name="id" type="string" column="uuid" >
+  		</id>
+  		<property name="name">
+     		<column name="account_name" />
+  		</property>
+  		<property name="defaultZoneId">
+     		<column name="default_zone_id" />
+  		</property>
+ 	</class>
+</hibernate-mapping>
+
