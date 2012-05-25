@@ -401,7 +401,6 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         ManagedObjectReference mor = null;
         if (serviceContext != null)
             mor = serviceContext.getHostMorByPath(hostInventoryPath);
-
         String privateTrafficLabel = null;
         privateTrafficLabel = serviceContext.getStockObject("privateTrafficLabel");
         if (privateTrafficLabel == null) {
@@ -420,6 +419,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                 HostFirewallSystemMO firewallMo = hostMo.getHostFirewallSystemMO();
                 if(firewallMo != null) {
             		if(hostMo.getHostType() == VmwareHostType.ESX) {
+            		    
 	                    firewallMo.enableRuleset("vncServer");
 	                    firewallMo.refreshFirewall();
             		}
@@ -463,14 +463,14 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                 		}
                     }
 
-                    String managementPortGroupName = getManagementPortGroupByHost(hostMo);
-                    assert(managementPortGroupName != null);
-
-                    HostPortGroupSpec spec = hostMo.getPortGroupSpec(managementPortGroupName);
                     String vlanId = null;
-                    if(spec.getVlanId() != 0) {
-                        vlanId = String.valueOf(spec.getVlanId());
+                    if(privateTrafficLabel != null) {
+                        String[] tokens = privateTrafficLabel.split(",");
+                        if(tokens.length == 2)
+                            vlanId = tokens[1];
                     }
+                    
+                    
                     s_logger.info("Calling prepareNetwork : " + hostMo.getContext().toString());
                     // prepare at least one network on the vswitch to enable OVF importing
                     if(!_nexusVSwitchActive) {
@@ -494,12 +494,11 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
             		}
                 }
 
-                String managementPortGroupName = getManagementPortGroupByHost(hostMo);
-                assert(managementPortGroupName != null);
-                HostPortGroupSpec spec = hostMo.getPortGroupSpec(managementPortGroupName);
                 String vlanId = null;
-                if(spec.getVlanId() != 0) {
-                    vlanId = String.valueOf(spec.getVlanId());
+                if(privateTrafficLabel != null) {
+                    String[] tokens = privateTrafficLabel.split(",");
+                    if(tokens.length == 2)
+                        vlanId = tokens[1];
                 }
 
                 // prepare at least one network on the vswitch to enable OVF importing
