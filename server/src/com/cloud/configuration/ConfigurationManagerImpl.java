@@ -138,8 +138,8 @@ import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.test.IPRangeConfig;
 import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
@@ -3574,6 +3574,34 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
     }
 
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_MARK_DEFAULT_ZONE, eventDescription = "Marking account with the default zone", async=true)
+    public AccountVO markDefaultZone(String accountName, long domainId, long defaultZoneId) {
+    	
+    	// Check if the account exists
+    	Account account = _accountDao.findEnabledAccount(accountName, domainId);
+    	if (account == null) {
+            s_logger.error("Unable to find account by name: " + accountName + " in domain " + domainId);
+            throw new InvalidParameterValueException("Account by name: " + accountName + " doesn't exist in domain " + domainId);
+        }
+
+        // Don't allow modification of system account
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
+            throw new InvalidParameterValueException("Can not modify system account");
+    	}
+
+    	AccountVO acctForUpdate = _accountDao.findById(account.getId());
+    	
+    	acctForUpdate.setDefaultZoneId(defaultZoneId);
+    	
+    	if (_accountDao.update(account.getId(), acctForUpdate)) {
+    		UserContext.current().setEventDetails("Default zone id= " + defaultZoneId);
+    		return _accountDao.findById(account.getId());
+    	} else {
+    		return null;
+    	}
+    }
+    
     // Note: This method will be used for entity name validations in the coming
     // releases (place holder for now)
     private void validateEntityName(String str) {

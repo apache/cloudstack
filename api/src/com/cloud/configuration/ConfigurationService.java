@@ -30,6 +30,7 @@ import com.cloud.api.commands.DeleteZoneCmd;
 import com.cloud.api.commands.LDAPConfigCmd;
 import com.cloud.api.commands.LDAPRemoveCmd;
 import com.cloud.api.commands.ListNetworkOfferingsCmd;
+import com.cloud.api.commands.MarkDefaultZoneForAccountCmd;
 import com.cloud.api.commands.UpdateCfgCmd;
 import com.cloud.api.commands.UpdateDiskOfferingCmd;
 import com.cloud.api.commands.UpdateNetworkOfferingCmd;
@@ -215,6 +216,17 @@ public interface ConfigurationService {
      * @return The new Vlan object
      */
     Vlan createVlanAndPublicIpRange(CreateVlanIpRangeCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, ResourceAllocationException;
+
+    /**
+     * Marks the the account with the default zone-id.
+     *
+     * @param accountName
+     * @param domainId
+     * @param zoneId
+     * @return The new account object
+     * @throws ,
+     */
+    Account markDefaultZone(String accountName, long domainId, long defaultZoneId);
 
     boolean deleteVlanIpRange(DeleteVlanIpRangeCmd cmd);
 

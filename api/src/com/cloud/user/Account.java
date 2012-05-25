@@ -55,4 +55,6 @@ public interface Account extends ControlledEntity {
     public Date getRemoved();
 
     public String getNetworkDomain();
+    
+    public Long getDefaultZoneId();
 }

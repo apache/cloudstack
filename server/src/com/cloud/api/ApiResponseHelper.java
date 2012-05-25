@@ -1391,12 +1391,10 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
 
-            if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-                if (userVm.getHypervisorType() != null) {
-                    userVmResponse.setHypervisor(userVm.getHypervisorType().toString());
-                }
+            if (userVm.getHypervisorType() != null) {
+                userVmResponse.setHypervisor(userVm.getHypervisorType().toString());
             }
-
+            
             if (details.contains(VMDetails.all) || details.contains(VMDetails.tmpl)) {
                 // Template Info
                 VMTemplateVO template = templates.get(userVm.getTemplateId());
@@ -2973,11 +2971,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         
         userVmData.setDomainId(userVm.getDomainId());
 
-        Account caller = UserContext.current().getCaller();
-        if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            if (userVm.getHypervisorType() != null) {
-                userVmData.setHypervisor(userVm.getHypervisorType().toString());
-            }
+        if (userVm.getHypervisorType() != null) {
+            userVmData.setHypervisor(userVm.getHypervisorType().toString());
         }
 
         if (userVm.getPassword() != null) {
