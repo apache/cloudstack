@@ -113,15 +113,13 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         String publicTrafficLabel = null;
         String guestTrafficLabel = null;
         Map<String, String> vsmCredentials = null;
+        
+        privateTrafficLabel = _netmgr.getDefaultManagementTrafficLabel(dcId, HypervisorType.VMware);
+        if (privateTrafficLabel != null) {
+            s_logger.info("Detected private network label : " + privateTrafficLabel);
+        }
+        
         if (_vmwareMgr.getNexusVSwitchGlobalParameter()) {
-            if (_vmwareMgr.getPrivateVSwitchTypeGlobalParameter() != null && _vmwareMgr.getPrivateVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus")) {
-                // Get physical network label
-                privateTrafficLabel = _netmgr.getDefaultManagementTrafficLabel(dcId, HypervisorType.VMware);
-                if (privateTrafficLabel != null) {
-                    s_logger.info("Detected private network label : " + privateTrafficLabel);
-                }
-            }
-
             DataCenterVO zone = _dcDao.findById(dcId);
             NetworkType zoneType = zone.getNetworkType();
 
@@ -151,11 +149,10 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
 		VmwareContext context = null;
 		try {
 			context = VmwareContextFactory.create(url.getHost(), username, password);
+            if (privateTrafficLabel != null)
+                context.registerStockObject("privateTrafficLabel", privateTrafficLabel);
+			
             if (_vmwareMgr.getNexusVSwitchGlobalParameter()) {
-                if (_vmwareMgr.getPrivateVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus")) {
-                    if (privateTrafficLabel != null)
-                        context.registerStockObject("privateTrafficLabel", privateTrafficLabel);
-                }
                 if (vsmCredentials != null) {
                     s_logger.info("Stocking credentials of Nexus VSM");
                     context.registerStockObject("vsmcredentials", vsmCredentials);
