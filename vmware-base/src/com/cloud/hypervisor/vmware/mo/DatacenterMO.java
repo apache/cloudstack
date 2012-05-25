@@ -21,6 +21,7 @@ import com.cloud.utils.Pair;
 import com.vmware.apputils.vim25.ServiceUtil;
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DVPortgroupConfigInfo;
+import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
@@ -29,6 +30,9 @@ import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
+import com.vmware.vim25.VirtualDeviceBackingInfo;
+import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
+import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
 
 public class DatacenterMO extends BaseMO {
 	
@@ -445,5 +449,21 @@ public class DatacenterMO extends BaseMO {
     public String getDvSwitchUuid(ManagedObjectReference dvSwitchMor) throws Exception {
         assert (dvSwitchMor != null);
         return (String) _context.getServiceUtil().getDynamicProperty(dvSwitchMor, "uuid");
+    }
+
+    public VirtualEthernetCardDistributedVirtualPortBackingInfo getDvPortBackingInfo(Pair<ManagedObjectReference, String> networkInfo)
+            throws Exception {
+        assert (networkInfo != null);
+        assert (networkInfo.first() != null && networkInfo.first().getType().equalsIgnoreCase("DistributedVirtualPortgroup"));
+        final VirtualEthernetCardDistributedVirtualPortBackingInfo dvPortBacking = new VirtualEthernetCardDistributedVirtualPortBackingInfo();
+        final DistributedVirtualSwitchPortConnection dvPortConnection = new DistributedVirtualSwitchPortConnection();
+        ManagedObjectReference dvsMor = getDvSwitchMor(networkInfo.first());
+        String dvSwitchUuid = getDvSwitchUuid(dvsMor);
+        dvPortConnection.setSwitchUuid(dvSwitchUuid);
+        dvPortConnection.setPortgroupKey(networkInfo.first().get_value());
+        dvPortBacking.setPort(dvPortConnection);
+        System.out.println("Plugging NIC device into network " + networkInfo.second() + " backed by dvSwitch: "
+                + dvSwitchUuid);
+        return dvPortBacking;
     }
 }
