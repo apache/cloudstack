@@ -241,7 +241,7 @@ cloudStack.preFilter = {
 			}
 			else if($dedicated.find('input[type=checkbox]:unchecked').length > 0) {
 				$capacity.css('display', 'inline-block');
-                                $capacity.find('input[type=text]').val('');												
+				$capacity.find('input[type=text]').val('');												
 			}			
 		});			
 		args.$form.change();		
