@@ -38,6 +38,7 @@ import com.cloud.utils.script.Script;
 import com.google.gson.Gson;
 import com.vmware.vim25.ArrayOfManagedObjectReference;
 import com.vmware.vim25.CustomFieldStringValue;
+import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.GuestInfo;
 import com.vmware.vim25.HttpNfcLeaseDeviceUrl;
@@ -72,6 +73,7 @@ import com.vmware.vim25.VirtualDiskSparseVer1BackingInfo;
 import com.vmware.vim25.VirtualDiskSparseVer2BackingInfo;
 import com.vmware.vim25.VirtualDiskType;
 import com.vmware.vim25.VirtualEthernetCard;
+import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
 import com.vmware.vim25.VirtualIDEController;
 import com.vmware.vim25.VirtualLsiLogicController;
 import com.vmware.vim25.VirtualMachineCloneSpec;
@@ -2003,16 +2005,37 @@ public class VirtualMachineMO extends BaseMO {
                 return 0;
             }
         });
-	    
-        int index = 0; 
-        for(VirtualDevice nic : nics) {
-            if(((VirtualEthernetCard)nic).getDeviceInfo().getSummary().startsWith(networkNamePrefix))
+        
+        int index = 0;
+        String attachedNetworkSummary;
+        String dvPortGroupName;
+        for (VirtualDevice nic : nics) {
+            attachedNetworkSummary = ((VirtualEthernetCard) nic).getDeviceInfo().getSummary();
+            if (attachedNetworkSummary.startsWith(networkNamePrefix)) {
                 return new Pair<Integer, VirtualDevice>(new Integer(index), nic);
+            } else if (attachedNetworkSummary.endsWith("DistributedVirtualPortBackingInfo.summary")) {
+                dvPortGroupName = getDvPortGroupName((VirtualEthernetCard) nic);
+                if (dvPortGroupName != null && dvPortGroupName.startsWith(networkNamePrefix)) {
+                    s_logger.debug("Found a dvPortGroup already associated with public NIC.");
+                    return new Pair<Integer, VirtualDevice>(new Integer(index), nic);
+                }
+            }
             index++;
         }
         return new Pair<Integer, VirtualDevice>(new Integer(-1), null);
-	}
-	
+    }
+
+    public String getDvPortGroupName(VirtualEthernetCard nic) throws Exception {
+        VirtualEthernetCardDistributedVirtualPortBackingInfo dvpBackingInfo =
+                (VirtualEthernetCardDistributedVirtualPortBackingInfo) ((VirtualEthernetCard) nic).getBacking();
+        DistributedVirtualSwitchPortConnection dvsPort = (DistributedVirtualSwitchPortConnection) dvpBackingInfo.getPort();
+        String dvPortGroupKey = dvsPort.getPortgroupKey();
+        ManagedObjectReference dvPortGroupMor = new ManagedObjectReference();
+        dvPortGroupMor.set_value(dvPortGroupKey);
+        dvPortGroupMor.setType("DistributedVirtualPortgroup");
+        return (String) _context.getServiceUtil().getDynamicProperty(dvPortGroupMor, "name");
+    }
+
 	public VirtualDevice[] getMatchedDevices(Class<?>[] deviceClasses) throws Exception {
 		assert(deviceClasses != null);
 		
