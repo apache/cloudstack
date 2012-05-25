@@ -1202,7 +1202,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
         }
 
-        //Check if public network has to be sest on VR
+        //Check if public network has to be set on VR
         boolean publicNetwork = false;
         if (_networkMgr.isProviderSupportServiceInNetwork(guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter)) {
             publicNetwork = true;
@@ -1211,7 +1211,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             s_logger.error("Didn't support redundant virtual router without public network!");
             return null;
         }
-        
+        //Check if control network has to be set on VR
+        boolean controlNetwork = true;
+        if ( dest.getDataCenter().getNetworkType() == NetworkType.Basic ) {
+            // in basic mode, use private network as control network
+            controlNetwork = false;
+        }
         
         //1) Get deployment plan and find out the list of routers
         boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || 
@@ -1253,7 +1258,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             int count = routerCount - routers.size();
             PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
             for (int i = 0; i < count; i++) {
-                DomainRouterVO router = deployRouter(owner, dest, plan, params, publicNetwork, guestNetwork, isRedundant,
+                DomainRouterVO router = deployRouter(owner, dest, plan, params, publicNetwork, controlNetwork, guestNetwork, isRedundant,
                         vrProvider, offeringId, sourceNatIp, null);
                 routers.add(router);
             }
@@ -1266,7 +1271,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     protected DomainRouterVO deployRouter(Account owner, DeployDestination dest, DeploymentPlan plan, Map<Param, Object> params,
-            boolean setupPublicNetwork, Network guestNetwork, boolean isRedundant,
+            boolean setupPublicNetwork, boolean setupControlNetwork, Network guestNetwork, boolean isRedundant,
             VirtualRouterProvider vrProvider, long svcOffId, PublicIp sourceNatIp, Long vpcId) throws ConcurrentOperationException, 
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException, 
             StorageUnavailableException, ResourceUnavailableException {
@@ -1275,9 +1280,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating the router " + id + " in datacenter "  + dest.getDataCenter());
         }
-        
-        //1) Create router networks
-        List<Pair<NetworkVO, NicProfile>> networks = createRouterNetworks(owner, setupPublicNetwork, guestNetwork, 
+
+        List<Pair<NetworkVO, NicProfile>> networks = createRouterNetworks(owner, setupPublicNetwork, setupControlNetwork, guestNetwork, 
                 isRedundant, plan, sourceNatIp);
 
        
@@ -1367,13 +1371,23 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return router;
     }
 
-    protected List<Pair<NetworkVO, NicProfile>> createRouterNetworks(Account owner, boolean setupPublicNetwork, 
+    protected List<Pair<NetworkVO, NicProfile>> createRouterNetworks(Account owner, boolean setupPublicNetwork, boolean setupControlNetwork,
             Network guestNetwork, boolean isRedundant, DeploymentPlan plan, PublicIp sourceNatIp) throws ConcurrentOperationException,
             InsufficientAddressCapacityException {
         //Form networks
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);
         
-        //1) Guest network
+        
+        //1) Control network
+        if (setupControlNetwork) {
+            s_logger.debug("Adding nic for Virtual Router in Control network ");
+            List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
+            NetworkOfferingVO controlOffering = offerings.get(0);
+            NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
+            networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
+        }
+        
+        //2) Guest network
         boolean hasGuestNetwork = false;
         if (guestNetwork != null) {
             s_logger.debug("Adding nic for Virtual Router in Guest network " + guestNetwork);
@@ -1408,7 +1422,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             hasGuestNetwork = true;
         }
         
-        //2) Public network
+        //3) Public network
         if (setupPublicNetwork) {
             s_logger.debug("Adding nic for Virtual Router in Public network ");
             //if source nat service is supported by the network, get the source nat ip address
@@ -1428,13 +1442,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
             networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
         }
-        
-        //3) Control network
-        List<NetworkOfferingVO> offerings = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemControlNetwork);
-        NetworkOfferingVO controlOffering = offerings.get(0);
-        NetworkVO controlConfig = _networkMgr.setupNetwork(_systemAcct, controlOffering, plan, null, null, false).get(0);
-        s_logger.debug("Adding nic for Virtual Router in Control network ");
-        networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
+
         
         return networks;
     }
@@ -1632,12 +1640,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         buf.append(" mgmtcidr=").append(_mgmt_cidr);
                         buf.append(" localgw=").append(dest.getPod().getGateway());
                     }
-
-
-                    if (dc.getNetworkType() == NetworkType.Basic) {
-                        // ask domR to setup SSH on guest network
-                        buf.append(" sshonguest=true");
-                    }
                 }
             } else if (nic.getTrafficType() == TrafficType.Guest) {
                 dnsProvided = _networkMgr.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.Dns, Provider.VirtualRouter);
@@ -1798,8 +1800,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         NicProfile controlNic = null;
 
-        if(profile.getHypervisorType() == HypervisorType.VMware && dcVo.getNetworkType() == NetworkType.Basic) {
-            // TODO this is a ugly to test hypervisor type here
+        if( dcVo.getNetworkType() == NetworkType.Basic) {
             // for basic network mode, we will use the guest NIC for control NIC
             for (NicProfile nic : profile.getNics()) {
                 if (nic.getTrafficType() == TrafficType.Guest && nic.getIp4Address() != null) {

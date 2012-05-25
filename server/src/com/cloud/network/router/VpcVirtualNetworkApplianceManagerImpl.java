@@ -110,7 +110,7 @@ VpcVirtualNetworkApplianceManager{
                     VirtualRouterProviderType.VirtualRouter);
             
             PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddressToVpc(owner, vpc);
-            DomainRouterVO router = deployRouter(owner, dest, plan, params, true, null, false,
+            DomainRouterVO router = deployRouter(owner, dest, plan, params, true, true, null, false,
                     vrProvider, offeringId, sourceNatIp, vpc.getId());
             routers.add(router);
             
