@@ -230,6 +230,7 @@ import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualSCSISharing;
+import com.xensource.xenapi.VLAN;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
@@ -1638,7 +1639,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (vol.getType() != Volume.Type.ISO) {
                 String poolUuid = vol.getPoolUuid();
                 if(poolMors.get(poolUuid) == null) {
-                    ManagedObjectReference morDataStore = hyperHost.findDatastore(poolUuid);
+                    ManagedObjectReference morDataStore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolUuid);
                     if (morDataStore == null) {
                         String msg = "Failed to get the mounted datastore for the volume's pool " + poolUuid;
                         s_logger.error(msg);
@@ -1651,47 +1652,55 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return poolMors;
     }
 
-    private String getVlanInfo(NicTO nicTo) {
+    private String getVlanInfo(NicTO nicTo, String defaultVlan) {
         if (nicTo.getBroadcastType() == BroadcastDomainType.Native) {
-            return Vlan.UNTAGGED;
+            return defaultVlan;
         }
 
         if (nicTo.getBroadcastType() == BroadcastDomainType.Vlan) {
             if (nicTo.getBroadcastUri() != null) {
                 return nicTo.getBroadcastUri().getHost();
             } else {
-                s_logger.warn("BroadcastType is not claimed as VLAN, but without vlan info in broadcast URI");
-                return Vlan.UNTAGGED;
+                s_logger.warn("BroadcastType is not claimed as VLAN, but without vlan info in broadcast URI. Use vlan info from labeling: " + defaultVlan);
+                return defaultVlan;
             }
         }
 
-        s_logger.warn("Unrecognized broadcast type in VmwareResource, type: " + nicTo.getBroadcastType().toString());
-        return Vlan.UNTAGGED;
+        s_logger.warn("Unrecognized broadcast type in VmwareResource, type: " + nicTo.getBroadcastType().toString() + ". Use vlan info from labeling: " + defaultVlan);
+        return defaultVlan;
     }
 
     private Pair<ManagedObjectReference, String> prepareNetworkFromNicInfo(HostMO hostMo, NicTO nicTo) throws Exception {
         
-        String switchName =  getTargetSwitch(nicTo);
+        Pair<String, String> switchName =  getTargetSwitch(nicTo);
         String namePrefix = getNetworkNamePrefix(nicTo);
         
-        s_logger.info("Prepare network on vSwitch: " + switchName + " with name prefix: " + namePrefix);
-        return HypervisorHostHelper.prepareNetwork(switchName, namePrefix, hostMo, getVlanInfo(nicTo), 
+        s_logger.info("Prepare network on vSwitch: " + switchName.first() + " with name prefix: " + namePrefix);
+        return HypervisorHostHelper.prepareNetwork(switchName.first(), namePrefix, hostMo, getVlanInfo(nicTo, switchName.second()), 
                 nicTo.getNetworkRateMbps(), nicTo.getNetworkRateMulticastMbps(), _ops_timeout, 
                 !namePrefix.startsWith("cloud.private"));
     }
     
-    private String getTargetSwitch(NicTO nicTo) throws Exception {
-        if(nicTo.getName() != null && !nicTo.getName().isEmpty())
-            return nicTo.getName();
+    // return Pair<switch name, vlan tagging>
+    private Pair<String, String> getTargetSwitch(NicTO nicTo) throws Exception {
+        if(nicTo.getName() != null && !nicTo.getName().isEmpty()) {
+        	String[] tokens = nicTo.getName().split(",");
+        	
+        	if(tokens.length == 2) {
+        		return new Pair<String, String>(tokens[0], tokens[1]);
+        	} else {
+        		return new Pair<String, String>(nicTo.getName(), Vlan.UNTAGGED);
+        	}
+        }
         
         if (nicTo.getType() == Networks.TrafficType.Guest) {
-            return this._guestNetworkVSwitchName;
+            return new Pair<String, String>(this._guestNetworkVSwitchName, Vlan.UNTAGGED);
         } else if (nicTo.getType() == Networks.TrafficType.Control || nicTo.getType() == Networks.TrafficType.Management) {
-            return this._privateNetworkVSwitchName;
+            return new Pair<String, String>(this._privateNetworkVSwitchName, Vlan.UNTAGGED);
         } else if (nicTo.getType() == Networks.TrafficType.Public) {
-            return this._publicNetworkVSwitchName;
+            return new Pair<String, String>(this._publicNetworkVSwitchName, Vlan.UNTAGGED);
         } else if (nicTo.getType() == Networks.TrafficType.Storage) {
-            return this._privateNetworkVSwitchName;
+            return new Pair<String, String>(this._privateNetworkVSwitchName, Vlan.UNTAGGED);
         } else if (nicTo.getType() == Networks.TrafficType.Vpn) {
             throw new Exception("Unsupported traffic type: " + nicTo.getType().toString());
         } else {
@@ -2296,7 +2305,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception("Unsupported storage pool type " + pool.getType());
             }
 
-            ManagedObjectReference morDatastore = hyperHost.mountDatastore(pool.getType() == StoragePoolType.VMFS, pool.getHost(), pool.getPort(), pool.getPath(), pool.getUuid());
+            ManagedObjectReference morDatastore = hyperHost.mountDatastore(pool.getType() == StoragePoolType.VMFS, pool.getHost(), 
+                pool.getPort(), pool.getPath(), pool.getUuid().replace("-", ""));
 
             assert (morDatastore != null);
             DatastoreSummary summary = new DatastoreMO(getServiceContext(), morDatastore).getSummary();
@@ -2361,7 +2371,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception(msg);
             }
 
-            ManagedObjectReference morDs = hyperHost.findDatastore(cmd.getPoolUuid());
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getPoolUuid());
             if (morDs == null) {
                 String msg = "Unable to find the mounted datastore to execute AttachVolumeCommand, vmName: " + cmd.getVmName();
                 s_logger.error(msg);
@@ -2470,11 +2480,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         URI uri = new URI(storeUrl);
 
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
-        ManagedObjectReference morDatastore = hyperHost.mountDatastore(false, uri.getHost(), 0, uri.getPath(), storeName);
+        ManagedObjectReference morDatastore = hyperHost.mountDatastore(false, uri.getHost(), 0, uri.getPath(), storeName.replace("-", ""));
 
-        if (morDatastore == null) {
+        if (morDatastore == null)
             throw new Exception("Unable to mount secondary storage on host. storeUrl: " + storeUrl);
-        }
 
         return morDatastore;
     }
@@ -2632,7 +2641,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             VmwareContext context = getServiceContext();
             VmwareHypervisorHost hyperHost = getHyperHost(context);
-            ManagedObjectReference morDs = hyperHost.findDatastore(cmd.getStorageId());
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getStorageId());
 
             if (morDs != null) {
                 DatastoreMO datastoreMo = new DatastoreMO(context, morDs);
@@ -2808,7 +2817,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             VolumeTO vol = cmd.getVolume();
 
-            ManagedObjectReference morDs = hyperHost.findDatastore(vol.getPoolUuid());
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, vol.getPoolUuid());
             if (morDs == null) {
                 String msg = "Unable to find datastore based on volume mount point " + cmd.getVolume().getMountPoint();
                 s_logger.error(msg);
@@ -2971,12 +2980,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             VmwareHypervisorHost hyperHost = getHyperHost(context);
             DatacenterMO dcMo = new DatacenterMO(context, hyperHost.getHyperHostDatacenter());
 
-            VmwareManager vmwareMgr = context.getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-
-            ManagedObjectReference morDatastore = hyperHost.findDatastore(pool.getUuid());
-            if (morDatastore == null) {
+            ManagedObjectReference morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, pool.getUuid());
+            if (morDatastore == null)
                 throw new Exception("Unable to find datastore in vSphere");
-            }
+            
             DatastoreMO dsMo = new DatastoreMO(context, morDatastore);
 
             if (cmd.getDiskCharacteristics().getType() == Volume.Type.ROOT) {
