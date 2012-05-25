@@ -668,7 +668,7 @@
 
         var $detail = $('<tr></tr>').addClass(key).appendTo($detailTable);
         var $name = $('<td></td>').addClass('name').appendTo($detail);
-        var $value = $('<td></td>').addClass('value').appendTo($detail);
+        var $value = $('<span>').appendTo($('<td></td>').addClass('value').appendTo($detail));
         var content = data[key];
 
         if (this.converter) content = this.converter(content);
