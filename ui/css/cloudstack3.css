@@ -2905,7 +2905,7 @@ Dialogs*/
 }
 
 .ui-dialog.confirm .ui-button {
-  margin-top: -24px;
+  margin-top: 0px;
   margin-left: 11px;
 }
 
@@ -2917,7 +2917,7 @@ Dialogs*/
   display: block;
   text-align: center;
   color: #445361;
-  font-size: 15px;
+  font-size: 14px;
   /*+text-shadow:0px 1px 1px #FFFFFF;*/
   -moz-text-shadow: 0px 1px 1px #FFFFFF;
   -webkit-text-shadow: 0px 1px 1px #FFFFFF;
