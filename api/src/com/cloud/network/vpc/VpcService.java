@@ -77,7 +77,7 @@ public interface VpcService {
      * @throws ResourceUnavailableException 
      * @throws ConcurrentOperationException 
      */
-    public boolean deleteVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    public boolean deleteVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
      * @param vpcId
@@ -102,12 +102,14 @@ public interface VpcService {
      * @param zoneId TODO
      * @param isRecursive TODO
      * @param listAll TODO
+     * @param restartRequired TODO
      * @param vpc
      * @return
      */
     public List<? extends Vpc> listVpcs(Long id, String vpcName, String displayText, 
             List<String> supportedServicesStr, String cidr, Long vpcOffId, String state, String accountName, Long domainId,
-            String keyword, Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll);
+            String keyword, Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, 
+            Boolean restartRequired);
 
     /**
      * @param vpcId
@@ -116,15 +118,21 @@ public interface VpcService {
      * @throws ResourceUnavailableException 
      * @throws ConcurrentOperationException 
      */
-    Vpc startVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean startVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * @param vpcId
      * @return
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
-     * @throws InsufficientCapacityException
      */
-    Vpc shutdownVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean shutdownVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException;
+
+    /**
+     * @param id
+     * @return
+     * @throws InsufficientCapacityException 
+     */
+    boolean restartVpc(Long id) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
 }

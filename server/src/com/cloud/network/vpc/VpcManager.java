@@ -17,7 +17,6 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -88,7 +87,6 @@ public interface VpcManager extends VpcService{
      * @return
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
-     * @throws InsufficientCapacityException
      */
-    boolean destroyVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean destroyVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException;
 }

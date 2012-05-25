@@ -2144,6 +2144,7 @@ CREATE TABLE `cloud`.`vpc` (
   `network_domain` varchar(255) COMMENT 'network domain',
   `removed` datetime COMMENT 'date removed if not null',
   `created` datetime NOT NULL COMMENT 'date created',
+  `restart_required` int(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 if restart is required for the VPC',
   PRIMARY KEY  (`id`),
   INDEX `i_vpc__removed`(`removed`),
   CONSTRAINT `fk_vpc__zone_id` FOREIGN KEY `fk_vpc__zone_id` (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
