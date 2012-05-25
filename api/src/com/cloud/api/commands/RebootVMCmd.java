@@ -93,11 +93,7 @@ public class RebootVMCmd extends BaseAsyncCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
         UserContext.current().setEventDetails("Vm Id: "+getId());
         UserVm result;
-        if (_userVmService.getHypervisorTypeOfUserVM(getId()) == HypervisorType.BareMetal) {
-        	result = _bareMetalVmService.rebootVirtualMachine(this);
-        } else {
-        	result = _userVmService.rebootVirtualMachine(this);
-        }
+        result = _userVmService.rebootVirtualMachine(this);
         
         if (result !=null){
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);

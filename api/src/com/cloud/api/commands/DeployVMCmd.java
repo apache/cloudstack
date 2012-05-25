@@ -319,11 +319,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         if (getStartVm()) {
             try {
                 UserContext.current().setEventDetails("Vm Id: "+getEntityId());
-                if (getHypervisor() == HypervisorType.BareMetal) {
-                    result = _bareMetalVmService.startVirtualMachine(this);
-                } else {
-                    result = _userVmService.startVirtualMachine(this);
-                }
+                result = _userVmService.startVirtualMachine(this);
             } catch (ResourceUnavailableException ex) {
                 s_logger.warn("Exception: ", ex);
                 throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
@@ -373,37 +369,34 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             if (diskOfferingId != null) {
                 DiskOffering diskOffering = _configService.getDiskOffering(diskOfferingId);
                 if (diskOffering == null) {
-                    throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
-                }
-            }
+					throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
+				}
+			}
 
-            UserVm vm = null;
-            if (getHypervisor() == HypervisorType.BareMetal) {
-                vm = _bareMetalVmService.createVirtualMachine(this);
-            } else {
-                if (zone.getNetworkType() == NetworkType.Basic) {
-                    if (getNetworkIds() != null) {
-                        throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
-                    } else {
-                        vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name,
-                                displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
-                    }
-                } else {
-                    if (zone.isSecurityGroupEnabled())  {
-                        vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(),
-                                owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
-                    } else {
-                        if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
-                            throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
-                        }
-                        vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName,
-                                diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
-                    }
-                }
-            }
+			UserVm vm = null;
+			if (zone.getNetworkType() == NetworkType.Basic) {
+				if (getNetworkIds() != null) {
+					throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
+				} else {
+					vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name,
+					        displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
+				}
+			} else {
+				if (zone.isSecurityGroupEnabled()) {
+					vm = _userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, getNetworkIds(), getSecurityGroupIdList(),
+					        owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress,
+					        keyboard);
+				} else {
+					if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
+						throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
+					}
+					vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName,
+					        diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
+				}
+			}
 
-            if (vm != null) {
-                setEntityId(vm.getId());
+			if (vm != null) {
+				setEntityId(vm.getId());
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to deploy vm");
             }

@@ -113,11 +113,7 @@ public class StartVMCmd extends BaseAsyncCmd {
             UserContext.current().setEventDetails("Vm Id: " + getId());
             
             UserVm result ;
-            if (_userVmService.getHypervisorTypeOfUserVM(getId()) == HypervisorType.BareMetal) {
-                result = _bareMetalVmService.startVirtualMachine(this);
-            } else {
-                result = _userVmService.startVirtualMachine(this);
-            }
+            result = _userVmService.startVirtualMachine(this);
 
             if (result != null) {
                 UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);

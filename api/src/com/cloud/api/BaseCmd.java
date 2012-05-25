@@ -54,7 +54,6 @@ import com.cloud.user.DomainService;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.vm.BareMetalVmService;
 import com.cloud.vm.UserVmService;
 
 public abstract class BaseCmd {
@@ -116,7 +115,6 @@ public abstract class BaseCmd {
     public static RulesService _rulesService;
     public static LoadBalancingRulesService _lbService;
     public static RemoteAccessVpnService _ravService;
-    public static BareMetalVmService _bareMetalVmService;
     public static ProjectService _projectService;
     public static FirewallService _firewallService;
     public static DomainService _domainService;
@@ -143,7 +141,6 @@ public abstract class BaseCmd {
         _lbService = locator.getManager(LoadBalancingRulesService.class);
         _ravService = locator.getManager(RemoteAccessVpnService.class);
         _responseGenerator = generator;
-        _bareMetalVmService = locator.getManager(BareMetalVmService.class);
         _projectService = locator.getManager(ProjectService.class);
         _firewallService = locator.getManager(FirewallService.class);
         _domainService = locator.getManager(DomainService.class);

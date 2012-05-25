@@ -1827,7 +1827,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             DeployDestination dest, ReservationContext context) throws InsufficientCapacityException,
             ConcurrentOperationException, ResourceUnavailableException {
         element.prepare(network, profile, vmProfile, dest, context);
-        if (vmProfile.getType() == Type.User && vmProfile.getHypervisorType() != HypervisorType.BareMetal && element.getProvider() != null) {
+        if (vmProfile.getType() == Type.User && element.getProvider() != null) {
             if (areServicesSupportedInNetwork(network.getId(), Service.Dhcp) &&
                     isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, element.getProvider()) &&
                     (element instanceof DhcpServiceProvider)) {
@@ -1923,12 +1923,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 updateNic(nic, network.getId(), 1);
             }
 
+            List<Provider> providers = getNetworkProviders(network.getId());
             for (NetworkElement element : _networkElements) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
-                }
-                prepareElement(element, network, profile, vmProfile, dest, context);
-            }
+                if (providers.contains(element.getProvider())) { 
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
+                    }        
+                    prepareElement(element, network, profile, vmProfile, dest, context);
+                }        
+            } 
 
             profile.setSecurityGroupEnabled(isSecurityGroupSupportedInNetwork(network));
             guru.updateNicProfile(profile, network);

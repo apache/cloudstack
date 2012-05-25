@@ -72,12 +72,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
 	
 	
 	@Override
-	public boolean prepare(VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context) {
-		List<NicProfile> nics = profile.getNics();
-	    if (nics.size() == 0) {
-	    	throw new CloudRuntimeException("Cannot do PXE start without nic");
-	    }
-	   
+	public boolean prepare(VirtualMachineProfile<UserVmVO> profile, NicProfile pxeNic, DeployDestination dest, ReservationContext context) {
 	    SearchCriteriaService<BaremetalPxeVO, BaremetalPxeVO> sc = SearchCriteria2.create(BaremetalPxeVO.class);
         sc.addAnd(sc.getEntity().getDeviceType(), Op.EQ, BaremetalPxeType.PING.toString());
         sc.addAnd(sc.getEntity().getPodId(), Op.EQ, dest.getPod().getId());
@@ -87,7 +82,6 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         }
         long pxeServerId = pxeVo.getHostId();
         
-		NicProfile pxeNic = nics.get(0);
 	    String mac = pxeNic.getMacAddress();
 	    String ip = pxeNic.getIp4Address();
 	    String gateway = pxeNic.getGateway();
@@ -259,6 +253,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
         vo.setPodId(pod.getId());
         vo.setPhysicalNetworkId(pcmd.getPhysicalNetworkId());
         vo.setDeviceType(BaremetalPxeType.PING.toString());
+        txn.start();
         _pxeDao.persist(vo);
         txn.commit();
         return vo;

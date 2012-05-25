@@ -105,10 +105,6 @@
             <adapter name="VmwareFenceBuilder" class="com.cloud.ha.VmwareFencer"/>
             <adapter name="OvmFenceBuilder" class="com.cloud.ovm.hypervisor.OvmFencer"/>
         </adapters>
-        <adapters key="com.cloud.hypervisor.HypervisorGuru">
-            <adapter name="XenServerGuru" class="com.cloud.hypervisor.XenServerGuru"/>
-            <adapter name="KVMGuru" class="com.cloud.hypervisor.KVMGuru"/>
-        </adapters>
         <adapters key="com.cloud.resource.Discoverer">
             <adapter name="XCP Agent" class="com.cloud.hypervisor.xen.discoverer.XcpServerDiscoverer"/>
             <adapter name="SecondaryStorage" class="com.cloud.storage.secondary.SecondaryStorageDiscoverer"/>
@@ -152,6 +148,7 @@
             <adapter name="VMwareGuru" class="com.cloud.hypervisor.guru.VMwareGuru"/>
             <adapter name="HypervGuru" class="com.cloud.hypervisor.guru.HypervGuru"/>            
             <adapter name="OvmGuru" class="com.cloud.ovm.hypervisor.OvmGuru" />
+            <adapter name="BaremetalGuru" class="com.cloud.baremetal.manager.BareMetalGuru"/>
         </adapters>
         <adapters key="com.cloud.agent.StartupCommandProcessor">
             <adapter name="BasicAgentAuthorizer" class="com.cloud.agent.manager.authn.impl.BasicAgentAuthManager"/>

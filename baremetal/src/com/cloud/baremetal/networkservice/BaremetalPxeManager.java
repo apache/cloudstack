@@ -22,6 +22,7 @@ import com.cloud.network.Network.Provider;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
@@ -31,7 +32,7 @@ public interface BaremetalPxeManager extends Manager, PluggableService {
         PING,
     }
     
-	boolean prepare(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context);
+	boolean prepare(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context);
 
 	boolean prepareCreateTemplate(Long pxeServerId, UserVm vm, String templateUrl);
 	

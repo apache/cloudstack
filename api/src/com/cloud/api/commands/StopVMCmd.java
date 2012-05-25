@@ -109,12 +109,7 @@ public class StopVMCmd extends BaseAsyncCmd {
         UserContext.current().setEventDetails("Vm Id: " + getId());
         UserVm result;
 
-        if (_userVmService.getHypervisorTypeOfUserVM(getId()) == HypervisorType.BareMetal) {
-            result = _bareMetalVmService.stopVirtualMachine(getId(), isForced());
-        } else {
-            result = _userVmService.stopVirtualMachine(getId(), isForced());
-        }
-
+        result = _userVmService.stopVirtualMachine(getId(), isForced());
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
             response.setResponseName(getCommandName());

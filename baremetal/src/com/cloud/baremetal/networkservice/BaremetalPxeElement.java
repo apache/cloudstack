@@ -28,16 +28,20 @@ import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
+import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = NetworkElement.class)
@@ -47,6 +51,7 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
     
     @Inject BaremetalPxeManager _pxeMgr;;
     @Inject VMInstanceDao _vmDao;
+    @Inject NicDao _nicDao;
     
     static {
         Capability cap = new Capability(BaremetalPxeManager.BAREMETAL_PXE_CAPABILITY);
@@ -88,6 +93,7 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
     }
 
     @Override
+    @DB
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest,
             ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         if (vm.getType() != Type.User || vm.getHypervisorType() != HypervisorType.BareMetal) {
@@ -95,9 +101,18 @@ public class BaremetalPxeElement extends AdapterBase implements NetworkElement {
         }
         
         VMInstanceVO vo = _vmDao.findById(vm.getId());
-        if (vo.getState() == null) {
+        if (vo.getLastHostId() == null) {
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            nic.setMacAddress(dest.getHost().getPrivateMacAddress());
+            NicVO nicVo = _nicDao.findById(nic.getId());
+            assert vo != null : "Where ths nic " + nic.getId() + " going???";
+            nicVo.setMacAddress(nic.getMacAddress());
+            _nicDao.update(nicVo.getId(), nicVo);
+            txn.commit();
+            
         	/*This vm is just being created */
-        	_pxeMgr.prepare(vm, dest, context);
+        	_pxeMgr.prepare(vm, nic, dest, context);
         }
         
         return false;

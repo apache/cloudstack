@@ -37,6 +37,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
@@ -86,10 +87,10 @@ public class BaremetalPxeManagerImpl implements BaremetalPxeManager, ResourceSta
 	}
 	
 	@Override
-	public boolean prepare(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
+	public boolean prepare(VirtualMachineProfile profile, NicProfile nic, DeployDestination dest, ReservationContext context) {
 	    //TODO: select type from template
 	    BaremetalPxeType type = BaremetalPxeType.PING;
-		return getServiceByType(type.toString()).prepare(profile, dest, context);
+		return getServiceByType(type.toString()).prepare(profile, nic, dest, context);
 	}
 
     @Override

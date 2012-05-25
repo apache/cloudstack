@@ -31,6 +31,7 @@ import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.SearchCriteria2;
 import com.cloud.utils.db.SearchCriteriaService;
@@ -91,6 +92,7 @@ public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProv
     }
 
     @Override
+    @DB
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest,
             ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         Host host = dest.getHost();

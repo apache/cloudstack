@@ -19,13 +19,14 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.host.Host;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Adapter;
+import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface BaremetalPxeService extends Adapter {
 	
-	public boolean prepare(VirtualMachineProfile<UserVmVO> profile, DeployDestination dest, ReservationContext context);
+	public boolean prepare(VirtualMachineProfile<UserVmVO> profile, NicProfile nic, DeployDestination dest, ReservationContext context);
 
     public boolean prepareCreateTemplate(Long pxeServerId, UserVm vm, String templateUrl);
     

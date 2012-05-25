@@ -2272,9 +2272,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         // check if we have available pools for vm deployment
-        long availablePools = _storagePoolDao.countPoolsByStatus(StoragePoolStatus.Up);
-        if (availablePools  < 1) {
-            throw new StorageUnavailableException("There are no available pools in the UP state for vm deployment", -1);
+        if (template.getHypervisorType() != HypervisorType.BareMetal) {
+        	long availablePools = _storagePoolDao.countPoolsByStatus(StoragePoolStatus.Up);
+        	if (availablePools  < 1) {
+        		throw new StorageUnavailableException("There are no available pools in the UP state for vm deployment", -1);
+        	}
         }
 
         ServiceOfferingVO offering = _serviceOfferingDao.findById(serviceOffering.getId());
