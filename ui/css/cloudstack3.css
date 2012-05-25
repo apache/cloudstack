@@ -1411,6 +1411,22 @@ div.list-view td.state.off span {
   text-indent: 0;
 }
 
+.detail-group .main-groups table td.value span {
+  display: block;
+  height: 30px;
+  overflow: auto;
+  position: relative;
+  top: 9px;
+}
+
+.detail-group .main-groups table td.value span {
+  width: 355px;
+}
+
+.panel.always-maximized .detail-group .main-groups table td.value span {
+  width: 565px;
+}
+
 .detail-group.head table td.name {
   padding: 20px 0px 17px;
 }
