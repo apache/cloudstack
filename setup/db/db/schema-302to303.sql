@@ -118,4 +118,9 @@ DELETE FROM `cloud`.`configuration` WHERE name='xen.min.product.version';
 DELETE FROM `cloud`.`configuration` WHERE name='xen.min.version';
 DELETE FROM `cloud`.`configuration` WHERE name='xen.min.xapi.version';
 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'enable.ec2.api', 'false', 'enable EC2 API on CloudStack');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'enable.s3.api', 'false', 'enable Amazon S3 API on CloudStack');
+ALTER TABLE `cloud`.`account` ADD COLUMN `default_zone_id` bigint unsigned;
+ALTER TABLE `cloud`.`account` ADD CONSTRAINT `fk_account__default_zone_id` FOREIGN KEY `fk_account__default_zone_id`(`default_zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
+
 DELETE FROM `cloud`.`storage_pool_host_ref` WHERE pool_id IN (SELECT id FROM storage_pool WHERE removed IS NOT NULL);

@@ -128,6 +128,7 @@ Requires: %{name}-setup = %{version}
 # reqs the agent-scripts package because of xenserver within the management server
 Requires: %{name}-agent-scripts = %{version}
 Requires: %{name}-python = %{version}
+Requires: %{name}-aws-api = %{version}
 # for consoleproxy
 # Requires: %{name}-agent
 Requires: tomcat6
@@ -271,6 +272,14 @@ Group:     System Environment/Libraries
 The CloudStack usage monitor provides usage accounting across the entire cloud for
 cloud operators to charge based on usage parameters.
 
+%package aws-api
+Summary:   CloudStack CloudBridge 
+Group:     System Environment/Libraries
+Requires: java >= 1.6.0
+Requires: tomcat6
+Obsoletes: cloud-bridge < %{version}-%{release}
+%description aws-api
+This is the CloudStack CloudBridge
 
 %prep
 
@@ -293,6 +302,7 @@ echo Doing CloudStack build
 rm $RPM_BUILD_ROOT/etc/rc.d/init.d/cloud-console-proxy
 rm $RPM_BUILD_ROOT/usr/bin/cloud-setup-console-proxy
 rm $RPM_BUILD_ROOT/usr/libexec/console-proxy-runner
+./tools/ant/apache-ant-1.7.1/bin/ant deploy-rpm-install -Drpm.install.dir=$RPM_BUILD_ROOT
 
 %clean
 
@@ -373,6 +383,32 @@ else
     /sbin/service %{name}-agent condrestart >/dev/null 2>&1 || true
 fi
 
+%post client
+if [ "$1" == "1" ] ; then
+    /sbin/chkconfig --add %{name}-management > /dev/null 2>&1 || true
+    /sbin/chkconfig --level 345 %{name}-management on > /dev/null 2>&1 || true
+fi
+
+if [ "$1" == "1" ] ; then
+    root=/usr/share/cloud/bridge
+    target=/usr/share/cloud/management/
+
+    if [ ! -e $target/webapps/awsapi ]; then
+        ln -s $root/webapps/awsapi $target/webapps/awsapi
+    fi
+
+    jars=`ls $root/lib`
+    for j in $jars
+    do
+        cp -f $root/lib/$j $root/webapps/awsapi/WEB-INF/lib/
+    done
+
+    confs="cloud-bridge.properties ec2-service.properties hibernate.cfg.xml CloudStack.cfg.xml"
+    for c in $confs
+    do
+        cp -f $root/conf/$c $target/conf
+    done
+fi
 
 %files utils
 %defattr(0644,root,root,0755)
@@ -432,7 +468,7 @@ fi
 %{_javadir}/jetty-util-6.1.26.jar
 %{_javadir}/%{name}-axis.jar
 %{_javadir}/%{name}-commons-discovery.jar
-%{_javadir}/%{name}-wsdl4j.jar
+%{_javadir}/%{name}-wsdl4j-1.6.2.jar
 %{_javadir}/%{name}-bcprov-jdk16-1.45.jar
 %{_javadir}/%{name}-jsch-0.1.42.jar
 %{_javadir}/%{name}-iControl.jar
@@ -538,6 +574,15 @@ fi
 %config(noreplace) %{_sysconfdir}/%{name}/usage/usage-components.xml
 %config(noreplace) %{_sysconfdir}/%{name}/usage/log4j-%{name}_usage.xml
 %config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/usage/db.properties
+
+%files aws-api
+%defattr(0644,cloud,cloud,0755)
+%{_datadir}/cloud/bridge/conf/*
+%{_datadir}/cloud/bridge/lib/*
+%{_datadir}/cloud/bridge/webapps/*
+%attr(0644,root,root) %{_datadir}/cloud/setup/bridge/db/*
+%attr(0755,root,root) %{_bindir}/cloudstack-aws-api-register
+%attr(0755,root,root) %{_bindir}/cloud-setup-bridge
 
 %changelog
 * Mon May 3 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.12

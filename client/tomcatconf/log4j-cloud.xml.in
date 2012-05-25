@@ -33,6 +33,17 @@
       </layout>
    </appender>
 
+   <appender name="AWSAPI" class="org.apache.log4j.rolling.RollingFileAppender">
+      <param name="Append" value="true"/>
+      <param name="Threshold" value="DEBUG"/>
+      <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
+        <param name="FileNamePattern" value="@AWSAPILOG@.%d{yyyy-MM-dd}.gz"/>
+        <param name="ActiveFileName" value="@AWSAPILOG@"/>
+      </rollingPolicy>
+      <layout class="org.apache.log4j.EnhancedPatternLayout">
+         <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{3}] (%t:%x) %m%n"/>
+      </layout>
+   </appender>
    <!-- ============================== -->
    <!-- Append warnings+ to the syslog if it is listening on UDP port FIXME make sysloghost configurable! -->
    <!-- ============================== -->
@@ -91,6 +102,24 @@
       <level value="DEBUG"/>
       <appender-ref ref="APISERVER"/>
    </logger>
+
+   
+   <logger name="com.cloud.bridge" additivity="false">
+      <level value="DEBUG"/>
+      <appender-ref ref="AWSAPI"/>
+   </logger>
+   
+   <logger name="com.cloud.stack" additivity="false">
+      <level value="DEBUG"/>
+      <appender-ref ref="AWSAPI"/>
+   </logger>
+   
+
+   <logger name="org.apache.axis2" additivity="false">
+      <level value="INFO"/>
+      <appender-ref ref="AWSAPI"/>
+   </logger>
+
 
    <!-- ======================= -->
    <!-- Setup the Root category -->

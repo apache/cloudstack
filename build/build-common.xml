@@ -46,7 +46,7 @@
       <depend srcdir="@{top.dir}/src" destdir="${classes.dir}/@{jar.name}" cache="${dep.cache.dir}" />
         
    	  <echo message="Compiling @{top.dir}/src"/>
-      <javac srcdir="@{top.dir}/src" debug="${debug}" debuglevel="${debuglevel}" deprecation="${deprecation}" destdir="${classes.dir}/@{jar.name}" source="${source.compat.version}" target="${target.compat.version}" includeantruntime="false" compiler="javac1.6">
+      <javac srcdir="@{top.dir}/src" debug="${debug}" debuglevel="${debuglevel}" deprecation="${deprecation}" destdir="${classes.dir}/@{jar.name}" source="${source.compat.version}" target="${target.compat.version}" includeantruntime="false" compiler="javac1.6" memoryinitialsize="512m" memorymaximumsize="1024m" fork="true">
         <!-- compilerarg line="-processor com.cloud.annotation.LocalProcessor -processorpath ${base.dir}/tools/src -Xlint:all"/ -->
         <!-- compilerarg line="-processor com.cloud.utils.LocalProcessor -processorpath ${base.dir}/utils/src -Xlint:all"/ -->
         <compilerarg line="-Xlint:-path"/>

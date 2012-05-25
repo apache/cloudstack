@@ -1233,8 +1233,10 @@ CREATE TABLE  `cloud`.`account` (
   `removed` datetime COMMENT 'date removed',
   `cleanup_needed` tinyint(1) NOT NULL default '0',
   `network_domain` varchar(255),
+  `default_zone_id` bigint unsigned,
   PRIMARY KEY  (`id`),
   INDEX i_account__removed(`removed`),
+  CONSTRAINT `fk_account__default_zone_id` FOREIGN KEY `fk_account__default_zone_id`(`default_zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
   CONSTRAINT `uc_account__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
