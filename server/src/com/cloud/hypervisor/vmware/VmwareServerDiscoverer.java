@@ -122,27 +122,17 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         if (_vmwareMgr.getNexusVSwitchGlobalParameter()) {
             DataCenterVO zone = _dcDao.findById(dcId);
             NetworkType zoneType = zone.getNetworkType();
-
-            if (zoneType != NetworkType.Basic && _vmwareMgr.getPublicVSwitchTypeGlobalParameter() != null && _vmwareMgr.getPublicVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus")) {
-                // Get physical network label
+            if (zoneType != NetworkType.Basic) {
                 publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId, HypervisorType.VMware);
                 if (publicTrafficLabel != null) {
                     s_logger.info("Detected public network label : " + publicTrafficLabel);
                 }
             }
-            else {
-                s_logger.info("Skipping detection of public traffic label as zone type is Basic.");
+            // Get physical network label
+            guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(dcId, HypervisorType.VMware);
+            if (guestTrafficLabel != null) {
+                s_logger.info("Detected guest network label : " + guestTrafficLabel);
             }
-
-            if (_vmwareMgr.getGuestVSwitchTypeGlobalParameter() != null && _vmwareMgr.getGuestVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus")) {
-                // Get physical network label
-                guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(dcId, HypervisorType.VMware);
-                if (guestTrafficLabel != null) {
-                    s_logger.info("Detected guest network label : " + guestTrafficLabel);
-                }
-            }
-
-            // Get credentials
             vsmCredentials = _vmwareMgr.getNexusVSMCredentialsByClusterId(clusterId);
         }
 
