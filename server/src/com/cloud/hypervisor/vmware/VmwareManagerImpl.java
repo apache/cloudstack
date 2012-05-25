@@ -130,9 +130,6 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     String _privateNetworkVSwitchName;
     String _publicNetworkVSwitchName;
     String _guestNetworkVSwitchName;
-    String _privateNetworkVSwitchType;
-    String _publicNetworkVSwitchType;
-    String _guestNetworkVSwitchType;
     boolean _nexusVSwitchActive;
     String _serviceConsoleName;
     String _managemetPortGroupName;
@@ -229,41 +226,29 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         }
 
         _privateNetworkVSwitchName = configDao.getValue(Config.VmwarePrivateNetworkVSwitch.key());
-        _privateNetworkVSwitchType = configDao.getValue(Config.VmwarePrivateNetworkVSwitchType.key());
-        if(_privateNetworkVSwitchName == null) {
-        	if(_privateNetworkVSwitchType == null || _privateNetworkVSwitchType.equalsIgnoreCase("standard")) {
-        		_privateNetworkVSwitchName = "vSwitch0";
-        	}
-        	else
-        	{
-        		_privateNetworkVSwitchName = "privateEthernetPortProfile";
-        	}
+
+        if (_privateNetworkVSwitchName == null) {
+            _privateNetworkVSwitchName = "vSwitch0";
+        } else {
+            _privateNetworkVSwitchName = "privateEthernetPortProfile";
         }
 
         _publicNetworkVSwitchName = configDao.getValue(Config.VmwarePublicNetworkVSwitch.key());
-        _publicNetworkVSwitchType = configDao.getValue(Config.VmwarePublicNetworkVSwitchType.key());
-        if(_publicNetworkVSwitchName == null) {
-        	if(_publicNetworkVSwitchType == null || _publicNetworkVSwitchType.equalsIgnoreCase("standard")) {
-        		_publicNetworkVSwitchName = "vSwitch0";
-        	}
-        	else
-        	{
-        		_publicNetworkVSwitchName = "publicEthernetPortProfile";
-        	}
-        }        
 
-        _guestNetworkVSwitchName =  configDao.getValue(Config.VmwareGuestNetworkVSwitch.key());
-        _guestNetworkVSwitchType = configDao.getValue(Config.VmwareGuestNetworkVSwitchType.key());
-        if(_guestNetworkVSwitchName == null) {
-        	if(_guestNetworkVSwitchType == null || _guestNetworkVSwitchType.equalsIgnoreCase("standard")) {
-        		_guestNetworkVSwitchName = "vSwitch0";
-        	}
-        	else
-        	{
-        		_guestNetworkVSwitchName = "guestEthernetPortProfile";
-        	}
+        if (_publicNetworkVSwitchName == null) {
+            _publicNetworkVSwitchName = "vSwitch0";
+        } else {
+            _publicNetworkVSwitchName = "publicEthernetPortProfile";
         }
-        
+
+        _guestNetworkVSwitchName = configDao.getValue(Config.VmwareGuestNetworkVSwitch.key());
+
+        if (_guestNetworkVSwitchName == null) {
+            _guestNetworkVSwitchName = "vSwitch0";
+        } else {
+            _guestNetworkVSwitchName = "guestEthernetPortProfile";
+        }
+
         _serviceConsoleName = configDao.getValue(Config.VmwareServiceConsole.key());
         if(_serviceConsoleName == null) {
             _serviceConsoleName = "Service Console";
@@ -361,18 +346,6 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
 
     public boolean getNexusVSwitchGlobalParameter() {
         return _nexusVSwitchActive;
-    }
-
-    public String getPrivateVSwitchTypeGlobalParameter() {
-        return _privateNetworkVSwitchType;
-    }
-
-    public String getPublicVSwitchTypeGlobalParameter() {
-        return _publicNetworkVSwitchType;
-    }
-
-    public String getGuestVSwitchTypeGlobalParameter() {
-        return _guestNetworkVSwitchType;
     }
 
     @Override
@@ -592,9 +565,6 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
         params.put("private.network.vswitch.name", _privateNetworkVSwitchName);
         params.put("public.network.vswitch.name", _publicNetworkVSwitchName);
         params.put("guest.network.vswitch.name", _guestNetworkVSwitchName);
-        params.put("private.network.vswitch.type", _privateNetworkVSwitchType);
-        params.put("public.network.vswitch.type", _publicNetworkVSwitchType);
-        params.put("guest.network.vswitch.type", _guestNetworkVSwitchType);
         params.put("vmware.use.nexus.vswitch", _nexusVSwitchActive);
         params.put("service.console.name", _serviceConsoleName);
         params.put("management.portgroup.name", _managemetPortGroupName);

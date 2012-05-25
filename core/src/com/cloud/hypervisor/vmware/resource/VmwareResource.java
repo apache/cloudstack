@@ -258,9 +258,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected String _privateNetworkVSwitchName;
     protected String _publicNetworkVSwitchName;
     protected String _guestNetworkVSwitchName;
-    protected VirtualSwitchType _privateNetworkVSwitchType = VirtualSwitchType.StandardVirtualSwitch;
-    protected VirtualSwitchType _publicNetworkVSwitchType = VirtualSwitchType.StandardVirtualSwitch;
-    protected VirtualSwitchType _guestNetworkVSwitchType = VirtualSwitchType.StandardVirtualSwitch;
+    protected VirtualSwitchType _vSwitchType = VirtualSwitchType.StandardVirtualSwitch;
     protected boolean _nexusVSwitch = false;
     
     protected float _cpuOverprovisioningFactor = 1;
@@ -4053,12 +4051,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     s_logger.info("Stocking credentials while configuring resource.");
                     context.registerStockObject("vsmcredentials", vsmCredentials);
                 }
-                if (mgr.getPrivateVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus"))
-                    _privateNetworkVSwitchName = mgr.getPrivateVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
-                if (mgr.getPublicVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus"))
-                    _publicNetworkVSwitchName = mgr.getPublicVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
-                if (mgr.getGuestVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus"))
-                    _guestNetworkVSwitchName = mgr.getGuestVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
+                _privateNetworkVSwitchName = mgr.getPrivateVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
+                _publicNetworkVSwitchName = mgr.getPublicVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
+                _guestNetworkVSwitchName = mgr.getGuestVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
             }
 
         } catch (Exception e) {
@@ -4104,31 +4099,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         value = params.get("vmware.use.nexus.vswitch").toString();
         if(value != null && value.equalsIgnoreCase("true"))
         	_nexusVSwitch = true;
-        
-        value = (String)params.get("private.network.vswitch.type");
-        if(value != null && value.equalsIgnoreCase("standard"))
-        	_privateNetworkVSwitchType = VirtualSwitchType.StandardVirtualSwitch;
-        else if(value != null && value.equalsIgnoreCase("nexus"))
-        	_privateNetworkVSwitchType = VirtualSwitchType.NexusDistributedVirtualSwitch;
-        else
-       	_privateNetworkVSwitchType = VirtualSwitchType.VMwareDistributedVirtualSwitch;
-        
-        value = (String)params.get("public.network.vswitch.type");
-        if(value != null && value.equalsIgnoreCase("standard"))
-        	_publicNetworkVSwitchType = VirtualSwitchType.StandardVirtualSwitch;
-        else if(value != null && value.equalsIgnoreCase("nexus"))
-        	_publicNetworkVSwitchType = VirtualSwitchType.NexusDistributedVirtualSwitch;
-        else
-        	_publicNetworkVSwitchType = VirtualSwitchType.VMwareDistributedVirtualSwitch;
-        
-        value = (String)params.get("guest.network.vswitch.type");
-        if(value != null && value.equalsIgnoreCase("standard"))
-        	_guestNetworkVSwitchType = VirtualSwitchType.StandardVirtualSwitch;
-        else if(value != null && value.equalsIgnoreCase("nexus"))
-        	_guestNetworkVSwitchType = VirtualSwitchType.NexusDistributedVirtualSwitch;
-        else
-        	_guestNetworkVSwitchType = VirtualSwitchType.VMwareDistributedVirtualSwitch;
-        
+
         s_logger.info("VmwareResource network configuration info. private vSwitch: " + _privateNetworkVSwitchName + ", public vSwitch: " + _publicNetworkVSwitchName + ", guest network: "
                 + _guestNetworkVSwitchName);
 

@@ -6496,8 +6496,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public String getDefaultPublicTrafficLabel(long dcId, HypervisorType hypervisorType) {
         try {
-            PhysicalNetwork mgmtPhyNetwork = getDefaultPhysicalNetworkByZoneAndTrafficType(dcId, TrafficType.Public);
-            PhysicalNetworkTrafficTypeVO publicTraffic = _pNTrafficTypeDao.findBy(mgmtPhyNetwork.getId(), TrafficType.Public);
+            PhysicalNetwork publicPhyNetwork = getOnePhysicalNetworkByZoneAndTrafficType(dcId, TrafficType.Public);
+            PhysicalNetworkTrafficTypeVO publicTraffic = _pNTrafficTypeDao.findBy(publicPhyNetwork.getId(),
+                    TrafficType.Public);
             if (publicTraffic != null) {
                 String label = null;
                 switch (hypervisorType) {
@@ -6524,8 +6525,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public String getDefaultGuestTrafficLabel(long dcId, HypervisorType hypervisorType) {
         try {
-            PhysicalNetwork mgmtPhyNetwork = getDefaultPhysicalNetworkByZoneAndTrafficType(dcId, TrafficType.Guest);
-            PhysicalNetworkTrafficTypeVO guestTraffic = _pNTrafficTypeDao.findBy(mgmtPhyNetwork.getId(), TrafficType.Guest);
+            PhysicalNetwork guestPhyNetwork = getOnePhysicalNetworkByZoneAndTrafficType(dcId, TrafficType.Guest);
+            PhysicalNetworkTrafficTypeVO guestTraffic = _pNTrafficTypeDao.findBy(guestPhyNetwork.getId(),
+                    TrafficType.Guest);
             if (guestTraffic != null) {
                 String label = null;
                 switch (hypervisorType) {
@@ -6547,5 +6549,21 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         return null;
+    }
+
+    private PhysicalNetwork getOnePhysicalNetworkByZoneAndTrafficType(long zoneId, TrafficType trafficType) {
+        List<PhysicalNetworkVO> networkList = _physicalNetworkDao.listByZoneAndTrafficType(zoneId, trafficType);
+
+        if (networkList.isEmpty()) {
+            throw new InvalidParameterValueException("Unable to find the default physical network with traffic="
+                    + trafficType + " in zone id=" + zoneId + ". ");
+        }
+
+        if (networkList.size() > 1) {
+            s_logger.info("More than one physical networks exist in zone id=" + zoneId + " with traffic type="
+                    + trafficType + ". ");
+        }
+
+        return networkList.get(0);
     }
 }
