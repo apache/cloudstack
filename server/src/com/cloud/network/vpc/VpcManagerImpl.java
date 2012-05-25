@@ -64,7 +64,6 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
@@ -482,7 +481,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_DELETE, eventDescription = "deleting VPC")
-    public boolean deleteVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    public boolean deleteVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException {
         UserContext.current().setEventDetails(" Id: " + vpcId);
         Account caller = UserContext.current().getCaller();
 
@@ -494,13 +493,12 @@ public class VpcManagerImpl implements VpcManager, Manager{
         
         //verify permissions
         _accountMgr.checkAccess(caller, null, false, vpc);
-
+        
         return destroyVpc(vpc);
     }
 
     @Override
-    public boolean destroyVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException, 
-                    InsufficientCapacityException {
+    public boolean destroyVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException {
         UserContext ctx = UserContext.current();
         
         //don't allow to delete vpc if it's in use by existing networks
@@ -516,7 +514,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
         _vpcDao.update(vpc.getId(), vpcVO);
 
         //shutdown VPC
-        shutdownVpc(vpc.getId());
+        if (!shutdownVpc(vpc.getId())) {
+            s_logger.warn("Failed to shutdown vpc " + vpc + " as a part of vpc destroy process");
+            return false;
+        }
         
         //cleanup vpc resources
         if (!cleanupVpcResources(vpc.getId(), ctx.getCaller(), ctx.getCallerUserId())) {
@@ -535,12 +536,15 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @ActionEvent(eventType = EventTypes.EVENT_VPC_UPDATE, eventDescription = "updating vpc")
     public Vpc updateVpc(long vpcId, String vpcName, String displayText) {
         UserContext.current().setEventDetails(" Id: " + vpcId);
+        Account caller = UserContext.current().getCaller();
 
         // Verify input parameters
         VpcVO vpcToUpdate = _vpcDao.findById(vpcId);
         if (vpcToUpdate == null) {
             throw new InvalidParameterValueException("Unable to find vpc offering " + vpcId);
         }
+        
+        _accountMgr.checkAccess(caller, null, false, vpcToUpdate);
 
         VpcVO vpc = _vpcDao.createForUpdate(vpcId);
 
@@ -564,7 +568,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @Override
     public List<? extends Vpc> listVpcs(Long id, String vpcName, String displayText, List<String> supportedServicesStr, 
             String cidr, Long vpcOffId, String state, String accountName, Long domainId, String keyword,
-            Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll) {
+            Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, Boolean restartRequired) {
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
         
@@ -586,6 +590,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         sb.and("vpcOfferingId", sb.entity().getVpcOfferingId(), SearchCriteria.Op.EQ);
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
+        sb.and("restartRequired", sb.entity().isRestartRequired(), SearchCriteria.Op.EQ);
 
 
         // now set the SC criteria...
@@ -621,6 +626,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
         
         if (state != null) {
             sc.addAnd("state", SearchCriteria.Op.EQ, state);
+        }
+        
+        if (restartRequired != null) {
+            sc.addAnd("restartRequired", SearchCriteria.Op.EQ, restartRequired);
         }
 
         List<VpcVO> vpcs = _vpcDao.search(sc, searchFilter);
@@ -675,7 +684,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     }
     
     @Override
-    public Vpc startVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, 
+    public boolean startVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, 
     InsufficientCapacityException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
@@ -699,17 +708,17 @@ public class VpcManagerImpl implements VpcManager, Manager{
         //deploy provider
         if (getVpcElement().implementVpc(vpc, dest, context)) {
             s_logger.debug("Vpc " + vpc + " has started succesfully");
-            return getVpc(vpc.getId());
+            return true;
         } else {
-            throw new CloudRuntimeException("Failed to start vpc " + vpc);
+            s_logger.warn("Vpc " + vpc + " failed to start");
             //FIXME - add cleanup logic here
+            return false;
         }
     }
     
     
     @Override
-    public Vpc shutdownVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, 
-    InsufficientCapacityException {
+    public boolean shutdownVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
         
@@ -726,13 +735,12 @@ public class VpcManagerImpl implements VpcManager, Manager{
         boolean success = getVpcElement().shutdownVpc(vpc);
         
         //FIXME - once more features are added to vpc (gateway/firewall rules, etc - cleanup them here)
-        
         if (success) {
-            s_logger.debug("Vpc " + vpc + " has been stopped succesfully");
-            return getVpc(vpc.getId());
+            s_logger.debug("Vpc " + vpc + " has been shutdown succesfully");
         } else {
-            throw new CloudRuntimeException("Failed to stop vpc " + vpc);
+            s_logger.warn("Vpc " + vpc + " failed to shutdown");
         }
+        return success;
     }
     
     @Override
@@ -794,6 +802,12 @@ public class VpcManagerImpl implements VpcManager, Manager{
             if (guestNtwkOff.getRedundantRouter()) {
                 throw new InvalidParameterValueException("No redunant router support when network belnogs to VPC");
             }
+            
+            //8) Conserve mode should be off
+            if (guestNtwkOff.isConserveMode()) {
+                throw new InvalidParameterValueException("Only networks with conserve mode Off can belong to VPC");
+            }
+            
         } finally {
             s_logger.debug("Releasing lock for " + locked);
             _vpcDao.releaseFromLockTable(locked.getId());
@@ -829,5 +843,45 @@ public class VpcManagerImpl implements VpcManager, Manager{
         
         return success;
        
+    }
+
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VPC_RESTART, eventDescription = "restarting vpc")
+    public boolean restartVpc(Long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, 
+                                        InsufficientCapacityException {
+        Account caller = UserContext.current().getCaller();
+
+        // Verify input parameters
+        VpcVO vpc = _vpcDao.findById(vpcId);
+        if (vpc == null) {
+            throw new InvalidParameterValueException("Unable to find vpc offering " + vpcId);
+        }
+        
+        _accountMgr.checkAccess(caller, null, false, vpc);
+        
+        s_logger.debug("Restarting VPC " + vpc);
+        boolean restartRequired = false;
+        try {
+            s_logger.debug("Shuttign down VPC " + vpc + " as a part of VPC restart process");
+            if (!shutdownVpc(vpcId)) {
+                s_logger.warn("Failed to shutdown vpc as a part of VPC " + vpc + " restart process");
+                restartRequired = true;
+                return false;
+            }
+            
+            s_logger.debug("Starting VPC " + vpc + " as a part of VPC restart process");
+            if (!startVpc(vpcId)) {
+                s_logger.warn("Failed to start vpc as a part of VPC " + vpc + " restart process");
+                restartRequired = true;
+                return false;
+            }
+            s_logger.debug("VPC " + vpc + " was restarted successfully");
+            return true;
+        } finally {
+            s_logger.debug("Updating VPC " + vpc + " with restartRequired=" + restartRequired);
+            vpc.setRestartRequired(restartRequired);
+            _vpcDao.update(vpc.getId(), vpc);
+        }  
     }
 }

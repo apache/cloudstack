@@ -24,7 +24,6 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VpcResponse;
 import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.Vpc;
 
 /**
  * @author Alena Prokharchyk
@@ -75,6 +74,9 @@ public class ListVPCsCmd extends BaseListAccountResourcesCmd{
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list VPCs by state")
     private String state;
     
+    @Parameter(name=ApiConstants.RESTART_REQUIRED, type=CommandType.BOOLEAN, description="list VPCs by restartRequired option")
+    private Boolean restartRequired;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -119,6 +121,10 @@ public class ListVPCsCmd extends BaseListAccountResourcesCmd{
         return state;
     }
     
+    public Boolean getRestartRequired() {
+        return restartRequired;
+    }
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -127,7 +133,8 @@ public class ListVPCsCmd extends BaseListAccountResourcesCmd{
     public void execute() {
         List<? extends Vpc> vpcs = _vpcService.listVpcs(getId(), getVpcName(), getDisplayText(),
                 getSupportedServices(), getCidr(), getVpcOffId(), getState(), getAccountName(), getDomainId(), 
-                this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), getZoneId(), this.isRecursive(), this.listAll());
+                this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), getZoneId(), this.isRecursive(), 
+                this.listAll(), getRestartRequired());
         ListResponse<VpcResponse> response = new ListResponse<VpcResponse>();
         List<VpcResponse> offeringResponses = new ArrayList<VpcResponse>();
         for (Vpc vpc : vpcs) {

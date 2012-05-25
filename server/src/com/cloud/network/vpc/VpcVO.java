@@ -73,6 +73,9 @@ public class VpcVO implements Vpc, Identity {
     @Column(name="network_domain")
     String networkDomain;
     
+    @Column(name="restart_required")
+    boolean restartRequired = false;
+    
     public VpcVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -171,5 +174,14 @@ public class VpcVO implements Vpc, Identity {
     @Override
     public String getNetworkDomain() {
         return networkDomain;
+    }
+    
+    public void setRestartRequired(boolean restartRequired) {
+        this.restartRequired = restartRequired;
+    }
+
+    @Override
+    public boolean isRestartRequired() {
+        return restartRequired;
     }
 }

@@ -124,7 +124,9 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
         //TODO - prepare vpc here (call start() method, it should start the VR, associate source nat ip address, etc)
         Vpc vpc = null;
         try {
-            vpc = _vpcService.startVpc(this.getEntityId());
+             if (_vpcService.startVpc(this.getEntityId())) {
+                 vpc = _vpcService.getVpc(getEntityId());
+             }
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
@@ -136,6 +138,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
             s_logger.trace(ex);
             throw new ServerApiException(BaseCmd.INSUFFICIENT_CAPACITY_ERROR, ex.getMessage());
         }
+        
         if (vpc != null) {
             VpcResponse response = _responseGenerator.createVpcResponse(vpc);
             response.setResponseName(getCommandName());

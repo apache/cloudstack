@@ -344,7 +344,7 @@ createVPC=com.cloud.api.commands.CreateVPCCmd;15
 listVPCs=com.cloud.api.commands.ListVPCsCmd;15
 deleteVPC=com.cloud.api.commands.DeleteVPCCmd;15
 updateVPC=com.cloud.api.commands.UpdateVPCCmd;15
-
+restartVPC=com.cloud.api.commands.RestartVPCCmd;15
 
 #### VPC offering commands
 createVPCOffering=com.cloud.api.commands.CreateVPCOfferingCmd;1

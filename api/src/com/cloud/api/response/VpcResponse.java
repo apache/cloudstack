@@ -71,6 +71,11 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     @SerializedName(ApiConstants.NETWORK) @Param(description="the list of networks belongign to the VPC", responseObject = NetworkResponse.class)
     private List<NetworkResponse> networks;
     
+    @SerializedName(ApiConstants.RESTART_REQUIRED) @Param(description="true network requires restart")
+    private Boolean restartRequired;
+    
+    @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
+    private String networkDomain;
 
     public void setId(Long id) {
         this.id.setValue(id);
@@ -139,5 +144,13 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
 
     public void setNetworks(List<NetworkResponse> networks) {
         this.networks = networks;
+    }
+    
+    public void setRestartRequired(Boolean restartRequired) {
+        this.restartRequired = restartRequired;
+    }
+    
+    public void setNetworkDomain(String networkDomain) {
+        this.networkDomain = networkDomain;
     }
 }

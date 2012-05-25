@@ -45,9 +45,8 @@ public interface Vpc extends ControlledEntity{
    
    String getDisplayText();
 
-/**
- * @return
- */
-String getNetworkDomain();
+   String getNetworkDomain();
+
+   boolean isRestartRequired();
    
 }
