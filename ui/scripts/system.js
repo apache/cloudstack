@@ -6571,7 +6571,7 @@
                     vsmdeviceid: { label: 'label.name' },
                     type: { label: 'label.type' },
                     zonename: { label: 'label.zone' },
-                    state: { label: 'label.status' }
+                    vsmdevicestate: { label: 'label.state' }
                   },
                   detailView: {
                     actions: {
@@ -6591,9 +6591,12 @@
                             dataType: "json",
                             async: true,
                             success: function(json) {
-                              var item = json.getciscovsmbyclusteridcmdresponse.cisconexusvsm;
-                              args.context.clusters[0].state = item.allocationstate;
-                              addExtraPropertiesToClusterObject(item);
+                              var jid = json.enablecisconexusvsmresponse.jobid;
+                              args.response.success(
+                                {_custom:
+                                  {jobId: jid}
+                                }
+                              );
                               args.response.success({
                                 actionFilter: nexusActionfilter,
                                 data:item
@@ -6624,9 +6627,12 @@
                             dataType: "json",
                             async: true,
                             success: function(json) {
-                              var item = json.getciscovsmbyclusteridcmdresponse.cisconexusvsm; 
-                              args.context.clusters[0].state = item.allocationstate;
-                              addExtraPropertiesToClusterObject(item);
+                              var jid = json.disablecisconexusvsmresponse.jobid; 
+                              args.response.success(
+                                {_custom:
+                                  {jobId: jid}
+                                }
+                              );
                               args.response.success({
                                 actionFilter: nexusActionfilter,
                                 data:item
@@ -6671,21 +6677,23 @@
                       details: {
                         title: 'label.details',
                         fields: {
-                          name: { label: 'label.name' },
-                          type: { label: 'label.type' },
-                          zonename: { label: 'label.zone' },
-                          state: { label: 'label.status' }
+                          vsmdeviceid: { label: 'label.name' },
+                          ipaddress: { label: 'label.ipaddress' },
+                          vsmctrlvlanid: { label: 'label.vsmctrlvlanid' },
+                          vsmpktvlanid: { label: 'label.vsmpktvlanid' },
+                          vsmstoragevlanid: { label: 'label.vsmstoragevlanid' },
+                          vsmdevicestate: { label: 'label.state' }
                         },
                         
                         dataProvider: function(args) {
                           $.ajax({
-                            url: createURL("listClusters&id=" + args.context.clusters[0].id),
+                            url: createURL("listCiscoNexusVSMs&clusterid=" + args.context.clusters[0].id),
                             dataType: "json",
                             success: function(json) {
-                              var item = json.listclustersresponse.cluster[0];
+                              var item = json.listcisconexusvsmscmdresponse.cisconexusvsm[0];
                               addExtraPropertiesToClusterObject(item);
                               args.response.success({
-                                actionFilter: clusterActionfilter,
+                                actionFilter: nexusActionfilter,
                                 data: item
                               });
                             },
@@ -6700,12 +6708,12 @@
 
                   dataProvider: function(args) {
                     $.ajax({
-                      url: createURL("getCiscoVSMByClusterId&id=" + args.context.clusters[0].id),
+                      url: createURL("listCiscoNexusVSMs&clusterid=" + args.context.clusters[0].id),
                       dataType: "json",
                       success: function(json) {
-                        var item = json.getciscovsmbyclusteridcmdresponse.cisconexusvsm;
+                        var item = json.listcisconexusvsmscmdresponse.cisconexusvsm;  
                         args.response.success({
-                          actionFilter: clusterActionfilter,
+                          actionFilter: nexusActionfilter,
                           data: item
                         });
                       },
