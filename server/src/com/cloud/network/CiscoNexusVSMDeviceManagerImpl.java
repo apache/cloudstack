@@ -144,7 +144,8 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     	}
     	
     	// At this stage, we have a VSM record for sure. Connect the VSM to the cluster Id.
-    	ClusterVSMMapVO connectorObj = new ClusterVSMMapVO(clusterId, _ciscoNexusVSMDeviceDao.getVSMbyIpaddress(ipaddress).getId());
+    	long vsmId = _ciscoNexusVSMDeviceDao.getVSMbyIpaddress(ipaddress).getId();
+    	ClusterVSMMapVO connectorObj = new ClusterVSMMapVO(clusterId, vsmId);
     	Transaction txn = Transaction.currentTxn();
     	try {
     		txn.start();
@@ -160,36 +161,37 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     	// All ESXi servers are stored in the host table, and their resource
     	// type is vmwareresource.
     	
-        List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(clusterId);
+        //List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(clusterId);
         
+        //TODO: Activate the code below if we make the Nexus VSM a separate resource.
         // Iterate through each of the hosts in this list. Each host has a host id.
         // Given this host id, we can reconfigure the in-memory resource representing
         // the host via the agent manager. Thus we inject VSM related information
         // into each host's resource. Also, we first configure each resource's
         // entries in the database to contain this VSM information before the injection.
     	
-        for (HostVO host : hosts) {        	
+        //for (HostVO host : hosts) {        	
         	// Create a host details VO object and write it out for this hostid.
-        	long vsmId = _ciscoNexusVSMDeviceDao.getVSMbyIpaddress(ipaddress).getId();
-        	Long hostid = new Long(vsmId);
-        	DetailVO vsmDetail = new DetailVO(host.getId(), "vsmId", hostid.toString());
-        	Transaction tx = Transaction.currentTxn();
-        	try {
-        		tx.start();
-        		_hostDetailDao.persist(vsmDetail);
-        		tx.commit();
-        	} catch (Exception e) {
-        		tx.rollback();
-        		throw new CloudRuntimeException(e.getMessage());
-        	}
-        	// Reconfigure the resource.
-        	Map hostDetails = new HashMap<String, String>();
-        	hostDetails.put(ApiConstants.ID, vsmId);
-        	hostDetails.put(ApiConstants.IP_ADDRESS, ipaddress);
-            hostDetails.put(ApiConstants.USERNAME, username);
-            hostDetails.put(ApiConstants.PASSWORD, password);
-            //_agentMrg.send(host.getId(), )
-        }
+        	//Long hostid = new Long(vsmId);
+        	//DetailVO vsmDetail = new DetailVO(host.getId(), "vsmId", hostid.toString());
+        	//Transaction tx = Transaction.currentTxn();
+        	//try {
+        		//tx.start();
+        		//_hostDetailDao.persist(vsmDetail);
+        		//tx.commit();
+        	//} catch (Exception e) {
+        		//tx.rollback();
+        		//throw new CloudRuntimeException(e.getMessage());
+        	//}
+        //}
+        // Reconfigure the resource.
+        //Map hostDetails = new HashMap<String, String>();
+        //hostDetails.put(ApiConstants.ID, vsmId);
+        //hostDetails.put(ApiConstants.IP_ADDRESS, ipaddress);
+        //hostDetails.put(ApiConstants.USERNAME, username);
+        //hostDetails.put(ApiConstants.PASSWORD, password);
+        //_agentMrg.send(host.getId(), )
+        
         return VSMObj;
         
     }
@@ -262,12 +264,6 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     		}
     	}
         
-        /*****
-        // Ok, I'm putting in a port profile creation call here. Just for testing.
-        PortProfileManagerImpl obj = new PortProfileManagerImpl();
-        obj.addPortProfile("pp1", 1, 4000, PortType.vEthernet, BindingType.Ephemeral);
-        ***/
-        
         return cisconexusvsm;
     }
     
@@ -291,14 +287,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     			throw new CloudRuntimeException(e.getMessage());
     		}
     	}
-       
-        /**
-        // Deleting the same port profile..        
-        PortProfileVO obj = _ppDao.findByName("pp1");
-        PortProfileManagerImpl obj2 = new PortProfileManagerImpl();
-        obj2.deletePortProfile(obj.getId());
-        //_ppmgr.addPortProfile("pp1", 1, 4000, PortType.vEthernet, BindingType.Ephemeral);
-        **/
+        
         return cisconexusvsm;
     }
     
