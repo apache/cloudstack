@@ -527,7 +527,7 @@ public class VsmCommand {
         Element policyMapMode = doc.createElement(s_policymapmode);
         policyDetails.appendChild(policyMapMode);
 
-        // Create the default class to match all trafic.
+        // Create the default class to match all traffic.
         Element classRoot = doc.createElement("class");
         Element classDefault = doc.createElement("class-default");
         policyMapMode.appendChild(classRoot);
@@ -544,11 +544,13 @@ public class VsmCommand {
         // Set the committed information rate and its value in mbps.
         Element cir = doc.createElement("cir");
         police.appendChild(cir);
-        Element cirValue = doc.createElement(s_paramvalue);
-        Element mbps = doc.createElement("mbps");
-        cirValue.setTextContent(Integer.toString(averageRate));
+        Element cirValue = doc.createElement("cir-val");
         cir.appendChild(cirValue);
-        cir.appendChild(mbps);
+        Element value2 = doc.createElement(s_paramvalue);
+        Element mbps = doc.createElement("mbps");
+        value2.setTextContent(Integer.toString(averageRate));
+        cirValue.appendChild(value2);
+        cirValue.appendChild(mbps);
 
         // Persist the configuration across reboots.
         modeConfigure.appendChild(persistConfiguration(doc));

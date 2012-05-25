@@ -20,9 +20,6 @@ public class NetconfHelper {
 
     private static final String SSH_NETCONF_TERMINATOR = "]]>]]>";
 
-    // Number of times to retry the command on failure.
-    private static final int s_retryCount = 3;
-
     private Connection _connection;
 
     private Session _session;
@@ -71,28 +68,7 @@ public class NetconfHelper {
         String command = VsmCommand.getAddPortProfile(name, type, binding, mode, vlanid);
         if (command != null) {
             command = command.concat(SSH_NETCONF_TERMINATOR);
-
-            // This command occasionally fails. On retry it succeeds. Putting in
-            // retry to handle failures.
-            for (int i = 0; i < s_retryCount; ++i) {
-                send(command);
-                // parse the rpc reply.
-                // parseOkReply(receive());
-                VsmOkResponse response = new VsmOkResponse(receive().trim());
-                if (!response.isResponseOk()) {
-                    if (i >= s_retryCount) {
-                        throw new CloudRuntimeException(response.toString());
-                    }
-
-                    try {
-                        Thread.sleep(1000);
-                    } catch (final InterruptedException e) {
-                        s_logger.debug("Got interrupted while waiting.");
-                    }
-                } else {
-                    break;
-                }
-            }
+            parseOkReply(sendAndReceive(command));
         } else {
             throw new CloudRuntimeException("Error generating rpc request for adding port profile.");
         }
@@ -103,9 +79,7 @@ public class NetconfHelper {
         String command = VsmCommand.getUpdatePortProfile(name, mode, params);
         if (command != null) {
             command = command.concat(SSH_NETCONF_TERMINATOR);
-            send(command);
-            // parse the rpc reply.
-            parseOkReply(receive());
+            parseOkReply(sendAndReceive(command));
         } else {
             throw new CloudRuntimeException("Error generating rpc request for updating port profile.");
         }
@@ -115,9 +89,7 @@ public class NetconfHelper {
         String command = VsmCommand.getDeletePortProfile(name);
         if (command != null) {
             command = command.concat(SSH_NETCONF_TERMINATOR);
-            send(command);
-            // parse the rpc reply.
-            parseOkReply(receive());
+            parseOkReply(sendAndReceive(command));
         } else {
             throw new CloudRuntimeException("Error generating rpc request for deleting port profile.");
         }
@@ -128,9 +100,7 @@ public class NetconfHelper {
         String command = VsmCommand.getAddPolicyMap(name, averageRate, maxRate, burstRate);
         if (command != null) {
             command = command.concat(SSH_NETCONF_TERMINATOR);
-            send(command);
-            // parse the rpc reply.
-            parseOkReply(receive());
+            parseOkReply(sendAndReceive(command));
         } else {
             throw new CloudRuntimeException("Error generating rpc request for adding/updating policy map.");
         }
@@ -140,9 +110,7 @@ public class NetconfHelper {
         String command = VsmCommand.getDeletePolicyMap(name);
         if (command != null) {
             command = command.concat(SSH_NETCONF_TERMINATOR);
-            send(command);
-            // parse the rpc reply.
-            parseOkReply(receive());
+            parseOkReply(sendAndReceive(command));
         } else {
             throw new CloudRuntimeException("Error generating rpc request for deleting policy map.");
         }
@@ -159,9 +127,7 @@ public class NetconfHelper {
         String command = VsmCommand.getServicePolicy(policyMap, portProfile, true);
         if (command != null) {
             command = command.concat(SSH_NETCONF_TERMINATOR);
-            send(command);
-            // parse the rpc reply.
-            parseOkReply(receive());
+            parseOkReply(sendAndReceive(command));
         } else {
             throw new CloudRuntimeException("Error generating rpc request for adding policy map.");
         }
@@ -172,9 +138,7 @@ public class NetconfHelper {
         String command = VsmCommand.getServicePolicy(policyMap, portProfile, false);
         if (command != null) {
             command = command.concat(SSH_NETCONF_TERMINATOR);
-            send(command);
-            // parse the rpc reply.
-            parseOkReply(receive());
+            parseOkReply(sendAndReceive(command));
         } else {
             throw new CloudRuntimeException("Error generating rpc request for removing policy map.");
         }
@@ -184,12 +148,10 @@ public class NetconfHelper {
         String command = VsmCommand.getPortProfile(name);
         if (command != null) {
             command = command.concat(SSH_NETCONF_TERMINATOR);
-            send(command);
-            // parse the rpc reply.
-            String received = receive();
+            String received = sendAndReceive(command);
             VsmPortProfileResponse response = new VsmPortProfileResponse(received.trim());
             if (!response.isResponseOk()) {
-                throw new CloudRuntimeException("Error response while getting the port profile details.");
+                throw new CloudRuntimeException(response.toString());
             } else {
                 return response.getPortProfile();
             }
@@ -202,12 +164,10 @@ public class NetconfHelper {
         String command = VsmCommand.getPolicyMap(name);
         if (command != null) {
             command = command.concat(SSH_NETCONF_TERMINATOR);
-            send(command);
-            // parse the rpc reply.
-            String received = receive();
+            String received = sendAndReceive(command);
             VsmPolicyMapResponse response = new VsmPolicyMapResponse(received.trim());
             if (!response.isResponseOk()) {
-                throw new CloudRuntimeException("Error response while getting the port profile details.");
+                throw new CloudRuntimeException(response.toString());
             } else {
                 return response.getPolicyMap();
             }
@@ -220,6 +180,15 @@ public class NetconfHelper {
         String ack = receive();
         String hello = VsmCommand.getHello() + SSH_NETCONF_TERMINATOR;
         send(hello);
+    }
+
+    private String sendAndReceive(String command) {
+        String received;
+        synchronized (NetconfHelper.class) {
+            send(command);
+            received = receive();
+        }
+        return received;
     }
 
     private void send(String message) {
