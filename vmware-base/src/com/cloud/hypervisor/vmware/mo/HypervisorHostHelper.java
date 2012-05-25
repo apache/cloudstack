@@ -26,6 +26,8 @@ import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.utils.ActionDelegate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
+import com.cloud.utils.cisco.n1kv.vsm.PolicyMap;
+import com.cloud.utils.cisco.n1kv.vsm.PortProfile;
 import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.BindingType;
 import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.OperationType;
 import com.cloud.utils.cisco.n1kv.vsm.VsmCommand.PortProfileType;
@@ -60,6 +62,7 @@ import com.vmware.vim25.VirtualSCSISharing;
 public class HypervisorHostHelper {
     private static final Logger s_logger = Logger.getLogger(HypervisorHostHelper.class);
     private static final int DEFAULT_LOCK_TIMEOUT_SECONDS = 600;
+    private static final String s_policyNamePrefix = "cloud.policy.";
     
     // make vmware-base loosely coupled with cloud-specific stuff, duplicate VLAN.UNTAGGED constant here
     private static final String UNTAGGED_VLAN_NAME = "untagged";
@@ -129,43 +132,71 @@ public class HypervisorHostHelper {
 	
     public static Map<String, String> getValidatedVsmCredentials(VmwareContext context) throws Exception {
         Map<String, String> vsmCredentials = context.getStockObject("vsmcredentials");
-		String msg;
-		if(vsmCredentials == null || vsmCredentials.size() != 3) {
-			msg = "Failed to retrieve required credentials of Nexus VSM from database.";
-			s_logger.error(msg);
+        String msg;
+        if (vsmCredentials == null || vsmCredentials.size() != 3) {
+            msg = "Failed to retrieve required credentials of Nexus VSM from database.";
+            s_logger.error(msg);
             throw new Exception(msg);
-		}
-		
-		String vsmIp = vsmCredentials.containsKey("vsmip") ? vsmCredentials.get("vsmip") : null;
-		String vsmUserName = vsmCredentials.containsKey("vsmusername") ? vsmCredentials.get("vsmusername") : null;
-		String vsmPassword = vsmCredentials.containsKey("vsmpassword") ? vsmCredentials.get("vsmpassword") : null;
-		if(vsmIp == null || vsmIp.isEmpty() || vsmUserName == null || vsmUserName.isEmpty() || vsmPassword == null || vsmPassword.isEmpty()) {
-			msg = "Detected invalid credentials for Nexus VSM";
-			s_logger.error(msg);
-            throw new Exception(msg);
-		}
-		return vsmCredentials;
-	}
-	
-    public static void createPortProfile(VmwareContext context, String ethPortProfileName, String networkName, Integer vlanId, Integer networkRateMbps) throws Exception {
-		Map<String, String> vsmCredentials = getValidatedVsmCredentials(context);
-		String vsmIp = vsmCredentials.get("vsmip");
-		String vsmUserName = vsmCredentials.get("vsmusername");
-		String vsmPassword = vsmCredentials.get("vsmpassword");
-		String msg;
-
-		NetconfHelper netconfClient;
-		try	{
-            s_logger.info("Connecting to Nexus VSM : " + vsmIp);
-            netconfClient = new NetconfHelper(vsmIp, vsmUserName, vsmPassword);
-            s_logger.info("Successfully connected to Nexus VSM : " + vsmIp);
-		} catch(CloudRuntimeException e) {
-			msg = "Failed to connect to Nexus VSM " + vsmIp + " with credentials of user " + vsmUserName;
-			s_logger.error(msg);
-			throw new CloudRuntimeException(msg);
         }
 
-		List<Pair<OperationType, String>> params = new ArrayList<Pair<OperationType, String>>();
+        String vsmIp = vsmCredentials.containsKey("vsmip") ? vsmCredentials.get("vsmip") : null;
+        String vsmUserName = vsmCredentials.containsKey("vsmusername") ? vsmCredentials.get("vsmusername") : null;
+        String vsmPassword = vsmCredentials.containsKey("vsmpassword") ? vsmCredentials.get("vsmpassword") : null;
+        if (vsmIp == null || vsmIp.isEmpty() || vsmUserName == null || vsmUserName.isEmpty() || vsmPassword == null
+                || vsmPassword.isEmpty()) {
+            msg = "Detected invalid credentials for Nexus 1000v.";
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
+        return vsmCredentials;
+    }
+
+    public static void createPortProfile(VmwareContext context, String ethPortProfileName, String networkName,
+            Integer vlanId, Integer networkRateMbps, long peakBandwidth, long burstSize) throws Exception {
+        Map<String, String> vsmCredentials = getValidatedVsmCredentials(context);
+        String vsmIp = vsmCredentials.get("vsmip");
+        String vsmUserName = vsmCredentials.get("vsmusername");
+        String vsmPassword = vsmCredentials.get("vsmpassword");
+        String msg;
+
+        NetconfHelper netconfClient;
+        try {
+            s_logger.info("Connecting to Nexus 1000v: " + vsmIp);
+            netconfClient = new NetconfHelper(vsmIp, vsmUserName, vsmPassword);
+            s_logger.info("Successfully connected to Nexus 1000v : " + vsmIp);
+        } catch (CloudRuntimeException e) {
+            msg = "Failed to connect to Nexus 1000v " + vsmIp + " with credentials of user " + vsmUserName
+                    + ". Exception: " + e.toString();
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+
+        String policyName = s_policyNamePrefix;
+        int averageBandwidth = 0;
+        if (networkRateMbps != null) {
+            averageBandwidth = networkRateMbps.intValue();
+            policyName += averageBandwidth;
+        }
+
+        try {
+            // TODO(sateesh): Change the type of peakBandwidth & burstRate in
+            // PolicyMap to long.
+            if (averageBandwidth > 0) {
+                s_logger.debug("Adding policy map " + policyName);
+                netconfClient.addPolicyMap(policyName, averageBandwidth, (int) peakBandwidth, (int) burstSize);
+            }
+        } catch (CloudRuntimeException e) {
+            msg = "Failed to add policy map of " + policyName + " with parameters " + "committed rate = "
+                    + averageBandwidth + "peak bandwidth = " + peakBandwidth + "burst size = " + burstSize
+                    + ". Exception: " + e.toString();
+            s_logger.error(msg);
+            if (netconfClient != null) {
+                netconfClient.disconnect();
+                s_logger.debug("Disconnected Nexus 1000v session.");
+            }
+        }
+
+        List<Pair<OperationType, String>> params = new ArrayList<Pair<OperationType, String>>();
         if (vlanId != null) {
             // No need to update ethernet port profile for untagged vlans
             params.add(new Pair<OperationType, String>(OperationType.addvlanid, vlanId.toString()));
@@ -174,17 +205,17 @@ public class HypervisorHostHelper {
                 netconfClient.updatePortProfile(ethPortProfileName, SwitchPortMode.trunk, params);
                 s_logger.info("Added " + vlanId + " to Ethernet port profile " + ethPortProfileName);
             } catch (CloudRuntimeException e) {
-                msg = "Failed to modify ethernet port profile " + ethPortProfileName + " with parameters " + params.toString();
+                msg = "Failed to update Ethernet port profile " + ethPortProfileName + " with VLAN " + vlanId
+                        + ". Exception: " + e.toString();
                 s_logger.error(msg);
                 if(netconfClient != null) {
                 	netconfClient.disconnect();
-                	s_logger.debug("Disconnected VSM session.");
+                	s_logger.debug("Disconnected Nexus 1000v session.");
                 }
-                throw new CloudRuntimeException(msg);
             }
         }
-		
-		try {
+
+        try {
             if (vlanId == null) {
                 s_logger.info("Adding port profile configured over untagged VLAN.");
                 netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, 0);
@@ -192,61 +223,150 @@ public class HypervisorHostHelper {
                 s_logger.info("Adding port profile configured over VLAN : " + vlanId.toString());
                 netconfClient.addPortProfile(networkName, PortProfileType.vethernet, BindingType.portbindingstatic, SwitchPortMode.access, vlanId.intValue());
             }
-            
         } catch (CloudRuntimeException e) {
-            msg = "Failed to add vEthernet port profile " + networkName + ". Exception: " + e.toString();
-			s_logger.error(msg);
-			if(vlanId == null) {
-                s_logger.warn("Ignoring exception : " + e.toString());
-                // throw new CloudRuntimeException(msg);
-			}
-		} finally {
-			if(netconfClient != null) {
-            	netconfClient.disconnect();
-            	s_logger.debug("Disconnected VSM session.");
-			}
-		}
-	}
-	
-    public static void updatePortProfile(VmwareContext context, String ethPortProfileName, Integer vlanId, Integer networkRateMbps) throws Exception {
+            msg = "Failed to add vEthernet port profile " + networkName + "." + ". Exception: " + e.toString();
+            s_logger.error(msg);
+            if(netconfClient != null) {
+                netconfClient.disconnect();
+                s_logger.debug("Disconnected Nexus 1000v session.");
+            }
+        }
+
+        try {
+            if (averageBandwidth > 0) {
+                s_logger.info("Associating policy map " + policyName + " with port profile " + networkName + ".");
+                netconfClient.attachServicePolicy(policyName, networkName);
+            }
+        }
+        catch(CloudRuntimeException e) {
+            msg = "Failed to associate policy map " + policyName + " with port profile " + networkName
+                    + ". Exception: " + e.toString();
+            s_logger.error(msg);           
+        } finally {
+            if (netconfClient != null) {
+                netconfClient.disconnect();
+                s_logger.debug("Disconnected Nexus 1000v session.");
+            }
+        }
+    }
+
+    public static void updatePortProfile(VmwareContext context, String ethPortProfileName, String vethPortProfileName,
+            Integer vlanId, Integer networkRateMbps, long peakBandwidth, long burstRate) throws Exception {
+        NetconfHelper netconfClient = null;
+        Map<String, String> vsmCredentials = getValidatedVsmCredentials(context);
+        String vsmIp = vsmCredentials.get("vsmip");
+        String vsmUserName = vsmCredentials.get("vsmusername");
+        String vsmPassword = vsmCredentials.get("vsmpassword");
+
+        String msg;
+        try {
+            netconfClient = new NetconfHelper(vsmIp, vsmUserName, vsmPassword);
+        } catch (CloudRuntimeException e) {
+            msg = "Failed to connect to Nexus 1000v " + vsmIp + " with credentials of user " + vsmUserName
+                    + ". Exception: " + e.toString();
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+
+        PortProfile portProfile = netconfClient.getPortProfileByName(vethPortProfileName);
+        int averageBandwidth = 0;
+        String policyName = s_policyNamePrefix;
+        if (networkRateMbps != null) {
+            averageBandwidth = networkRateMbps.intValue();
+            policyName += averageBandwidth;
+        }
+
+        if (averageBandwidth > 0) {
+            PolicyMap policyMap = netconfClient.getPolicyMapByName(portProfile.inputPolicyMap);
+            if (policyMap.committedRate == averageBandwidth && policyMap.peakRate == peakBandwidth
+                    && policyMap.burstRate == burstRate) {
+                s_logger.debug("Detected that policy map is already applied to port profile " + vethPortProfileName);
+                if (netconfClient != null) {
+                    netconfClient.disconnect();
+                    s_logger.debug("Disconnected Nexus 1000v session.");
+                }
+                return;
+            } else {
+                try {
+                    // TODO(sateesh): Change the type of peakBandwidth &
+                    // burstRate in PolicyMap to long.
+                    s_logger.info("Adding policy map " + policyName);
+                    netconfClient.addPolicyMap(policyName, averageBandwidth, (int) peakBandwidth, (int) burstRate);
+                } catch (CloudRuntimeException e) {
+                    msg = "Failed to add policy map of " + policyName + " with parameters " + "committed rate = "
+                            + averageBandwidth + "peak bandwidth = " + peakBandwidth + "burst size = " + burstRate
+                            + ". Exception: " + e.toString();
+                    s_logger.error(msg);
+                    if (netconfClient != null) {
+                        netconfClient.disconnect();
+                        s_logger.debug("Disconnected Nexus 1000v session.");
+                    }
+                }
+
+                try {
+                    s_logger.info("Associating policy map " + policyName + " with port profile " + vethPortProfileName
+                            + ".");
+                    netconfClient.attachServicePolicy(policyName, vethPortProfileName);
+                } catch (CloudRuntimeException e) {
+                    msg = "Failed to associate policy map " + policyName + " with port profile " + vethPortProfileName
+                            + ". Exception: " + e.toString();
+                    s_logger.error(msg);
+                    if (netconfClient != null) {
+                        netconfClient.disconnect();
+                        s_logger.debug("Disconnected Nexus 1000v session.");
+                    }
+                }
+            }
+        }
+
         if (vlanId == null) {
-            s_logger.info("Skipping update operation over ethernet port profile " + ethPortProfileName + " for untagged VLAN.");
+            s_logger.info("Skipping update operation over ethernet port profile " + ethPortProfileName
+                    + " for untagged VLAN.");
+            if (netconfClient != null) {
+                netconfClient.disconnect();
+                s_logger.debug("Disconnected Nexus 1000v session.");
+            }
             return;
         }
-        s_logger.info("Updating vEthernet port profile with VLAN " + vlanId);
 
-		Map<String, String> vsmCredentials = getValidatedVsmCredentials(context);
-		String vsmIp = vsmCredentials.get("vsmip");
-		String vsmUserName = vsmCredentials.get("vsmusername");
-		String vsmPassword = vsmCredentials.get("vsmpassword");
-		String msg;
-		
-		NetconfHelper netconfClient;
-		try	{
-			netconfClient = new NetconfHelper(vsmIp, vsmUserName, vsmPassword);	
-		} catch(CloudRuntimeException e) {
-			msg = "Failed to connect to Nexus VSM " + vsmIp + " with credentials of user " + vsmUserName;
-			s_logger.error(msg);
-			throw new CloudRuntimeException(msg);
-		}		
-		
-		List<Pair<OperationType, String>> params = new ArrayList<Pair<OperationType, String>>();
-        params.add(new Pair<OperationType, String>(OperationType.addvlanid, vlanId.toString()));
-		
-		try {
-			netconfClient.updatePortProfile(ethPortProfileName, SwitchPortMode.trunk, params); 
-		} catch(CloudRuntimeException e) {
-			msg = "Failed to modify ethernet port profile " + ethPortProfileName + " with parameters " + params.toString();
-			s_logger.error(msg);
-			throw new CloudRuntimeException(msg);
-		} finally {
-			if(netconfClient != null) {
-            	netconfClient.disconnect();
-            	s_logger.debug("Disconnected VSM session.");
-			}
-		}
-	}	
-	
+        String currentVlan = portProfile.vlan;
+        String newVlan = Integer.toString(vlanId.intValue());
+        if (currentVlan.equalsIgnoreCase(newVlan)) {
+            if (netconfClient != null) {
+                netconfClient.disconnect();
+                s_logger.debug("Disconnected Nexus 1000v session.");
+            }
+            return;
+        }
+
+        List<Pair<OperationType, String>> params = new ArrayList<Pair<OperationType, String>>();
+        params.add(new Pair<OperationType, String>(OperationType.addvlanid, newVlan));
+        try {
+            s_logger.info("Updating vEthernet port profile with VLAN " + vlanId.toString());
+            netconfClient.updatePortProfile(ethPortProfileName, SwitchPortMode.trunk, params);
+        } catch (CloudRuntimeException e) {
+            msg = "Failed to update ethernet port profile " + ethPortProfileName + " with parameters "
+                    + params.toString() + ". Exception: " + e.toString();
+            s_logger.error(msg);
+            if (netconfClient != null) {
+                netconfClient.disconnect();
+                s_logger.debug("Disconnected Nexus 1000v session.");
+            }
+        }
+
+        try {
+            netconfClient.updatePortProfile(vethPortProfileName, SwitchPortMode.access, params);
+        } catch (CloudRuntimeException e) {
+            msg = "Failed to update vEthernet port profile " + vethPortProfileName + " with parameters "
+                    + params.toString() + ". Exception: " + e.toString();
+            s_logger.error(msg);
+            if (netconfClient != null) {
+                netconfClient.disconnect();
+                s_logger.debug("Disconnected Nexus 1000v session.");
+            }
+        }
+    }
+
 	/**
 	 * @param ethPortProfileName
 	 * @param namePrefix
@@ -258,15 +378,16 @@ public class HypervisorHostHelper {
 	 * @return
 	 * @throws Exception
 	 */
-	public static Pair<ManagedObjectReference, String> prepareNetwork(String ethPortProfileName, String namePrefix,
-            HostMO hostMo, String vlanId, Integer networkRateMbps, Integer networkRateMulticastMbps, 
-            long timeOutMs) throws Exception {
-		ManagedObjectReference morNetwork = null;
-		VmwareContext context = hostMo.getContext();
-		ManagedObjectReference dcMor = hostMo.getHyperHostDatacenter();
-		DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
 
-		ManagedObjectReference morEthernetPortProfile = dataCenterMo.getDvPortGroupMor(ethPortProfileName);
+    public static Pair<ManagedObjectReference, String> prepareNetwork(String ethPortProfileName, String namePrefix,
+            HostMO hostMo, String vlanId, Integer networkRateMbps, Integer networkRateMulticastMbps, long timeOutMs)
+            throws Exception {
+        ManagedObjectReference morNetwork = null;
+        VmwareContext context = hostMo.getContext();
+        ManagedObjectReference dcMor = hostMo.getHyperHostDatacenter();
+        DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
+
+        ManagedObjectReference morEthernetPortProfile = dataCenterMo.getDvPortGroupMor(ethPortProfileName);
 
         if (morEthernetPortProfile == null) {
             String msg = "Unable to find Ethernet port profile " + ethPortProfileName;
@@ -274,7 +395,7 @@ public class HypervisorHostHelper {
             throw new Exception(msg);
         }
         else {
-            s_logger.info("Found Ethernet port profile  " + ethPortProfileName);
+            s_logger.info("Found Ethernet port profile " + ethPortProfileName);
         }
 
         boolean createGCTag = false;
@@ -285,63 +406,53 @@ public class HypervisorHostHelper {
             createGCTag = true;
             vid = Integer.parseInt(vlanId);
         }
-		
-		networkName = composeCloudNetworkName(namePrefix, vlanId, networkRateMbps, ethPortProfileName);
+
+        networkName = composeCloudNetworkName(namePrefix, vlanId, networkRateMbps, ethPortProfileName);
 
         // TODO(sateesh): Enable this for VMware DVS.
-		/*DVSTrafficShapingPolicy shapingPolicy = null;		
-		if(networkRateMbps != null && networkRateMbps.intValue() > 0) {
-			shapingPolicy = new DVSTrafficShapingPolicy();
-			BoolPolicy isEnabled = new BoolPolicy();			
-			LongPolicy averageBandwidth = new LongPolicy();
-			LongPolicy peakBandwidth = new LongPolicy();
-			LongPolicy burstSize = new LongPolicy(); 
-			
-			isEnabled.setValue(true);
-			averageBandwidth.setValue((long)networkRateMbps.intValue()*1024L*1024L);
-			// We chose 50% higher allocation than average bandwidth.
-			// TODO(sateesh): Also let user specify the peak coefficient
-			peakBandwidth.setValue((long)(averageBandwidth.getValue()*1.5));
-			// TODO(sateesh): Also let user specify the burst coefficient
-			burstSize.setValue((long)(5*averageBandwidth.getValue()/8));
-			
-			shapingPolicy.setEnabled(isEnabled);
-			shapingPolicy.setAverageBandwidth(averageBandwidth);
-			shapingPolicy.setPeakBandwidth(peakBandwidth);
-			shapingPolicy.setBurstSize(burstSize);
-		}
-		DVPortgroupConfigInfo spec = dataCenterMo.getDvPortGroupSpec(networkName);*/
+//        DVSTrafficShapingPolicy shapingPolicy = null;
+//        if (networkRateMbps != null && networkRateMbps.intValue() > 0) {
+//            shapingPolicy = new DVSTrafficShapingPolicy();
+//            BoolPolicy isEnabled = new BoolPolicy();
+//            LongPolicy averageBandwidth = new LongPolicy();
+//            LongPolicy peakBandwidth = new LongPolicy();
+//            LongPolicy burstSize = new LongPolicy();
+//
+//            isEnabled.setValue(true);
+//            averageBandwidth.setValue((long) networkRateMbps.intValue() * 1024L * 1024L);
+//            // We chose 50% higher allocation than average bandwidth.
+//            // TODO(sateesh): Also let user specify the peak coefficient
+//            peakBandwidth.setValue((long) (averageBandwidth.getValue() * 1.5));
+//            // TODO(sateesh): Also let user specify the burst coefficient
+//            burstSize.setValue((long) (5 * averageBandwidth.getValue() / 8));
+//
+//            shapingPolicy.setEnabled(isEnabled);
+//            shapingPolicy.setAverageBandwidth(averageBandwidth);
+//            shapingPolicy.setPeakBandwidth(peakBandwidth);
+//            shapingPolicy.setBurstSize(burstSize);
+//        }
+        DVPortgroupConfigInfo spec = dataCenterMo.getDvPortGroupSpec(networkName);
         long averageBandwidth = 0L;
         if (networkRateMbps != null && networkRateMbps.intValue() > 0) {
             averageBandwidth = (long) (networkRateMbps.intValue() * 1024L * 1024L);
         }
-		//We chose 50% higher allocation than average bandwidth.
-		//TODO(sateesh): Also let user specify the peak coefficient
+        // We chose 50% higher allocation than average bandwidth.
+        // TODO(sateesh): Also let user specify the peak coefficient
         long peakBandwidth = (long) (averageBandwidth * 1.5);
-		//TODO(sateesh): Also let user specify the burst coefficient
-		long burstSize = 5 * averageBandwidth / 8;
-		
-		boolean bWaitPortGroupReady = false;
+        // TODO(sateesh): Also let user specify the burst coefficient
+        long burstSize = 5 * averageBandwidth / 8;
+
+        boolean bWaitPortGroupReady = false;
         if (!dataCenterMo.hasDvPortGroup(networkName)) {
             s_logger.info("Port profile " + networkName + " not found.");
-            createPortProfile(context, ethPortProfileName, networkName, vid, networkRateMbps);
+            createPortProfile(context, ethPortProfileName, networkName, vid, networkRateMbps, peakBandwidth, burstSize);
             bWaitPortGroupReady = true;
         } else {
             s_logger.info("Port profile " + networkName + " found.");
-            updatePortProfile(context, ethPortProfileName, vid, networkRateMbps);
             bWaitPortGroupReady = true;
-            // TODO(sateesh): Enable port profile policy configuration
-            // PortProfile portProfile;
-            // try {
-            // portProfile = getPortProfileByName(networkName);
-            // if (portProfile.vlanId != vlanId ||
-            //        portProfile.policy.getAverageBandwidth() != averageBandwidth ||
-            //        portProfile.policy.getPeakBandwidth() != peakBandwidth ||
-            // portProfile.policy.getBurstRate() != burstRate) {
-            // updatePortProfile(context, ethPortProfileName, vlanId, averageBandwidth, peakBandwidth, burstSize);
-            // }
+            updatePortProfile(context, ethPortProfileName, networkName, vid, networkRateMbps, peakBandwidth, burstSize);
         }
-		//Wait for dvPortGroup on vCenter		
+        // Wait for dvPortGroup on vCenter		
         if(bWaitPortGroupReady) 
             morNetwork = waitForDvPortGroupReady(dataCenterMo, networkName, timeOutMs);
         else
@@ -357,10 +468,10 @@ public class HypervisorHostHelper {
             networkMo.setCustomFieldValue(CustomFieldConstants.CLOUD_GC_DVP, "true");
             s_logger.debug("Added custom field : " + CustomFieldConstants.CLOUD_GC_DVP);
         }
-				
-		return new Pair<ManagedObjectReference, String>(morNetwork, networkName);
-	}
-	
+
+        return new Pair<ManagedObjectReference, String>(morNetwork, networkName);
+    }
+
     private static ManagedObjectReference waitForDvPortGroupReady(
 			DatacenterMO dataCenterMo, String dvPortGroupName, long timeOutMs) throws Exception {
 		ManagedObjectReference morDvPortGroup = null;
@@ -380,8 +491,8 @@ public class HypervisorHostHelper {
 		return morDvPortGroup;
 	}
 
-	private static boolean isSpecMatch(DVPortgroupConfigInfo spec, Integer vid,
-			DVSTrafficShapingPolicy shapingPolicy) {
+    // This method would be used for VMware Distributed Virtual Switch.
+	private static boolean isSpecMatch(DVPortgroupConfigInfo spec, Integer vid, DVSTrafficShapingPolicy shapingPolicy) {
 		DVSTrafficShapingPolicy currentTrafficShapingPolicy;
 		currentTrafficShapingPolicy = spec.getDefaultPortConfig().getInShapingPolicy();
 		// TODO(sateesh): Extract and compare vendor specific configuration specification as well.
