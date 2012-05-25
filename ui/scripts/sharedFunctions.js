@@ -253,6 +253,10 @@ cloudStack.actionFilter = {
     var jsonObj = args.context.item;
 		var allowedActions = [];
 
+    if (!isAdmin()) {
+      return [];
+    }
+
 		if(jsonObj.type == 'Isolated') {
 		  allowedActions.push('edit');		//only Isolated network can be upgraded
 		}
