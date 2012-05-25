@@ -71,6 +71,10 @@ public class ListNetworksCmd extends BaseListProjectAndAccountResourcesCmd {
     
     @Parameter(name=ApiConstants.SPECIFY_IP_RANGES, type=CommandType.BOOLEAN, description="true if need to list only networks which support specifying ip ranges")
     private Boolean specifyIpRanges;
+    
+    @IdentityMapper(entityTableName="vpc")
+    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="List networks by VPC")
+    private Long vpcId;
    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -116,7 +120,11 @@ public class ListNetworksCmd extends BaseListProjectAndAccountResourcesCmd {
     	return specifyIpRanges;
     }
 
-	/////////////////////////////////////////////////////
+	public Long getVpcId() {
+        return vpcId;
+    }
+
+    /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override

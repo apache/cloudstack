@@ -33,8 +33,10 @@ public interface VpcService {
     public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices);
     
     public Vpc getVpc(long vpcId);
+    
+    public Vpc getActiveVpc(long vpcId);
         
-    public List<Network> getVpcNetworks(long vpcId);
+    public List<? extends Network> getVpcNetworks(long vpcId);
     
     Map<Service, Set<Provider>> getVpcOffSvcProvidersMap(long vpcOffId);
     

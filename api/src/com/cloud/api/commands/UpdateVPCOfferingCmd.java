@@ -46,7 +46,8 @@ public class UpdateVPCOfferingCmd extends BaseAsyncCmd{
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the display text of the VPC offering")
     private String displayText;
    
-    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="update state for the VPC offering")
+    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="update state for the VPC offering; " +
+    		"supported states - Enabled/Disabled")
     private String state;
 
     /////////////////////////////////////////////////////

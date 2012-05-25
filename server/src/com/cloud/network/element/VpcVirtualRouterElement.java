@@ -99,7 +99,11 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
            return false;
        }
        
-       Vpc vpc = _vpcService.getVpc(vpcId);
+       Vpc vpc = _vpcService.getActiveVpc(vpcId);
+       if (vpc == null) {
+           s_logger.warn("Unable to find Enabled VPC by id " + vpcId);
+           return false;
+       }
        
        Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
        params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
@@ -142,7 +146,11 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return false;
         }
         
-        Vpc vpc = _vpcService.getVpc(vpcId);
+        Vpc vpc = _vpcService.getActiveVpc(vpcId);
+        if (vpc == null) {
+            s_logger.warn("Unable to find Enabled VPC by id " + vpcId);
+            return false;
+        }
         
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);

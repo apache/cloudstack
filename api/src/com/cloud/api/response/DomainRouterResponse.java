@@ -19,8 +19,8 @@ package com.cloud.api.response;
 import java.util.Date;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.vm.VirtualMachine.State;
 import com.google.gson.annotations.SerializedName;
 
@@ -136,6 +136,9 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     
     @SerializedName("scriptsversion") @Param(description="the version of scripts")
     private String scriptsVersion;
+    
+    @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the network belongs to")
+    private IdentityProxy vpcId = new IdentityProxy("vpc");
     
     @Override
     public Long getObjectId() {
@@ -304,5 +307,9 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+    
+    public void setVpcId(Long vpcId) {
+        this.vpcId.setValue(vpcId);
     }
 }
