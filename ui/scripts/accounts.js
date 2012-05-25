@@ -90,7 +90,7 @@
                   },
                   email: {
                     label: 'label.email',
-                    validation: { required: true }
+                    validation: { required: true, email:true }
                   },
                   firstname: {
                     label: 'label.first.name',
@@ -687,7 +687,7 @@
                   },
                   email: {
                     label: 'label.email',
-                    validation: { required: true }
+                    validation: { required: true, email: true }
                   },
                   firstname: {
                     label: 'label.first.name',
