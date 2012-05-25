@@ -36,11 +36,13 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.network.IPAddressVO;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.vpc.VpcOffering.State;
@@ -90,6 +92,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
     NetworkDao _ntwkDao;
     @Inject
     NetworkManager _ntwkMgr;
+    @Inject
+    IPAddressDao _ipAddressDao;
     
     private VpcProvider vpcElement = null;
     
@@ -138,9 +142,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
     }
 
     @Override
-    public List<Network> getVpcNetworks(long vpcId) {
-        // TODO Auto-generated method stub
-        return null;
+    public List<? extends Network> getVpcNetworks(long vpcId) {
+        return _ntwkDao.listByVpc(vpcId);
     }
 
     @Override
@@ -226,10 +229,13 @@ public class VpcManagerImpl implements VpcManager, Manager{
         return offering;
     }
     
-    
-
     @Override
     public Vpc getVpc(long vpcId) {
+        return _vpcDao.findById(vpcId);
+    }
+    
+    @Override
+    public Vpc getActiveVpc(long vpcId) {
         return _vpcDao.findById(vpcId);
     }
 
@@ -478,23 +484,47 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @ActionEvent(eventType = EventTypes.EVENT_VPC_DELETE, eventDescription = "deleting VPC")
     public boolean deleteVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         UserContext.current().setEventDetails(" Id: " + vpcId);
+        Account caller = UserContext.current().getCaller();
 
         // Verify vpc id
-        VpcVO vpc = _vpcDao.findById(vpcId);
+        Vpc vpc = getVpc(vpcId);
         if (vpc == null) {
             throw new InvalidParameterValueException("unable to find VPC id=" + vpcId);
         }
+        
+        //verify permissions
+        _accountMgr.checkAccess(caller, null, false, vpc);
 
-        // don't allow to delete vpc if it's in use by existing networks
-        int networksCount = _ntwkDao.getNetworkCountByVpcId(vpcId);
+        return destroyVpc(vpc);
+    }
+
+    @Override
+    public boolean destroyVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException, 
+                    InsufficientCapacityException {
+        UserContext ctx = UserContext.current();
+        
+        //don't allow to delete vpc if it's in use by existing networks
+        int networksCount = _ntwkDao.getNetworkCountByVpcId(vpc.getId());
         if (networksCount > 0) {
-            throw new InvalidParameterValueException("Can't delete VPC " + vpcId + " as its used by " + networksCount + " networks");
+            throw new InvalidParameterValueException("Can't delete VPC " + vpc + " as its used by " + networksCount + " networks");
         }
         
-        //shutdown VPC
-        shutdownVpc(vpcId);
+        //mark VPC as disabled
+        s_logger.debug("Updating VPC " + vpc + " with state " + Vpc.State.Disabled + " as a part of vpc delete");
+        VpcVO vpcVO = _vpcDao.findById(vpc.getId());
+        vpcVO.setState(Vpc.State.Disabled);
+        _vpcDao.update(vpc.getId(), vpcVO);
 
-        if (_vpcDao.remove(vpcId)) {
+        //shutdown VPC
+        shutdownVpc(vpc.getId());
+        
+        //cleanup vpc resources
+        if (!cleanupVpcResources(vpc.getId(), ctx.getCaller(), ctx.getCallerUserId())) {
+            s_logger.warn("Failed to cleanup resources for vpc " + vpc);
+            return false;
+        }
+
+        if (_vpcDao.remove(vpc.getId())) {
             return true;
         } else {
             return false;
@@ -652,9 +682,9 @@ public class VpcManagerImpl implements VpcManager, Manager{
         User callerUser = _accountMgr.getActiveUser(ctx.getCallerUserId());
         
         //check if vpc exists
-        Vpc vpc = getVpc(vpcId);
+        Vpc vpc = getActiveVpc(vpcId);
         if (vpc == null) {
-            throw new InvalidParameterValueException("Unable to find vpc by id " + vpcId);
+            throw new InvalidParameterValueException("Unable to find Enabled vpc by id " + vpcId);
         }
         
         //permission check
@@ -777,5 +807,27 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
         
         return vpcElement;
+    }
+    
+    @Override
+    public List<? extends Vpc> getVpcsForAccount(long accountId) {
+        return _vpcDao.listByAccountId(accountId);
+    }
+    
+    public boolean cleanupVpcResources(long vpcId, Account caller, long callerUserId) {
+        s_logger.debug("Cleaning up resources for vpc id=" + vpcId);
+        boolean success = true;
+        // release all ip addresses
+        List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedVpc(vpcId, null);
+        s_logger.debug("Releasing ips for vpc id=" + vpcId + " as a part of vpc cleanup");
+        for (IPAddressVO ipToRelease : ipsToRelease) {
+            success = success && _ntwkMgr.releasePublicIpAddress(ipToRelease.getId(), callerUserId, caller);
+            if (!success) {
+                s_logger.warn("Failed to cleanup ip " + ipToRelease + " as a part of vpc id=" + vpcId + " cleanup");
+            }
+        }
+        
+        return success;
+       
     }
 }

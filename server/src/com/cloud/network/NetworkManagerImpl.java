@@ -187,7 +187,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -1168,8 +1167,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         _ipAddressDao.markAsUnavailable(ip.getId());
                         if (!applyIpAssociations(network, true)) {
                             // if fail to apply ip assciations again, unassign ip address without updating resource
-// count and
-                            // generating usage event as there is no need to keep it in the db
+                            // count and generating usage event as there is no need to keep it in the db
                             _ipAddressDao.unassignIpAddress(ip.getId());
                         }
                     } catch (Exception e) {
@@ -1185,7 +1183,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public boolean releasePublicIpAddress(long addrId, long userId, Account caller) {
 
         boolean success = true;
-
         // Cleanup all ip address resources - PF/LB/Static nat rules
         if (!cleanupIpResources(addrId, userId, caller)) {
             success = false;
@@ -1213,10 +1210,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } catch (ResourceUnavailableException e) {
                 throw new CloudRuntimeException("We should never get to here because we used true when applyIpAssociations", e);
             }
+        } else {
+            if (ip.getState() == IpAddress.State.Releasing) {
+                _ipAddressDao.unassignIpAddress(ip.getId());
+            }
         }
 
         if (success) {
-            s_logger.debug("released a public ip id=" + addrId);
+            s_logger.debug("Released a public ip id=" + addrId);
         }
 
         return success;
@@ -2428,9 +2429,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         //validate vpc
         if (vpcId != null) {
-            Vpc vpc = _vpcMgr.getVpc(vpcId);
+            Vpc vpc = _vpcMgr.getActiveVpc(vpcId);
             if (vpc == null) {
-                throw new InvalidParameterValueException("Unable to find vpc by id "  + vpcId);
+                throw new InvalidParameterValueException("Unable to find enabled vpc by id "  + vpcId);
             }
             _accountMgr.checkAccess(caller, null, false, vpc);
         }
@@ -2631,7 +2632,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId) 
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
         
-        Vpc vpc = _vpcMgr.getVpc(vpcId);
+        Vpc vpc = _vpcMgr.getActiveVpc(vpcId);
         //1) Validate if network can be created for VPC
         _vpcMgr.validateGuestNtkwForVpc(_configMgr.getNetworkOffering(ntwkOffId), cidr, networkDomain, owner, vpc);
         
@@ -2895,6 +2896,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         boolean listAll = cmd.listAll();
         boolean isRecursive = cmd.isRecursive();
         Boolean specifyIpRanges = cmd.getSpecifyIpRanges();
+        Long vpcId = cmd.getVpcId();
 
         // 1) default is system to false if not specified
         // 2) reset parameter to false if it's specified by the regular user
@@ -3005,21 +3007,25 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (domainId != null) {
                 networksToReturn
                         .addAll(listDomainLevelNetworks(
-                                buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges), searchFilter,
+                                buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
+                                        physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId), searchFilter,
                                 domainId));
             }
 
             if (!permittedAccounts.isEmpty()) {
                 networksToReturn.addAll(listAccountSpecificNetworks(
-                        buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges), searchFilter,
+                        buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId), searchFilter,
                         permittedAccounts));
             } else if (domainId == null || listAll) {
                 networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(
-                        buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges), searchFilter, path,
+                        buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId), searchFilter, path,
                         isRecursive));
             }
         } else {
-            networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired, specifyIpRanges),
+            networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId,
+                    guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId),
                     searchFilter);
         }
 
@@ -3049,8 +3055,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId,
-            String aclType, boolean skipProjectNetworks, Boolean restartRequired, Boolean specifyIpRanges) {
+    private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, 
+            Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId,
+            String aclType, boolean skipProjectNetworks, Boolean restartRequired, Boolean specifyIpRanges, Long vpcId) {
         SearchCriteria<NetworkVO> sc = sb.create();
 
         if (isSystem != null) {
@@ -3097,6 +3104,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (specifyIpRanges != null) {
             sc.addAnd("specifyIpRanges", SearchCriteria.Op.EQ, specifyIpRanges);
+        }
+        
+        if (vpcId != null) {
+            sc.addAnd("vpcId", SearchCriteria.Op.EQ, vpcId);
         }
 
         return sc;

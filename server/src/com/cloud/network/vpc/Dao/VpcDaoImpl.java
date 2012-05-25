@@ -16,10 +16,13 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import com.cloud.domain.Domain.State;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -32,8 +35,8 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @DB(txn = false)
 public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
     final GenericSearchBuilder<VpcVO, Integer> CountByOfferingId;
+    final SearchBuilder<VpcVO> AllFieldsSearch;
 
-    
     protected VpcDaoImpl() {
         super();
         
@@ -42,6 +45,12 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
         CountByOfferingId.and("offeringId", CountByOfferingId.entity().getVpcOfferingId(), Op.EQ);
         CountByOfferingId.and("removed", CountByOfferingId.entity().getRemoved(), Op.NULL);
         CountByOfferingId.done();
+        
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), Op.EQ);
+        AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
+        AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), Op.EQ);
+        AllFieldsSearch.done();
     }
     
     
@@ -51,6 +60,21 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
         sc.setParameters("offeringId", offId);
         List<Integer> results = customSearch(sc, null);
         return results.get(0);
+    }
+    
+    @Override
+    public Vpc getActiveVpcById(long vpcId) {
+        SearchCriteria<VpcVO> sc = AllFieldsSearch.create();
+        sc.setParameters("id", vpcId);
+        sc.setParameters("state", State.Active);
+        return findOneBy(sc);
+    }
+    
+    @Override
+    public List<? extends Vpc> listByAccountId(long accountId) {
+        SearchCriteria<VpcVO> sc = AllFieldsSearch.create();
+        sc.setParameters("accountId", accountId);
+        return listBy(sc, null);
     }
 }
 

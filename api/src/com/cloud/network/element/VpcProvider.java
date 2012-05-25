@@ -17,12 +17,8 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
 import com.cloud.network.vpc.Vpc;
-import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineProfile;
 
 /**
  * @author Alena Prokharchyk

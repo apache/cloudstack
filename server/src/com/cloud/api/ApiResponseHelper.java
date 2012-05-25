@@ -1650,6 +1650,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             routerResponse.setDns1(zone.getDns1());
             routerResponse.setDns2(zone.getDns2());
         }
+        
+        routerResponse.setVpcId(router.getVpcId());
 
         routerResponse.setObjectName("domainrouter");
         return routerResponse;
@@ -2884,6 +2886,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         response.setSpecifyIpRanges(network.getSpecifyIpRanges());
+        response.setVpcId(network.getVpcId());
 
         response.setObjectName("network");
         return response;
