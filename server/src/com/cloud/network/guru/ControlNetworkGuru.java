@@ -106,14 +106,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
     @Override
     public NicProfile allocate(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
-    	
-        if(vm.getHypervisorType() == HypervisorType.VMware && vm.getType() != VirtualMachine.Type.DomainRouter) {
-        	NicProfile nicProf = new NicProfile(Nic.ReservationStrategy.Create, null, null, null, null);
-            String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
-            nicProf.setMacAddress(mac);
-            return nicProf;
-        }
-        
+       
         if (nic != null) {
             throw new CloudRuntimeException("Does not support nic specification at this time: " + nic);
         }
@@ -137,15 +130,6 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 	            String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
 	            nic.setMacAddress(mac);
 	            return;
-        	} else {
-        		// in basic mode and in VMware case, control network will be shared with guest network
-	            String mac = _networkMgr.getNextAvailableMacAddressInNetwork(config.getId());
-	            nic.setMacAddress(mac);
-	            nic.setIp4Address("0.0.0.0");
-	            nic.setNetmask("0.0.0.0");
-	            nic.setFormat(AddressFormat.Ip4);
-	            nic.setGateway("0.0.0.0");
-        		return;
         	}
         }
         
@@ -158,6 +142,7 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         nic.setNetmask("255.255.0.0");
         nic.setFormat(AddressFormat.Ip4);
         nic.setGateway(NetUtils.getLinkLocalGateway());
+        nic.setDeviceId(0);
     }
 
     @Override
