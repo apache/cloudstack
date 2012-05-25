@@ -811,27 +811,32 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         // TODO : probably need to set traffic shaping
         Pair<ManagedObjectReference, String> networkInfo = null;
         
-        if(!_nexusVSwitch) {
-        	networkInfo = HypervisorHostHelper.prepareNetwork(this._publicNetworkVSwitchName, "cloud.public",
-                	vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout, true);
+        if (!_nexusVSwitch) {
+            networkInfo = HypervisorHostHelper.prepareNetwork(this._publicNetworkVSwitchName, "cloud.public",
+                    vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout, true);
+        } else {
+            networkInfo = HypervisorHostHelper.prepareNetwork(this._publicNetworkVSwitchName, "cloud.public",
+                    vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout);
         }
-        else {
-        	networkInfo = HypervisorHostHelper.prepareNetwork(this._publicNetworkVSwitchName, "cloud.public",
-                	vmMo.getRunningHost(), vlanId, null, null, this._ops_timeout);
-        }
-        
+
         int nicIndex = allocPublicNicIndex(vmMo);
-        
+
         try {
-        	VirtualDevice[] nicDevices = vmMo.getNicDevices();
-        	
-        	VirtualEthernetCard device = (VirtualEthernetCard)nicDevices[nicIndex];
-        	
-    		VirtualEthernetCardNetworkBackingInfo nicBacking = new VirtualEthernetCardNetworkBackingInfo();
-    		nicBacking.setDeviceName(networkInfo.second());
-    		nicBacking.setNetwork(networkInfo.first());
-    		device.setBacking(nicBacking);
-        	
+            VirtualDevice[] nicDevices = vmMo.getNicDevices();
+
+            VirtualEthernetCard device = (VirtualEthernetCard) nicDevices[nicIndex];
+
+            if (!_nexusVSwitch) {
+                VirtualEthernetCardNetworkBackingInfo nicBacking = new VirtualEthernetCardNetworkBackingInfo();
+                nicBacking.setDeviceName(networkInfo.second());
+                nicBacking.setNetwork(networkInfo.first());
+                device.setBacking(nicBacking);
+            } else {
+                HostMO hostMo = vmMo.getRunningHost();
+                DatacenterMO dataCenterMo = new DatacenterMO(hostMo.getContext(), hostMo.getHyperHostDatacenter());
+                device.setBacking(dataCenterMo.getDvPortBackingInfo(networkInfo));
+            }
+
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
             deviceConfigSpecArray[0] = new VirtualDeviceConfigSpec();
@@ -4050,9 +4055,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 if (mgr.getPrivateVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus"))
                     _privateNetworkVSwitchName = mgr.getPrivateVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
                 if (mgr.getPublicVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus"))
-                _publicNetworkVSwitchName = mgr.getPublicVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
+                    _publicNetworkVSwitchName = mgr.getPublicVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
                 if (mgr.getGuestVSwitchTypeGlobalParameter().equalsIgnoreCase("nexus"))
-                _guestNetworkVSwitchName = mgr.getGuestVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
+                    _guestNetworkVSwitchName = mgr.getGuestVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
             }
 
         } catch (Exception e) {
