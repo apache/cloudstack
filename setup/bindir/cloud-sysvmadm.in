@@ -212,7 +212,8 @@ reboot_router(){
 }
 
 restart_networks(){
-    networks=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select n.id from networks n, network_offerings no where n.network_offering_id = no.id and no.system_only = 0 and n.removed is null"`)
+    networks=(`mysql -h $db --user=$user --password=$password --skip-column-names -U cloud -e "select n.id 
+    from networks n, network_offerings no where n.network_offering_id = no.id and no.system_only = 0 and n.removed is null"`)
     length_networks=(${#networks[@]})
     
     echo -e "\nRestarting networks... "
@@ -295,7 +296,7 @@ restart_network(){
 query_async_job_result() {
 while [ 1 ]
 do
-	jobstatus=`curl -sS "http://$ms:8096/?command=queryAsyncJobResult&jobId=$1&response=json" | sed 's/\"//g' | sed 's/ //g' | sed 's/{//g' | sed 's/}//g' | awk -F, {'print $2'} | awk -F: {'print $2'}`
+	jobstatus=`curl -sS "http://$ms:8096/?command=queryAsyncJobResult&jobId=$1&response=json" | sed 's/\"//g' | sed 's/ //g' | sed 's/{//g' | sed 's/}//g' | awk -F, {'print $4'} | awk -F: {'print $2'}`
 	if [ "$jobstatus" != "0" ]; then
 		echo $jobstatus
 		break
