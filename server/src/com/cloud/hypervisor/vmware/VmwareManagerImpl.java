@@ -376,11 +376,9 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
             mor = serviceContext.getHostMorByPath(hostInventoryPath);
 
         String privateTrafficLabel = null;
-        if (_nexusVSwitchActive) {
-            privateTrafficLabel = serviceContext.getStockObject("privateTrafficLabel");
-            if (privateTrafficLabel == null) {
-                privateTrafficLabel = _privateNetworkVSwitchName;
-            }
+        privateTrafficLabel = serviceContext.getStockObject("privateTrafficLabel");
+        if (privateTrafficLabel == null) {
+            privateTrafficLabel = _privateNetworkVSwitchName;
         }
 
         if(mor != null) {
@@ -401,12 +399,11 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
                 }
 
                 // prepare at least one network on the vswitch to enable OVF importing
-                String managementPortGroupName = getManagementPortGroupByHost(hostMo);
-                assert(managementPortGroupName != null);
-                HostPortGroupSpec spec = hostMo.getPortGroupSpec(managementPortGroupName);
                 String vlanId = null;
-                if(spec.getVlanId() != 0) {
-                    vlanId = String.valueOf(spec.getVlanId());
+                if(privateTrafficLabel != null) {
+                	String[] tokens = privateTrafficLabel.split(",");
+                	if(tokens.length == 2)
+                		vlanId = tokens[1];
                 }
 
                 if(!_nexusVSwitchActive) {
