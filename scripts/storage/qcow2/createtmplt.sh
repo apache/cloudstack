@@ -118,7 +118,7 @@ create_from_snapshot() {
   $qemu_img convert -f qcow2 -O qcow2 -s "$snapshotName" "$tmpltImg" /$tmpltfs/$tmpltname >& /dev/null
   if [ $? -gt 0 ]
   then
-     printf "Failed to create template /$tmplfs/$tmpltname from snapshot $snapshotName on disk $tmpltImg "
+     printf "Failed to create template /$tmpltfs/$tmpltname from snapshot $snapshotName on disk $tmpltImg "
      exit 2
   fi
 
