@@ -97,7 +97,7 @@ create_from_file() {
   local tmpltimg="$2"
   local tmpltname=$3
   if [ -b $tmpltimg ]; then
-      $qemu-img convert -f raw -O qcow2 "$tmpltimg" /$tmpltfs/$tmpltname
+      $qemu_img convert -f raw -O qcow2 "$tmpltimg" /$tmpltfs/$tmpltname
   else
       $qemu_img convert -f qcow2 -O qcow2 "$tmpltimg" /$tmpltfs/$tmpltname >& /dev/null
   fi
