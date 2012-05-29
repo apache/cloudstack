@@ -696,11 +696,8 @@ setup_elbvm() {
 
 setup_default() {
   cat > /etc/network/interfaces << EOF
-auto lo eth0
+auto lo
 iface lo inet loopback
-
-iface eth0 inet static
-
 EOF
 }
 
@@ -895,7 +892,9 @@ start)
 	;;
 
 stop)
-	log_action_begin_msg "Stopping cloud-early-config (noop)"
+	log_action_begin_msg "Stopping cloud-early-config"
+        #Override old system's interface setting
+        setup_default;
 	log_action_end_msg 0
 	;;
 
