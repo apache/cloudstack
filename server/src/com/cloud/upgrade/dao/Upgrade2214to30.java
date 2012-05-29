@@ -382,8 +382,19 @@ public class Upgrade2214to30 implements DbUpgrade {
                             addPhysicalNtwk_To_Ntwk_IP_Vlan(conn, physicalNetworkId,networkId);
                         }
                         pstmt3.close();
+                        
+                        // add the reference to this physical network for the default public network entries in vlan / user_ip_address tables
                         // add first physicalNetworkId to op_dc_vnet_alloc for this zone - just a placeholder since direct networking dont need this
                         if(isFirstPhysicalNtwk){
+                            s_logger.debug("Adding PhysicalNetwork to default Public network entries in vlan and user_ip_address");
+                            pstmt3 = conn.prepareStatement("SELECT id FROM `cloud`.`networks` where traffic_type = 'Public' and data_center_id = "+zoneId);
+                            ResultSet rsPubNet = pstmt3.executeQuery();
+                            if(rsPubNet.next()){
+                                Long publicNetworkId = rsPubNet.getLong(1);
+                                addPhysicalNtwk_To_Ntwk_IP_Vlan(conn, physicalNetworkId,publicNetworkId);
+                            }
+                            pstmt3.close();
+                            
                             s_logger.debug("Adding PhysicalNetwork to op_dc_vnet_alloc");
                             String updateVnet = "UPDATE `cloud`.`op_dc_vnet_alloc` SET physical_network_id = " + physicalNetworkId + " WHERE data_center_id = " + zoneId;
                             pstmtUpdate = conn.prepareStatement(updateVnet);
