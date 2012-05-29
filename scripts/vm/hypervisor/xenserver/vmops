@@ -280,7 +280,7 @@ def setLinkLocalIP(session, args):
         except:
             return 'can not cat network.conf'
 
-        if result.lower() == "bridge":
+        if result.lower().strip() == "bridge":
             try:
                 cmd = ["brctl", "addbr", brName]
                 txt = util.pread2(cmd)
