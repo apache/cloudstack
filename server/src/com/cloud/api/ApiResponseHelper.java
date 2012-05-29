@@ -730,30 +730,30 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public IPAddressResponse createIPAddressResponse(IpAddress ipAddress) {
-        VlanVO vlan = ApiDBUtils.findVlanById(ipAddress.getVlanId());
+    public IPAddressResponse createIPAddressResponse(IpAddress ipAddr) {
+        VlanVO vlan = ApiDBUtils.findVlanById(ipAddr.getVlanId());
         boolean forVirtualNetworks = vlan.getVlanType().equals(VlanType.VirtualNetwork);
-        long zoneId = ipAddress.getDataCenterId();
+        long zoneId = ipAddr.getDataCenterId();
 
         IPAddressResponse ipResponse = new IPAddressResponse();
-        ipResponse.setId(ipAddress.getId());
-        ipResponse.setIpAddress(ipAddress.getAddress().toString());
-        if (ipAddress.getAllocatedTime() != null) {
-            ipResponse.setAllocated(ipAddress.getAllocatedTime());
+        ipResponse.setId(ipAddr.getId());
+        ipResponse.setIpAddress(ipAddr.getAddress().toString());
+        if (ipAddr.getAllocatedTime() != null) {
+            ipResponse.setAllocated(ipAddr.getAllocatedTime());
         }
         ipResponse.setZoneId(zoneId);
-        ipResponse.setZoneName(ApiDBUtils.findZoneById(ipAddress.getDataCenterId()).getName());
-        ipResponse.setSourceNat(ipAddress.isSourceNat());
-        ipResponse.setIsSystem(ipAddress.getSystem());
+        ipResponse.setZoneName(ApiDBUtils.findZoneById(ipAddr.getDataCenterId()).getName());
+        ipResponse.setSourceNat(ipAddr.isSourceNat());
+        ipResponse.setIsSystem(ipAddr.getSystem());
 
         // get account information
-        populateOwner(ipResponse, ipAddress);
+        populateOwner(ipResponse, ipAddr);
 
         ipResponse.setForVirtualNetwork(forVirtualNetworks);
-        ipResponse.setStaticNat(ipAddress.isOneToOneNat());
+        ipResponse.setStaticNat(ipAddr.isOneToOneNat());
 
-        if (ipAddress.getAssociatedWithVmId() != null) {
-            UserVm vm = ApiDBUtils.findUserVmById(ipAddress.getAssociatedWithVmId());
+        if (ipAddr.getAssociatedWithVmId() != null) {
+            UserVm vm = ApiDBUtils.findUserVmById(ipAddr.getAssociatedWithVmId());
             ipResponse.setVirtualMachineId(vm.getId());
             ipResponse.setVirtualMachineName(vm.getHostName());
             if (vm.getDisplayName() != null) {
@@ -763,11 +763,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        ipResponse.setAssociatedNetworkId(ipAddress.getAssociatedWithNetworkId());
+        ipResponse.setAssociatedNetworkId(ipAddr.getAssociatedWithNetworkId());
+        ipResponse.setVpcId(ipAddr.getVpcId());
 
         // Network id the ip is associated withif associated networkId is null, try to get this information from vlan
-        Long associatedNetworkId = ipAddress.getAssociatedWithNetworkId();
-        Long vlanNetworkId = ApiDBUtils.getVlanNetworkId(ipAddress.getVlanId());
+        Long associatedNetworkId = ipAddr.getAssociatedWithNetworkId();
+        Long vlanNetworkId = ApiDBUtils.getVlanNetworkId(ipAddr.getVlanId());
         if (associatedNetworkId == null) {
             associatedNetworkId = vlanNetworkId;
         }
@@ -783,18 +784,18 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         ipResponse.setNetworkId(networkId);
-        ipResponse.setState(ipAddress.getState().toString());
-        ipResponse.setPhysicalNetworkId(ipAddress.getPhysicalNetworkId());
+        ipResponse.setState(ipAddr.getState().toString());
+        ipResponse.setPhysicalNetworkId(ipAddr.getPhysicalNetworkId());
 
         // show this info to admin only
         Account account = UserContext.current().getCaller();
         if ((account == null) || account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-            ipResponse.setVlanId(ipAddress.getVlanId());
-            ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanId()).getVlanTag());
+            ipResponse.setVlanId(ipAddr.getVlanId());
+            ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddr.getVlanId()).getVlanTag());
         }
         
-        if (ipAddress.getSystem()) {
-            if (ipAddress.isOneToOneNat()) {
+        if (ipAddr.getSystem()) {
+            if (ipAddr.isOneToOneNat()) {
                 ipResponse.setPurpose(IpAddress.Purpose.StaticNat.toString());
             } else {
                 ipResponse.setPurpose(IpAddress.Purpose.Lb.toString());

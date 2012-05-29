@@ -96,16 +96,10 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     
     @SerializedName(ApiConstants.PURPOSE) @Param(description="purpose of the IP address. In Acton this value is not null for Ips with isSystem=true, and can have either StaticNat or LB value")
     private String purpose;
+    
+    @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the ip belongs to")
+    private IdentityProxy vpcId = new IdentityProxy("vpc");
 
-/*    
-    @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
-    private IdentityProxy jobId = new IdentityProxy("async_job");
-*/    
-
-/*    
-    @SerializedName(ApiConstants.JOB_STATUS) @Param(description="shows the current pending asynchronous job status")
-    private Integer jobStatus;
-*/    
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
@@ -215,5 +209,9 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
 
     public void setPurpose(String purpose) {
         this.purpose = purpose;
+    }
+    
+    public void setVpcId(Long vpcId) {
+        this.vpcId.setValue(vpcId);
     }
 }

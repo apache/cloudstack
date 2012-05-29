@@ -78,6 +78,10 @@ public class ListPublicIpAddressesCmd extends BaseListProjectAndAccountResources
     
     @Parameter(name=ApiConstants.IS_STATIC_NAT, type=CommandType.BOOLEAN, description="list only static nat ip addresses")
     private Boolean isStaticNat;
+    
+    @IdentityMapper(entityTableName="vpc")
+    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="List ips belonging to the VPC")
+    private Long vpcId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -120,6 +124,10 @@ public class ListPublicIpAddressesCmd extends BaseListProjectAndAccountResources
 
 	public Boolean getIsStaticNat() {
 		return isStaticNat;
+	}
+
+	public Long getVpcId() {
+        return vpcId;
 	}
 
 	/////////////////////////////////////////////////////

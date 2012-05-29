@@ -1850,13 +1850,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             if (reprogramGuestNtwks) {
                 s_logger.debug("Resending ipAssoc, port forwarding, load balancing rules as a part of Virtual router start");
                 long ownerId = router.getAccountId();
-                long zoneId = router.getDataCenterIdToDeployIn();
 
-                final List<IPAddressVO> userIps = _networkMgr.listPublicIpsAssignedToGuestNtwk(ownerId, zoneId, null, guestNetworkId);
+                final List<IPAddressVO> userIps = _networkMgr.listPublicIpsAssignedToGuestNtwk(ownerId, guestNetworkId, null);
                 List<PublicIp> allPublicIps = new ArrayList<PublicIp>();
                 if (userIps != null && !userIps.isEmpty()) {
                     for (IPAddressVO userIp : userIps) {
-                        PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                        PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
+                                NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
                         allPublicIps.add(publicIp);
                     }
                 }
