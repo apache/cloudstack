@@ -96,15 +96,13 @@ public interface NetworkManager extends NetworkService {
      * 
      * @param accountId
      *            - account that the IP address should belong to
-     * @param dcId
-     *            - zone that the IP address should belong to
-     * @param sourceNat
-     *            - (optional) true if the IP address should be a source NAT address
      * @param associatedNetworkId
      *            TODO
+     * @param sourceNat
+     *            - (optional) true if the IP address should be a source NAT address
      * @return - list of IP addresses
      */
-    List<IPAddressVO> listPublicIpsAssignedToGuestNtwk(long accountId, long dcId, Boolean sourceNat, Long associatedNetworkId);
+    List<IPAddressVO> listPublicIpsAssignedToGuestNtwk(long accountId, long associatedNetworkId, Boolean sourceNat);
 
     List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
             throws ConcurrentOperationException;
@@ -390,5 +388,14 @@ public interface NetworkManager extends NetworkService {
      * @param network
      */
     void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, Network network);
+
+
+    /**
+     * @param accountId
+     * @param dcId
+     * @param sourceNat
+     * @return
+     */
+    List<IPAddressVO> listPublicIpsAssignedToAccount(long accountId, long dcId, Boolean sourceNat);
 
 }

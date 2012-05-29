@@ -1644,6 +1644,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long ipId = cmd.getId();
         Boolean sourceNat = cmd.getIsSourceNat();
         Boolean staticNat = cmd.getIsStaticNat();
+        Long vpcId = cmd.getVpcId();
 
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1671,6 +1672,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("associatedNetworkIdEq", sb.entity().getAssociatedWithNetworkId(), SearchCriteria.Op.EQ);
         sb.and("isSourceNat", sb.entity().isSourceNat(), SearchCriteria.Op.EQ);
         sb.and("isStaticNat", sb.entity().isOneToOneNat(), SearchCriteria.Op.EQ);
+        sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
 
         if (forLoadBalancing != null && (Boolean) forLoadBalancing) {
             SearchBuilder<LoadBalancerVO> lbSearch = _loadbalancerDao.createSearchBuilder();
@@ -1713,6 +1715,10 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("dataCenterId", zone);
         }
 
+        if (vpcId != null) {
+            sc.setParameters("vpcId", vpcId);
+        }
+        
         if (ipId != null) {
             sc.setParameters("id", ipId);
         }

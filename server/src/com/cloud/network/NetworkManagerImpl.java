@@ -432,7 +432,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         addr.setState(assign ? IpAddress.State.Allocated : IpAddress.State.Allocating);
 
         if (vlanUse != VlanType.DirectAttached || zone.getNetworkType() == NetworkType.Basic) {
+            Network guestNtwk = getNetwork(guestNetworkId);
             addr.setAssociatedWithNetworkId(guestNetworkId);
+            addr.setVpcId(guestNtwk.getVpcId());
             addr.setVpcId(vpcId);
         }
 
@@ -484,21 +486,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException {
         long dcId = vpc.getZoneId();
         
-        List<IPAddressVO> addrs = listPublicIpsAssignedToVpc(owner.getId(), true, vpc.getId());
+        IPAddressVO sourceNatIp = getExistingSourceNat(owner.getId(), null, vpc.getId());
         
         PublicIp ipToReturn = null;
-        if (!addrs.isEmpty()) {
-            IPAddressVO sourceNatIp = null;
-            // Account already has ip addresses
-            for (IPAddressVO addr : addrs) {
-                if (addr.isSourceNat()) {
-                    sourceNatIp = addr;
-                    break;
-                }
-            }
-
-            assert (sourceNatIp != null) : "How do we get a bunch of ip addresses but none of them are source nat? " +
-                    "account=" + owner.getId() + "; vpc=" + vpc;
+        
+        if (sourceNatIp != null) {
             ipToReturn = new PublicIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()), 
                     NetUtils.createSequenceBasedMacAddress(sourceNatIp.getMacAddress()));
         } else {
@@ -509,25 +501,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     } 
     
     @Override
-    public PublicIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) throws InsufficientAddressCapacityException, ConcurrentOperationException {
+    public PublicIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) 
+            throws InsufficientAddressCapacityException, ConcurrentOperationException {
         assert (guestNetwork.getTrafficType() != null) : "You're asking for a source nat but your network " +
         		"can't participate in source nat.  What do you have to say for yourself?";
         long dcId = guestNetwork.getDataCenterId();
-        List<IPAddressVO> addrs = listPublicIpsAssignedToGuestNtwk(owner.getId(), dcId, null, guestNetwork.getId());
         
+        IPAddressVO sourceNatIp = getExistingSourceNat(owner.getId(), guestNetwork.getId(), guestNetwork.getVpcId());
+                
         PublicIp ipToReturn = null;
-        if (!addrs.isEmpty()) {
-            IPAddressVO sourceNatIp = null;
-            // Account already has ip addresses
-            for (IPAddressVO addr : addrs) {
-                if (addr.isSourceNat()) {
-                    sourceNatIp = addr;
-                    break;
-                }
-            }
-
-            assert (sourceNatIp != null) : "How do we get a bunch of ip addresses but none of them are source nat? " +
-                    "account=" + owner.getId() + "; guestNetwork=" + guestNetwork;
+        if (sourceNatIp != null) {
             ipToReturn = new PublicIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()), 
                     NetUtils.createSequenceBasedMacAddress(sourceNatIp.getMacAddress()));
         } else {
@@ -729,7 +712,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 ipToServices.put(ip, services);
 
                 // if IP in allocating state then it will not have any rules attached so skip IPAssoc to network service
-// provider
+                // provider
                 if (ip.getState() == State.Allocating) {
                     continue;
                 }
@@ -1045,8 +1028,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         // In Advance zone only allow to do IP assoc for Isolated networks with source nat service enabled
-        if (zone.getNetworkType() == NetworkType.Advanced && !(network.getGuestType() == GuestType.Isolated && areServicesSupportedInNetwork(network.getId(), Service.SourceNat))) {
-            throw new InvalidParameterValueException("In zone of type " + NetworkType.Advanced + " ip address can be associated only to the network of guest type " + GuestType.Isolated + " with the "
+        if (zone.getNetworkType() == NetworkType.Advanced && 
+                !(network.getGuestType() == GuestType.Isolated && areServicesSupportedInNetwork(network.getId(), Service.SourceNat))) {
+            throw new InvalidParameterValueException("In zone of type " + NetworkType.Advanced + 
+                    " ip address can be associated only to the network of guest type " + GuestType.Isolated + " with the "
                     + Service.SourceNat.getName() + " enabled");
         }
 
@@ -1096,11 +1081,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             boolean sharedSourceNat = offering.getSharedSourceNat();
 
             if (!sharedSourceNat) {
-                // First IP address should be source nat when it's being associated with Guest Virtual network
-                List<IPAddressVO> addrs = listPublicIpsAssignedToGuestNtwk(ownerId, zone.getId(), true, networkId);
-
-                if (addrs.isEmpty() && network.getGuestType() == Network.GuestType.Isolated) {
-                    isSourceNat = true;
+                if (getExistingSourceNat(ownerId, network.getId(), network.getVpcId()) == null) {
+                    if (network.getGuestType() == GuestType.Isolated) {
+                        isSourceNat = true;
+                    }
                 }
             }
 
@@ -1126,6 +1110,34 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         return ip;
+    }
+
+    protected IPAddressVO getExistingSourceNat(long ownerId, Long networkId, Long vpcId) {
+        
+        List<IPAddressVO> addrs = null;
+        if (vpcId != null) {
+            addrs = listPublicIpsAssignedToVpc(ownerId, true, vpcId);
+        } else if (networkId != null) {
+            addrs = listPublicIpsAssignedToGuestNtwk(ownerId, networkId, true);
+        }
+        
+        IPAddressVO sourceNatIp = null;
+        if (addrs.isEmpty()) {
+            return null;
+        } else {
+            // Account already has ip addresses
+            for (IPAddressVO addr : addrs) {
+                if (addr.isSourceNat()) {
+                    sourceNatIp = addr;
+                    return sourceNatIp;
+                }
+            }
+
+            assert (sourceNatIp != null) : "How do we get a bunch of ip addresses but none of them are source nat? " +
+                    "account=" + ownerId + "; networkId=" + networkId + "; vpcId=" + vpcId;
+        } 
+        
+        return sourceNatIp;
     }
 
     @Override
@@ -1481,13 +1493,24 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<IPAddressVO> listPublicIpsAssignedToGuestNtwk(long accountId, long dcId, Boolean sourceNat, Long associatedNetworkId) {
+    public List<IPAddressVO> listPublicIpsAssignedToGuestNtwk(long accountId, long associatedNetworkId, Boolean sourceNat) {
+        SearchCriteria<IPAddressVO> sc = IpAddressSearch.create();
+        sc.setParameters("accountId", accountId);
+        sc.setParameters("associatedWithNetworkId", associatedNetworkId); 
+
+        if (sourceNat != null) {
+            sc.addAnd("sourceNat", SearchCriteria.Op.EQ, sourceNat);
+        }
+        sc.setJoinParameters("virtualNetworkVlanSB", "vlanType", VlanType.VirtualNetwork);
+
+        return _ipAddressDao.search(sc, null);
+    }
+    
+    @Override
+    public List<IPAddressVO> listPublicIpsAssignedToAccount(long accountId, long dcId, Boolean sourceNat) {
         SearchCriteria<IPAddressVO> sc = IpAddressSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("dataCenterId", dcId);
-        if (associatedNetworkId != null) {
-            sc.setParameters("associatedWithNetworkId", associatedNetworkId);
-        }
 
         if (sourceNat != null) {
             sc.addAnd("sourceNat", SearchCriteria.Op.EQ, sourceNat);
@@ -2164,7 +2187,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 Integer networkRate = getNetworkRate(network.getId(), vm.getId());
 
                 NetworkGuru guru = _networkGurus.get(network.getGuruName());
-                NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vm.getHypervisorType(), network));
+                NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
+                        networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vm.getHypervisorType(), network));
                 guru.updateNicProfile(profile, network);
                 profiles.add(profile);
             }
@@ -2195,6 +2219,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // verify permissions
         if (ipVO.getAllocatedToAccountId() != null) {
             _accountMgr.checkAccess(caller, null, true, ipVO);
+        }
+        
+        //if ip address is a source nat ip in vpc, fail to disassociate
+        if (ipVO.getVpcId() != null && ipVO.isSourceNat()) {
+            throw new InvalidParameterValueException("IP address id=" + ipAddressId + " is a source nat for VPC id=" +
+                    ipVO.getVpcId() + " and can't be released");
         }
 
         Network associatedNetwork = getNetwork(ipVO.getAssociatedWithNetworkId());
@@ -3981,6 +4011,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     addr.setSourceNat(false);
                 }
                 addr.setAssociatedWithNetworkId(guestNetwork.getId());
+                addr.setVpcId(guestNetwork.getVpcId());
                 addr.setAllocatedTime(new Date());
                 addr.setAllocatedInDomainId(owner.getDomainId());
                 addr.setAllocatedToAccountId(owner.getId());
