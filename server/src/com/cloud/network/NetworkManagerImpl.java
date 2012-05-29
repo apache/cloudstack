@@ -1330,7 +1330,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
                     "Offering for Isolated VPC networks with Source Nat service enabled", TrafficType.Guest,
                     null, false, Availability.Required, null, defaultIsolatedSourceNatEnabledNetworkOfferingProviders,
-                    true, Network.GuestType.Isolated, false, null, true, null, false);
+                    true, Network.GuestType.Isolated, false, null, false, null, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }

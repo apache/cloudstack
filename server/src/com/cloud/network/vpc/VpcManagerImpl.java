@@ -385,7 +385,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
             offering.setDisplayText(displayText);
         }
 
-
         if (state != null) {
             boolean validState = false;
             for (VpcOffering.State st : VpcOffering.State.values()) {
@@ -704,18 +703,41 @@ public class VpcManagerImpl implements VpcManager, Manager{
         DeployDestination dest = new DeployDestination(dc, null, null, null);
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, 
                 _accountMgr.getAccount(vpc.getAccountId()));
+        
+        boolean result = true;
+        try {
+            if (!startVpc(vpc, dest, context)) {
+                s_logger.warn("Failed to start vpc " + vpc);
+                result = false;
+            }
+        } catch (Exception ex) {
+            s_logger.warn("Failed to start vpc " + vpc + " due to ", ex);
+            result = false;
+        } finally {
+            //do cleanup
+            if (!result) {
+                s_logger.debug("Destroying vpc " + vpc + " that failed to start");
+                if (destroyVpc(vpc)) {
+                    s_logger.warn("Successfully destroyed vpc " + vpc + " that failed to start");
+                } else {
+                    s_logger.warn("Failed to destroy vpc " + vpc + " that failed to start");
+                }
+            }
+        }
+        return result;
+    }
 
+    protected boolean startVpc(Vpc vpc, DeployDestination dest, ReservationContext context) 
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         //deploy provider
         if (getVpcElement().implementVpc(vpc, dest, context)) {
             s_logger.debug("Vpc " + vpc + " has started succesfully");
             return true;
         } else {
             s_logger.warn("Vpc " + vpc + " failed to start");
-            //FIXME - add cleanup logic here
             return false;
         }
     }
-    
     
     @Override
     public boolean shutdownVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException {
@@ -778,14 +800,16 @@ public class VpcManagerImpl implements VpcManager, Manager{
             
             //4) vpc and network should belong to the same owner
             if (vpc.getAccountId() != networkOwner.getId()) {
-                throw new InvalidParameterValueException("Vpc " + vpc + " owner is different from the network owner " + networkOwner);
+                throw new InvalidParameterValueException("Vpc " + vpc + " owner is different from the network owner "
+            + networkOwner);
             }
             
             //5) Only Isolated networks with Source nat service enabled can be added to vpc
             if (!(guestNtwkOff.getGuestType() == GuestType.Isolated 
                     && _ntwkMgr.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.SourceNat))) {
                 
-                throw new InvalidParameterValueException("Only networks of type " + GuestType.Isolated + " with service " + Service.SourceNat + 
+                throw new InvalidParameterValueException("Only networks of type " + GuestType.Isolated + " with service "
+                + Service.SourceNat + 
                         " can be added as a part of VPC");
             }
             
@@ -842,7 +866,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
         
         return success;
-       
     }
 
 
