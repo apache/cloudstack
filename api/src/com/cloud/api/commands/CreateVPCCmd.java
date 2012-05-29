@@ -121,7 +121,6 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
     
     @Override
     public void execute() {
-        //TODO - prepare vpc here (call start() method, it should start the VR, associate source nat ip address, etc)
         Vpc vpc = null;
         try {
              if (_vpcService.startVpc(this.getEntityId())) {

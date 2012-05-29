@@ -351,3 +351,9 @@ createVPCOffering=com.cloud.api.commands.CreateVPCOfferingCmd;1
 updateVPCOffering=com.cloud.api.commands.UpdateVPCOfferingCmd;1
 deleteVPCOffering=com.cloud.api.commands.DeleteVPCOfferingCmd;1
 listVPCOfferings=com.cloud.api.commands.ListVPCOfferingsCmd;15
+
+#### VPC gateway commands
+createVPCGateway=com.cloud.api.commands.CreateVPCGatewayCmd;15
+listVPCGateways=com.cloud.api.commands.ListVPCGatewaysCmd;15
+deleteVPCGateway=com.cloud.api.commands.DeleteVPCGatewayCmd;15
+
