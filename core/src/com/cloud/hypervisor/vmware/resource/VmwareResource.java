@@ -2341,8 +2341,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception("Unsupported storage pool type " + pool.getType());
             }
 
-            ManagedObjectReference morDatastore = hyperHost.mountDatastore(pool.getType() == StoragePoolType.VMFS, pool.getHost(), 
-                pool.getPort(), pool.getPath(), pool.getUuid().replace("-", ""));
+            ManagedObjectReference morDatastore = null;
+            morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, pool.getUuid());
+            if(morDatastore == null)
+	            morDatastore = hyperHost.mountDatastore(pool.getType() == StoragePoolType.VMFS, pool.getHost(), 
+	                pool.getPort(), pool.getPath(), pool.getUuid().replace("-", ""));
 
             assert (morDatastore != null);
             DatastoreSummary summary = new DatastoreMO(getServiceContext(), morDatastore).getSummary();
