@@ -6568,9 +6568,9 @@
                             args.complete();
                           }
                         }
-                      },
+                      }
 
-                      'remove': {
+                      /*   'remove': {
                         label: 'label.action.delete.nexusVswitch' ,
                         messages: {
                           confirm: function(args) {
@@ -6593,7 +6593,7 @@
                         notification: {
                           poll: function(args) { args.complete(); }
                         }
-                      }
+                      }*/
                     },
 
                     tabs: {
