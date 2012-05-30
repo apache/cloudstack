@@ -6606,7 +6606,7 @@
                           vsmctrlvlanid: { label: 'label.vsmctrlvlanid' },
                           vsmpktvlanid: { label: 'label.vsmpktvlanid' },
                           vsmstoragevlanid: { label: 'label.vsmstoragevlanid' },
-                          vsmdevicestate: { label: 'label.state' }
+                          vsmdevicestate: { label: 'label.state', indicator: { 'Enabled': 'on' } }
                         },
                         
                         dataProvider: function(args) {
@@ -6638,8 +6638,10 @@
                         var item = json.listcisconexusvsmscmdresponse.cisconexusvsm;
                         args.response.success({
                           actionFilter: nexusActionfilter,
-                          data: $.extend(item, {
-                            zonename: args.context.clusters[0].zonename
+                          data: $.map(item, function(item) {
+                            return $.extend(item, {
+                              zonename: args.context.clusters[0].zonename
+                            });
                           })
                         });
                       },
