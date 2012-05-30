@@ -698,7 +698,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     }
                 }
                 
-                VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, account, params);
+                Account vmOwnerAccount = _accountDao.findById(vm.getAccountId());
+                VirtualMachineProfileImpl<T> vmProfile = new VirtualMachineProfileImpl<T>(vm, template, offering, vmOwnerAccount, params);
                 DeployDestination dest = null;
                 for (DeploymentPlanner planner : _planners) {
                     if (planner.canHandle(vmProfile, plan, avoids)) {
