@@ -1350,11 +1350,6 @@
 													else if($form.find('.form-item[rel=projectId]').css("display") != "none") {  //project-specific
 														array1.push("&projectid=" + args.data.projectId);
 														array1.push("&acltype=account");
-
-														if ($form.find('.form-item[rel=subdomainaccess]:visible input:checked').size())
-															array1.push("&subdomainaccess=true");
-														else
-															array1.push("&subdomainaccess=false");
 													}
 													else {  //domain-specific
 														array1.push("&acltype=domain");
@@ -1758,7 +1753,7 @@
                         ],
                         dataProvider: function(args) {			
 													$.ajax({
-														url: createURL("listNetworks&id=" + args.context.networks[0].id + "&listAll=true"), //pass "&listAll=true" to "listNetworks&id=xxxxxxxx" for now before API gets fixed.
+														url: createURL("listNetworks&id=" + args.context.networks[0].id + "&listAll=true" + "&projectid=-1"), //pass "&listAll=true" to "listNetworks&id=xxxxxxxx" for now before API gets fixed.
 														dataType: "json",
 														async: false,
 														success: function(json) {														 
