@@ -6488,7 +6488,6 @@
                   id: 'vSwitches',
                   fields: {
                     vsmdeviceid: { label: 'label.name' },
-                    zonename: { label: 'label.zone' },
                     vsmdevicestate: { label: 'label.state' }
                   },
                   detailView: {
@@ -6632,9 +6631,7 @@
                         var item = json.listcisconexusvsmscmdresponse.cisconexusvsm;  
                         args.response.success({
                           actionFilter: nexusActionfilter,
-                          data: $.extend(item, {
-                            zonename: args.context.clusters[0].zonename
-                          })
+                          data: item
                         });
                       },
                       error: function(json) {
