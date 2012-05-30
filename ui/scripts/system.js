@@ -6490,7 +6490,7 @@
                   id: 'vSwitches',
                   fields: {
                     vsmdeviceid: { label: 'label.name' },
-                    vsmdevicestate: { label: 'label.state' }
+                    vsmdevicestate: { label: 'label.state',indicator:{ 'Enabled': 'on' } }
                   },
                   detailView: {
                     actions: {
