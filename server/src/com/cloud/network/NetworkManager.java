@@ -77,7 +77,8 @@ public interface NetworkManager extends NetworkService {
      * @throws InsufficientAddressCapacityException
      */
 
-    PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException;
+    PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, 
+            boolean isSystem) throws InsufficientAddressCapacityException;
 
 
     /**
@@ -89,7 +90,7 @@ public interface NetworkManager extends NetworkService {
      * @param ipAddress
      * @return true if it did; false if it didn't
      */
-    public boolean releasePublicIpAddress(long id, long userId, Account caller);
+    public boolean disassociatePublicIpAddress(long id, long userId, Account caller);
 
     /**
      * Lists IP addresses that belong to VirtualNetwork VLANs
@@ -369,7 +370,8 @@ public interface NetworkManager extends NetworkService {
      * @throws InsufficientCapacityException
      * @throws ResourceUnavailableException
      */
-    NicProfile prepareNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, ReservationContext context, long nicId, NetworkVO network) throws InsufficientVirtualNetworkCapcityException,
+    NicProfile prepareNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination dest, 
+            ReservationContext context, long nicId, NetworkVO network) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
 
 
@@ -380,7 +382,8 @@ public interface NetworkManager extends NetworkService {
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    NicProfile releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NetworkVO network) throws ConcurrentOperationException, ResourceUnavailableException;
+    NicProfile releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NetworkVO network) 
+            throws ConcurrentOperationException, ResourceUnavailableException;
 
 
     /**
@@ -397,5 +400,19 @@ public interface NetworkManager extends NetworkService {
      * @return
      */
     List<IPAddressVO> listPublicIpsAssignedToAccount(long accountId, long dcId, Boolean sourceNat);
+
+
+    /**
+     * @param ipAddrId
+     * @param networkId
+     */
+    IpAddress associateIPToGuestNetwork(long ipAddrId, long networkId) throws ResourceAllocationException, ResourceUnavailableException, 
+        InsufficientAddressCapacityException, ConcurrentOperationException;
+
+
+    /**
+     * @param ipId
+     */
+    void unassignIPFromVpcNetwork(long ipId);
 
 }

@@ -611,7 +611,7 @@ public class ElasticLoadBalancerManagerImpl implements
         IPAddressVO ipvo = _ipAddressDao.findById(ipId);
         ipvo.setAssociatedWithNetworkId(null); 
         _ipAddressDao.update(ipvo.getId(), ipvo);
-       _networkMgr.releasePublicIpAddress(ipId, userId, caller);
+       _networkMgr.disassociatePublicIpAddress(ipId, userId, caller);
        _ipAddressDao.unassignIpAddress(ipId);
     }
 

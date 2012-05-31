@@ -597,7 +597,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
                 for (IpAddress ip : ipsToRelease) {
                     s_logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
-                    if (!_networkMgr.releasePublicIpAddress(ip.getId(), callerUserId, caller)) {
+                    if (!_networkMgr.disassociatePublicIpAddress(ip.getId(), callerUserId, caller)) {
                         s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
                         accountCleanupNeeded = true;
                     }

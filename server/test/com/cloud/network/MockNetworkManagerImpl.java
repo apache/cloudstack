@@ -74,13 +74,13 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public IpAddress associateIP(long ipId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException, ResourceUnavailableException {
+    public IpAddress associateIPToGuestNetwork(long ipId, long networkId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public boolean disassociateIpAddress(long ipAddressId) {
+    public boolean releaseIpAddress(long ipAddressId) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -181,7 +181,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
 
     @Override
-    public boolean releasePublicIpAddress(long id, long userId, Account caller) {
+    public boolean disassociatePublicIpAddress(long id, long userId, Account caller) {
         // TODO Auto-generated method stub
         return false;
     }
@@ -764,8 +764,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
 	@Override
-	public IpAddress allocateIP(long networkId, Account ipOwner,
-			boolean isSystem) throws ResourceAllocationException,
+	public IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) throws ResourceAllocationException,
 			InsufficientAddressCapacityException, ConcurrentOperationException {
 		// TODO Auto-generated method stub
 		return null;

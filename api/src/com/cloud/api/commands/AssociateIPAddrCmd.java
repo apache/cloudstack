@@ -37,6 +37,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -49,24 +50,34 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account to associate with this IP address")
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, 
+            description="the account to associate with this IP address")
     private String accountName;
 
     @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the domain to associate with this IP address")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, 
+        description="the ID of the domain to associate with this IP address")
     private Long domainId;
 
     @IdentityMapper(entityTableName="data_center")
-    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the availability zone you want to acquire an public IP address from")
+    @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, 
+        description="the ID of the availability zone you want to acquire an public IP address from")
     private Long zoneId;
     
     @IdentityMapper(entityTableName="networks")
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="The network this ip address should be associated to.")
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, 
+        description="The network this ip address should be associated to.")
     private Long networkId;
     
     @IdentityMapper(entityTableName="projects")
-    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Deploy vm for the project")
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, 
+        description="Deploy vm for the project")
     private Long projectId;
+    
+    @IdentityMapper(entityTableName="vpc")
+    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="the VPC you want the ip address to " +
+    		"be associated with")
+    private Long vpcId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -90,18 +101,40 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         return UserContext.current().getCaller().getDomainId();
     }
 
-    private Long getZoneId() {
-        return zoneId;
+    private long getZoneId() {
+        if (zoneId != null) {
+            return zoneId;
+        } else if (vpcId != null) {
+            Vpc vpc = _entityMgr.findById(Vpc.class, vpcId);
+            if (vpc != null) {
+                return vpc.getZoneId();
+            }
+        } else if (networkId != null) {
+            Network ntwk = _entityMgr.findById(Network.class, networkId);
+            if (ntwk != null) {
+                return ntwk.getDataCenterId();
+            }
+        }
+        
+        throw new InvalidParameterValueException("Unable to figure out zone to assign ip to");
+    }
+    
+    public Long getVpcId() {
+        return vpcId;
     }
     
     public Long getNetworkId() {
+        if (vpcId != null) {
+            return null;
+        }
+        
         if (networkId != null) {
             return networkId;
         } 
         Long zoneId = getZoneId();
         
         if (zoneId == null) {
-        	throw new InvalidParameterValueException("Either networkId or zoneId has to be specified");
+            return null;
         }
         
         DataCenter zone = _configService.getZone(zoneId);
@@ -110,7 +143,8 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
                     _accountService.getAccount(getEntityOwnerId()));
             if (networks.size() == 0) {
                 String domain = _domainService.getDomain(getDomainId()).getName();
-                throw new InvalidParameterValueException("Account name=" + getAccountName() + " domain=" + domain + " doesn't have virtual networks in zone=" + zone.getName());
+                throw new InvalidParameterValueException("Account name=" + getAccountName() + " domain=" + domain + 
+                        " doesn't have virtual networks in zone=" + zone.getName());
             }
             
             if (networks.size() < 1) {
@@ -123,7 +157,8 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         } else {
             Network defaultGuestNetwork = _networkService.getExclusiveGuestNetwork(zoneId);
             if (defaultGuestNetwork == null) {
-                throw new InvalidParameterValueException("Unable to find a default Guest network for account " + getAccountName() + " in domain id=" + getDomainId());
+                throw new InvalidParameterValueException("Unable to find a default Guest network for account " + 
+                        getAccountName() + " in domain id=" + getDomainId());
             } else {
                 return defaultGuestNetwork.getId();
             }
@@ -169,7 +204,8 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() throws ResourceAllocationException{
         try {
-            IpAddress ip = _networkService.allocateIP(getNetworkId(), _accountService.getAccount(getEntityOwnerId()), false);
+            IpAddress ip = _networkService.allocateIP(_accountService.getAccount(getEntityOwnerId()), false, getZoneId());
+
             if (ip != null) {
                 this.setEntityId(ip.getId());
             } else {
@@ -186,9 +222,16 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     }
     
     @Override
-    public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
+    public void execute() throws ResourceUnavailableException, ResourceAllocationException, 
+                                    ConcurrentOperationException, InsufficientCapacityException {
         UserContext.current().setEventDetails("Ip Id: " + getEntityId());
-        IpAddress result = _networkService.associateIP(getEntityId());
+
+        IpAddress result = null;
+        
+        if (getVpcId() != null) {
+            result = _networkService.associateIP(getEntityId(), getNetworkId(), getVpcId());
+        }
+
         if (result != null) {
             IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(result);
             ipResponse.setResponseName(getCommandName());

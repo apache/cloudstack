@@ -167,9 +167,12 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
             }
         } else {
         	IpAddress ipAddr = _networkService.getIp(publicIpId);
-        	return ipAddr.getAssociatedWithNetworkId();
+        	if (ipAddr.getAssociatedWithNetworkId() != null) {
+                return ipAddr.getAssociatedWithNetworkId();
+        	} else {
+        	    throw new InvalidParameterValueException("Ip address id=" + publicIpId + " is not associated with any network");
+        	}
         }
-        
     }
 
     public Integer getPublicPort() {

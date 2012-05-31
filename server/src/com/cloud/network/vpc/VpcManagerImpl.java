@@ -859,7 +859,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedVpc(vpcId, null);
         s_logger.debug("Releasing ips for vpc id=" + vpcId + " as a part of vpc cleanup");
         for (IPAddressVO ipToRelease : ipsToRelease) {
-            success = success && _ntwkMgr.releasePublicIpAddress(ipToRelease.getId(), callerUserId, caller);
+            success = success && _ntwkMgr.disassociatePublicIpAddress(ipToRelease.getId(), callerUserId, caller);
             if (!success) {
                 s_logger.warn("Failed to cleanup ip " + ipToRelease + " as a part of vpc id=" + vpcId + " cleanup");
             }
