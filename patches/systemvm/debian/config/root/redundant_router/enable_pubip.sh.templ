@@ -5,8 +5,8 @@ set -e
 ip link|grep BROADCAST|grep -v eth0|grep -v eth1|cut -d ":" -f 2 > /tmp/iflist
 while read i
 do
-    ifconfig $i down
-    ifconfig $i up
+    ifdown $i
+    ifup $i
 done < /tmp/iflist
 ip route add default via [GATEWAY] dev eth2 && \
 service dnsmasq restart
