@@ -76,6 +76,11 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "type of firewallrule: system/user")
     private String type;
     
+    @IdentityMapper(entityTableName="networks")
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, 
+        description="The network of the vm the Firewall rule will be created for")
+    private Long networkId;
+    
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -191,7 +196,19 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
 
     @Override
     public long getNetworkId() {
-        throw new UnsupportedOperationException("Not yet implemented");
+        IpAddress ip = _entityMgr.findById(IpAddress.class, getIpAddressId());
+        Long ntwkId = null;
+        
+        if (ip.getAssociatedWithNetworkId() != null) {
+            ntwkId = ip.getAssociatedWithNetworkId();
+        } else {
+            ntwkId = networkId;
+        }
+        if (ntwkId == null) {
+            throw new InvalidParameterValueException("Unable to create firewall rule for the ipAddress id=" + ipAddressId + 
+                    " as ip is not associated with any network and no networkId is passed in");
+        }
+        return ntwkId;
     }
 
     @Override

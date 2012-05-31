@@ -714,7 +714,8 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
 
             // Validate ip address
             if (ipAddressVo == null) {
-                throw new InvalidParameterValueException("Unable to create load balance rule; ip id=" + ipAddrId + " doesn't exist in the system");
+                throw new InvalidParameterValueException("Unable to create load balance rule; ip id=" + ipAddrId + "" +
+                		" doesn't exist in the system");
             } else if (ipAddressVo.isOneToOneNat()) {
                 throw new NetworkRuleConflictException("Can't do load balance on ip address: " + ipAddressVo.getAddress());
             }
@@ -731,7 +732,14 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 ip = _networkMgr.assignSystemIp(lb.getNetworkId(), lbOwner, true, false);
                 lb.setSourceIpAddressId(ip.getId());
             }
+            
+            
+            
             try {
+                if (ip.getAssociatedWithNetworkId() == null) {
+                    s_logger.debug("The ip is not associated with the network id="+ lb.getNetworkId() + " so assigning");
+                    _networkMgr.associateIPToGuestNetwork(ipAddrId, lb.getNetworkId());
+                }
                 result = createLoadBalancer(lb, openFirewall);
             } catch (Exception ex) {
                 s_logger.warn("Failed to create load balancer due to ", ex);
@@ -774,7 +782,8 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             throw ex;
         }
 
-        _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPortStart, srcPortEnd, lb.getProtocol(), Purpose.LoadBalancing, FirewallRuleType.User);
+        _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPortStart, srcPortEnd, lb.getProtocol(), 
+                Purpose.LoadBalancing, FirewallRuleType.User);
 
         networkId = ipAddr.getAssociatedWithNetworkId();
         if (networkId == null) {
@@ -803,7 +812,8 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         newRule = _lbDao.persist(newRule);
 
         if (openFirewall) {
-            _firewallMgr.createRuleForAllCidrs(sourceIpId, caller.getCaller(), lb.getSourcePortStart(), lb.getSourcePortEnd(), lb.getProtocol(), null, null, newRule.getId());
+            _firewallMgr.createRuleForAllCidrs(sourceIpId, caller.getCaller(), lb.getSourcePortStart(), 
+                    lb.getSourcePortEnd(), lb.getProtocol(), null, null, newRule.getId(), networkId);
         }
 
         boolean success = true;
@@ -950,7 +960,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         boolean success = true;
         if (ip.getSystem()) {
             s_logger.debug("Releasing system ip address " + lb.getSourceIpAddressId() + " as a part of delete lb rule");
-            if (!_networkMgr.releasePublicIpAddress(lb.getSourceIpAddressId(), UserContext.current().getCallerUserId(), UserContext.current().getCaller())) {
+            if (!_networkMgr.disassociatePublicIpAddress(lb.getSourceIpAddressId(), UserContext.current().getCallerUserId(), UserContext.current().getCaller())) {
                 s_logger.warn("Unable to release system ip address id=" + lb.getSourceIpAddressId() + " as a part of delete lb rule");
                 success = false;
             } else {

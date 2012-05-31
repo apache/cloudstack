@@ -62,6 +62,11 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. Has value true by default")
     private Boolean openFirewall;
     
+    @IdentityMapper(entityTableName="networks")
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, 
+        description="The network of the ip the VPN be created for")
+    private Long networkId;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -129,10 +134,26 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 		return EventTypes.EVENT_REMOTE_ACCESS_VPN_CREATE;
 	}
 	
+    public long getNetworkId() {
+        IpAddress ip = _entityMgr.findById(IpAddress.class, getPublicIpId());
+        Long ntwkId = null;
+        
+        if (ip.getAssociatedWithNetworkId() != null) {
+            ntwkId = ip.getAssociatedWithNetworkId();
+        } else {
+            ntwkId = networkId;
+        }
+        if (ntwkId == null) {
+            throw new InvalidParameterValueException("Unable to create remote access vpn for the ipAddress id=" + getPublicIpId() + 
+                    " as ip is not associated with any network and no networkId is passed in");
+        }
+        return ntwkId;
+    }
+	
     @Override
     public void create() {
         try {
-            RemoteAccessVpn vpn = _ravService.createRemoteAccessVpn(publicIpId, ipRange, getOpenFirewall());
+            RemoteAccessVpn vpn = _ravService.createRemoteAccessVpn(publicIpId, ipRange, getOpenFirewall(), getNetworkId());
             if (vpn != null) {
                 this.setEntityId(vpn.getServerAddressId());
             } else {

@@ -33,6 +33,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -131,21 +132,38 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     public FirewallRule createFirewallRule(FirewallRule rule) throws NetworkRuleConflictException {
         Account caller = UserContext.current().getCaller();
 
-        return createFirewallRule(rule.getSourceIpAddressId(), caller, rule.getXid(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), rule.getSourceCidrList(), rule.getIcmpCode(),
-                rule.getIcmpType(), null, rule.getType());
+        return createFirewallRule(rule.getSourceIpAddressId(), caller, rule.getXid(), rule.getSourcePortStart(), 
+                rule.getSourcePortEnd(), rule.getProtocol(), rule.getSourceCidrList(), rule.getIcmpCode(),
+                rule.getIcmpType(), null, rule.getType(), rule.getNetworkId());
     }
 
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_OPEN, eventDescription = "creating firewall rule", create = true)
-    public FirewallRule createFirewallRule(long ipAddrId, Account caller, String xId, Integer portStart, Integer portEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType,
-            Long relatedRuleId, FirewallRule.FirewallRuleType type) throws NetworkRuleConflictException {
+    public FirewallRule createFirewallRule(long ipAddrId, Account caller, String xId, Integer portStart, 
+            Integer portEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType,
+            Long relatedRuleId, FirewallRule.FirewallRuleType type, long networkId) throws NetworkRuleConflictException {
+        
         IPAddressVO ipAddress = _ipAddressDao.findById(ipAddrId);
-
         // Validate ip address
         if (ipAddress == null && type == FirewallRule.FirewallRuleType.User) {
-            throw new InvalidParameterValueException("Unable to create port forwarding rule; ip id=" + ipAddrId + " doesn't exist in the system");
+            throw new InvalidParameterValueException("Unable to create port forwarding rule; ip id=" + ipAddrId + 
+                    " doesn't exist in the system");
         }
+        
+        //associate ip address to network (if needed)
+        if (ipAddress.getAssociatedWithNetworkId() == null) {
+            s_logger.debug("The ip is not associated with the network id="+ networkId + " so assigning");
+            try {
+                _networkMgr.associateIPToGuestNetwork(ipAddrId, networkId);
+            } catch (Exception ex) {
+                s_logger.warn("Failed to associate ip id=" + ipAddrId + " to network id=" + networkId + " as " +
+                        "a part of firewall rule creation");
+                return null;
+            }
+        }
+        
+        _networkMgr.checkIpForService(ipAddress, Service.Firewall);  
 
         validateFirewallRule(caller, ipAddress, portStart, portEnd, protocol, Purpose.Firewall, type);
 
@@ -158,17 +176,14 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             throw new InvalidParameterValueException("Can't specify start/end port when protocol is ICMP");
         }
 
-        Long networkId = null;
         Long accountId = null;
         Long domainId = null;
 
         if (ipAddress != null) {
-            networkId = ipAddress.getAssociatedWithNetworkId();
             accountId = ipAddress.getAllocatedToAccountId();
             domainId = ipAddress.getAllocatedInDomainId();
         }
 
-        _networkMgr.checkIpForService(ipAddress, Service.Firewall);
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -369,7 +384,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     }
 
     @Override
-    public boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError, boolean updateRulesInDB) throws ResourceUnavailableException {
+    public boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError, boolean updateRulesInDB) 
+            throws ResourceUnavailableException {
         boolean success = true;
         if (!_networkMgr.applyRules(rules, continueOnError)) {
             s_logger.warn("Rules are not completely applied");
@@ -380,10 +396,11 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
                     if (rule.getState() == FirewallRule.State.Revoke) {
                         FirewallRuleVO relatedRule = _firewallDao.findByRelatedId(rule.getId());
                         if (relatedRule != null) {
-                            s_logger.warn("Can't remove the firewall rule id=" + rule.getId() + " as it has related firewall rule id=" + relatedRule.getId() + "; leaving it in Revoke state");
+                            s_logger.warn("Can't remove the firewall rule id=" + rule.getId() + 
+                                    " as it has related firewall rule id=" + relatedRule.getId() + "; leaving it in Revoke state");
                             success = false;
                         } else {
-                            _firewallDao.remove(rule.getId());
+                            removeRule(rule);
                         }
                     } else if (rule.getState() == FirewallRule.State.Add) {
                         FirewallRuleVO ruleVO = _firewallDao.findById(rule.getId());
@@ -395,6 +412,23 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         }
 
         return success;
+    }
+
+    @DB
+    protected void removeRule(FirewallRule rule) {
+        //Lock ip address
+        IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
+       
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        //remove the rule
+        _firewallDao.remove(rule.getId());
+        if (ip.getVpcId() != null && _firewallDao.listByIp(ip.getId()).isEmpty()) {
+          //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
+            _networkMgr.unassignIPFromVpcNetwork(ip.getId());
+        }
+        
+        txn.commit();
     }
 
     @Override
@@ -535,18 +569,21 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     }
 
     @Override
-    public FirewallRule createRuleForAllCidrs(long ipAddrId, Account caller, Integer startPort, Integer endPort, String protocol, Integer icmpCode, Integer icmpType, Long relatedRuleId)
+    public FirewallRule createRuleForAllCidrs(long ipAddrId, Account caller,
+            Integer startPort, Integer endPort, String protocol, Integer icmpCode, Integer icmpType, Long relatedRuleId, long networkId)
             throws NetworkRuleConflictException {
 
         // If firwallRule for this port range already exists, return it
-        List<FirewallRuleVO> rules = _firewallDao.listByIpPurposeAndProtocolAndNotRevoked(ipAddrId, startPort, endPort, protocol, Purpose.Firewall);
+        List<FirewallRuleVO> rules = _firewallDao.listByIpPurposeAndProtocolAndNotRevoked(ipAddrId, startPort, endPort,
+                protocol, Purpose.Firewall);
         if (!rules.isEmpty()) {
             return rules.get(0);
         }
 
         List<String> oneCidr = new ArrayList<String>();
         oneCidr.add(NetUtils.ALL_CIDRS);
-        return createFirewallRule(ipAddrId, caller, null, startPort, endPort, protocol, oneCidr, icmpCode, icmpType, relatedRuleId, FirewallRule.FirewallRuleType.User);
+        return createFirewallRule(ipAddrId, caller, null, startPort, endPort, protocol, oneCidr, icmpCode, icmpType,
+                relatedRuleId, FirewallRule.FirewallRuleType.User, networkId);
     }
 
     @Override
@@ -654,7 +691,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         for (FirewallRuleVO rule : systemRules) {
             try {
                 this.createFirewallRule(ip.getId(), acct, rule.getXid(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(),
-                        rule.getSourceCidrList(), rule.getIcmpCode(), rule.getIcmpType(), rule.getRelated(), FirewallRuleType.System);
+                        rule.getSourceCidrList(), rule.getIcmpCode(), rule.getIcmpType(), rule.getRelated(), FirewallRuleType.System, rule.getNetworkId());
             } catch (Exception e) {
                 s_logger.debug("Failed to add system wide firewall rule, due to:" + e.toString());
             }

@@ -2477,7 +2477,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                                     " as ip " + ip + " belonging to the range has firewall rules applied. Cleanup the rules first");
                         }
                         //release public ip address here
-                        success = success && _networkMgr.releasePublicIpAddress(ip.getId(), userId, caller);
+                        success = success && _networkMgr.disassociatePublicIpAddress(ip.getId(), userId, caller);
                     }
                     if (!success) {
                         s_logger.warn("Some ip addresses failed to be released as a part of vlan " + vlanDbId + " removal");

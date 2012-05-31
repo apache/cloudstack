@@ -41,23 +41,10 @@ public interface NetworkService {
 
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
 
-    IpAddress allocateIP(long networkId, Account ipOwner) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException;
-    IpAddress allocateIP(long networkId, Account ipOwner, boolean isSystem) throws ResourceAllocationException, 
-    InsufficientAddressCapacityException, ConcurrentOperationException;
+    IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) throws ResourceAllocationException, 
+        InsufficientAddressCapacityException, ConcurrentOperationException;
 
-    /**
-     * Associates a public IP address for a router.
-     * 
-     * @param ipId
-     *            - the command specifying ipAddress
-     * @return ip address object
-     * @throws ResourceAllocationException
-     *             , InsufficientCapacityException
-     */
-    IpAddress associateIP(long ipId) throws ResourceAllocationException, InsufficientAddressCapacityException, 
-    ConcurrentOperationException, ResourceUnavailableException;
-
-    boolean disassociateIpAddress(long ipAddressId) throws InsufficientAddressCapacityException;
+    boolean releaseIpAddress(long ipAddressId) throws InsufficientAddressCapacityException;
 
     Network createGuestNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException,
     ResourceAllocationException;
@@ -149,4 +136,18 @@ public interface NetworkService {
     List<? extends Network> listNetworksByVpc(long vpcId);
     
     boolean isVmPartOfNetwork(long vmId, long ntwkId);
+
+    /**
+     * @param entityId
+     * @param networkId
+     * @param vpcId
+     * @return
+     * @throws ConcurrentOperationException 
+     * @throws ResourceUnavailableException 
+     * @throws ResourceAllocationException 
+     * @throws InsufficientAddressCapacityException 
+     */
+    IpAddress associateIP(long ipId, Long networkId, Long vpcId) throws InsufficientAddressCapacityException,
+        ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException;
+
 }

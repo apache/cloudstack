@@ -64,7 +64,7 @@ public interface RulesService {
 
     boolean applyPortForwardingRules(long ipAdddressId, Account caller) throws ResourceUnavailableException;
 
-    boolean enableStaticNat(long ipAddressId, long vmId, boolean isSystemVm) throws NetworkRuleConflictException, ResourceUnavailableException;
+    boolean enableStaticNat(long ipAddressId, long vmId, long networkId, boolean isSystemVm) throws NetworkRuleConflictException, ResourceUnavailableException;
 
     PortForwardingRule getPortForwardigRule(long ruleId);
 
