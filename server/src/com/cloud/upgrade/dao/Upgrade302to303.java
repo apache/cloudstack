@@ -61,46 +61,59 @@ public class Upgrade302to303 implements DbUpgrade {
         setupExternalNetworkDevices(conn);
     }
 
+    // upgrades deployment with F5 and SRX devices, to 3.0's Network offerings & service providers paradigm
     private void setupExternalNetworkDevices(Connection conn) {
-        PreparedStatement dcSearchStmt, pNetworkStmt, devicesStmt = null;
-        ResultSet dcResults, pNetworksResults, devicesResult = null;
+        PreparedStatement zoneSearchStmt = null, pNetworkStmt = null, f5DevicesStmt = null, srxDevicesStmt = null;
+        ResultSet zoneResults = null, pNetworksResults = null, f5DevicesResult = null, srxDevicesResult = null;
 
         try {
-        	dcSearchStmt = conn.prepareStatement("SELECT id, networktype FROM `cloud`.`data_center`");
-        	dcResults = dcSearchStmt.executeQuery();
-            while (dcResults.next()) {
-                long zoneId = dcResults.getLong(1);
-                long f5HostId = 0;
-                long srxHostId = 0;
+            zoneSearchStmt = conn.prepareStatement("SELECT id, networktype FROM `cloud`.`data_center`");
+            zoneResults = zoneSearchStmt.executeQuery();
+            while (zoneResults.next()) {
+                long zoneId = zoneResults.getLong(1);
+                String networkType = zoneResults.getString(2);
 
-                String networkType = dcResults.getString(2);
-                if (NetworkType.Advanced.toString().equalsIgnoreCase(networkType)) {
+                if (!NetworkType.Advanced.toString().equalsIgnoreCase(networkType)) {
+                    continue;
+                }
 
-                    devicesStmt = conn.prepareStatement("SELECT id, type FROM host WHERE data_center_id=? AND type = 'ExternalLoadBalancer' OR type = 'ExternalFirewall'");
-                    devicesStmt.setLong(1, zoneId);
-                    devicesResult = devicesStmt.executeQuery();
+                pNetworkStmt = conn.prepareStatement("SELECT id FROM `cloud`.`physical_network` where data_center_id=?");
+                pNetworkStmt.setLong(1, zoneId);
+                pNetworksResults = pNetworkStmt.executeQuery();
+                while (pNetworksResults.next()) {
+                    long physicalNetworkId = pNetworksResults.getLong(1);
+                    PreparedStatement fetchF5NspStmt = conn.prepareStatement("SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId
+                            + " and provider_name = 'F5BigIp'");
+                    ResultSet rsF5NSP = fetchF5NspStmt.executeQuery();
+                    boolean hasF5Nsp = rsF5NSP.next();
+                    fetchF5NspStmt.close();
 
-                    while (devicesResult.next()) {
-                        String device = devicesResult.getString(2);
-                        if (device.equals("ExternalLoadBalancer")) {
-                            f5HostId = devicesResult.getLong(1);
-                        } else if (device.equals("ExternalFirewall")) {
-                            srxHostId = devicesResult.getLong(1);
-                        }
-                    }
+                    if (!hasF5Nsp) {
+                        f5DevicesStmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalLoadBalancer'");
+                        f5DevicesStmt.setLong(1, zoneId);
+                        f5DevicesResult = f5DevicesStmt.executeQuery();
 
-                    // check if the deployment had F5 and SRX devices
-                    if (f5HostId != 0 && srxHostId != 0) {
-                        pNetworkStmt = conn.prepareStatement("SELECT id FROM `cloud`.`physical_network` where data_center_id=?");
-                        pNetworkStmt.setLong(1, zoneId);
-                        pNetworksResults = pNetworkStmt.executeQuery();
-                        if (pNetworksResults.first()) {
-                            long physicalNetworkId = pNetworksResults.getLong(1);
-
+                        while (f5DevicesResult.next()) {
+                            long f5HostId = f5DevicesResult.getLong(1);;
                             // add F5BigIP provider and provider instance to physical network
                             addF5ServiceProvider(conn, physicalNetworkId, zoneId);
                             addF5LoadBalancer(conn, f5HostId, physicalNetworkId);
+                        }
+                    }
 
+                    PreparedStatement fetchSRXNspStmt = conn.prepareStatement("SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId
+                            + " and provider_name = 'JuniperSRX'");
+                    ResultSet rsSRXNSP = fetchSRXNspStmt.executeQuery();
+                    boolean hasSrxNsp = rsSRXNSP.next();
+                    fetchSRXNspStmt.close();
+
+                    if (!hasSrxNsp) {
+                        srxDevicesStmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalFirewall'");
+                        srxDevicesStmt.setLong(1, zoneId);
+                        srxDevicesResult = srxDevicesStmt.executeQuery();
+
+                        while (srxDevicesResult.next()) {
+                            long srxHostId = srxDevicesResult.getLong(1);
                             // add SRX provider and provider instance to physical network 
                             addSrxServiceProvider(conn, physicalNetworkId, zoneId);
                             addSrxFirewall(conn, srxHostId, physicalNetworkId);
@@ -108,15 +121,16 @@ public class Upgrade302to303 implements DbUpgrade {
                     }
                 }
             }
-            if (dcResults != null) {
+
+            if (zoneResults != null) {
                 try {
-                    dcResults.close();
+                    zoneResults.close();
                 } catch (SQLException e) {
                 }
             }
-            if (dcSearchStmt != null) {
+            if (zoneSearchStmt != null) {
                 try {
-                    dcSearchStmt.close();
+                    zoneSearchStmt.close();
                 } catch (SQLException e) {
                 }
             }
