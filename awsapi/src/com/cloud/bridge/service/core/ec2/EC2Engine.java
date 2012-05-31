@@ -1396,44 +1396,51 @@ public class EC2Engine {
 
 			// now actually deploy the vms
 			for( int i=0; i < createInstances; i++ ) {
-				CloudStackUserVm resp = getApi().deployVirtualMachine(svcOffering.getId(), 
-						request.getTemplateId(), zoneId, null, null, null, null, 
-						null, null, null, request.getKeyName(), null, (network != null ? network.getId() : null), 
-						null, constructList(request.getGroupSet()), request.getSize().longValue(), request.getUserData());
-				EC2Instance vm = new EC2Instance();
-				vm.setId(resp.getId().toString());
-				vm.setName(resp.getName());
-				vm.setZoneName(resp.getZoneName());
-				vm.setTemplateId(resp.getTemplateId().toString());
-				if (resp.getSecurityGroupList() != null && resp.getSecurityGroupList().size() > 0) {
-					// TODO, we have a list of security groups, just return the first one?
-                    List<CloudStackSecurityGroup> securityGroupList = resp.getSecurityGroupList();
-                    for (CloudStackSecurityGroup securityGroup : securityGroupList) {
-                        vm.addGroupName(securityGroup.getName());
+			    try{
+    				CloudStackUserVm resp = getApi().deployVirtualMachine(svcOffering.getId(), 
+    						request.getTemplateId(), zoneId, null, null, null, null, 
+    						null, null, null, request.getKeyName(), null, (network != null ? network.getId() : null), 
+    						null, constructList(request.getGroupSet()), request.getSize().longValue(), request.getUserData());
+    				EC2Instance vm = new EC2Instance();
+    				vm.setId(resp.getId().toString());
+    				vm.setName(resp.getName());
+    				vm.setZoneName(resp.getZoneName());
+    				vm.setTemplateId(resp.getTemplateId().toString());
+    				if (resp.getSecurityGroupList() != null && resp.getSecurityGroupList().size() > 0) {
+    					// TODO, we have a list of security groups, just return the first one?
+                        List<CloudStackSecurityGroup> securityGroupList = resp.getSecurityGroupList();
+                        for (CloudStackSecurityGroup securityGroup : securityGroupList) {
+                            vm.addGroupName(securityGroup.getName());
+                        }
                     }
-                }
-				vm.setState(resp.getState());
-				vm.setCreated(resp.getCreated());
-                List <CloudStackNic> nicList = resp.getNics();
-                for (CloudStackNic nic : nicList) {
-                    if (nic.getIsDefault()) {
-                        vm.setPrivateIpAddress(nic.getIpaddress());
-                        break;
+    				vm.setState(resp.getState());
+    				vm.setCreated(resp.getCreated());
+                    List <CloudStackNic> nicList = resp.getNics();
+                    for (CloudStackNic nic : nicList) {
+                        if (nic.getIsDefault()) {
+                            vm.setPrivateIpAddress(nic.getIpaddress());
+                            break;
+                        }
                     }
-                }
-                vm.setIpAddress(resp.getIpAddress());
-				vm.setAccountName(resp.getAccountName());
-				vm.setDomainId(resp.getDomainId());
-				vm.setHypervisor(resp.getHypervisor());
-				vm.setServiceOffering( svcOffering.getName());
-				instances.addInstance(vm);
-				countCreated++;
+                    vm.setIpAddress(resp.getIpAddress());
+    				vm.setAccountName(resp.getAccountName());
+    				vm.setDomainId(resp.getDomainId());
+    				vm.setHypervisor(resp.getHypervisor());
+    				vm.setServiceOffering( svcOffering.getName());
+    				instances.addInstance(vm);
+    				countCreated++;
+			    }catch(Exception e){
+			        logger.error("Failed to deploy VM number: "+ (i+1) +" due to error: "+e.getMessage());
+			        break;
+			    }
 			}    		
 
 			if (0 == countCreated) {
 				// TODO, we actually need to destroy left-over VMs when the exception is thrown
-				throw new EC2ServiceException(ServerError.InsufficientInstanceCapacity, "Insufficient Instance Capacity" );
+				throw new EC2ServiceException(ServerError.InternalError, "Failed to deploy instances" );
 			}
+			
+			logger.debug("Could deploy "+ countCreated + " VM's successfully");
 
 			return instances;
 		} catch( Exception e ) {
