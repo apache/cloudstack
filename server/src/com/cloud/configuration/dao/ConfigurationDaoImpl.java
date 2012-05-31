@@ -163,14 +163,15 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     	String returnValue = initValue;
 		try {
 			txn.start();
-			stmt = txn.prepareAutoCloseStatement("SELECT value FROM configuration WHERE name=?");
+			stmt = txn.prepareAutoCloseStatement("SELECT value, category FROM configuration WHERE name=?");
 			stmt.setString(1, name);
 			ResultSet rs = stmt.executeQuery();
 			if(rs != null && rs.next()) {
 				returnValue =  rs.getString(1);
+				String category1 = rs.getString(2);
 				if(returnValue != null) {
 					txn.commit();
-					if("Hidden".equals(category) || "Secure".equals(category)){
+					if("Hidden".equals(category1) || "Secure".equals(category1)){
 						return DBEncryptionUtil.decrypt(returnValue);
 					} else {
 						return returnValue;

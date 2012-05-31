@@ -284,14 +284,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         // As it is so common for people to forget about configuring
         // management.network.cidr,
-        String mgtCidr = _configDao.getValue(Config.ManagementNetwork.key());
+        ConfigurationVO	mgmtNetwork = _configDao.findByName(Config.ManagementNetwork.key());
+        String mgtCidr = mgmtNetwork.getValue();
         if (mgtCidr == null || mgtCidr.trim().isEmpty()) {
             String[] localCidrs = NetUtils.getLocalCidrs();
             if (localCidrs.length > 0) {
                 s_logger.warn("Management network CIDR is not configured originally. Set it default to " + localCidrs[0]);
 
                 _alertMgr.sendAlert(AlertManager.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0), "Management network CIDR is not configured originally. Set it default to " + localCidrs[0], "");
-                _configDao.update(Config.ManagementNetwork.key(), Config.ManagementNetwork.getCategory(), localCidrs[0]);
+                _configDao.update(Config.ManagementNetwork.key(), mgmtNetwork.getCategory(), localCidrs[0]);
             } else {
                 s_logger.warn("Management network CIDR is not properly configured and we are not able to find a default setting");
                 _alertMgr.sendAlert(AlertManager.ALERT_TYPE_MANAGMENT_NODE, 0, new Long(0), "Management network CIDR is not properly configured and we are not able to find a default setting", "");
