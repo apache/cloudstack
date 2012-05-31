@@ -2519,7 +2519,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         URI uri = new URI(storeUrl);
 
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
-        ManagedObjectReference morDatastore = hyperHost.mountDatastore(false, uri.getHost(), 0, uri.getPath(), storeName.replace("-", ""));
+        ManagedObjectReference morDatastore = null;
+        morDatastore = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, storeName);
+        if(morDatastore == null) {
+        	morDatastore = hyperHost.mountDatastore(false, uri.getHost(), 0, uri.getPath(), storeName.replace("-", ""));
+        }
 
         if (morDatastore == null)
             throw new Exception("Unable to mount secondary storage on host. storeUrl: " + storeUrl);
