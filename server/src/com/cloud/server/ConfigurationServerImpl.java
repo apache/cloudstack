@@ -421,10 +421,11 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
     protected void updateCloudIdentifier() {
         // Creates and saves a UUID as the cloud identifier
-        String currentCloudIdentifier = _configDao.getValue("cloud.identifier");
+    	ConfigurationVO cloudIdentifier = _configDao.findByName("cloud.identifier");
+        String currentCloudIdentifier = cloudIdentifier.getValue();
         if (currentCloudIdentifier == null || currentCloudIdentifier.isEmpty()) {
             String uuid = UUID.randomUUID().toString();
-            _configDao.update(Config.CloudIdentifier.key(), Config.CloudIdentifier.getCategory(), uuid);
+            _configDao.update(Config.CloudIdentifier.key(), cloudIdentifier.getCategory(), uuid);
         }
     }
 
