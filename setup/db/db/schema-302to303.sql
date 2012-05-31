@@ -123,6 +123,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'vmware.use.nexus.vswitch', 'false', 'Enable/Disable Cisco Nexus 1000v vSwitch in VMware environment');
 ALTER TABLE `cloud`.`account` ADD COLUMN `default_zone_id` bigint unsigned;
 ALTER TABLE `cloud`.`account` ADD CONSTRAINT `fk_account__default_zone_id` FOREIGN KEY `fk_account__default_zone_id`(`default_zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud_usage`.`account` ADD COLUMN `default_zone_id` bigint unsigned;
 
 DROP TABLE IF EXISTS `cloud`.`cluster_vsm_map`;
 DROP TABLE IF EXISTS `cloud`.`virtual_supervisor_module`;
