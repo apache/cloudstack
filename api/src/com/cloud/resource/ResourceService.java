@@ -27,6 +27,7 @@ import com.cloud.api.commands.UpdateHostCmd;
 import com.cloud.api.commands.UpdateHostPasswordCmd;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Cluster;
@@ -57,7 +58,7 @@ public interface ResourceService {
      * @throws IllegalArgumentException
      * @throws DiscoveryException
      */
-    List<? extends Cluster> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException;
+    List<? extends Cluster> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException, ResourceInUseException;
 
     boolean deleteCluster(DeleteClusterCmd cmd);
 
