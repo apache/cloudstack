@@ -441,12 +441,14 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 	            
 	            // If VSM already exists and is mapped to a cluster, fail this operation.
 	            CiscoNexusVSMDeviceVO vsm = _vsmDao.getVSMbyIpaddress(vsmIp);
-	            List<ClusterVSMMapVO> clusterList = _clusterVSMDao.listByVSMId(vsm.getId());
-	            if(vsm != null && clusterList != null && !clusterList.isEmpty()) {
-	            	s_logger.error("Failed to add cluster: specified Nexus VSM is already associated with another cluster");
-	            	ResourceInUseException ex = new ResourceInUseException("Failed to add cluster: specified Nexus VSM is already associated with another cluster with specified Id");
-	            	ex.addProxyObject("cluster", clusterList.get(0).getClusterId(), "clusterId");
-	            	throw ex;
+	            if(vsm != null) {
+	            	List<ClusterVSMMapVO> clusterList = _clusterVSMDao.listByVSMId(vsm.getId());
+	            	if (clusterList != null && !clusterList.isEmpty()) {	            
+	            		s_logger.error("Failed to add cluster: specified Nexus VSM is already associated with another cluster");
+	            		ResourceInUseException ex = new ResourceInUseException("Failed to add cluster: specified Nexus VSM is already associated with another cluster with specified Id");
+	            		ex.addProxyObject("cluster", clusterList.get(0).getClusterId(), "clusterId");
+	            		throw ex;
+	            	}
 	            }
 	            // persist credentials to database if the VSM entry is not already in the db. 
 	            if (_vsmDao.getVSMbyIpaddress(vsmIp) == null) {
