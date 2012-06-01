@@ -1110,6 +1110,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 Set<VBD> vbds = vm.getVBDs(conn);
                 for( VBD vbd : vbds ) {
                    if (vbd.getType(conn) == Types.VbdType.CD ) {
+                       vbd.eject(conn);
                        vbd.destroy(conn);
                        break;
                    }
