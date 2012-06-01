@@ -6087,10 +6087,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     protected Long getNonGuestNetworkPhysicalNetworkId(Network network) {
         // no physical network for control traffic type
+
+        // have to remove this sanity check as VMware control network is management network
+        // we need to retrieve traffic label information through physical network
+/*        
         if (network.getTrafficType() == TrafficType.Control) {
             return null;
         }
-
+*/
         Long physicalNetworkId = network.getPhysicalNetworkId();
 
         if (physicalNetworkId == null) {
