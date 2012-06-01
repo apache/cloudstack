@@ -1936,19 +1936,21 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             result = false;
         }
         if (result == false) {
-            return false;
+            return result;
         }
         answer = cmds.getAnswer("getDomRVersion");
         if (answer != null && answer instanceof GetDomRVersionAnswer) {
             GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer)answer;
             if (answer == null || !answer.getResult()) {
-                /* Try to push on because it's not a critical error */
-                s_logger.warn("Unable to get the template/scripts version of router " + router.getInstanceName() + " due to: " + versionAnswer.getDetails() + ", but we would continue");
+                s_logger.warn("Unable to get the template/scripts version of router " + router.getInstanceName() + " due to: " + versionAnswer.getDetails());
+                result = false;
             } else {
                 router.setTemplateVersion(versionAnswer.getTemplateVersion());
                 router.setScriptsVersion(versionAnswer.getScriptsVersion());
                 router = _routerDao.persist(router);
             }
+        } else {
+            result = false;
         }
 
         return result;
