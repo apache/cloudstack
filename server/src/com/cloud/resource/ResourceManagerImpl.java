@@ -445,6 +445,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 	            	List<ClusterVSMMapVO> clusterList = _clusterVSMDao.listByVSMId(vsm.getId());
 	            	if (clusterList != null && !clusterList.isEmpty()) {	            
 	            		s_logger.error("Failed to add cluster: specified Nexus VSM is already associated with another cluster");
+	            		_clusterDao.remove(clusterId);
 	            		ResourceInUseException ex = new ResourceInUseException("Failed to add cluster: specified Nexus VSM is already associated with another cluster with specified Id");
 	            		ex.addProxyObject("cluster", clusterList.get(0).getClusterId(), "clusterId");
 	            		throw ex;
