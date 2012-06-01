@@ -4057,8 +4057,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     context.registerStockObject("vsmcredentials", vsmCredentials);
                 }
                 _privateNetworkVSwitchName = mgr.getPrivateVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
-                _publicNetworkVSwitchName = mgr.getPublicVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
-                _guestNetworkVSwitchName = mgr.getGuestVSwitchName(Long.parseLong(_dcId), HypervisorType.VMware);
             }
 
         } catch (Exception e) {

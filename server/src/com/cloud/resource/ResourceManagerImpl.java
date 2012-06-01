@@ -431,7 +431,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 	                netconfClient = new NetconfHelper(vsmIp, vsmUser, vsmPassword);
 	                netconfClient.disconnect();
 	            } catch (CloudRuntimeException e) {
-	                String msg = "Invalid credentials supplied for user " + vsmUser + " for Cisco Nexus 1000v VSM at " + vsmIp;
+	                String msg = "Invalid credentials supplied for user " + vsmUser + " for Cisco Nexus 1000v at " + vsmIp;
 	                s_logger.error(msg);
 		            _clusterDao.remove(clusterId);
 	                throw new CloudRuntimeException(msg);
@@ -444,9 +444,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
 	            if(vsm != null) {
 	            	List<ClusterVSMMapVO> clusterList = _clusterVSMDao.listByVSMId(vsm.getId());
 	            	if (clusterList != null && !clusterList.isEmpty()) {	            
-	            		s_logger.error("Failed to add cluster: specified Nexus VSM is already associated with another cluster");
+	            		s_logger.error("Failed to add cluster: specified Nexus 1000v is already associated with another cluster");
 	            		_clusterDao.remove(clusterId);
-	            		ResourceInUseException ex = new ResourceInUseException("Failed to add cluster: specified Nexus VSM is already associated with another cluster with specified Id");
+	            		ResourceInUseException ex = new ResourceInUseException("Failed to add cluster: specified Nexus 1000v is already associated with another cluster with specified Id");
 	            		ex.addProxyObject("cluster", clusterList.get(0).getClusterId(), "clusterId");
 	            		throw ex;
 	            	}

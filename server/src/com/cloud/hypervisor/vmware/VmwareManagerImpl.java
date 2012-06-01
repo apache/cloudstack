@@ -359,16 +359,6 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     }
     
     @Override
-    public String getPublicVSwitchName(long dcId, HypervisorType hypervisorType) {
-        return _netMgr.getDefaultPublicTrafficLabel(dcId, hypervisorType);
-    }
-    
-    @Override
-    public String getGuestVSwitchName(long dcId, HypervisorType hypervisorType) {
-        return _netMgr.getDefaultGuestTrafficLabel(dcId, hypervisorType);
-    }
-    
-    @Override
     public List<ManagedObjectReference> addHostToPodCluster(VmwareContext serviceContext, long dcId, Long podId, Long clusterId,
             String hostInventoryPath) throws Exception {
         ManagedObjectReference mor = null;
@@ -984,7 +974,7 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
             nexusVSMCredentials.put("vsmip", nexusVSM.getipaddr());
             nexusVSMCredentials.put("vsmusername", nexusVSM.getUserName());
             nexusVSMCredentials.put("vsmpassword", nexusVSM.getPassword());
-            s_logger.info("Successfully fetched the credentials of Nexus VSM.");
+            s_logger.info("Successfully fetched the credentials of Nexus 1000v.");
         }
         return nexusVSMCredentials;
     }

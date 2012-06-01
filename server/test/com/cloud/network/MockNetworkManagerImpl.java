@@ -868,16 +868,4 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         // TODO Auto-generated method stub
         return null;
     }
-
-    @Override
-    public String getDefaultPublicTrafficLabel(long dcId, HypervisorType vmware) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public String getDefaultGuestTrafficLabel(long dcId, HypervisorType vmware) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 }

@@ -134,7 +134,7 @@ public class HypervisorHostHelper {
         Map<String, String> vsmCredentials = context.getStockObject("vsmcredentials");
         String msg;
         if (vsmCredentials == null || vsmCredentials.size() != 3) {
-            msg = "Failed to retrieve required credentials of Nexus VSM from database.";
+            msg = "Failed to retrieve required credentials of Nexus 1000v from database.";
             s_logger.error(msg);
             throw new Exception(msg);
         }

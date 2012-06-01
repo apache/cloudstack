@@ -303,8 +303,4 @@ public interface NetworkManager extends NetworkService {
     String getDefaultManagementTrafficLabel(long zoneId, HypervisorType hypervisorType);
 
     String getDefaultStorageTrafficLabel(long zoneId, HypervisorType hypervisorType);
-
-    String getDefaultPublicTrafficLabel(long dcId, HypervisorType vmware);
-
-    String getDefaultGuestTrafficLabel(long dcId, HypervisorType vmware);
 }

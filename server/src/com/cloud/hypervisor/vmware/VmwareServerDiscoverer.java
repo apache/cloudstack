@@ -120,19 +120,6 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
         }
         
         if (_vmwareMgr.getNexusVSwitchGlobalParameter()) {
-            DataCenterVO zone = _dcDao.findById(dcId);
-            NetworkType zoneType = zone.getNetworkType();
-            if (zoneType != NetworkType.Basic) {
-                publicTrafficLabel = _netmgr.getDefaultPublicTrafficLabel(dcId, HypervisorType.VMware);
-                if (publicTrafficLabel != null) {
-                    s_logger.info("Detected public network label : " + publicTrafficLabel);
-                }
-            }
-            // Get physical network label
-            guestTrafficLabel = _netmgr.getDefaultGuestTrafficLabel(dcId, HypervisorType.VMware);
-            if (guestTrafficLabel != null) {
-                s_logger.info("Detected guest network label : " + guestTrafficLabel);
-            }
             vsmCredentials = _vmwareMgr.getNexusVSMCredentialsByClusterId(clusterId);
         }
 
@@ -144,7 +131,7 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
 			
             if (_vmwareMgr.getNexusVSwitchGlobalParameter()) {
                 if (vsmCredentials != null) {
-                    s_logger.info("Stocking credentials of Nexus VSM");
+                    s_logger.info("Stocking credentials of Nexus 1000v");
                     context.registerStockObject("vsmcredentials", vsmCredentials);
                 }
             }
@@ -208,12 +195,6 @@ public class VmwareServerDiscoverer extends DiscovererBase implements Discoverer
 	            params.put("guid", guid);
                 if (privateTrafficLabel != null) {
                     params.put("private.network.vswitch.name", privateTrafficLabel);
-                }
-                if (publicTrafficLabel != null) {
-                    params.put("public.network.vswitch.name", publicTrafficLabel);
-                }
-                if (guestTrafficLabel != null) {
-                    params.put("guest.network.vswitch.name", guestTrafficLabel);
                 }
 	            
 	            VmwareResource resource = new VmwareResource(); 
