@@ -1,0 +1,96 @@
+Summary
+=======
+
+1) templates/committerVote.txt
+1a) request lazy consensus from IPMC
+2) templates/committerInvite.txt
+
+after they accept, then do:
+
+3) templates/committerAccept.txt ... the normal process for dev-to-pmc
+4) wait until we see that receipt of CLA is recorded
+5) template/committerCreate.txt
+5a) now wait until root says it is done
+5b) chair to enable their svn access
+6) template/committerDone.txt
+7 template/committerAnnounce.txt
+8) add them to the cloudstack-developers group in Jira.
+
+Discussion
+==========
+
+We do the vote on the private mailing list to enable a frank discussion.
+
+Start a separate Vote thread for each new person. This makes it much
+easier to review the mail archives.
+
+In most cases, we will be inviting people to go straight from developer
+to PPMC member. However, there may be extraordinary cases where we want
+limited work-related commit access. This will be resolved during the vote
+discussion. http://forrest.apache.org/guidelines.html#elect (yes, I know
+this is not the CloudStack project, we need to create our own guidelines)
+
+We need to be sure that they are committed people that we can work with.
+They will be our peers. We will have already observed that they are
+committed to the project and graceful toward users and other developers.
+
+Don't wait too long before proposing and don't be too hasty. There is a
+trade-off and something about timeliness. A point is reached where it
+becomes obvious that we should invite them. This encourages them and keeps
+them enthusiastic. If we leave it too long, then we risk them becoming
+disillusioned.
+
+On the PPMC list we can each say exactly what we feel about each person,
+with no holds barred. Keep the discussion concise. The praise part can
+be done later in public.
+
+See the end of this document for some guidelines to help you to assess a
+candidate.
+
+Let the Vote thread run for one week.
+A positive result is achieved by Consensus Approval
+http://forrest.apache.org/guidelines.html#approvals
+i.e. at least 3 +1 votes and no vetoes.
+Any veto must be accompanied by reasoning and be prepared to defend it.
+Other members can attempt to encourage them to change.
+
+New PPMC members can be either quiet or active as they choose. If we find
+that certain people lapse and don't ever contribute, then we can take steps
+to retire them.
+
+After a positive result, we give them a chance to decline in private.
+They can post a reply to the PPMC mailing list.
+
+After we reach a decision on the PPMC list, and after the steps above,
+we will announce it on the dev list. We can then each follow up with
+our praise in public.
+
+There are template emails for each stage of the process at ./templates/
+These may need tweaks for each case. Also remember that these templates
+are just a guide, especially the announcement one.
+
+Other notes about the process are at
+http://incubator.apache.org/guides/ppmc.html
+http://www.apache.org/dev/pmc.html#newcommitter
+
+
+
+------------------------------------------------------------------------
+Guidelines for assessing candidates
+-----------------------------------
+
+When voting, you need to make up your own mind, perhaps search mailing lists
+and Jira, etc. The following are some tips that we developed on the private@
+list. It seems that each time we discuss someone, then new ideas arise about
+what we should look for, e.g. private@ archives early July 2006.
+Also consider http://forrest.apache.org/committed.html
+
+0) Ability to work co-operatively with peers. Ability to be a mentor.
+- How do we evaluate?  By the interactions they have through mail. By how
+they respond to criticism. By how they participate in decision-making process.
+1) Community - How do we evaluate?  By the interactions they have through mail.
+2) Committment - How do we evaluate?  By time, by sticking through tough
+issues, by helping on not-so-fun tasks as well.
+3) Personal skill/ability - How do we evaluate?  A solid general understanding
+of Forrest.  Quality of discussion in mail.  Patches easy to apply with only
+a cursory review.

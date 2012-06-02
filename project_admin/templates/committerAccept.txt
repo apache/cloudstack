@@ -1,0 +1,47 @@
+This is the followup email after they have accepted.
+
+------------------------------------------------------------------------
+To: JoeBloggs@foo.net
+Cc: cloudstack-private@incubator.apache.org
+Subject: Re: invitation to become CloudStack committer
+
+Welcome. Here are the next steps. After that we will make
+an announcement to the cloudstack-dev list.
+
+You need to send a Contributor License Agreement to the ASF.
+Normally you would send an Individual CLA. If you also make
+contributions done in work time or using work resources then
+see the Corporate CLA. Ask us if you have any issues.
+http://www.apache.org/licenses/#clas
+
+You need to choose a preferred ASF user name and alternatives.
+In order to ensure it is available you can view a list of taken ids at
+http://www.apache.org/~jim/committers.html
+
+Please notify us when you have submitted the CLA and by what means 
+you did so. This will enable us to monitor its progress.
+
+We will arrange for your Apache user account when the CLA has 
+been recorded.
+
+After that is done, please make followup replies to the cloudstack-dev list.
+We generally discuss everything there and keep this cloudstack-private@ list
+for occasional matters which must be private.
+
+The developer section of the website describes the roles
+and provides other resources:
+http://www.apache.org/foundation/how-it-works.html
+http://www.apache.org/dev/
+
+The incubator also has some useful information for new committers
+in incubating projects:
+http://incubator.apache.org/guides/committer.html
+
+In the absence of our own guidelines document we are currently 
+using those developed at Apache Forrest:
+http://forrest.apache.org/guidelines.html
+
+Yours,
+The Apache CloudStack PPMC
+
+------------------------------------------------------------------------

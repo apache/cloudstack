@@ -1,0 +1,18 @@
+This is the email to announce to cloudstack-dev after the
+followup acceptance.
+
+Replace the Joe Blogs in the subject, the ### in the body.
+
+------------------------------------------------------------
+To: cloudstack-dev@incubator.apache.org
+Subject: new committer: ###Joe Bloggs
+
+The Podling Project Management Committee (PPMC) for Apache CloudStack
+has asked #### ####### to become a committer and we are pleased to 
+announce that they have accepted.
+
+### add specific details here ###
+
+Being a committer enables easier contribution to the
+project since there is no need to go via the patch
+submission process. This should enable better productivity.
