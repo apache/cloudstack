@@ -70,6 +70,7 @@ DROP TABLE IF EXISTS `cloud`.`ovs_tunnel_alloc`;
 DROP TABLE IF EXISTS `cloud`.`ovs_vlan_mapping_dirty`;
 DROP TABLE IF EXISTS `cloud`.`ovs_vm_flow_log`;
 DROP TABLE IF EXISTS `cloud`.`ovs_work`;
+DROP TABLE IF EXISTS `cloud`.`ovs_tunnel_account`;
 
 CREATE TABLE `cloud`.`ovs_tunnel_interface` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT,
