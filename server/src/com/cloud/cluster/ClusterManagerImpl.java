@@ -402,6 +402,23 @@ public class ClusterManagerImpl implements ClusterManager {
             Answer[] answers = new Answer[1];
             answers[0] = new Answer(cmd, result, null);
             return _gson.toJson(answers);
+        } else if (cmds.length == 1 && cmds[0] instanceof PropagateResourceEventCommand) {
+        	PropagateResourceEventCommand cmd = (PropagateResourceEventCommand) cmds[0];
+            if (s_logger.isDebugEnabled()) {
+            	s_logger.debug("Intercepting resource manager command: " + _gson.toJson(cmd));
+            }
+            
+            boolean result = false;
+            try {
+            	result = _resourceMgr.executeUserRequest(cmd.getHostId(), cmd.getEvent());
+            } catch (Exception e) {
+            	s_logger.warn("Exception happened while exceuting command from resource manager in other mgmt server", e);
+            	return null;
+            }
+            
+            Answer[] answers = new Answer[1];
+            answers[0] = new Answer(cmd, result, null);
+            return _gson.toJson(answers);
         }
 
         try {
