@@ -1291,9 +1291,8 @@
               url: createURL("createPhysicalNetwork&zoneid=" + args.data.returnedZone.id + array1.join("")),
               dataType: "json",
               success: function(json) {
-                var jobId = json.createphysicalnetworkresponse.jobid;
-                var timerKey = "createPhysicalNetworkJob_" + jobId;
-                $("body").everyTime(2000, timerKey, function(){
+                var jobId = json.createphysicalnetworkresponse.jobid; 
+								var createPhysicalNetworkIntervalID = setInterval(function() { 	
                   $.ajax({
                     url: createURL("queryAsyncJobResult&jobid=" + jobId),
                     dataType: "json",
@@ -1302,8 +1301,9 @@
                       if (result.jobstatus == 0) {
                         return; //Job has not completed
                       }
-                      else {
-                        $("body").stopTime(timerKey);
+                      else {                        
+												clearInterval(createPhysicalNetworkIntervalID); 
+												
                         if (result.jobstatus == 1) {
                           var returnedBasicPhysicalNetwork = result.jobresult.physicalnetwork;
                           var label = returnedBasicPhysicalNetwork.id + trafficLabelParam('guest', data);
@@ -1313,9 +1313,8 @@
                             url: createURL("addTrafficType&trafficType=Guest&physicalnetworkid=" + label),
                             dataType: "json",
                             success: function(json) {
-                              var jobId = json.addtraffictyperesponse.jobid;
-                              var timerKey = "addTrafficTypeJob_" + jobId;
-                              $("body").everyTime(2000, timerKey, function() {
+                              var jobId = json.addtraffictyperesponse.jobid;                              
+															var addGuestTrafficTypeIntervalID = setInterval(function() { 																
                                 $.ajax({
                                   url: createURL("queryAsyncJobResult&jobid=" + jobId),
                                   dataType: "json",
@@ -1324,8 +1323,9 @@
                                     if (result.jobstatus == 0) {
                                       return; //Job has not completed
                                     }
-                                    else {
-                                      $("body").stopTime(timerKey);
+                                    else {                                      
+																			clearInterval(addGuestTrafficTypeIntervalID); 
+																			
                                       if (result.jobstatus == 1) {
                                         returnedTrafficTypes.push(result.jobresult.traffictype);
 
@@ -1348,8 +1348,8 @@
                                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                     alert("Failed to add Guest traffic type to basic zone. Error: " + errorMsg);
                                   }
-                                });
-                              });
+                                });                              
+															}, 3000); 																
                             }
                           });
 
@@ -1359,9 +1359,8 @@
                             url: createURL("addTrafficType&trafficType=Management&physicalnetworkid=" + returnedBasicPhysicalNetwork.id + label),
                             dataType: "json",
                             success: function(json) {
-                              var jobId = json.addtraffictyperesponse.jobid;
-                              var timerKey = "addTrafficTypeJob_" + jobId;
-                              $("body").everyTime(2000, timerKey, function() {
+                              var jobId = json.addtraffictyperesponse.jobid;                             
+															var addManagementTrafficTypeIntervalID = setInterval(function() { 	
                                 $.ajax({
                                   url: createURL("queryAsyncJobResult&jobid=" + jobId),
                                   dataType: "json",
@@ -1370,8 +1369,9 @@
                                     if (result.jobstatus == 0) {
                                       return; //Job has not completed
                                     }
-                                    else {
-                                      $("body").stopTime(timerKey);
+                                    else {                                      
+																			clearInterval(addManagementTrafficTypeIntervalID); 
+																			
                                       if (result.jobstatus == 1) {
                                         returnedTrafficTypes.push(result.jobresult.traffictype);
 
@@ -1394,8 +1394,8 @@
                                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                     alert("Failed to add Management traffic type to basic zone. Error: " + errorMsg);
                                   }
-                                });
-                              });
+                                });                              
+															}, 3000); 	
                             }
                           });
 
@@ -1407,9 +1407,8 @@
                               url: createURL('addTrafficType&physicalnetworkid=' + returnedBasicPhysicalNetwork.id + '&trafficType=Storage' + label),
                               dataType: "json",
                               success: function(json) {
-                                var jobId = json.addtraffictyperesponse.jobid;
-                                var timerKey = "addTrafficTypeJob_" + jobId;
-                                $("body").everyTime(2000, timerKey, function() {
+                                var jobId = json.addtraffictyperesponse.jobid;                                
+																var addStorageTrafficTypeIntervalID = setInterval(function() { 	
                                   $.ajax({
                                     url: createURL("queryAsyncJobResult&jobid=" + jobId),
                                     dataType: "json",
@@ -1418,8 +1417,9 @@
                                       if (result.jobstatus == 0) {
                                         return; //Job has not completed
                                       }
-                                      else {
-                                        $("body").stopTime(timerKey);
+                                      else {                                        
+																				clearInterval(addStorageTrafficTypeIntervalID); 
+																				
                                         if (result.jobstatus == 1) {
                                           returnedTrafficTypes.push(result.jobresult.traffictype);
 
@@ -1442,8 +1442,8 @@
                                       var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                       alert("Failed to add Management traffic type to basic zone. Error: " + errorMsg);
                                     }
-                                  });
-                                });
+                                  });                                
+																}, 3000); 	
                               }
                             });
                           }
@@ -1454,9 +1454,8 @@
                               url: createURL("addTrafficType&trafficType=Public&physicalnetworkid=" + returnedBasicPhysicalNetwork.id + label),
                               dataType: "json",
                               success: function(json) {
-                                var jobId = json.addtraffictyperesponse.jobid;
-                                var timerKey = "addTrafficTypeJob_" + jobId;
-                                $("body").everyTime(2000, timerKey, function() {
+                                var jobId = json.addtraffictyperesponse.jobid;                               
+																var addPublicTrafficTypeIntervalID = setInterval(function() { 	
                                   $.ajax({
                                     url: createURL("queryAsyncJobResult&jobid=" + jobId),
                                     dataType: "json",
@@ -1465,8 +1464,9 @@
                                       if (result.jobstatus == 0) {
                                         return; //Job has not completed
                                       }
-                                      else {
-                                        $("body").stopTime(timerKey);
+                                      else {                                       
+																				clearInterval(addPublicTrafficTypeIntervalID); 
+																				
                                         if (result.jobstatus == 1) {
                                           returnedTrafficTypes.push(result.jobresult.traffictype);
 
@@ -1489,8 +1489,8 @@
                                       var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                       alert("Failed to add Public traffic type to basic zone. Error: " + errorMsg);
                                     }
-                                  });
-                                });
+                                  });                                
+																}, 3000); 	
                               }
                             });
                           }
@@ -1504,8 +1504,9 @@
                       var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                       alert("createPhysicalNetwork failed. Error: " + errorMsg);
                     }
-                  });
-                });
+                  });                
+								}, 3000); 	
+								
               }
             });
           }
@@ -1520,9 +1521,8 @@
                 url: createURL("createPhysicalNetwork&zoneid=" + args.data.returnedZone.id + array1.join("")),
                 dataType: "json",
                 success: function(json) {
-                  var jobId = json.createphysicalnetworkresponse.jobid;
-                  var timerKey = "createPhysicalNetworkJob_" + jobId;
-                  $("body").everyTime(2000, timerKey, function(){
+                  var jobId = json.createphysicalnetworkresponse.jobid;                  
+									var createPhysicalNetworkIntervalID = setInterval(function() { 	
                     $.ajax({
                       url: createURL("queryAsyncJobResult&jobid=" + jobId),
                       dataType: "json",
@@ -1531,8 +1531,9 @@
                         if (result.jobstatus == 0) {
                           return; //Job has not completed
                         }
-                        else {
-                          $("body").stopTime(timerKey);
+                        else {                          
+													clearInterval(createPhysicalNetworkIntervalID); 
+													
                           if (result.jobstatus == 1) {
                             var returnedPhysicalNetwork = result.jobresult.physicalnetwork;
                             returnedPhysicalNetwork.originalId = thisPhysicalNetwork.id;
@@ -1563,9 +1564,8 @@
                                 url: createURL(apiCmd + label),
                                 dataType: "json",
                                 success: function(json) {
-                                  var jobId = json.addtraffictyperesponse.jobid;
-                                  var timerKey = "addTrafficTypeJob_" + jobId;
-                                  $("body").everyTime(2000, timerKey, function() {
+                                  var jobId = json.addtraffictyperesponse.jobid;                                 
+																	var addTrafficTypeIntervalID = setInterval(function() { 	
                                     $.ajax({
                                       url: createURL("queryAsyncJobResult&jobid=" + jobId),
                                       dataType: "json",
@@ -1574,8 +1574,9 @@
                                         if (result.jobstatus == 0) {
                                           return; //Job has not completed
                                         }
-                                        else {
-                                          $("body").stopTime(timerKey);
+                                        else {                                         
+																					clearInterval(addTrafficTypeIntervalID); 
+																					
                                           if (result.jobstatus == 1) {
                                             returnedTrafficTypes.push(result.jobresult.traffictype);
 
@@ -1601,8 +1602,8 @@
                                         var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                         alert(apiCmd + " failed. Error: " + errorMsg);
                                       }
-                                    });
-                                  });
+                                    });                                  
+																	}, 3000); 																		
                                 }
                               });
                             });
@@ -1616,8 +1617,8 @@
                         var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                         alert("createPhysicalNetwork failed. Error: " + errorMsg);
                       }
-                    });
-                  });
+                    });                  
+									}, 3000); 	
                 }
               });
             });
@@ -1632,10 +1633,8 @@
             $.ajax({
               url: createURL("updatePhysicalNetwork&state=Enabled&id=" + args.data.returnedBasicPhysicalNetwork.id),
               dataType: "json",
-              success: function(json) {
-                //var jobId = json.updatephysicalnetworkresponse.jobid;
-                var updatePhysicalNetworkTimer = "updatePhysicalNetworkJob_" + json.updatephysicalnetworkresponse.jobid;
-                $("body").everyTime(2000, updatePhysicalNetworkTimer, function() {
+              success: function(json) { 
+								var enablePhysicalNetworkIntervalID = setInterval(function() { 	
                   $.ajax({
                     url: createURL("queryAsyncJobResult&jobId=" + json.updatephysicalnetworkresponse.jobid),
                     dataType: "json",
@@ -1644,8 +1643,9 @@
                       if (result.jobstatus == 0) {
                         return; //Job has not completed
                       }
-                      else {
-                        $("body").stopTime(updatePhysicalNetworkTimer);
+                      else {                        
+												clearInterval(enablePhysicalNetworkIntervalID); 
+												
                         if (result.jobstatus == 1) {
                           //alert("updatePhysicalNetwork succeeded.");
 
@@ -1688,10 +1688,8 @@
                             url: createURL("configureVirtualRouterElement&enabled=true&id=" + virtualRouterElementId),
                             dataType: "json",
                             async: false,
-                            success: function(json) {
-                              //var jobId = json.configurevirtualrouterelementresponse.jobid;
-                              var configureVirtualRouterElementTimer = "configureVirtualRouterElementJob_" + json.configurevirtualrouterelementresponse.jobid;
-                              $("body").everyTime(2000, configureVirtualRouterElementTimer, function() {
+                            success: function(json) {  
+															var enableVirtualRouterElementIntervalID = setInterval(function() { 	
                                 $.ajax({
                                   url: createURL("queryAsyncJobResult&jobId=" + json.configurevirtualrouterelementresponse.jobid),
                                   dataType: "json",
@@ -1700,8 +1698,9 @@
                                     if (result.jobstatus == 0) {
                                       return; //Job has not completed
                                     }
-                                    else {
-                                      $("body").stopTime(configureVirtualRouterElementTimer);
+                                    else {                                     
+																			clearInterval(enableVirtualRouterElementIntervalID); 
+																			
                                       if (result.jobstatus == 1) {
                                         //alert("configureVirtualRouterElement succeeded.");
 
@@ -1709,10 +1708,8 @@
                                           url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + virtualRouterProviderId),
                                           dataType: "json",
                                           async: false,
-                                          success: function(json) {
-                                            //var jobId = json.updatenetworkserviceproviderresponse.jobid;
-                                            var updateNetworkServiceProviderTimer = "updateNetworkServiceProviderJob_" + json.updatenetworkserviceproviderresponse.jobid;
-                                            $("body").everyTime(2000, updateNetworkServiceProviderTimer, function() {
+                                          success: function(json) {    
+																						var enableVirtualRouterProviderIntervalID = setInterval(function() { 	
                                               $.ajax({
                                                 url: createURL("queryAsyncJobResult&jobId=" + json.updatenetworkserviceproviderresponse.jobid),
                                                 dataType: "json",
@@ -1721,8 +1718,9 @@
                                                   if (result.jobstatus == 0) {
                                                     return; //Job has not completed
                                                   }
-                                                  else {
-                                                    $("body").stopTime(updateNetworkServiceProviderTimer);
+                                                  else {                                                    
+																										clearInterval(enableVirtualRouterProviderIntervalID); 
+																										
                                                     if (result.jobstatus == 1) {
                                                       //alert("Virtual Router Provider is enabled");
 																											
@@ -1754,9 +1752,8 @@
                                                           url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + securityGroupProviderId),
                                                           dataType: "json",
                                                           async: false,
-                                                          success: function(json) {
-                                                            var updateNetworkServiceProviderTimer = "asyncJob_" + json.updatenetworkserviceproviderresponse.jobid;
-                                                            $("body").everyTime(2000, updateNetworkServiceProviderTimer, function() {
+                                                          success: function(json) {                                                            
+																														var enableSecurityGroupProviderIntervalID = setInterval(function() { 	
                                                               $.ajax({
                                                                 url: createURL("queryAsyncJobResult&jobId=" + json.updatenetworkserviceproviderresponse.jobid),
                                                                 dataType: "json",
@@ -1765,8 +1762,9 @@
                                                                   if (result.jobstatus == 0) {
                                                                     return; //Job has not completed
                                                                   }
-                                                                  else {
-                                                                    $("body").stopTime(updateNetworkServiceProviderTimer);
+                                                                  else {                                                                   
+																																		clearInterval(enableSecurityGroupProviderIntervalID); 
+																																		
                                                                     if (result.jobstatus == 1) { //Security group provider has been enabled successfully      
 																																			stepFns.addNetscalerProvider({
 																																				data: args.data
@@ -1781,8 +1779,8 @@
                                                                   var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                                                   alert("failed to enable security group provider. Error: " + errorMsg);
                                                                 }
-                                                              });
-                                                            });
+                                                              });                                                            
+																														}, 3000); 	
                                                           }
                                                         });
                                                       }
@@ -1801,8 +1799,8 @@
                                                   var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                                   alert("failed to enable Virtual Router Provider. Error: " + errorMsg);
                                                 }
-                                              });
-                                            });
+                                              });                                            
+																						}, 3000); 	
                                           }
                                         });
                                       }
@@ -1815,8 +1813,8 @@
                                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                     alert("configureVirtualRouterElement failed. Error: " + errorMsg);
                                   }
-                                });
-                              });
+                                });                              
+															}, 3000); 	
                             }
                           });
                         }
@@ -1829,8 +1827,8 @@
                       var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                       alert("updatePhysicalNetwork failed. Error: " + errorMsg);
                     }
-                  });
-                });
+                  });                
+								}, 3000); 	
               }
             });
           }
@@ -1841,9 +1839,8 @@
                 url: createURL("updatePhysicalNetwork&state=Enabled&id=" + thisPhysicalNetwork.id),
                 dataType: "json",
                 success: function(json) {
-                  var jobId = json.updatephysicalnetworkresponse.jobid;
-                  var timerKey = "updatePhysicalNetworkJob_"+jobId;
-                  $("body").everyTime(2000, timerKey, function() {
+                  var jobId = json.updatephysicalnetworkresponse.jobid;                  						
+									var enablePhysicalNetworkIntervalID = setInterval(function() { 									  
                     $.ajax({
                       url: createURL("queryAsyncJobResult&jobId="+jobId),
                       dataType: "json",
@@ -1852,8 +1849,9 @@
                         if (result.jobstatus == 0) {
                           return; //Job has not completed
                         }
-                        else {
-                          $("body").stopTime(timerKey);
+                        else {		
+													clearInterval(enablePhysicalNetworkIntervalID); 
+													
                           if (result.jobstatus == 1) {
                             //alert("updatePhysicalNetwork succeeded.");
 
@@ -1897,9 +1895,8 @@
                               dataType: "json",
                               async: false,
                               success: function(json) {
-                                var jobId = json.configurevirtualrouterelementresponse.jobid;
-                                var timerKey = "configureVirtualRouterElementJob_"+jobId;
-                                $("body").everyTime(2000, timerKey, function() {
+                                var jobId = json.configurevirtualrouterelementresponse.jobid;                                
+																var enableVirtualRouterElementIntervalID = setInterval(function() { 	
                                   $.ajax({
                                     url: createURL("queryAsyncJobResult&jobId="+jobId),
                                     dataType: "json",
@@ -1908,17 +1905,17 @@
                                       if (result.jobstatus == 0) {
                                         return; //Job has not completed
                                       }
-                                      else {
-                                        $("body").stopTime(timerKey);
+                                      else {                                        
+																				clearInterval(enableVirtualRouterElementIntervalID); 
+																				
                                         if (result.jobstatus == 1) { //configureVirtualRouterElement succeeded
                                           $.ajax({
                                             url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + virtualRouterProviderId),
                                             dataType: "json",
                                             async: false,
                                             success: function(json) {
-                                              var jobId = json.updatenetworkserviceproviderresponse.jobid;
-                                              var timerKey = "updateNetworkServiceProviderJob_"+jobId;
-                                              $("body").everyTime(2000, timerKey, function() {
+                                              var jobId = json.updatenetworkserviceproviderresponse.jobid;                                             
+																							var enableVirtualRouterProviderIntervalID = setInterval(function() { 	
                                                 $.ajax({
                                                   url: createURL("queryAsyncJobResult&jobId="+jobId),
                                                   dataType: "json",
@@ -1927,8 +1924,9 @@
                                                     if (result.jobstatus == 0) {
                                                       return; //Job has not completed
                                                     }
-                                                    else {
-                                                      $("body").stopTime(timerKey);
+                                                    else {                                                      
+																											clearInterval(enableVirtualRouterProviderIntervalID); 
+																											
                                                       if (result.jobstatus == 1) { //Virtual Router Provider has been enabled successfully
                                                         advZoneConfiguredPhysicalNetworkCount++;
                                                         if(advZoneConfiguredPhysicalNetworkCount == args.data.returnedPhysicalNetworks.length) { //not call addPod() until all physical networks get configured
@@ -1946,8 +1944,8 @@
                                                     var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                                     alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
                                                   }
-                                                });
-                                              });
+                                                });                                              
+																							}, 3000); 	
                                             }
                                           });
                                         }
@@ -1960,8 +1958,8 @@
                                       var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                                       alert("configureVirtualRouterElement failed. Error: " + errorMsg);
                                     }
-                                  });
-                                });
+                                  });                                
+																}, 3000); 	
                               }
                             });
                           }
@@ -1974,8 +1972,8 @@
                         var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                         alert("updatePhysicalNetwork failed. Error: " + errorMsg);
                       }
-                    });
-                  });
+                    });                  
+									}, 3000); 		
                 }
               });
             });
@@ -1990,9 +1988,8 @@
 							url: createURL("addNetworkServiceProvider&name=Netscaler&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id),
 							dataType: "json",
 							async: false,
-							success: function(json) {
-								var addNetworkServiceProviderTimer = "asyncJob_" + json.addnetworkserviceproviderresponse.jobid;
-								$("body").everyTime(2000, addNetworkServiceProviderTimer, function() {
+							success: function(json) {								
+								var addNetscalerProviderIntervalID = setInterval(function() { 	                  						
 									$.ajax({
 										url: createURL("queryAsyncJobResult&jobId=" + json.addnetworkserviceproviderresponse.jobid),
 										dataType: "json",
@@ -2001,8 +1998,9 @@
 											if (result.jobstatus == 0) {
 												return; //Job has not completed
 											}
-											else {
-												$("body").stopTime(addNetworkServiceProviderTimer);
+											else {												
+												clearInterval(addNetscalerProviderIntervalID); 
+												
 												if (result.jobstatus == 1) {
 													args.data.returnedNetscalerProvider = result.jobresult.networkserviceprovider;                       
 													stepFns.addNetscalerDevice({
@@ -2020,8 +2018,8 @@
 										}
 									});
 								});
-							}
-						});
+							}						
+						}, 3000); 								
 						//add netscaler provider (end)
 					}
 					else { //selectedNetworkOfferingHavingNetscaler == false
@@ -2127,9 +2125,8 @@
           $.ajax({
             url: createURL("addNetscalerLoadBalancer" + array1.join("")),
             dataType: "json",
-            success: function(json) {
-              var addNetscalerLoadBalancerTimer = "asyncJob_" + json.addnetscalerloadbalancerresponse.jobid;
-              $("body").everyTime(2000, addNetscalerLoadBalancerTimer, function() {
+            success: function(json) {             
+							var addNetscalerLoadBalancerIntervalID = setInterval(function() { 								
                 $.ajax({
                   url: createURL("queryAsyncJobResult&jobid=" + json.addnetscalerloadbalancerresponse.jobid),
                   dataType: "json",
@@ -2138,18 +2135,17 @@
                     if(result.jobstatus == 0) {
                       return;
                     }
-                    else {
-                      $("body").stopTime(addNetscalerLoadBalancerTimer);
+                    else {                      
+											clearInterval(addNetscalerLoadBalancerIntervalID); 
+											
                       if(result.jobstatus == 1) {
                         args.data.returnedNetscalerProvider.returnedNetscalerloadbalancer = result.jobresult.netscalerloadbalancer;
 
                         $.ajax({
                           url: createURL("updateNetworkServiceProvider&state=Enabled&id=" + args.data.returnedNetscalerProvider.id),
                           dataType: "json",
-                          success: function(json) {
-                            var updateNetworkServiceProviderTimer = "asyncJob_" + json.updatenetworkserviceproviderresponse.jobid;
-
-                            $("body").everyTime(2000, updateNetworkServiceProviderTimer, function() {
+                          success: function(json) {                            
+														var enableNetscalerProviderIntervalID = setInterval(function() { 	
                               $.ajax({
                                 url: createURL("queryAsyncJobResult&jobid=" + json.updatenetworkserviceproviderresponse.jobid),
                                 dataType: "json",
@@ -2158,8 +2154,9 @@
                                   if(result.jobstatus == 0) {
                                     return;
                                   }
-                                  else {
-                                    $("body").stopTime(updateNetworkServiceProviderTimer);
+                                  else {                                    
+																		clearInterval(enableNetscalerProviderIntervalID); 
+																		
                                     if(result.jobstatus == 1) {																		 
 																			stepFns.addGuestNetwork({
 																				data: args.data
@@ -2170,8 +2167,8 @@
                                     }
                                   }
                                 }
-                              });
-                            });
+                              });                            
+														}, 3000); 															
                           },
                           error: function(XMLHttpResponse) {
                             var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -2184,8 +2181,8 @@
                       }
                     }
                   }
-                });
-              });
+                });              
+							}, 3000); 								
             },
             error: function(XMLHttpResponse) {
               var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
@@ -2490,9 +2487,8 @@
                   url: createURL("updatePhysicalNetwork&id=" + returnedId  + "&vlan=" + todb(vlan)),
                   dataType: "json",
                   success: function(json) {
-                    var jobId = json.updatephysicalnetworkresponse.jobid;
-                    var timerKey = "asyncJob_" + jobId;
-                    $("body").everyTime(2000, timerKey, function(){
+                    var jobId = json.updatephysicalnetworkresponse.jobid;                    
+										var updatePhysicalNetworkVlanIntervalID = setInterval(function() { 											
                       $.ajax({
                         url: createURL("queryAsyncJobResult&jobid=" + jobId),
                         dataType: "json",
@@ -2501,8 +2497,9 @@
                           if(result.jobstatus == 0) {
                             return;
                           }
-                          else {
-                            $("body").stopTime(timerKey);
+                          else {                            
+														clearInterval(updatePhysicalNetworkVlanIntervalID); 
+														
                             if(result.jobstatus == 1) {
                               updatedCount++;
                               if(updatedCount == physicalNetworksHavingGuestIncludingVlan.length) {
@@ -2520,8 +2517,8 @@
                           var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
                           error('configureGuestTraffic', errorMsg, { fn: 'configureGuestTraffic', args: args });
                         }
-                      });
-                    });
+                      });                    
+										}, 3000); 	
                   }
                 });
               });

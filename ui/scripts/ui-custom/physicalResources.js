@@ -82,8 +82,7 @@
               dataType: 'json',
               success: function(json) {
                 var jid = json.uploadcustomcertificateresponse.jobid;
-                var timerKey = "uploadcustomcertificatejob_" + jid;
-                $("body").everyTime(2000, timerKey, function() {
+                var uploadCustomCertificateIntervalID = setInterval(function() { 	
                   $.ajax({
                     url: createURL("queryAsyncJobResult&jobId=" + jid),
                     dataType: "json",
@@ -93,7 +92,7 @@
                         return; //Job has not completed
                       }
                       else {
-                        $("body").stopTime(timerKey);
+                        clearInterval(uploadCustomCertificateIntervalID); 
                         if (result.jobstatus == 1) {
                           cloudStack.dialog.notice({ message: 'Update SSL Certiciate succeeded' });
                         }
@@ -108,7 +107,7 @@
                       $loading.remove();
                     }
                   });
-                });
+                }, 3000); 		
               },
               error: function(XMLHttpResponse) {
                 cloudStack.dialog.notice({ message: 'Failed to update SSL Certificate. ' + parseXMLHttpResponse(XMLHttpResponse) });

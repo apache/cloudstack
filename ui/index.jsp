@@ -1583,7 +1583,6 @@
     <script src="lib/jquery-ui/js/jquery-ui.js" type="text/javascript"></script>		
     <script src="lib/date.js" type="text/javascript"></script>
     <script src="lib/jquery.cookies.js" type="text/javascript"></script>
-    <script src="lib/jquery.timers.js" type="text/javascript"></script>
     <script src="lib/jquery.md5.js" type="text/javascript" ></script>
 		
     <script src="lib/excanvas.js"></script>
