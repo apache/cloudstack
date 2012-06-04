@@ -40,5 +40,11 @@ public interface VpcProvider extends NetworkElement{
      */
     boolean shutdownVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException;
     
-
+    boolean createPrivateGateway();
+        
+    boolean createVpnGateway();
+    
+    boolean deletePrivateGateway();
+        
+    boolean deleteVpnGateway();
 }

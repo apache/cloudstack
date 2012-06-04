@@ -307,6 +307,12 @@ public class NetworkOfferingVO implements NetworkOffering, Identity {
         this(name, "System Offering for " + name, trafficType, true, false, 0, 0, true, Availability.Required, null, null, true, specifyIpRanges);
         this.state = State.Enabled;
     }
+    
+    public NetworkOfferingVO(String name, Network.GuestType guestType) {
+        this(name, "System Offering for " + name, TrafficType.Guest, true, true, 0, 0, true, Availability.Optional, 
+                null, Network.GuestType.Isolated, true, false);
+        this.state = State.Enabled;
+    }
 
     @Override
     public String toString() {

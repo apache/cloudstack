@@ -142,7 +142,7 @@ public interface VirtualMachineManager extends Manager {
      * @throws ResourceUnavailableException
      * @throws InsufficientCapacityException
      */
-    boolean addVmToNetwork(VirtualMachine vm, Network network) throws ConcurrentOperationException, 
+    NicProfile addVmToNetwork(VirtualMachine vm, Network network) throws ConcurrentOperationException, 
                 ResourceUnavailableException, InsufficientCapacityException;
 
     /**

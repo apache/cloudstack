@@ -2432,7 +2432,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     
     @Override
     @DB
-    public boolean addVmToNetwork(VirtualMachine vm, Network network) throws ConcurrentOperationException, 
+    public NicProfile addVmToNetwork(VirtualMachine vm, Network network) throws ConcurrentOperationException, 
                                                     ResourceUnavailableException, InsufficientCapacityException {
         
         VMInstanceVO vmVO = _vmDao.findById(vm.getId());
@@ -2476,10 +2476,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         
         if (vmGuru.plugNic(network, nicTO, vmTO, context, dest)) {
             s_logger.debug("Nic is plugged successfully for vm " + vm + " in network " + network + ". Vm  is a part of network now");
-            return true;
+            return nic;
         } else {
             s_logger.warn("Failed to plug nic to the vm " + vm + " in network " + network);
-            return false;
+            return null;
         }
         
     }
@@ -2501,18 +2501,16 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         //1) Release the nic
         NicProfile nic = _networkMgr.releaseNic(vmProfile, networkVO);
         
-        //2) TODO - unplug the nic
+        //2) Convert vmProfile to vmTO
         VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
-        
-        //3) Convert vmProfile to vmTO
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
         VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
         
-        //4) Convert nicProfile to NicTO
+        //3) Convert nicProfile to NicTO
         NicTO nicTO = hvGuru.toNicTO(nic);
         
         boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
-        //5) Unplug the nic
+        //4) Unplug the nic
         if (result) {
             s_logger.debug("Nic is unplugged successfully for vm " + vm + " in network " + network );
         } else {

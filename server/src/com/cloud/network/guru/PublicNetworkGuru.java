@@ -132,7 +132,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
+    public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) 
+            throws InsufficientVirtualNetworkCapcityException,
     InsufficientAddressCapacityException, ConcurrentOperationException {
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());       
@@ -172,7 +173,8 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     @Override
-    public Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
+    public Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context)
+            throws InsufficientVirtualNetworkCapcityException {
         return network;
     }
 

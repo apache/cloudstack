@@ -352,3 +352,7 @@ createVPCGateway=com.cloud.api.commands.CreateVPCGatewayCmd;15
 listVPCGateways=com.cloud.api.commands.ListVPCGatewaysCmd;15
 deleteVPCGateway=com.cloud.api.commands.DeleteVPCGatewayCmd;15
 
+#### Private network command
+createPrivateNetwork=com.cloud.api.commands.CreatePrivateNetworkCmd;1
+deletePrivateNetwork=com.cloud.api.commands.CreatePrivateNetworkCmd;1
+

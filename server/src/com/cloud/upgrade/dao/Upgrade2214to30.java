@@ -859,7 +859,8 @@ public class Upgrade2214to30 implements DbUpgrade {
         ResultSet rs = null;
         try {
             pstmt = conn
-                    .prepareStatement("select id, dns_service, gateway_service, firewall_service, lb_service, userdata_service, vpn_service, dhcp_service, unique_name from `cloud`.`network_offerings` where traffic_type='Guest'");
+                    .prepareStatement("select id, dns_service, gateway_service, firewall_service, " +
+                    		"lb_service, userdata_service, vpn_service, dhcp_service, unique_name from `cloud`.`network_offerings` where traffic_type='Guest'");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long id = rs.getLong(1);
@@ -905,7 +906,8 @@ public class Upgrade2214to30 implements DbUpgrade {
                 }
 
                 for (String service : services) {
-                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ntwk_offering_service_map` (`network_offering_id`, `service`, `provider`, `created`) values (?,?,?, now())");
+                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ntwk_offering_service_map` " +
+                    		"(`network_offering_id`, `service`, `provider`, `created`) values (?,?,?, now())");
                     pstmt.setLong(1, id);
                     pstmt.setString(2, service);
                     if (service.equalsIgnoreCase("SecurityGroup")) {

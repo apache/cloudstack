@@ -146,4 +146,23 @@ public interface NetworkService {
     IpAddress associateIP(long ipId, Long networkId, Long vpcId) throws InsufficientAddressCapacityException,
         ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException;
 
+    /**
+     * @param networkName
+     * @param displayText
+     * @param physicalNetworkId
+     * @param vlan
+     * @param startIp
+     * @param endIP TODO
+     * @param gateway
+     * @param netmask
+     * @param networkOwnerId
+     * @return
+     * @throws InsufficientCapacityException 
+     * @throws ConcurrentOperationException 
+     * @throws ResourceAllocationException 
+     */
+    Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan,
+            String startIp, String endIP, String gateway, String netmask, long networkOwnerId) 
+                    throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
+
 }

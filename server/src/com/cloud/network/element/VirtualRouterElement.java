@@ -54,6 +54,7 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LbStickinessMethod;
@@ -161,10 +162,26 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
-        _routerMgr.deployVirtualRouterInGuestNetwork(network, dest, _accountMgr.getAccount(network.getAccountId()), params, 
+        List<DomainRouterVO> routers = _routerMgr.deployVirtualRouterInGuestNetwork(network, dest, 
+                _accountMgr.getAccount(network.getAccountId()), params, 
                 offering.getRedundantRouter());
-
-        return true;
+        if ((routers == null) || (routers.size() == 0)) {
+            throw new ResourceUnavailableException("Can't find at least one running router!",
+                    DataCenter.class, network.getDataCenterId());
+        }
+        
+        boolean success = true;
+        for (VirtualRouter router : routers) {
+            //Add router to guest network
+            success = success && _routerMgr.addRouterToGuestNetwork(router, network, false);
+            if (!success) {
+                s_logger.warn("Failed to plug nic in network " + network + " for virtual router router " + router);
+            } else {
+                s_logger.debug("Successfully plugged nic in network " + network + " for virtual router " + router);
+            }
+        }
+        
+        return success;       
     }
 
     @Override
@@ -196,7 +213,19 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             throw new ResourceUnavailableException("Can't find at least one running router!",
                     DataCenter.class, network.getDataCenterId());
         }
-        return true;
+        
+        boolean success = true;
+        for (VirtualRouter router : routers) {
+            //Add router to guest network
+            success = success && _routerMgr.addRouterToGuestNetwork(router, network, false);
+            if (!success) {
+                s_logger.warn("Failed to plug nic in network " + network + " for virtual router " + router);
+            } else {
+                s_logger.debug("Successfully plugged nic in network " + network + " for virtual router " + router);
+            }
+        }
+        
+        return success;      
     }
 
     @Override

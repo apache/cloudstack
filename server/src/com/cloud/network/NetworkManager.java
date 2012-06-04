@@ -415,4 +415,12 @@ public interface NetworkManager extends NetworkService {
      */
     void unassignIPFromVpcNetwork(long ipId);
 
+
+    /**
+     * @param vm
+     * @param networkId
+     * @return
+     */
+    NicProfile getNicProfile(VirtualMachine vm, long networkId);
+
 }

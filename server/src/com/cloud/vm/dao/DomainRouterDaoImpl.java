@@ -264,7 +264,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         if (guestNetworks != null && !guestNetworks.isEmpty()) {
             // 2) add router to the network
             for (Network guestNetwork : guestNetworks) {
-                addRouterToNetwork(router, guestNetwork);
+                addRouterToGuestNetwork(router, guestNetwork);
             }
         }
        
@@ -274,7 +274,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     
     @Override
     @DB
-    public void addRouterToNetwork(DomainRouterVO router, Network guestNetwork) {
+    public void addRouterToGuestNetwork(DomainRouterVO router, Network guestNetwork) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         //1) add router to network
@@ -309,5 +309,5 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setParameters("role", Role.VIRTUAL_ROUTER);
         return listBy(sc);
     }
-    
+
 }

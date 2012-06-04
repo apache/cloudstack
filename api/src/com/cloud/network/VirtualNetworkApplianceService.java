@@ -57,4 +57,25 @@ public interface VirtualNetworkApplianceService {
     VirtualRouter startRouter(long id) throws ResourceUnavailableException, InsufficientCapacityException, ConcurrentOperationException;
 
     VirtualRouter destroyRouter(long routerId) throws ResourceUnavailableException, ConcurrentOperationException;
+
+    /**
+     * @param router
+     * @param network
+     * @param isRedundant TODO
+     * @return
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     * @throws InsufficientCapacityException
+     */
+    boolean addRouterToGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+
+    /**
+     * @param router
+     * @param network
+     * @param isRedundant TODO
+     * @return
+     * @throws ConcurrentOperationException
+     * @throws ResourceUnavailableException
+     */
+    boolean removeRouterFromGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) throws ConcurrentOperationException, ResourceUnavailableException;
 }

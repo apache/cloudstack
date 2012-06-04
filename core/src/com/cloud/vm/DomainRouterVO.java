@@ -41,9 +41,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     
     @Column(name="public_netmask")
     private String publicNetmask;
-    
-    @Column(name="guest_ip_address")
-    private String guestIpAddress;
 
     @Column(name="is_redundant_router")
     boolean isRedundantRouter;
@@ -140,10 +137,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     public void setPublicNetmask(String publicNetmask) {
         this.publicNetmask = publicNetmask;
     }
-    
-    public void setGuestIpAddress(String routerIpAddress) {
-        this.guestIpAddress = routerIpAddress;
-    }
 
     @Override
     public long getDataCenterIdToDeployIn() {
@@ -156,11 +149,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     
     public String getPublicMacAddress() {
         return publicMacAddress;
-    }
-    
-    @Override
-    public String getGuestIpAddress() {
-        return guestIpAddress;
     }
     
     protected DomainRouterVO() {

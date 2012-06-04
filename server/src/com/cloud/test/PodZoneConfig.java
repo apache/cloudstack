@@ -381,7 +381,8 @@ public class PodZoneConfig {
         String defaultXenStorageNetworkLabel = getDefaultXenNetworkLabel(TrafficType.Storage);
         String defaultXenGuestNetworkLabel = getDefaultXenNetworkLabel(TrafficType.Guest);
         
-        String insertTraficType = "INSERT INTO `cloud`.`physical_network_traffic_types` (physical_network_id, traffic_type, xen_network_label) VALUES ( ?, ?, ?)";
+        String insertTraficType = "INSERT INTO `cloud`.`physical_network_traffic_types` " +
+        		"(physical_network_id, traffic_type, xen_network_label) VALUES ( ?, ?, ?)";
 
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(insertTraficType);
