@@ -21,6 +21,7 @@ import java.util.List;
 public class EC2DescribeAvailabilityZones {
 
 	private List<String> zoneSet = new ArrayList<String>();    // a list of strings identifying zones
+    private EC2AvailabilityZonesFilterSet azfs = null;
 
 	public EC2DescribeAvailabilityZones() {
 	}
@@ -32,4 +33,13 @@ public class EC2DescribeAvailabilityZones {
 	public String[] getZoneSet() {
 		return zoneSet.toArray(new String[0]);
 	}
+	
+    public EC2AvailabilityZonesFilterSet getFilterSet() {
+        return azfs;
+    }
+
+    public void setFilterSet( EC2AvailabilityZonesFilterSet param ) {
+        azfs = param;
+    }
+
 }
