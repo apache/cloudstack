@@ -203,7 +203,7 @@ public class ApiServlet extends HttpServlet {
                     if (username != null) {
                         String pwd = ((password == null) ? null : password[0]);
                         try {
-                            _apiServer.loginUser(session, username[0], pwd, domainId, domain, params);
+                            _apiServer.loginUser(session, username[0], pwd, domainId, domain, req.getRemoteAddr(), params);
                             auditTrailSb.insert(0,
                                     "(userId=" + session.getAttribute("userid") + " accountId=" + ((Account) session.getAttribute("accountobj")).getId() + " sessionId=" + session.getId() + ")");
                             String loginResponse = getLoginSuccessResponse(session, responseType);
