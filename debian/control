@@ -135,8 +135,7 @@ Package: cloud-agent-libs
 Architecture: any
 Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java
 Description: CloudStack agent libraries
- The CloudStack agent libraries are used by the Cloud Agent and the Cloud
- Console Proxy.
+ The CloudStack agent libraries are used by the Cloud Agent.
 
 Package: cloud-agent
 Provides: vmops-agent
@@ -155,13 +154,6 @@ Description: CloudStack system iso
  The CloudStack agent is in charge of managing shared computing resources in
  a CloudStack Cloud Stack-powered cloud.  Install this package if this computer
  will participate in your cloud.
-
-Package: cloud-console-proxy
-Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-agent-libs (= ${source:Version}), python, cloud-python (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, cloud-daemonize, sysvinit-utils, chkconfig, augeas-tools, uuid-runtime, grep, iproute
-Description: CloudStack console proxy
- The CloudStack console proxy is the service in charge of granting console
- access into virtual machines managed by the CloudStack CloudStack.
 
 Package: cloud-usage
 Provides: vmops-usage

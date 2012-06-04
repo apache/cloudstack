@@ -1,9 +1,0 @@
-/usr/share/java/cloud-console*.jar
-/etc/cloud/console-proxy/agent.properties
-/etc/cloud/console-proxy/consoleproxy.properties
-/etc/cloud/console-proxy/log4j-cloud.xml
-/etc/init.d/cloud-console-proxy
-/usr/bin/console-proxy-runner
-/usr/bin/cloud-setup-console-proxy
-/usr/lib/cloud/console-proxy/*
-/var/log/cloud/console-proxy
