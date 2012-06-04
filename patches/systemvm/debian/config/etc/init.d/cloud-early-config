@@ -171,8 +171,7 @@ setup_interface() {
   local intfnum=$1
   local ip=$2
   local mask=$3
-  local gw=$4
-  local force=$5
+  local force=$4
   local intf=eth${intfnum} 
   local bootproto="static"
 
@@ -286,11 +285,11 @@ disable_hvc() {
 
 setup_common() {
   init_interfaces $1 $2 $3
-  setup_interface "0" $ETH0_IP $ETH0_MASK $GW
-  setup_interface "1" $ETH1_IP $ETH1_MASK $GW
+  setup_interface "0" $ETH0_IP $ETH0_MASK
+  setup_interface "1" $ETH1_IP $ETH1_MASK
   if [ -n "$ETH2_IP" ]
   then
-  	setup_interface "2" $ETH2_IP $ETH2_MASK $GW
+  	setup_interface "2" $ETH2_IP $ETH2_MASK
   fi
    
   echo $NAME > /etc/hostname
@@ -472,38 +471,20 @@ setup_redundant_router() {
     fi
 }
 
-setup_router() {
-  log_it "Setting up virtual router system vm"
-  
+
+setup_vmware_extra_nics() {
+  local oldmd5
   oldmd5=
   [ -f "/etc/udev/rules.d/70-persistent-net.rules" ] && oldmd5=$(md5sum "/etc/udev/rules.d/70-persistent-net.rules" | awk '{print $1}')
-  
-  if [ -n "$ETH2_IP" ]
+ 
+  if [ -n "$EXTRA_NICS" ]
   then
-      setup_common eth0 eth1 eth2
-      
-      if [ -n "$EXTRA_PUBNICS" ]
-      then
-        for((i = 3; i < 3 + $EXTRA_PUBNICS; i++))
-        do
-            setup_interface "$i" "0.0.0.0" "255.255.255.255" $GW "force"
-        done
-      fi
-  else
-  	setup_common eth0 eth1
-      if [ -n "$EXTRA_PUBNICS" ]
-      then
-        for((i = 2; i < 2 + $EXTRA_PUBNICS; i++))
-        do
-            setup_interface "$i" "0.0.0.0" "255.255.255.255" $GW "force"
-        done
-      fi
+    for((i = 1; i < 1 + $EXTRA_NICS; i++))
+    do
+      setup_interface "$i" "0.0.0.0" "255.255.255.255" "force"
+    done
   fi
-  
-  if [ -n "$ETH2_IP" -a "$RROUTER" == "1" ]
-  then
-    setup_redundant_router
-  fi
+
   
   log_it "Checking udev NIC assignment order changes"
   if [ "$NIC_MACS" != "" ]
@@ -522,18 +503,29 @@ setup_router() {
     fi
   fi
   
-  
-  
-  NS=$NS1
-  [ -n "$NS2" ] && NS=$NS1,$NS2
-  if [ "$USE_EXTERNAL_DNS" == "true" ]
-  then
-      sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
-      echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
+
+}
+
+
+setup_router() {
+  log_it "Setting up virtual router system vm"
+  if [ "$hyp" == "vmware" ]; then
+    setup_vmware_extra_nics
   fi
+ 
+  setup_common eth0
+   
+  if [ "$RROUTER" == "1" ]
+  then
+    setup_redundant_router
+  fi
+     
+  setup_dnsmasq
+  setup_apache2 $ETH0_IP
   
   sed -i  /gateway/d /etc/hosts
 
+  echo "$ETH0_IP $NAME" >> /etc/hosts
   setup_sshd $ETH0_IP
 
   enable_svc dnsmasq 1
@@ -542,47 +534,6 @@ setup_router() {
   enable_svc cloud 0
   disable_rpfilter_domR
   enable_fwding 1
-  chkconfig nfs-common off
-  cp /etc/iptables/iptables-router /etc/iptables/rules
-}
-
-setup_dhcpsrvr() {
-  log_it "Setting up dhcp server system vm"
-  setup_common eth0
-  setup_dnsmasq
-  setup_apache2 $ETH0_IP
-
-  NS=$NS1
-  [ -n "$NS2" ] && NS=$NS1,$NS2
-  if [ "$DEFAULTROUTE" != "false" ]
-  then
-    sed -i -e "/^[#]*dhcp-option=option:router.*$/d" /etc/dnsmasq.conf
-    echo "dhcp-option=option:router,$GW" >> /etc/dnsmasq.conf
-    #for now set up ourself as the dns server as well
-    sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
-    if [ "$USE_EXTERNAL_DNS" == "true" ]
-    then
-        echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
-    else
-        echo "dhcp-option=6,$ETH0_IP,$NS" >> /etc/dnsmasq.conf
-    fi
-  else
-    sed -i -e "/^[#]*dhcp-option=option:router.*$/d" /etc/dnsmasq.conf
-    echo "dhcp-option=option:router" >> /etc/dnsmasq.conf
-    sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
-    echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
-  fi
-
-  sed -i  /gateway/d /etc/hosts
-  echo "$ETH0_IP $NAME" >> /etc/hosts
-
-  setup_sshd $ETH0_IP
-
-  enable_svc dnsmasq 1
-  enable_svc haproxy 0
-  enable_svc cloud-passwd-srvr 1
-  enable_svc cloud 0
-  enable_fwding 0
   chkconfig nfs-common off
   cp /etc/iptables/iptables-router /etc/iptables/rules
 }
@@ -700,10 +651,6 @@ start() {
      router)
          [ "$NAME" == "" ] && NAME=router
          setup_router
-	  ;;
-     dhcpsrvr)
-         [ "$NAME" == "" ] && NAME=dhcpsrvr
-         setup_dhcpsrvr
 	  ;;
      secstorage)
          [ "$NAME" == "" ] && NAME=secstorage
