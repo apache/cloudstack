@@ -20,7 +20,6 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcVirtualNetworkApplianceService;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineProfile.Param;
@@ -28,7 +27,7 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 /**
  * @author Alena Prokharchyk
  */
-public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplianceManager, VpcVirtualNetworkApplianceService{
+public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplianceManager{
 
     /**
      * @param vpc

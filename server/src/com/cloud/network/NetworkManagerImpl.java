@@ -131,6 +131,7 @@ import com.cloud.network.element.SourceNatServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.element.VirtualRouterElement;
+import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
@@ -147,8 +148,10 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StaticNatRuleImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vpc.PrivateIpVO;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.Dao.PrivateIpDao;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -300,6 +303,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     StorageNetworkManager _stnwMgr;
     @Inject
     VpcManager _vpcMgr;
+    @Inject
+    PrivateIpDao _privateIpDao;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -1327,6 +1332,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, TrafficType.Storage, true);
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemStorageNetwork, storageNetworkOffering);
+        NetworkOfferingVO privateGatewayNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPrivateGatewayNetworkOffering,
+                GuestType.Isolated);
+        privateGatewayNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(privateGatewayNetworkOffering);
+        _systemNetworks.put(NetworkOfferingVO.SystemPrivateGatewayNetworkOffering, privateGatewayNetworkOffering);
+
 
         // populate providers
         Map<Network.Service, Set<Network.Provider>> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
@@ -1347,7 +1357,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         sgProviders.add(Provider.SecurityGroupProvider);
         defaultSharedSGEnabledNetworkOfferingProviders.put(Service.SecurityGroup, sgProviders);
 
-        Map<Network.Service, Set<Network.Provider>> defaultIsolatedSourceNatEnabledNetworkOfferingProviders = new HashMap<Network.Service, Set<Network.Provider>>();
+        Map<Network.Service, Set<Network.Provider>> defaultIsolatedSourceNatEnabledNetworkOfferingProviders = 
+                new HashMap<Network.Service, Set<Network.Provider>>();
         defaultProviders.clear();
         defaultProviders.add(Network.Provider.VirtualRouter);
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Dhcp, defaultProviders);
@@ -2266,6 +2277,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
         return profiles;
+    }
+    
+    @Override
+    public NicProfile getNicProfile(VirtualMachine vm, long networkId) {
+        NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
+        NetworkVO network = _networksDao.findById(networkId);
+        Integer networkRate = getNetworkRate(network.getId(), vm.getId());
+    
+        NetworkGuru guru = _networkGurus.get(network.getGuruName());
+        NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
+                networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vm.getHypervisorType(), network));
+        guru.updateNicProfile(profile, network);            
+        
+        return profile;
     }
 
     @Override
@@ -3512,14 +3537,26 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return success;
     }
 
-    private boolean deleteVlansInNetwork(long networkId, long userId, Account callerAccount) {
-        List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+    protected boolean deleteVlansInNetwork(long networkId, long userId, Account callerAccount) {
+        
+        //cleanup Public vlans
+        List<VlanVO> publicVlans = _vlanDao.listVlansByNetworkId(networkId);
         boolean result = true;
-        for (VlanVO vlan : vlans) {
+        for (VlanVO vlan : publicVlans) {
             if (!_configMgr.deleteVlanAndPublicIpRange(_accountMgr.getSystemUser().getId(), vlan.getId(), callerAccount)) {
                 s_logger.warn("Failed to delete vlan " + vlan.getId() + ");");
                 result = false;
             }
+        }      
+        
+        //cleanup private vlans
+        int privateIpAllocCount = _privateIpDao.countAllocatedByNetworkId(networkId);
+        if (privateIpAllocCount > 0) {
+            s_logger.warn("Can't delete Private ip range for network " + networkId + " as it has allocated ip addresses");
+            result = false;
+        } else {
+            _privateIpDao.deleteByNetworkId(networkId);
+            s_logger.debug("Deleted ip range for private network id=" + networkId);
         }
         return result;
     }
@@ -4999,7 +5036,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_PHYSICAL_NETWORK_CREATE, eventDescription = "Creating Physical Network", create = true)
-    public PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, List<String> isolationMethods, String broadcastDomainRangeStr, Long domainId, List<String> tags, String name) {
+    public PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, List<String> 
+    isolationMethods, String broadcastDomainRangeStr, Long domainId, List<String> tags, String name) {
 
         // Check if zone exists
         if (zoneId == null) {
@@ -6495,6 +6533,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         PhysicalNetworkServiceProvider nsp = addProviderToPhysicalNetwork(physicalNetworkId, 
                 Network.Provider.VPCVirtualRouter.getName(), null, null);
+        // add instance of the provider
+        VpcVirtualRouterElement element = (VpcVirtualRouterElement) getElementImplementingProvider(Network.Provider.VPCVirtualRouter.getName());
+        if (element == null) {
+            throw new CloudRuntimeException("Unable to find the Network Element implementing the VPCVirtualRouter Provider");
+        }
+        element.addElement(nsp.getId());
 
         return nsp;
     }
@@ -6955,7 +6999,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public boolean isVmPartOfNetwork(long vmId, long ntwkId) {
-        if (_nicDao.findByInstanceIdAndNetworkId(ntwkId, vmId) != null) {
+        if (_nicDao.findNonReleasedByInstanceIdAndNetworkId(ntwkId, vmId) != null) {
             return true;
         }
         return false;
@@ -6989,6 +7033,64 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         ip.setAssociatedWithNetworkId(null);
         _ipAddressDao.update(ipId, ip);
         s_logger.debug("IP address " + ip + " is no longer associated with the network inside vpc id=" + vpcId);
+    }
+
+    @Override @DB
+    public Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, 
+            String vlan, String startIp, String endIp, String gateway, String netmask, long networkOwnerId) 
+                    throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
+        
+        Account owner = _accountMgr.getAccount(networkOwnerId);
+        
+        // Get system network offeirng
+        NetworkOfferingVO ntwkOff = _systemNetworks.get(NetworkOffering.SystemPrivateGatewayNetworkOffering);
+        
+        
+        // Validate physical network
+        PhysicalNetwork pNtwk = _physicalNetworkDao.findById(physicalNetworkId);
+        if (pNtwk == null) {
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a physical network" +
+            		" having the given id");
+            ex.addProxyObject("physical_network", physicalNetworkId, "physicalNetworkId");
+            throw ex;
+        }
+        
+        // VALIDATE IP INFO
+        // if end ip is not specified, default it to startIp
+        if (!NetUtils.isValidIp(startIp)) {
+            throw new InvalidParameterValueException("Invalid format for the startIp parameter");
+        }
+        if (endIp == null) {
+            endIp = startIp;
+        } else if (!NetUtils.isValidIp(endIp)) {
+            throw new InvalidParameterValueException("Invalid format for the endIp parameter");
+        }
+
+        String cidr = null;
+        if (!NetUtils.isValidIp(gateway)) {
+            throw new InvalidParameterValueException("Invalid gateway");
+        }
+        if (!NetUtils.isValidNetmask(netmask)) {
+            throw new InvalidParameterValueException("Invalid netmask");
+        }
+
+        cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+        
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        //create Guest network
+        Network privateNetwork = createGuestNetwork(ntwkOff.getId(), networkName, displayText, gateway, cidr, vlan, 
+                null, owner, null, pNtwk, pNtwk.getDataCenterId(), ACLType.Account, null, null);
+        
+        //add entry to private_ip_address table
+        PrivateIpVO privateIp = new PrivateIpVO(startIp, privateNetwork.getId());
+        _privateIpDao.persist(privateIp);
+        
+        txn.commit();
+        s_logger.debug("Private network " + privateNetwork + " is created");
+
+        return privateNetwork;
     }
     
 }

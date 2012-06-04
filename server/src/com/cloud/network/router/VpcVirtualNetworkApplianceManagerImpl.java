@@ -19,15 +19,12 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network;
 import com.cloud.network.NetworkService;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.VirtualRouterProvider;
@@ -35,25 +32,21 @@ import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcVirtualNetworkApplianceService;
 import com.cloud.network.vpc.Dao.VpcDao;
 import com.cloud.network.vpc.Dao.VpcOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
-import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
 /**
  * @author Alena Prokharchyk
  */
 
-@Local(value = { VpcVirtualNetworkApplianceManager.class, VpcVirtualNetworkApplianceService.class,})
-public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplianceManagerImpl implements 
-VpcVirtualNetworkApplianceManager{
+@Local(value = {VpcVirtualNetworkApplianceManager.class})
+public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplianceManagerImpl implements VpcVirtualNetworkApplianceManager{
     private static final Logger s_logger = Logger.getLogger(VpcVirtualNetworkApplianceManagerImpl.class);
 
     @Inject
@@ -103,15 +96,19 @@ VpcVirtualNetworkApplianceManager{
         
         //3) Deploy Virtual Router
         try {
-            //FIXME - remove hardcoded provider type when decide if we want cross physical networks vpcs
             List<? extends PhysicalNetwork> pNtwks = _pNtwkDao.listByZone(vpc.getZoneId());
             
-            VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(pNtwks.get(0).getId(), 
-                    VirtualRouterProviderType.VirtualRouter);
+            VirtualRouterProvider vpcVrProvider = null;
+            for (PhysicalNetwork pNtwk : pNtwks) {
+                vpcVrProvider = _vrProviderDao.findByNspIdAndType(pNtwk.getId(), 
+                        VirtualRouterProviderType.VPCVirtualRouter);
+                if (vpcVrProvider != null) {
+                    break;
+                }
+            }
             
-            PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddressToVpc(owner, vpc);
-            DomainRouterVO router = deployRouter(owner, dest, plan, params, true, true, null, false,
-                    vrProvider, offeringId, sourceNatIp, vpc.getId());
+            DomainRouterVO router = deployRouter(owner, dest, plan, params, false, vpcVrProvider, offeringId,
+                    vpc.getId());
             routers.add(router);
             
         } finally {
@@ -131,93 +128,4 @@ VpcVirtualNetworkApplianceManager{
         return new Pair<DeploymentPlan, List<DomainRouterVO>>(plan, routers);
     }
     
-    @Override
-    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm, 
-            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {
-        
-        String networkDomain = network.getNetworkDomain();
-        String cidr = network.getCidr();
-        String dhcpRange = null;
-        if (cidr != null) {
-            dhcpRange = NetUtils.getDhcpRange(cidr);
-        }
-        
-        boolean result = true;
-        
-        //add router to network
-        DomainRouterVO router = _routerDao.findById(vm.getId());
-        s_logger.debug("Adding router " + router + " to network " + network);
-        _routerDao.addRouterToNetwork(router, network);
-        
-        
-        //FIXME - Anthony, here I send plug nic command
-//        try {
-//            Map<PlugNicCommand.Param, String> params = new HashMap<PlugNicCommand.Param, String>();
-//            params.put(PlugNicCommand.Param.NetworkDomain, networkDomain);
-//            params.put(PlugNicCommand.Param.DhcpRange, dhcpRange);
-//             
-//            PlugNicCommand plugNicCmd = new PlugNicCommand(vm, nic, params);
-//            
-//            Commands cmds = new Commands(OnError.Stop);
-//            cmds.addCommand("plugnic", plugNicCmd);
-//            _agentMgr.send(dest.getHost().getId(), cmds);
-//            
-//            PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
-//            if (!(plugNicAnswer != null && plugNicAnswer.getResult())) {
-//                s_logger.warn("Unable to plug nic for vm " + vm.getHostName());
-//                result = false;
-//            } 
-//
-//        } catch (OperationTimedoutException e) {
-//            throw new AgentUnavailableException("Unable to plug nic for vm " + vm.getHostName() + " in network " + network,
-//                    dest.getHost().getId(), e);
-//        }
-        
-        return result;
-    }
-
-    @Override
-    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm,
-            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
-        
-        //FIXME - Anthony, add unplug nic agent command
-        boolean result = true;
-//        try {
-//            UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(vm, nic);
-//            Commands cmds = new Commands(OnError.Stop);
-//            cmds.addCommand("unplugnic", unplugNicCmd);
-//            _agentMgr.send(dest.getHost().getId(), cmds);
-//            
-//            UnPlugNicAnswer unplugNicAnswer = cmds.getAnswer(UnPlugNicAnswer.class);
-//            if (!(unplugNicAnswer != null && unplugNicAnswer.getResult())) {
-//                s_logger.warn("Unable to unplug nic from vm " + vm.getHostName());
-//                result = false;
-//            } 
-//
-//        } catch (OperationTimedoutException e) {
-//            throw new AgentUnavailableException("Unable to unplug nic from vm " + vm.getHostName() + " from network " + network,
-//                    dest.getHost().getId(), e);
-//        }
-//        
-        if (result) {
-            s_logger.debug("Removing router " + vm.getHostName() + " from network " + network);
-            _routerDao.removeRouterFromNetwork(vm.getId(), network.getId());
-        }
-        
-        return result;
-    }
-
-    @Override
-    public boolean addVmToNetwork(VirtualRouter router, Network network) throws ConcurrentOperationException, 
-                    ResourceUnavailableException, InsufficientCapacityException {
-        return _itMgr.addVmToNetwork(router, network);
-    }
-
-
-    @Override
-    public boolean removeVmFromNetwork(VirtualRouter router, Network network) 
-            throws ConcurrentOperationException, ResourceUnavailableException {
-        return _itMgr.removeVmFromNetwork(router, network);
-    }
 }

@@ -27,7 +27,8 @@ import com.cloud.network.VpnUser;
 
 public interface RemoteAccessVpnService {
 
-    RemoteAccessVpn createRemoteAccessVpn(long vpnServerAddressId, String ipRange, boolean openFirewall, long networkId) throws NetworkRuleConflictException;
+    RemoteAccessVpn createRemoteAccessVpn(long vpnServerAddressId, String ipRange, boolean openFirewall, long networkId) 
+            throws NetworkRuleConflictException;
     void destroyRemoteAccessVpn(long vpnServerAddressId) throws ResourceUnavailableException;
     RemoteAccessVpn startRemoteAccessVpn(long vpnServerAddressId, boolean openFirewall) throws ResourceUnavailableException;
 

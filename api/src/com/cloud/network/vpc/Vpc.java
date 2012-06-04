@@ -25,7 +25,7 @@ public interface Vpc extends ControlledEntity{
         Disabled
     }
     
-   public static final String _supportedProviders = Network.Provider.VirtualRouter.getName();
+   public static final String _supportedProviders = Network.Provider.VPCVirtualRouter.getName();
 
    boolean readyToUse();
 

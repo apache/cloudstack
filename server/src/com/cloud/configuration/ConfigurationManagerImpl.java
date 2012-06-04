@@ -1608,6 +1608,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     } else {
                         continue;
                     }
+                } else if (offering.getTrafficType() == TrafficType.Guest) {
+                    continue;
                 }
 
                 userNetwork.setBroadcastDomainType(broadcastDomainType);

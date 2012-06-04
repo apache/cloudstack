@@ -37,4 +37,13 @@ public interface NicDao extends GenericDao<NicVO, Long> {
     NicVO findByIp4AddressAndNetworkId(String ip4Address, long networkId);
     
     NicVO findDefaultNicForVM(long instanceId);
+
+    /**
+     * @param networkId
+     * @param instanceId
+     * @return
+     */
+    NicVO findNonReleasedByInstanceIdAndNetworkId(long networkId, long instanceId);
+    
+    String getIpAddress(long networkId, long instanceId);
 }

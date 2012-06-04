@@ -35,7 +35,6 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcService;
-import com.cloud.network.vpc.VpcVirtualNetworkApplianceService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.DomainRouterVO;
@@ -52,8 +51,6 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     private static final Logger s_logger = Logger.getLogger(VpcVirtualRouterElement.class);
     @Inject 
     NetworkService _ntwkService;
-    @Inject
-    VpcVirtualNetworkApplianceService _vpcElementService;
     @Inject
     VpcService _vpcService;
     
@@ -116,13 +113,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
        
        boolean success = true;
        for (VirtualRouter router : routers) {
-           //1) Check if router is already a part of the network
-           if (_ntwkService.isVmPartOfNetwork(router.getId(), network.getId())) {
-               s_logger.debug("Router " + router + " is already part of the network " + network);
-               continue;
-           }
-           //2) Call plugNics in the network service
-           success = success && _vpcElementService.addVmToNetwork(router, network);
+           //Add router to guest network
+           success = success && _routerMgr.addRouterToGuestNetwork(router, network, false);
        }
        
        if (!success) {
@@ -131,7 +123,6 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
            s_logger.debug("Successfully plugged nic in network " + network + " for virtual router in vpc id=" + vpcId);
        }
        
-      
        return success;       
     }
     
@@ -155,7 +146,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
         
-        List<DomainRouterVO> routers = _vpcRouterMgr.deployVirtualRouterInVpc(vpc, dest, _accountMgr.getAccount(vpc.getAccountId()), params);
+        List<DomainRouterVO> routers = _vpcRouterMgr.deployVirtualRouterInVpc(vpc, dest, 
+                _accountMgr.getAccount(vpc.getAccountId()), params);
         if ((routers == null) || (routers.size() == 0)) {
             throw new ResourceUnavailableException("Can't find at least one running router!",
                     DataCenter.class, network.getDataCenterId());
@@ -163,21 +155,14 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         
         boolean success = true;
         for (VirtualRouter router : routers) {
-            //1) Check if router is already a part of the network
-            if (_ntwkService.isVmPartOfNetwork(router.getId(), network.getId())) {
-                s_logger.debug("Router " + router + " is already part of the network " + network);
-                continue;
+            //2) Add router to guest network
+            success = success && _routerMgr.addRouterToGuestNetwork(router, network, false);
+            if (!success) {
+                s_logger.warn("Failed to plug nic in network " + network + " for virtual router " + router);
+            } else {
+                s_logger.debug("Successfully plugged nic in network " + network + " for virtual router " + router);
             }
-            //2) Call plugNics in the network service
-            success = success && _vpcElementService.addVmToNetwork(router, network);
         }
-        
-        if (!success) {
-            s_logger.warn("Failed to plug nic in network " + network + " for virtual router in vpc id=" + vpcId);
-        } else {
-            s_logger.debug("Successfully plugged nic in network " + network + " for virtual router in vpc id=" + vpcId);
-        }
-        
        
         return success;
     }
@@ -200,13 +185,12 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 continue;
             }
             //2) Call unplugNics in the network service
-            success = success && _vpcElementService.removeVmFromNetwork(router, network);
-        }
-        
-        if (!success) {
-            s_logger.warn("Failed to unplug nic in network " + network + " for virtual router in vpc id=" + vpcId);
-        } else {
-            s_logger.debug("Successfully unplugged nic in network " + network + " for virtual router in vpc id=" + vpcId);
+            success = success && _vpcRouterMgr.removeRouterFromGuestNetwork(router, network, false);
+            if (!success) {
+                s_logger.warn("Failed to unplug nic in network " + network + " for virtual router " + router);
+            } else {
+                s_logger.debug("Successfully unplugged nic in network " + network + " for virtual router " + router);
+            }
         }
         
         return success;
@@ -229,13 +213,12 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 continue;
             }
             //2) Call unplugNics in the network service
-            success = success && _vpcElementService.removeVmFromNetwork(router, config);
-        }
-        
-        if (!success) {
-            s_logger.warn("Failed to unplug nic in network " + config + " for virtual router in vpc id=" + vpcId);
-        } else {
-            s_logger.debug("Successfully unplugged nic in network " + config + " for virtual router in vpc id=" + vpcId);
+            success = success && _vpcRouterMgr.removeRouterFromGuestNetwork(router, config, false);
+            if (!success) {
+                s_logger.warn("Failed to unplug nic in network " + config + " for virtual router " + router);
+            } else {
+                s_logger.debug("Successfully unplugged nic in network " + config + " for virtual router " + router);
+            }
         }
         
         return success;
@@ -259,6 +242,30 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
         return capabilities;
+    }
+    
+    @Override
+    public boolean createPrivateGateway() {
+        //TODO - add implementation here
+        return true;
+    }
+    
+    @Override
+    public boolean createVpnGateway() {
+        //TODO - add implementation here
+        return true;
+    }
+    
+    @Override
+    public boolean deletePrivateGateway() {
+        //TODO - add implementation here
+        return true;
+    }
+    
+    @Override
+    public boolean deleteVpnGateway() {
+        //TODO - add implementation here
+        return true;
     }
 
 }
