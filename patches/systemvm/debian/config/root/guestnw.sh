@@ -31,64 +31,71 @@ usage() {
 
 
 setup_dnsmasq() {
-  loger -t cloud "Setting up dnsmasq for network $gwIP "
+  loger -t cloud "Setting up dnsmasq for network $ip/$mask "
   
-  sed -i -e "/^[#]*dhcp-range=interface:$ethDev/d" /etc/dnsmasq.d/cloud.conf
+  sed -i -e "/^[#]*dhcp-range=interface:$dev/d" /etc/dnsmasq.d/cloud.conf
 
-  echo "dhcp-range=interface:$ethDev,$gwIP,static/" >> /etc/dnsmasq.d/cloud.conf
+  echo "dhcp-range=interface:$dev,set:interface-$dev,$ip,static/" >> /etc/dnsmasq.d/cloud.conf
 
+  sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,option:router.*$/d" /etc/dnsmasq.d/cloud.conf
+  if [ -n "$gw" ]
+  then
+    echo "dhcp-option=tag:interface-$dev,option:router,$gw" >> /etc/dnsmasq.d/cloud.conf
+  fi
+  sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,6.*$/d" /etc/dnsmasq.d/cloud.conf
+  if [ -n "$NS" ]
+  then
+    echo "dhcp-option=tag:interface-$dev,6,$NS" >> /etc/dnsmasq.d/cloud.conf
+  fi
   service dnsmasq restart
   sleep 1
 }
 
 desetup_dnsmasq() {
-  loger -t cloud "Setting up dnsmasq for network $gwIP "
+  loger -t cloud "Setting up dnsmasq for network $ip/$mask "
   
-  sed -i -e "/^[#]*dhcp-range=interface:$ethDev/d" /etc/dnsmasq.d/cloud.conf
-
+  sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,option:router.*$/d" /etc/dnsmasq.d/cloud.conf
+  sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,6.*$/d" /etc/dnsmasq.d/cloud.conf
+  sed -i -e "/^[#]*dhcp-range=interface:$dev/d" /etc/dnsmasq.d/cloud.conf
   service dnsmasq restart
   sleep 1
 }
 
 
-create_network() {
-  logger -t cloud " $(basename $0): Create network on interface $ethDev,  gateway $gwIP, network $network, cidr $cidr "
+create_guest_network() {
+  logger -t cloud " $(basename $0): Create network on interface $dev,  gateway $gw, network $ip/$mask "
 
-  sudo ip addr add $ethDev $gwIP/$cidr
+  sudo ip addr add $dev $ip/$mask
 
-  # create inbond acl chain
-  if sudo iptables -N ACL_INBOND_$gwIP 2>/dev/null
+  # create inbound acl chain
+  if sudo iptables -N ACL_INBOUND_$ip 2>/dev/null
   then
-    logger -t cloud "$(basename $0): create VPC inbond acl chain for network $gwIP"
+    logger -t cloud "$(basename $0): create VPC inbound acl chain for network $ip/$mask"
     # policy drop
-    sudo iptables -A ACL_INBOND_$gwIP DROP >/dev/null
-    sudo iptables -A FORWARD -o $dev -d $gwIP/$cidr -j ACL_INBOND_$gwIP
+    sudo iptables -A ACL_INBOUND_$ip DROP >/dev/null
+    sudo iptables -A FORWARD -o $dev -d $ip/$mask -j ACL_INBOUND_$ip
   fi
-  # create outbond acl chain
-  if sudo iptables -N ACL_OUTBOND_$gwIP 2>/dev/null
+  # create outbound acl chain
+  if sudo iptables -N ACL_OUTBOUND_$ip 2>/dev/null
   then
-    logger -t cloud "$(basename $0): create VPC outbond acl chain for network $gwIP"
-    sudo iptables -A ACL_OUTBOND_$gwIP DROP >/dev/null
-    sudo iptables -A FORWARD -i $dev -s $gwIP/$cidr -j ACL_OUTBOND_$gwIP
+    logger -t cloud "$(basename $0): create VPC outbound acl chain for network $ip/$mask"
+    sudo iptables -A ACL_OUTBOUND_$ip DROP >/dev/null
+    sudo iptables -A FORWARD -i $dev -s $ip/$mask -j ACL_OUTBOUND_$ip
   fi
 
   setup_dnsmasq
 }
 
-destroy_network() {
-  logger -t cloud " $(basename $0): Create network on interface $ethDev,  gateway $gwIP, network $network, cidr $cidr "
-
-
-  # destroy egress firewall chain
-  sudo iptables -t mangle -D PREROUTING -s $gwIP/$cidr -j FIREWALL_EGRESS_$gwIP
-  sudo iptables -t mangle -F FIREWALL_EGRESS_$gwIP
-  sudo iptables -t mangle -X FIREWALL_EGRESS_$gwIP
-
-  # destroy ingress firewall chain
-
-  sudo iptables -t mangle -D POSTROUTING -o $devDev-d $gwIP/$cidr -j FIREWALL_IEGRESS_$gwIP
-  sudo iptables -t mangle -F FIREWALL_INGRESS_$gwIP
-  sudo iptables -t mangle -X FIREWALL_INGRESS_$gwIP
+destroy_guest_network() {
+  logger -t cloud " $(basename $0): Create network on interface $dev,  gateway $gw, network $ip/$mask "
+  # destroy inbound acl chain
+  sudo iptables -F ACL_INBOUND_$ip 2>/dev/null
+  sudo iptables -D FORWARD -o $dev -d $ip/$mask -j ACL_INBOUND_$ip  2>/dev/null
+  sudo iptables -X ACL_INBOUND_$ip 2>/dev/null
+  # destroy outbound acl chain
+  sudo iptables -F ACL_OUTBOUND_$ip 2>/dev/null
+  sudo iptables -D FORWARD -i $dev -s $ip/$mask -j ACL_OUTBOUND_$ip  2>/dev/null
+  sudo iptables -X ACL_OUTBOUND_$ip 2>/dev/null
 
   desetup_dnsmasq
 }
@@ -116,18 +123,20 @@ do
   n)	nflag=1
 		network="$OPTAGR"
 		;;
-  c)	cflag=1
-		cidr="$OPTARG"
+  c)	mflag=1
+		mask="$OPTARG"
 		;;
   d)	dflag=1
-  		ethDev="$OPTARG"
+  		dev="$OPTARG"
   		;;
-  v)	vflag=1
-  		vcidr="$OPTARG"
+  v)	iflag=1
+		ip="$OPTARG"
   		;;
-
   g)	gflag=1
-  		gwIP="$OPTARG"
+  		gw="$OPTARG"
+                ;;
+  s)    sflag=1
+                DNS="$OPTARG"
   		;;
   ?)	usage
                 unlock_exit 2 $lock $locked
@@ -142,7 +151,7 @@ then
     unlock_exit 2 $lock $locked
 fi
 
-if [ "$Cflag" == "1" ] && ["$nflag$mflag$gflag$vflag" != "1111" ] 
+if [ "$Cflag" == "1" ] && ["$dflag$iflag$gflag$mflag" != "1111" ] 
 then
     usage
     unlock_exit 2 $lock $locked
