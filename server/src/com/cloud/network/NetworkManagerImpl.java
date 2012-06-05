@@ -108,6 +108,7 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork.BroadcastDomainRange;
+import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -6437,7 +6438,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (element == null) {
             throw new CloudRuntimeException("Unable to find the Network Element implementing the VirtualRouter Provider");
         }
-        element.addElement(nsp.getId());
+        element.addElement(nsp.getId(), VirtualRouterProviderType.VirtualRouter);
 
         return nsp;
     }
@@ -6451,7 +6452,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (element == null) {
             throw new CloudRuntimeException("Unable to find the Network Element implementing the VPCVirtualRouter Provider");
         }
-        element.addElement(nsp.getId());
+        element.addElement(nsp.getId(), VirtualRouterProviderType.VPCVirtualRouter);
 
         return nsp;
     }

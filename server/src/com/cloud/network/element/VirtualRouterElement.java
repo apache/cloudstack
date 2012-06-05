@@ -696,13 +696,13 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public VirtualRouterProvider addElement(Long nspId) {
-        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(nspId, VirtualRouterProviderType.VirtualRouter);
+    public VirtualRouterProvider addElement(Long nspId, VirtualRouterProviderType providerType) {
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(nspId, providerType);
         if (element != null) {
             s_logger.debug("There is already a virtual router element with service provider id " + nspId);
             return null;
         }
-        element = new VirtualRouterProviderVO(nspId, VirtualRouterProviderType.VirtualRouter);
+        element = new VirtualRouterProviderVO(nspId, providerType);
         _vrProviderDao.persist(element);
         return element;
     }
