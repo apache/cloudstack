@@ -92,5 +92,5 @@ they respond to criticism. By how they participate in decision-making process.
 2) Committment - How do we evaluate?  By time, by sticking through tough
 issues, by helping on not-so-fun tasks as well.
 3) Personal skill/ability - How do we evaluate?  A solid general understanding
-of Forrest.  Quality of discussion in mail.  Patches easy to apply with only
+of CloudStack.  Quality of discussion in mail.  Patches easy to apply with only
 a cursory review.
