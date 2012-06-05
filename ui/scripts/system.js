@@ -1349,12 +1349,7 @@
 													}
 													else if($form.find('.form-item[rel=projectId]').css("display") != "none") {  //project-specific
 														array1.push("&projectid=" + args.data.projectId);
-														array1.push("&acltype=account");
-														
-														if ($form.find('.form-item[rel=subdomainaccess]:visible input:checked').size())
-															array1.push("&subdomainaccess=true");
-														else
-															array1.push("&subdomainaccess=false");
+														array1.push("&acltype=account");														
 													}
 													else {  //domain-specific
 														array1.push("&acltype=domain");
