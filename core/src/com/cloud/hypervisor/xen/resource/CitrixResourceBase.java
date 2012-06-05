@@ -103,6 +103,8 @@ import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.PingRoutingWithOvsCommand;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PlugNicAnswer;
+import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PoolEjectCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
@@ -115,6 +117,8 @@ import com.cloud.agent.api.SecurityGroupRuleAnswer;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
+import com.cloud.agent.api.SetupGuestNetworkAnswer;
+import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -123,6 +127,8 @@ import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.agent.api.UnPlugNicAnswer;
+import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VmStatsEntry;
@@ -516,11 +522,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((GetDomRVersionCmd)cmd);
         } else if (clazz == CheckNetworkCommand.class) {
             return execute((CheckNetworkCommand) cmd);
-        } else {
+        } else if (clazz == SetupGuestNetworkCommand.class) {
+            return execute((SetupGuestNetworkCommand) cmd);
+        } else if (clazz == PlugNicCommand.class) {
+            return execute((PlugNicCommand) cmd);
+        } else if (clazz == UnPlugNicCommand.class) {
+            return execute((UnPlugNicCommand) cmd);
+        }else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
-
 
     protected XsLocalNetwork getNativeNetworkForTraffic(Connection conn, TrafficType type, String name) throws XenAPIException, XmlRpcException {
         if (name != null) {
@@ -6957,7 +6968,32 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return changes;
     }
 
+    /**
+     * @param cmd
+     * @return
+     */
+    private UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
+    /**
+     * @param cmd
+     * @return
+     */
+    private PlugNicAnswer execute(PlugNicCommand cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /**
+     * @param cmd
+     * @return
+     */
+    private SetupGuestNetworkAnswer execute(SetupGuestNetworkCommand cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 
 
 }

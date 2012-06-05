@@ -27,6 +27,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkService;
 import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.addr.PublicIp;
@@ -38,6 +39,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
@@ -99,16 +101,25 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             List<? extends PhysicalNetwork> pNtwks = _pNtwkDao.listByZone(vpc.getZoneId());
             
             VirtualRouterProvider vpcVrProvider = null;
+           
             for (PhysicalNetwork pNtwk : pNtwks) {
-                vpcVrProvider = _vrProviderDao.findByNspIdAndType(pNtwk.getId(), 
+                PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(pNtwk.getId(), 
+                        VirtualRouterProviderType.VPCVirtualRouter.toString());
+                if (provider == null) {
+                    throw new CloudRuntimeException("Cannot find service provider " + 
+                            VirtualRouterProviderType.VPCVirtualRouter.toString() + " in physical network " + pNtwk.getId());
+                }
+                vpcVrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), 
                         VirtualRouterProviderType.VPCVirtualRouter);
                 if (vpcVrProvider != null) {
                     break;
                 }
             }
             
+            PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddressToVpc(owner, vpc);
+            
             DomainRouterVO router = deployRouter(owner, dest, plan, params, false, vpcVrProvider, offeringId,
-                    vpc.getId());
+                    vpc.getId(), sourceNatIp);
             routers.add(router);
             
         } finally {
