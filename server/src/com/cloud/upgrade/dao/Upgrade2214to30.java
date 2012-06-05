@@ -22,6 +22,7 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
@@ -29,7 +30,6 @@ import org.apache.log4j.Logger;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
-
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -82,8 +82,10 @@ public class Upgrade2214to30 implements DbUpgrade {
         updateReduntantRouters(conn);
         // update networks that have to switch from Shared to Isolated network offerings
         switchAccountSpecificNetworksToIsolated(conn);
+        // update networks to external network offerings if needed
+        String externalOfferingName = fixNetworksWithExternalDevices(conn);
         // create service/provider map for network offerings
-        createNetworkOfferingServices(conn);
+        createNetworkOfferingServices(conn, externalOfferingName);
         // create service/provider map for networks
         createNetworkServices(conn);
         //migrate user concentrated deployment planner choice to new global setting
@@ -854,67 +856,97 @@ public class Upgrade2214to30 implements DbUpgrade {
     	}
     }
     
-    private void createNetworkOfferingServices(Connection conn) {
+    private void createNetworkOfferingServices(Connection conn, String externalOfferingName) {
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
             pstmt = conn
-                    .prepareStatement("select id, dns_service, gateway_service, firewall_service, lb_service, userdata_service, vpn_service, dhcp_service, unique_name from `cloud`.`network_offerings` where traffic_type='Guest'");
+                    .prepareStatement("select id, dns_service, gateway_service, firewall_service, lb_service, userdata_service," +
+                    		" vpn_service, dhcp_service, unique_name from `cloud`.`network_offerings` where traffic_type='Guest'");
             rs = pstmt.executeQuery();
             while (rs.next()) {
+                boolean sharedSourceNat = false;
+                boolean dedicatedLb = true;
                 long id = rs.getLong(1);
                 String uniqueName = rs.getString(9);
 
-                ArrayList<String> services = new ArrayList<String>();
+                Map<String, String> services = new HashMap<String, String>();
                 if (rs.getLong(2) != 0) {
-                    services.add("Dns");
+                    services.put("Dns", "VirtualRouter");
                 }
 
                 if (rs.getLong(3) != 0) {
-                    services.add("Gateway");
+                    if (externalOfferingName != null && uniqueName.equalsIgnoreCase(externalOfferingName)) {
+                        services.put("Gateway", "JuniperSRX");
+                    } else {
+                        services.put("Gateway", "VirtualRouter");
+                    }
                 }
 
                 if (rs.getLong(4) != 0) {
-                    services.add("Firewall");
+                    if (externalOfferingName != null && uniqueName.equalsIgnoreCase(externalOfferingName)) {
+                        services.put("Firewall", "JuniperSRX");
+                    } else {
+                        services.put("Firewall", "VirtualRouter");
+                    }
                 }
 
                 if (rs.getLong(5) != 0) {
-                    services.add("Lb");
+                    if (externalOfferingName != null && uniqueName.equalsIgnoreCase(externalOfferingName)) {
+                        services.put("Lb", "F5BigIp");
+                        dedicatedLb = false;
+                    } else {
+                        services.put("Lb", "VirtualRouter");
+                    }
                 }
 
                 if (rs.getLong(6) != 0) {
-                    services.add("UserData");
+                    services.put("UserData", "VirtualRouter");
                 }
 
                 if (rs.getLong(7) != 0) {
-                    services.add("Vpn");
+                    if (externalOfferingName == null || !uniqueName.equalsIgnoreCase(externalOfferingName)) {
+                        services.put("Vpn", "VirtualRouter");
+                    } 
                 }
 
                 if (rs.getLong(8) != 0) {
-                    services.add("Dhcp");
+                    services.put("Dhcp", "VirtualRouter");
                 }
 
                 if (uniqueName.equalsIgnoreCase(NetworkOffering.DefaultSharedNetworkOfferingWithSGService.toString())) {
-                    services.add("SecurityGroup");
+                    services.put("SecurityGroup", "SecurityGroupProvider");
                 }
 
-                if (uniqueName.equals(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService.toString())) {
-                    services.add("SourceNat");
-                    services.add("PortForwarding");
-                    services.add("StaticNat");
+                if (uniqueName.equals(NetworkOffering.DefaultIsolatedNetworkOfferingWithSourceNatService.toString()) || uniqueName.equalsIgnoreCase(externalOfferingName)) {
+                    if (externalOfferingName != null && uniqueName.equalsIgnoreCase(externalOfferingName)) {
+                        services.put("SourceNat", "JuniperSRX");
+                        services.put("PortForwarding", "JuniperSRX");
+                        services.put("StaticNat", "JuniperSRX");
+                        sharedSourceNat = true;
+                    } else {
+                        services.put("SourceNat", "VirtualRouter");
+                        services.put("PortForwarding", "VirtualRouter");
+                        services.put("StaticNat", "VirtualRouter");
+                    }
                 }
 
-                for (String service : services) {
-                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ntwk_offering_service_map` (`network_offering_id`, `service`, `provider`, `created`) values (?,?,?, now())");
+                for (String service : services.keySet()) {
+                    pstmt = conn.prepareStatement("INSERT INTO `cloud`.`ntwk_offering_service_map` (`network_offering_id`," +
+                    		" `service`, `provider`, `created`) values (?,?,?, now())");
                     pstmt.setLong(1, id);
                     pstmt.setString(2, service);
-                    if (service.equalsIgnoreCase("SecurityGroup")) {
-                        pstmt.setString(3, "SecurityGroupProvider");
-                    } else {
-                        pstmt.setString(3, "VirtualRouter");
-                    }
+                    pstmt.setString(3, services.get(service));
                     pstmt.executeUpdate();
                 }
+                
+                //update shared source nat and dedicated lb
+                pstmt = conn.prepareStatement("UPDATE `cloud`.`network_offerings` set shared_source_nat_service=?, dedicated_lb_service=? where id=?");
+                pstmt.setBoolean(1, sharedSourceNat);
+                pstmt.setBoolean(2, dedicatedLb);
+                pstmt.setLong(3, id);
+                pstmt.executeUpdate();
+                
             }
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to create service/provider map for network offerings", e);
@@ -1175,7 +1207,7 @@ public class Upgrade2214to30 implements DbUpgrade {
                 return ;
             }
             
-            // get all networks that need to be updated to the redundant network offerings
+            // get all networks that need to be updated to the isolated network offering
             pstmt = conn
                     .prepareStatement("select id, network_offering_id from `cloud`.`networks` where switch_to_isolated=1");
             rs = pstmt.executeQuery();
@@ -1309,5 +1341,108 @@ public class Upgrade2214to30 implements DbUpgrade {
             } catch (SQLException e) {
             }
         }
+    }
+    
+    protected String fixNetworksWithExternalDevices(Connection conn) {
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        ResultSet rs1 = null;
+        
+        //Get zones to upgrade
+        List<Long> zoneIds = new ArrayList<Long>();
+        try {
+            pstmt = conn.prepareStatement("select id from `cloud`.`data_center` where lb_provider='F5BigIp' or firewall_provider='JuniperSRX' or gateway_provider='JuniperSRX'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                zoneIds.add(rs.getLong(1));
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to switch networks to the new network offering", e);
+        }
+        
+        
+        String uniqueName = null;
+        HashMap<Long, Long> newNetworkOfferingMap = new HashMap<Long, Long>();
+        
+        for (Long zoneId : zoneIds) {
+            try {
+                // Find the correct network offering
+                pstmt = conn
+                        .prepareStatement("select id, network_offering_id from `cloud`.`networks` where guest_type='Virtual' and data_center_id=?");
+                pstmt.setLong(1, zoneId);
+                rs = pstmt.executeQuery();
+                pstmt = conn.prepareStatement("select count(*) from `cloud`.`network_offerings`");
+                rs1 = pstmt.executeQuery();
+                long ntwkOffCount = 0;
+                while (rs1.next()) {
+                    ntwkOffCount = rs1.getLong(1);
+                } 
+
+                pstmt = conn.prepareStatement("CREATE TEMPORARY TABLE `cloud`.`network_offerings2` ENGINE=MEMORY SELECT * FROM `cloud`.`network_offerings` WHERE id=1");
+                pstmt.executeUpdate();
+
+
+                while (rs.next()) {
+                    long networkId = rs.getLong(1);
+                    long networkOfferingId = rs.getLong(2);
+                    s_logger.debug("Updating network offering for the network id=" + networkId + " as it has switch_to_isolated=1");
+                    Long newNetworkOfferingId = null;
+                    if (!newNetworkOfferingMap.containsKey(networkOfferingId)) {
+                        uniqueName = "Isolated with external providers";
+                        // clone the record to
+                        pstmt = conn.prepareStatement("INSERT INTO `cloud`.`network_offerings2` SELECT * FROM `cloud`.`network_offerings` WHERE id=?");
+                        pstmt.setLong(1, networkOfferingId);
+                        pstmt.executeUpdate();
+
+                        //set the new unique name
+                        pstmt = conn.prepareStatement("UPDATE `cloud`.`network_offerings2` SET id=?, unique_name=?, name=? WHERE id=?");
+                        ntwkOffCount = ntwkOffCount + 1;
+                        newNetworkOfferingId = ntwkOffCount;
+                        pstmt.setLong(1, newNetworkOfferingId);
+                        pstmt.setString(2, uniqueName);
+                        pstmt.setString(3, uniqueName);
+                        pstmt.setLong(4, networkOfferingId);
+                        pstmt.executeUpdate();
+
+                        pstmt = conn.prepareStatement("INSERT INTO `cloud`.`network_offerings` SELECT * from " +
+                                "`cloud`.`network_offerings2` WHERE id=" + newNetworkOfferingId);
+                        pstmt.executeUpdate();
+
+                        pstmt = conn.prepareStatement("UPDATE `cloud`.`networks` SET network_offering_id=? where id=?");
+                        pstmt.setLong(1, newNetworkOfferingId);
+                        pstmt.setLong(2, networkId);
+                        pstmt.executeUpdate();
+
+                        newNetworkOfferingMap.put(networkOfferingId, ntwkOffCount);
+                    } else {
+                        pstmt = conn.prepareStatement("UPDATE `cloud`.`networks` SET network_offering_id=? where id=?");
+                        newNetworkOfferingId = newNetworkOfferingMap.get(networkOfferingId);
+                        pstmt.setLong(1, newNetworkOfferingId);
+                        pstmt.setLong(2, networkId);
+                        pstmt.executeUpdate();
+                    }
+
+                    s_logger.debug("Successfully updated network id=" + networkId + " with new network offering id " + newNetworkOfferingId);
+                }
+
+            } catch (SQLException e) {
+                throw new CloudRuntimeException("Unable to switch networks to the new network offering", e);
+            } finally {
+                try {
+                    pstmt = conn.prepareStatement("DROP TABLE `cloud`.`network_offerings2`");
+                    pstmt.executeUpdate();
+                    if (rs != null) {
+                        rs.close();
+                    }
+
+                    if (pstmt != null) {
+                        pstmt.close();
+                    }
+                } catch (SQLException e) {
+                }
+            }
+        }
+        
+        return uniqueName;
     }
 }
