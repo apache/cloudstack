@@ -76,6 +76,7 @@ public class ClusterBasedAgentLoadBalancerPlanner implements AgentLoadBalancerPl
         }
         
         sc = SearchCriteria2.create(HostVO.class);
+        sc.addAnd(sc.getEntity().getResource(), Op.NNULL);
         sc.addAnd(sc.getEntity().getManagementServerId(), Op.EQ, msId);
         sc.addAnd(sc.getEntity().getStatus(), Op.EQ, Status.Up);
         List<HostVO> directHosts = sc.list();
