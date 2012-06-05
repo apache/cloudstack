@@ -30,48 +30,48 @@ usage() {
 #set -x
 #FIXME: eating up the error code during execution of iptables
 acl_remove_backup() {
-  sudo iptables -F _ACL_INBOND_$gGW 2>/dev/null
-  sudo iptables -D FORWARD -o $dev -d $gcidr -j _ACL_INBOND_$gGW  2>/dev/null
-  sudo iptables -X _ACL_INBOND_$gGW 2>/dev/null
-  sudo iptables -F _ACL_OUTBOND_$gGW 2>/dev/null
-  sudo iptables -D FORWARD -i $dev -s $gcidr -j _ACL_OUTBOND_$gGW  2>/dev/null
-  sudo iptables -X _ACL_OUTBOND_$gGW 2>/dev/null
+  sudo iptables -F _ACL_INBOUND_$ip 2>/dev/null
+  sudo iptables -D FORWARD -o $dev -d $gcidr -j _ACL_INBOUND_$ip  2>/dev/null
+  sudo iptables -X _ACL_INBOUND_$ip 2>/dev/null
+  sudo iptables -F _ACL_OUTBOUND_$ip 2>/dev/null
+  sudo iptables -D FORWARD -i $dev -s $gcidr -j _ACL_OUTBOUND_$ip  2>/dev/null
+  sudo iptables -X _ACL_OUTBOUND_$ip 2>/dev/null
 }
 
 acl_remove() {
-  sudo iptables -F ACL_INBOND_$gGW 2>/dev/null
-  sudo iptables -D FORWARD -o $dev -d $gcidr -j ACL_INBOND_$gGW  2>/dev/null
-  sudo iptables -X ACL_INBOND_$gGW 2>/dev/null
-  sudo iptables -F ACL_OUTBOND_$gGW 2>/dev/null
-  sudo iptables -D FORWARD -i $dev -s $gcidr -j ACL_OUTBOND_$gGW  2>/dev/null
-  sudo iptables -X ACL_OUTBOND_$gGW 2>/dev/null
+  sudo iptables -F ACL_INBOUND_$ip 2>/dev/null
+  sudo iptables -D FORWARD -o $dev -d $gcidr -j ACL_INBOUND_$ip  2>/dev/null
+  sudo iptables -X ACL_INBOUND_$ip 2>/dev/null
+  sudo iptables -F ACL_OUTBOUND_$ip 2>/dev/null
+  sudo iptables -D FORWARD -i $dev -s $gcidr -j ACL_OUTBOUND_$ip  2>/dev/null
+  sudo iptables -X ACL_OUTBOUND_$ip 2>/dev/null
 }
 
 acl_restore() {
   acl_remove
-  sudo iptables -E _ACL_INBOND_$gGW ACL_INBOND_$gGW 2>/dev/null
-  sudo iptables -E _ACL_OUTBOND_$gGW ACL_OUTBOND_$gGW 2>/dev/null
+  sudo iptables -E _ACL_INBOUND_$ip ACL_INBOUND_$ip 2>/dev/null
+  sudo iptables -E _ACL_OUTBOUND_$ip ACL_OUTBOUND_$ip 2>/dev/null
 }
 
 acl_save() {
   acl_remove_backup
-  sudo iptables -E ACL_INBOND_$gGW _ACL_INBOND_$gGW 2>/dev/null
-  sudo iptables -E ACL_OUTBOND_$gGW _ACL_OUTBOND_$gGW 2>/dev/null
+  sudo iptables -E ACL_INBOUND_$ip _ACL_INBOUND_$ip 2>/dev/null
+  sudo iptables -E ACL_OUTBOUND_$ip _ACL_OUTBOUND_$gGW 2>/dev/null
 }
 
 acl_chain_for_guest_network () {
   acl_save
-  # inbond
-  sudo iptables -E ACL_INBOND_$gGW _ACL_INBOND_$gGW 2>/dev/null
-  sudo iptables -N ACL_INBOND_$gGW 2>/dev/null
+  # inbound
+  sudo iptables -E ACL_INBOUND_$ip _ACL_INBOUND_$ip 2>/dev/null
+  sudo iptables -N ACL_INBOUND_$ip 2>/dev/null
   # drop if no rules match (this will be the last rule in the chain)
-  sudo iptables -A ACL_INBOND_$gGW -j DROP 2>/dev/null
-  sudo iptables -A FORWARD -o $dev -d $gcidr -j ACL_INBOND_$gGW  2>/dev/null
-  # outbond
-  sudo iptables -E ACL_OUTBOND_$gGW _ACL_OUTBOND_$gGW 2>/dev/null
-  sudo iptables -N ACL_OUTBOND_$gGW 2>/dev/null
-  sudo iptables -A ACL_OUTBOND_$gGW -j DROP 2>/dev/null
-  sudo iptables -D FORWARD -i $dev -s $gcidr -j ACL_OUTBOND_$gGW  2>/dev/null
+  sudo iptables -A ACL_INBOUND_$ip -j DROP 2>/dev/null
+  sudo iptables -A FORWARD -o $dev -d $gcidr -j ACL_INBOUND_$ip  2>/dev/null
+  # outbound
+  sudo iptables -E ACL_OUTBOUND_$ip _ACL_OUTBOUND_$ip 2>/dev/null
+  sudo iptables -N ACL_OUTBOUND_$ip 2>/dev/null
+  sudo iptables -A ACL_OUTBOUND_$ip -j DROP 2>/dev/null
+  sudo iptables -D FORWARD -i $dev -s $gcidr -j ACL_OUTBOUND_$ip  2>/dev/null
 }
 
 
@@ -79,13 +79,13 @@ acl_chain_for_guest_network () {
 acl_entry_for_guest_network() {
   local rule=$1
 
-  local inbond=$(echo $rule | cut -d: -f1)
+  local inbound=$(echo $rule | cut -d: -f1)
   local prot=$(echo $rules | cut -d: -f2)
   local sport=$(echo $rules | cut -d: -f3)    
   local eport=$(echo $rules | cut -d: -f4)    
   local cidrs=$(echo $rules | cut -d: -f5 | sed 's/-/ /g')
   
-  logger -t cloud "$(basename $0): enter apply firewall rules for guest network: $gcidr inbond:$inbond:$prot:$sport:$eport:$cidrs"  
+  logger -t cloud "$(basename $0): enter apply acl rules for guest network: $gcidr, inbound:$inbound:$prot:$sport:$eport:$cidrs"  
 
   # note that rules are inserted after the RELATED,ESTABLISHED rule 
   # but before the DROP rule
@@ -97,30 +97,30 @@ acl_entry_for_guest_network() {
       typecode="$sport/$eport"
       [ "$eport" == "-1" ] && typecode="$sport"
       [ "$sport" == "-1" ] && typecode="any"
-      if [ "$inbond" == "1" ]
+      if [ "$inbound" == "1" ]
       then
-        sudo iptables -I ACL_INBOND_$gGW -p $prot -s $lcidr  \
+        sudo iptables -I ACL_INBOUND_$gGW -p $prot -s $lcidr  \
                     --icmp-type $typecode  -j ACCEPT
       else
-        sudo iptables -I ACL_OUTBOND_$gGW -p $prot -d $lcidr  \
+        sudo iptables -I ACL_OUTBOUND_$gGW -p $prot -d $lcidr  \
                     --icmp-type $typecode  -j ACCEPT
       fi
     else
-      if [ "$inbond" == "1" ]
+      if [ "$inbound" == "1" ]
       then
-        sudo iptables -I ACL_INBOND_$gGW -p $prot -s $lcidr \
+        sudo iptables -I ACL_INBOUND_$gGW -p $prot -s $lcidr \
                     --dport $sport:$eport -j ACCEPT
       else
-        sudo iptables -I ACL_OUTBOND_$gGW -p $prot -d $lcidr \
+        sudo iptables -I ACL_OUTBOUND_$gGW -p $prot -d $lcidr \
                     --dport $sport:$eport -j ACCEP`T
     fi
     result=$?
     [ $result -gt 0 ] && 
-       logger -t cloud "Error adding iptables entry for $pubIp:$prot:$sport:$eport:$src" &&
+       logger -t cloud "Error adding iptables entry for guest network : $gcidr,inbound:$inbound:$prot:$sport:$eport:$cidrs" &&
        break
   done
       
-  logger -t cloud "$(basename $0): exit apply firewall rules for public ip $pubIp"  
+  logger -t cloud "$(basename $0): exit apply acl rules for guest network : $gcidr"  
   return $result
 }
 
@@ -132,7 +132,7 @@ aflag=0
 rules=""
 rules_list=""
 gcidr=""
-gGW=""
+ip=""
 dev=""
 while getopts ':d:g:a:' OPTION
 do
@@ -150,9 +150,7 @@ do
   esac
 done
 
-VIF_LIST=$(get_vif_list)
-
-if [ "$gflag$aflag" != "11" ]
+if [ "$dflag$gflag$aflag" != "!11" ]
 then
   usage()
 fi
@@ -170,7 +168,7 @@ fi
 # example : 172.16.92.44:tcp:80:80:0.0.0.0/0:,172.16.92.44:tcp:220:220:0.0.0.0/0:,200.1.1.2:reverted:0:0:0 
 
 success=0
-gGW=$(echo $gcidr | awk -F'/' '{print $1}')
+ip=$(echo $gcidr | awk -F'/' '{print $1}')
 
 acl_chain_for_guest_network
 
