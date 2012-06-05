@@ -105,9 +105,6 @@ UPDATE `cloud`.`configuration` set component='NetworkManager' where name='router
 UPDATE `cloud`.`configuration` set component='NetworkManager' where name='router.template.id';
 UPDATE `cloud`.`configuration` set category='Advanced' where name='capacity.skipcounting.hours';
 UPDATE `cloud`.`configuration` set category='Advanced' where name='use.local.storage';
-UPDATE `cloud`.`configuration` set category='Hidden' where name='router.ram.size';
-UPDATE `cloud`.`configuration` set category='Hidden' where name='secondary.storage.vm';
-UPDATE `cloud`.`configuration` set category='Hidden' where name='security.hash.key';
 UPDATE `cloud`.`configuration` set description = 'Percentage (as a value between 0 and 1) of local storage utilization above which alerts will be sent about low local storage available.' where name = 'cluster.localStorage.capacity.notificationthreshold';
 
 DELETE FROM `cloud`.`configuration` WHERE name='direct.agent.pool.size';
