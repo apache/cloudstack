@@ -1164,7 +1164,7 @@
 
                   displayText: { label: 'label.description', validation: { required: true } },
 
-                  networkRate: { label: 'label.network.rate' },
+                  networkRate: { label: 'label.network.rate.megabytes' },
 
 									/*
                   trafficType: {

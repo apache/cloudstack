@@ -1651,6 +1651,7 @@
 
 <script language="javascript">
 dictionary = {
+'label.network.rate.megabytes': '<fmt:message key="label.network.rate.megabytes"/>',
 'message.setup.physical.network.during.zone.creation.basic': '<fmt:message key="message.setup.physical.network.during.zone.creation.basic"/>',
 'label.traffic.label': '<fmt:message key="label.traffic.label"/>',
 'label.management.ips': '<fmt:message key="label.management.ips"/>',
