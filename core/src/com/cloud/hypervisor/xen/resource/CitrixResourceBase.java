@@ -6973,8 +6973,31 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      * @return
      */
     private UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
-        // TODO Auto-generated method stub
-        return null;
+        Connection conn = getConnection();
+        VirtualMachineTO vmto = cmd.getVirtualMachine();
+        String vmName = vmto.getName();
+        try {
+            Set<VM> vms = VM.getByNameLabel(conn, vmName);
+            if ( vms == null || vms.isEmpty() ) {
+                return new UnPlugNicAnswer(cmd, false, "Can not find VM " + vmName);
+            }
+            VM vm = vms.iterator().next();
+            NicTO nic = cmd.getNic();
+            String mac = nic.getMac();
+            for ( VIF vif : vm.getVIFs(conn)) {
+                String lmac = vif.getMAC(conn);
+                if ( lmac.equals(mac) ) {
+                    vif.unplug(conn);
+                    vif.destroy(conn);
+                    break;
+                }
+            }
+            return new UnPlugNicAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = " UnPlug Nic failed due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new UnPlugNicAnswer(cmd, false, msg);
+        }
     }
 
     /**
@@ -6982,8 +7005,24 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      * @return
      */
     private PlugNicAnswer execute(PlugNicCommand cmd) {
-        // TODO Auto-generated method stub
-        return null;
+        Connection conn = getConnection();
+        VirtualMachineTO vmto = cmd.getVirtualMachine();
+        String vmName = vmto.getName();
+        try {
+            Set<VM> vms = VM.getByNameLabel(conn, vmName);
+            if ( vms == null || vms.isEmpty() ) {
+                return new PlugNicAnswer(cmd, false, "Can not find VM " + vmName);
+            }
+            VM vm = vms.iterator().next();
+            NicTO nic = cmd.getNic();
+            VIF vif = createVif(conn, vmName, vm, nic);
+            vif.plug(conn);
+            return new PlugNicAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = " Plug Nic failed due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new PlugNicAnswer(cmd, false, msg);
+        }
     }
 
     /**
