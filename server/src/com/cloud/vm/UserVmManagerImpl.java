@@ -426,7 +426,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
             Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
             NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null, 
-                    _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork), _networkMgr.getNetworkTag(template.getHypervisorType(), defaultNetwork));
+                    _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork), 
+                    _networkMgr.getNetworkTag(template.getHypervisorType(), defaultNetwork));
             VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmInstance);
             vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
 

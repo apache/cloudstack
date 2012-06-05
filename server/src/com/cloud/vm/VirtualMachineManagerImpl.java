@@ -2131,7 +2131,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         List<NicVO> nics = _nicsDao.listByVmId(profile.getId());
         for (NicVO nic : nics) {
             Network network = _networkMgr.getNetwork(nic.getNetworkId());
-            NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, _networkMgr.isSecurityGroupSupportedInNetwork(network), _networkMgr.getNetworkTag(profile.getHypervisorType(), network));
+            NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, 
+                    _networkMgr.isSecurityGroupSupportedInNetwork(network), _networkMgr.getNetworkTag(profile.getHypervisorType(), network));
             profile.addNic(nicProfile);
         }
 
@@ -2469,7 +2470,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
         
         //4) Convert nicProfile to NicTO
-        NicTO nicTO = hvGuru.toNicTO(nic);
+        NicTO nicTO = toNicTO(nic, vmProfile.getVirtualMachine().getHypervisorType());
         
         //5) plug the nic to the vm
         VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
@@ -2482,6 +2483,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             return null;
         }
         
+    }
+
+    @Override
+    public NicTO toNicTO(NicProfile nic, HypervisorType hypervisorType) {
+        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(hypervisorType);
+        
+        NicTO nicTO = hvGuru.toNicTO(nic);
+        return nicTO;
     }
     
     @Override
@@ -2506,8 +2515,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
         VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
         
-        //3) Convert nicProfile to NicTO
-        NicTO nicTO = hvGuru.toNicTO(nic);
+        NicTO nicTO = toNicTO(nic, vmProfile.getVirtualMachine().getHypervisorType());
         
         boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
         //4) Unplug the nic
