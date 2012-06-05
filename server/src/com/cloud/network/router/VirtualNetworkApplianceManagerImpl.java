@@ -3048,9 +3048,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             defaultDns1 = guestNic.getDns1();
             defaultDns2 = guestNic.getDns2();
         }
+        
+        NicVO nic = _nicDao.findByInstanceIdAndNetworkId(network.getId(), router.getId());
+        NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, 
+                _networkMgr.isSecurityGroupSupportedInNetwork(network), _networkMgr.getNetworkTag(router.getHypervisorType(), network));
 
         SetupGuestNetworkCommand setupCmd = new SetupGuestNetworkCommand(dhcpRange, networkDomain, isRedundant, priority, 
-                defaultDns1, defaultDns2, add);
+                defaultDns1, defaultDns2, add, _itMgr.toNicTO(nicProfile, router.getHypervisorType()));
         setupCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         setupCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(network.getId(), router.getId()));
         setupCmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));

@@ -203,7 +203,8 @@ public class NicProfile {
         return strategy;
     }
 
-    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate, boolean isSecurityGroupEnabled, String name) {
+    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate, 
+            boolean isSecurityGroupEnabled, String name) {
         this.id = nic.getId();
         this.networkId = network.getId();
         this.gateway = nic.getGateway();

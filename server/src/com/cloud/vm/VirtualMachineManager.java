@@ -15,6 +15,7 @@ package com.cloud.vm;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -153,5 +154,12 @@ public interface VirtualMachineManager extends Manager {
      * @throws ConcurrentOperationException 
      */
     boolean removeVmFromNetwork(VirtualMachine vm, Network network) throws ConcurrentOperationException, ResourceUnavailableException;
+
+    /**
+     * @param nic
+     * @param hypervisorType
+     * @return
+     */
+    NicTO toNicTO(NicProfile nic, HypervisorType hypervisorType);
 
 }
