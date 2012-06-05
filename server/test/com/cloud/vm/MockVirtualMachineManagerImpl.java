@@ -217,4 +217,22 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
 		return null;
 	}
 
+    /* (non-Javadoc)
+     * @see com.cloud.vm.VirtualMachineManager#checkIfCanUpgrade(com.cloud.vm.VirtualMachine, long)
+     */
+    @Override
+    public void checkIfCanUpgrade(VirtualMachine vmInstance, long newServiceOfferingId) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.vm.VirtualMachineManager#upgradeVmDb(long, long)
+     */
+    @Override
+    public boolean upgradeVmDb(long vmId, long serviceOfferingId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
 }
