@@ -1350,14 +1350,11 @@
 													else if($form.find('.form-item[rel=projectId]').css("display") != "none") {  //project-specific
 														array1.push("&projectid=" + args.data.projectId);
 														array1.push("&acltype=account");
-<<<<<<< HEAD
-=======
 														
 														if ($form.find('.form-item[rel=subdomainaccess]:visible input:checked').size())
 															array1.push("&subdomainaccess=true");
 														else
 															array1.push("&subdomainaccess=false");
->>>>>>> CS-15057: Remove jquery.timer.js from source code. Replace it with native JavaScript functions.
 													}
 													else {  //domain-specific
 														array1.push("&acltype=domain");
@@ -1830,9 +1827,6 @@
 							notification: {
 								poll: pollAsyncJobResult
 							}
-<<<<<<< HEAD
-						}
-=======
 						},
 						enable: {
               label: 'label.action.enable.physical.network',
@@ -1908,7 +1902,6 @@
               },
               notification: { poll: pollAsyncJobResult }
             }
->>>>>>> CS-15057: Remove jquery.timer.js from source code. Replace it with native JavaScript functions.
 					}
         },
         dataProvider: function(args) {
