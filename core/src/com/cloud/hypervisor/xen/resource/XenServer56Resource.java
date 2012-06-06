@@ -142,7 +142,7 @@ public class XenServer56Resource extends CitrixResourceBase {
 
     @Override
     protected String networkUsage(Connection conn, final String privateIpAddress, final String option, final String vif) {
-        String args = null;
+        String args = "netusage.sh " + privateIpAddress + " ";
         if (option.equals("get")) {
             args = "-g";
         } else if (option.equals("create")) {
@@ -157,9 +157,7 @@ public class XenServer56Resource extends CitrixResourceBase {
             args += vif;
         }
 
-        args += " -i ";
-        args += privateIpAddress;
-        return callHostPlugin(conn, "vmops", "networkUsage", "args", args);
+        return callHostPlugin(conn, "vmops", "routerProxy", "args", args);
     }
 
     protected NetworkUsageAnswer execute(NetworkUsageCommand cmd) {

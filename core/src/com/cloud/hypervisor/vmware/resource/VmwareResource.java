@@ -1022,7 +1022,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected Answer execute(CheckRouterCommand cmd) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Executing resource CheckRouterCommand: " + _gson.toJson(cmd));
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /root/checkrouter.sh ");
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/checkrouter.sh ");
         }
 
         Pair<Boolean, String> result;

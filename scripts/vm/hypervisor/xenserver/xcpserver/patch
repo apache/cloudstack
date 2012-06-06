@@ -26,7 +26,6 @@ dhcp_entry.sh=../../../../network/domr/,0755,/opt/xensource/bin
 router_proxy.sh=../../../../network/domr/,0755,/opt/xensource/bin
 vm_data.sh=../../../../network/domr/,0755,/opt/xensource/bin
 save_password_to_domr.sh=../../../../network/domr/,0755,/opt/xensource/bin
-networkUsage.sh=../../../../network/domr/,0755,/opt/xensource/bin
 call_firewall.sh=../../../../network/domr/,0755,/opt/xensource/bin
 call_loadbalancer.sh=../../../../network/domr/,0755,/opt/xensource/bin
 l2tp_vpn.sh=../../../../network/domr/,0755,/opt/xensource/bin
