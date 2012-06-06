@@ -7017,8 +7017,47 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      * @return
      */
     private SetupGuestNetworkAnswer execute(SetupGuestNetworkCommand cmd) {
-        // TODO Auto-generated method stub
-        return null;
+        Connection conn = getConnection();
+        NicTO nic = cmd.getNic();
+        String domrIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String domrGIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
+        String domrName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        try {
+            Set<VM> vms = VM.getByNameLabel(conn, domrName);
+            if ( vms == null || vms.isEmpty() ) {
+                return new SetupGuestNetworkAnswer(cmd, false, "Can not find VM " + domrName);
+            }
+            VM vm = vms.iterator().next();
+            String mac = nic.getMac();
+            VIF domrVif = null;
+            for ( VIF vif : vm.getVIFs(conn)) {
+                String lmac = vif.getMAC(conn);
+                if ( lmac.equals(mac) ) {
+                    domrVif = vif;
+                    break;
+                }
+            }
+            if ( domrVif == null ) {
+                return new SetupGuestNetworkAnswer(cmd, false, "Can not find vif with mac " + mac + " for VM " + domrName);
+            }
+
+            String args = "guestnw.sh " + domrIP + " -C";
+            String dev = "eth" + domrVif.getDevice(conn);
+            args += " -d " + dev;
+            args += " -i " + domrGIP;
+            args += " -g " + nic.getGateway();
+            args += " -m " + Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
+            args += " -s " + nic.getDns1();
+            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            if (result == null || result.isEmpty()) {
+                return new SetupGuestNetworkAnswer(cmd, false, "creating guest network failed due to " + ((result == null)? "null":result));
+            }
+            return new SetupGuestNetworkAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = " UnPlug Nic failed due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new SetupGuestNetworkAnswer(cmd, false, msg);
+        }
     }
 
 
