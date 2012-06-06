@@ -803,6 +803,7 @@
 
       detailView: {
         name: 'Instance details',
+        isMaximized: true,
         viewAll: { path: 'storage.volumes', label: 'label.volumes' },
         tabFilter: function(args) {
           var hiddenTabs = [];
@@ -1735,7 +1736,45 @@
                 }
               });
             }
+          },
+
+          volume: {
+            title: 'label.volumes',
+            multiple: true,
+            fields:{
+                id: { label: 'ID' },
+                state: { label: 'label.state' },
+                type: { label: 'label.type' },
+                storagetype: { label: 'label.storage.type' },
+                size: {
+                label: 'label.size',
+                  converter: function(args) {
+                    if (args == null || args == 0)
+                          return "";
+                        else
+                          return cloudStack.converters.convertBytes(args);
+                  }
+                },
+                deviceid: { label: 'label.device.id' },
+                storage: { label: 'label.storage' },
+                created: { label: 'label.created' }
+          },
+          dataProvider: function(args) {
+	                                               $.ajax({
+	                                                        url: createURL("listVolumes&listAll=true"),
+	                                                        data: { virtualmachineid: args.context.instances[0].id },
+	                                                        dataType: "json",
+	                                                        async: true,
+	                                                        success: function(json) {
+	                                                                var jsonObj = json.listvolumesresponse.volume;
+	                                                                args.response.success({
+	                                                                                       data: jsonObj
+	                                                                });
+	                                                        }
+	                                                });
           }
+        }
+
         }
       }
     }
