@@ -140,21 +140,6 @@ def pingxenserver(session, args):
     return txt
 
 @echo
-def ipassoc(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/ipassoc.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        txt = 'success'
-    except:
-        util.SMlog("  ip associate failed "  )
-        txt = '' 
-
-    return txt
-
-@echo
 def vm_data(session, args):
     router_ip = args.pop('routerIP')
     vm_ip = args.pop('vmIP')
@@ -298,6 +283,8 @@ def setLinkLocalIP(session, args):
         txt = '' 
     txt = 'success'
     return txt
+
+
     
 @echo
 def setFirewallRule(session, args):
@@ -313,6 +300,23 @@ def setFirewallRule(session, args):
         txt = '' 
 
     return txt
+    
+@echo
+def routerProxy(session, args):
+    sargs = args['args']
+    cmd = sargs.split(' ')
+    cmd.insert(0, "/opt/xensource/bin/router_proxy.sh")
+    cmd.insert(0, "/bin/bash")
+    try:
+        txt = util.pread2(cmd)
+        txt = 'success'
+    except:
+        util.SMlog("routerProxy command " + sargs + " failed "  )
+        txt = '' 
+
+    return txt
+
+
 
 @echo
 def setLoadBalancerRule(session, args):
@@ -1436,26 +1440,13 @@ def bumpUpPriority(session, args):
 
     return txt
 
-@echo
-def getDomRVersion(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/getDomRVersion.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-    except:
-        util.SMlog("  get domR version fail! ")
-        txt = '' 
-
-    return txt
 
 if __name__ == "__main__":
      XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, 
                             "getvncport": getvncport, "getgateway": getgateway, "preparemigration": preparemigration, 
                             "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
-                            "ipassoc": ipassoc, "vm_data": vm_data, "savePassword": savePassword, 
-                            "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, 
+                            "vm_data": vm_data, "savePassword": savePassword, 
+                            "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "routerProxy": routerProxy, 
                             "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, 
                             "networkUsage": networkUsage, "network_rules":network_rules, 
                             "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules,
@@ -1464,5 +1455,5 @@ if __name__ == "__main__":
                             "get_rule_logs_for_vms":get_rule_logs_for_vms, 
                             "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn,
                             "cleanup_rules":cleanup_rules, "checkRouter":checkRouter,
-                            "bumpUpPriority":bumpUpPriority, "getDomRVersion":getDomRVersion,
+                            "bumpUpPriority":bumpUpPriority,
                             "kill_copy_process":kill_copy_process})

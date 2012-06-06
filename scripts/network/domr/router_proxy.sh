@@ -14,20 +14,9 @@
 
 
 
- 
+# used as a proxy to call script inside virtual router 
 
-# $Id: ipassoc.sh 9804 2010-06-22 18:36:49Z alex $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/network/domr/ipassoc.sh $
-# ipassoc.sh -- associate/disassociate a public ip with an instance
-# 2.1.4
-usage() {
-  printf "Usage:\n %s -A  -i <domR eth1 ip>  -l <public-ip-address>  -r <domr name> [-f] \n" $(basename $0) >&2
-  printf " %s -D -i <domR eth1 ip> -l <public-ip-address> -r <domr name> [-f] \n" $(basename $0) >&2
-}
-
-cert="/root/.ssh/id_rsa.cloud"
-domRIp=$1
-shift
-
+#set -x
 
 check_gw() {
   ping -c 1 -n -q $1 > /dev/null
@@ -36,17 +25,30 @@ check_gw() {
     sleep 1
     ping -c 1 -n -q $1 > /dev/null
   fi
-  return $?;
+  if [ $? -gt 0 ]
+  then
+    exit 1
+  fi
 }
 
+cert="/root/.ssh/id_rsa.cloud"
+
+script=$1
+shift
+
+domRIp=$1
+shift
 
 check_gw "$domRIp"
-if [ $? -gt 0 ]
-then
-  exit 1
-fi
 
-
-ssh -p 3922 -q -o StrictHostKeyChecking=no -i $cert root@$domRIp "/root/ipassoc.sh $*"
+ssh -p 3922 -q -o StrictHostKeyChecking=no -i $cert root@$domRIp "/root/$script $*"
 exit $?
+
+
+
+
+
+
+
+
 
