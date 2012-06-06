@@ -1,4 +1,5 @@
 # This file specifies the files that need
+#
 # to be transferred over to the XenServer.
 # The format of this file is as follows:
 # [Name of file]=[source path],[file permission],[destination path]
@@ -11,7 +12,6 @@
 # If [source path] does not start with '/' or '~', then it is relative path to the location of the patch file. 
 NFSSR.py=/opt/xensource/sm
 vmops=..,0755,/etc/xapi.d/plugins
-ovsgre=..,0755,/etc/xapi.d/plugins
 ovstunnel=..,0755,/etc/xapi.d/plugins
 vmopsSnapshot=..,0755,/etc/xapi.d/plugins
 hostvmstats.py=..,0755,/opt/xensource/sm
@@ -23,7 +23,7 @@ make_migratable.sh=..,0755,/opt/xensource/bin
 setup_iscsi.sh=..,0755,/opt/xensource/bin
 pingtest.sh=../../..,0755,/opt/xensource/bin
 dhcp_entry.sh=../../../../network/domr/,0755,/opt/xensource/bin
-ipassoc.sh=../../../../network/domr/,0755,/opt/xensource/bin
+router_proxy.sh=../../../../network/domr/,0755,/opt/xensource/bin
 vm_data.sh=../../../../network/domr/,0755,/opt/xensource/bin
 save_password_to_domr.sh=../../../../network/domr/,0755,/opt/xensource/bin
 networkUsage.sh=../../../../network/domr/,0755,/opt/xensource/bin
