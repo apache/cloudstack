@@ -1359,8 +1359,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private GetDomRVersionAnswer execute(GetDomRVersionCmd cmd) {
         Connection conn = getConnection();
-        String args = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String result = callHostPlugin(conn, "vmops", "getDomRVersion", "args", args);
+        String args = "get_template_version.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
         if (result == null || result.isEmpty()) {
             return new GetDomRVersionAnswer(cmd, "getDomRVersionCmd failed");
         }
@@ -1732,7 +1732,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
             }
 
-            String args = privateIpAddress;
+            String args = "ipassoc.sh " + privateIpAddress;
 
             if (add) {
                 args += " -A ";
@@ -1758,7 +1758,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += vlanGateway;
             
 
-            String result = callHostPlugin(conn, "vmops", "ipassoc", "args", args);
+            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
             if (result == null || result.isEmpty()) {
                 throw new InternalErrorException("Xen plugin \"ipassoc\" failed.");
             }
