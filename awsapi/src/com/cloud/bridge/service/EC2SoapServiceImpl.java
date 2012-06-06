@@ -1100,7 +1100,12 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        	String devicePath = engine.cloudDeviceIdToDevicePath( vol.getHypervisor(), vol.getDeviceId());
 	        	param5.setDevice( devicePath );
 	        	param5.setStatus( toVolumeAttachmentState( vol.getInstanceId(), vol.getVMState()));
-	        	param5.setAttachTime( cal );  
+                if (vol.getAttached() == null) {
+                    param5.setAttachTime( cal );
+                } else {
+                    Calendar attachTime = EC2RestAuth.parseDateString(vol.getAttached());
+                    param5.setAttachTime( attachTime );
+                }
 	        	param5.setDeleteOnTermination( false );
                 param4.addItem( param5 );
             }
