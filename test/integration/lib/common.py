@@ -106,12 +106,12 @@ def download_systemplates_sec_storage(server, services):
 
     try:
         # Login to management server
-        ssh = remoteSSHClient.remoteSSHClient(
+        ssh = remoteSSHClient(
                                           server["ipaddress"],
                                           server["port"],
                                           server["username"],
                                           server["password"]
-                                          )
+                             )
     except Exception:
         raise Exception("SSH access failted for server with IP address: %s" %
                                                             server["ipaddess"])

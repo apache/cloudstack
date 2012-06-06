@@ -24,7 +24,7 @@ from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
-from marvin import remoteSSHClient
+from marvin.remoteSSHClient import remoteSSHClient
 import datetime
 
 
@@ -1579,7 +1579,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
         vpns = Vpn.list(
                         self.apiclient,
                         publicipid=src_nat.id,
-            listall=True,
+                        listall=True,
                         )
 
         self.assertEqual(

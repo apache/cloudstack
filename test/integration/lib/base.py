@@ -601,7 +601,9 @@ class Template:
                     time.sleep(interval)
 
                 elif 'Installing' not in template.status:
-                    raise Exception("ErrorInDownload")
+                    raise Exception(
+                        "Error in downloading template: status - %s" %
+                                                            template.status)
 
             elif timeout == 0:
                 break
@@ -693,10 +695,12 @@ class Iso:
                     return
                 elif 'Downloaded' not in response.status and \
                     'Installing' not in response.status:
-                    raise Exception("ErrorInDownload")
+                    raise Exception(
+                        "Error In Downloading ISO: ISO Status - %s" %
+                                                            response.status)
 
             elif timeout == 0:
-                raise Exception("TimeoutException")
+                raise Exception("ISO download Timeout Exception")
             else:
                 timeout = timeout - 1
         return
@@ -728,12 +732,12 @@ class PublicIPAddress:
         if zoneid:
             cmd.zoneid = zoneid
         elif "zoneid" in services:
-            services["zoneid"]
+            cmd.zoneid = services["zoneid"]
 
         if domainid:
             cmd.domainid = domainid
         elif "domainid" in services:
-            services["domainid"]
+            cmd.domainid = services["domainid"]
 
         if networkid:
             cmd.networkid = networkid
@@ -1143,7 +1147,7 @@ class LoadBalancerRule:
         apiclient.removeFromLoadBalancerRule(cmd)
         return
 
-    def update(self, apiclient, algorithm=None, description=None, name=None):
+    def update(self, apiclient, algorithm=None, description=None, name=None, **kwargs):
         """Updates the load balancing rule"""
         cmd = updateLoadBalancerRule.updateLoadBalancerRuleCmd()
         cmd.id = self.id
@@ -1154,7 +1158,39 @@ class LoadBalancerRule:
         if name:
             cmd.name = name
 
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
         return apiclient.updateLoadBalancerRule(cmd)
+
+    def createSticky(self, apiclient, methodname, name, description=None, param=None):
+        """Creates a sticky policy for the LB rule"""
+
+        cmd = createLBStickinessPolicy.createLBStickinessPolicyCmd()
+        cmd.lbruleid = self.id
+        cmd.methodname = methodname
+        cmd.name = name
+        if description:
+            cmd.description = description
+        if param:
+            cmd.param = []
+            for name, value in param.items():
+                cmd.param.append({'name': name, 'value': value})
+        return apiclient.createLBStickinessPolicy(cmd)
+    
+    def deleteSticky(self, apiclient, id):
+        """Deletes stickyness policy"""
+        
+        cmd = deleteLBStickinessPolicy.deleteLBStickinessPolicyCmd()
+        cmd.id = id
+        return apiclient.deleteLBStickinessPolicy(cmd)
+    
+    @classmethod
+    def listStickyPolicies(cls, apiclient, lbruleid, **kwargs):
+        """Lists stickiness policies for load balancing rule"""
+        
+        cmd= listLBStickinessPolicies.listLBStickinessPoliciesCmd()
+        cmd.lbruleid = lbruleid
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return apiclient.listLBStickinessPolicies(cmd)
 
     @classmethod
     def list(cls, apiclient, **kwargs):
@@ -1403,6 +1439,15 @@ class Network:
         cmd.id = self.id
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.updateNetwork(cmd))
+
+    def restart(self, apiclient, cleanup=None):
+        """Restarts the network"""
+
+        cmd = restartNetwork.restartNetworkCmd()
+        cmd.id = self.id
+        if cleanup:
+            cmd.cleanup = cleanup 
+        return(apiclient.restartNetwork(cmd))
 
     @classmethod
     def list(cls, apiclient, **kwargs):

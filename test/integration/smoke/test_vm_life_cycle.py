@@ -20,7 +20,7 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin import remoteSSHClient
+from marvin.remoteSSHClient import remoteSSHClient
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
@@ -45,7 +45,7 @@ class Services:
                     "username": "test",
                     # Random characters are appended in create account to 
                     # ensure unique username generated each time
-                    "password": "fr3sca",
+                    "password": "password",
                 },
                 "small":
                 # Create a small virtual machine instance with disk offering 
@@ -87,7 +87,7 @@ class Services:
                         "name": "Small Instance",
                         "displaytext": "Small Instance",
                         "cpunumber": 1,
-                        "cpuspeed": 500,
+                        "cpuspeed": 100,
                         "memory": 256
                     },
                 "medium":
@@ -97,17 +97,17 @@ class Services:
                         "name": "Medium Instance",
                         "displaytext": "Medium Instance",
                         "cpunumber": 1,
-                        "cpuspeed": 1000,
-                        "memory": 1024
+                        "cpuspeed": 100,
+                        "memory": 256
                     }
                 },
                 "iso":  # ISO settings for Attach/Detach ISO tests
                 {
                     "displaytext": "Test ISO",
                     "name": "testISO",
-                    "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
+                    "url": "http://nfs1.lab.vmops.com/isos_32bit/dsl-4.4.10.iso",
                      # Source URL where ISO is located
-                    "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                    "ostypeid": '1a568aed-db2d-41ca-b644-416b0bdc067e',
                     "mode": 'HTTP_DOWNLOAD', # Downloading existing ISO 
                 },
                 "template": {
@@ -121,7 +121,7 @@ class Services:
             "sleep": 60,
             "timeout": 10,
             #Migrate VM to hostid
-            "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+            "ostypeid": '1a568aed-db2d-41ca-b644-416b0bdc067e',
             # CentOS 5.3 (64-bit)
             "mode":'advanced',
         }
@@ -754,18 +754,15 @@ class TestVMLifeCycle(cloudstackTestCase):
                          True,
                          "Check the number of hosts in the zone"
                          )
-        self.assertEqual(
+        self.assertGreaterEqual(
                 len(hosts),
                 2,
                 "Atleast 2 hosts should be present in a zone for VM migration"
                 )
+        # Remove the host of current VM from the hosts list
+        hosts[:] = [host for host in hosts if host.id != self.medium_virtual_machine.hostid]
 
-        # Find the host of VM and also the new host to migrate VM.
-        if self.medium_virtual_machine.hostid == hosts[0].id:
-            host = hosts[1]
-        else:
-            host = hosts[0]
-
+        host = hosts[0]
         self.debug("Migrating VM-ID: %s to Host: %s" % (
                                         self.medium_virtual_machine.id,
                                         host.id
