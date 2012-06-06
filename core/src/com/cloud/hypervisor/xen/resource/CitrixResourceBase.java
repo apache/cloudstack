@@ -1330,8 +1330,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private CheckRouterAnswer execute(CheckRouterCommand cmd) {
         Connection conn = getConnection();
-        String args = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String result = callHostPlugin(conn, "vmops", "checkRouter", "args", args);
+        String args = "checkrouter.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
         if (result == null || result.isEmpty()) {
             return new CheckRouterAnswer(cmd, "CheckRouterCommand failed");
         }
