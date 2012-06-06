@@ -2448,31 +2448,40 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         Host host = _hostDao.findById(vm.getHostId()); 
         DeployDestination dest = new DeployDestination(dc, null, null, host);
         
-        s_logger.debug("Adding vm " + vm + " to network " + network);
+        NicProfile nic = null;
+        NicVO nicVO = _nicsDao.findByInstanceIdAndNetworkId(network.getId(), vm.getId());
+        if (nicVO != null) {
+            nic = new NicProfile(nicVO, network, nicVO.getBroadcastUri(), nicVO.getIsolationUri(), _networkMgr.getNetworkRate(network.getId(), vm.getId()), 
+                    _networkMgr.isSecurityGroupSupportedInNetwork(network), _networkMgr.getNetworkTag(vm.getHypervisorType(), network));
+        }
         
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        //1) allocate nic
-        NicProfile nic = _networkMgr.allocateNic(null, network, false, 
-                100, vmProfile).first();
+        if (nic == null) {
+            s_logger.debug("Allocating nic for the " + vm + " in network " + network);
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            //1) allocate nic and prepare nic if needed
+            int deviceId = _nicsDao.countNics(vm.getId());
+            
+            nic = _networkMgr.allocateNic(null, network, false, 
+                    deviceId, vmProfile).first();
+            
+            s_logger.debug("Nic is allocated successfully for vm " + vm + " in network " + network);
+            
+            nic = _networkMgr.prepareNic(vmProfile, dest, context, nic.getId(), networkVO);
+            
+            s_logger.debug("Nic is prepared successfully for vm " + vm + " in network " + network);
+            
+            txn.commit();
+        }
         
-        s_logger.debug("Nic is allocated successfully for vm " + vm + " in network " + network);
-        
-        //2) Prepare nic
-        nic = _networkMgr.prepareNic(vmProfile, dest, context, nic.getId(), networkVO);
-        
-        s_logger.debug("Nic is prepared successfully for vm " + vm + " in network " + network);
-        
-        txn.commit();
-        
-        //3) Convert vmProfile to vmTO
+        //2) Convert vmProfile to vmTO
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
         VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
         
-        //4) Convert nicProfile to NicTO
+        //3) Convert nicProfile to NicTO
         NicTO nicTO = toNicTO(nic, vmProfile.getVirtualMachine().getHypervisorType());
         
-        //5) plug the nic to the vm
+        //4) plug the nic to the vm
         VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
         
         if (vmGuru.plugNic(network, nicTO, vmTO, context, dest)) {
@@ -2482,7 +2491,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             s_logger.warn("Failed to plug nic to the vm " + vm + " in network " + network);
             return null;
         }
-        
     }
 
     @Override
