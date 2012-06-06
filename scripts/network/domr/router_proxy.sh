@@ -41,7 +41,7 @@ shift
 
 check_gw "$domRIp"
 
-ssh -p 3922 -q -o StrictHostKeyChecking=no -i $cert root@$domRIp "/root/$script $*"
+ssh -p 3922 -q -o StrictHostKeyChecking=no -i $cert root@$domRIp "/opt/cloud/bin/$script $*"
 exit $?
 
 
