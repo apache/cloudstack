@@ -39,14 +39,6 @@ class Services:
                                     "hypervisor": "XenServer",
                                     "templatefilter": "self",
                                 },
-                            1: {
-                                    "hypervisor": "KVM",
-                                    "templatefilter": "self",
-                                },
-                            2: {
-                                    "hypervisor": "VMWare",
-                                    "templatefilter": "self",
-                                },
                             },
                          "sleep": 60,
                          "timeout": 5,
@@ -89,6 +81,7 @@ class TestSecStorageServices(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @unittest.skip("do not add secondary storage")
     def test_01_add_sec_storage(self):
         """Test secondary storage
         """

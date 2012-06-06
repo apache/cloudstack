@@ -1349,7 +1349,7 @@
 													}
 													else if($form.find('.form-item[rel=projectId]').css("display") != "none") {  //project-specific
 														array1.push("&projectid=" + args.data.projectId);
-														array1.push("&acltype=account");
+														array1.push("&acltype=account");														
 													}
 													else {  //domain-specific
 														array1.push("&acltype=domain");
@@ -1822,7 +1822,7 @@
 							notification: {
 								poll: pollAsyncJobResult
 							}
-						}
+						}						
 					}
         },
         dataProvider: function(args) {
@@ -2484,9 +2484,8 @@
                       dataType: "json",
                       async: true,
                       success: function(json) {
-                        var jobId = json.addnetworkserviceproviderresponse.jobid;
-                        var timerKey = "addNetworkServiceProviderJob_"+jobId;
-                        $("body").everyTime(2000, timerKey, function() {
+                        var jobId = json.addnetworkserviceproviderresponse.jobid;                       
+												var addNetscalerProviderIntervalID = setInterval(function() { 	
                           $.ajax({
                             url: createURL("queryAsyncJobResult&jobId="+jobId),
                             dataType: "json",
@@ -2496,7 +2495,7 @@
                                 return; //Job has not completed
                               }
                               else {
-                                $("body").stopTime(timerKey);
+                                clearInterval(addNetscalerProviderIntervalID); 
                                 if (result.jobstatus == 1) {
                                   nspMap["netscaler"] = result.jobresult.networkserviceprovider;
                                   addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse", "netscalerloadbalancer");
@@ -2511,7 +2510,7 @@
                               alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + errorMsg);
                             }
                           });
-                        });
+                        }, 3000); 		
                       }
                     });
                   }
@@ -2713,9 +2712,8 @@
                       dataType: "json",
                       async: true,
                       success: function(json) {
-                        var jobId = json.addnetworkserviceproviderresponse.jobid;
-                        var timerKey = "addNetworkServiceProviderJob_"+jobId;
-                        $("body").everyTime(2000, timerKey, function() {
+                        var jobId = json.addnetworkserviceproviderresponse.jobid;                        
+												var addF5ProviderIntervalID = setInterval(function() { 	
                           $.ajax({
                             url: createURL("queryAsyncJobResult&jobId="+jobId),
                             dataType: "json",
@@ -2725,7 +2723,7 @@
                                 return; //Job has not completed
                               }
                               else {
-                                $("body").stopTime(timerKey);
+                                clearInterval(addF5ProviderIntervalID); 
                                 if (result.jobstatus == 1) {
                                   nspMap["f5"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
                                   addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addF5LoadBalancer", "addf5bigiploadbalancerresponse");
@@ -2740,7 +2738,7 @@
                               alert("addNetworkServiceProvider&name=F5BigIpfailed. Error: " + errorMsg);
                             }
                           });
-                        });
+                        }, 3000); 		
                       }
                     });
                   }
@@ -2962,8 +2960,7 @@
                       async: true,
                       success: function(json) {
                         var jobId = json.addnetworkserviceproviderresponse.jobid;
-                        var timerKey = "addNetworkServiceProviderJob_"+jobId;
-                        $("body").everyTime(2000, timerKey, function() {
+                        var addJuniperSRXProviderIntervalID = setInterval(function() { 	
                           $.ajax({
                             url: createURL("queryAsyncJobResult&jobId="+jobId),
                             dataType: "json",
@@ -2973,7 +2970,7 @@
                                 return; //Job has not completed
                               }
                               else {
-                                $("body").stopTime(timerKey);
+                                clearInterval(addJuniperSRXProviderIntervalID); 
                                 if (result.jobstatus == 1) {
                                   nspMap["srx"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
                                   addExternalFirewall(args, selectedPhysicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse", "srxfirewall");
@@ -2988,7 +2985,7 @@
                               alert("addNetworkServiceProvider&name=JuniperSRX failed. Error: " + errorMsg);
                             }
                           });
-                        });
+                        }, 3000); 		
                       }
                     });
                   }
@@ -5120,9 +5117,8 @@
                     dataType: "json",
                     async: true,
                     success: function(json) {
-                      var jobId = json.addnetworkserviceproviderresponse.jobid;
-                      var timerKey = "addNetworkServiceProviderJob_"+jobId;
-                      $("body").everyTime(2000, timerKey, function() {
+                      var jobId = json.addnetworkserviceproviderresponse.jobid;                      
+											var addNetscalerProviderIntervalID = setInterval(function() { 	
                         $.ajax({
                           url: createURL("queryAsyncJobResult&jobId="+jobId),
                           dataType: "json",
@@ -5132,7 +5128,7 @@
                               return; //Job has not completed
                             }
                             else {
-                              $("body").stopTime(timerKey);
+                              clearInterval(addNetscalerProviderIntervalID); 
                               if (result.jobstatus == 1) {
                                 nspMap["netscaler"] = result.jobresult.networkserviceprovider;
                                 addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addNetscalerLoadBalancer", "addnetscalerloadbalancerresponse", "netscalerloadbalancer");
@@ -5147,7 +5143,7 @@
                             alert("addNetworkServiceProvider&name=Netscaler failed. Error: " + errorMsg);
                           }
                         });
-                      });
+                      }, 3000); 		
                     }
                   });
                 }
@@ -5314,8 +5310,7 @@
                     async: true,
                     success: function(json) {
                       var jobId = json.addnetworkserviceproviderresponse.jobid;
-                      var timerKey = "addNetworkServiceProviderJob_"+jobId;
-                      $("body").everyTime(2000, timerKey, function() {
+                      var addF5ProviderIntervalID = setInterval(function() { 	
                         $.ajax({
                           url: createURL("queryAsyncJobResult&jobId="+jobId),
                           dataType: "json",
@@ -5325,7 +5320,7 @@
                               return; //Job has not completed
                             }
                             else {
-                              $("body").stopTime(timerKey);
+                              clearInterval(addF5ProviderIntervalID); 
                               if (result.jobstatus == 1) {
                                 nspMap["f5"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
                                 addExternalLoadBalancer(args, selectedPhysicalNetworkObj, "addF5LoadBalancer", "addf5bigiploadbalancerresponse", "f5loadbalancer");
@@ -5340,7 +5335,7 @@
                             alert("addNetworkServiceProvider&name=F5BigIpfailed. Error: " + errorMsg);
                           }
                         });
-                      });
+                      }, 3000); 		
                     }
                   });
                 }
@@ -5524,8 +5519,7 @@
                     async: true,
                     success: function(json) {
                       var jobId = json.addnetworkserviceproviderresponse.jobid;
-                      var timerKey = "addNetworkServiceProviderJob_"+jobId;
-                      $("body").everyTime(2000, timerKey, function() {
+                      var addJuniperSRXProviderIntervalID = setInterval(function() { 	
                         $.ajax({
                           url: createURL("queryAsyncJobResult&jobId="+jobId),
                           dataType: "json",
@@ -5535,7 +5529,7 @@
                               return; //Job has not completed
                             }
                             else {
-                              $("body").stopTime(timerKey);
+                              clearInterval(addJuniperSRXProviderIntervalID); 
                               if (result.jobstatus == 1) {
                                 nspMap["srx"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
                                 addExternalFirewall(args, selectedPhysicalNetworkObj, "addSrxFirewall", "addsrxfirewallresponse", "srxfirewall");
@@ -5550,7 +5544,7 @@
                             alert("addNetworkServiceProvider&name=JuniperSRX failed. Error: " + errorMsg);
                           }
                         });
-                      });
+                      }, 3000); 		
                     }
                   });
                 }
@@ -8600,8 +8594,7 @@
 			dataType: "json",
 			success: function(json) {
 				var jobId = json.updatephysicalnetworkresponse.jobid;
-				var timerKey = "updatePhysicalNetworkJob_"+jobId;
-				$("body").everyTime(2000, timerKey, function() {
+				var enablePhysicalNetworkIntervalID = setInterval(function() { 	
 					$.ajax({
 						url: createURL("queryAsyncJobResult&jobId="+jobId),
 						dataType: "json",
@@ -8611,7 +8604,7 @@
 								return; //Job has not completed
 							}
 							else {
-								$("body").stopTime(timerKey);
+								clearInterval(enablePhysicalNetworkIntervalID); 
 								if (result.jobstatus == 1) {
 									//alert("updatePhysicalNetwork succeeded.");
 
@@ -8656,8 +8649,7 @@
 										async: false,
 										success: function(json) {
 											var jobId = json.configurevirtualrouterelementresponse.jobid;
-											var timerKey = "configureVirtualRouterElementJob_"+jobId;
-											$("body").everyTime(2000, timerKey, function() {
+											var enableVirtualRouterElementIntervalID = setInterval(function() { 	
 												$.ajax({
 													url: createURL("queryAsyncJobResult&jobId="+jobId),
 													dataType: "json",
@@ -8667,7 +8659,7 @@
 															return; //Job has not completed
 														}
 														else {
-															$("body").stopTime(timerKey);
+															clearInterval(enableVirtualRouterElementIntervalID); 
 															if (result.jobstatus == 1) {
 																//alert("configureVirtualRouterElement succeeded.");
 
@@ -8677,8 +8669,7 @@
 																	async: false,
 																	success: function(json) {
 																		var jobId = json.updatenetworkserviceproviderresponse.jobid;
-																		var timerKey = "updateNetworkServiceProviderJob_"+jobId;
-																		$("body").everyTime(2000, timerKey, function() {
+																		var enableVirtualRouterProviderIntervalID = setInterval(function() { 	
 																			$.ajax({
 																				url: createURL("queryAsyncJobResult&jobId="+jobId),
 																				dataType: "json",
@@ -8688,7 +8679,7 @@
 																						return; //Job has not completed
 																					}
 																					else {
-																						$("body").stopTime(timerKey);
+																						clearInterval(enableVirtualRouterProviderIntervalID); 
 																						if (result.jobstatus == 1) {
 																							//alert("Virtual Router Provider is enabled");
 
@@ -8718,8 +8709,7 @@
 																										async: false,
 																										success: function(json) {
 																											var jobId = json.updatenetworkserviceproviderresponse.jobid;
-																											var timerKey = "updateNetworkServiceProviderJob_"+jobId;
-																											$("body").everyTime(2000, timerKey, function() {
+																											var enableSecurityGroupProviderIntervalID = setInterval(function() { 	
 																												$.ajax({
 																													url: createURL("queryAsyncJobResult&jobId="+jobId),
 																													dataType: "json",
@@ -8729,7 +8719,7 @@
 																															return; //Job has not completed
 																														}
 																														else {
-																															$("body").stopTime(timerKey);
+																															clearInterval(enableSecurityGroupProviderIntervalID); 
 																															if (result.jobstatus == 1) {
 																																//alert("Security group provider is enabled");
 
@@ -8781,7 +8771,7 @@
 																														alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
 																													}
 																												});
-																											});
+																											}, 3000); 		
 																										}
 																									});
 																								}
@@ -8862,7 +8852,7 @@
 																					alert("updateNetworkServiceProvider failed. Error: " + errorMsg);
 																				}
 																			});
-																		});
+																		}, 3000); 		
 																	}
 																});
 															}
@@ -8876,7 +8866,7 @@
 														alert("configureVirtualRouterElement failed. Error: " + errorMsg);
 													}
 												});
-											});
+											}, 3000); 		
 										}
 									});
 								}
@@ -8890,7 +8880,7 @@
 							alert("updatePhysicalNetwork failed. Error: " + errorMsg);
 						}
 					});
-				});
+				}, 3000); 		
 			}
 		});
 	};

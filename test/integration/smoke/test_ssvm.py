@@ -34,7 +34,7 @@ class Services:
         self.services = {
                       "host": {
                                "username": 'root', # Credentials for SSH
-                               "password": 'fr3sca',
+                               "password": 'password',
                                "publicport": 22,
                                },
                        "sleep": 60,
@@ -78,7 +78,6 @@ class TestSSVMs(cloudstackTestCase):
                                         self.apiclient,
                                         systemvmtype='secondarystoragevm',
                                         state='Running',
-                                        zoneid=self.zone.id
                                         )
         self.assertEqual(
                             isinstance(list_ssvm_response, list),
@@ -196,7 +195,6 @@ class TestSSVMs(cloudstackTestCase):
                                         self.apiclient,
                                         systemvmtype='consoleproxy',
                                         state='Running',
-                                        zoneid=self.zone.id
                                         )
         self.assertEqual(
                             isinstance(list_cpvm_response, list),

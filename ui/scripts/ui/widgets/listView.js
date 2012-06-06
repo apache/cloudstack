@@ -545,9 +545,9 @@
   var renderActionCol = function(actions) {
     return $.grep(
       $.map(actions, function(value, key) {
-        return key;
+        return { key: key, value: value };
       }),
-      function(elem) { return elem != 'add'; }
+      function(elem) { return elem.key != 'add' && !elem.value.isHeader; }
     ).length;
   };
 

@@ -1583,7 +1583,6 @@
     <script src="lib/jquery-ui/js/jquery-ui.js" type="text/javascript"></script>		
     <script src="lib/date.js" type="text/javascript"></script>
     <script src="lib/jquery.cookies.js" type="text/javascript"></script>
-    <script src="lib/jquery.timers.js" type="text/javascript"></script>
     <script src="lib/jquery.md5.js" type="text/javascript" ></script>
 		
     <script src="lib/excanvas.js"></script>
@@ -1652,6 +1651,7 @@
 
 <script language="javascript">
 dictionary = {
+'label.network.rate.megabytes': '<fmt:message key="label.network.rate.megabytes"/>',
 'message.setup.physical.network.during.zone.creation.basic': '<fmt:message key="message.setup.physical.network.during.zone.creation.basic"/>',
 'label.traffic.label': '<fmt:message key="label.traffic.label"/>',
 'label.management.ips': '<fmt:message key="label.management.ips"/>',

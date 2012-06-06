@@ -21,7 +21,7 @@ from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
-from marvin import remoteSSHClient
+from marvin.remoteSSHClient import remoteSSHClient
 import datetime
 
 
@@ -168,7 +168,7 @@ class TestHighAvailability(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
-    @unittest.skip("skipped")
+
     def test_01_host_maintenance_mode(self):
         """Test host maintenance mode
         """
