@@ -1090,7 +1090,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
                 buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
             }
 
-            buf.append(" eth").append(deviceId).append("mask=").append(nic.getNetmask());
             if (nic.isDefaultNic()) {
                 buf.append(" gateway=").append(nic.getGateway());
             }
