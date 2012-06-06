@@ -21,7 +21,7 @@ from integration.lib.common import *
 #Import Local Modules
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin import remoteSSHClient
+from marvin.remoteSSHClient import remoteSSHClient
 
 class Services:
     """Test Services

@@ -31,7 +31,7 @@ class Services:
 
     def __init__(self):
         self.services = {
-                            "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                            "ostypeid": '1a568aed-db2d-41ca-b644-416b0bdc067e',
                             # Cent OS 5.3 (64 bit)
                             "mode": 'advanced',
                             # Networking mode: Basic or advanced
@@ -457,7 +457,7 @@ class TestPortForwarding(cloudstackTestCase):
                 "SSHing into VM with IP address %s after NAT rule deletion" %
                                                  self.virtual_machine.ipaddress)
 
-            remoteSSHClient.remoteSSHClient(
+            remoteSSHClient(
                                             src_nat_ip_addr.ipaddress,
                                             self.virtual_machine.ssh_port,
                                             self.virtual_machine.username,
@@ -573,7 +573,7 @@ class TestPortForwarding(cloudstackTestCase):
                 "SSHing into VM with IP address %s after NAT rule deletion" %
                                                  self.virtual_machine.ipaddress)
 
-            remoteSSHClient.remoteSSHClient(
+            remoteSSHClient(
                                             ip_address.ipaddress.ipaddress,
                                             self.virtual_machine.ssh_port,
                                             self.virtual_machine.username,
@@ -778,7 +778,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
                 (self.vm_1.ipaddress, src_nat_ip_addr.ipaddress)
                 )
 
-            ssh_1 = remoteSSHClient.remoteSSHClient(
+            ssh_1 = remoteSSHClient(
                                         src_nat_ip_addr.ipaddress,
                                         self.services['lbrule']["publicport"],
                                         self.vm_1.username,
@@ -803,7 +803,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
                                              self.vm_2.id
                                              ))
 
-            ssh_2 = remoteSSHClient.remoteSSHClient(
+            ssh_2 = remoteSSHClient(
                                         src_nat_ip_addr.ipaddress,
                                         self.services['lbrule']["publicport"],
                                         self.vm_1.username,
@@ -836,7 +836,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
                                              self.vm_2.id
                                              ))
 
-            ssh_1 = remoteSSHClient.remoteSSHClient(
+            ssh_1 = remoteSSHClient(
                                         src_nat_ip_addr.ipaddress,
                                         self.services['lbrule']["publicport"],
                                         self.vm_1.username,
@@ -859,7 +859,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
 
         with self.assertRaises(Exception):
             self.debug("Removed all VMs, trying to SSH")
-            ssh_1 = remoteSSHClient.remoteSSHClient(
+            ssh_1 = remoteSSHClient(
                                         src_nat_ip_addr.ipaddress,
                                         self.services['lbrule']["publicport"],
                                         self.vm_1.username,
@@ -969,7 +969,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
                                              self.vm_1.id,
                                              self.vm_2.id
                                              ))
-            ssh_1 = remoteSSHClient.remoteSSHClient(
+            ssh_1 = remoteSSHClient(
                                     self.non_src_nat_ip.ipaddress.ipaddress,
                                     self.services['lbrule']["publicport"],
                                     self.vm_1.username,
@@ -988,7 +988,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
                                              self.vm_1.id,
                                              self.vm_2.id
                                              ))
-            ssh_2 = remoteSSHClient.remoteSSHClient(
+            ssh_2 = remoteSSHClient(
                                     self.non_src_nat_ip.ipaddress.ipaddress,
                                     self.services['lbrule']["publicport"],
                                     self.vm_1.username,
@@ -1016,7 +1016,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
                                              self.non_src_nat_ip.ipaddress.ipaddress,
                                              self.vm_2.id
                                              ))
-            ssh_1 = remoteSSHClient.remoteSSHClient(
+            ssh_1 = remoteSSHClient(
                                         self.non_src_nat_ip.ipaddress.ipaddress,
                                         self.services['lbrule']["publicport"],
                                         self.vm_1.username,
@@ -1042,7 +1042,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
                                              self.non_src_nat_ip.ipaddress.ipaddress,
                                              self.vm_1.id
                                              ))
-            ssh_1 = remoteSSHClient.remoteSSHClient(
+            ssh_1 = remoteSSHClient(
                                         self.non_src_nat_ip.ipaddress.ipaddress,
                                         self.services['lbrule']["publicport"],
                                         self.vm_1.username,
@@ -1195,7 +1195,7 @@ class TestRebootRouter(cloudstackTestCase):
         try:
             self.debug("SSH into VM (ID : %s ) after reboot" % self.vm_1.id)
 
-            remoteSSHClient.remoteSSHClient(
+            remoteSSHClient(
                                     self.nat_rule.ipaddress,
                                     self.services["natrule"]["publicport"],
                                     self.vm_1.username,
@@ -1273,7 +1273,7 @@ class TestAssignRemoveLB(cloudstackTestCase):
                         ]
         return
 
-    def test_assign_and_removal_elb(self):
+    def test_assign_and_removal_lb(self):
         """Test for assign & removing load balancing rule"""
 
         # Validate:
@@ -1347,7 +1347,7 @@ class TestAssignRemoveLB(cloudstackTestCase):
                                              self.vm_2.id
                                              ))
             #Create SSH client for each VM
-            ssh_1 = remoteSSHClient.remoteSSHClient(
+            ssh_1 = remoteSSHClient(
                                         self.non_src_nat_ip.ipaddress,
                                         self.services["lbrule"]["publicport"],
                                         self.vm_1.username,
@@ -1364,7 +1364,7 @@ class TestAssignRemoveLB(cloudstackTestCase):
                                              self.vm_1.id,
                                              self.vm_2.id
                                              ))
-            ssh_2 = remoteSSHClient.remoteSSHClient(
+            ssh_2 = remoteSSHClient(
                                         self.non_src_nat_ip.ipaddress,
                                         self.services["lbrule"]["publicport"],
                                         self.vm_2.username,
@@ -1406,7 +1406,7 @@ class TestAssignRemoveLB(cloudstackTestCase):
                                              self.vm_1.id,
                                              ))
             # Again make a SSH connection, as previous is not used after LB remove
-            ssh_1 = remoteSSHClient.remoteSSHClient(
+            ssh_1 = remoteSSHClient(
                                         self.non_src_nat_ip.ipaddress,
                                         self.services["lbrule"]["publicport"],
                                         self.vm_1.username,
@@ -1428,13 +1428,13 @@ class TestAssignRemoveLB(cloudstackTestCase):
         lb_rule.assign(self.apiclient, [self.vm_3])
 
         try:
-            ssh_1 = remoteSSHClient.remoteSSHClient(
+            ssh_1 = remoteSSHClient(
                                         self.non_src_nat_ip.ipaddress,
                                         self.services["lbrule"]["publicport"],
                                         self.vm_1.username,
                                         self.vm_1.password
                                         )
-            ssh_3 = remoteSSHClient.remoteSSHClient(
+            ssh_3 = remoteSSHClient(
                                         self.non_src_nat_ip.ipaddress,
                                         self.services["lbrule"]["publicport"],
                                         self.vm_3.username,
@@ -1599,7 +1599,7 @@ class TestReleaseIP(cloudstackTestCase):
 
         # SSH Attempt though public IP should fail
         with self.assertRaises(Exception):
-            ssh_2 = remoteSSHClient.remoteSSHClient(
+            ssh_2 = remoteSSHClient(
                                     self.ip_addr.ipaddress,
                                     self.services["natrule"]["publicport"],
                                     self.virtual_machine.username,

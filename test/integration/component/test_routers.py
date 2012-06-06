@@ -17,10 +17,10 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin import remoteSSHClient
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
+from marvin.remoteSSHClient import remoteSSHClient
 
 #Import System modules
 import time
@@ -77,6 +77,7 @@ class Services:
                                     # Algorithm used for load balancing
                                     "privateport": 22,
                                     "publicport": 2222,
+                                    "protocol": 'TCP',
                                 },
                          "fw_rule":{
                                     "startport": 1,

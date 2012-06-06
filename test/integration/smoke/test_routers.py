@@ -42,7 +42,7 @@ class Services:
                                     {
                                         "displayname": "Test VM",
                                         "username": "root",
-                                        "password": "fr3sca",
+                                        "password": "password",
                                         "ssh_port": 22,
                                         "hypervisor": 'XenServer',
                                         "privateport": 22,
@@ -54,9 +54,9 @@ class Services:
                                         "firstname": "Test",
                                         "lastname": "User",
                                         "username": "testuser",
-                                        "password": "fr3sca",
+                                        "password": "password",
                                         },
-                         "ostypeid":'946b031b-0e10-4f4a-a3fc-d212ae2ea07f',
+                         "ostypeid":'1a568aed-db2d-41ca-b644-416b0bdc067e',
                          "sleep": 60,
                          "timeout": 10,
                          "mode": 'advanced', #Networking mode: Basic, Advanced
@@ -152,7 +152,7 @@ class TestRouterServices(cloudstackTestCase):
                            zoneid=router.zoneid,
                            type='Routing',
                            state='Up',
-                           virtualmachineid=self.vm_1.id
+                           id=router.hostid
                            )
         self.assertEqual(
                             isinstance(hosts, list),
@@ -214,7 +214,7 @@ class TestRouterServices(cloudstackTestCase):
                            zoneid=router.zoneid,
                            type='Routing',
                            state='Up',
-                           virtualmachineid=self.vm_1.id
+                           id=router.hostid
                            )
         self.assertEqual(
                             isinstance(hosts, list),
@@ -400,7 +400,7 @@ class TestRouterServices(cloudstackTestCase):
                            zoneid=router.zoneid,
                            type='Routing',
                            state='Up',
-                           virtualmachineid=self.vm_1.id
+                           id=router.hostid
                            )
         self.assertEqual(
                             isinstance(hosts, list),

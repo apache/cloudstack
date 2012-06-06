@@ -18,7 +18,7 @@
 import marvin
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin import remoteSSHClient
+from marvin.remoteSSHClient import remoteSSHClient
 from utils import *
 from base import *
 
@@ -103,12 +103,12 @@ def download_systemplates_sec_storage(server, services):
 
     try:
         # Login to management server
-        ssh = remoteSSHClient.remoteSSHClient(
+        ssh = remoteSSHClient(
                                           server["ipaddress"],
                                           server["port"],
                                           server["username"],
                                           server["password"]
-                                          )
+                             )
     except Exception:
         raise Exception("SSH access failted for server with IP address: %s" %
                                                             server["ipaddess"])
