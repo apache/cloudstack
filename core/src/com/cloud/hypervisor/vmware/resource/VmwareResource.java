@@ -1021,7 +1021,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     protected Answer execute(CheckRouterCommand cmd) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Executing resource CheckRouterCommand: " + _gson.toJson(cmd));
-            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /root/checkrouter.sh ");
+            s_logger.debug("Run command on domR " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + ", /opt/cloud/bin/checkrouter.sh ");
         }
 
         Pair<Boolean, String> result;
@@ -3858,12 +3858,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         try {
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace("Executing /root/netusage.sh " + args + " on DomR " + privateIpAddress);
+                s_logger.trace("Executing /opt/cloud/bin/netusage.sh " + args + " on DomR " + privateIpAddress);
             }
 
             VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
-            Pair<Boolean, String> result = SshHelper.sshExecute(privateIpAddress, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/root/netusage.sh " + args);
+            Pair<Boolean, String> result = SshHelper.sshExecute(privateIpAddress, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/netusage.sh " + args);
 
             if (!result.first()) {
                 return null;

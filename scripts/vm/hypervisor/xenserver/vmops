@@ -364,19 +364,6 @@ def deleteFile(session, args):
     return txt
 
 
-@echo
-def networkUsage(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/networkUsage.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-    except:
-        util.SMlog("  network usage error "  )
-        txt = '' 
-
-    return txt
     
 def get_private_nic(session, args):
     vms = session.xenapi.VM.get_all()
@@ -1434,7 +1421,7 @@ if __name__ == "__main__":
                             "vm_data": vm_data, "savePassword": savePassword, 
                             "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "routerProxy": routerProxy, 
                             "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, 
-                            "networkUsage": networkUsage, "network_rules":network_rules, 
+                            "network_rules":network_rules, 
                             "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules,
                             "destroy_network_rules_for_vm":destroy_network_rules_for_vm, 
                             "default_network_rules_systemvm":default_network_rules_systemvm, 
