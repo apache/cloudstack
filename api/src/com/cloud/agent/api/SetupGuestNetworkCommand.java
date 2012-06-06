@@ -28,6 +28,10 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand{
     boolean add = true;
     NicTO nic;
     
+    public NicTO getNic() {
+        return nic;
+    }
+
     @Override
     public boolean executeInSequence() {
         return true;
