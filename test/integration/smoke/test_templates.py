@@ -637,7 +637,7 @@ class TestTemplates(cloudstackTestCase):
                         "ListTemplates should not list any system templates"
                         )
         return
-    @unittest.expectedFailure
+
     def test_06_copy_template(self):
         """Test for copy template from one zone to another"""
 

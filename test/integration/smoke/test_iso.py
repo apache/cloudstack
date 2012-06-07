@@ -445,7 +445,7 @@ class TestISO(cloudstackTestCase):
                             "Check isfeatured permission of ISO"
                         )
         return
-    @unittest.expectedFailure
+
     def test_06_copy_iso(self):
         """Test for copy ISO from one zone to another"""
 
