@@ -7035,6 +7035,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String domrIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String domrGIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
         String domrName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String gw = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
         try {
             Set<VM> vms = VM.getByNameLabel(conn, domrName);
             if ( vms == null || vms.isEmpty() ) {
@@ -7058,7 +7059,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             String dev = "eth" + domrVif.getDevice(conn);
             args += " -d " + dev;
             args += " -i " + domrGIP;
-            args += " -g " + nic.getGateway();
+            args += " -g " + gw;
             args += " -m " + Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
             args += " -s " + nic.getDns1();
             String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
