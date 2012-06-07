@@ -45,6 +45,7 @@ import com.cloud.dao.EntityManagerImpl;
 import com.cloud.dc.ClusterDetailsDaoImpl;
 import com.cloud.dc.dao.AccountVlanMapDaoImpl;
 import com.cloud.dc.dao.ClusterDaoImpl;
+import com.cloud.dc.dao.ClusterVSMMapDaoImpl;
 import com.cloud.dc.dao.DataCenterDaoImpl;
 import com.cloud.dc.dao.DataCenterIpAddressDaoImpl;
 import com.cloud.dc.dao.DcDetailsDaoImpl;
@@ -70,11 +71,9 @@ import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.ExternalLoadBalancerUsageManagerImpl;
 import com.cloud.network.NetworkManagerImpl;
 import com.cloud.network.StorageNetworkManagerImpl;
+import com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl;
 import com.cloud.network.dao.ExternalFirewallDeviceDaoImpl;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceDaoImpl;
-import com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl;
-import com.cloud.dc.dao.ClusterVSMMapDaoImpl;
-import com.cloud.network.dao.PortProfileDaoImpl;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
@@ -91,16 +90,17 @@ import com.cloud.network.dao.NetworkServiceMapDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDaoImpl;
+import com.cloud.network.dao.PortProfileDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VirtualRouterProviderDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
+import com.cloud.network.element.CiscoNexusVSMElement;
+import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.network.element.F5ExternalLoadBalancerElement;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.network.element.JuniperSRXExternalFirewallElement;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.network.element.NetscalerElement;
-import com.cloud.network.element.CiscoNexusVSMElement;
-import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VirtualRouterElementService;
@@ -159,6 +159,8 @@ import com.cloud.storage.snapshot.SnapshotManagerImpl;
 import com.cloud.storage.snapshot.SnapshotSchedulerImpl;
 import com.cloud.storage.swift.SwiftManagerImpl;
 import com.cloud.storage.upload.UploadMonitorImpl;
+import com.cloud.tags.TaggedResourceManagerImpl;
+import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.template.HyervisorTemplateAdapter;
 import com.cloud.template.TemplateAdapter;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
@@ -327,6 +329,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("NetworkServiceMapDao", NetworkServiceMapDaoImpl.class);
         addDao("StorageNetworkIpAddressDao", StorageNetworkIpAddressDaoImpl.class);
         addDao("StorageNetworkIpRangeDao", StorageNetworkIpRangeDaoImpl.class);
+        addDao("TagsDao", ResourceTagsDaoImpl.class);
     }
 
     @Override
@@ -383,6 +386,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("StorageNetworkManager", StorageNetworkManagerImpl.class);
         addManager("ExternalLoadBalancerUsageManager", ExternalLoadBalancerUsageManagerImpl.class);
         addManager("HA Manager", HighAvailabilityManagerImpl.class);
+        addManager("TaggedResourcesManager", TaggedResourceManagerImpl.class);
     }
 
     @Override

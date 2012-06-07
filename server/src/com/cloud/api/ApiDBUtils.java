@@ -25,6 +25,7 @@ import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.configuration.Resource.TaggedResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
@@ -77,6 +78,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.StatsCollector;
+import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -84,6 +86,7 @@ import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.StorageStats;
@@ -91,9 +94,8 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeHostVO;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume.Type;
+import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -188,6 +190,7 @@ public class ApiDBUtils {
     private static AccountDetailsDao _accountDetailsDao;
     private static NetworkDomainDao _networkDomainDao;
     private static HighAvailabilityManager _haMgr;
+    private static TaggedResourceService _taggedResourceService;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -241,6 +244,7 @@ public class ApiDBUtils {
         _accountDetailsDao = locator.getDao(AccountDetailsDao.class);
         _networkDomainDao = locator.getDao(NetworkDomainDao.class);
         _haMgr = locator.getManager(HighAvailabilityManager.class);
+        _taggedResourceService = locator.getManager(TaggedResourceService.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -748,4 +752,9 @@ public class ApiDBUtils {
     public static String getHaTag() {
         return _haMgr.getHaTag();
     }
+    
+    public static String getUuid(String resourceId, TaggedResourceType resourceType) {
+        return _taggedResourceService.getUuid(resourceId, resourceType);
+    }
+
 }

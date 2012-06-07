@@ -2123,4 +2123,22 @@ CREATE TABLE `cloud`.`port_profile` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+
+CREATE TABLE `cloud`.`resource_tags` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40),
+  `key` varchar(255),
+  `value` varchar(255),
+  `resource_id` bigint unsigned NOT NULL,
+  `resource_type` varchar(255),
+  `customer` varchar(255),
+  `domain_id` bigint unsigned NOT NULL COMMENT 'foreign key to domain id',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner of this network',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_tags__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`),
+  CONSTRAINT `fk_tags__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`),
+  UNIQUE `i_tags__resource_id__resource_type__key`(`resource_id`, `resource_type`, `key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 SET foreign_key_checks = 1;
