@@ -768,14 +768,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
 	@Override
-	public IpAddress allocateIP(long networkId, Account ipOwner,
-			boolean isSystem) throws ResourceAllocationException,
-			InsufficientAddressCapacityException, ConcurrentOperationException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
 	public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner,
 			VlanType type, Long networkId, String requestedIp, boolean isSystem)
 			throws InsufficientAddressCapacityException {
@@ -878,6 +870,15 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     @Override
     public String getDefaultGuestTrafficLabel(long dcId, HypervisorType vmware) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkService#allocateIP(long, com.cloud.user.Account)
+     */
+    @Override
+    public IpAddress allocateIP(long networkId, Account ipOwner) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }

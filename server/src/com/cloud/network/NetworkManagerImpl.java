@@ -6060,12 +6060,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public String getNetworkTag(HypervisorType hType, Network network) {
         // no network tag for control traffic type
-        if (network.getTrafficType() == TrafficType.Control) {
+    	TrafficType effectiveTrafficType = network.getTrafficType();
+    	if(hType == HypervisorType.VMware && effectiveTrafficType == TrafficType.Control)
+    		effectiveTrafficType = TrafficType.Management;
+    	
+        if (effectiveTrafficType == TrafficType.Control) {
             return null;
         }
 
         Long physicalNetworkId = null;
-        if (network.getTrafficType() != TrafficType.Guest) {
+        if (effectiveTrafficType != TrafficType.Guest) {
             physicalNetworkId = getNonGuestNetworkPhysicalNetworkId(network);
         } else {
             NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
@@ -6078,15 +6082,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return null;
         }
 
-        return _pNTrafficTypeDao.getNetworkTag(physicalNetworkId, network.getTrafficType(), hType);
+        return _pNTrafficTypeDao.getNetworkTag(physicalNetworkId, effectiveTrafficType, hType);
     }
 
     protected Long getNonGuestNetworkPhysicalNetworkId(Network network) {
         // no physical network for control traffic type
+
+        // have to remove this sanity check as VMware control network is management network
+        // we need to retrieve traffic label information through physical network
+/*        
         if (network.getTrafficType() == TrafficType.Control) {
             return null;
         }
-
+*/
         Long physicalNetworkId = network.getPhysicalNetworkId();
 
         if (physicalNetworkId == null) {
