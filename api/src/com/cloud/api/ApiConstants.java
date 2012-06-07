@@ -358,6 +358,8 @@ public class ApiConstants {
     public static final String VSM_DEVICE_STATE = "vsmdevicestate";
     public static final String ADD_VSM_FLAG = "addvsmflag";
     public static final String CAN_USE_FOR_DEPLOY = "canusefordeploy";
+    public static final String RESOURCE_IDS = "resourceids";
+    public static final String RESOURCE_ID = "resourceid";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

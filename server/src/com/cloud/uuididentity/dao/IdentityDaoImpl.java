@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.IdentityMapper;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.Transaction;
@@ -86,8 +87,39 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 		}
 		return null;
     }
+    
+    @DB
+    @Override
+    public Pair<Long, Long> getAccountDomainInfo(String tableName, Long identityId) {
+        assert(tableName != null);
+        
+        PreparedStatement pstmt = null;
+        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        try {
+            try {
+                pstmt = txn.prepareAutoCloseStatement(
+                    String.format("SELECT account_id, domain_id FROM `%s` WHERE id=?", tableName)
+                );
+                
+                pstmt.setLong(1, identityId);
+                
+                ResultSet rs = pstmt.executeQuery();
+                if(rs.next()) {
+                    return new Pair<Long, Long>(rs.getLong(1), rs.getLong(2));
+                } else {
+                    throw new InvalidParameterValueException("Object " + tableName + "(id: " + identityId + ") does not exist.");
+                }
+            } catch (SQLException e) {
+                s_logger.error("Unexpected exception ", e);
+            }
+        } finally {
+            txn.close();
+        }
+        return null;
+    }
 	
     @DB
+    @Override
 	public String getIdentityUuid(String tableName, String identityString) {
 		assert(tableName != null);
 		assert(identityString != null);
