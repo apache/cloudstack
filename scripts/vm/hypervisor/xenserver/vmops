@@ -233,21 +233,6 @@ def saveDhcpEntry(session, args):
     return txt
     
 @echo
-def lt2p_vpn(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/l2tp_vpn.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        txt = 'success'
-    except:
-        util.SMlog("l2tp vpn failed "  )
-        txt = '' 
-
-    return txt    
-
-@echo
 def setLinkLocalIP(session, args):
     brName = args['brName']
     try:
@@ -1434,7 +1419,7 @@ if __name__ == "__main__":
                             "destroy_network_rules_for_vm":destroy_network_rules_for_vm, 
                             "default_network_rules_systemvm":default_network_rules_systemvm, 
                             "get_rule_logs_for_vms":get_rule_logs_for_vms, 
-                            "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn,
+                            "setLinkLocalIP":setLinkLocalIP,
                             "cleanup_rules":cleanup_rules,
                             "bumpUpPriority":bumpUpPriority,
                             "kill_copy_process":kill_copy_process})

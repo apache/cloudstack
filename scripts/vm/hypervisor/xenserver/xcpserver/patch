@@ -28,7 +28,6 @@ vm_data.sh=../../../../network/domr/,0755,/opt/xensource/bin
 save_password_to_domr.sh=../../../../network/domr/,0755,/opt/xensource/bin
 call_firewall.sh=../../../../network/domr/,0755,/opt/xensource/bin
 call_loadbalancer.sh=../../../../network/domr/,0755,/opt/xensource/bin
-l2tp_vpn.sh=../../../../network/domr/,0755,/opt/xensource/bin
 cloud-setup-bonding.sh=..,0755,/opt/xensource/bin
 copy_vhd_to_secondarystorage.sh=..,0755,/opt/xensource/bin
 copy_vhd_from_secondarystorage.sh=..,0755,/opt/xensource/bin

@@ -1588,7 +1588,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected synchronized Answer execute(final RemoteAccessVpnCfgCommand cmd) {
         Connection conn = getConnection();
-        String args = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String args = "vpn_l2tp.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         if (cmd.isCreate()) {
             args += " -r " + cmd.getIpRange();
             args += " -p " + cmd.getPresharedKey();
@@ -1600,7 +1600,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -d ";
             args += " -s " + cmd.getVpnServerIp();
         }
-        String result = callHostPlugin(conn, "vmops", "lt2p_vpn", "args", args);
+        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "Configure VPN failed");
         }

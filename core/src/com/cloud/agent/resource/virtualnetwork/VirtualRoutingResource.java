@@ -82,7 +82,6 @@ import com.cloud.utils.script.Script;
 public class VirtualRoutingResource implements Manager {
     private static final Logger s_logger = Logger.getLogger(VirtualRoutingResource.class);
     private String _savepasswordPath; 	// This script saves a random password to the DomR file system
-    private String _ipassocPath;
     private String _publicIpAddress;
     private String _firewallPath;
     private String _loadbPath;
@@ -90,11 +89,8 @@ public class VirtualRoutingResource implements Manager {
     private String _vmDataPath;
     private String _publicEthIf;
     private String _privateEthIf;
-    private String _getRouterStatusPath;
     private String _bumpUpPriorityPath;
-    private String _l2tpVpnPath;
-    private String _getDomRVersionPath;
-
+    private String _routerProxyPath;
 
     private int _timeout;
     private int _startTimeout;
@@ -146,37 +142,41 @@ public class VirtualRoutingResource implements Manager {
     }
 
     private Answer execute(VpnUsersCfgCommand cmd) {
-        for (VpnUsersCfgCommand.UsernamePassword userpwd: cmd.getUserpwds()) {
-            Script command = new Script(_l2tpVpnPath, _timeout, s_logger);
-            command.add(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
+        for (VpnUsersCfgCommand.UsernamePassword userpwd: cmd.getUserpwds()) {         
+            String args = "";
             if (!userpwd.isAdd()) {
-                command.add("-U ", userpwd.getUsername());
+                args +="-U ";
+                args +=userpwd.getUsername();
             } else {
-                command.add("-u ", userpwd.getUsernamePassword());
+                args +="-u ";
+                args += userpwd.getUsernamePassword();
             }
-            String result = command.execute();
+            String result = routerProxy("vpn_l2tp.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
             if (result != null) {
                 return new Answer(cmd, false, "Configure VPN user failed for user " + userpwd.getUsername());
             }
-        }
-        
+        }       
         return new Answer(cmd);
     }
 
     private Answer execute(RemoteAccessVpnCfgCommand cmd) {
-        Script command = new Script(_l2tpVpnPath, _timeout, s_logger);
-        command.add(cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP));
+        String args = "";
         if (cmd.isCreate()) {
-            command.add("-r ", cmd.getIpRange());
-            command.add("-p ", cmd.getPresharedKey());
-            command.add("-s ", cmd.getVpnServerIp());
-            command.add("-l ", cmd.getLocalIp());
-            command.add("-c ");
+            args += "-r ";
+            args += cmd.getIpRange();
+            args += " -p ";
+            args += cmd.getPresharedKey();
+            args += " -s ";
+            args += cmd.getVpnServerIp();
+            args += " -l ";
+            args += cmd.getLocalIp();
+            args += " -c ";
         } else {
-            command.add("-d ");
-            command.add("-s ", cmd.getVpnServerIp());
+            args +="-d ";
+            args += " -s ";
+            args += cmd.getVpnServerIp();
         }
-        String result = command.execute();
+        String result = routerProxy("vpn_l2tp.sh", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
         if (result != null) {
             return new Answer(cmd, false, "Configure VPN failed");
         }
@@ -474,9 +474,18 @@ public class VirtualRoutingResource implements Manager {
     }
 
     public String getRouterStatus(String routerIP) {
-        final Script command  = new Script(_getRouterStatusPath, _timeout, s_logger);
+        return routerProxy("checkrouter.sh", routerIP, null);
+    }
+    
+    
+    public String routerProxy(String script, String routerIP, String args) {
+        final Script command  = new Script(_routerProxyPath, _timeout, s_logger);
         final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+        command.add(script);
         command.add(routerIP);
+        if ( args != null ) {
+            command.add(args);
+        }
         String result = command.execute(parser);
         if (result == null) {
             return parser.getLine();
@@ -507,14 +516,7 @@ public class VirtualRoutingResource implements Manager {
     }
 
     protected String getDomRVersion(String routerIP) {
-        final Script command  = new Script(_getDomRVersionPath, _timeout, s_logger);
-        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
-        command.add(routerIP);
-        String result = command.execute(parser);
-        if (result == null) {
-            return parser.getLine();
-        }
-        return null;
+        return routerProxy("netusage.sh", routerIP, null);
     }
 
     protected Answer execute(GetDomRVersionCmd cmd) {
@@ -592,16 +594,17 @@ public class VirtualRoutingResource implements Manager {
 
 
     public String assignPublicIpAddress(final String vmName, final long id, final String vnet, final String privateIpAddress, final String macAddress, final String publicIpAddress) {
-
-        final Script command = new Script(_ipassocPath, _timeout, s_logger);
-        command.add("-A");
-        command.add("-f"); //first ip is source nat ip
-        command.add("-r", vmName);
-        command.add("-i", privateIpAddress);
-        command.add("-a", macAddress);
-        command.add("-l", publicIpAddress);
-
-        return command.execute();
+        String args ="-A";
+        args += " -f"; //first ip is source nat ip
+        args += " -r ";
+        args += vmName;
+        args += " -i ";
+        args += privateIpAddress;
+        args += " -a ";
+        args += macAddress;
+        args += " -l ";
+        args += publicIpAddress;
+        return routerProxy("ipassoc.sh", privateIpAddress, args);
     }
 
     public String assignPublicIpAddress(final String vmName,
@@ -610,30 +613,29 @@ public class VirtualRoutingResource implements Manager {
             final String vlanId, final String vlanGateway,
             final String vlanNetmask, final String vifMacAddress, String guestIp, int nicNum){
 
-        final Script command = new Script(_ipassocPath, _timeout, s_logger);
-        command.add( privateIpAddress);
+        String args = "";
         if (add) {
-            command.add("-A");
+            args += "-A";
         } else {
-            command.add("-D");
-        }
-
-        if (sourceNat) {
-            command.add("-s");
-        } 
-        if (firstIP) {
-            command.add( "-f");
-
+            args += "-D";
         }
         String cidrSize = Long.toString(NetUtils.getCidrSize(vlanNetmask));
-        command.add( "-l", publicIpAddress + "/" + cidrSize);
-        String publicNic = "eth" + nicNum;
-        command.add("-c", publicNic);
-        
-        command.add("-g", vlanGateway);
-        
+        if (sourceNat) {
+            args +=" -s";
+        }
+        if (firstIP) {
+            args += " -f";
+        }
+        args += " -l ";
+        args += publicIpAddress + "/" + cidrSize;
 
-        return command.execute();
+        String publicNic = "eth" + nicNum;
+        args += " -c ";
+        args += publicNic;
+
+        args +=" -g ";
+        args += vlanGateway;
+        return routerProxy("ipassoc.sh", privateIpAddress, args);
     }
     
     private void deletExitingLinkLocalRoutTable(String linkLocalBr) {
@@ -801,12 +803,6 @@ public class VirtualRoutingResource implements Manager {
         value = (String)params.get("ssh.port");
         _port = NumbersUtil.parseInt(value, 3922);
 
-        _ipassocPath = findScript("ipassoc.sh");
-        if (_ipassocPath == null) {
-            throw new ConfigurationException("Unable to find the ipassoc.sh");
-        }
-        s_logger.info("ipassoc.sh found in " + _ipassocPath);
-
         _publicIpAddress = (String)params.get("public.ip.address");
         if (_publicIpAddress != null) {
             s_logger.warn("Incoming public ip address is overriden.  Will always be using the same ip address: " + _publicIpAddress);
@@ -837,11 +833,6 @@ public class VirtualRoutingResource implements Manager {
             throw new ConfigurationException("Unable to find user_data.sh");
         }
 
-        _getRouterStatusPath = findScript("getRouterStatus.sh");
-        if(_getRouterStatusPath == null) {
-            throw new ConfigurationException("Unable to find getRouterStatus.sh");
-        }
-
         _publicEthIf = (String)params.get("public.network.device");
         if (_publicEthIf == null) {
             _publicEthIf = "xenbr1";
@@ -859,14 +850,9 @@ public class VirtualRoutingResource implements Manager {
             throw new ConfigurationException("Unable to find bumpUpPriority.sh");
         }
         
-        _l2tpVpnPath = findScript("l2tp_vpn.sh");
-        if (_l2tpVpnPath == null) {
-            throw new ConfigurationException("Unable to find l2tp_vpn.sh");
-        }
-
-        _getDomRVersionPath = findScript("getDomRVersion.sh");
-        if(_getDomRVersionPath == null) {
-            throw new ConfigurationException("Unable to find getDomRVersion.sh");
+        _routerProxyPath = findScript("routerProxy.sh");
+        if (_routerProxyPath == null) {
+            throw new ConfigurationException("Unable to find routerProxy.sh");
         }
         
         return true;
