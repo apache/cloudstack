@@ -286,10 +286,13 @@ disable_hvc() {
 setup_common() {
   init_interfaces $1 $2 $3
   setup_interface "0" $ETH0_IP $ETH0_MASK
-  setup_interface "1" $ETH1_IP $ETH1_MASK
+  if [ -n "$ETH1_IP" ]
+  then
+    setup_interface "1" $ETH1_IP $ETH1_MASK
+  fi
   if [ -n "$ETH2_IP" ]
   then
-  	setup_interface "2" $ETH2_IP $ETH2_MASK
+    setup_interface "2" $ETH2_IP $ETH2_MASK
   fi
    
   echo $NAME > /etc/hostname
@@ -347,46 +350,6 @@ setup_common() {
       sleep 3
       pkill ping
   fi
-}
-
-setup_dnsmasq() {
-  log_it "Setting up dnsmasq"
-  [ -z $DHCP_RANGE ] && DHCP_RANGE=$ETH0_IP
-  [ -z $DOMAIN ] && DOMAIN="cloudnine.internal"
-  
-  if [ -n "$DOMAIN" ]
-  then
-        #send domain name to dhcp clients
-        sed -i s/[#]*dhcp-option=15.*$/dhcp-option=15,\"$DOMAIN\"/ /etc/dnsmasq.conf
-        #DNS server will append $DOMAIN to local queries
-        sed -r -i s/^[#]?domain=.*$/domain=$DOMAIN/ /etc/dnsmasq.conf
-        #answer all local domain queries
-        sed  -i -e "s/^[#]*local=.*$/local=\/$DOMAIN\//" /etc/dnsmasq.conf
-
-  fi
-  
-  if [ -n  "$DNS_SEARCH_ORDER" ]
-  then
-      sed -i -e "/^[#]*dhcp-option.*=119.*$/d" /etc/dnsmasq.conf
-      echo "dhcp-option-force=119,$DNS_SEARCH_ORDER" >> /etc/dnsmasq.conf
-      # set the domain search order as a space seprated list for option 15
-      DNS_SEARCH_ORDER=$(echo $DNS_SEARCH_ORDER | sed 's/,/ /g')
-      #send domain name to dhcp clients 
-      sed -i s/[#]*dhcp-option=15.*$/dhcp-option=15,\""$DNS_SEARCH_ORDER"\"/ /etc/dnsmasq.conf
-  fi
-  
-
-  sed -i -e "s/^dhcp-range=.*$/dhcp-range=$DHCP_RANGE,static/" /etc/dnsmasq.conf
-  sed -i -e "s/^[#]*listen-address=.*$/listen-address=$ETH0_IP/" /etc/dnsmasq.conf
-
-  if [ "$RROUTER" == "1" ]
-  then
-      sed -i -e "/^[#]*dhcp-option=option:router.*$/d" /etc/dnsmasq.conf
-      echo "dhcp-option=option:router,$GUEST_GW" >> /etc/dnsmasq.conf
-      sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
-      echo "dhcp-option=6,$GUEST_GW" >> /etc/dnsmasq.conf
-  fi
-
 }
 
 setup_sshd(){
@@ -520,9 +483,6 @@ setup_router() {
     setup_redundant_router
   fi
      
-  setup_dnsmasq
-  setup_apache2 $ETH0_IP
-  
   sed -i  /gateway/d /etc/hosts
 
   echo "$ETH0_IP $NAME" >> /etc/hosts
