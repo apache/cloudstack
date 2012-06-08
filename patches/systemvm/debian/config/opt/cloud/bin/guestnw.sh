@@ -31,7 +31,7 @@ usage() {
 
 
 setup_dnsmasq() {
-  loger -t cloud "Setting up dnsmasq for network $ip/$mask "
+  logger -t cloud "Setting up dnsmasq for network $ip/$mask "
   # setup static 
   sed -i -e "/^[#]*dhcp-range=interface:$dev/d" /etc/dnsmasq.d/cloud.conf
   echo "dhcp-range=interface:$dev,set:interface-$dev,$ip,static" >> /etc/dnsmasq.d/cloud.conf
@@ -58,7 +58,7 @@ setup_dnsmasq() {
 }
 
 desetup_dnsmasq() {
-  loger -t cloud "Setting up dnsmasq for network $ip/$mask "
+  logger -t cloud "Setting up dnsmasq for network $ip/$mask "
   
   sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,option:router.*$/d" /etc/dnsmasq.d/cloud.conf
   sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,6.*$/d" /etc/dnsmasq.d/cloud.conf
@@ -71,7 +71,9 @@ desetup_dnsmasq() {
 create_guest_network() {
   logger -t cloud " $(basename $0): Create network on interface $dev,  gateway $gw, network $ip/$mask "
 
-  sudo ip addr add $dev $ip/$mask
+  sudo ip addr add dev $dev $ip/$mask
+  sudo ip link set $dev up
+  sudo arping -c 3 -I $dev -A -U -s $ip $ip;
 
   # create inbound acl chain
   if sudo iptables -N ACL_INBOUND_$ip 2>/dev/null
