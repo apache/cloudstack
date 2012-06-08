@@ -32,20 +32,26 @@ usage() {
 
 setup_dnsmasq() {
   loger -t cloud "Setting up dnsmasq for network $ip/$mask "
-  
+  # setup static 
   sed -i -e "/^[#]*dhcp-range=interface:$dev/d" /etc/dnsmasq.d/cloud.conf
-
-  echo "dhcp-range=interface:$dev,set:interface-$dev,$ip,static/" >> /etc/dnsmasq.d/cloud.conf
-
+  echo "dhcp-range=interface:$dev,set:interface-$dev,$ip,static" >> /etc/dnsmasq.d/cloud.conf
+  # setup gateway
   sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,option:router.*$/d" /etc/dnsmasq.d/cloud.conf
   if [ -n "$gw" ]
   then
     echo "dhcp-option=tag:interface-$dev,option:router,$gw" >> /etc/dnsmasq.d/cloud.conf
   fi
+  # setup DNS
   sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,6.*$/d" /etc/dnsmasq.d/cloud.conf
-  if [ -n "$NS" ]
+  if [ -n "$DNS" ]
   then
-    echo "dhcp-option=tag:interface-$dev,6,$NS" >> /etc/dnsmasq.d/cloud.conf
+    echo "dhcp-option=tag:interface-$dev,6,$DNS" >> /etc/dnsmasq.d/cloud.conf
+  fi
+  # setup DOMAIN
+  sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,15.*$/d" /etc/dnsmasq.d/cloud.conf
+  if [ -n "$DOMAIN" ]
+  then
+    echo "dhcp-option=tag:interface-$dev,15,$DOMAIN" >> /etc/dnsmasq.d/cloud.conf
   fi
   service dnsmasq restart
   sleep 1
@@ -72,14 +78,14 @@ create_guest_network() {
   then
     logger -t cloud "$(basename $0): create VPC inbound acl chain for network $ip/$mask"
     # policy drop
-    sudo iptables -A ACL_INBOUND_$ip DROP >/dev/null
+    sudo iptables -A ACL_INBOUND_$ip -j DROP >/dev/null
     sudo iptables -A FORWARD -o $dev -d $ip/$mask -j ACL_INBOUND_$ip
   fi
   # create outbound acl chain
   if sudo iptables -N ACL_OUTBOUND_$ip 2>/dev/null
   then
     logger -t cloud "$(basename $0): create VPC outbound acl chain for network $ip/$mask"
-    sudo iptables -A ACL_OUTBOUND_$ip DROP >/dev/null
+    sudo iptables -A ACL_OUTBOUND_$ip -j DROP >/dev/null
     sudo iptables -A FORWARD -i $dev -s $ip/$mask -j ACL_OUTBOUND_$ip
   fi
 
@@ -111,7 +117,7 @@ Dflag=
 op=""
 
 
-while getopts 'CDg:n:m:c:v' OPTION
+while getopts 'CDn:m:d:i:g:s:e:' OPTION
 do
   case $OPTION in
   C)	Cflag=1
@@ -123,13 +129,13 @@ do
   n)	nflag=1
 		network="$OPTAGR"
 		;;
-  c)	mflag=1
+  m)	mflag=1
 		mask="$OPTARG"
 		;;
   d)	dflag=1
   		dev="$OPTARG"
   		;;
-  v)	iflag=1
+  i)	iflag=1
 		ip="$OPTARG"
   		;;
   g)	gflag=1
@@ -137,6 +143,9 @@ do
                 ;;
   s)    sflag=1
                 DNS="$OPTARG"
+                ;;
+  e)    eflag=1
+		DOMAIN="$OPTARG"
   		;;
   ?)	usage
                 unlock_exit 2 $lock $locked
@@ -145,13 +154,13 @@ do
 done
 
 
-if [ "$Cflag$Dflag$cflag" != "11" ]
+if [ "$Cflag$Dflag$dflag" != "11" ]
 then
     usage
     unlock_exit 2 $lock $locked
 fi
 
-if [ "$Cflag" == "1" ] && ["$dflag$iflag$gflag$mflag" != "1111" ] 
+if [ "$Cflag" == "1" ] && ["$iflag$gflag$mflag" != "111" ] 
 then
     usage
     unlock_exit 2 $lock $locked

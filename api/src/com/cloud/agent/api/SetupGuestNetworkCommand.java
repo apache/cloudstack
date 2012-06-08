@@ -32,6 +32,10 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand{
         return nic;
     }
 
+    public String getNetworkDomain() {
+        return networkDomain;
+    }
+
     @Override
     public boolean executeInSequence() {
         return true;

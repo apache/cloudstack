@@ -7036,6 +7036,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String domrGIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
         String domrName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String gw = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
+        String cidr = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));;
+        String domainName = cmd.getNetworkDomain();
+        String dns = nic.getDns1();
         try {
             Set<VM> vms = VM.getByNameLabel(conn, domrName);
             if ( vms == null || vms.isEmpty() ) {
@@ -7060,8 +7063,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -d " + dev;
             args += " -i " + domrGIP;
             args += " -g " + gw;
-            args += " -m " + Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
-            args += " -s " + nic.getDns1();
+            args += " -m " + cidr;
+            if ( dns != null && !dns.isEmpty() ) {
+                args += " -s " + dns;
+            }
+            if ( domainName != null && !domainName.isEmpty() ) {
+                args += " -e " + domainName;
+            }
             String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
             if (result == null || result.isEmpty()) {
                 return new SetupGuestNetworkAnswer(cmd, false, "creating guest network failed due to " + ((result == null)? "null":result));
