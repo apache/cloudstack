@@ -129,8 +129,12 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         if (physicalNetworkId == null) {
             return false;
         }
+        
+        if (network.getVpcId() != null) {
+            return false;
+        }
 
-        if (!_networkMgr.isProviderEnabledInPhysicalNetwork(physicalNetworkId, "VirtualRouter")) {
+        if (!_networkMgr.isProviderEnabledInPhysicalNetwork(physicalNetworkId, Network.Provider.VirtualRouter.getName())) {
             return false;
         }
 
@@ -170,18 +174,16 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                     DataCenter.class, network.getDataCenterId());
         }
         
-        boolean success = true;
         for (VirtualRouter router : routers) {
             //Add router to guest network
-            success = success && _routerMgr.addRouterToGuestNetwork(router, network, false);
-            if (!success) {
-                s_logger.warn("Failed to plug nic in network " + network + " for virtual router router " + router);
+            if (!_routerMgr.addRouterToGuestNetwork(router, network, false)) {
+                throw new CloudRuntimeException("Failed to add router " + router + " to guest network " + network);
             } else {
-                s_logger.debug("Successfully plugged nic in network " + network + " for virtual router " + router);
+                s_logger.debug("Successfully added router " + router + " to guest network " + network);
             }
         }
         
-        return success;       
+        return true;       
     }
 
     @Override
@@ -214,18 +216,16 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                     DataCenter.class, network.getDataCenterId());
         }
         
-        boolean success = true;
         for (VirtualRouter router : routers) {
             //Add router to guest network
-            success = success && _routerMgr.addRouterToGuestNetwork(router, network, false);
-            if (!success) {
-                s_logger.warn("Failed to plug nic in network " + network + " for virtual router " + router);
+            if (!_routerMgr.addRouterToGuestNetwork(router, network, false)) {
+                throw new CloudRuntimeException("Failed to add router " + router + " to guest network " + network);
             } else {
-                s_logger.debug("Successfully plugged nic in network " + network + " for virtual router " + router);
+                s_logger.debug("Successfully added router " + router + " to guest network " + network);
             }
         }
         
-        return success;      
+        return true;      
     }
 
     @Override

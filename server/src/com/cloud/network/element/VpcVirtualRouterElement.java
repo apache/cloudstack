@@ -31,12 +31,14 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkService;
+import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.Inject;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -53,12 +55,47 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     NetworkService _ntwkService;
     @Inject
     VpcService _vpcService;
+    @Inject
+    VpcVirtualNetworkApplianceService _vpcMgr;
     
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
         
     @Inject
     VpcVirtualNetworkApplianceManager _vpcRouterMgr;
+    
+    
+    @Override
+    protected boolean canHandle(Network network, Service service) {
+        Long physicalNetworkId = _networkMgr.getPhysicalNetworkId(network);
+        if (physicalNetworkId == null) {
+            return false;
+        }
+        
+        if (network.getVpcId() == null) {
+            return false;
+        }
+
+        if (!_networkMgr.isProviderEnabledInPhysicalNetwork(physicalNetworkId, Network.Provider.VPCVirtualRouter.getName())) {
+            return false;
+        }
+
+        if (service == null) {
+            if (!_networkMgr.isProviderForNetwork(getProvider(), network.getId())) {
+                s_logger.trace("Element " + getProvider().getName() + " is not a provider for the network " + network);
+                return false;
+            }
+        } else {
+            if (!_networkMgr.isProviderSupportServiceInNetwork(network.getId(), service, getProvider())) {
+                s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() 
+                        + " in the network " + network);
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     
     @Override
     public boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, 
@@ -111,19 +148,16 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                    DataCenter.class, network.getDataCenterId());
        }
        
-       boolean success = true;
        for (VirtualRouter router : routers) {
-           //Add router to guest network
-           success = success && _routerMgr.addRouterToGuestNetwork(router, network, false);
+         //Add router to guest network
+           if (!_vpcMgr.addVpcRouterToGuestNetwork(router, network, false)) {
+               throw new CloudRuntimeException("Failed to add VPC router " + router + " to guest network " + network);
+           } else {
+               s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);
+           }
        }
        
-       if (!success) {
-           s_logger.warn("Failed to plug nic in network " + network + " for virtual router in vpc id=" + vpcId);
-       } else {
-           s_logger.debug("Successfully plugged nic in network " + network + " for virtual router in vpc id=" + vpcId);
-       }
-       
-       return success;       
+       return true;       
     }
     
     @Override
@@ -153,18 +187,16 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                     DataCenter.class, network.getDataCenterId());
         }
         
-        boolean success = true;
         for (VirtualRouter router : routers) {
-            //2) Add router to guest network
-            success = success && _routerMgr.addRouterToGuestNetwork(router, network, false);
-            if (!success) {
-                s_logger.warn("Failed to plug nic in network " + network + " for virtual router " + router);
+            //Add router to guest network
+            if (!_vpcMgr.addVpcRouterToGuestNetwork(router, network, false)) {
+                throw new CloudRuntimeException("Failed to add VPC router " + router + " to guest network " + network);
             } else {
-                s_logger.debug("Successfully plugged nic in network " + network + " for virtual router " + router);
+                s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);
             }
         }
        
-        return success;
+        return true;
     }
     
     @Override

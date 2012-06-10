@@ -66,6 +66,7 @@ public interface VirtualNetworkApplianceService {
      * @param router
      * @param network
      * @param isRedundant TODO
+     * @param setupDns TODO
      * @return
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException

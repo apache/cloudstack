@@ -423,6 +423,14 @@ public interface NetworkManager extends NetworkService {
      * @return
      */
     NicProfile getNicProfile(VirtualMachine vm, long networkId);
+
+
+    /**
+     * @param network
+     * @param provider
+     * @return
+     */
+    boolean setupDns(Network network, Provider provider);
     
 
 }
