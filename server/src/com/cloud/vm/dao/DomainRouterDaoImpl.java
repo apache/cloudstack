@@ -309,5 +309,11 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setParameters("role", Role.VIRTUAL_ROUTER);
         return listBy(sc);
     }
+    
+    @Override
+    public boolean isRouterPartOfGuestNetwork(long routerId, long guestNetworkId) {
+        RouterNetworkVO routerNtwkMap = _routerNetworkDao.findByRouterAndNetwork(routerId, guestNetworkId);
+        return routerNtwkMap != null;
+    }
 
 }

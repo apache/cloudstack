@@ -1932,7 +1932,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @DB
-    public Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException,
+    public Pair<NetworkGuru, NetworkVO> implementNetwork(long networkId, DeployDestination dest, ReservationContext context)
+            throws ConcurrentOperationException, ResourceUnavailableException,
             InsufficientCapacityException {
         Transaction.currentTxn();
         Pair<NetworkGuru, NetworkVO> implemented = new Pair<NetworkGuru, NetworkVO>(null, null);
@@ -1993,7 +1994,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
     }
 
-    private void implementNetworkElementsAndResources(DeployDestination dest, ReservationContext context, NetworkVO network, NetworkOfferingVO offering)
+    private void implementNetworkElementsAndResources(DeployDestination dest, ReservationContext context, 
+            NetworkVO network, NetworkOfferingVO offering)
             throws ConcurrentOperationException, InsufficientAddressCapacityException, ResourceUnavailableException, InsufficientCapacityException {
         // If this is a 1) guest virtual network 2) network has sourceNat service 3) network offering does not support a
         // Shared source NAT rule,
@@ -2001,14 +2003,29 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         boolean sharedSourceNat = offering.getSharedSourceNat();
 
-        if (network.getGuestType() == Network.GuestType.Isolated && areServicesSupportedInNetwork(network.getId(), Service.SourceNat) 
+        if (network.getGuestType() == Network.GuestType.Isolated 
+                && areServicesSupportedInNetwork(network.getId(), Service.SourceNat) 
                 && !sharedSourceNat) {
-            List<IPAddressVO> ips = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
+            
+            List<IPAddressVO> ips = null;
+            Vpc vpc = null;
+            if (network.getVpcId() != null) {
+                vpc = _vpcMgr.getVpc(network.getVpcId());
+                ips = _ipAddressDao.listByAssociatedVpc(vpc.getId(), true);
+            } else {
+                ips = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
+            }
+            
 
             if (ips.isEmpty()) {
-                s_logger.debug("Creating a source nat ip for " + network);
+                String target = vpc != null ? vpc.toString() : network.toString();
+                s_logger.debug("Creating a source nat ip for " + target);
                 Account owner = _accountMgr.getAccount(network.getAccountId());
-                assignSourceNatIpAddressToGuestNetwork(owner, network);
+                if (vpc != null) {
+                    assignSourceNatIpAddressToVpc(owner, vpc);
+                } else {
+                    assignSourceNatIpAddressToGuestNetwork(owner, network);
+                }
             }
         }
 
@@ -2109,13 +2126,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    @DB
     public NicProfile prepareNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, DeployDestination 
             dest, ReservationContext context, long nicId, NetworkVO network)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, 
             ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        
-        
         
         Integer networkRate = getNetworkRate(network.getId(), vmProfile.getId());
         NetworkGuru guru = _networkGurus.get(network.getGuruName());
@@ -2164,7 +2178,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
             }
-            prepareElement(element, network, profile, vmProfile, dest, context);
+            prepareElement(element, network, profile, vmProfile, dest, context);  
         }
 
         profile.setSecurityGroupEnabled(isSecurityGroupSupportedInNetwork(network));
@@ -6987,6 +7001,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         s_logger.debug("Private network " + privateNetwork + " is created");
 
         return privateNetwork;
+    }
+    
+    @Override
+    public boolean setupDns(Network network, Provider provider) {
+        boolean dnsProvided = isProviderSupportServiceInNetwork(network.getId(), Service.Dns, provider );
+        boolean dhcpProvided =isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, 
+                provider);
+        
+        boolean setupDns = dnsProvided || dhcpProvided;
+        return setupDns;
     }
     
 }

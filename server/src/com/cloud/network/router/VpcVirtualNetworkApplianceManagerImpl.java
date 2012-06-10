@@ -19,17 +19,23 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import sun.security.jca.ProviderList;
+
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkService;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
+import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.vpc.Vpc;
@@ -47,7 +53,7 @@ import com.cloud.vm.VirtualMachineProfile.Param;
  * @author Alena Prokharchyk
  */
 
-@Local(value = {VpcVirtualNetworkApplianceManager.class})
+@Local(value = {VpcVirtualNetworkApplianceManager.class, VpcVirtualNetworkApplianceService.class})
 public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplianceManagerImpl implements VpcVirtualNetworkApplianceManager{
     private static final Logger s_logger = Logger.getLogger(VpcVirtualNetworkApplianceManagerImpl.class);
 
@@ -137,6 +143,18 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         List<DomainRouterVO> routers = _routerDao.listRoutersByVpcId(vpcId);
         
         return new Pair<DeploymentPlan, List<DomainRouterVO>>(plan, routers);
+    }
+    
+    @Override
+    public boolean addVpcRouterToGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) 
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        boolean dnsProvided = _networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.Dns, Provider.VPCVirtualRouter);
+        boolean dhcpProvided = _networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.Dhcp, 
+                Provider.VPCVirtualRouter);
+        
+        boolean setupDns = dnsProvided || dhcpProvided;
+        
+        return super.addRouterToGuestNetwork(router, network, isRedundant, setupDns);
     }
     
 }

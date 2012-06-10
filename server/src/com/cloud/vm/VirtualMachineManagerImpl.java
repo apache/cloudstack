@@ -2432,7 +2432,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     }
     
     @Override
-    @DB
     public NicProfile addVmToNetwork(VirtualMachine vm, Network network) throws ConcurrentOperationException, 
                                                     ResourceUnavailableException, InsufficientCapacityException {
         
@@ -2451,27 +2450,27 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         NicProfile nic = null;
         NicVO nicVO = _nicsDao.findByInstanceIdAndNetworkId(network.getId(), vm.getId());
         if (nicVO != null) {
-            nic = new NicProfile(nicVO, network, nicVO.getBroadcastUri(), nicVO.getIsolationUri(), _networkMgr.getNetworkRate(network.getId(), vm.getId()), 
-                    _networkMgr.isSecurityGroupSupportedInNetwork(network), _networkMgr.getNetworkTag(vm.getHypervisorType(), network));
+            nic = _networkMgr.getNicProfile(vm, network.getId());
         }
         
         if (nic == null) {
             s_logger.debug("Allocating nic for the " + vm + " in network " + network);
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
             //1) allocate nic and prepare nic if needed
             int deviceId = _nicsDao.countNics(vm.getId());
             
             nic = _networkMgr.allocateNic(null, network, false, 
                     deviceId, vmProfile).first();
             
+            if (nic == null) {
+                throw new CloudRuntimeException("Failed to allocate nic for vm " + vm + " in network " + network);
+            }
+            
             s_logger.debug("Nic is allocated successfully for vm " + vm + " in network " + network);
             
             nic = _networkMgr.prepareNic(vmProfile, dest, context, nic.getId(), networkVO);
             
             s_logger.debug("Nic is prepared successfully for vm " + vm + " in network " + network);
-            
-            txn.commit();
+
         }
         
         //2) Convert vmProfile to vmTO

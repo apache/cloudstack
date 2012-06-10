@@ -1948,7 +1948,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
         
         try {
-          //add router to public and guest networks
+            //add router to public and guest networks
             for (Nic publicNic : publicNics.keySet()) {
                 Network publicNtwk = publicNics.get(publicNic);
                 if (!addRouterToPublicNetwork(router, publicNtwk, _ipAddressDao.findByIpAndSourceNetworkId(publicNtwk.getId(), 
@@ -1958,9 +1958,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 }
             }
             
-            for (Nic guestNic : guestNics.keySet()) {
+            for (Nic guestNic : guestNics.keySet()) {  
                 Network guestNtwk = guestNics.get(guestNic);
-                if (!addRouterToGuestNetwork(router, guestNtwk, false)) {
+                //FIXME - move vpc code to the vpc manager
+                boolean setupDnsRouter = _networkMgr.setupDns(guestNtwk, Provider.VirtualRouter);
+                boolean setupDnsVpc = _networkMgr.setupDns(guestNtwk, Provider.VPCVirtualRouter);
+                
+                boolean setupDns = setupDnsRouter ? setupDnsRouter : setupDnsVpc;
+                
+                if (!addRouterToGuestNetwork(router, guestNtwk, false, setupDns)) {
                     s_logger.warn("Failed to plug nic " + guestNic + " to router " + router);
                     return false;
                 }
@@ -1968,8 +1974,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         } catch (Exception ex) {
             s_logger.warn("Failed to plug nic for router " + router + " due to exception ", ex);
             return false;
-        }
-         
+        }     
 
         return result;
     }
@@ -3057,7 +3062,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
     
     protected boolean setupGuestNetwork(Network network, VirtualRouter router, boolean add, boolean isRedundant,
-            NicProfile guestNic) 
+            NicProfile guestNic, boolean setupDns) 
             throws ConcurrentOperationException, ResourceUnavailableException{
         
         String networkDomain = network.getNetworkDomain();
@@ -3081,16 +3086,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String defaultDns1 = null;
         String defaultDns2 = null;
         
-        boolean dnsProvided = _networkMgr.isProviderSupportServiceInNetwork(guestNic.getNetworkId(), Service.Dns, Provider.VirtualRouter);
-        boolean dhcpProvided = _networkMgr.isProviderSupportServiceInNetwork(guestNic.getNetworkId(), Service.Dhcp, Provider.VirtualRouter);
-
-        if (guestNic.isDefaultNic() && (dnsProvided || dhcpProvided)) {
+        if (setupDns) {
             defaultDns1 = guestNic.getDns1();
             defaultDns2 = guestNic.getDns2();
         }
         
         NicVO nic = _nicDao.findByInstanceIdAndNetworkId(network.getId(), router.getId());
-        NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), _networkMgr.getNetworkRate(network.getId(), router.getId()), 
+        NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
+                _networkMgr.getNetworkRate(network.getId(), router.getId()), 
                 _networkMgr.isSecurityGroupSupportedInNetwork(network), _networkMgr.getNetworkTag(router.getHypervisorType(), network));
 
         SetupGuestNetworkCommand setupCmd = new SetupGuestNetworkCommand(dhcpRange, networkDomain, isRedundant, priority, 
@@ -3115,10 +3118,19 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         return result;
     }
-
+    
     @Override
-    public boolean addRouterToGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) throws ConcurrentOperationException, 
-                    ResourceUnavailableException, InsufficientCapacityException {
+    public boolean addRouterToGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) 
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+        boolean setupDns = _networkMgr.setupDns(network, Provider.VirtualRouter);
+        
+        return addRouterToGuestNetwork(router, network, isRedundant, setupDns);
+    }
+
+   
+
+    protected boolean addRouterToGuestNetwork(VirtualRouter router, Network network, boolean isRedundant, boolean setupDns) 
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         
         if (network.getTrafficType() != TrafficType.Guest) {
             s_logger.warn("Network " + network + " is not of type " + TrafficType.Guest);
@@ -3128,19 +3140,22 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         //Add router to the Guest network
         boolean result = true;
         try {
-            DomainRouterVO routerVO = _routerDao.findById(router.getId());
-            s_logger.debug("Plugging nic for vpc virtual router " + router + " in network " + network);
-            _routerDao.addRouterToGuestNetwork(routerVO, network);
+            if (_routerDao.isRouterPartOfGuestNetwork(router.getId(), network.getId())) {
+                DomainRouterVO routerVO = _routerDao.findById(router.getId());
+                s_logger.debug("Plugging nic for virtual router " + router + " in network " + network);
+                _routerDao.addRouterToGuestNetwork(routerVO, network);
+            } 
             
             NicProfile guestNic = _itMgr.addVmToNetwork(router, network);
             //setup guest network
             if (guestNic != null) {
-                result = setupGuestNetwork(network, router, true, isRedundant, guestNic);
+                result = setupGuestNetwork(network, router, true, isRedundant, guestNic, setupDns);
             } else {
                 s_logger.warn("Failed to add router " + router + " to guest network " + network);
+                result = false;
             }
         } catch (Exception ex) {
-            s_logger.warn("Failed to add router " + router + " to network " + network);
+            s_logger.warn("Failed to add router " + router + " to network " + network + " due to ", ex);
             result = false;
         } finally {
             if (!result) {
@@ -3156,7 +3171,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return result;
     }
 
-
     @Override
     public boolean removeRouterFromGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) 
             throws ConcurrentOperationException, ResourceUnavailableException {
@@ -3165,13 +3179,19 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return false;
         }
         
+        //check if router is already part of network
+        if (!_routerDao.isRouterPartOfGuestNetwork(router.getId(), network.getId())) {
+            s_logger.debug("Router " + router + " is not a part of guest network " + network + "; no need to unplug guest nic");
+            return true;
+        }
+        
         //Check if router is a part of the Guest network
         if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
             s_logger.debug("Router " + router + " is not a part of the Guest network " + network);
             return true;
         }
         
-        boolean result = setupGuestNetwork(network, router, false, isRedundant, _networkMgr.getNicProfile(router, network.getId()));
+        boolean result = setupGuestNetwork(network, router, false, isRedundant, _networkMgr.getNicProfile(router, network.getId()), false);
         if (!result) {
             s_logger.warn("Failed to destroy guest network config " + network + " on router " + router);
             return false;
@@ -3203,6 +3223,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             NicProfile publicNic = _itMgr.addVmToNetwork(router, publicNetwork);
             //setup public network
             if (publicNic != null) {
+                publicNic.setDefaultNic(true);
                 if (publicIpAddr != null) {
                     IPAddressVO ipVO = _ipAddressDao.findById(publicIpAddr.getId());
                     PublicIp publicIp = new PublicIp(ipVO, _vlanDao.findById(ipVO.getVlanId()), 
@@ -3214,7 +3235,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 s_logger.warn("Failed to add router " + router + " to the public network " + publicNetwork);
             }
         } catch (Exception ex) {
-            s_logger.warn("Failed to add router " + router + " to the public network " + publicNetwork);
+            s_logger.warn("Failed to add router " + router + " to the public network " + publicNetwork + " due to ", ex);
         } finally {
             if (!result) {
                 s_logger.debug("Removing the router " + router + " from public network " + publicNetwork + " as a part of cleanup");

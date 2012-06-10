@@ -123,5 +123,12 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      * @param guestNetworkId
      */
     void removeRouterFromNetwork(long routerId, long guestNetworkId);
+
+    /**
+     * @param routerId
+     * @param guestNetworkId
+     * @return
+     */
+    boolean isRouterPartOfGuestNetwork(long routerId, long guestNetworkId);
     
 }
