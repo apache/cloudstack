@@ -37,6 +37,7 @@ import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
+import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.SecurityGroupRuleAnswer;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
@@ -53,6 +54,7 @@ import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
@@ -273,6 +275,12 @@ public class MockVmManagerImpl implements MockVmManager {
     }
 
     @Override
+    public Answer SetFirewallRules(SetFirewallRulesCommand cmd) {
+    	return new Answer(cmd);
+    }
+    
+
+    @Override
     public NetworkUsageAnswer getNetworkUsage(NetworkUsageCommand cmd) {
         return new NetworkUsageAnswer(cmd, null, 100L, 100L);
     }
@@ -345,7 +353,7 @@ public class MockVmManagerImpl implements MockVmManager {
 
     @Override
     public Answer rebootVM(RebootCommand cmd) {
-        return new Answer(cmd);
+        return new RebootAnswer(cmd, "Rebooted "+cmd.getVmName());
     }
 
     @Override
@@ -457,5 +465,5 @@ public class MockVmManagerImpl implements MockVmManager {
         }
         return maps;
     }
-	
+
 }
