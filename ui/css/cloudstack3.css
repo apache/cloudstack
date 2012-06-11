@@ -351,6 +351,68 @@ body.login {
   background: #FFFFFF;
 }
 
+/*About dialog*/
+.dialog-about .ui-widget-content {
+  padding-left: 0;
+  padding-right: 0;
+  width: 100% !important;
+}
+
+.dialog-about .logo {
+  font-size: 26px;
+  color: #636363;
+  padding-top: 20px;
+}
+
+.dialog-about .version {
+  font-size: 12px;
+  padding-top: 10px;
+}
+
+.dialog-about .ui-button {
+  float: none;
+  margin: 0 auto;
+}
+
+#browser div.panel div.detail-view .toolbar {
+  width: 594px;
+}
+
+div.list-view table tbody td span {
+  display: block;
+  float: left;
+  max-width: 210px;
+  word-wrap: break-word;
+  text-indent: 0;
+  margin-left: 12px;
+  line-height: 15px;
+  overflow: auto;
+  overflow-x: hidden;
+}
+
+div.list-view div.toolbar div.section-switcher div.section-select label {
+  margin: 0 9px 0 0;
+}
+
+.loading-overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  left: 0px;
+  top: 0px;
+  background: #F2F2F2 url(../images/ajax-loader.gif) no-repeat center;
+  z-index: 500;
+  /*+opacity:70%;*/
+  filter: alpha(opacity=70);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=70);
+  -moz-opacity: 0.7;
+  opacity: 0.7;
+}
+
+.detail-view .ui-tabs-panel .loading-overlay {
+  background-position: 50% 250px;
+}
+
 /*Install wizard*/
 .install-wizard {
   width: 1024px;
@@ -1577,45 +1639,6 @@ div.details div.detail-group td.value input[type=checkbox] {
 div.details div.detail-group td.value input,
 div.details div.detail-group td.value input[type=text] {
   width: 93%;
-}
-
-#browser div.panel div.detail-view .toolbar {
-  width: 594px;
-}
-
-div.list-view table tbody td span {
-  display: block;
-  float: left;
-  max-width: 210px;
-  word-wrap: break-word;
-  text-indent: 0;
-  margin-left: 12px;
-  line-height: 15px;
-  overflow: auto;
-  overflow-x: hidden;
-}
-
-div.list-view div.toolbar div.section-switcher div.section-select label {
-  margin: 0 9px 0 0;
-}
-
-.loading-overlay {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  left: 0px;
-  top: 0px;
-  background: #F2F2F2 url(../images/ajax-loader.gif) no-repeat center;
-  z-index: 500;
-  /*+opacity:70%;*/
-  filter: alpha(opacity=70);
-  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=70);
-  -moz-opacity: 0.7;
-  opacity: 0.7;
-}
-
-.detail-view .ui-tabs-panel .loading-overlay {
-  background-position: 50% 250px;
 }
 
 /*** Actions*/

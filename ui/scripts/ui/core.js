@@ -257,7 +257,7 @@
     // User options
     var $options = $('<div>').attr({ id: 'user-options' })
           .appendTo($('#header'));
-    $(['label.logout', 'label.help']).each(function() {
+    $(['label.logout', 'label.help', 'About']).each(function() {
       var $link = $('<a>')
             .attr({ href: '#' })
             .html(_l(this.toString()))
@@ -268,6 +268,28 @@
           var helpURL = 'http://docs.cloud.com/CloudStack_Documentation';
 
           window.open(helpURL, '_blank');
+          
+          return false;
+        });
+      }
+      if (this == 'About') {
+        $link.click(function() {
+          var $logo = $('<div>').addClass('logo').html('CloudStack'),
+          $version = $('<div>').addClass('version').html(g_cloudstackversion),
+          $about = $('<div>').addClass('about').append($logo).append($version);
+          $about.dialog({
+            modal: true,
+            width: 300,
+            title: 'About CloudStack',
+            closeOnEscape: false,
+            dialogClass: 'dialog-about',
+            buttons: {
+              'Close': function() {
+                $( this ).dialog( "close" );
+                $(':ui-dialog, .overlay').remove();
+              }
+            }
+          }).closest('.ui-dialog').overlay();
 
           return false;
         });
