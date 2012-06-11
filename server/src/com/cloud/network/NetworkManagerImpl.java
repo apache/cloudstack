@@ -1075,6 +1075,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             txn.commit();
         } finally {
             if (accountToLock != null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Releasing lock account " + ipOwner);
+                }
                 _accountDao.releaseFromLockTable(ipOwner.getId());
                 s_logger.debug("Associate IP address lock released");
             }
@@ -1989,6 +1992,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 _networksDao.update(networkId, network);
 
                 shutdownNetwork(networkId, context, false);
+            }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Releasing lock for network id " + networkId);
             }
             _networksDao.releaseFromLockTable(networkId);
         }
