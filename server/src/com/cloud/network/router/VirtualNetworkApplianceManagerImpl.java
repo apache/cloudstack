@@ -3076,7 +3076,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String dhcpRange = getGuestDhcpRange(guestNic, network, _configMgr.getZone(network.getDataCenterId()));
         
         boolean result = true;
-        long guestVlanTag = Long.parseLong(network.getBroadcastUri().getHost());
+        
+        Nic nic = _nicDao.findByInstanceIdAndNetworkId(network.getId(), router.getId());
+        long guestVlanTag = Long.parseLong(nic.getBroadcastUri().getHost());
         
         String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIp4Address()) | ~NetUtils.ip2Long(guestNic.getNetmask()));
         Integer priority = null;
@@ -3098,7 +3100,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             defaultDns2 = guestNic.getDns2();
         }
         
-        NicVO nic = _nicDao.findByInstanceIdAndNetworkId(network.getId(), router.getId());
         NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
                 _networkMgr.getNetworkRate(network.getId(), router.getId()), 
                 _networkMgr.isSecurityGroupSupportedInNetwork(network), _networkMgr.getNetworkTag(router.getHypervisorType(), network));
@@ -3186,12 +3187,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return false;
         }
         
-        //check if router is already part of network
-        if (!_routerDao.isRouterPartOfGuestNetwork(router.getId(), network.getId())) {
-            s_logger.debug("Router " + router + " is not a part of guest network " + network + "; no need to unplug guest nic");
-            return true;
-        }
-        
         //Check if router is a part of the Guest network
         if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
             s_logger.debug("Router " + router + " is not a part of the Guest network " + network);
@@ -3208,8 +3203,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         if (result) {
             if (result) {
-                s_logger.debug("Removing router " + router + " from network " + network);
-                _routerDao.removeRouterFromNetwork(router.getId(), network.getId());
+                //check if router is already part of network
+                if (_routerDao.isRouterPartOfGuestNetwork(router.getId(), network.getId())) {
+                    s_logger.debug("Removing router " + router + " from network" + network);
+                    _routerDao.removeRouterFromNetwork(router.getId(), network.getId());
+                }
             }
         }
         return result;
