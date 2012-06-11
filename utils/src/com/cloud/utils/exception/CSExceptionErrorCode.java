@@ -94,13 +94,15 @@ public class CSExceptionErrorCode {
 			ExceptionErrorCodeMap.put("com.cloud.exception.ResourceUnavailableException", 4520);
 			ExceptionErrorCodeMap.put("com.cloud.exception.StorageUnavailableException", 4525);
 			ExceptionErrorCodeMap.put("com.cloud.exception.UnsupportedServiceException", 4530);
-			ExceptionErrorCodeMap.put("com.cloud.exception.VirtualMachineMigrationException", 4535);			
+			ExceptionErrorCodeMap.put("com.cloud.exception.VirtualMachineMigrationException", 4535);
+			ExceptionErrorCodeMap.put("com.cloud.async.AsyncCommandQueued", 4540);
 			
 			// Have a special error code for ServerApiException when it is
 			// thrown in a standalone manner when failing to detect any of the above
 			// standard exceptions.
 			ExceptionErrorCodeMap.put("com.cloud.api.ServerApiException", 9999);
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new ExceptionInInitializerError(e);
 		}
 	}
