@@ -132,6 +132,8 @@
 						
 						g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
             $.cookie('userProjectsEnabled', g_userProjectsEnabled, { expires: 1 });
+			
+            g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
 						
             userValid = true;
           },
@@ -243,6 +245,8 @@
 
                 g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
                 $.cookie('userProjectsEnabled', g_userProjectsEnabled, { expires: 1 });
+				
+                g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
 
                 args.response.success({
                   data: {

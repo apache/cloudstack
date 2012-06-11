@@ -21,6 +21,7 @@ var g_timezoneoffset = null;
 var g_timezone = null;
 var g_supportELB = null;
 var g_userPublicTemplateEnabled = "true";
+var g_cloudstackversion = null;
 
 //keyboard keycode
 var keycode_Enter = 13;
