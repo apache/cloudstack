@@ -2198,7 +2198,7 @@ CREATE TABLE `cloud`.`router_network_ref` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_router_network_ref__router_id` FOREIGN KEY (`router_id`) REFERENCES `domain_router`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_router_network_ref__networks_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
-  UNIQUE `i_router_network_ref__router_id__network_id`(`router_id`, `network_id`),
+  UNIQUE `i_router_network_ref__router_id__network_id`(`router_id`, `network_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
