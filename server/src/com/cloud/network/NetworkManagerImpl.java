@@ -3371,7 +3371,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     private boolean shutdownNetworkElementsAndResources(ReservationContext context, boolean cleanupElements, NetworkVO network) {
         // 1) Cleanup all the rules for the network. If it fails, just log the failure and proceed with shutting down
-// the elements
+        // the elements
         boolean cleanupResult = true;
         try {
             cleanupResult = shutdownNetworkResources(network.getId(), context.getAccount(), context.getCaller().getId());

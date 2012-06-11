@@ -24,6 +24,7 @@ import com.cloud.network.element.VpcProvider;
 import com.cloud.network.vpc.VpcOffering.State;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
+import com.cloud.vm.DomainRouterVO;
 
 
 /**
@@ -89,4 +90,10 @@ public interface VpcManager extends VpcService{
      * @throws ResourceUnavailableException
      */
     boolean destroyVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException;
+
+    /**
+     * @param vpcId
+     * @return
+     */
+    List<DomainRouterVO> getVpcRouters(long vpcId);
 }

@@ -80,6 +80,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -174,15 +175,6 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                     DataCenter.class, network.getDataCenterId());
         }
         
-        for (VirtualRouter router : routers) {
-            //Add router to guest network
-            if (!_routerMgr.addRouterToGuestNetwork(router, network, false)) {
-                throw new CloudRuntimeException("Failed to add router " + router + " to guest network " + network);
-            } else {
-                s_logger.debug("Successfully added router " + router + " to guest network " + network);
-            }
-        }
-        
         return true;       
     }
 
@@ -216,12 +208,16 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                     DataCenter.class, network.getDataCenterId());
         }
         
-        for (VirtualRouter router : routers) {
-            //Add router to guest network
-            if (!_routerMgr.addRouterToGuestNetwork(router, network, false)) {
-                throw new CloudRuntimeException("Failed to add router " + router + " to guest network " + network);
-            } else {
-                s_logger.debug("Successfully added router " + router + " to guest network " + network);
+        if (vm.getType() == Type.User) {
+            for (VirtualRouter router : routers) {
+                if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
+                  //Add router to guest network
+                    if (!_routerMgr.addRouterToGuestNetwork(router, network, false)) {
+                        throw new CloudRuntimeException("Failed to add router " + router + " to guest network " + network);
+                    } else {
+                        s_logger.debug("Successfully added router " + router + " to guest network " + network);
+                    }
+                }
             }
         }
         
@@ -790,35 +786,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
 
-            boolean publicNetwork = false;
-            if (_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, getProvider())) {
-                publicNetwork = true;
-            }
-            boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic 
-                    || _networkMgr.isSecurityGroupSupportedInNetwork(network)) &&
-                    network.getTrafficType() == TrafficType.Guest;
-
-            List<DomainRouterVO> routers;
-
-            if (publicNetwork) {
-                routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
-            } else {
-                Long podId = dest.getPod().getId();
-                if (isPodBased) {
-                    routers = _routerDao.listByNetworkAndPodAndRole(network.getId(), podId, Role.VIRTUAL_ROUTER);
-                } else {
-                    routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
-                }
-            }
-
-            // for Basic zone, add all Running routers - we have to send Dhcp/vmData/password info to them when
-                // network.dns.basiczone.updates is set to "all"
-            Long podId = dest.getPod().getId();
-            if (isPodBased && _routerMgr.getDnsBasicZoneUpdate().equalsIgnoreCase("all")) {
-                List<DomainRouterVO> allRunningRoutersOutsideThePod = _routerDao.findByNetworkOutsideThePod(network.getId(),
-                        podId, State.Running, Role.VIRTUAL_ROUTER);
-                routers.addAll(allRunningRoutersOutsideThePod);
-            }
+            List<DomainRouterVO> routers = getRouters(network, dest);
 
             if ((routers == null) || (routers.size() == 0)) {
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
@@ -841,35 +809,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             @SuppressWarnings("unchecked")
             VirtualMachineProfile<UserVm> uservm = (VirtualMachineProfile<UserVm>) vm;
 
-            boolean publicNetwork = false;
-            if (_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, getProvider())) {
-                publicNetwork = true;
-            }
-            boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic 
-                    || _networkMgr.isSecurityGroupSupportedInNetwork(network)) &&
-                    network.getTrafficType() == TrafficType.Guest;
-
-            List<DomainRouterVO> routers;
-
-            if (publicNetwork) {
-                routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
-            } else {
-                Long podId = dest.getPod().getId();
-                if (isPodBased) {
-                    routers = _routerDao.listByNetworkAndPodAndRole(network.getId(), podId, Role.VIRTUAL_ROUTER);
-                } else {
-                    routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
-                }
-            }
-
-            // for Basic zone, add all Running routers - we have to send Dhcp/vmData/password info to them when
-            // network.dns.basiczone.updates is set to "all"
-            Long podId = dest.getPod().getId();
-            if (isPodBased && _routerMgr.getDnsBasicZoneUpdate().equalsIgnoreCase("all")) {
-                List<DomainRouterVO> allRunningRoutersOutsideThePod = _routerDao.findByNetworkOutsideThePod(network.getId(),
-                        podId, State.Running, Role.VIRTUAL_ROUTER);
-                routers.addAll(allRunningRoutersOutsideThePod);
-            }
+            List<DomainRouterVO> routers = getRouters(network, dest);
 
             if ((routers == null) || (routers.size() == 0)) {
                 throw new ResourceUnavailableException("Can't find at least one router!", DataCenter.class, network.getDataCenterId());
@@ -878,6 +818,39 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             return _routerMgr.applyUserData(network, nic, uservm, dest, routers);
         }
         return false;
+    }
+
+    protected List<DomainRouterVO> getRouters(Network network, DeployDestination dest) {
+        boolean publicNetwork = false;
+        if (_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, getProvider())) {
+            publicNetwork = true;
+        }
+        boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic 
+                || _networkMgr.isSecurityGroupSupportedInNetwork(network)) &&
+                network.getTrafficType() == TrafficType.Guest;
+
+        List<DomainRouterVO> routers;
+
+        if (publicNetwork) {
+            routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
+        } else {
+            Long podId = dest.getPod().getId();
+            if (isPodBased) {
+                routers = _routerDao.listByNetworkAndPodAndRole(network.getId(), podId, Role.VIRTUAL_ROUTER);
+            } else {
+                routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
+            }
+        }
+
+        // for Basic zone, add all Running routers - we have to send Dhcp/vmData/password info to them when
+        // network.dns.basiczone.updates is set to "all"
+        Long podId = dest.getPod().getId();
+        if (isPodBased && _routerMgr.getDnsBasicZoneUpdate().equalsIgnoreCase("all")) {
+            List<DomainRouterVO> allRunningRoutersOutsideThePod = _routerDao.findByNetworkOutsideThePod(network.getId(),
+                    podId, State.Running, Role.VIRTUAL_ROUTER);
+            routers.addAll(allRunningRoutersOutsideThePod);
+        }
+        return routers;
     }
 
     @Override

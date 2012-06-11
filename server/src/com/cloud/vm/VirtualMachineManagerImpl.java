@@ -2432,9 +2432,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     }
     
     @Override
-    public NicProfile addVmToNetwork(VirtualMachine vm, Network network) throws ConcurrentOperationException, 
+    public NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException, 
                                                     ResourceUnavailableException, InsufficientCapacityException {
         
+        s_logger.debug("Adding vm " + vm + " to network " + network);
         VMInstanceVO vmVO = _vmDao.findById(vm.getId());
         NetworkVO networkVO = _networkDao.findById(network.getId());
         ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM), 
@@ -2458,7 +2459,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             //1) allocate nic and prepare nic if needed
             int deviceId = _nicsDao.countNics(vm.getId());
             
-            nic = _networkMgr.allocateNic(null, network, false, 
+            nic = _networkMgr.allocateNic(requested, network, false, 
                     deviceId, vmProfile).first();
             
             if (nic == null) {
@@ -2470,7 +2471,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             nic = _networkMgr.prepareNic(vmProfile, dest, context, nic.getId(), networkVO);
             
             s_logger.debug("Nic is prepared successfully for vm " + vm + " in network " + network);
-
+            
         }
         
         //2) Convert vmProfile to vmTO
