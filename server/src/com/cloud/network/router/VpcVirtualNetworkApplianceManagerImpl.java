@@ -19,8 +19,6 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
-import sun.security.jca.ProviderList;
-
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -91,19 +89,17 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         Pair<DeploymentPlan, List<DomainRouterVO>> planAndRouters = getDeploymentPlanAndRouters(vpc.getId(), dest);
         DeploymentPlan plan = planAndRouters.first();
         List<DomainRouterVO> routers = planAndRouters.second();
-        
-        //2) Return routers if exist
-        if (routers.size() >= 1) {
-            return routers;
-        }
-        
-        Long offeringId = _vpcOffDao.findById(vpc.getVpcOfferingId()).getServiceOfferingId();
-        if (offeringId == null) {
-            offeringId = _offering.getId();
-        }
-        
-        //3) Deploy Virtual Router
-        try {
+        try { 
+            //2) Return routers if exist
+            if (routers.size() >= 1) {
+                return routers;
+            }
+            
+            Long offeringId = _vpcOffDao.findById(vpc.getVpcOfferingId()).getServiceOfferingId();
+            if (offeringId == null) {
+                offeringId = _offering.getId();
+            }
+            //3) Deploy Virtual Router
             List<? extends PhysicalNetwork> pNtwks = _pNtwkDao.listByZone(vpc.getZoneId());
             
             VirtualRouterProvider vpcVrProvider = null;
