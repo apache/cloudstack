@@ -1271,6 +1271,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             for (int i = 0; i < count; i++) {
                 DomainRouterVO router = deployRouter(owner, dest, plan, params, isRedundant, vrProvider, offeringId,
                         null, sourceNatIp);
+                //add router to router network map
+                if (!_routerDao.isRouterPartOfGuestNetwork(router.getId(), network.getId())) {
+                    DomainRouterVO routerVO = _routerDao.findById(router.getId());
+                    _routerDao.addRouterToGuestNetwork(routerVO, network);
+                }
                 routers.add(router);
             }
         } finally {
@@ -3135,8 +3140,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return addRouterToGuestNetwork(router, network, isRedundant, setupDns);
     }
 
-   
-
     protected boolean addRouterToGuestNetwork(VirtualRouter router, Network network, boolean isRedundant, boolean setupDns) 
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         
@@ -3148,9 +3151,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         //Add router to the Guest network
         boolean result = true;
         try {
-            if (_routerDao.isRouterPartOfGuestNetwork(router.getId(), network.getId())) {
+            if (!_routerDao.isRouterPartOfGuestNetwork(router.getId(), network.getId())) {
                 DomainRouterVO routerVO = _routerDao.findById(router.getId());
-                s_logger.debug("Plugging nic for virtual router " + router + " in network " + network);
                 _routerDao.addRouterToGuestNetwork(routerVO, network);
             } 
             
