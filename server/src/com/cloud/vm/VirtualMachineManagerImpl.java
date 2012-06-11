@@ -2484,6 +2484,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         //4) plug the nic to the vm
         VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
         
+        s_logger.debug("Plugging nic for vm " + vm + " in network " + network);
         if (vmGuru.plugNic(network, nicTO, vmTO, context, dest)) {
             s_logger.debug("Nic is plugged successfully for vm " + vm + " in network " + network + ". Vm  is a part of network now");
             return nic;
@@ -2525,6 +2526,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         
         NicTO nicTO = toNicTO(nic, vmProfile.getVirtualMachine().getHypervisorType());
         
+        s_logger.debug("Un-plugging nic for vm " + vm + " from network " + network);
         boolean result = vmGuru.unplugNic(network, nicTO, vmTO, context, dest);
         //4) Unplug the nic
         if (result) {
