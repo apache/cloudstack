@@ -65,8 +65,10 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
+import com.cloud.vm.dao.DomainRouterDao;
 
 /**
  * @author Alena Prokharchyk
@@ -93,6 +95,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
     NetworkManager _ntwkMgr;
     @Inject
     IPAddressDao _ipAddressDao;
+    @Inject
+    DomainRouterDao _routerDao;
     
     private VpcProvider vpcElement = null;
     
@@ -906,5 +910,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
             vpc.setRestartRequired(restartRequired);
             _vpcDao.update(vpc.getId(), vpc);
         }  
+    }
+    
+    @Override
+    public List<DomainRouterVO> getVpcRouters(long vpcId) {
+        return _routerDao.listRoutersByVpcId(vpcId);
     }
 }

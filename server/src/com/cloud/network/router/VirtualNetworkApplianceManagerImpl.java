@@ -128,6 +128,8 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
@@ -1952,8 +1954,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             //add router to public and guest networks
             for (Nic publicNic : publicNics.keySet()) {
                 Network publicNtwk = publicNics.get(publicNic);
-                if (!addRouterToPublicNetwork(router, publicNtwk, _ipAddressDao.findByIpAndSourceNetworkId(publicNtwk.getId(), 
-                        publicNic.getIp4Address()))) {
+                IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(publicNtwk.getId(), 
+                        publicNic.getIp4Address());
+                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
+                        NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                if (!addRouterToPublicNetwork(router, publicNtwk, publicIp)) {
                     s_logger.warn("Failed to plug nic " + publicNic + " to router " + router);
                     return false;
                 }
@@ -2109,7 +2114,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
     
     @Override
-    public boolean applyDhcpEntry(Network network, final NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest, List<DomainRouterVO> routers)
+    public boolean applyDhcpEntry(Network network, final NicProfile nic, VirtualMachineProfile<UserVm> profile, 
+            DeployDestination dest, List<DomainRouterVO> routers)
             throws ResourceUnavailableException {
         _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
         
@@ -3147,7 +3153,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 _routerDao.addRouterToGuestNetwork(routerVO, network);
             } 
             
-            NicProfile guestNic = _itMgr.addVmToNetwork(router, network);
+            NicProfile guestNic = _itMgr.addVmToNetwork(router, network, null);
             //setup guest network
             if (guestNic != null) {
                 result = setupGuestNetwork(network, router, true, isRedundant, guestNic, setupDns);
@@ -3209,7 +3215,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return result;
     }
     
-    protected boolean addRouterToPublicNetwork(VirtualRouter router, Network publicNetwork, IpAddress publicIpAddr) 
+    protected boolean addRouterToPublicNetwork(VirtualRouter router, Network publicNetwork, PublicIp sourceNatIp) 
             throws ConcurrentOperationException,ResourceUnavailableException, InsufficientCapacityException {
         
         if (publicNetwork.getTrafficType() != TrafficType.Public) {
@@ -3220,13 +3226,23 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         //Add router to the Public network
         boolean result = true;
         try {
+            NicProfile defaultNic = new NicProfile();
+
+            defaultNic.setDefaultNic(true);
+            defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
+            defaultNic.setGateway(sourceNatIp.getGateway());
+            defaultNic.setNetmask(sourceNatIp.getNetmask());
+            defaultNic.setMacAddress(sourceNatIp.getMacAddress());
+            defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
+            defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
+            defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
             
-            NicProfile publicNic = _itMgr.addVmToNetwork(router, publicNetwork);
+            NicProfile publicNic = _itMgr.addVmToNetwork(router, publicNetwork, defaultNic);
             //setup public network
             if (publicNic != null) {
                 publicNic.setDefaultNic(true);
-                if (publicIpAddr != null) {
-                    IPAddressVO ipVO = _ipAddressDao.findById(publicIpAddr.getId());
+                if (sourceNatIp != null) {
+                    IPAddressVO ipVO = _ipAddressDao.findById(sourceNatIp.getId());
                     PublicIp publicIp = new PublicIp(ipVO, _vlanDao.findById(ipVO.getVlanId()), 
                             NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress()));
                     result = setupPublicNetwork(publicNetwork, router, false, publicIp);

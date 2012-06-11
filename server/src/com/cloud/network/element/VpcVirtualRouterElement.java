@@ -31,18 +31,19 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkService;
-import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcService;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 
 /**
@@ -54,15 +55,12 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     @Inject 
     NetworkService _ntwkService;
     @Inject
-    VpcService _vpcService;
+    VpcManager _vpcMgr;
     @Inject
-    VpcVirtualNetworkApplianceService _vpcMgr;
+    VpcVirtualNetworkApplianceManager _vpcRouterMgr;
     
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
-        
-    @Inject
-    VpcVirtualNetworkApplianceManager _vpcRouterMgr;
     
     
     @Override
@@ -133,7 +131,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
            return false;
        }
        
-       Vpc vpc = _vpcService.getActiveVpc(vpcId);
+       Vpc vpc = _vpcMgr.getActiveVpc(vpcId);
        if (vpc == null) {
            s_logger.warn("Unable to find Enabled VPC by id " + vpcId);
            return false;
@@ -146,15 +144,6 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
        if ((routers == null) || (routers.size() == 0)) {
            throw new ResourceUnavailableException("Can't find at least one running router!",
                    DataCenter.class, network.getDataCenterId());
-       }
-       
-       for (VirtualRouter router : routers) {
-         //Add router to guest network
-           if (!_vpcMgr.addVpcRouterToGuestNetwork(router, network, false)) {
-               throw new CloudRuntimeException("Failed to add VPC router " + router + " to guest network " + network);
-           } else {
-               s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);
-           }
        }
        
        return true;       
@@ -171,7 +160,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return false;
         }
         
-        Vpc vpc = _vpcService.getActiveVpc(vpcId);
+        Vpc vpc = _vpcMgr.getActiveVpc(vpcId);
         if (vpc == null) {
             s_logger.warn("Unable to find Enabled VPC by id " + vpcId);
             return false;
@@ -187,14 +176,18 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                     DataCenter.class, network.getDataCenterId());
         }
         
-        for (VirtualRouter router : routers) {
-            //Add router to guest network
-            if (!_vpcMgr.addVpcRouterToGuestNetwork(router, network, false)) {
-                throw new CloudRuntimeException("Failed to add VPC router " + router + " to guest network " + network);
-            } else {
-                s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);
+        if (vm.getType() == Type.User) {
+            for (VirtualRouter router : routers) {
+                //Add router to guest network
+                if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
+                    if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(router, network, false)) {
+                        throw new CloudRuntimeException("Failed to add VPC router " + router + " to guest network " + network);
+                    } else {
+                        s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);
+                    }
+                } 
             }
-        }
+        } 
        
         return true;
     }
@@ -202,30 +195,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) 
             throws ConcurrentOperationException, ResourceUnavailableException {
-        boolean success = true;
-        Long vpcId = network.getVpcId();
-        if (vpcId == null) {
-            s_logger.debug("Network " + network + " doesn't belong to any vpc, so skipping unplug nic part");
-            return success;
-        }
-        
-        List<? extends VirtualRouter> routers = _routerDao.listRoutersByVpcId(vpcId);
-        for (VirtualRouter router : routers) {
-            //1) Check if router is already a part of the network
-            if (!_ntwkService.isVmPartOfNetwork(router.getId(), network.getId())) {
-                s_logger.debug("Router " + router + " is not a part the network " + network);
-                continue;
-            }
-            //2) Call unplugNics in the network service
-            success = success && _vpcRouterMgr.removeRouterFromGuestNetwork(router, network, false);
-            if (!success) {
-                s_logger.warn("Failed to unplug nic in network " + network + " for virtual router " + router);
-            } else {
-                s_logger.debug("Successfully unplugged nic in network " + network + " for virtual router " + router);
-            }
-        }
-        
-        return success;
+        return true;
     }
 
     @Override
@@ -299,5 +269,13 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         //TODO - add implementation here
         return true;
     }
+    
+    
+    
+    @Override
+    protected List<DomainRouterVO> getRouters(Network network, DeployDestination dest) {
+        return  _vpcMgr.getVpcRouters(network.getVpcId());
+    }
 
+    
 }
