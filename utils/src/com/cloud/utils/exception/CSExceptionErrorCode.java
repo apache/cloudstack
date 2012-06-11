@@ -14,14 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
+
 package com.cloud.utils.exception;
 
 import java.util.HashMap;
+
 import org.apache.log4j.Logger;
 
 /**
  * CSExceptionErrorCode lists the CloudStack error codes that correspond
- * to each exception thrown by the CloudStack API.
+ * to a each exception thrown by the CloudStack API.
  */
 
 public class CSExceptionErrorCode {
@@ -92,13 +95,15 @@ public class CSExceptionErrorCode {
 			ExceptionErrorCodeMap.put("com.cloud.exception.ResourceUnavailableException", 4520);
 			ExceptionErrorCodeMap.put("com.cloud.exception.StorageUnavailableException", 4525);
 			ExceptionErrorCodeMap.put("com.cloud.exception.UnsupportedServiceException", 4530);
-			ExceptionErrorCodeMap.put("com.cloud.exception.VirtualMachineMigrationException", 4535);			
+			ExceptionErrorCodeMap.put("com.cloud.exception.VirtualMachineMigrationException", 4535);
+			ExceptionErrorCodeMap.put("com.cloud.async.AsyncCommandQueued", 4540);
 			
 			// Have a special error code for ServerApiException when it is
 			// thrown in a standalone manner when failing to detect any of the above
 			// standard exceptions.
 			ExceptionErrorCodeMap.put("com.cloud.api.ServerApiException", 9999);
 		} catch (Exception e) {
+			e.printStackTrace();
 			throw new ExceptionInInitializerError(e);
 		}
 	}
