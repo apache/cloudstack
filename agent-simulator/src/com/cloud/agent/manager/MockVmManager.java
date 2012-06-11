@@ -13,7 +13,6 @@
 package com.cloud.agent.manager;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.Answer;
@@ -39,6 +38,7 @@ import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
@@ -63,6 +63,8 @@ public interface MockVmManager extends Manager {
     Answer SetStaticNatRules(SetStaticNatRulesCommand cmd);
     
     Answer SetPortForwardingRules(SetPortForwardingRulesCommand cmd);
+
+    Answer SetFirewallRules(SetFirewallRulesCommand cmd);
     
     Answer getNetworkUsage(NetworkUsageCommand cmd);
     
