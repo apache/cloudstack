@@ -396,8 +396,8 @@
         
         $hiddenPanels.addClass('mouseover-hidden');
         setTimeout(function() {
-          $('.mouseover-hidden').hide("slow");
-        } ,2000);
+          $('.mouseover-hidden').fadeOut('fast');
+        }, 1000);
       }
     }
   ));
