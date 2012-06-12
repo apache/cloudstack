@@ -16,6 +16,7 @@ package com.cloud.network.element;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 
@@ -31,6 +32,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkService;
+import com.cloud.network.PublicIpAddress;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.vpc.Vpc;
@@ -269,12 +271,32 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         return true;
     }
     
-    
-    
     @Override
     protected List<DomainRouterVO> getRouters(Network network, DeployDestination dest) {
         return  _vpcMgr.getVpcRouters(network.getVpcId());
     }
 
-    
+    @Override
+    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> services) 
+            throws ResourceUnavailableException {
+        boolean canHandle = true;
+        for (Service service : services) {
+            if (!canHandle(network, service)) {
+                canHandle = false;
+                break;
+            }
+        }
+        if (canHandle) {
+            List<DomainRouterVO> routers = getRouters(network, null);
+            if (routers == null || routers.isEmpty()) {
+                s_logger.debug(this.getName() + " element doesn't need to associate ip addresses on the backend; VPC virtual " +
+                        "router doesn't exist in the network " + network.getId());
+                return true;
+            }
+
+            return _vpcRouterMgr.associateIP(network, ipAddress, routers);
+        } else {
+            return false;
+        }
+    }
 }

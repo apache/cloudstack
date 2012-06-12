@@ -2641,7 +2641,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean associateIP(Network network, final List<? extends PublicIpAddress> ipAddress, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+    public boolean associateIP(Network network, final List<? extends PublicIpAddress> ipAddress, List<? extends VirtualRouter> routers)
+            throws ResourceUnavailableException {
         if (ipAddress == null || ipAddress.isEmpty()) {
             s_logger.debug("No ip association rules to be applied for network " + network.getId());
             return true;
@@ -2750,11 +2751,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return _dnsBasicZoneUpdates;
     }
     
-    private interface RuleApplier {
+    protected interface RuleApplier {
         boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException;
     }
     
-    private boolean applyRules(Network network, List<? extends VirtualRouter> routers, String typeString, 
+    protected boolean applyRules(Network network, List<? extends VirtualRouter> routers, String typeString, 
             boolean isPodLevelException, Long podId, boolean failWhenDisconnect, RuleApplier applier) throws ResourceUnavailableException {
         if (routers == null || routers.isEmpty()) {
             s_logger.warn("Unable to apply " + typeString + ", virtual router doesn't exist in the network " + network.getId());
