@@ -14,7 +14,6 @@ package com.cloud.consoleproxy;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 
 import org.apache.log4j.Logger;
@@ -31,10 +30,23 @@ import com.cloud.consoleproxy.vnc.VncClient;
  */
 public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
 	private static final Logger s_logger = Logger.getLogger(ConsoleProxyVncClient.class);
+
+	private static final int SHIFT_KEY_MASK = 64;
+	private static final int CTRL_KEY_MASK = 128;
+	private static final int META_KEY_MASK = 256;
+	private static final int ALT_KEY_MASK = 512;
+	
+	private static final int X11_KEY_SHIFT = 0xffe1;
+	private static final int X11_KEY_CTRL = 0xffe3;
+	private static final int X11_KEY_ALT = 0xffe9;
+	private static final int X11_KEY_META = 0xffe7;
 	
 	private VncClient client;
 	private Thread worker;
 	private boolean workerDone = false;
+	
+	private int lastModifierStates = 0;
+	private int lastPointerMask = 0;
 	
 	public ConsoleProxyVncClient() {
 	}
@@ -149,11 +161,13 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
 		
 		switch(event) {
 		case KEY_DOWN :
+			sendModifierEvents(modifiers);
 			client.sendClientKeyboardEvent(RfbConstants.KEY_DOWN, code, 0);
 			break;
 			
 		case KEY_UP :
 			client.sendClientKeyboardEvent(RfbConstants.KEY_UP, code, 0);
+			sendModifierEvents(0);
 			break;
 			
 		case KEY_PRESS :
@@ -175,11 +189,21 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
 	    int mask = 1;
 	    if(code == 2)
 	    	mask = 4;
+	    
 		if(event == InputEventType.MOUSE_DOWN) {
 			pointerMask = mask;
+			lastPointerMask = pointerMask;
+		} else if(event == InputEventType.MOUSE_UP) {
+			lastPointerMask = 0;
+		} else if(event == InputEventType.MOUSE_MOVE) {
+			if(lastPointerMask != 0)
+				pointerMask = lastPointerMask;
 		}
 		
+		sendModifierEvents(modifiers);
 		client.sendClientMouseEvent(pointerMask, x, y, code, modifiers);
+		if(pointerMask == 0)
+			sendModifierEvents(0);
 	}
 	
 	@Override
@@ -187,5 +211,21 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
 		if(client != null)
 			return client.getFrameBufferCanvas();
 		return null;
+	}
+	
+	private void sendModifierEvents(int modifiers) {
+		if((modifiers & SHIFT_KEY_MASK) != (lastModifierStates & SHIFT_KEY_MASK))
+			client.sendClientKeyboardEvent((modifiers & SHIFT_KEY_MASK) != 0 ? RfbConstants.KEY_DOWN : RfbConstants.KEY_UP, X11_KEY_SHIFT, 0);
+			
+		if((modifiers & CTRL_KEY_MASK) != (lastModifierStates & CTRL_KEY_MASK))
+			client.sendClientKeyboardEvent((modifiers & CTRL_KEY_MASK) != 0 ? RfbConstants.KEY_DOWN : RfbConstants.KEY_UP, X11_KEY_CTRL, 0);
+
+		if((modifiers & META_KEY_MASK) != (lastModifierStates & META_KEY_MASK))
+			client.sendClientKeyboardEvent((modifiers & META_KEY_MASK) != 0 ? RfbConstants.KEY_DOWN : RfbConstants.KEY_UP, X11_KEY_META, 0);
+		
+		if((modifiers & ALT_KEY_MASK) != (lastModifierStates & ALT_KEY_MASK))
+			client.sendClientKeyboardEvent((modifiers & ALT_KEY_MASK) != 0 ? RfbConstants.KEY_DOWN : RfbConstants.KEY_UP, X11_KEY_ALT, 0);
+		
+		lastModifierStates = modifiers;
 	}
 }
