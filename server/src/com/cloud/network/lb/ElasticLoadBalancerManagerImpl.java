@@ -856,6 +856,12 @@ public class ElasticLoadBalancerManagerImpl implements
                     // always add management explicit route, for basic networking setup
                     buf.append(" mgmtcidr=").append(_mgmtCidr);
                     buf.append(" localgw=").append(dest.getPod().getGateway());
+
+                    if (dc.getNetworkType() == NetworkType.Basic) {
+                        // ask elb vm to setup SSH on guest network
+                        buf.append(" sshonguest=true");
+                    }
+
                 }
 
                 controlNic = nic;
