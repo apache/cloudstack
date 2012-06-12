@@ -115,6 +115,7 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.SecurityGroupRuleAnswer;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
+import com.cloud.agent.api.SetSourceNatAnswer;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
 import com.cloud.agent.api.SetupGuestNetworkAnswer;
@@ -140,6 +141,7 @@ import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
@@ -148,6 +150,7 @@ import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
@@ -524,7 +527,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((PlugNicCommand) cmd);
         } else if (clazz == UnPlugNicCommand.class) {
             return execute((UnPlugNicCommand) cmd);
-        }else {
+        } else if (clazz == IpAssocVpcCommand.class) {
+            return execute((IpAssocVpcCommand) cmd);
+        } else if (clazz == SetSourceNatCommand.class) {
+            return execute((SetSourceNatCommand) cmd);
+        } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
@@ -1804,7 +1811,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         return new IpAssocAnswer(cmd, results);
     }
-
+    
     protected GetVncPortAnswer execute(GetVncPortCommand cmd) {
         Connection conn = getConnection();
         try {
@@ -7075,6 +7082,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.warn(msg, e);
             return new SetupGuestNetworkAnswer(cmd, false, msg);
         }
+    }
+
+    protected IpAssocAnswer execute(IpAssocVpcCommand cmd) {
+        //FIXME - add implementation here
+        return null;
+    }
+
+    
+    protected SetSourceNatAnswer execute(SetSourceNatCommand cmd) {
+        //FIXME - add implementation here
+        return null;
     }
 
 
