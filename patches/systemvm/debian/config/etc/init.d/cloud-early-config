@@ -615,6 +615,9 @@ EOF
   enable_fwding 1
   chkconfig nfs-common off
   cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules
+  cp /etc/vpcdnsmasq.conf /etc/dnsmasq.conf
+  echo "" > /etc/dnsmasq.d/dhcphosts.txt
+  echo "dhcp-hostsfile=/etc/dnsmasq.d/dhcphosts.txt" > /etc/dnsmasq.d/cloud.conf
 }
 
 
