@@ -30,104 +30,8 @@ then
 fi
 
 usage() {
-  printf "Usage:\n %s -A    -l <public-ip-address>   -c <dev> [-f] \n" $(basename $0) >&2
-  printf " %s -D  -l <public-ip-address>  -c <dev> [-f] \n" $(basename $0) >&2
-}
-
-add_fw_chain_for_ip () {
-  local pubIp=$(echo $1 | awk -F'/' '{print $1}')
-  if sudo iptables -t mangle -N FIREWALL_$pubIp &> /dev/null
-  then
-    logger -t cloud "$(basename $0): created firewall chain for $pubIp"
-    sudo iptables -t mangle -A FIREWALL_$pubIp -j DROP> /dev/null
-    #ensure outgoing connections are maintained (first rule in chain)
-    sudo iptables -t mangle -I FIREWALL_$pubIp -m state --state RELATED,ESTABLISHED -j ACCEPT> /dev/null
-    #ensure that this table is after VPN chain
-    sudo iptables -t mangle -I PREROUTING 2 -d $pubIp -j FIREWALL_$pubIp
-    return $?
-  fi
-  logger -t cloud "$(basename $0): firewall chain for $pubIp already exists"
-}
-
-add_vpn_chain_for_ip () {
-  local pubIp=$(echo $1 | awk -F'/' '{print $1}')
-  if sudo iptables -t mangle -N VPN_$pubIp &> /dev/null
-  then
-    logger -t cloud "$(basename $0): created VPN chain for $pubIp"
-    #ensure outgoing connections are maintained (first rule in chain)
-    sudo iptables -t mangle -I VPN_$pubIp -m state --state RELATED,ESTABLISHED -j ACCEPT
-    sudo iptables -t mangle -A VPN_$pubIp -j RETURN
-    #ensure that this table is the first
-    sudo iptables -t mangle -I PREROUTING 1 -d $pubIp -j VPN_$pubIp
-    return $?
-  fi
-  logger -t cloud "$(basename $0): VPN chain for $pubIp already exists"
-}
-
-del_fw_chain_for_ip () {
-  local pubIp=$(echo $1 | awk -F'/' '{print $1}')
-  if ! sudo iptables -t mangle -N FIREWALL_$pubIp &> /dev/null
-  then
-    logger -t cloud "$(basename $0): destroying firewall chain for $pubIp"
-    sudo iptables -t mangle -D PREROUTING  -d $pubIp -j FIREWALL_$pubIp
-    sudo iptables -t mangle -F FIREWALL_$pubIp
-    sudo iptables -t mangle -X FIREWALL_$pubIp 
-    return $?
-  fi
-  # firewall chain got created as a result of testing for the chain, cleanup
-  sudo iptables -t mangle -F FIREWALL_$pubIp
-  sudo iptables -t mangle -X FIREWALL_$pubIp
-  logger -t cloud "$(basename $0): firewall chain did not exist for $pubIp, cleaned up"
-}
-
-del_vpn_chain_for_ip () {
-  local pubIp=$(echo $1 | awk -F'/' '{print $1}')
-  if ! sudo iptables -t mangle -N VPN_$pubIp &> /dev/null
-  then
-    logger -t cloud "$(basename $0): destroying vpn chain for $pubIp"
-    sudo iptables -t mangle -D PREROUTING  -d $pubIp -j VPN_$pubIp
-    sudo iptables -t mangle -F VPN_$pubIp
-    sudo iptables -t mangle -X VPN_$pubIp 
-    return $?
-  fi
-  # vpn chain got created as a result of testing for the chain, cleanup
-  sudo iptables -t mangle -F VPN_$pubIp
-  sudo iptables -t mangle -X VPN_$pubIp
-  logger -t cloud "$(basename $0): vpn chain did not exist for $pubIp, cleaned up"
-}
-
-convert_primary_to_32() {
-  local existingIpMask=$(sudo ip addr show dev $ethDev | grep "inet " | awk '{print $2}')
-  local primary=$(echo $1 | awk -F'/' '{print $1}')
-# add 32 mask to the existing primary
-  for ipMask in $existingIpMask
-  do
-      local ipNoMask=$(echo $ipMask | awk -F'/' '{print $1}')
-      local mask=$(echo $ipMask | awk -F'/' '{print $2}')
-      if [ "$ipNoMask" == "$primary" ]
-      then
-        continue
-      fi
-      if [ "$mask" != "32" ]
-      then
-         ip_addr_add $ethDev $ipNoMask/32
-      fi
-  done
-#delete primaries
-  for ipMask in $existingIpMask
-  do
-      local ipNoMask=$(echo $ipMask | awk -F'/' '{print $1}')
-      local mask=$(echo $ipMask | awk -F'/' '{print $2}')
-      if [ "$ipNoMask" == "$primary" ]
-      then
-        continue
-      fi
-      if [ "$mask" != "32" ]
-      then
-    # this would have erase all primaries and secondaries in the previous loop, so we need to eat up the error.
-         sudo ip addr del dev $ethDev $ipNoMask/$mask > /dev/null
-      fi
-  done
+  printf "Usage:\n %s -A -l <public-ip-address> -c <dev> [-f] \n" $(basename $0) >&2
+  printf " %s -D -l <public-ip-address> -c <dev> [-f] \n" $(basename $0) >&2
 }
 
 remove_routing() {
@@ -169,8 +73,6 @@ copy_routes_from_main() {
 ip_addr_add() {
   local dev="$1"
   local ip="$2"
-  local brd=`TERM=linux ipcalc $ip|grep Broadcast|awk -F' ' '{print $2}'`
-  sudo ip addr add dev $dev $ip broadcast $brd
 }
 
 add_routing() {
@@ -207,102 +109,6 @@ add_routing() {
   fi
   return 0;
 }
-add_snat() {
-  local pubIp=$1
-  local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
-  if [ "$sflag" == "0" ]
-  then
-    logger -t cloud "$(basename $0):Remove SourceNAT $pubIp on interface $ethDev if it is present"
-    sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
-    return 0;
-  fi
-  # setup default gateway 
-  sudo ip route | grep default
-  if [ $? -gt 0 ]
-  then 
-    sudo ip route add default via $defaultGwIP dev $ethDev
-  fi
-
-  logger -t cloud "$(basename $0):Added SourceNAT $pubIp on interface $ethDev"
-  sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
-  sudo iptables -t nat -A POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
-  return $?
-}
-remove_snat() {
-  if [ "$sflag" == "0" ]
-  then
-    return 0;
-  fi
-
-  local pubIp=$1
-  logger -t cloud "$(basename $0):Removing SourceNAT $pubIp on interface $ethDev"
-  sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask;
-  return $?
-}
-add_first_ip() {
-  local pubIp=$1
-  logger -t cloud "$(basename $0):Adding first ip $pubIp on interface $ethDev"
-  local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
-  local mask=$(echo $1 | awk -F'/' '{print $2}')
-  sudo ip link show $ethDev | grep "state DOWN" > /dev/null
-  local old_state=$?
-  
-  convert_primary_to_32 $pubIp
-  ip_addr_add $ethDev $pubIp
-  if [ "$mask" != "32" ] && [ "$mask" != "" ]
-  then
-    # remove if duplicat ip with 32 mask, this happens when we are promting the ip to primary
-       sudo ip addr del dev $ethDev $ipNoMask/32 > /dev/null
-  fi
-
-  sudo iptables -D FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-  sudo iptables -D FORWARD -i eth0 -o $ethDev  -j ACCEPT
-  sudo iptables -A FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-  sudo iptables -A FORWARD -i eth0 -o $ethDev  -j ACCEPT
-
-  add_snat $1
-  if [ $? -gt 0  -a $? -ne 2 ]
-  then
-     logger -t cloud "$(basename $0):Failed adding source nat entry for ip $pubIp on interface $ethDev"
-     return 1
-  fi
-
-  logger -t cloud "$(basename $0):Added first ip $pubIp on interface $ethDev"
-  if [ $if_keep_state -ne 1 -o $old_state -ne 0 ]
-  then
-      sudo ip link set $ethDev up
-      sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
-  fi
-  add_routing $1 
-
-  return 0
-}
-
-remove_first_ip() {
-  local pubIp=$1
-  logger -t cloud "$(basename $0):Removing first ip $pubIp on interface $ethDev"
-  local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
-  local mask=$(echo $1 | awk -F'/' '{print $2}')
-
-  local existingIpMask=$(sudo ip addr show dev $ethDev | grep inet | awk '{print $2}'  | grep -w $ipNoMask)
-  [ "$existingIpMask" == "" ] && return 0
-
-  [ "$mask" == "" ] && mask="32"
-
-  sudo iptables -D FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
-  sudo iptables -D FORWARD -i eth0 -o $ethDev  -j ACCEPT
-  remove_snat $1
-  
-  sudo ip addr del dev $ethDev "$ipNoMask/$mask"
-  if [ $? -gt 0  -a $? -ne 2 ]
-  then
-     remove_routing $1
-     return 1
-  fi
-  remove_routing $1
-
-  return $?
-}
 
 
 add_an_ip () {
@@ -312,8 +118,7 @@ add_an_ip () {
   sudo ip link show $ethDev | grep "state DOWN" > /dev/null
   local old_state=$?
 
-  ip_addr_add $ethDev $pubIp
-  add_snat $1
+  sudo ip addr add dev $dev $ip
   if [ $if_keep_state -ne 1 -o $old_state -ne 0 ]
   then
       sudo ip link set $ethDev up
@@ -361,29 +166,10 @@ remove_an_ip () {
 }
 
 #set -x
-sflag=0
 lflag=
-fflag=
 cflag=
 op=""
 
-is_master=0
-is_redundant=0
-if_keep_state=0
-grep "redundant_router=1" /var/cache/cloud/cmdline > /dev/null
-if [ $? -eq 0 ]
-then
-    is_redundant=1
-    sudo /root/checkrouter.sh --no-lock|grep "Status: MASTER" > /dev/null 2>&1 
-    if [ $? -eq 0 ]
-    then
-        is_master=1
-    fi
-fi
-if [ $is_redundant -eq 1 -a $is_master -ne 1 ]
-then
-    if_keep_state=1
-fi
 
 while getopts 'sfADa:l:c:g:' OPTION
 do
@@ -393,10 +179,6 @@ do
 		;;
   D)	Dflag=1
 		op="-D"
-		;;
-  f)	fflag=1
-		;;
-  s)	sflag=1
 		;;
   l)	lflag=1
 		publicIp="$OPTARG"
@@ -427,35 +209,17 @@ then
 fi
 
 
-if [ "$fflag" == "1" ] && [ "$Aflag" == "1" ]
-then
-  add_first_ip  $publicIp  &&
-  add_vpn_chain_for_ip $publicIp &&
-  add_fw_chain_for_ip $publicIp 
-  unlock_exit $? $lock $locked
-fi
-
 if [ "$Aflag" == "1" ]
-then  
+then
   add_an_ip  $publicIp  &&
-  add_fw_chain_for_ip $publicIp 
   unlock_exit $? $lock $locked
 fi
 
-if [ "$fflag" == "1" ] && [ "$Dflag" == "1" ]
-then
-  remove_first_ip  $publicIp &&
-  del_fw_chain_for_ip $publicIp &&
-  del_vpn_chain_for_ip $publicIp
-  unlock_exit $? $lock $locked
-fi
 
 if [ "$Dflag" == "1" ]
 then
   remove_an_ip  $publicIp &&
-  del_fw_chain_for_ip $publicIp 
   unlock_exit $? $lock $locked
 fi
 
-unlock_exit 0 $lock $locked
 
