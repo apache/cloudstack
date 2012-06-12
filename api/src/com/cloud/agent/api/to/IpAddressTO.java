@@ -36,7 +36,8 @@ public class IpAddressTO {
     private TrafficType trafficType;
     private String networkName;
 
-    public IpAddressTO(long accountId, String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, String guestIp, Integer networkRate, boolean isOneToOneNat) {
+    public IpAddressTO(long accountId, String ipAddress, boolean add, boolean firstIP, boolean sourceNat, String vlanId,
+            String vlanGateway, String vlanNetmask, String vifMacAddress, String guestIp, Integer networkRate, boolean isOneToOneNat) {
         this.accountId = accountId;
         this.publicIp = ipAddress;
         this.add = add;

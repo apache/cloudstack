@@ -249,7 +249,7 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
      * @see com.cloud.vm.VirtualMachineManager#removeVmFromNetwork(com.cloud.vm.VirtualMachine, com.cloud.network.Network)
      */
     @Override
-    public boolean removeVmFromNetwork(VirtualMachine vm, Network network) {
+    public boolean removeVmFromNetwork(VirtualMachine vm, Network network, URI broadcastUri) {
         // TODO Auto-generated method stub
         return false;
     }

@@ -54,7 +54,6 @@ import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
-import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LbStickinessMethod;
@@ -80,7 +79,6 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -206,19 +204,6 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         if ((routers == null) || (routers.size() == 0)) {
             throw new ResourceUnavailableException("Can't find at least one running router!",
                     DataCenter.class, network.getDataCenterId());
-        }
-        
-        if (vm.getType() == Type.User) {
-            for (VirtualRouter router : routers) {
-                if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
-                  //Add router to guest network
-                    if (!_routerMgr.addRouterToGuestNetwork(router, network, false)) {
-                        throw new CloudRuntimeException("Failed to add router " + router + " to guest network " + network);
-                    } else {
-                        s_logger.debug("Successfully added router " + router + " to guest network " + network);
-                    }
-                }
-            }
         }
         
         return true;      

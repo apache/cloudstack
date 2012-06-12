@@ -2238,6 +2238,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return profile;
     }
     
+    
+    @Override
+    public NicProfile releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NetworkVO network, URI broadcastUri) 
+            throws ConcurrentOperationException, ResourceUnavailableException {
+        NicVO nic = _nicDao.findByInstanceIdNetworkIdAndBroadcastUri(network.getId(), vmProfile.getId(), broadcastUri.toString());
+        releaseNic(vmProfile, nic, network);
+        
+        NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, 
+                isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
+        return profile;
+    }
+
 
     protected void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NicVO nic, NetworkVO network) 
             throws ConcurrentOperationException, ResourceUnavailableException {

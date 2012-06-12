@@ -48,19 +48,12 @@ import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
-import com.cloud.agent.api.PlugNicAnswer;
-import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.RebootAnswer;
-import com.cloud.agent.api.SetupGuestNetworkAnswer;
-import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StopAnswer;
-import com.cloud.agent.api.UnPlugNicAnswer;
-import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
-import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
@@ -128,8 +121,6 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.Networks.BroadcastDomainType;
-import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
@@ -1384,18 +1375,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             } finally {
                 startRetry++;
             }
-        } 
-        
-        //3) Plug public nic
-        boolean addToPublicNtwk = true;
-        if (sourceNatIp != null) {
-            Network publicNetwork = _networkDao.listByZoneAndTrafficType(dest.getDataCenter().getId(), TrafficType.Public).get(0);
-            addToPublicNtwk = addRouterToPublicNetwork(router, publicNetwork, sourceNatIp); 
-        }
-        
-        if (!addToPublicNtwk) {
-            s_logger.warn("Failed to add router " + router + " to public network in zone " + dest.getDataCenter() + " cleaninig up");
-            destroyRouter(router.getId());
         }
         
         return router;
@@ -1630,7 +1609,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
 
         String rpFilter = " ";
-        String type = "router";
+        String type = null;
+        if (router.getVpcId() != null) {
+            type = "vpcrouter";
+        } else {
+            type = "router";
+        }
+        
         if (_disable_rp_filter) {
             rpFilter=" disable_rp_filter=true";
         }
@@ -1924,20 +1909,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             return result;
         }
         
-        //Get guest nic info
-        Map<Nic, Network> guestNics = new HashMap<Nic, Network>();
-        Map<Nic, Network> publicNics = new HashMap<Nic, Network>();
+        //Get guest networks info
         List<Network> guestNetworks = new ArrayList<Network>();
         
         List<? extends Nic> routerNics = _nicDao.listByVmId(profile.getId());
         for (Nic routerNic : routerNics) {
             Network network = _networkMgr.getNetwork(routerNic.getNetworkId());
             if (network.getTrafficType() == TrafficType.Guest) {
-                guestNics.put(routerNic, network);
                 guestNetworks.add(network);
-            } else if (network.getTrafficType() == TrafficType.Public) {
-                publicNics.put(routerNic, network);
-            }
+            } 
         }
         
         answer = cmds.getAnswer("getDomRVersion");
@@ -1951,41 +1931,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 router.setScriptsVersion(versionAnswer.getScriptsVersion());
                 router = _routerDao.persist(router, guestNetworks);
             }
-        } else {
-            result = false;
-        }
-        
-        try {
-            //add router to public and guest networks
-            for (Nic publicNic : publicNics.keySet()) {
-                Network publicNtwk = publicNics.get(publicNic);
-                IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(publicNtwk.getId(), 
-                        publicNic.getIp4Address());
-                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
-                        NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
-                if (!addRouterToPublicNetwork(router, publicNtwk, publicIp)) {
-                    s_logger.warn("Failed to plug nic " + publicNic + " to router " + router);
-                    return false;
-                }
-            }
-            
-            for (Nic guestNic : guestNics.keySet()) {  
-                Network guestNtwk = guestNics.get(guestNic);
-                //FIXME - move vpc code to the vpc manager
-                boolean setupDnsRouter = _networkMgr.setupDns(guestNtwk, Provider.VirtualRouter);
-                boolean setupDnsVpc = _networkMgr.setupDns(guestNtwk, Provider.VPCVirtualRouter);
-                
-                boolean setupDns = setupDnsRouter ? setupDnsRouter : setupDnsVpc;
-                
-                if (!addRouterToGuestNetwork(router, guestNtwk, false, setupDns)) {
-                    s_logger.warn("Failed to plug nic " + guestNic + " to router " + router);
-                    return false;
-                }
-            }
-        } catch (Exception ex) {
-            s_logger.warn("Failed to plug nic for router " + router + " due to exception ", ex);
-            return false;
-        }     
+        }   
 
         return result;
     }
@@ -3019,311 +2965,21 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     protected String getRouterIpInNetwork(long networkId, long instanceId) {
         return _nicDao.getIpAddress(networkId, instanceId);
     }
-    
-    @Override
-    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm, 
-            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
-            InsufficientCapacityException {     
-        boolean result = true;
-        
-        try {
-            PlugNicCommand plugNicCmd = new PlugNicCommand(vm, nic);
-            
-            Commands cmds = new Commands(OnError.Stop);
-            cmds.addCommand("plugnic", plugNicCmd);
-            _agentMgr.send(dest.getHost().getId(), cmds);
-            
-            PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
-            if (!(plugNicAnswer != null && plugNicAnswer.getResult())) {
-                s_logger.warn("Unable to plug nic for vm " + vm.getHostName());
-                result = false;
-            } 
 
-        } catch (OperationTimedoutException e) {
-            throw new AgentUnavailableException("Unable to plug nic for router " + vm.getHostName() + " in network " + network,
-                    dest.getHost().getId(), e);
-        }
-        
-        return result;
+
+    @Override
+    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm, ReservationContext context, DeployDestination dest)
+            throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
+        //not supported
+        throw new UnsupportedOperationException("Plug nic is not supported for vm of type " + vm.getType());
     }
 
     @Override
-    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm,
-            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
-        
-        boolean result = true;
-        DomainRouterVO router = _routerDao.findById(vm.getId());
-        try {
-            UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(vm, nic);
-            Commands cmds = new Commands(OnError.Stop);
-            cmds.addCommand("unplugnic", unplugNicCmd);
-            _agentMgr.send(dest.getHost().getId(), cmds);
-            
-            UnPlugNicAnswer unplugNicAnswer = cmds.getAnswer(UnPlugNicAnswer.class);
-            if (!(unplugNicAnswer != null && unplugNicAnswer.getResult())) {
-                s_logger.warn("Unable to unplug nic from router " + router);
-                result = false;
-            } 
-
-        } catch (OperationTimedoutException e) {
-            throw new AgentUnavailableException("Unable to unplug nic from rotuer " + router + " from network " + network,
-                    dest.getHost().getId(), e);
-        }
-        
-        return result;
-    }
-    
-    protected boolean setupGuestNetwork(Network network, VirtualRouter router, boolean add, boolean isRedundant,
-            NicProfile guestNic, boolean setupDns) 
-            throws ConcurrentOperationException, ResourceUnavailableException{
-        
-        String networkDomain = network.getNetworkDomain();
-        String dhcpRange = getGuestDhcpRange(guestNic, network, _configMgr.getZone(network.getDataCenterId()));
-        
-        boolean result = true;
-        
-        Nic nic = _nicDao.findByInstanceIdAndNetworkId(network.getId(), router.getId());
-        long guestVlanTag = Long.parseLong(nic.getBroadcastUri().getHost());
-        
-        String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIp4Address()) | ~NetUtils.ip2Long(guestNic.getNetmask()));
-        Integer priority = null;
-        if (isRedundant) {
-            List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
-            try {
-                getUpdatedPriority(network, routers, _routerDao.findById(router.getId()));
-            } catch (InsufficientVirtualNetworkCapcityException e) {
-                s_logger.error("Failed to get update priority!", e);
-                throw new CloudRuntimeException("Failed to get update priority!");
-            }
-        }
-        
-        String defaultDns1 = null;
-        String defaultDns2 = null;
-        
-        if (setupDns) {
-            defaultDns1 = guestNic.getDns1();
-            defaultDns2 = guestNic.getDns2();
-        }
-        
-        NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
-                _networkMgr.getNetworkRate(network.getId(), router.getId()), 
-                _networkMgr.isSecurityGroupSupportedInNetwork(network), _networkMgr.getNetworkTag(router.getHypervisorType(), network));
-
-        SetupGuestNetworkCommand setupCmd = new SetupGuestNetworkCommand(dhcpRange, networkDomain, isRedundant, priority, 
-                defaultDns1, defaultDns2, add, _itMgr.toNicTO(nicProfile, router.getHypervisorType()));
-        setupCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
-        setupCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(network.getId(), router.getId()));
-        setupCmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
-        setupCmd.setAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY, network.getGateway());
-        setupCmd.setAccessDetail(NetworkElementCommand.GUEST_BRIDGE, brd);
-        setupCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        
-        Commands cmds = new Commands(OnError.Stop);
-        cmds.addCommand("setupguestnetwork", setupCmd);
-        sendCommandsToRouter(router, cmds);
-        
-        SetupGuestNetworkAnswer setupAnswer = cmds.getAnswer(SetupGuestNetworkAnswer.class);
-        String setup = add ? "set" : "destroy";
-        if (!(setupAnswer != null && setupAnswer.getResult())) {
-            s_logger.warn("Unable to " + setup + " guest network on router " + router);
-            result = false;
-        } 
-        
-        return result;
-    }
-    
-    @Override
-    public boolean addRouterToGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) 
-            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        boolean setupDns = _networkMgr.setupDns(network, Provider.VirtualRouter);
-        
-        return addRouterToGuestNetwork(router, network, isRedundant, setupDns);
-    }
-
-    protected boolean addRouterToGuestNetwork(VirtualRouter router, Network network, boolean isRedundant, boolean setupDns) 
-            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        
-        if (network.getTrafficType() != TrafficType.Guest) {
-            s_logger.warn("Network " + network + " is not of type " + TrafficType.Guest);
-            return false;
-        }
-        
-        //Add router to the Guest network
-        boolean result = true;
-        try {
-            if (!_routerDao.isRouterPartOfGuestNetwork(router.getId(), network.getId())) {
-                DomainRouterVO routerVO = _routerDao.findById(router.getId());
-                _routerDao.addRouterToGuestNetwork(routerVO, network);
-            } 
-            
-            NicProfile guestNic = _itMgr.addVmToNetwork(router, network, null);
-            //setup guest network
-            if (guestNic != null) {
-                result = setupGuestNetwork(network, router, true, isRedundant, guestNic, setupDns);
-            } else {
-                s_logger.warn("Failed to add router " + router + " to guest network " + network);
-                result = false;
-            }
-        } catch (Exception ex) {
-            s_logger.warn("Failed to add router " + router + " to network " + network + " due to ", ex);
-            result = false;
-        } finally {
-            if (!result) {
-                s_logger.debug("Removing the router " + router + " from network " + network + " as a part of cleanup");
-                if (removeRouterFromGuestNetwork(router, network, isRedundant)) {
-                    s_logger.debug("Removed the router " + router + " from network " + network + " as a part of cleanup");
-                } else {
-                    s_logger.warn("Failed to remove the router " + router + " from network " + network + " as a part of cleanup");
-                }
-            }
-        }
-        
-        return result;
-    }
-
-    @Override
-    public boolean removeRouterFromGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) 
+    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm, ReservationContext context, DeployDestination dest)
             throws ConcurrentOperationException, ResourceUnavailableException {
-        if (network.getTrafficType() != TrafficType.Guest) {
-            s_logger.warn("Network " + network + " is not of type " + TrafficType.Guest);
-            return false;
-        }
-        
-        //Check if router is a part of the Guest network
-        if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
-            s_logger.debug("Router " + router + " is not a part of the Guest network " + network);
-            return true;
-        }
-        
-        boolean result = setupGuestNetwork(network, router, false, isRedundant, _networkMgr.getNicProfile(router, network.getId()), false);
-        if (!result) {
-            s_logger.warn("Failed to destroy guest network config " + network + " on router " + router);
-            return false;
-        }
-        
-        result = result && _itMgr.removeVmFromNetwork(router, network);
-        
-        if (result) {
-            if (result) {
-                //check if router is already part of network
-                if (_routerDao.isRouterPartOfGuestNetwork(router.getId(), network.getId())) {
-                    s_logger.debug("Removing router " + router + " from network" + network);
-                    _routerDao.removeRouterFromNetwork(router.getId(), network.getId());
-                }
-            }
-        }
-        return result;
+      //not supported
+        throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
     }
     
-    protected boolean addRouterToPublicNetwork(VirtualRouter router, Network publicNetwork, PublicIp sourceNatIp) 
-            throws ConcurrentOperationException,ResourceUnavailableException, InsufficientCapacityException {
-        
-        if (publicNetwork.getTrafficType() != TrafficType.Public) {
-            s_logger.warn("Network " + publicNetwork + " is not of type " + TrafficType.Public);
-            return false;
-        }
-        
-        //Add router to the Public network
-        boolean result = true;
-        try {
-            NicProfile defaultNic = new NicProfile();
-
-            defaultNic.setDefaultNic(true);
-            defaultNic.setIp4Address(sourceNatIp.getAddress().addr());
-            defaultNic.setGateway(sourceNatIp.getGateway());
-            defaultNic.setNetmask(sourceNatIp.getNetmask());
-            defaultNic.setMacAddress(sourceNatIp.getMacAddress());
-            defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
-            defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(sourceNatIp.getVlanTag()));
-            defaultNic.setIsolationUri(IsolationType.Vlan.toUri(sourceNatIp.getVlanTag()));
-            
-            NicProfile publicNic = _itMgr.addVmToNetwork(router, publicNetwork, defaultNic);
-            //setup public network
-            if (publicNic != null) {
-                publicNic.setDefaultNic(true);
-                if (sourceNatIp != null) {
-                    IPAddressVO ipVO = _ipAddressDao.findById(sourceNatIp.getId());
-                    PublicIp publicIp = new PublicIp(ipVO, _vlanDao.findById(ipVO.getVlanId()), 
-                            NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress()));
-                    result = setupPublicNetwork(publicNetwork, router, false, publicIp);
-                }
-            } else {
-                result = false;
-                s_logger.warn("Failed to add router " + router + " to the public network " + publicNetwork);
-            }
-        } catch (Exception ex) {
-            s_logger.warn("Failed to add router " + router + " to the public network " + publicNetwork + " due to ", ex);
-        } finally {
-            if (!result) {
-                s_logger.debug("Removing the router " + router + " from public network " + publicNetwork + " as a part of cleanup");
-                if (removeRouterFromPublicNetwork(router, publicNetwork)) {
-                    s_logger.debug("Removed the router " + router + " from public network " + publicNetwork + " as a part of cleanup");
-                } else {
-                    s_logger.warn("Failed to remove the router " + router + " from public network " + publicNetwork + " as a part of cleanup");
-                }
-            }
-        }
-        
-        return result;
-    }
-    
-    
-    protected boolean removeRouterFromPublicNetwork(VirtualRouter router, Network publicNetwork) 
-            throws ConcurrentOperationException, ResourceUnavailableException {
-        
-        if (publicNetwork.getTrafficType() != TrafficType.Public) {
-            s_logger.warn("Network " + publicNetwork + " is not of type " + TrafficType.Public);
-            return false;
-        }
-        
-        //Check if router is a part of the Guest network
-        if (!_networkMgr.isVmPartOfNetwork(router.getId(), publicNetwork.getId())) {
-            s_logger.debug("Router " + router + " is not a part of the Public network " + publicNetwork);
-            return true;
-        }
-        
-        String routerIpStr = router.getPublicIpAddress();
-        
-        IPAddressVO sourceNatIp = _ipAddressDao.findByIpAndSourceNetworkId(publicNetwork.getId(), routerIpStr);
-        
-        assert sourceNatIp.isSourceNat() : "Ip " + sourceNatIp + " is not source nat";
-        
-        boolean result = true;
-        if (sourceNatIp != null) {
-            IPAddressVO ipVO = _ipAddressDao.findById(sourceNatIp.getId());
-            _networkMgr.markIpAsUnavailable(ipVO.getId());
-            PublicIp publicIp = new PublicIp(ipVO, _vlanDao.findById(ipVO.getVlanId()), 
-                    NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress()));
-            result = setupPublicNetwork(publicNetwork, router, false, publicIp);
-        }
-        
-        if (!result) {
-            s_logger.warn("Failed to destroy public network config " + publicNetwork + " on router " + router);
-            return false;
-        }
-        
-        result = result && _itMgr.removeVmFromNetwork(router, publicNetwork);
-        
-        return result;
-    }
-    
-    protected boolean setupPublicNetwork(Network network, VirtualRouter router, boolean add, PublicIp ipAddress) 
-            throws ConcurrentOperationException, ResourceUnavailableException{
-        
-        List<PublicIp> publicIps = new ArrayList<PublicIp>(1);
-        publicIps.add(ipAddress);
-        Commands cmds = new Commands(OnError.Stop);
-        createAssociateIPCommands(router, publicIps, cmds, 0);
-        sendCommandsToRouter(router, cmds);
-
-        boolean result = true;
-        IpAssocAnswer ipAssocAnswer = cmds.getAnswer(IpAssocAnswer.class);
-        String setup = add ? "set" : "destroy";
-        if (!(ipAssocAnswer != null && ipAssocAnswer.getResult())) {
-            s_logger.warn("Unable to " + setup + " public network on router " + router);
-            result = false;
-        }
-        
-        return result;
-    }
 }

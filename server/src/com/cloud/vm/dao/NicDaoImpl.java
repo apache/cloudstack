@@ -22,8 +22,8 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.vm.Nic.State;
 import com.cloud.vm.Nic;
+import com.cloud.vm.Nic.State;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 
@@ -44,6 +44,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         AllFieldsSearch.and("vmType", AllFieldsSearch.entity().getVmType(), Op.EQ);
         AllFieldsSearch.and("address", AllFieldsSearch.entity().getIp4Address(), Op.EQ);
         AllFieldsSearch.and("isDefault", AllFieldsSearch.entity().isDefaultNic(), Op.EQ);
+        AllFieldsSearch.and("broadcastUri", AllFieldsSearch.entity().getBroadcastUri(), Op.EQ);
         AllFieldsSearch.done();
         
         IpSearch = createSearchBuilder(String.class);
@@ -164,6 +165,16 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         sc.setParameters("vmId", instanceId);
         List<Integer> results = customSearch(sc, null);
         return results.get(0);
+    }
+
+
+    @Override
+    public NicVO findByInstanceIdNetworkIdAndBroadcastUri(long networkId, long instanceId, String broadcastUri) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("instance", instanceId);
+        sc.setParameters("broadcastUri", broadcastUri);
+        return findOneBy(sc);
     }
 
 }
