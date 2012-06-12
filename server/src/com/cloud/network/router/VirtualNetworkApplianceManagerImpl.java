@@ -1210,12 +1210,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             s_logger.error("Didn't support redundant virtual router without public network!");
             return null;
         }
-        //Check if control network has to be set on VR
-        boolean controlNetwork = true;
-        if ( dest.getDataCenter().getNetworkType() == NetworkType.Basic ) {
-            // in basic mode, use private network as control network
-            controlNetwork = false;
-        }
+
+        
         
         //1) Get deployment plan and find out the list of routers
         boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || 
@@ -1589,6 +1585,13 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         buf.append(" mgmtcidr=").append(_mgmt_cidr);
                         buf.append(" localgw=").append(dest.getPod().getGateway());
                     }
+                    
+
+                    if (dc.getNetworkType() == NetworkType.Basic) {
+                        // ask domR to setup SSH on guest network
+                        buf.append(" sshonguest=true");
+                    }
+
                 }
             } else {
                 //Remove public and guest nics from the profile
@@ -1704,7 +1707,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         NicProfile controlNic = null;
 
-        if( dcVo.getNetworkType() == NetworkType.Basic) {
+        if(profile.getHypervisorType() == HypervisorType.VMware && dcVo.getNetworkType() == NetworkType.Basic) {
+            // TODO this is a ugly to test hypervisor type here
             // for basic network mode, we will use the guest NIC for control NIC
             for (NicProfile nic : profile.getNics()) {
                 if (nic.getTrafficType() == TrafficType.Guest && nic.getIp4Address() != null) {
