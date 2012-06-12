@@ -171,7 +171,8 @@ setup_interface() {
   local intfnum=$1
   local ip=$2
   local mask=$3
-  local force=$4
+  local gw=$4
+  local force=$5
   local intf=eth${intfnum} 
   local bootproto="static"
 
@@ -285,14 +286,11 @@ disable_hvc() {
 
 setup_common() {
   init_interfaces $1 $2 $3
-  setup_interface "0" $ETH0_IP $ETH0_MASK
-  if [ -n "$ETH1_IP" ]
-  then
-    setup_interface "1" $ETH1_IP $ETH1_MASK
-  fi
+  setup_interface "0" $ETH0_IP $ETH0_MASK $GW
+  setup_interface "1" $ETH1_IP $ETH1_MASK $GW
   if [ -n "$ETH2_IP" ]
   then
-    setup_interface "2" $ETH2_IP $ETH2_MASK
+  	setup_interface "2" $ETH2_IP $ETH2_MASK $GW
   fi
    
   echo $NAME > /etc/hostname
@@ -330,7 +328,7 @@ setup_common() {
   fi
 
   ip route delete default
-  if [ "$RROUTER" != "1" -a -n $GW ]
+  if [ "$RROUTER" != "1" ]
   then
       if [ -z "$3" ]
       then
@@ -338,18 +336,57 @@ setup_common() {
       else
           ip route add default via $GW dev $3
       fi
-      # a hacking way to activate vSwitch under VMware
-      ping -n -c 3 $GW &
-      sleep 3
-      pkill ping
   fi
  
+  # a hacking way to activate vSwitch under VMware
+  ping -n -c 3 $GW &
+  sleep 3
+  pkill ping
   if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
   then
       ping -n -c 3 $LOCAL_GW &
       sleep 3
       pkill ping
   fi
+}
+
+setup_dnsmasq() {
+  log_it "Setting up dnsmasq"
+  [ -z $DHCP_RANGE ] && DHCP_RANGE=$ETH0_IP
+  [ -z $DOMAIN ] && DOMAIN="cloudnine.internal"
+  
+  if [ -n "$DOMAIN" ]
+  then
+        #send domain name to dhcp clients
+        sed -i s/[#]*dhcp-option=15.*$/dhcp-option=15,\"$DOMAIN\"/ /etc/dnsmasq.conf
+        #DNS server will append $DOMAIN to local queries
+        sed -r -i s/^[#]?domain=.*$/domain=$DOMAIN/ /etc/dnsmasq.conf
+        #answer all local domain queries
+        sed  -i -e "s/^[#]*local=.*$/local=\/$DOMAIN\//" /etc/dnsmasq.conf
+
+  fi
+  
+  if [ -n  "$DNS_SEARCH_ORDER" ]
+  then
+      sed -i -e "/^[#]*dhcp-option.*=119.*$/d" /etc/dnsmasq.conf
+      echo "dhcp-option-force=119,$DNS_SEARCH_ORDER" >> /etc/dnsmasq.conf
+      # set the domain search order as a space seprated list for option 15
+      DNS_SEARCH_ORDER=$(echo $DNS_SEARCH_ORDER | sed 's/,/ /g')
+      #send domain name to dhcp clients 
+      sed -i s/[#]*dhcp-option=15.*$/dhcp-option=15,\""$DNS_SEARCH_ORDER"\"/ /etc/dnsmasq.conf
+  fi
+  
+  sed -i -e "s/^dhcp-range=.*$/dhcp-range=$DHCP_RANGE,static/" /etc/dnsmasq.conf
+  sed -i -e "s/^[#]*listen-address=.*$/listen-address=$ETH0_IP/" /etc/dnsmasq.conf
+
+  if [ "$RROUTER" == "1" ]
+  then
+      sed -i -e "/^[#]*dhcp-option=option:router.*$/d" /etc/dnsmasq.conf
+      echo "dhcp-option=option:router,$GUEST_GW" >> /etc/dnsmasq.conf
+      sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
+      echo "dhcp-option=6,$GUEST_GW" >> /etc/dnsmasq.conf
+  fi
+
 }
 
 setup_sshd(){
@@ -434,20 +471,38 @@ setup_redundant_router() {
     fi
 }
 
-
-setup_vmware_extra_nics() {
-  local oldmd5
+setup_router() {
+  log_it "Setting up virtual router system vm"
+  
   oldmd5=
   [ -f "/etc/udev/rules.d/70-persistent-net.rules" ] && oldmd5=$(md5sum "/etc/udev/rules.d/70-persistent-net.rules" | awk '{print $1}')
- 
-  if [ -n "$EXTRA_NICS" ]
+  
+  if [ -n "$ETH2_IP" ]
   then
-    for((i = 1; i < 1 + $EXTRA_NICS; i++))
-    do
-      setup_interface "$i" "0.0.0.0" "255.255.255.255" "force"
-    done
+      setup_common eth0 eth1 eth2
+      
+      if [ -n "$EXTRA_PUBNICS" ]
+      then
+        for((i = 3; i < 3 + $EXTRA_PUBNICS; i++))
+        do
+            setup_interface "$i" "0.0.0.0" "255.255.255.255" $GW "force"
+        done
+      fi
+  else
+  	setup_common eth0 eth1
+      if [ -n "$EXTRA_PUBNICS" ]
+      then
+        for((i = 2; i < 2 + $EXTRA_PUBNICS; i++))
+        do
+            setup_interface "$i" "0.0.0.0" "255.255.255.255" $GW "force"
+        done
+      fi
   fi
-
+  
+  if [ -n "$ETH2_IP" -a "$RROUTER" == "1" ]
+  then
+    setup_redundant_router
+  fi
   
   log_it "Checking udev NIC assignment order changes"
   if [ "$NIC_MACS" != "" ]
@@ -466,27 +521,24 @@ setup_vmware_extra_nics() {
     fi
   fi
   
-
-}
-
-
-setup_router() {
-  log_it "Setting up virtual router system vm"
-  if [ "$hyp" == "vmware" ]; then
-    setup_vmware_extra_nics
-  fi
- 
-  setup_common eth0
-   
-  if [ "$RROUTER" == "1" ]
+  
+  
+  setup_dnsmasq
+  
+  NS=$NS1
+  [ -n "$NS2" ] && NS=$NS1,$NS2
+  if [ "$USE_EXTERNAL_DNS" == "true" ]
   then
-    setup_redundant_router
+      sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
+      echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
   fi
-     
-  sed -i  /gateway/d /etc/hosts
+  
+  setup_apache2 $ETH0_IP
 
+  sed -i  /gateway/d /etc/hosts
   echo "$ETH0_IP $NAME" >> /etc/hosts
-  setup_sshd $ETH0_IP
+
+  setup_sshd $ETH1_IP
 
   enable_svc dnsmasq 1
   enable_svc haproxy 1
@@ -496,6 +548,57 @@ setup_router() {
   enable_fwding 1
   chkconfig nfs-common off
   cp /etc/iptables/iptables-router /etc/iptables/rules
+}
+
+setup_dhcpsrvr() {
+  log_it "Setting up dhcp server system vm"
+  setup_common eth0 eth1
+  setup_dnsmasq
+  setup_apache2 $ETH0_IP
+
+  NS=$NS1
+  [ -n "$NS2" ] && NS=$NS1,$NS2
+  if [ "$DEFAULTROUTE" != "false" ]
+  then
+    sed -i -e "/^[#]*dhcp-option=option:router.*$/d" /etc/dnsmasq.conf
+    echo "dhcp-option=option:router,$GW" >> /etc/dnsmasq.conf
+    #for now set up ourself as the dns server as well
+    sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
+    if [ "$USE_EXTERNAL_DNS" == "true" ]
+    then
+        echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
+    else
+        echo "dhcp-option=6,$ETH0_IP,$NS" >> /etc/dnsmasq.conf
+    fi
+  else
+    sed -i -e "/^[#]*dhcp-option=option:router.*$/d" /etc/dnsmasq.conf
+    echo "dhcp-option=option:router" >> /etc/dnsmasq.conf
+    sed -i -e "/^[#]*dhcp-option=6.*$/d" /etc/dnsmasq.conf
+    echo "dhcp-option=6,$NS" >> /etc/dnsmasq.conf
+  fi
+
+  sed -i  /gateway/d /etc/hosts
+  echo "$ETH0_IP $NAME" >> /etc/hosts
+
+  if [ "$SSHONGUEST" == "true" ]
+  then
+    setup_sshd $ETH0_IP
+  else
+    setup_sshd $ETH1_IP
+  fi
+
+  enable_svc dnsmasq 1
+  enable_svc haproxy 0
+  enable_svc cloud-passwd-srvr 1
+  enable_svc cloud 0
+  enable_fwding 0
+  chkconfig nfs-common off
+  if [ "$SSHONGUEST" == "true" ]
+  then
+    sed '/3922/i -A INPUT -i eth0 -p tcp -m state --state NEW --dport 3922 -j ACCEPT' /etc/iptables/iptables-router > /etc/iptables/rules
+  else
+    cp /etc/iptables/iptables-router /etc/iptables/rules
+  fi
 }
 
 setup_storage_network() {
@@ -570,11 +673,17 @@ setup_elbvm() {
   setup_common eth0 eth1
   sed -i  /gateway/d /etc/hosts
   public_ip=$ETH2_IP
-  [ "$ETH2_IP" == "0.0.0.0" ] || [ "$ETH2_IP" == "" ] && public_ip=$ETH1_IP
+  [ "$ETH2_IP" == "0.0.0.0" ] || [ "$ETH2_IP" == "" ] && public_ip=$ETH0_IP
   echo "$public_ip $NAME" >> /etc/hosts
 
-  cp /etc/iptables/iptables-elbvm /etc/iptables/rules
-  setup_sshd $ETH0_IP
+  if [ "$SSHONGUEST" == "true" ]
+  then
+    sed '/3922/s/eth1/eth0/'
+    setup_sshd $ETH0_IP
+  else
+    cp /etc/iptables/iptables-elbvm /etc/iptables/rules
+    setup_sshd $ETH1_IP
+  fi
   
   enable_fwding 0
   enable_svc haproxy 0
@@ -611,6 +720,10 @@ start() {
      router)
          [ "$NAME" == "" ] && NAME=router
          setup_router
+	  ;;
+     dhcpsrvr)
+         [ "$NAME" == "" ] && NAME=dhcpsrvr
+         setup_dhcpsrvr
 	  ;;
      secstorage)
          [ "$NAME" == "" ] && NAME=secstorage
@@ -707,6 +820,9 @@ for i in $CMDLINE
       template)
         TEMPLATE=$VALUE
       	;;
+      sshonguest)
+        SSHONGUEST=$VALUE
+        ;;
       name)
 	    NAME=$VALUE
 	    ;;
