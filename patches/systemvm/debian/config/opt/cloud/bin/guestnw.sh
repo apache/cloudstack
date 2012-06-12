@@ -70,10 +70,13 @@ desetup_dnsmasq() {
 
 create_guest_network() {
   logger -t cloud " $(basename $0): Create network on interface $dev,  gateway $gw, network $ip/$mask "
-
+  # setup ip configuration
   sudo ip addr add dev $dev $ip/$mask
   sudo ip link set $dev up
   sudo arping -c 3 -I $dev -A -U -s $ip $ip;
+  # setup rules to allow dhcp/dns request
+  sudo iptables -A INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
+  sudo iptables -A INPUT -i $dev -p udp -m udp --dport 53 -j ACCEPT
 
   # create inbound acl chain
   if sudo iptables -N ACL_INBOUND_$ip 2>/dev/null

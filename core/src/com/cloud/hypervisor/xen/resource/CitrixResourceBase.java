@@ -7038,7 +7038,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String gw = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
         String cidr = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));;
         String domainName = cmd.getNetworkDomain();
-        String dns = nic.getDns1();
+        String dns = cmd.getDefaultDns1();
+        if (dns == null || dns.isEmpty()) {
+            dns = cmd.getDefaultDns2();
+        } else {
+            String dns2= cmd.getDefaultDns2();
+            if ( dns2 != null && !dns2.isEmpty()) {
+                dns += "," + dns2;
+            }
+        }
         try {
             Set<VM> vms = VM.getByNameLabel(conn, domrName);
             if ( vms == null || vms.isEmpty() ) {
