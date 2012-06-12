@@ -330,7 +330,7 @@ setup_common() {
   fi
 
   ip route delete default
-  if [ "$RROUTER" != "1" ]
+  if [ "$RROUTER" != "1" -a -n $GW ]
   then
       if [ -z "$3" ]
       then
@@ -338,12 +338,12 @@ setup_common() {
       else
           ip route add default via $GW dev $3
       fi
+      # a hacking way to activate vSwitch under VMware
+      ping -n -c 3 $GW &
+      sleep 3
+      pkill ping
   fi
  
-  # a hacking way to activate vSwitch under VMware
-  ping -n -c 3 $GW &
-  sleep 3
-  pkill ping
   if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
   then
       ping -n -c 3 $LOCAL_GW &
