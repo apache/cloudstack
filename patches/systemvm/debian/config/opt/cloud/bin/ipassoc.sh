@@ -216,12 +216,6 @@ add_snat() {
     sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
     return 0;
   fi
-  # setup default gateway 
-  sudo ip route | grep default
-  if [ $? -gt 0 ]
-  then 
-    sudo ip route add default via $defaultGwIP dev $ethDev
-  fi
 
   logger -t cloud "$(basename $0):Added SourceNAT $pubIp on interface $ethDev"
   sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $ipNoMask ;
