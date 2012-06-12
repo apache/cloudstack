@@ -231,9 +231,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
 
         IpAddress result = null;
         
-        if (getVpcId() != null) {
-            result = _networkService.associateIP(getEntityId(), getNetworkId(), getVpcId());
-        }
+        result = _networkService.associateIP(getEntityId(), getNetworkId(), getVpcId());        
 
         if (result != null) {
             IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(result);
