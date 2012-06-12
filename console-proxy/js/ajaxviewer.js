@@ -284,7 +284,11 @@ JsCookedKeyboardMapper.prototype.inputFeed = function(eventType, code, modifiers
 			} else {
 				this.mappedInput.push({type : eventType, code: X11Keysym, modifiers: modifiers});
 			}
-		} 
+		} else {
+			if((modifiers & AjaxViewer.CTRL_KEY_MASK) != 0) {
+				this.mappedInput.push({type : eventType, code: X11Keysym, modifiers: modifiers});
+			}
+		}
 
 		// special handling for ALT/CTRL key
 		if(eventType == AjaxViewer.KEY_UP && (code == AjaxViewer.JS_KEY_ALT || code == code == AjaxViewer.JS_KEY_CTRL))
@@ -328,8 +332,8 @@ function AjaxViewer(panelId, imageUrl, updateUrl, tileMap, width, height, tileWi
 	// trouble-shooting
 	g_logger = new Logger();
 	
-	//g_logger.enable(true);
-	//g_logger.open();
+	// g_logger.enable(true);
+	// g_logger.open();
 	
 	var ajaxViewer = this;
 	this.imageLoaded = false;
