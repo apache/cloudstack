@@ -6180,17 +6180,17 @@
                     validation: { required: true }
                   },
                   vsmipaddress: {
-                    label: 'Nexus dvSwitch IP Address',
+                    label: 'Nexus 1000v IP Address',
                     validation: { required: true },
                     isHidden: false
                   },
                   vsmusername: {
-                    label: 'Nexus dvSwitch Username',
+                    label: 'Nexus 1000v Username',
                     validation: { required: true },
                     isHidden: false
                   },
                   vsmpassword: {
-                    label: 'Nexus dvSwitch Password',
+                    label: 'Nexus 1000v Password',
                     validation: { required: true },
                     isPassword: true,
                     isHidden: false

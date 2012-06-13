@@ -729,17 +729,17 @@
             validation: { required: true }
           },
           vsmipaddress: {
-            label: 'Nexus dvSwitch IP Address',
+            label: 'Nexus 1000v IP Address',
             validation: { required: true },
             isHidden: true
           },
           vsmusername: {
-            label: 'Nexus dvSwitch Username',
+            label: 'Nexus 1000v Username',
             validation: { required: true },
             isHidden: true
           },
           vsmpassword: {
-            label: 'Nexus dvSwitch Password',
+            label: 'Nexus 1000v Password',
             validation: { required: true },
             isPassword: true,
             isHidden: true
