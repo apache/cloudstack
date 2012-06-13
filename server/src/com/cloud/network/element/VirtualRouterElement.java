@@ -559,12 +559,13 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
         firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
         firewallCapabilities.put(Capability.MultipleIps, "true");
-
+        firewallCapabilities.put(Capability.FirewallType, "perpublicip");
         capabilities.put(Service.Firewall, firewallCapabilities);
 
         // Set capabilities for vpn
         Map<Capability, String> vpnCapabilities = new HashMap<Capability, String>();
-        vpnCapabilities.put(Capability.SupportedVpnTypes, "pptp,l2tp,ipsec");
+        vpnCapabilities.put(Capability.SupportedVpnProtocols, "pptp,l2tp,ipsec");
+        vpnCapabilities.put(Capability.VpnTypes, "removeaccessvpn");
         capabilities.put(Service.Vpn, vpnCapabilities);
 
         Map<Capability, String> dnsCapabilities = new HashMap<Capability, String>();

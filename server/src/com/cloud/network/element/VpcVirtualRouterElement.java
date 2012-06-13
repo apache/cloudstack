@@ -89,6 +89,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() 
                         + " in the network " + network);
                 return false;
+            } else if (service == Service.Firewall) {
+                //todo - get capability here
             }
         }
 
@@ -239,6 +241,14 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         sourceNatCapabilities.put(Capability.RedundantRouter, "false");
         capabilities.put(Service.SourceNat, sourceNatCapabilities);
         
+        Map<Capability, String> vpnCapabilities = capabilities.get(Service.Vpn);
+        vpnCapabilities.put(Capability.VpnTypes, "s2svpn");
+        capabilities.put(Service.Vpn, vpnCapabilities);
+        
+        Map<Capability, String> firewallCapabilities = capabilities.get(Service.Firewall);
+        firewallCapabilities.put(Capability.FirewallType, "percidr");
+        capabilities.put(Service.Firewall, firewallCapabilities);
+
         return capabilities;
     }
     
