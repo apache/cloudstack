@@ -1181,37 +1181,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 guestNetwork.getState() == Network.State.Implementing : "Network is not yet fully implemented: "
                 + guestNetwork;
         assert guestNetwork.getTrafficType() == TrafficType.Guest;
-
-        Network network = _networkDao.acquireInLockTable(guestNetwork.getId());
-        if (network == null) {
-            throw new ConcurrentOperationException("Unable to lock network " + guestNetwork.getId());
-        }
         
-        //Check if providers are supported in the physical networks
-        VirtualRouterProviderType type = VirtualRouterProviderType.VirtualRouter;
-        Long physicalNetworkId = _networkMgr.getPhysicalNetworkId(network);
-        PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, type.toString());
-        if (provider == null) {
-            throw new CloudRuntimeException("Cannot find service provider " + type.toString() + " in physical network " + physicalNetworkId);
-        }
-        VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), type);
-        if (vrProvider == null) {
-            throw new CloudRuntimeException("Cannot find virtual router provider " + type.toString()+ " as service provider " + provider.getId());
-        }
         
-        if (_networkMgr.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
-            owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
-        }
-
-        //Check if public network has to be set on VR
-        boolean publicNetwork = false;
-        if (_networkMgr.isProviderSupportServiceInNetwork(guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter)) {
-            publicNetwork = true;
-        }
-        if (isRedundant && !publicNetwork) {
-            s_logger.error("Didn't support redundant virtual router without public network!");
-            return null;
-        }
         
         //1) Get deployment plan and find out the list of routers
         boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || 
@@ -1242,26 +1213,59 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (routers.size() >= 5) {
             s_logger.error("Too much redundant routers!");
         }
-        
-        Long offeringId = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
-        if (offeringId == null) {
-            offeringId = _offering.getId();
+
+        Network network = _networkDao.acquireInLockTable(guestNetwork.getId());
+        if (network == null) {
+            throw new ConcurrentOperationException("Unable to lock network " + guestNetwork.getId());
         }
         
-        PublicIp sourceNatIp = null;
-        if (publicNetwork) {
-            sourceNatIp = _networkMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
-        }
-        
-        //Check if control network has to be set on VR
-        boolean controlNetwork = true;
-        if ( dest.getDataCenter().getNetworkType() == NetworkType.Basic ) {
-            // in basic mode, use private network as control network
-            controlNetwork = false;
-        }
-        
-        //3) deploy virtual router(s)
         try {
+            //Check if providers are supported in the physical networks
+            VirtualRouterProviderType type = VirtualRouterProviderType.VirtualRouter;
+            Long physicalNetworkId = _networkMgr.getPhysicalNetworkId(network);
+            PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, type.toString());
+            if (provider == null) {
+                throw new CloudRuntimeException("Cannot find service provider " + type.toString() + " in physical network " + physicalNetworkId);
+            }
+            VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), type);
+            if (vrProvider == null) {
+                throw new CloudRuntimeException("Cannot find virtual router provider " + type.toString()+ " as service provider " + provider.getId());
+            }
+            
+            if (_networkMgr.isNetworkSystem(guestNetwork) || guestNetwork.getGuestType() == Network.GuestType.Shared) {
+                owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
+            }
+    
+            //Check if public network has to be set on VR
+            boolean publicNetwork = false;
+            if (_networkMgr.isProviderSupportServiceInNetwork(guestNetwork.getId(), Service.SourceNat, Provider.VirtualRouter)) {
+                publicNetwork = true;
+            }
+            if (isRedundant && !publicNetwork) {
+                s_logger.error("Didn't support redundant virtual router without public network!");
+                return null;
+            }
+            
+    
+            
+            Long offeringId = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
+            if (offeringId == null) {
+                offeringId = _offering.getId();
+            }
+            
+            PublicIp sourceNatIp = null;
+            if (publicNetwork) {
+                sourceNatIp = _networkMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
+            }
+            
+            //Check if control network has to be set on VR
+            boolean controlNetwork = true;
+            if ( dest.getDataCenter().getNetworkType() == NetworkType.Basic ) {
+                // in basic mode, use private network as control network
+                controlNetwork = false;
+            }
+        
+            //3) deploy virtual router(s)
             int count = routerCount - routers.size();
             for (int i = 0; i < count; i++) {
                 DomainRouterVO router = deployRouter(owner, dest, plan, params, isRedundant, vrProvider, offeringId,
