@@ -17,6 +17,7 @@
 	var selectedNetworkOfferingHavingNetscaler = false;
   var returnedPublicVlanIpRanges = []; //public VlanIpRanges returned by API
   var configurationUseLocalStorage = false;
+	var OvsTunnelManagerIsEnabled = false;
 
   // Makes URL string for traffic label
   var trafficLabelParam = function(trafficTypeID, data, physicalNetworkID) {
@@ -246,6 +247,31 @@
           $('.setup-guest-traffic').addClass('advanced');
         }
 
+				//skip the step if OVS tunnel manager is enabled				
+				$.ajax({
+				  url: createURL('listConfigurations'),
+					data: {
+					  name: 'sdn.ovs.controller'
+					},
+					dataType: "json",
+					async: false,
+					success: function(json) {					 
+						var items = json.listconfigurationsresponse.configuration; //2 entries returned: 'sdn.ovs.controller', 'sdn.ovs.controller.default.label'
+						$(items).each(function(){						  
+						  if(this.name == 'sdn.ovs.controller') {
+							  if(this.value == 'true' || this.value == true) {
+								  OvsTunnelManagerIsEnabled = true;
+								}
+								return false; //break each loop
+							}
+						});						
+					}
+				});					
+				if(OvsTunnelManagerIsEnabled == true) {
+				  return false;
+				}				
+				
+				
         return args.data['network-model'] == 'Basic' ||
           $.grep(args.groupedData.physicalNetworks, function(network) {
             return $.inArray('guest', network.trafficTypes) > -1;
@@ -2423,7 +2449,15 @@
           return true;
         },
 
-        configureGuestTraffic: function(args) {
+        configureGuestTraffic: function(args) {				  
+					//skip the step if OVS tunnel manager is enabled
+					if(OvsTunnelManagerIsEnabled == true) {
+					  stepFns.addCluster({
+							data: args.data
+						});		
+            return;			
+					}					
+									
           message(dictionary['message.configuring.guest.traffic']);  
 
           if(args.data.returnedZone.networktype == "Basic") {		//create an VlanIpRange for guest network in basic zone
