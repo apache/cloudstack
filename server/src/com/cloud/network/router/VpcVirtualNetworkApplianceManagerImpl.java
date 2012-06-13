@@ -363,8 +363,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     public boolean finalizeStart(VirtualMachineProfile<DomainRouterVO> profile, long hostId, Commands cmds,
             ReservationContext context) {
         
+
+        
         if (!super.finalizeStart(profile, hostId, cmds, context)) {
             return false;
+        } else if (profile.getVirtualMachine().getVpcId() == null) {
+            return true;
         }
         
         DomainRouterVO router = profile.getVirtualMachine();
@@ -372,21 +376,19 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         //Get guest nic info
         Map<Nic, Network> guestNics = new HashMap<Nic, Network>();
         Map<Nic, Network> publicNics = new HashMap<Nic, Network>();
-        List<Network> guestNetworks = new ArrayList<Network>();
         
         List<? extends Nic> routerNics = _nicDao.listByVmId(profile.getId());
         for (Nic routerNic : routerNics) {
             Network network = _networkMgr.getNetwork(routerNic.getNetworkId());
             if (network.getTrafficType() == TrafficType.Guest) {
                 guestNics.put(routerNic, network);
-                guestNetworks.add(network);
             } else if (network.getTrafficType() == TrafficType.Public) {
                 publicNics.put(routerNic, network);
             }
         }
         
         try {
-            //add router to public and guest networks
+            //add VPC router to public and guest networks
             for (Nic publicNic : publicNics.keySet()) {
                 Network publicNtwk = publicNics.get(publicNic);
                 IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(publicNtwk.getId(), 
@@ -423,19 +425,18 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             StorageUnavailableException, ResourceUnavailableException {
         
         DomainRouterVO router = 
-                super.deployRouter(owner, dest, plan, params, isRedundant, vrProvider, svcOffId, vpcId, sourceNatIp);
+                super.deployRouter(owner, dest, plan, params, isRedundant, vrProvider, svcOffId, vpcId, sourceNatIp, 
+                        false, true, null, null);
         
         //Plug public nic
-        boolean addToPublicNtwk = true;
-        if (sourceNatIp != null) {
+        if (router != null && sourceNatIp != null) {
             Network publicNetwork = _networkDao.listByZoneAndTrafficType(dest.getDataCenter().getId(), TrafficType.Public).get(0);
-            addToPublicNtwk = addPublicIpToVpc(router, publicNetwork, sourceNatIp); 
-        }
-        
-        if (!addToPublicNtwk) {
-            s_logger.warn("Failed to add router " + router + " to public network in zone " + dest.getDataCenter() + " cleaninig up");
-            destroyRouter(router.getId());
-            return null;
+            if (!addPublicIpToVpc(router, publicNetwork, sourceNatIp)) {
+                s_logger.warn("Failed to add router " + router + " to public network in zone " + dest.getDataCenter() + " cleaninig up");
+                destroyRouter(router.getId());
+                return null;
+            }
+            
         }
         
         return router;
@@ -683,4 +684,22 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             }
         });
     }
+    
+    
+//    @Override
+//    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, 
+//            ReservationContext context) {
+//        //remove public and guest nics as we will plug them later
+//        Iterator<NicProfile> it = profile.getNics().iterator();
+//        while (it.hasNext()) {
+//            NicProfile nic = it.next();
+//            if (nic.getTrafficType() == TrafficType.Public || nic.getTrafficType() == TrafficType.Guest) {
+//                s_logger.debug("Removing nic of type " + nic.getTrafficType() + " from the nics passed on vm start. " +
+//                		"The nic will be plugged later");
+//                it.remove();
+//            }
+//        }
+//        
+//        return super.finalizeVirtualMachineProfile(profile, dest, context);
+//    }
 }

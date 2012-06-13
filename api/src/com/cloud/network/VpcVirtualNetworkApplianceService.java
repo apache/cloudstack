@@ -31,7 +31,8 @@ public interface VpcVirtualNetworkApplianceService {
      * @throws ResourceUnavailableException
      * @throws InsufficientCapacityException
      */
-    boolean addVpcRouterToGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean addVpcRouterToGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) 
+            throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * @param router
