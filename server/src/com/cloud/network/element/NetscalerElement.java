@@ -279,7 +279,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         firewallCapabilities.put(Capability.TrafficStatistics, "per public ip");
         firewallCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
         firewallCapabilities.put(Capability.MultipleIps, "true");
-
+        firewallCapabilities.put(Capability.FirewallType, "perpublicip");
         capabilities.put(Service.Firewall, firewallCapabilities);
 
         return capabilities;
