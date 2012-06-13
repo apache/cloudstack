@@ -63,10 +63,21 @@ class Services:
                                 "password": 'nsroot',
                                 "networkdevicetype": 'NetscalerVPXLoadBalancer',
                                 "publicinterface": '1/1',
-                                "privateinterface": '0/1',
+                                "privateinterface": '1/1',
                                 "numretries": 2,
                                 "lbdevicededicated": False,
                                 "lbdevicecapacity": 50,
+                                "port": 22,
+                         },
+                         "netscaler_dedicated": {
+                                "ipaddress": '192.168.100.213',
+                                "username": 'nsroot',
+                                "password": 'nsroot',
+                                "networkdevicetype": 'NetscalerVPXLoadBalancer',
+                                "publicinterface": '1/1',
+                                "privateinterface": '1/1',
+                                "numretries": 2,
+                                "lbdevicededicated": True,
                                 "port": 22,
                          },
                          "network_offering_dedicated": {
@@ -260,6 +271,7 @@ class TestAddNetScaler(cloudstackTestCase):
             "Physical network id should match with the network in which device is configured"
             )
         return
+
 
 
 class TestInvalidParametersNetscaler(cloudstackTestCase):
@@ -502,7 +514,7 @@ class TestInvalidParametersNetscaler(cloudstackTestCase):
                                   )
         return
 
-@unittest.skip("Issue- Unable to validate user credentials while creating nw offering")
+
 class TestNetScalerDedicated(cloudstackTestCase):
 
     @classmethod
@@ -528,10 +540,9 @@ class TestNetScalerDedicated(cloudstackTestCase):
         if isinstance(physical_networks, list):
             physical_network = physical_networks[0]
 
-        cls.services["netscaler"]["lbdevicededicated"] = True
         cls.netscaler = NetScaler.add(
                                   cls.api_client,
-                                  cls.services["netscaler"],
+                                  cls.services["netscaler_dedicated"],
                                   physicalnetworkid=physical_network.id
                                   )
 
@@ -702,8 +713,8 @@ class TestNetScalerDedicated(cloudstackTestCase):
         # Creating network using the network offering created
         self.debug("Trying to create network with network offering: %s" %
                                                     self.network_offering.id)
-        with self.assertRaises(Exception):
-            Network.create(
+
+        Network.create(
                             self.apiclient,
                             self.services["network"],
                             accountid=self.account_2.account.name,
@@ -711,7 +722,19 @@ class TestNetScalerDedicated(cloudstackTestCase):
                             networkofferingid=self.network_offering.id,
                             zoneid=self.zone.id
                         )
+	self.debug("Deploying an instance in account: %s" % self.account_2.account.name)
+        with self.assertRaises(Exception):
+        	VirtualMachine.create(
+                                  self.apiclient,
+                                  self.services["virtual_machine"],
+                                  accountid=self.account_2.account.name,
+                                  domainid=self.account_2.account.domainid,
+                                  serviceofferingid=self.service_offering.id,
+                                  networkids=[str(self.network.id)]
+                                  )
+	self.debug("Deply instacne in dedicated Network offering mode failed")
         return
+
 
 
 class TestNetScalerShared(cloudstackTestCase):
@@ -827,12 +850,12 @@ class TestNetScalerShared(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    def test_netscaler_dedicated_mode(self):
-        """Test netscaler device in dedicated mode
+    def test_netscaler_shared_mode(self):
+        """Test netscaler device in shared mode
         """
 
         # Validate the following
-        # 1. Add Netscaler device in dedicated mode.
+        # 1. Add Netscaler device in shared mode.
         # 2. Netscaler should be configured successfully.It should be able to
         #    service only 1 account.
 
@@ -953,6 +976,7 @@ class TestNetScalerShared(cloudstackTestCase):
                             "VM state should be running after deployment"
                         )
         return
+
 
 
 class TestNetScalerCustomCapacity(cloudstackTestCase):
@@ -1074,14 +1098,14 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    def test_netscaler_dedicated_mode(self):
-        """Test netscaler device in dedicated mode
+    def test_netscaler_custom_capacity(self):
+        """Test netscaler device with custom capacity
         """
 
         # Validate the following
-        # 1. Add Netscaler device in dedicated mode.
+        # 1. Add Netscaler device in shared mode with capacity 3
         # 2. Netscaler should be configured successfully.It should be able to
-        #    service only 1 account.
+        #    service only 3 accounts.
 
         ns_list = NetScaler.list(
                                  self.apiclient,
@@ -1226,6 +1250,7 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
         return
 
 
+
 class TestNetScalerNoCapacity(cloudstackTestCase):
 
     @classmethod
@@ -1250,7 +1275,7 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
                                                  )
         if isinstance(physical_networks, list):
             physical_network = physical_networks[0]
-
+	cls.services["netscaler"]["lbdevicecapacity"] = 2
         cls.netscaler = NetScaler.add(
                                   cls.api_client,
                                   cls.services["netscaler"],
@@ -1345,14 +1370,15 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    def test_netscaler_dedicated_mode(self):
-        """Test netscaler device in dedicated mode
+    def test_netscaler_no_capacity(self):
+        """Test netscaler device with no capacity remaining
         """
 
         # Validate the following
-        # 1. Add Netscaler device in dedicated mode.
+        # 1. Add Netscaler device in shared mode with capacity 2
         # 2. Netscaler should be configured successfully.It should be able to
-        #    service only 1 account.
+        #    service only 2 accounts.
+        # 3. Deploy instance for account 3 should fail
 
         ns_list = NetScaler.list(
                                  self.apiclient,
@@ -1495,6 +1521,7 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
                                   networkids=[str(self.network_3.id)]
                                   )
         return
+
 
 
 class TestGuestNetworkWithNetScaler(cloudstackTestCase):
@@ -2049,6 +2076,7 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
         return
 
 
+
 class TestGuestNetworkShutDown(cloudstackTestCase):
 
     @classmethod
@@ -2209,7 +2237,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                                     name='network.gc.wait'
                                     )
         # Sleep to ensure that all resources are deleted
-        time.sleep((int(interval[0].value) + int(wait[0].value))*2)
+        time.sleep((int(interval[0].value) + int(wait[0].value)) * 2)
 
         self.debug("SSH into netscaler: %s" %
                                     self.services["netscaler"]["ipaddress"])
@@ -2457,6 +2485,7 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
             self.fail("SSH Access failed for %s: %s" % \
                       (self.services["netscaler"]["ipaddress"], e))
         return
+
 
 
 class TestServiceProvider(cloudstackTestCase):
@@ -2750,8 +2779,15 @@ class TestServiceProvider(cloudstackTestCase):
                                       id=self.netscaler_provider.id,
                                       state='Disabled'
                                     )
-        self.debug("Deploying VM in the network: %s" % self.network.id)
         with self.assertRaises(Exception):
+            self.debug("Deploying VM in the network: %s" % self.network.id)
+            LoadBalancerRule.create(
+                                    self.apiclient,
+                                    self.services["lbrule"],
+                                    ipaddressid=public_ip.ipaddress.id,
+                                    accountid=self.account.account.name,
+                                    networkid=self.network.id
+                                )
             VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
@@ -2761,6 +2797,7 @@ class TestServiceProvider(cloudstackTestCase):
                                   networkids=[str(self.network.id)]
                                   )
         return
+
 
 
 class TestDeleteNetscaler(cloudstackTestCase):

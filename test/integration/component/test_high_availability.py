@@ -21,7 +21,7 @@ from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
-from marvin.remoteSSHClient import remoteSSHClient
+from marvin import remoteSSHClient
 import datetime
 
 
@@ -80,7 +80,7 @@ class Services:
                          "templates": {
                                 "displaytext": "Public Template",
                                 "name": "Public template",
-                                "ostypeid": '946b031b-0e10-4f4a-a3fc-d212ae2ea07f',
+                                "ostypeid": '1d4a6dce-8db1-4c08-8752-e88b360d8287',
                                 "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                                 "hypervisor": 'XenServer',
                                 "format" : 'VHD',
@@ -89,7 +89,7 @@ class Services:
                                 "isextractable": True,
                                 "templatefilter": 'self',
                          },
-                         "ostypeid": '946b031b-0e10-4f4a-a3fc-d212ae2ea07f',
+                         "ostypeid": '1d4a6dce-8db1-4c08-8752-e88b360d8287',
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 100,
@@ -198,7 +198,7 @@ class TestHighAvailability(cloudstackTestCase):
                          True,
                          "List hosts should return valid host response"
                          )
-        self.assertEqual(
+        self.assertGreaterEqual(
                          len(hosts),
                          2,
                          "There must be two hosts present in a cluster"
@@ -277,15 +277,6 @@ class TestHighAvailability(cloudstackTestCase):
         self.debug("Creating LB rule on IP with NAT: %s" %
                                     public_ip.ipaddress.ipaddress)
 
-        # Open up firewall port for SSH        
-        fw_rule = FireWallRule.create(
-                            self.apiclient,
-                            ipaddressid=public_ip.ipaddress.id,
-                            protocol=self.services["natrule"]["protocol"],
-                            cidrlist=['0.0.0.0/0'],
-                            startport=self.services["natrule"]["publicport"],
-                            endport=self.services["natrule"]["publicport"]
-                            )
         # Create Load Balancer rule on IP already having NAT rule
         lb_rule = LoadBalancerRule.create(
                                     self.apiclient,
@@ -600,7 +591,7 @@ class TestHighAvailability(cloudstackTestCase):
                          True,
                          "List hosts should return valid host response"
                          )
-        self.assertEqual(
+        self.assertGreaterEqual(
                          len(hosts),
                          2,
                          "There must be two hosts present in a cluster"
@@ -675,16 +666,6 @@ class TestHighAvailability(cloudstackTestCase):
                                  self.services["natrule"],
                                  ipaddressid=public_ip.ipaddress.id
                                  )
-
-        # Open up firewall port for SSH        
-        fw_rule = FireWallRule.create(
-                            self.apiclient,
-                            ipaddressid=public_ip.ipaddress.id,
-                            protocol=self.services["natrule"]["protocol"],
-                            cidrlist=['0.0.0.0/0'],
-                            startport=self.services["natrule"]["publicport"],
-                            endport=self.services["natrule"]["publicport"]
-                            )
 
         self.debug("Creating LB rule on IP with NAT: %s" %
                                     public_ip.ipaddress.ipaddress)

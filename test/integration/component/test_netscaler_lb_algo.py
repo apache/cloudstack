@@ -58,7 +58,7 @@ class Services:
                                     "protocol": 'TCP',
                                 },
                          "netscaler": {
-                                "ipaddress": '10.147.40.100',
+                                "ipaddress": '192.168.100.213',
                                 "username": 'nsroot',
                                 "password": 'nsroot',
                                 "networkdevicetype": 'NetscalerVPXLoadBalancer',
@@ -67,35 +67,7 @@ class Services:
                                 "numretries": 2,
                                 "lbdevicededicated": False,
                                 "lbdevicecapacity": 50,
-                         },
-                         "network_offering_dedicated": {
-                                    "name": 'Netscaler',
-                                    "displaytext": 'Netscaler',
-                                    "guestiptype": 'Isolated',
-                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
-                                    "traffictype": 'GUEST',
-                                    "availability": 'Optional',
-                                    "specifyVlan": False,
-                                    "specifyIpRanges": False,
-                                    "serviceProviderList" : {
-                                            "Dhcp": 'VirtualRouter',
-                                            "Dns": 'VirtualRouter',
-                                            "SourceNat": 'VirtualRouter',
-                                            "PortForwarding": 'VirtualRouter',
-                                            "Vpn": 'VirtualRouter',
-                                            "Firewall": 'VirtualRouter',
-                                            "Lb": 'Netscaler',
-                                            "UserData": 'VirtualRouter',
-                                            "StaticNat": 'VirtualRouter',
-                                    },
-                                    "servicecapabilitylist": {
-                                        "SourceNat": {
-                                            "SupportedSourceNatTypes": "peraccount"
-                                        },
-                                        "lb": {
-                                               "SupportedLbIsolation": "dedicated"
-                                        },
-                                    },
+				"port": 22,
                          },
                          "network_offering": {
                                     "name": 'Netscaler',
@@ -128,12 +100,7 @@ class Services:
                                     "publicport": 22,
                                     "openfirewall": False,
                          },
-                         "natrule": {
-                                    "privateport": 22,
-                                    "publicport": 22,
-                                    "protocol": "TCP"
-                         },
-                         "ostypeid": '2b58909b-7d9e-45d9-80d8-e58d0bbcbf07',
+                         "ostypeid": '946b031b-0e10-4f4a-a3fc-d212ae2ea07f',
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 10,
@@ -166,6 +133,7 @@ class TestLbWithRoundRobin(cloudstackTestCase):
                                             )
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
@@ -174,8 +142,8 @@ class TestLbWithRoundRobin(cloudstackTestCase):
                                             cls.services["service_offering"]
                                             )
         cls._cleanup = [
-                        cls.service_offering,
                         cls.network_offering,
+                        cls.service_offering
                         ]
         return
 
@@ -248,7 +216,7 @@ class TestLbWithRoundRobin(cloudstackTestCase):
         self.debug("Deploying VM in account: %s" % self.account.account.name)
 
         # Spawn an instance in that network
-        virtual_machine_1 = VirtualMachine.create(
+        self.virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.account.name,
@@ -259,12 +227,12 @@ class TestLbWithRoundRobin(cloudstackTestCase):
         self.debug("Deployed VM in network: %s" % self.network.id)
         list_vm_response = VirtualMachine.list(
                                         self.apiclient,
-                                        id=virtual_machine_1.id
+                                        id=self.virtual_machine.id
                                         )
 
         self.debug(
                 "Verify listVirtualMachines response for virtual machine: %s" \
-                % virtual_machine_1.id
+                % self.virtual_machine.id
             )
 
         self.assertEqual(
@@ -280,41 +248,6 @@ class TestLbWithRoundRobin(cloudstackTestCase):
                             "VM state should be running after deployment"
                         )
 
-        self.debug("Deploying another VM in account: %s" %
-                                            self.account.account.name)
-
-        # Spawn an instance in that network
-        virtual_machine_2 = VirtualMachine.create(
-                                  self.apiclient,
-                                  self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
-                                  domainid=self.account.account.domainid,
-                                  serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network.id)]
-                                  )
-        self.debug("Deployed VM in network: %s" % self.network.id)
-        list_vm_response = VirtualMachine.list(
-                                        self.apiclient,
-                                        id=virtual_machine_2.id
-                                        )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % virtual_machine_2.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-                            vm_response.state,
-                            "Running",
-                            "VM state should be running after deployment"
-                        )
         self.debug("Associating public IP for network: %s" % self.network.id)
 
         ip_with_lb_rule = PublicIPAddress.create(
@@ -341,9 +274,6 @@ class TestLbWithRoundRobin(cloudstackTestCase):
                                     networkid=self.network.id
                                 )
 
-        self.debug("Trying to create PF rule on IP with LB rule: %s" %
-                                        ip_with_lb_rule.ipaddress.ipaddress)
-
         lb_rules = LoadBalancerRule.list(
                                          self.apiclient,
                                          id=lb_rule.id,
@@ -354,60 +284,39 @@ class TestLbWithRoundRobin(cloudstackTestCase):
                          True,
                          "List LB rules should return a newly created LB rule"
                          )
-        self.debug("Adding %s, %s to the LB rule %s" % (
-                                                    virtual_machine_1.name,
-                                                    virtual_machine_2.name,
-                                                    lb_rule.name
-                                                    ))
-        lb_rule.assign(self.apiclient, [virtual_machine_1, virtual_machine_2])
-
-	try:
-            self.debug(
-                "Verifying the algorithm used for LB by SSHing into instances")
-            hostnames = []
-            ssh = virtual_machine_1.get_ssh_client(
-                                ipaddress=ip_with_lb_rule.ipaddress.ipaddress)
-            self.debug("Command: hostname")
-            result = ssh.execute("hostname")
+        self.debug("Adding %s to the LB rule %s" % (
+                                                self.virtual_machine.name,
+                                                lb_rule.name
+                                                ))
+        lb_rule.assign(self.apiclient, [self.virtual_machine])
+        self.debug("SSH into Netscaler to check whether algorithm is configured properly or not?")
+        self.debug("SSH into netscaler: %s" %
+                                    self.services["netscaler"]["ipaddress"])
+        try:
+            ssh_client = remoteSSHClient(
+                                    self.services["netscaler"]["ipaddress"],
+                                    self.services["netscaler"]["port"],
+                                    self.services["netscaler"]["username"],
+                                    self.services["netscaler"]["password"],
+                                    )
+            cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
+                                        ip_with_lb_rule.ipaddress.ipaddress,
+                                        lb_rule.publicport)
+            self.debug("command: %s" % cmd)
+            res = ssh_client.execute(cmd)
+            result = str(res)
             self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            ssh = virtual_machine_2.get_ssh_client(
-                                ipaddress=ip_with_lb_rule.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            self.debug("Hostnames: %s" % str(hostnames))
-
-            self.assertNotEqual(
-                    hostnames[0],
-                    hostnames[1],
-                    "Hostnames must not be same if round robin algo is used"
-                )
-
-            ssh = virtual_machine_1.get_ssh_client(
-                                ipaddress=ip_with_lb_rule.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
 
             self.assertEqual(
-                hostnames[0],
-                hostnames[2],
-                "Alternate Hostnames must be same if roundrobin algo is used"
-                )
-        except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
-                                        ip_with_lb_rule.ipaddress.ipaddress,
-                                        e))
-        return
+                    result.count("Configured Method: ROUNDROBIN"),
+                    1,
+                    "'ROUNDROBIN' algorithm should be configured on NS"
+                    )
 
+        except Exception as e:
+            self.fail("SSH Access failed for %s: %s" % \
+                      (self.services["netscaler"]["ipaddress"], e))
+        return
 
 
 class TestLbWithLeastConn(cloudstackTestCase):
@@ -435,6 +344,7 @@ class TestLbWithLeastConn(cloudstackTestCase):
                                             )
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
@@ -442,9 +352,10 @@ class TestLbWithLeastConn(cloudstackTestCase):
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
+
         cls._cleanup = [
-                        cls.service_offering,
                         cls.network_offering,
+                        cls.service_offering
                         ]
         return
 
@@ -517,7 +428,7 @@ class TestLbWithLeastConn(cloudstackTestCase):
         self.debug("Deploying VM in account: %s" % self.account.account.name)
 
         # Spawn an instance in that network
-        virtual_machine_1 = VirtualMachine.create(
+        self.virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.account.name,
@@ -528,12 +439,12 @@ class TestLbWithLeastConn(cloudstackTestCase):
         self.debug("Deployed VM in network: %s" % self.network.id)
         list_vm_response = VirtualMachine.list(
                                         self.apiclient,
-                                        id=virtual_machine_1.id
+                                        id=self.virtual_machine.id
                                         )
 
         self.debug(
                 "Verify listVirtualMachines response for virtual machine: %s" \
-                % virtual_machine_1.id
+                % self.virtual_machine.id
             )
 
         self.assertEqual(
@@ -549,43 +460,15 @@ class TestLbWithLeastConn(cloudstackTestCase):
                             "VM state should be running after deployment"
                         )
 
-        self.debug("Deploying another VM in account: %s" %
-                                            self.account.account.name)
-
-        # Spawn an instance in that network
-        virtual_machine_2 = VirtualMachine.create(
-                                  self.apiclient,
-                                  self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
-                                  domainid=self.account.account.domainid,
-                                  serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network.id)]
-                                  )
-        self.debug("Deployed VM in network: %s" % self.network.id)
-        list_vm_response = VirtualMachine.list(
-                                        self.apiclient,
-                                        id=virtual_machine_2.id
-                                        )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % virtual_machine_2.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-                            vm_response.state,
-                            "Running",
-                            "VM state should be running after deployment"
-                        )
         self.debug("Associating public IP for network: %s" % self.network.id)
 
+        PublicIPAddress.create(
+                                self.apiclient,
+                                accountid=self.account.account.name,
+                                zoneid=self.zone.id,
+                                domainid=self.account.account.domainid,
+                                networkid=self.network.id
+                                )
         ip_with_lb_rule = PublicIPAddress.create(
                                 self.apiclient,
                                 accountid=self.account.account.name,
@@ -610,9 +493,6 @@ class TestLbWithLeastConn(cloudstackTestCase):
                                     networkid=self.network.id
                                 )
 
-        self.debug("Trying to create PF rule on IP with LB rule: %s" %
-                                        ip_with_lb_rule.ipaddress.ipaddress)
-
         lb_rules = LoadBalancerRule.list(
                                          self.apiclient,
                                          id=lb_rule.id,
@@ -624,58 +504,40 @@ class TestLbWithLeastConn(cloudstackTestCase):
                          "List LB rules should return a newly created LB rule"
                          )
         self.debug("Adding %s to the LB rule %s" % (
-                                                    virtual_machine_1.name,
-                                                    lb_rule.name
-                                                    ))
-        lb_rule.assign(self.apiclient, [virtual_machine_1])
-        self.debug("Creating a firewall rule to open up SSH ports..")
+                                                self.virtual_machine.name,
+                                                lb_rule.name
+                                                ))
+        lb_rule.assign(self.apiclient, [self.virtual_machine])
 
+        self.debug("SSH into Netscaler to check whether algorithm is configured properly or not?")
+        self.debug("SSH into netscaler: %s" %
+                                    self.services["netscaler"]["ipaddress"])
         try:
-            self.debug(
-                "Verifying the algorithm used for LB by SSHing into instances")
-            hostnames = []
-            ssh = virtual_machine_1.get_ssh_client(
-                                ipaddress=ip_with_lb_rule.ipaddress.ipaddress)
-            self.debug("Command: hostname")
-            result = ssh.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            ssh = virtual_machine_1.get_ssh_client(
-                                ipaddress=ip_with_lb_rule.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            self.debug("Hostnames: %s" % str(hostnames))
-
-            self.debug("Adding %s to the LB rule %s" % (
-                                                    virtual_machine_2.name,
-                                                    lb_rule.name
-                                                    ))
-            lb_rule.assign(self.apiclient, [virtual_machine_2])
-
-            ssh = virtual_machine_2.get_ssh_client(
-                                ipaddress=ip_with_lb_rule.ipaddress.ipaddress
-                        )
-            self.debug("Command: hostname")
-            result = ssh.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            res = str(result)
-            self.assertNotEqual(
-                res.count(virtual_machine_2.name),
-                1,
-                "SSH request should go to second VM(having least connections)"
-                )
-        except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            ssh_client = remoteSSHClient(
+                                    self.services["netscaler"]["ipaddress"],
+                                    self.services["netscaler"]["port"],
+                                    self.services["netscaler"]["username"],
+                                    self.services["netscaler"]["password"],
+                                    )
+            cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
                                         ip_with_lb_rule.ipaddress.ipaddress,
-                                        e))
+                                        lb_rule.publicport)
+            self.debug("command: %s" % cmd)
+            res = ssh_client.execute(cmd)
+            result = str(res)
+            self.debug("Output: %s" % result)
+
+            self.assertEqual(
+                    result.count("Configured Method: LEASTCONNECTION"),
+                    1,
+                    "'LEASTCONNECTION' algorithm should be configured on NS"
+                    )
+
+        except Exception as e:
+            self.fail("SSH Access failed for %s: %s" % \
+                      (self.services["netscaler"]["ipaddress"], e))
         return
+
 
 
 class TestLbWithSourceIp(cloudstackTestCase):
@@ -711,8 +573,8 @@ class TestLbWithSourceIp(cloudstackTestCase):
                                             cls.services["service_offering"]
                                             )
         cls._cleanup = [
-                        cls.service_offering,
                         cls.network_offering,
+                        cls.service_offering
                         ]
         return
 
@@ -785,7 +647,7 @@ class TestLbWithSourceIp(cloudstackTestCase):
         self.debug("Deploying VM in account: %s" % self.account.account.name)
 
         # Spawn an instance in that network
-        virtual_machine_1 = VirtualMachine.create(
+        self.virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account.account.name,
@@ -796,12 +658,12 @@ class TestLbWithSourceIp(cloudstackTestCase):
         self.debug("Deployed VM in network: %s" % self.network.id)
         list_vm_response = VirtualMachine.list(
                                         self.apiclient,
-                                        id=virtual_machine_1.id
+                                        id=self.virtual_machine.id
                                         )
 
         self.debug(
                 "Verify listVirtualMachines response for virtual machine: %s" \
-                % virtual_machine_1.id
+                % self.virtual_machine.id
             )
 
         self.assertEqual(
@@ -817,41 +679,6 @@ class TestLbWithSourceIp(cloudstackTestCase):
                             "VM state should be running after deployment"
                         )
 
-        self.debug("Deploying another VM in account: %s" %
-                                            self.account.account.name)
-
-        # Spawn an instance in that network
-        virtual_machine_2 = VirtualMachine.create(
-                                  self.apiclient,
-                                  self.services["virtual_machine"],
-                                  accountid=self.account.account.name,
-                                  domainid=self.account.account.domainid,
-                                  serviceofferingid=self.service_offering.id,
-                                  networkids=[str(self.network.id)]
-                                  )
-        self.debug("Deployed VM in network: %s" % self.network.id)
-        list_vm_response = VirtualMachine.list(
-                                        self.apiclient,
-                                        id=virtual_machine_2.id
-                                        )
-
-        self.debug(
-                "Verify listVirtualMachines response for virtual machine: %s" \
-                % virtual_machine_2.id
-            )
-
-        self.assertEqual(
-                            isinstance(list_vm_response, list),
-                            True,
-                            "Check list response returns a valid list"
-                        )
-        vm_response = list_vm_response[0]
-
-        self.assertEqual(
-                            vm_response.state,
-                            "Running",
-                            "VM state should be running after deployment"
-                        )
         self.debug("Associating public IP for network: %s" % self.network.id)
 
         ip_with_lb_rule = PublicIPAddress.create(
@@ -878,9 +705,6 @@ class TestLbWithSourceIp(cloudstackTestCase):
                                     networkid=self.network.id
                                 )
 
-        self.debug("Trying to create PF rule on IP with LB rule: %s" %
-                                        ip_with_lb_rule.ipaddress.ipaddress)
-
         lb_rules = LoadBalancerRule.list(
                                          self.apiclient,
                                          id=lb_rule.id,
@@ -891,74 +715,41 @@ class TestLbWithSourceIp(cloudstackTestCase):
                          True,
                          "List LB rules should return a newly created LB rule"
                          )
+
         self.debug("Adding %s to the LB rule %s" % (
-                                                    virtual_machine_1.name,
-                                                    lb_rule.name
-                                                    ))
-        lb_rule.assign(self.apiclient, [virtual_machine_1])
-
+                                                self.virtual_machine.name,
+                                                lb_rule.name
+                                                ))
+        lb_rule.assign(self.apiclient, [self.virtual_machine])
+        self.debug("SSH into Netscaler to check whether algorithm is configured properly or not?")
+        self.debug("SSH into netscaler: %s" %
+                                    self.services["netscaler"]["ipaddress"])
         try:
-            self.debug(
-                "Verifying the algorithm used for LB by SSHing into instances")
-            hostnames = []
-            ssh = virtual_machine_1.get_ssh_client(
-                                ipaddress=ip_with_lb_rule.ipaddress.ipaddress)
-            self.debug("Command: hostname")
-            result = ssh.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            res = str(result)
-
-            self.assertEqual(
-                res.count(virtual_machine_1.name),
-                1,
-                "Request should be sent only to the first VM"
-                )
-
-            self.debug("Adding %s to the LB rule %s" % (
-                                                    virtual_machine_2.name,
-                                                    lb_rule.name
-                                                    ))
-            lb_rule.assign(self.apiclient, [virtual_machine_2])
-
-            ssh = virtual_machine_1.get_ssh_client(
-                                ipaddress=ip_with_lb_rule.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            self.debug("Hostnames: %s" % str(hostnames))
-
-            res = str(result)
-
-            self.assertEqual(
-                res.count(virtual_machine_1.name),
-                1,
-                "Request should be sent only to the first VM"
-                )
-
-            ssh = virtual_machine_2.get_ssh_client(
-                                ipaddress=ip_with_lb_rule.ipaddress.ipaddress
-                        )
-            self.debug("Command: hostname")
-            result = ssh.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            res = str(result)
-
-            self.assertEqual(
-                res.count(virtual_machine_1.name),
-                1,
-                "Request should be sent only to the first VM"
-                )
-        except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            ssh_client = remoteSSHClient(
+                                    self.services["netscaler"]["ipaddress"],
+                                    self.services["netscaler"]["port"],
+                                    self.services["netscaler"]["username"],
+                                    self.services["netscaler"]["password"],
+                                    )
+            cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
                                         ip_with_lb_rule.ipaddress.ipaddress,
-                                        e))
+                                        lb_rule.publicport)
+            self.debug("command: %s" % cmd)
+            res = ssh_client.execute(cmd)
+            result = str(res)
+            self.debug("Output: %s" % result)
+
+            self.assertEqual(
+                    result.count("Configured Method: SOURCEIPHASH"),
+                    1,
+                    "'SOURCEIPHASH' algorithm should be configured on NS"
+                    )
+
+        except Exception as e:
+            self.fail("SSH Access failed for %s: %s" % \
+                      (self.services["netscaler"]["ipaddress"], e))
         return
+
 
 
 class TestLbAlgoRrLc(cloudstackTestCase):
@@ -985,13 +776,6 @@ class TestLbAlgoRrLc(cloudstackTestCase):
                                             )
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
-
-        cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
         cls.account = Account.create(
                                      cls.api_client,
                                      cls.services["account"],
@@ -1006,17 +790,16 @@ class TestLbAlgoRrLc(cloudstackTestCase):
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
                                     )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
+
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
 
         # Spawn an instance in that network
-        cls.vm_1 = VirtualMachine.create(
-                                  cls.api_client,
-                                  cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
-                                  domainid=cls.account.account.domainid,
-                                  serviceofferingid=cls.service_offering.id,
-                                  networkids=[str(cls.network.id)]
-                                  )
-        cls.vm_2 = VirtualMachine.create(
+        cls.virtual_machine = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.account.name,
@@ -1032,8 +815,8 @@ class TestLbAlgoRrLc(cloudstackTestCase):
                                 networkid=cls.network.id
                                 )
         cls._cleanup = [
-                        cls.service_offering,
-                        cls.account
+                        cls.account,
+                        cls.service_offering
                         ]
         return
 
@@ -1100,8 +883,6 @@ class TestLbAlgoRrLc(cloudstackTestCase):
                                     networkid=self.network.id
                                 )
         self.cleanup.append(lb_rule)
-        self.debug("Trying to create PF rule on IP with LB rule: %s" %
-                                        self.public_ip.ipaddress.ipaddress)
 
         lb_rules = LoadBalancerRule.list(
                                          self.apiclient,
@@ -1113,117 +894,74 @@ class TestLbAlgoRrLc(cloudstackTestCase):
                          True,
                          "List LB rules should return a newly created LB rule"
                          )
-        self.debug("Adding %s, %s to the LB rule %s" % (
-                                                        self.vm_1.name,
-                                                        self.vm_2.name,
-                                                        lb_rule.name
-                                                        ))
-        lb_rule.assign(self.apiclient, [self.vm_1, self.vm_2])
 
+        self.debug("Adding %s to the LB rule %s" % (
+                                                self.virtual_machine.name,
+                                                lb_rule.name
+                                                ))
+        lb_rule.assign(self.apiclient, [self.virtual_machine])
+
+        self.debug("SSH into Netscaler to check whether algorithm is configured properly or not?")
+        self.debug("SSH into netscaler: %s" %
+                                    self.services["netscaler"]["ipaddress"])
         try:
-            self.debug(
-                "Verifying the roundrobin algo used by SSHing into instances")
-            hostnames = []
-            ssh_1 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-				)
-            self.debug("Command: hostname")
-            result = ssh_1.execute("hostname")
+            ssh_client = remoteSSHClient(
+                                    self.services["netscaler"]["ipaddress"],
+                                    self.services["netscaler"]["port"],
+                                    self.services["netscaler"]["username"],
+                                    self.services["netscaler"]["password"],
+                                    )
+            cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
+                                        self.public_ip.ipaddress.ipaddress,
+                                        lb_rule.publicport)
+            self.debug("command: %s" % cmd)
+            res = ssh_client.execute(cmd)
+            result = str(res)
             self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            ssh_2 = self.vm_2.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_2.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            self.debug("Hostnames: %s" % str(hostnames))
-
-            self.assertNotEqual(
-                    hostnames[0],
-                    hostnames[1],
-                    "Hostnames must not be same if round robin algo is used"
-                )
-
-            ssh_3 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_3.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
 
             self.assertEqual(
-                hostnames[0],
-                hostnames[2],
-                "Alternate Hostnames must be same if roundrobin algo is used"
-                )
+                    result.count("Configured Method: ROUNDROBIN"),
+                    1,
+                    "'ROUNDROBIN' algorithm should be configured on NS"
+                    )
         except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
-                                        self.public_ip.ipaddress.ipaddress,
-                                        e))
+            self.fail("SSH Access failed for %s: %s" % \
+                      (self.services["netscaler"]["ipaddress"], e))
+
         self.debug(
                 "Updating LB rule: %s with new algorithm: %s" % (
                                                                 lb_rule.name,
                                                                 'leastconn'))
         lb_rule.update(self.apiclient, algorithm='leastconn')
 
-        self.debug(
-            "Removing virtual machine: %s to test least connection algo" %
-                                                    self.vm_2.name)
+        self.debug("SSH into Netscaler to check whether algorithm is configured properly or not?")
+        self.debug("SSH into netscaler: %s" %
+                                    self.services["netscaler"]["ipaddress"])
         try:
-            self.debug(
-                "Verifying the algorithm used for LB by SSHing into instances")
-            hostnames = []
-            ssh = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            ssh_4 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_4.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            self.debug("Hostnames: %s" % str(hostnames))
-
-            self.debug("Adding %s to the LB rule %s" % (
-                                                    self.vm_2.name,
-                                                    lb_rule.name
-                                                    ))
-            lb_rule.assign(self.apiclient, [self.vm_2])
-
-            ssh_5 = self.vm_2.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress
-                        )
-            self.debug("Command: hostname")
-            result = ssh_5.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            res = str(result)
-            self.assertNotEqual(
-                res.count(self.vm_2.name),
-                1,
-                "SSH request should go to second VM(having least connections)"
-                )
-        except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            ssh_client = remoteSSHClient(
+                                    self.services["netscaler"]["ipaddress"],
+                                    self.services["netscaler"]["port"],
+                                    self.services["netscaler"]["username"],
+                                    self.services["netscaler"]["password"],
+                                    )
+            cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
                                         self.public_ip.ipaddress.ipaddress,
-                                        e))
+                                        lb_rule.publicport)
+            self.debug("command: %s" % cmd)
+            res = ssh_client.execute(cmd)
+            result = str(res)
+            self.debug("Output: %s" % result)
+
+            self.assertEqual(
+                    result.count("Configured Method: LEASTCONNECTION"),
+                    1,
+                    "'LEASTCONNECTION' algorithm should be configured on NS"
+                    )
+        except Exception as e:
+            self.fail("SSH Access failed for %s: %s" % \
+                      (self.services["netscaler"]["ipaddress"], e))
         return
+
 
 
 class TestLbAlgoLcRr(cloudstackTestCase):
@@ -1250,13 +988,6 @@ class TestLbAlgoLcRr(cloudstackTestCase):
                                             )
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
-
-        cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
         cls.account = Account.create(
                                      cls.api_client,
                                      cls.services["account"],
@@ -1271,17 +1002,16 @@ class TestLbAlgoLcRr(cloudstackTestCase):
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
                                     )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
+
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
 
         # Spawn an instance in that network
-        cls.vm_1 = VirtualMachine.create(
-                                  cls.api_client,
-                                  cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
-                                  domainid=cls.account.account.domainid,
-                                  serviceofferingid=cls.service_offering.id,
-                                  networkids=[str(cls.network.id)]
-                                  )
-        cls.vm_2 = VirtualMachine.create(
+        cls.virtual_machine = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.account.name,
@@ -1297,8 +1027,8 @@ class TestLbAlgoLcRr(cloudstackTestCase):
                                 networkid=cls.network.id
                                 )
         cls._cleanup = [
-                        cls.service_offering,
-                        cls.account
+                        cls.account,
+                        cls.service_offering
                         ]
         return
 
@@ -1377,111 +1107,70 @@ class TestLbAlgoLcRr(cloudstackTestCase):
                          "List LB rules should return a newly created LB rule"
                          )
         self.debug("Adding %s to the LB rule %s" % (
-                                                        self.vm_1.name,
-                                                        lb_rule.name
-                                                        ))
-        lb_rule.assign(self.apiclient, [self.vm_1])
-
+                                                self.virtual_machine.name,
+                                                lb_rule.name
+                                                ))
+        lb_rule.assign(self.apiclient, [self.virtual_machine])
+        self.debug("SSH into Netscaler to check whether algorithm is configured properly or not?")
+        self.debug("SSH into netscaler: %s" %
+                                    self.services["netscaler"]["ipaddress"])
         try:
-            self.debug(
-                "Verifying the leastconn algo used by SSHing into instances")
-            hostnames = []
-            ssh_1 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-				)
-            self.debug("Command: hostname")
-            result = ssh_1.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            ssh_2 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_2.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            self.debug("Hostnames: %s" % str(hostnames))
-
-            self.debug("Adding %s to the LB rule %s" % (
-                                                    self.vm_2.name,
-                                                    lb_rule.name
-                                                    ))
-            lb_rule.assign(self.apiclient, [self.vm_2])
-
-            ssh_3 = self.vm_2.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-				reconnect=True
-                        )
-            self.debug("Command: hostname")
-            result = ssh_3.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            res = str(result)
-            self.assertNotEqual(
-                res.count(self.vm_2.name),
-                1,
-                "SSH request should go to second VM(having least connections)"
-                )
-        except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            ssh_client = remoteSSHClient(
+                                    self.services["netscaler"]["ipaddress"],
+                                    self.services["netscaler"]["port"],
+                                    self.services["netscaler"]["username"],
+                                    self.services["netscaler"]["password"],
+                                    )
+            cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
                                         self.public_ip.ipaddress.ipaddress,
-                                        e))
+                                        lb_rule.publicport)
+            self.debug("command: %s" % cmd)
+            res = ssh_client.execute(cmd)
+            result = str(res)
+            self.debug("Output: %s" % result)
+
+            self.assertEqual(
+                    result.count("Configured Method: LEASTCONNECTION"),
+                    1,
+                    "'LEASTCONNECTION' algorithm should be configured on NS"
+                    )
+        except Exception as e:
+            self.fail("SSH Access failed for %s: %s" % \
+                      (self.services["netscaler"]["ipaddress"], e))
+
         self.debug(
                 "Updating LB rule: %s with new algorithm: %s" % (
                                                                 lb_rule.name,
                                                                 'roundrobin'))
         lb_rule.update(self.apiclient, algorithm='roundrobin')
+        self.debug("SSH into Netscaler to check whether algorithm is configured properly or not?")
+        self.debug("SSH into netscaler: %s" %
+                                    self.services["netscaler"]["ipaddress"])
         try:
-            self.debug(
-                "Verifying the roundrobin algo used by SSHing into instances")
-            hostnames = []
-            ssh_4 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-				reconnect=True)
-            self.debug("Command: hostname")
-            result = ssh_4.execute("hostname")
+            ssh_client = remoteSSHClient(
+                                    self.services["netscaler"]["ipaddress"],
+                                    self.services["netscaler"]["port"],
+                                    self.services["netscaler"]["username"],
+                                    self.services["netscaler"]["password"],
+                                    )
+            cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
+                                        self.public_ip.ipaddress.ipaddress,
+                                        lb_rule.publicport)
+            self.debug("command: %s" % cmd)
+            res = ssh_client.execute(cmd)
+            result = str(res)
             self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            ssh_5 = self.vm_2.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_5.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            self.debug("Hostnames: %s" % str(hostnames))
-
-            self.assertNotEqual(
-                    hostnames[0],
-                    hostnames[1],
-                    "Hostnames must not be same if round robin algo is used"
-                )
-
-            ssh_6 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_6.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
 
             self.assertEqual(
-                hostnames[0],
-                hostnames[2],
-                "Alternate Hostnames must be same if roundrobin algo is used"
-                )
+                    result.count("Configured Method: ROUNDROBIN"),
+                    1,
+                    "'ROUNDROBIN' algorithm should be configured on NS"
+                    )
         except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
-                                        self.public_ip.ipaddress.ipaddress,
-                                        e))
+            self.fail("SSH Access failed for %s: %s" % \
+                      (self.services["netscaler"]["ipaddress"], e))
         return
+
 
 
 class TestLbAlgoRrSb(cloudstackTestCase):
@@ -1508,13 +1197,6 @@ class TestLbAlgoRrSb(cloudstackTestCase):
                                             )
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
-
-        cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
         cls.account = Account.create(
                                      cls.api_client,
                                      cls.services["account"],
@@ -1529,9 +1211,16 @@ class TestLbAlgoRrSb(cloudstackTestCase):
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
                                     )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
+
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
 
         # Spawn an instance in that network
-        cls.vm_1 = VirtualMachine.create(
+        cls.virtual_machine = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.account.name,
@@ -1539,14 +1228,7 @@ class TestLbAlgoRrSb(cloudstackTestCase):
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
-        cls.vm_2 = VirtualMachine.create(
-                                  cls.api_client,
-                                  cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
-                                  domainid=cls.account.account.domainid,
-                                  serviceofferingid=cls.service_offering.id,
-                                  networkids=[str(cls.network.id)]
-                                  )
+
         cls.public_ip = PublicIPAddress.create(
                                 cls.api_client,
                                 accountid=cls.account.account.name,
@@ -1555,8 +1237,8 @@ class TestLbAlgoRrSb(cloudstackTestCase):
                                 networkid=cls.network.id
                                 )
         cls._cleanup = [
-                        cls.service_offering,
-                        cls.account
+                        cls.account,
+                        cls.service_offering
                         ]
         return
 
@@ -1623,8 +1305,6 @@ class TestLbAlgoRrSb(cloudstackTestCase):
                                     networkid=self.network.id
                                 )
         self.cleanup.append(lb_rule)
-        self.debug("Trying to create PF rule on IP with LB rule: %s" %
-                                        self.public_ip.ipaddress.ipaddress)
 
         lb_rules = LoadBalancerRule.list(
                                          self.apiclient,
@@ -1636,133 +1316,73 @@ class TestLbAlgoRrSb(cloudstackTestCase):
                          True,
                          "List LB rules should return a newly created LB rule"
                          )
-        self.debug("Adding %s, %s to the LB rule %s" % (
-                                                        self.vm_1.name,
-                                                        self.vm_2.name,
-                                                        lb_rule.name
-                                                        ))
-        lb_rule.assign(self.apiclient, [self.vm_1, self.vm_2])
-
+        self.debug("Adding %s to the LB rule %s" % (
+                                                self.virtual_machine.name,
+                                                lb_rule.name
+                                                ))
+        lb_rule.assign(self.apiclient, [self.virtual_machine])
+        self.debug("SSH into Netscaler to check whether algorithm is configured properly or not?")
+        self.debug("SSH into netscaler: %s" %
+                                    self.services["netscaler"]["ipaddress"])
         try:
-            self.debug(
-                "Verifying the roundrobin algo used by SSHing into instances")
-            hostnames = []
-            ssh_1 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-				reconnect=True)
-            self.debug("Command: hostname")
-            result = ssh_1.execute("hostname")
+            ssh_client = remoteSSHClient(
+                                    self.services["netscaler"]["ipaddress"],
+                                    self.services["netscaler"]["port"],
+                                    self.services["netscaler"]["username"],
+                                    self.services["netscaler"]["password"],
+                                    )
+            cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
+                                        self.public_ip.ipaddress.ipaddress,
+                                        lb_rule.publicport)
+            self.debug("command: %s" % cmd)
+            res = ssh_client.execute(cmd)
+            result = str(res)
             self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            ssh_2 = self.vm_2.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_2.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            self.debug("Hostnames: %s" % str(hostnames))
-
-            self.assertNotEqual(
-                    hostnames[0],
-                    hostnames[1],
-                    "Hostnames must not be same if round robin algo is used"
-                )
-
-            ssh_3 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_3.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
 
             self.assertEqual(
-                hostnames[0],
-                hostnames[2],
-                "Alternate Hostnames must be same if roundrobin algo is used"
-                )
+                    result.count("Configured Method: ROUNDROBIN"),
+                    1,
+                    "'ROUNDROBIN' algorithm should be configured on NS"
+                    )
         except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
-                                        self.public_ip.ipaddress.ipaddress,
-                                        e))
+            self.fail("SSH Access failed for %s: %s" % \
+                      (self.services["netscaler"]["ipaddress"], e))
+
         self.debug(
                 "Updating LB rule: %s with new algorithm: %s" % (
                                                                 lb_rule.name,
                                                                 'source'))
         lb_rule.update(self.apiclient, algorithm='source')
 
-        self.debug(
-            "Removing virtual machine: %s to test source algo" %
-                                                    self.vm_2.name)
-        lb_rule.remove(self.apiclient, [self.vm_2])
-
+        self.debug("SSH into Netscaler to check whether algorithm is configured properly or not?")
+        self.debug("SSH into netscaler: %s" %
+                                    self.services["netscaler"]["ipaddress"])
         try:
-            self.debug(
-                "Verifying the algorithm used for LB by SSHing into instances")
-            hostnames = []
-            ssh_4 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress)
-            self.debug("Command: hostname")
-            result = ssh_4.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            res = str(result)
-
-            self.assertEqual(
-                res.count(self.vm_1.name),
-                1,
-                "Request should be sent only to the first VM"
-                )
-
-            self.debug("Adding %s to the LB rule %s" % (
-                                                    self.vm_2.name,
-                                                    lb_rule.name
-                                                    ))
-            lb_rule.assign(self.apiclient, [self.vm_2])
-
-            ssh_5 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_5.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            self.debug("Hostnames: %s" % str(hostnames))
-
-            res = str(result)
-
-            self.assertEqual(
-                res.count(self.vm_1.name),
-                1,
-                "Request should be sent only to the first VM"
-                )
-
-            ssh_6 = self.vm_2.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-				reconnect=True
-                        )
-            self.debug("Command: hostname")
-            result = ssh_6.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            res = str(result)
-
-            self.assertEqual(
-                res.count(self.vm_1.name),
-                1,
-                "Request should be sent only to the first VM"
-                )
-        except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            ssh_client = remoteSSHClient(
+                                    self.services["netscaler"]["ipaddress"],
+                                    self.services["netscaler"]["port"],
+                                    self.services["netscaler"]["username"],
+                                    self.services["netscaler"]["password"],
+                                    )
+            cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
                                         self.public_ip.ipaddress.ipaddress,
-                                        e))
+                                        lb_rule.publicport)
+            self.debug("command: %s" % cmd)
+            res = ssh_client.execute(cmd)
+            result = str(res)
+            self.debug("Output: %s" % result)
+
+            self.assertEqual(
+                    result.count("Configured Method: SOURCEIPHASH"),
+                    1,
+                    "'SOURCEIPHASH' algorithm should be configured on NS"
+                    )
+
+        except Exception as e:
+            self.fail("SSH Access failed for %s: %s" % \
+                      (self.services["netscaler"]["ipaddress"], e))
         return
+
 
 
 class TestLbAlgoSbRr(cloudstackTestCase):
@@ -1789,13 +1409,7 @@ class TestLbAlgoSbRr(cloudstackTestCase):
                                             )
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
 
-        cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
         cls.account = Account.create(
                                      cls.api_client,
                                      cls.services["account"],
@@ -1810,9 +1424,16 @@ class TestLbAlgoSbRr(cloudstackTestCase):
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
                                     )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
+
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
 
         # Spawn an instance in that network
-        cls.vm_1 = VirtualMachine.create(
+        cls.virtual_machine = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.account.name,
@@ -1820,14 +1441,7 @@ class TestLbAlgoSbRr(cloudstackTestCase):
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
-        cls.vm_2 = VirtualMachine.create(
-                                  cls.api_client,
-                                  cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
-                                  domainid=cls.account.account.domainid,
-                                  serviceofferingid=cls.service_offering.id,
-                                  networkids=[str(cls.network.id)]
-                                  )
+
         cls.public_ip = PublicIPAddress.create(
                                 cls.api_client,
                                 accountid=cls.account.account.name,
@@ -1836,7 +1450,6 @@ class TestLbAlgoSbRr(cloudstackTestCase):
                                 networkid=cls.network.id
                                 )
         cls._cleanup = [
-                        cls.service_offering,
                         cls.account
                         ]
         return
@@ -1915,130 +1528,75 @@ class TestLbAlgoSbRr(cloudstackTestCase):
                          True,
                          "List LB rules should return a newly created LB rule"
                          )
+
         self.debug("Adding %s to the LB rule %s" % (
-                                                        self.vm_1.name,
-                                                        lb_rule.name
-                                                        ))
-        lb_rule.assign(self.apiclient, [self.vm_1])
+                                                self.virtual_machine.name,
+                                                lb_rule.name
+                                                ))
+        lb_rule.assign(self.apiclient, [self.virtual_machine])
 
+        self.debug("SSH into Netscaler to check whether algorithm is configured properly or not?")
+        self.debug("SSH into netscaler: %s" %
+                                    self.services["netscaler"]["ipaddress"])
         try:
-            self.debug(
-                "Verifying the algorithm used for LB by SSHing into instances")
-            hostnames = []
-            ssh_1 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-				                reconnect=True
-				                )
-            self.debug("Command: hostname")
-            result = ssh_1.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            res = str(result)
-
-            self.assertEqual(
-                res.count(self.vm_1.name),
-                1,
-                "Request should be sent only to the first VM"
-                )
-
-            self.debug("Adding %s to the LB rule %s" % (
-                                                    self.vm_2.name,
-                                                    lb_rule.name
-                                                    ))
-            lb_rule.assign(self.apiclient, [self.vm_2])
-
-            ssh_2 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_2.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            self.debug("Hostnames: %s" % str(hostnames))
-
-            res = str(result)
-
-            self.assertEqual(
-                res.count(self.vm_1.name),
-                1,
-                "Request should be sent only to the first VM"
-                )
-
-            ssh_3 = self.vm_2.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                        )
-            self.debug("Command: hostname")
-            result = ssh_3.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            res = str(result)
-
-            self.assertEqual(
-                res.count(self.vm_1.name),
-                1,
-                "Request should be sent only to the first VM"
-                )
-        except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            ssh_client = remoteSSHClient(
+                                    self.services["netscaler"]["ipaddress"],
+                                    self.services["netscaler"]["port"],
+                                    self.services["netscaler"]["username"],
+                                    self.services["netscaler"]["password"],
+                                    )
+            cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
                                         self.public_ip.ipaddress.ipaddress,
-                                        e))
+                                        lb_rule.publicport)
+            self.debug("command: %s" % cmd)
+            res = ssh_client.execute(cmd)
+            result = str(res)
+            self.debug("Output: %s" % result)
+
+            self.assertEqual(
+                    result.count("Configured Method: SOURCEIPHASH"),
+                    1,
+                    "'SOURCEIPHASH' algorithm should be configured on NS"
+                    )
+
+        except Exception as e:
+            self.fail("SSH Access failed for %s: %s" % \
+                      (self.services["netscaler"]["ipaddress"], e))
+
         self.debug(
                 "Updating LB rule: %s with new algorithm: %s" % (
                                                                 lb_rule.name,
                                                                 'roundrobin'))
         lb_rule.update(self.apiclient, algorithm='roundrobin')
 
+        self.debug("SSH into Netscaler to check whether algorithm is configured properly or not?")
+        self.debug("SSH into netscaler: %s" %
+                                    self.services["netscaler"]["ipaddress"])
         try:
-            self.debug(
-                "Verifying the roundrobin algo used by SSHing into instances")
-            hostnames = []
-            ssh = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-				                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh.execute("hostname")
+            ssh_client = remoteSSHClient(
+                                    self.services["netscaler"]["ipaddress"],
+                                    self.services["netscaler"]["port"],
+                                    self.services["netscaler"]["username"],
+                                    self.services["netscaler"]["password"],
+                                    )
+            cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
+                                        self.public_ip.ipaddress.ipaddress,
+                                        lb_rule.publicport)
+            self.debug("command: %s" % cmd)
+            res = ssh_client.execute(cmd)
+            result = str(res)
             self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            ssh_4 = self.vm_2.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_4.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            self.debug("Hostnames: %s" % str(hostnames))
-
-            self.assertNotEqual(
-                    hostnames[0],
-                    hostnames[1],
-                    "Hostnames must not be same if round robin algo is used"
-                )
-
-            ssh_5 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_5.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
 
             self.assertEqual(
-                hostnames[0],
-                hostnames[2],
-                "Alternate Hostnames must be same if roundrobin algo is used"
-                )
+                    result.count("Configured Method: ROUNDROBIN"),
+                    1,
+                    "'ROUNDROBIN' algorithm should be configured on NS"
+                    )
         except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
-                                        self.public_ip.ipaddress.ipaddress,
-                                        e))
+            self.fail("SSH Access failed for %s: %s" % \
+                      (self.services["netscaler"]["ipaddress"], e))
         return
+
 
 
 class TestLbAlgoSbLc(cloudstackTestCase):
@@ -2065,13 +1623,7 @@ class TestLbAlgoSbLc(cloudstackTestCase):
                                             )
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
 
-        cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
         cls.account = Account.create(
                                      cls.api_client,
                                      cls.services["account"],
@@ -2086,9 +1638,16 @@ class TestLbAlgoSbLc(cloudstackTestCase):
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
                                     )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
+
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
 
         # Spawn an instance in that network
-        cls.vm_1 = VirtualMachine.create(
+        cls.virtual_machine = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.account.name,
@@ -2096,14 +1655,7 @@ class TestLbAlgoSbLc(cloudstackTestCase):
                                   serviceofferingid=cls.service_offering.id,
                                   networkids=[str(cls.network.id)]
                                   )
-        cls.vm_2 = VirtualMachine.create(
-                                  cls.api_client,
-                                  cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
-                                  domainid=cls.account.account.domainid,
-                                  serviceofferingid=cls.service_offering.id,
-                                  networkids=[str(cls.network.id)]
-                                  )
+
         cls.public_ip = PublicIPAddress.create(
                                 cls.api_client,
                                 accountid=cls.account.account.name,
@@ -2191,134 +1743,74 @@ class TestLbAlgoSbLc(cloudstackTestCase):
                          True,
                          "List LB rules should return a newly created LB rule"
                          )
+
         self.debug("Adding %s to the LB rule %s" % (
-                                                        self.vm_1.name,
-                                                        lb_rule.name
-                                                        ))
-        lb_rule.assign(self.apiclient, [self.vm_1])
+                                                self.virtual_machine.name,
+                                                lb_rule.name
+                                                ))
+        lb_rule.assign(self.apiclient, [self.virtual_machine])
 
+        self.debug("SSH into Netscaler to check whether algorithm is configured properly or not?")
+        self.debug("SSH into netscaler: %s" %
+                                    self.services["netscaler"]["ipaddress"])
         try:
-            self.debug(
-                "Verifying the algorithm used for LB by SSHing into instances")
-            hostnames = []
-            ssh_1 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-				reconnect=True)
-            self.debug("Command: hostname")
-            result = ssh_1.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            res = str(result)
-
-            self.assertEqual(
-                res.count(self.vm_1.name),
-                1,
-                "Request should be sent only to the first VM"
-                )
-
-            self.debug("Adding %s to the LB rule %s" % (
-                                                    self.vm_2.name,
-                                                    lb_rule.name
-                                                    ))
-            lb_rule.assign(self.apiclient, [self.vm_2])
-
-            ssh_2 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_2.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            self.debug("Hostnames: %s" % str(hostnames))
-
-            res = str(result)
-
-            self.assertEqual(
-                res.count(self.vm_1.name),
-                1,
-                "Request should be sent only to the first VM"
-                )
-
-            ssh_3 = self.vm_2.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-				reconnect=True
-                        )
-            self.debug("Command: hostname")
-            result = ssh_3.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            res = str(result)
-
-            self.assertEqual(
-                res.count(self.vm_1.name),
-                1,
-                "Request should be sent only to the first VM"
-                )
-        except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            ssh_client = remoteSSHClient(
+                                    self.services["netscaler"]["ipaddress"],
+                                    self.services["netscaler"]["port"],
+                                    self.services["netscaler"]["username"],
+                                    self.services["netscaler"]["password"],
+                                    )
+            cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
                                         self.public_ip.ipaddress.ipaddress,
-                                        e))
+                                        lb_rule.publicport)
+            self.debug("command: %s" % cmd)
+            res = ssh_client.execute(cmd)
+            result = str(res)
+            self.debug("Output: %s" % result)
+
+            self.assertEqual(
+                    result.count("Configured Method: SOURCEIPHASH"),
+                    1,
+                    "'SOURCEIPHASH' algorithm should be configured on NS"
+                    )
+
+        except Exception as e:
+            self.fail("SSH Access failed for %s: %s" % \
+                      (self.services["netscaler"]["ipaddress"], e))
         self.debug(
                 "Updating LB rule: %s with new algorithm: %s" % (
                                                                 lb_rule.name,
                                                                 'leastconn'))
         lb_rule.update(self.apiclient, algorithm='leastconn')
 
-        self.debug(
-            "Removing virtual machine: %s to test least connection algo" %
-                                                    self.vm_2.name)
-        lb_rule.remove(self.apiclient, [self.vm_2])
+        self.debug("SSH into Netscaler to check whether algorithm is configured properly or not?")
+        self.debug("SSH into netscaler: %s" %
+                                    self.services["netscaler"]["ipaddress"])
         try:
-            self.debug(
-                "Verifying the algorithm used for LB by SSHing into instances")
-            hostnames = []
-            ssh_4 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_4.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            ssh_5 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_5.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            self.debug("Hostnames: %s" % str(hostnames))
-
-            self.debug("Adding %s to the LB rule %s" % (
-                                                    self.vm_2.name,
-                                                    lb_rule.name
-                                                    ))
-            lb_rule.assign(self.apiclient, [self.vm_2])
-
-            ssh_6 = self.vm_2.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-				                reconnect=True
-                        )
-            self.debug("Command: hostname")
-            result = ssh_6.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            res = str(result)
-            self.assertNotEqual(
-                res.count(self.vm_2.name),
-                1,
-                "SSH request should go to second VM(having least connections)"
-                )
-        except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            ssh_client = remoteSSHClient(
+                                    self.services["netscaler"]["ipaddress"],
+                                    self.services["netscaler"]["port"],
+                                    self.services["netscaler"]["username"],
+                                    self.services["netscaler"]["password"],
+                                    )
+            cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
                                         self.public_ip.ipaddress.ipaddress,
-                                        e))
+                                        lb_rule.publicport)
+            self.debug("command: %s" % cmd)
+            res = ssh_client.execute(cmd)
+            result = str(res)
+            self.debug("Output: %s" % result)
+
+            self.assertEqual(
+                    result.count("Configured Method: LEASTCONNECTION"),
+                    1,
+                    "'LEASTCONNECTION' algorithm should be configured on NS"
+                    )
+        except Exception as e:
+            self.fail("SSH Access failed for %s: %s" % \
+                      (self.services["netscaler"]["ipaddress"], e))
         return
+
 
 
 class TestLbAlgoLcSb(cloudstackTestCase):
@@ -2345,13 +1837,7 @@ class TestLbAlgoLcSb(cloudstackTestCase):
                                             )
         # Enable Network offering
         cls.network_offering.update(cls.api_client, state='Enabled')
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = cls.template.id
 
-        cls.service_offering = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering"]
-                                            )
         cls.account = Account.create(
                                      cls.api_client,
                                      cls.services["account"],
@@ -2366,17 +1852,16 @@ class TestLbAlgoLcSb(cloudstackTestCase):
                                     networkofferingid=cls.network_offering.id,
                                     zoneid=cls.zone.id
                                     )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
+
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
 
         # Spawn an instance in that network
-        cls.vm_1 = VirtualMachine.create(
-                                  cls.api_client,
-                                  cls.services["virtual_machine"],
-                                  accountid=cls.account.account.name,
-                                  domainid=cls.account.account.domainid,
-                                  serviceofferingid=cls.service_offering.id,
-                                  networkids=[str(cls.network.id)]
-                                  )
-        cls.vm_2 = VirtualMachine.create(
+        cls.virtual_machine = VirtualMachine.create(
                                   cls.api_client,
                                   cls.services["virtual_machine"],
                                   accountid=cls.account.account.name,
@@ -2392,8 +1877,8 @@ class TestLbAlgoLcSb(cloudstackTestCase):
                                 networkid=cls.network.id
                                 )
         cls._cleanup = [
-                        cls.service_offering,
-                        cls.account
+                        cls.account,
+                        cls.service_offering
                         ]
         return
 
@@ -2472,130 +1957,69 @@ class TestLbAlgoLcSb(cloudstackTestCase):
                          "List LB rules should return a newly created LB rule"
                          )
         self.debug("Adding %s to the LB rule %s" % (
-                                                        self.vm_1.name,
-                                                        lb_rule.name
-                                                        ))
-        lb_rule.assign(self.apiclient, [self.vm_1])
-
+                                                self.virtual_machine.name,
+                                                lb_rule.name
+                                                ))
+        lb_rule.assign(self.apiclient, [self.virtual_machine])
+        
+        self.debug("SSH into Netscaler to check whether algorithm is configured properly or not?")
+        self.debug("SSH into netscaler: %s" %
+                                    self.services["netscaler"]["ipaddress"])
         try:
-            self.debug(
-                "Verifying the algorithm used for LB by SSHing into instances")
-            hostnames = []
-            ssh_1 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_1.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            ssh_2 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_2.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            self.debug("Hostnames: %s" % str(hostnames))
-
-            self.debug("Adding %s to the LB rule %s" % (
-                                                    self.vm_2.name,
-                                                    lb_rule.name
-                                                    ))
-            lb_rule.assign(self.apiclient, [self.vm_2])
-
-            ssh_3 = self.vm_2.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-				                reconnect=True
-                        )
-            self.debug("Command: hostname")
-            result = ssh_3.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            res = str(result)
-            self.assertNotEqual(
-                res.count(self.vm_2.name),
-                1,
-                "SSH request should go to second VM(having least connections)"
-                )
-        except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            ssh_client = remoteSSHClient(
+                                    self.services["netscaler"]["ipaddress"],
+                                    self.services["netscaler"]["port"],
+                                    self.services["netscaler"]["username"],
+                                    self.services["netscaler"]["password"],
+                                    )
+            cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
                                         self.public_ip.ipaddress.ipaddress,
-                                        e))
+                                        lb_rule.publicport)
+            self.debug("command: %s" % cmd)
+            res = ssh_client.execute(cmd)
+            result = str(res)
+            self.debug("Output: %s" % result)
+
+            self.assertEqual(
+                    result.count("Configured Method: LEASTCONNECTION"),
+                    1,
+                    "'LEASTCONNECTION' algorithm should be configured on NS"
+                    )
+        except Exception as e:
+            self.fail("SSH Access failed for %s: %s" % \
+                      (self.services["netscaler"]["ipaddress"], e))
+
         self.debug(
                 "Updating LB rule: %s with new algorithm: %s" % (
                                                                 lb_rule.name,
                                                                 'source'))
         lb_rule.update(self.apiclient, algorithm='source')
 
-        self.debug(
-            "Removing virtual machine: %s to test source algo" %
-                                                    self.vm_2.name)
-        lb_rule.remove(self.apiclient, [self.vm_2])
-
+        self.debug("SSH into Netscaler to check whether algorithm is configured properly or not?")
+        self.debug("SSH into netscaler: %s" %
+                                    self.services["netscaler"]["ipaddress"])
         try:
-            self.debug(
-                "Verifying the algorithm used for LB by SSHing into instances")
-            hostnames = []
-            ssh_4 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress)
-            self.debug("Command: hostname")
-            result = ssh_4.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            res = str(result)
-
-            self.assertEqual(
-                res.count(self.vm_1.name),
-                1,
-                "Request should be sent only to the first VM"
-                )
-
-            self.debug("Adding %s to the LB rule %s" % (
-                                                    self.vm_2.name,
-                                                    lb_rule.name
-                                                    ))
-            lb_rule.assign(self.apiclient, [self.vm_2])
-
-            ssh_5 = self.vm_1.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                                )
-            self.debug("Command: hostname")
-            result = ssh_5.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-            self.debug("Hostnames: %s" % str(hostnames))
-
-            res = str(result)
-
-            self.assertEqual(
-                res.count(self.vm_1.name),
-                1,
-                "Request should be sent only to the first VM"
-                )
-
-            ssh_6 = self.vm_2.get_ssh_client(
-                                ipaddress=self.public_ip.ipaddress.ipaddress,
-                                reconnect=True
-                        )
-            self.debug("Command: hostname")
-            result = ssh_6.execute("hostname")
-            self.debug("Output: %s" % result)
-            hostnames.append(result)
-
-            res = str(result)
-
-            self.assertEqual(
-                res.count(self.vm_1.name),
-                1,
-                "Request should be sent only to the first VM"
-                )
-        except Exception as e:
-            self.fail("Exception occured during SSH: %s - %s" % (
+            ssh_client = remoteSSHClient(
+                                    self.services["netscaler"]["ipaddress"],
+                                    self.services["netscaler"]["port"],
+                                    self.services["netscaler"]["username"],
+                                    self.services["netscaler"]["password"],
+                                    )
+            cmd = "show lb vserver Cloud-VirtualServer-%s-%s" % (
                                         self.public_ip.ipaddress.ipaddress,
-                                        e))
+                                        lb_rule.publicport)
+            self.debug("command: %s" % cmd)
+            res = ssh_client.execute(cmd)
+            result = str(res)
+            self.debug("Output: %s" % result)
+
+            self.assertEqual(
+                    result.count("Configured Method: SOURCEIPHASH"),
+                    1,
+                    "'SOURCEIPHASH' algorithm should be configured on NS"
+                    )
+
+        except Exception as e:
+            self.fail("SSH Access failed for %s: %s" % \
+                      (self.services["netscaler"]["ipaddress"], e))
         return
