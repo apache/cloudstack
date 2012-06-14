@@ -322,6 +322,9 @@
             if (field.defaultValue) {
               $input.val(field.defaultValue);
             }
+			if (field.id) {
+              $input.attr('id', field.id);
+            }
           }
           $input.addClass("disallowSpecialCharacters");
         }

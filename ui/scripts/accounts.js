@@ -86,6 +86,15 @@
                   password: {
                     label: 'label.password',
                     validation: { required: true },
+                    isPassword: true,
+                    id: 'password'
+                  },
+                  'password-confirm': {
+                    label: 'label.confirm.password',
+                    validation: {
+                      required: true,
+                      equalTo: '#password'
+                    },
                     isPassword: true
                   },
                   email: {
@@ -683,7 +692,16 @@
                   password: {
                     label: 'label.password',
                     isPassword: true,
-                    validation: { required: true }
+                    validation: { required: true },
+                    id: 'password'
+                  },
+                  'password-confirm': {
+                    label: 'label.confirm.password',
+                    validation: {
+                      required: true,
+                      equalTo: '#password'
+                    },
+                    isPassword: true
                   },
                   email: {
                     label: 'label.email',
@@ -793,8 +811,17 @@
                     newPassword: {
                       label: 'label.new.password',
                       isPassword: true,
-                      validation: { required: true }
-                    }
+                      validation: { required: true },
+					  id: 'newPassword'
+                    },
+					'password-confirm': {
+						label: 'label.confirm.password',
+						validation: {
+							required: true,
+							equalTo: '#newPassword'
+						},
+						isPassword: true
+					}
                   }
                 },
                 action: function(args) {
