@@ -401,7 +401,8 @@ public class ApiServlet extends HttpServlet {
             }
             sb.append(" } }");
         } else {
-            sb.append("<loginresponse>");
+            sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
+            sb.append("<loginresponse cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
             sb.append("<timeout>" + inactiveInterval + "</timeout>");
             Enumeration attrNames = session.getAttributeNames();
             if (attrNames != null) {
