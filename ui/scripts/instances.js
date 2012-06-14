@@ -105,89 +105,97 @@
                     }
                   });
 
-									
-									//***** get templates/ISOs (begin) *****
-									var hypervisorArray = [];
-									$(hypervisorObjs).each(function(index, item) {									 
-										hypervisorArray.push(item.name);
-									});
+				  //***** get templates/ISOs (begin) *****
+				  var selectedTemplate = args.currentData['select-template'];
+				  if (selectedTemplate == 'select-template') {
+					  var hypervisorArray = [];
+					  $(hypervisorObjs).each(function(index, item) {									 
+							hypervisorArray.push(item.name);
+					  });
 																		
-                  $.ajax({
-                    url: createURL("listTemplates&templatefilter=featured&zoneid="+args.currentData.zoneid),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {										  
-										  featuredTemplateObjs = $.grep(json.listtemplatesresponse.template, function(item, index) {											  
-											  if($.inArray(item.hypervisor, hypervisorArray) > -1)
-											    return true;
-											});	
-                    }
-                  });
-                  $.ajax({
-                    url: createURL("listTemplates&templatefilter=community&zoneid="+args.currentData.zoneid),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      communityTemplateObjs = $.grep(json.listtemplatesresponse.template, function(item, index) {											  
-											  if($.inArray(item.hypervisor, hypervisorArray) > -1)
-											    return true;
-											});	
-                    }
-                  });
-                  $.ajax({
-                    url: createURL("listTemplates&templatefilter=selfexecutable&zoneid="+args.currentData.zoneid),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      myTemplateObjs = $.grep(json.listtemplatesresponse.template, function(item, index) {											  
-											  if($.inArray(item.hypervisor, hypervisorArray) > -1)
-											    return true;
-											});	
-                    }
-                  });
-									
-									$.ajax({
-                    url: createURL("listIsos&isofilter=featured&zoneid=" + args.currentData.zoneid + "&bootable=true"),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      featuredIsoObjs = json.listisosresponse.iso;
-                    }
-                  });
-                  $.ajax({
-                    url: createURL("listIsos&isofilter=community&zoneid=" + args.currentData.zoneid + "&bootable=true"),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      communityIsoObjs = json.listisosresponse.iso;
-                    }
-                  });
-                  $.ajax({
-                    url: createURL("listIsos&isofilter=selfexecutable&zoneid=" + args.currentData.zoneid + "&bootable=true"),
-                    dataType: "json",
-                    async: false,
-                    success: function(json) {
-                      myIsoObjs = json.listisosresponse.iso;
-                    }
-                  });		
-									//***** get templates/ISOs (end) *****
+					  $.ajax({
+						url: createURL("listTemplates&templatefilter=featured&zoneid="+args.currentData.zoneid),
+						dataType: "json",
+						async: false,
+						success: function(json) {										  
+											  featuredTemplateObjs = $.grep(json.listtemplatesresponse.template, function(item, index) {											  
+												  if($.inArray(item.hypervisor, hypervisorArray) > -1)
+													return true;
+												});	
+						}
+					  });
+					  $.ajax({
+						url: createURL("listTemplates&templatefilter=community&zoneid="+args.currentData.zoneid),
+						dataType: "json",
+						async: false,
+						success: function(json) {
+						  communityTemplateObjs = $.grep(json.listtemplatesresponse.template, function(item, index) {											  
+												  if($.inArray(item.hypervisor, hypervisorArray) > -1)
+													return true;
+												});	
+						}
+					  });
+					  $.ajax({
+						url: createURL("listTemplates&templatefilter=selfexecutable&zoneid="+args.currentData.zoneid),
+						dataType: "json",
+						async: false,
+						success: function(json) {
+						  myTemplateObjs = $.grep(json.listtemplatesresponse.template, function(item, index) {											  
+												  if($.inArray(item.hypervisor, hypervisorArray) > -1)
+													return true;
+												});	
+						}
+					  });
+				  } else if (selectedTemplate == 'select-iso') {
+					$.ajax({
+						url: createURL("listIsos&isofilter=featured&zoneid=" + args.currentData.zoneid + "&bootable=true"),
+						dataType: "json",
+						async: false,
+						success: function(json) {
+						  featuredIsoObjs = json.listisosresponse.iso;
+						}
+					});
+					$.ajax({
+						url: createURL("listIsos&isofilter=community&zoneid=" + args.currentData.zoneid + "&bootable=true"),
+						dataType: "json",
+						async: false,
+						success: function(json) {
+						  communityIsoObjs = json.listisosresponse.iso;
+						}
+					});
+					$.ajax({
+						url: createURL("listIsos&isofilter=selfexecutable&zoneid=" + args.currentData.zoneid + "&bootable=true"),
+						dataType: "json",
+						async: false,
+						success: function(json) {
+						  myIsoObjs = json.listisosresponse.iso;
+						}
+					});
+				  }
+				  //***** get templates/ISOs (end) *****
 
 									
-                  args.response.success({
+				  var templatesObj = {};
+				  if (selectedTemplate == 'select-template') {
+					templatesObj = {
+						featuredtemplates: featuredTemplateObjs,
+						communitytemplates: communityTemplateObjs,
+						mytemplates: myTemplateObjs
+					}
+				  } else if (selectedTemplate == 'select-iso') {
+					templatesObj = {
+						featuredisos: featuredIsoObjs,
+                        communityisos: communityIsoObjs,
+                        myisos: myIsoObjs
+					}
+				  }
+				  args.response.success({
                     hypervisor: {
                       idField: 'name',
                       nameField: 'name'
                     },
                     data: {
-                      templates: {
-                        featuredtemplates: featuredTemplateObjs,
-                        communitytemplates: communityTemplateObjs,
-                        mytemplates: myTemplateObjs,
-                        
-												featuredisos: featuredIsoObjs,
-                        communityisos: communityIsoObjs,
-                        myisos: myIsoObjs 										
-                      },
+                      templates: templatesObj,
                       hypervisors: hypervisorObjs
                     }
                   });
