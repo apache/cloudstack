@@ -17,7 +17,7 @@
 	var selectedNetworkOfferingHavingNetscaler = false;
   var returnedPublicVlanIpRanges = []; //public VlanIpRanges returned by API
   var configurationUseLocalStorage = false;
-	var OvsTunnelManagerIsEnabled = false;
+	var skipGuestTrafficStep = false;
 
   // Makes URL string for traffic label
   var trafficLabelParam = function(trafficTypeID, data, physicalNetworkID) {
@@ -242,40 +242,35 @@
         if (args.data['network-model'] == 'Basic') {
           $('.setup-guest-traffic').addClass('basic');
           $('.setup-guest-traffic').removeClass('advanced');
-        } else {
+					skipGuestTrafficStep = false; //set value
+        } 
+				else {
           $('.setup-guest-traffic').removeClass('basic');
           $('.setup-guest-traffic').addClass('advanced');
-        }
-
-				//skip the step if OVS tunnel manager is enabled				
-				$.ajax({
-				  url: createURL('listConfigurations'),
-					data: {
-					  name: 'sdn.ovs.controller'
-					},
-					dataType: "json",
-					async: false,
-					success: function(json) {					 
-						var items = json.listconfigurationsresponse.configuration; //2 entries returned: 'sdn.ovs.controller', 'sdn.ovs.controller.default.label'
-						$(items).each(function(){						  
-						  if(this.name == 'sdn.ovs.controller') {
-							  if(this.value == 'true' || this.value == true) {
-								  OvsTunnelManagerIsEnabled = true;
+					
+					//skip the step if OVS tunnel manager is enabled	
+          skipGuestTrafficStep = false; //reset it before ajax call
+					$.ajax({
+						url: createURL('listConfigurations'),
+						data: {
+							name: 'sdn.ovs.controller'
+						},
+						dataType: "json",
+						async: false,
+						success: function(json) {					 
+							var items = json.listconfigurationsresponse.configuration; //2 entries returned: 'sdn.ovs.controller', 'sdn.ovs.controller.default.label'
+							$(items).each(function(){						  
+								if(this.name == 'sdn.ovs.controller') {
+									if(this.value == 'true' || this.value == true) {
+										skipGuestTrafficStep = true;
+									}
+									return false; //break each loop
 								}
-								return false; //break each loop
-							}
-						});						
-					}
-				});					
-				if(OvsTunnelManagerIsEnabled == true) {
-				  return false;
-				}				
-				
-				
-        return args.data['network-model'] == 'Basic' ||
-          $.grep(args.groupedData.physicalNetworks, function(network) {
-            return $.inArray('guest', network.trafficTypes) > -1;
-          }).length;
+							});						
+						}
+					});	
+        }
+				return !skipGuestTrafficStep;
       },
 
       configureStorageTraffic: function(args) {
@@ -2449,9 +2444,8 @@
           return true;
         },
 
-        configureGuestTraffic: function(args) {				  
-					//skip the step if OVS tunnel manager is enabled
-					if(OvsTunnelManagerIsEnabled == true) {
+        configureGuestTraffic: function(args) {		
+					if(skipGuestTrafficStep == true) {
 					  stepFns.addCluster({
 							data: args.data
 						});		
