@@ -52,6 +52,13 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
 		try {
 	        try {
+	            try {
+	                pstmt = txn.prepareAutoCloseStatement(String.format("SELECT uuid FROM `%s`", tableName));
+	                pstmt.executeQuery();
+	            } catch (SQLException e) {
+	                throw new InvalidParameterValueException("uuid field doesn't exist in table " + tableName);
+	            }
+	            
 	            pstmt = txn.prepareAutoCloseStatement(
 	        		String.format("SELECT id FROM `%s` WHERE id=? OR uuid=?", tableName)
 	        		
@@ -96,26 +103,33 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
         PreparedStatement pstmt = null;
         Transaction txn = Transaction.open(Transaction.CLOUD_DB);
         try {
+            Long domainId = null;
+            Long accountId = null;
+            //get domainId
             try {
-                pstmt = txn.prepareAutoCloseStatement(
-                    String.format("SELECT account_id, domain_id FROM `%s` WHERE id=?", tableName)
-                );
-                
+                pstmt = txn.prepareAutoCloseStatement(String.format("SELECT domain_id FROM `%s` WHERE id=?", tableName));
                 pstmt.setLong(1, identityId);
-                
                 ResultSet rs = pstmt.executeQuery();
-                if(rs.next()) {
-                    return new Pair<Long, Long>(rs.getLong(1), rs.getLong(2));
-                } else {
-                    throw new InvalidParameterValueException("Object " + tableName + "(id: " + identityId + ") does not exist.");
+                if (rs.next()) {
+                    domainId = rs.getLong(1);
                 }
             } catch (SQLException e) {
-                s_logger.error("Unexpected exception ", e);
             }
+            
+            //get accountId
+            try {
+                pstmt = txn.prepareAutoCloseStatement(String.format("SELECT account_id FROM `%s` WHERE id=?", tableName));
+                pstmt.setLong(1, identityId);
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    accountId = rs.getLong(1);
+                }
+            } catch (SQLException e) {
+            }
+            return new Pair<Long, Long>(accountId, domainId);  
         } finally {
             txn.close();
         }
-        return null;
     }
 	
     @DB

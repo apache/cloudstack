@@ -16,23 +16,23 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.api.commands.ListTagsCmd;
-import com.cloud.configuration.Resource;
-import com.cloud.configuration.Resource.TaggedResourceType;
+import com.cloud.server.ResourceTag.TaggedResourceType;
 
 /**
  * @author Alena Prokharchyk
  */
 public interface TaggedResourceService {
     
-    Resource.TaggedResourceType getResourceType (String resourceTypeStr);
+    TaggedResourceType getResourceType (String resourceTypeStr);
 
     /**
      * @param resourceIds TODO
      * @param resourceType
      * @param tags
+     * @param customer TODO
      * @return
      */
-    List<ResourceTag> createTags(List<String> resourceIds, TaggedResourceType resourceType, Map<String, String> tags);
+    List<ResourceTag> createTags(List<String> resourceIds, TaggedResourceType resourceType, Map<String, String> tags, String customer);
 
     /**
      * @param resourceId
@@ -46,4 +46,12 @@ public interface TaggedResourceService {
      * @return
      */
     List<? extends ResourceTag> listTags(ListTagsCmd listTagsCmd);
+
+    /**
+     * @param resourceIds
+     * @param resourceType
+     * @param tags
+     * @return
+     */
+    boolean deleteTags(List<String> resourceIds, TaggedResourceType resourceType, Map<String, String> tags);
 }

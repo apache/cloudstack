@@ -13,12 +13,25 @@
 package com.cloud.server;
 
 import com.cloud.acl.ControlledEntity;
-import com.cloud.configuration.Resource;
 
 /**
  * @author Alena Prokharchyk
  */
 public interface ResourceTag extends ControlledEntity{
+    
+    public enum  TaggedResourceType {
+        UserVm,
+        Template,
+        ISO,
+        Volume,
+        Snapshot,
+        Network,
+        LoadBalancer,
+        PortForwardingRule,
+        FirewallRule,
+        SecurityGroup,
+        PublicIpAddress
+    }
 
     /**
      * @return
@@ -43,6 +56,11 @@ public interface ResourceTag extends ControlledEntity{
     /**
      * @return
      */
-    Resource.TaggedResourceType getResourceType();
+    TaggedResourceType getResourceType();
+
+    /**
+     * @return
+     */
+    String getCustomer();
 
 }

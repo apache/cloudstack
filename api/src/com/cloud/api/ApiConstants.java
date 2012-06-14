@@ -355,6 +355,7 @@ public class ApiConstants {
     public static final String EXCL_ZONES = "excludezones";
     public static final String RESOURCE_IDS = "resourceids";
     public static final String RESOURCE_ID = "resourceid";
+    public static final String CUSTOMER = "customer";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

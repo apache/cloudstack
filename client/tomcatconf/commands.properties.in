@@ -334,6 +334,6 @@ listNetworkDevice=com.cloud.api.commands.ListNetworkDeviceCmd;1
 deleteNetworkDevice=com.cloud.api.commands.DeleteNetworkDeviceCmd;1
 
 #### Tags commands
-#createTags=com.cloud.api.commands.CreateTagsCmd;15
-#deleteTags=com.cloud.api.commands.DeleteTagsCmd;15
-#listTags=com.cloud.api.commands.ListTagsCmd;15
+createTags=com.cloud.api.commands.CreateTagsCmd;15
+deleteTags=com.cloud.api.commands.DeleteTagsCmd;15
+listTags=com.cloud.api.commands.ListTagsCmd;15
