@@ -302,7 +302,8 @@ def routerProxy(session, args):
     cmd.insert(0, "/bin/bash")
     try:
         txt = util.pread2(cmd)
-        txt = 'success'
+        if txt is None or len(txt) == 0 :
+            txt = 'success'
     except:
         util.SMlog("routerProxy command " + sargs + " failed "  )
         txt = '' 
