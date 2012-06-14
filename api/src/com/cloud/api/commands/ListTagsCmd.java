@@ -43,6 +43,9 @@ public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd{
     @Parameter(name=ApiConstants.VALUE, type=CommandType.STRING, description="list by value")
     private String value;
     
+    @Parameter(name=ApiConstants.CUSTOMER, type=CommandType.STRING, description="list by customer name")
+    private String customer;
+    
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -83,5 +86,9 @@ public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd{
     @Override
     public String getCommandName() {
         return s_name;
+    }
+    
+    public String getCustomer() {
+        return customer;
     }
 }

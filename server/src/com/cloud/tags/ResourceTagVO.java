@@ -24,8 +24,6 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.api.Identity;
-import com.cloud.configuration.Resource;
-import com.cloud.configuration.Resource.TaggedResourceType;
 import com.cloud.server.ResourceTag;
 
 /**
@@ -61,7 +59,10 @@ public class ResourceTagVO implements Identity, ResourceTag{
     
     @Column(name="resource_type")
     @Enumerated(value=EnumType.STRING)
-    private Resource.TaggedResourceType resourceType;
+    private TaggedResourceType resourceType;
+    
+    @Column(name="customer")
+    String customer;
 
     
     protected ResourceTagVO(){
@@ -75,8 +76,10 @@ public class ResourceTagVO implements Identity, ResourceTag{
      * @param domainId
      * @param resourceId
      * @param resourceType
+     * @param customer TODO
      */
-    public ResourceTagVO(String key, String value, long accountId, long domainId, long resourceId, TaggedResourceType resourceType) {
+    public ResourceTagVO(String key, String value, long accountId, long domainId, long resourceId, 
+            TaggedResourceType resourceType, String customer) {
         super();
         this.key = key;
         this.value = value;
@@ -85,6 +88,7 @@ public class ResourceTagVO implements Identity, ResourceTag{
         this.resourceId = resourceId;
         this.resourceType = resourceType;
         this.uuid = UUID.randomUUID().toString();
+        this.customer = customer;
     }
     
     
@@ -128,12 +132,17 @@ public class ResourceTagVO implements Identity, ResourceTag{
     }
 
     @Override
-    public Resource.TaggedResourceType getResourceType() {
+    public TaggedResourceType getResourceType() {
         return resourceType;
     }
 
     @Override
     public String getUuid() {
         return uuid;
+    }
+    
+    @Override
+    public String getCustomer() {
+        return customer;
     }
 }

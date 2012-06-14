@@ -52,6 +52,9 @@ public class ResourceTagResponse extends BaseResponse implements ControlledEntit
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain associated with the tag")
     private String domainName;
+    
+    @SerializedName(ApiConstants.CUSTOMER) @Param(description="customer associated with the tag")
+    private String customer;
 
     public void setKey(String key) {
         this.key = key;
@@ -91,4 +94,7 @@ public class ResourceTagResponse extends BaseResponse implements ControlledEntit
         this.projectName = projectName;
     }   
    
+    public void setCustomer(String customer) {
+        this.customer = customer;
+    }
 }

@@ -3430,6 +3430,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setDomainName(ApiDBUtils.findDomainById(domainId).getName());
         }
         
+        response.setCustomer(resourceTag.getCustomer());
+        
         response.setObjectName("tag");
   
         return response;

@@ -19,22 +19,6 @@ package com.cloud.configuration;
 public interface Resource {
 
     public static final short RESOURCE_UNLIMITED = -1;
-    
-    public enum  TaggedResourceType {
-        UserVm,
-        Template,
-        ISO,
-        Volume,
-        Snapshot,
-        Network,
-        LoadBalancingRule,
-        PortForwardingRule,
-        FirewallRule,
-        SecurityGroup,
-        RemoteAccessVpn,
-        PublicIpAdddress,
-        SecondaryStorageVm
-    }
 
     public enum ResourceType {
         user_vm("user_vm", 0, ResourceOwnerType.Account, ResourceOwnerType.Domain),
