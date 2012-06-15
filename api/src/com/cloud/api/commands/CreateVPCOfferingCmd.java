@@ -19,6 +19,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.VpcOfferingResponse;
@@ -30,6 +31,8 @@ import com.cloud.user.Account;
 /**
  * @author Alena Prokharchyk
  */
+
+@Implementation(description="Creates VPC offering", responseObject=VpcOfferingResponse.class)
 public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd{
     public static final Logger s_logger = Logger.getLogger(CreateVPCOfferingCmd.class.getName());
     private static final String _name = "createvpcofferingresponse";

@@ -18,6 +18,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
@@ -27,6 +28,8 @@ import com.cloud.user.Account;
 /**
  * @author Alena Prokharchyk
  */
+
+@Implementation(description="Deletes VPC offering", responseObject=SuccessResponse.class)
 public class DeleteVPCOfferingCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteVPCOfferingCmd.class.getName());
     private static final String s_name = "deletevpcofferingresponse";

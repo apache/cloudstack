@@ -18,6 +18,7 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.VpcResponse;
@@ -28,6 +29,8 @@ import com.cloud.user.Account;
 /**
  * @author Alena Prokharchyk
  */
+
+@Implementation(description="Updates a VPC", responseObject=VpcResponse.class)
 public class UpdateVPCCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateVPCCmd.class.getName());
     private static final String _name = "updatevpcresponse";

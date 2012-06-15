@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VpcResponse;
@@ -28,6 +29,8 @@ import com.cloud.network.vpc.Vpc;
 /**
  * @author Alena Prokharchyk
  */
+
+@Implementation(description="Lists VPCs", responseObject=VpcResponse.class)
 public class ListVPCsCmd extends BaseListAccountResourcesCmd{
     public static final Logger s_logger = Logger.getLogger(ListVPCsCmd.class.getName());
     private static final String s_name = "listvpcsresponse";

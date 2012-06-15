@@ -18,12 +18,12 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
@@ -31,6 +31,8 @@ import com.cloud.user.Account;
 /**
  * @author Alena Prokharchyk
  */
+
+@Implementation(description="Deletes a VPC", responseObject=SuccessResponse.class)
 public class DeleteVPCCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteVPCCmd.class.getName());
     private static final String s_name = "deletevpcresponse";
