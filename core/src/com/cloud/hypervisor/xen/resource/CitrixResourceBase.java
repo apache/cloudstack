@@ -2719,9 +2719,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         callHostPlugin(conn, "vmopsSnapshot", "unmountSnapshotsDir", "dcId", dcId.toString());
 
         setupLinkLocalNetwork(conn);
-        // try to destroy CD-ROM device for all system VMs
+        // try to destroy CD-ROM device for all system VMs on this host
         try {
-            Set<VM> vms = VM.getAll(conn);
+            Host host = Host.getByUuid(conn, _host.uuid);
+            Set<VM> vms = host.getResidentVMs(conn);
             for ( VM vm : vms ) {
                 destroyPatchVbd(conn, vm.getNameLabel(conn));
             }
