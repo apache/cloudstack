@@ -941,7 +941,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (speed != null) {
 
             int cpuWeight = _maxWeight; //cpu_weight
-            int utilization = 0; // max CPU cap, default is unlimited
+            long utilization = 0; // max CPU cap, default is unlimited
 
             // weight based allocation
             cpuWeight = (int)((speed*0.99) / _host.speed * _maxWeight);
@@ -950,11 +950,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             if (vmSpec.getLimitCpuUse()) {
-                utilization = (int)((speed*0.99) / _host.speed * 100);
+                utilization = ((long)speed * 100 * vmSpec.getCpus()) / _host.speed ;
             }
 
             vcpuParams.put("weight", Integer.toString(cpuWeight));
-            vcpuParams.put("cap", Integer.toString(utilization));
+            vcpuParams.put("cap", Long.toString(utilization));
 
         }
 
