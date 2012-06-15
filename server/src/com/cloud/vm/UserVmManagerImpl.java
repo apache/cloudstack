@@ -152,7 +152,6 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
-import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
@@ -166,6 +165,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
+import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -425,7 +425,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
 
             Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
-            NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null, _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork), _networkMgr.getNetworkTag(template.getHypervisorType(), defaultNetwork));
+            NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null, 
+                    _networkMgr.isSecurityGroupSupportedInNetwork(defaultNetwork), 
+                    _networkMgr.getNetworkTag(template.getHypervisorType(), defaultNetwork));
             VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmInstance);
             vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
 
@@ -2167,9 +2169,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated);
 
                 if (virtualNetworks.isEmpty()) {
-                    s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId() + " as a part of deployVM process");
-                    Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
-                            null, null, owner, false, null, physicalNetwork, zone.getId(), ACLType.Account, null);
+                    s_logger.debug("Creating network for account " + owner + " from the network offering id=" + 
+                requiredOfferings.get(0).getId() + " as a part of deployVM process");
+                    Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), 
+                            owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
+                            null, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null);
                     defaultNetwork = _networkDao.findById(newNetwork.getId());
                 } else if (virtualNetworks.size() > 1) {
                     throw new InvalidParameterValueException("More than 1 default Isolated networks are found for account " + owner + "; please specify networkIds");
@@ -3433,7 +3437,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 	NetworkVO defaultNetwork = null;
                     List<NetworkOfferingVO> requiredOfferings = _networkOfferingDao.listByAvailability(Availability.Required, false);
                     if (requiredOfferings.size() < 1) {
-                    	throw new InvalidParameterValueException("Unable to find network offering with availability=" + Availability.Required + " to automatically create the network as a part of vm creation");
+                    	throw new InvalidParameterValueException("Unable to find network offering with availability="
+                    + Availability.Required + " to automatically create the network as a part of vm creation");
                     }
                     
                     PhysicalNetwork physicalNetwork = _networkMgr.translateZoneIdToPhysicalNetwork(zone.getId());
@@ -3442,17 +3447,21 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
 
                         if (virtualNetworks.isEmpty()) {
-                            s_logger.debug("Creating network for account " + newAccount + " from the network offering id=" + requiredOfferings.get(0).getId() + " as a part of deployVM process");
-                            Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", null, null,
-                                    null, null, newAccount, false, null, physicalNetwork, zone.getId(), ACLType.Account, null);
+                            s_logger.debug("Creating network for account " + newAccount + " from the network offering id=" + 
+                        requiredOfferings.get(0).getId() + " as a part of deployVM process");
+                            Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), 
+                                    newAccount.getAccountName() + "-network", newAccount.getAccountName() + "-network", null, null,
+                                    null, null, newAccount, null, physicalNetwork, zone.getId(), ACLType.Account, null, null);
                             defaultNetwork = _networkDao.findById(newNetwork.getId());
                         } else if (virtualNetworks.size() > 1) {
-                            throw new InvalidParameterValueException("More than 1 default Isolated networks are found for account " + newAccount + "; please specify networkIds");
+                            throw new InvalidParameterValueException("More than 1 default Isolated networks are found " +
+                            		"for account " + newAccount + "; please specify networkIds");
                         } else {
                             defaultNetwork = virtualNetworks.get(0);
                         }
                     } else {
-                    	throw new InvalidParameterValueException("Required network offering id=" + requiredOfferings.get(0).getId() + " is not in " + NetworkOffering.State.Enabled); 
+                    	throw new InvalidParameterValueException("Required network offering id=" + 
+                    requiredOfferings.get(0).getId() + " is not in " + NetworkOffering.State.Enabled); 
                     }
 
                     applicableNetworks.add(defaultNetwork);
@@ -3557,5 +3566,20 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return vm;
     }
     
+    @Override
+    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm,
+            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
+        //not supported
+        throw new UnsupportedOperationException("Plug nic is not supported for vm of type " + vm.getType());
+    }
+
+
+    @Override
+    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm,
+            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
+        //not supported
+        throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
+    }
     
 }

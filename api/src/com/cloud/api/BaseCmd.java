@@ -40,6 +40,7 @@ import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
+import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
@@ -125,6 +126,7 @@ public abstract class BaseCmd {
     public static IdentityService _identityService;
     public static StorageNetworkService _storageNetworkService;
     public static TaggedResourceService _taggedResourceService;
+    public static VpcService _vpcService;
 
     static void setComponents(ResponseGenerator generator) {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
@@ -153,6 +155,7 @@ public abstract class BaseCmd {
         _identityService = locator.getManager(IdentityService.class);
         _storageNetworkService = locator.getManager(StorageNetworkService.class);
         _taggedResourceService = locator.getManager(TaggedResourceService.class);
+        _vpcService = locator.getManager(VpcService.class);
     }
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;

@@ -140,21 +140,6 @@ def pingxenserver(session, args):
     return txt
 
 @echo
-def ipassoc(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/ipassoc.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        txt = 'success'
-    except:
-        util.SMlog("  ip associate failed "  )
-        txt = '' 
-
-    return txt
-
-@echo
 def vm_data(session, args):
     router_ip = args.pop('routerIP')
     vm_ip = args.pop('vmIP')
@@ -248,21 +233,6 @@ def saveDhcpEntry(session, args):
     return txt
     
 @echo
-def lt2p_vpn(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/l2tp_vpn.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-        txt = 'success'
-    except:
-        util.SMlog("l2tp vpn failed "  )
-        txt = '' 
-
-    return txt    
-
-@echo
 def setLinkLocalIP(session, args):
     brName = args['brName']
     try:
@@ -307,6 +277,8 @@ def setLinkLocalIP(session, args):
     txt = 'success'
     return txt
     
+
+    
 @echo
 def setFirewallRule(session, args):
     sargs = args['args']
@@ -321,6 +293,24 @@ def setFirewallRule(session, args):
         txt = '' 
 
     return txt
+
+@echo
+def routerProxy(session, args):
+    sargs = args['args']
+    cmd = sargs.split(' ')
+    cmd.insert(0, "/opt/xensource/bin/router_proxy.sh")
+    cmd.insert(0, "/bin/bash")
+    try:
+        txt = util.pread2(cmd)
+        if txt is None or len(txt) == 0 :
+            txt = 'success'
+    except:
+        util.SMlog("routerProxy command " + sargs + " failed "  )
+        txt = '' 
+
+    return txt
+
+
 
 @echo
 def setLoadBalancerRule(session, args):
@@ -368,19 +358,6 @@ def deleteFile(session, args):
     return txt
 
 
-@echo
-def networkUsage(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/networkUsage.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-    except:
-        util.SMlog("  network usage error "  )
-        txt = '' 
-
-    return txt
     
 def get_private_nic(session, args):
     vms = session.xenapi.VM.get_all()
@@ -1419,20 +1396,6 @@ def network_rules(session, args):
     util.SMlog("Failed to network rule !")
 
 @echo
-def checkRouter(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/getRouterStatus.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-    except:
-        util.SMlog("  check router status fail! ")
-        txt = '' 
-
-    return txt
-
-@echo
 def bumpUpPriority(session, args):
     sargs = args['args']
     cmd = sargs.split(' ')
@@ -1447,33 +1410,20 @@ def bumpUpPriority(session, args):
 
     return txt
 
-@echo
-def getDomRVersion(session, args):
-    sargs = args['args']
-    cmd = sargs.split(' ')
-    cmd.insert(0, "/opt/xensource/bin/getDomRVersion.sh")
-    cmd.insert(0, "/bin/bash")
-    try:
-        txt = util.pread2(cmd)
-    except:
-        util.SMlog("  get domR version fail! ")
-        txt = '' 
-
-    return txt
 
 if __name__ == "__main__":
      XenAPIPlugin.dispatch({"pingtest": pingtest, "setup_iscsi":setup_iscsi, "gethostvmstats": gethostvmstats, 
                             "getvncport": getvncport, "getgateway": getgateway, "preparemigration": preparemigration, 
                             "setIptables": setIptables, "pingdomr": pingdomr, "pingxenserver": pingxenserver,  
-                            "ipassoc": ipassoc, "vm_data": vm_data, "savePassword": savePassword, 
-                            "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, 
+                            "vm_data": vm_data, "savePassword": savePassword, 
+                            "saveDhcpEntry": saveDhcpEntry, "setFirewallRule": setFirewallRule, "routerProxy": routerProxy, 
                             "setLoadBalancerRule": setLoadBalancerRule, "createFile": createFile, "deleteFile": deleteFile, 
-                            "networkUsage": networkUsage, "network_rules":network_rules, 
+                            "network_rules":network_rules, 
                             "can_bridge_firewall":can_bridge_firewall, "default_network_rules":default_network_rules,
                             "destroy_network_rules_for_vm":destroy_network_rules_for_vm, 
                             "default_network_rules_systemvm":default_network_rules_systemvm, 
                             "get_rule_logs_for_vms":get_rule_logs_for_vms, 
-                            "setLinkLocalIP":setLinkLocalIP, "lt2p_vpn":lt2p_vpn,
-                            "cleanup_rules":cleanup_rules, "checkRouter":checkRouter,
-                            "bumpUpPriority":bumpUpPriority, "getDomRVersion":getDomRVersion,
+                            "setLinkLocalIP":setLinkLocalIP,
+                            "cleanup_rules":cleanup_rules,
+                            "bumpUpPriority":bumpUpPriority,
                             "kill_copy_process":kill_copy_process})

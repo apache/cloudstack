@@ -37,28 +37,21 @@ public interface NetworkService {
 
     List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner);
 
-    IpAddress allocateIP(long networkId, Account ipOwner) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException;
 
-    /**
-     * Associates a public IP address for a router.
-     * 
-     * @param ipId
-     *            - the command specifying ipAddress
-     * @return ip address object
-     * @throws ResourceAllocationException
-     *             , InsufficientCapacityException
-     */
-    IpAddress associateIP(long ipId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException, ResourceUnavailableException;
+    IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) throws ResourceAllocationException, 
+        InsufficientAddressCapacityException, ConcurrentOperationException;
 
-    boolean disassociateIpAddress(long ipAddressId) throws InsufficientAddressCapacityException;
+    boolean releaseIpAddress(long ipAddressId) throws InsufficientAddressCapacityException;
 
-    Network createNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException;
+    Network createGuestNetwork(CreateNetworkCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException,
+    ResourceAllocationException;
 
     List<? extends Network> searchForNetworks(ListNetworksCmd cmd);
 
     boolean deleteNetwork(long networkId);
 
-    boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup) throws ConcurrentOperationException,
+    ResourceUnavailableException, InsufficientCapacityException;
 
     int getActiveNicsInNetwork(long networkId);
 
@@ -74,7 +67,8 @@ public interface NetworkService {
 
     Long getDedicatedNetworkDomain(long networkId);
 
-    Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr);
+    Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser,
+            String domainSuffix, Long networkOfferingId, Boolean changeCidr);
 
     Integer getNetworkRate(long networkId, Long vmId);
 
@@ -82,11 +76,14 @@ public interface NetworkService {
 
     Map<Service, Set<Provider>> getNetworkOfferingServiceProvidersMap(long networkOfferingId);
 
-    PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, List<String> isolationMethods, String broadcastDomainRange, Long domainId, List<String> tags, String name);
+    PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, 
+            List<String> isolationMethods, String broadcastDomainRange, Long domainId, List<String> tags, String name);
 
-    List<? extends PhysicalNetwork> searchPhysicalNetworks(Long id, Long zoneId, String keyword, Long startIndex, Long pageSize, String name);
+    List<? extends PhysicalNetwork> searchPhysicalNetworks(Long id, Long zoneId, String keyword, 
+            Long startIndex, Long pageSize, String name);
 
-    PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags, String newVnetRangeString, String state);
+    PhysicalNetwork updatePhysicalNetwork(Long id, String networkSpeed, List<String> tags, 
+            String newVnetRangeString, String state);
 
     boolean deletePhysicalNetwork(Long id);
 
@@ -94,9 +91,11 @@ public interface NetworkService {
 
     List<? extends Provider> listSupportedNetworkServiceProviders(String serviceName);
 
-    PhysicalNetworkServiceProvider addProviderToPhysicalNetwork(Long physicalNetworkId, String providerName, Long destinationPhysicalNetworkId, List<String> enabledServices);
+    PhysicalNetworkServiceProvider addProviderToPhysicalNetwork(Long physicalNetworkId, String providerName,
+            Long destinationPhysicalNetworkId, List<String> enabledServices);
 
-    List<? extends PhysicalNetworkServiceProvider> listNetworkServiceProviders(Long physicalNetworkId, String name, String state, Long startIndex, Long pageSize);
+    List<? extends PhysicalNetworkServiceProvider> listNetworkServiceProviders(Long physicalNetworkId, String name,
+            String state, Long startIndex, Long pageSize);
 
     PhysicalNetworkServiceProvider updateNetworkServiceProvider(Long id, String state, List<String> enabledServices);
 
@@ -112,7 +111,8 @@ public interface NetworkService {
 
     long findPhysicalNetworkId(long zoneId, String tag, TrafficType trafficType);
 
-    PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType, String xenLabel, String kvmLabel, String vmwareLabel, String simulatorLabel, String vlan);
+    PhysicalNetworkTrafficType addTrafficTypeToPhysicalNetwork(Long physicalNetworkId, String trafficType, 
+            String xenLabel, String kvmLabel, String vmwareLabel, String simulatorLabel, String vlan);
 
     PhysicalNetworkTrafficType getPhysicalNetworkTrafficType(Long id);
 
@@ -129,5 +129,41 @@ public interface NetworkService {
     List<Pair<TrafficType, String>> listTrafficTypeImplementor(ListTrafficTypeImplementorsCmd cmd);
 
     List<? extends Network> getIsolatedNetworksWithSourceNATOwnedByAccountInZone(long zoneId, Account owner);
+
+    List<? extends Network> listNetworksByVpc(long vpcId);
+    
+    boolean isVmPartOfNetwork(long vmId, long ntwkId);
+
+    /**
+     * @param entityId
+     * @param networkId
+     * @param vpcId
+     * @return
+     * @throws ConcurrentOperationException 
+     * @throws ResourceUnavailableException 
+     * @throws ResourceAllocationException 
+     * @throws InsufficientAddressCapacityException 
+     */
+    IpAddress associateIP(long ipId, Long networkId, Long vpcId) throws InsufficientAddressCapacityException,
+        ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException;
+
+    /**
+     * @param networkName
+     * @param displayText
+     * @param physicalNetworkId
+     * @param vlan
+     * @param startIp
+     * @param endIP TODO
+     * @param gateway
+     * @param netmask
+     * @param networkOwnerId
+     * @return
+     * @throws InsufficientCapacityException 
+     * @throws ConcurrentOperationException 
+     * @throws ResourceAllocationException 
+     */
+    Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan,
+            String startIp, String endIP, String gateway, String netmask, long networkOwnerId) 
+                    throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
 
 }

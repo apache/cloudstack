@@ -112,6 +112,7 @@ import com.cloud.network.ovs.OvsTunnelManagerImpl;
 import com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl;
 import com.cloud.network.router.VirtualNetworkApplianceManagerImpl;
+import com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl;
 import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
 import com.cloud.network.security.SecurityGroupManagerImpl2;
@@ -121,6 +122,11 @@ import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupVMMapDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupWorkDaoImpl;
 import com.cloud.network.security.dao.VmRulesetLogDaoImpl;
+import com.cloud.network.vpc.VpcManagerImpl;
+import com.cloud.network.vpc.Dao.PrivateIpDaoImpl;
+import com.cloud.network.vpc.Dao.VpcDaoImpl;
+import com.cloud.network.vpc.Dao.VpcOfferingDaoImpl;
+import com.cloud.network.vpc.Dao.VpcOfferingServiceMapDaoImpl;
 import com.cloud.network.vpn.RemoteAccessVpnManagerImpl;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl;
@@ -330,6 +336,10 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("StorageNetworkIpAddressDao", StorageNetworkIpAddressDaoImpl.class);
         addDao("StorageNetworkIpRangeDao", StorageNetworkIpRangeDaoImpl.class);
         addDao("TagsDao", ResourceTagsDaoImpl.class);
+        addDao("VpcDao", VpcDaoImpl.class);
+        addDao("VpcOfferingDao", VpcOfferingDaoImpl.class);
+        addDao("VpcOfferingServiceMapDao", VpcOfferingServiceMapDaoImpl.class);
+        addDao("PrivateIpDao", PrivateIpDaoImpl.class);
     }
 
     @Override
@@ -387,6 +397,8 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("ExternalLoadBalancerUsageManager", ExternalLoadBalancerUsageManagerImpl.class);
         addManager("HA Manager", HighAvailabilityManagerImpl.class);
         addManager("TaggedResourcesManager", TaggedResourceManagerImpl.class);
+        addManager("VPC Manager", VpcManagerImpl.class);
+        addManager("VpcVirtualRouterManager", VpcVirtualNetworkApplianceManagerImpl.class);
     }
 
     @Override

@@ -1565,6 +1565,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long hostId = cmd.getHostId();
         String keyword = cmd.getKeyword();
         Long networkId = cmd.getNetworkId();
+        Long vpcId = cmd.getVpcId();
 
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1585,6 +1586,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("dataCenterId", sb.entity().getDataCenterIdToDeployIn(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodIdToDeployIn(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
+        sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
 
         if (networkId != null) {
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
@@ -1611,23 +1613,33 @@ public class ManagementServerImpl implements ManagementServer {
         if (name != null) {
             sc.setParameters("name", "%" + name + "%");
         }
+        
         if (id != null) {
             sc.setParameters("id", id);
         }
+        
         if (state != null) {
             sc.setParameters("state", state);
         }
+        
         if (zone != null) {
             sc.setParameters("dataCenterId", zone);
         }
+        
         if (pod != null) {
             sc.setParameters("podId", pod);
         }
+        
         if (hostId != null) {
             sc.setParameters("hostId", hostId);
         }
+        
         if (networkId != null) {
             sc.setJoinParameters("nicSearch", "networkId", networkId);
+        }
+
+        if (vpcId != null) {
+            sc.setParameters("vpcId", vpcId);
         }
 
         return _routerDao.search(sc, searchFilter);
@@ -1646,6 +1658,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long ipId = cmd.getId();
         Boolean sourceNat = cmd.getIsSourceNat();
         Boolean staticNat = cmd.getIsStaticNat();
+        Long vpcId = cmd.getVpcId();
 
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1673,6 +1686,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("associatedNetworkIdEq", sb.entity().getAssociatedWithNetworkId(), SearchCriteria.Op.EQ);
         sb.and("isSourceNat", sb.entity().isSourceNat(), SearchCriteria.Op.EQ);
         sb.and("isStaticNat", sb.entity().isOneToOneNat(), SearchCriteria.Op.EQ);
+        sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
 
         if (forLoadBalancing != null && (Boolean) forLoadBalancing) {
             SearchBuilder<LoadBalancerVO> lbSearch = _loadbalancerDao.createSearchBuilder();
@@ -1715,6 +1729,10 @@ public class ManagementServerImpl implements ManagementServer {
             sc.setParameters("dataCenterId", zone);
         }
 
+        if (vpcId != null) {
+            sc.setParameters("vpcId", vpcId);
+        }
+        
         if (ipId != null) {
             sc.setParameters("id", ipId);
         }

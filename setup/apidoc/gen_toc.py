@@ -115,7 +115,8 @@ known_categories = {
     'Project': 'Project',
     'Lun': 'Storage',
     'Pool': 'Pool',
-    'Tags': 'Resource tags',
+    'Tags': 'Resource Tags',
+    'VPC': 'VPC',
     }
 
 

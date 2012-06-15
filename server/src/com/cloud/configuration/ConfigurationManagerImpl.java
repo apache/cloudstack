@@ -1608,11 +1608,14 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     } else {
                         continue;
                     }
+                } else if (offering.getTrafficType() == TrafficType.Guest) {
+                    continue;
                 }
 
                 userNetwork.setBroadcastDomainType(broadcastDomainType);
                 userNetwork.setNetworkDomain(networkDomain);
-                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, false, Domain.ROOT_DOMAIN, null, null);
+                _networkMgr.setupNetwork(systemAccount, offering, userNetwork, plan, null, null, false, 
+                        Domain.ROOT_DOMAIN, null, null, null);
             }
         }
     }
@@ -2476,7 +2479,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                                     " as ip " + ip + " belonging to the range has firewall rules applied. Cleanup the rules first");
                         }
                         //release public ip address here
-                        success = success && _networkMgr.releasePublicIpAddress(ip.getId(), userId, caller);
+                        success = success && _networkMgr.disassociatePublicIpAddress(ip.getId(), userId, caller);
                     }
                     if (!success) {
                         s_logger.warn("Some ip addresses failed to be released as a part of vlan " + vlanDbId + " removal");
@@ -2531,7 +2534,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         return tags;
     }
 
-    private String cleanupTags(String tags) {
+    @Override
+    public String cleanupTags(String tags) {
         if (tags != null) {
             String[] tokens = tags.split(",");
             StringBuilder t = new StringBuilder();
@@ -2864,7 +2868,6 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_OFFERING_CREATE, eventDescription = "creating network offering")
     public NetworkOffering createNetworkOffering(CreateNetworkOfferingCmd cmd) {
-        Long userId = UserContext.current().getCallerUserId();
         String name = cmd.getNetworkOfferingName();
         String displayText = cmd.getDisplayText();
         String tags = cmd.getTags();
@@ -2971,7 +2974,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     Set<Provider> providers = new HashSet<Provider>();
                     // in Acton, don't allow to specify more than 1 provider per service
                     if (svcPrv.get(serviceStr) != null && svcPrv.get(serviceStr).size() > 1) {
-                        throw new InvalidParameterValueException("In the current release only one provider can be specified for the service");
+                        throw new InvalidParameterValueException("In the current release only one provider can be " +
+                        		"specified for the service");
                     }
                     for (String prvNameStr : svcPrv.get(serviceStr)) {
                         // check if provider is supported
@@ -3002,7 +3006,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     }
                     serviceProviderMap.put(service, providers);
                 } else {
-                    throw new InvalidParameterValueException("Service " + serviceStr + " is not enabled for the network offering, can't add a provider to it");
+                    throw new InvalidParameterValueException("Service " + serviceStr + " is not enabled for the network " +
+                    		"offering, can't add a provider to it");
                 }
             }
         }
@@ -3036,8 +3041,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         serviceCapabilityMap.put(Service.SourceNat, sourceNatServiceCapabilityMap);
         serviceCapabilityMap.put(Service.StaticNat, staticNatServiceCapabilityMap);
 
-        // if Firewall service is missing, and Juniper is a provider for any other service or VR is StaticNat/PF provider, add Firewall
-        // service/provider combination
+        // if Firewall service is missing, add Firewall service/provider combination
         if (firewallProvider != null) {
             s_logger.debug("Adding Firewall service with provider " + firewallProvider.getName());
             Set<Provider> firewallProviderSet = new HashSet<Provider>();
@@ -3045,8 +3049,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             serviceProviderMap.put(Service.Firewall, firewallProviderSet);
         }
 
-        return createNetworkOffering(userId, name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType,
-                false, serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges);
+        return createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges);
     }
 
     void validateLoadBalancerServiceCapabilities(Map<Capability, String> lbServiceCapabilityMap) {
@@ -3126,9 +3130,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     @DB
-    public NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability,
-            Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly,
-            Long serviceOfferingId, boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges) {
+    public NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate,
+            Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId,
+            boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges) {
 
         String multicastRateStr = _configDao.getValue("multicast.throttling.rate");
         int multicastRate = ((multicastRateStr == null) ? 10 : Integer.parseInt(multicastRateStr));
@@ -3190,13 +3194,15 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         if ((sourceNatServiceCapabilityMap != null) && (!sourceNatServiceCapabilityMap.isEmpty())) {
             String sourceNatType = sourceNatServiceCapabilityMap.get(Capability.SupportedSourceNatTypes);
             if (sourceNatType != null) {
-                _networkMgr.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.SupportedSourceNatTypes, sourceNatType);
+                _networkMgr.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, 
+                        Capability.SupportedSourceNatTypes, sourceNatType);
                 sharedSourceNat = sourceNatType.contains("perzone");
             }
 
             String param = sourceNatServiceCapabilityMap.get(Capability.RedundantRouter);
             if (param != null) {
-                _networkMgr.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, Capability.RedundantRouter, param);
+                _networkMgr.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, 
+                        Capability.RedundantRouter, param);
                 redundantRouter = param.contains("true");
             }
         }
@@ -3210,7 +3216,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
 
-        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, isDefault, availability, tags, type, conserveMode, dedicatedLb,
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, 
+                networkRate, multicastRate, isDefault, availability, tags, type, conserveMode, dedicatedLb,
                 sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges);
 
         if (serviceOfferingId != null) {
@@ -3549,19 +3556,23 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 }
             }
             if (availability == null) {
-                throw new InvalidParameterValueException("Invalid value for Availability. Supported types: " + Availability.Required + ", " + Availability.Optional);
+                throw new InvalidParameterValueException("Invalid value for Availability. Supported types: " 
+            + Availability.Required + ", " + Availability.Optional);
             } else {
                 if (availability == NetworkOffering.Availability.Required) {
-                    boolean canOffBeRequired = (offeringToUpdate.getGuestType() == GuestType.Isolated && _networkMgr.areServicesSupportedByNetworkOffering(offeringToUpdate.getId(), Service.SourceNat));
+                    boolean canOffBeRequired = (offeringToUpdate.getGuestType() == GuestType.Isolated 
+                            && _networkMgr.areServicesSupportedByNetworkOffering(offeringToUpdate.getId(), Service.SourceNat));
                     if (!canOffBeRequired) {
-                        throw new InvalidParameterValueException("Availability can be " + NetworkOffering.Availability.Required + " only for networkOfferings of type " + GuestType.Isolated + " and with "
+                        throw new InvalidParameterValueException("Availability can be " + 
+                    NetworkOffering.Availability.Required + " only for networkOfferings of type " + GuestType.Isolated + " and with "
                                 + Service.SourceNat.getName() + " enabled");
                     }
 
                     // only one network offering in the system can be Required
                     List<NetworkOfferingVO> offerings = _networkOfferingDao.listByAvailability(Availability.Required, false);
                     if (!offerings.isEmpty() && offerings.get(0).getId() != offeringToUpdate.getId()) {
-                        throw new InvalidParameterValueException("System already has network offering id=" + offerings.get(0).getId() + " with availability " + Availability.Required);
+                        throw new InvalidParameterValueException("System already has network offering id=" + 
+                    offerings.get(0).getId() + " with availability " + Availability.Required);
                     }
                 }
                 offering.setAvailability(availability);
@@ -3576,7 +3587,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_MARK_DEFAULT_ZONE, eventDescription = "Marking account with the default zone", async=true)
+    @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_MARK_DEFAULT_ZONE, eventDescription = "Marking account with the " +
+    		"default zone", async=true)
     public AccountVO markDefaultZone(String accountName, long domainId, long defaultZoneId) {
     	
     	// Check if the account exists

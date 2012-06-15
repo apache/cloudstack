@@ -92,6 +92,8 @@ import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.response.VirtualRouterProviderResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.api.response.VolumeResponse;
+import com.cloud.api.response.VpcOfferingResponse;
+import com.cloud.api.response.VpcResponse;
 import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
@@ -144,6 +146,8 @@ import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -729,30 +733,30 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public IPAddressResponse createIPAddressResponse(IpAddress ipAddress) {
-        VlanVO vlan = ApiDBUtils.findVlanById(ipAddress.getVlanId());
+    public IPAddressResponse createIPAddressResponse(IpAddress ipAddr) {
+        VlanVO vlan = ApiDBUtils.findVlanById(ipAddr.getVlanId());
         boolean forVirtualNetworks = vlan.getVlanType().equals(VlanType.VirtualNetwork);
-        long zoneId = ipAddress.getDataCenterId();
+        long zoneId = ipAddr.getDataCenterId();
 
         IPAddressResponse ipResponse = new IPAddressResponse();
-        ipResponse.setId(ipAddress.getId());
-        ipResponse.setIpAddress(ipAddress.getAddress().toString());
-        if (ipAddress.getAllocatedTime() != null) {
-            ipResponse.setAllocated(ipAddress.getAllocatedTime());
+        ipResponse.setId(ipAddr.getId());
+        ipResponse.setIpAddress(ipAddr.getAddress().toString());
+        if (ipAddr.getAllocatedTime() != null) {
+            ipResponse.setAllocated(ipAddr.getAllocatedTime());
         }
         ipResponse.setZoneId(zoneId);
-        ipResponse.setZoneName(ApiDBUtils.findZoneById(ipAddress.getDataCenterId()).getName());
-        ipResponse.setSourceNat(ipAddress.isSourceNat());
-        ipResponse.setIsSystem(ipAddress.getSystem());
+        ipResponse.setZoneName(ApiDBUtils.findZoneById(ipAddr.getDataCenterId()).getName());
+        ipResponse.setSourceNat(ipAddr.isSourceNat());
+        ipResponse.setIsSystem(ipAddr.getSystem());
 
         // get account information
-        populateOwner(ipResponse, ipAddress);
+        populateOwner(ipResponse, ipAddr);
 
         ipResponse.setForVirtualNetwork(forVirtualNetworks);
-        ipResponse.setStaticNat(ipAddress.isOneToOneNat());
+        ipResponse.setStaticNat(ipAddr.isOneToOneNat());
 
-        if (ipAddress.getAssociatedWithVmId() != null) {
-            UserVm vm = ApiDBUtils.findUserVmById(ipAddress.getAssociatedWithVmId());
+        if (ipAddr.getAssociatedWithVmId() != null) {
+            UserVm vm = ApiDBUtils.findUserVmById(ipAddr.getAssociatedWithVmId());
             ipResponse.setVirtualMachineId(vm.getId());
             ipResponse.setVirtualMachineName(vm.getHostName());
             if (vm.getDisplayName() != null) {
@@ -762,11 +766,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        ipResponse.setAssociatedNetworkId(ipAddress.getAssociatedWithNetworkId());
+        ipResponse.setAssociatedNetworkId(ipAddr.getAssociatedWithNetworkId());
+        ipResponse.setVpcId(ipAddr.getVpcId());
 
         // Network id the ip is associated withif associated networkId is null, try to get this information from vlan
-        Long associatedNetworkId = ipAddress.getAssociatedWithNetworkId();
-        Long vlanNetworkId = ApiDBUtils.getVlanNetworkId(ipAddress.getVlanId());
+        Long associatedNetworkId = ipAddr.getAssociatedWithNetworkId();
+        Long vlanNetworkId = ApiDBUtils.getVlanNetworkId(ipAddr.getVlanId());
         if (associatedNetworkId == null) {
             associatedNetworkId = vlanNetworkId;
         }
@@ -782,18 +787,18 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         ipResponse.setNetworkId(networkId);
-        ipResponse.setState(ipAddress.getState().toString());
-        ipResponse.setPhysicalNetworkId(ipAddress.getPhysicalNetworkId());
+        ipResponse.setState(ipAddr.getState().toString());
+        ipResponse.setPhysicalNetworkId(ipAddr.getPhysicalNetworkId());
 
         // show this info to admin only
         Account account = UserContext.current().getCaller();
         if ((account == null) || account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-            ipResponse.setVlanId(ipAddress.getVlanId());
-            ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanId()).getVlanTag());
+            ipResponse.setVlanId(ipAddr.getVlanId());
+            ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddr.getVlanId()).getVlanTag());
         }
         
-        if (ipAddress.getSystem()) {
-            if (ipAddress.isOneToOneNat()) {
+        if (ipAddr.getSystem()) {
+            if (ipAddr.isOneToOneNat()) {
                 ipResponse.setPurpose(IpAddress.Purpose.StaticNat.toString());
             } else {
                 ipResponse.setPurpose(IpAddress.Purpose.Lb.toString());
@@ -1658,6 +1663,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             routerResponse.setDns1(zone.getDns1());
             routerResponse.setDns2(zone.getDns2());
         }
+
+        routerResponse.setVpcId(router.getVpcId());
 
         routerResponse.setObjectName("domainrouter");
         return routerResponse;
@@ -2888,6 +2895,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         response.setSpecifyIpRanges(network.getSpecifyIpRanges());
+        response.setVpcId(network.getVpcId());
 
         response.setObjectName("network");
         return response;
@@ -3437,5 +3445,89 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
     
+    
+    @Override
+    public VpcOfferingResponse createVpcOfferingResponse(VpcOffering offering) {
+        VpcOfferingResponse response = new VpcOfferingResponse();
+        response.setId(offering.getId());
+        response.setName(offering.getName());
+        response.setDisplayText(offering.getDisplayText());
+        response.setIsDefault(offering.isDefault());
+        response.setState(offering.getState().name());
+
+        Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(offering.getId());
+        List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
+        for (Service service : serviceProviderMap.keySet()) {
+            ServiceResponse svcRsp = new ServiceResponse();
+            // skip gateway service
+            if (service == Service.Gateway) {
+                continue;
+            }
+            svcRsp.setName(service.getName());
+            List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
+            for (Provider provider : serviceProviderMap.get(service)) {
+                if (provider != null) {
+                    ProviderResponse providerRsp = new ProviderResponse();
+                    providerRsp.setName(provider.getName());
+                    providers.add(providerRsp);
+                }
+            }
+            svcRsp.setProviders(providers);
+
+            serviceResponses.add(svcRsp);
+        }
+        response.setServices(serviceResponses);
+        response.setObjectName("vpcoffering");
+        return response;
+    }
+    
+    
+    @Override
+    public VpcResponse createVpcResponse(Vpc vpc) {
+        VpcResponse response = new VpcResponse();
+        response.setId(vpc.getId());
+        response.setName(vpc.getName());
+        response.setDisplayText(vpc.getDisplayText());
+        response.setState(vpc.getState().name());
+        response.setVpcOfferingId(vpc.getVpcOfferingId());
+        response.setCidr(vpc.getCidr());
+        response.setZoneId(vpc.getZoneId());
+        response.setRestartRequired(vpc.isRestartRequired());
+        response.setNetworkDomain(vpc.getNetworkDomain());
+
+        Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(vpc.getVpcOfferingId());
+        List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
+        for (Service service : serviceProviderMap.keySet()) {
+            ServiceResponse svcRsp = new ServiceResponse();
+            // skip gateway service
+            if (service == Service.Gateway) {
+                continue;
+            }
+            svcRsp.setName(service.getName());
+            List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
+            for (Provider provider : serviceProviderMap.get(service)) {
+                if (provider != null) {
+                    ProviderResponse providerRsp = new ProviderResponse();
+                    providerRsp.setName(provider.getName());
+                    providers.add(providerRsp);
+                }
+            }
+            svcRsp.setProviders(providers);
+
+            serviceResponses.add(svcRsp);
+        }
+        
+        List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
+        List<? extends Network> networks = ApiDBUtils.listVpcNetworks(vpc.getId());
+        for (Network network : networks) {
+            NetworkResponse ntwkRsp = createNetworkResponse(network);
+            networkResponses.add(ntwkRsp);
+        }
+        
+        response.setNetworks(networkResponses);
+        response.setServices(serviceResponses);
+        response.setObjectName("vpcoffering");
+        return response;
+    }
     
 }

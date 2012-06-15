@@ -379,11 +379,13 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         
         IPAddressVO sourceNatIp = null;
         if (!sharedSourceNat) {
-            // Get the source NAT IP address for this network          
-            List<IPAddressVO> sourceNatIps = _networkMgr.listPublicIpAddressesInVirtualNetwork(network.getAccountId(), zoneId, true, null);
+            // Get the source NAT IP address for this account          
+            List<IPAddressVO> sourceNatIps = _networkMgr.listPublicIpsAssignedToAccount(network.getAccountId(), 
+                    zoneId, true);
 
             if (sourceNatIps.size() != 1) {
-                String errorMsg = "External firewall was unable to find the source NAT IP address for account " + account.getAccountName();
+                String errorMsg = "External firewall was unable to find the source NAT IP address for account " 
+            + account.getAccountName();
                 s_logger.error(errorMsg);
                 return true;
             } else {

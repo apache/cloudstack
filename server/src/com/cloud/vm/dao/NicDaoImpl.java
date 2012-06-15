@@ -22,6 +22,8 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.vm.Nic;
+import com.cloud.vm.Nic.State;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VirtualMachine;
 
@@ -29,6 +31,9 @@ import com.cloud.vm.VirtualMachine;
 public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     private final SearchBuilder<NicVO> AllFieldsSearch;
     private final GenericSearchBuilder<NicVO, String> IpSearch;
+    private final SearchBuilder<NicVO> NonReleasedSearch;
+    final GenericSearchBuilder<NicVO, Integer> CountBy;
+
     
     protected NicDaoImpl() {
         super();
@@ -39,6 +44,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         AllFieldsSearch.and("vmType", AllFieldsSearch.entity().getVmType(), Op.EQ);
         AllFieldsSearch.and("address", AllFieldsSearch.entity().getIp4Address(), Op.EQ);
         AllFieldsSearch.and("isDefault", AllFieldsSearch.entity().isDefaultNic(), Op.EQ);
+        AllFieldsSearch.and("broadcastUri", AllFieldsSearch.entity().getBroadcastUri(), Op.EQ);
         AllFieldsSearch.done();
         
         IpSearch = createSearchBuilder(String.class);
@@ -46,6 +52,18 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         IpSearch.and("network", IpSearch.entity().getNetworkId(), Op.EQ);
         IpSearch.and("address", IpSearch.entity().getIp4Address(), Op.NNULL);
         IpSearch.done();
+        
+        NonReleasedSearch = createSearchBuilder();
+        NonReleasedSearch.and("instance", NonReleasedSearch.entity().getInstanceId(), Op.EQ);
+        NonReleasedSearch.and("network", NonReleasedSearch.entity().getNetworkId(), Op.EQ);
+        NonReleasedSearch.and("state", NonReleasedSearch.entity().getState(), Op.NOTIN);
+        NonReleasedSearch.done();
+        
+        CountBy = createSearchBuilder(Integer.class);
+        CountBy.select(null, Func.COUNT, CountBy.entity().getId());
+        CountBy.and("vmId", CountBy.entity().getInstanceId(), Op.EQ);
+        CountBy.and("removed", CountBy.entity().getRemoved(), Op.NULL);
+        CountBy.done();
     }
     
     @Override
@@ -123,4 +141,40 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         sc.setParameters("isDefault", 1);
         return findOneBy(sc);
     }
+    
+    @Override
+    public NicVO findNonReleasedByInstanceIdAndNetworkId(long networkId, long instanceId) {
+        SearchCriteria<NicVO> sc = NonReleasedSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("instance", instanceId);
+        sc.setParameters("state", State.Releasing, Nic.State.Deallocating);
+        return findOneBy(sc);
+    }
+    
+    @Override
+    public String getIpAddress(long networkId, long instanceId) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("instance", instanceId);
+        return findOneBy(sc).getIp4Address();
+    }
+
+    @Override
+    public int countNics(long instanceId) {
+        SearchCriteria<Integer> sc = CountBy.create();
+        sc.setParameters("vmId", instanceId);
+        List<Integer> results = customSearch(sc, null);
+        return results.get(0);
+    }
+
+
+    @Override
+    public NicVO findByInstanceIdNetworkIdAndBroadcastUri(long networkId, long instanceId, String broadcastUri) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("instance", instanceId);
+        sc.setParameters("broadcastUri", broadcastUri);
+        return findOneBy(sc);
+    }
+
 }

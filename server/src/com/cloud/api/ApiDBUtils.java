@@ -49,6 +49,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.LoadBalancerVO;
+import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
@@ -68,6 +69,7 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -191,6 +193,7 @@ public class ApiDBUtils {
     private static NetworkDomainDao _networkDomainDao;
     private static HighAvailabilityManager _haMgr;
     private static TaggedResourceService _taggedResourceService;
+    private static VpcManager _vpcMgr;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -245,6 +248,7 @@ public class ApiDBUtils {
         _networkDomainDao = locator.getDao(NetworkDomainDao.class);
         _haMgr = locator.getManager(HighAvailabilityManager.class);
         _taggedResourceService = locator.getManager(TaggedResourceService.class);
+        _vpcMgr = locator.getManager(VpcManager.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -757,4 +761,11 @@ public class ApiDBUtils {
         return _taggedResourceService.getUuid(resourceId, resourceType);
     }
 
+    public static Map<Service, Set<Provider>> listVpcOffServices(long vpcOffId) {
+        return _vpcMgr.getVpcOffSvcProvidersMap(vpcOffId);
+    }
+    
+    public static List<? extends Network> listVpcNetworks(long vpcId) {
+        return _networkMgr.listNetworksByVpc(vpcId);
+    }
 }

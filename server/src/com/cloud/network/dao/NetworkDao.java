@@ -70,8 +70,6 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
 
     void addDomainToNetwork(long networkId, long domainId, Boolean subdomainAccess);
 
-    Long getNetworkCountByOfferingId(long offeringId);
-
     List<NetworkVO> listByPhysicalNetwork(long physicalNetworkId);
 
     List<NetworkVO> listSecurityGroupEnabledNetworks();
@@ -95,5 +93,9 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     long countNetworksUserCanCreate(long ownerId);
 
     List<NetworkVO> listSourceNATEnabledNetworks(long accountId, long dataCenterId, GuestType type);
+    
+    int getNetworkCountByVpcId(long vpcId);
+    
+    List<NetworkVO> listByVpc(long vpcId);
 
 }

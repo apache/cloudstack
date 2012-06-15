@@ -127,6 +127,9 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.SPECIFY_IP_RANGES) @Param(description="true if network supports specifying ip ranges, false otherwise")
     private Boolean specifyIpRanges;
     
+    @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the network belongs to")
+    private IdentityProxy vpcId = new IdentityProxy("vpc");
+    
     public void setId(Long id) {
         this.id.setValue(id);
     }
@@ -268,4 +271,8 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 	public void setSpecifyIpRanges(Boolean specifyIpRanges) {
 		this.specifyIpRanges = specifyIpRanges;
 	}
+	
+    public void setVpcId(Long vpcId) {
+        this.vpcId.setValue(vpcId);
+    }
 }

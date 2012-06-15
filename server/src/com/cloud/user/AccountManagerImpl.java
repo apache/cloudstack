@@ -77,6 +77,8 @@ import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -199,6 +201,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private ProjectAccountDao _projectAccountDao;
     @Inject
     private IPAddressDao _ipAddressDao;
+    @Inject
+    private VpcManager _vpcMgr;
 
     private Adapters<UserAuthenticator> _userAuthenticators;
 
@@ -574,19 +578,35 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 }
             }
 
+            //Delete all VPCs
+            boolean vpcsDeleted = true;
+            s_logger.debug("Deleting vpcs for account " + account.getId());
+            List<? extends Vpc> vpcs = _vpcMgr.getVpcsForAccount(account.getId());
+            for (Vpc vpc : vpcs) {
+
+                if (!_vpcMgr.destroyVpc(vpc)) {
+                    s_logger.warn("Unable to destroy VPC " + vpc + " as a part of account id=" + accountId + " cleanup.");
+                    accountCleanupNeeded = true;
+                    vpcsDeleted = false;
+                } else {
+                    s_logger.debug("VPC " + vpc.getId() + " successfully deleted as a part of account id=" + accountId + " cleanup.");
+                }
+            }
+
+            if (vpcsDeleted) {
             // release ip addresses belonging to the account
             List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
             for (IpAddress ip : ipsToRelease) {
                 s_logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
-                if (!_networkMgr.releasePublicIpAddress(ip.getId(), callerUserId, caller)) {
+                    if (!_networkMgr.disassociatePublicIpAddress(ip.getId(), callerUserId, caller)) {
                     s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
                     accountCleanupNeeded = true;
                 }
             }
+            }
 
             // delete account specific Virtual vlans (belong to system Public Network) - only when networks are cleaned
-            // up
-            // successfully
+            // up successfully
             if (networksDeleted) {
                 if (!_configMgr.deleteAccountSpecificVirtualRanges(accountId)) {
                     accountCleanupNeeded = true;

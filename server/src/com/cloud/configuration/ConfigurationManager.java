@@ -164,11 +164,12 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 
     /**
      * Creates a new network offering
-     * 
      * @param name
      * @param displayText
      * @param trafficType
      * @param tags
+     * @param specifyVlan
+     *            ;
      * @param networkRate
      *            TODO
      * @param serviceProviderMap
@@ -180,19 +181,18 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @param systemOnly
      *            TODO
      * @param serviceOfferingId
+     * @param conserveMode
+     *            ;
      * @param specifyIpRanges
      *            TODO
      * @param id
-     * @param specifyVlan
-     *            ;
-     * @param conserveMode
-     *            ;
+     * 
      * @return network offering object
      */
 
-    NetworkOfferingVO createNetworkOffering(long userId, String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate,
-            Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId, boolean conserveMode,
-            Map<Service, Map<Capability, String>> serviceCapabilityMap, boolean specifyIpRanges);
+    NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability, Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap,
+            boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId, boolean conserveMode, Map<Service, Map<Capability, String>> serviceCapabilityMap,
+            boolean specifyIpRanges);
 
     Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, String startIP, String endIP, String vlanGateway, String vlanNetmask, String vlanId, Account vlanOwner) throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
 
@@ -225,5 +225,11 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
 	AllocationState findPodAllocationState(HostPodVO pod);
 
 	AllocationState findClusterAllocationState(ClusterVO cluster);
+
+    /**
+     * @param tags
+     * @return
+     */
+    String cleanupTags(String tags);
 
 }

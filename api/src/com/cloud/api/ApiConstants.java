@@ -356,6 +356,9 @@ public class ApiConstants {
     public static final String RESOURCE_IDS = "resourceids";
     public static final String RESOURCE_ID = "resourceid";
     public static final String CUSTOMER = "customer";
+    public static final String VPC_OFF_ID = "vpcofferingid";
+    public static final String NETWORK = "network";
+    public static final String VPC_ID = "vpcid";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

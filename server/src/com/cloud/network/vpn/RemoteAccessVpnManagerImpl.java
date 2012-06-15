@@ -102,7 +102,8 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     SearchBuilder<RemoteAccessVpnVO> VpnSearch;
 
     @Override
-    public RemoteAccessVpn createRemoteAccessVpn(long publicIpId, String ipRange, boolean openFirewall) throws NetworkRuleConflictException {
+    public RemoteAccessVpn createRemoteAccessVpn(long publicIpId, String ipRange, boolean openFirewall, long networkId) 
+            throws NetworkRuleConflictException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
 
@@ -114,11 +115,23 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         
         _accountMgr.checkAccess(caller, null, true, ipAddr);
 
-        if (!ipAddr.readyToUse() || ipAddr.getAssociatedWithNetworkId() == null) {
+        if (!ipAddr.readyToUse()) {
             throw new InvalidParameterValueException("The Ip address is not ready to be used yet: " + ipAddr.getAddress());
         }
         
         IPAddressVO ipAddress = _ipAddressDao.findById(publicIpId);
+        
+        //associate ip address to network (if needed)
+        if (ipAddress.getAssociatedWithNetworkId() == null) {
+            s_logger.debug("The ip is not associated with the network id="+ networkId + " so assigning");
+            try {
+                _networkMgr.associateIPToGuestNetwork(publicIpId, networkId);
+            } catch (Exception ex) {
+                s_logger.warn("Failed to associate ip id=" + publicIpId + " to network id=" + networkId + " as " +
+                        "a part of remote access vpn creation");
+                return null;
+            }
+        }
         _networkMgr.checkIpForService(ipAddress, Service.Vpn);
 
         RemoteAccessVpnVO vpnVO = _remoteAccessVpnDao.findByPublicIpAddress(publicIpId);
@@ -132,7 +145,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         }
 
         // TODO: assumes one virtual network / domr per account per zone
-        vpnVO = _remoteAccessVpnDao.findByAccountAndNetwork(ipAddr.getAccountId(), ipAddr.getAssociatedWithNetworkId());
+        vpnVO = _remoteAccessVpnDao.findByAccountAndNetwork(ipAddr.getAccountId(), networkId);
         if (vpnVO != null) {
             //if vpn is in Added state, return it to the api
             if (vpnVO.getState() == RemoteAccessVpn.State.Added) {
@@ -142,7 +155,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         }
         
         //Verify that vpn service is enabled for the network
-        Network network = _networkMgr.getNetwork(ipAddr.getAssociatedWithNetworkId());
+        Network network = _networkMgr.getNetwork(networkId);
         if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.Vpn)) {
             throw new InvalidParameterValueException("Vpn service is not supported in network id=" + ipAddr.getAssociatedWithNetworkId());
         }
