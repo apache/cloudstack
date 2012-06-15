@@ -9157,6 +9157,8 @@
 			dataType: "json",
 			async: false,
 			success: function(json) {
+			  nspMap = {}; //reset 
+			
 				var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;	        
         if(items != null) {				
 					for(var i = 0; i < items.length; i++) {
