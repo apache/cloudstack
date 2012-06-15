@@ -130,7 +130,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         
        Long vpcId = network.getVpcId();
        if (vpcId == null) {
-           s_logger.warn("Network " + network + " is not associated with any VPC");
+           s_logger.trace("Network " + network + " is not associated with any VPC");
            return false;
        }
        
@@ -159,7 +159,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
        
         Long vpcId = network.getVpcId();
         if (vpcId == null) {
-            s_logger.warn("Network " + network + " is not associated with any VPC");
+            s_logger.trace("Network " + network + " is not associated with any VPC");
             return false;
         }
         
