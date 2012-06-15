@@ -5,7 +5,7 @@
 # if you change 'em here, you need to change it also in cloud.spec, add a %changelog entry there, and add an entry in debian/changelog
 
 
-VERSION = '3.0.3.2012-06-14T02:14:58Z'
+VERSION = '3.0.3.2012-06-15T00:14:17Z'
 APPNAME = 'cloud'
 
 import shutil,os

@@ -333,7 +333,6 @@ addNetworkDevice=com.cloud.api.commands.AddNetworkDeviceCmd;1
 listNetworkDevice=com.cloud.api.commands.ListNetworkDeviceCmd;1
 deleteNetworkDevice=com.cloud.api.commands.DeleteNetworkDeviceCmd;1
 
-
 ### VPC commands
 createVPC=com.cloud.api.commands.CreateVPCCmd;15
 listVPCs=com.cloud.api.commands.ListVPCsCmd;15
@@ -347,12 +346,11 @@ updateVPCOffering=com.cloud.api.commands.UpdateVPCOfferingCmd;1
 deleteVPCOffering=com.cloud.api.commands.DeleteVPCOfferingCmd;1
 listVPCOfferings=com.cloud.api.commands.ListVPCOfferingsCmd;15
 
-#### VPC gateway commands
-createVPCGateway=com.cloud.api.commands.CreateVPCGatewayCmd;15
-listVPCGateways=com.cloud.api.commands.ListVPCGatewaysCmd;15
-deleteVPCGateway=com.cloud.api.commands.DeleteVPCGatewayCmd;15
+#### Private gateway commands
+#createPrivateGateway=com.cloud.api.commands.CreatePrivateGatewayCmd;15
+#listPrivateGateways=com.cloud.api.commands.ListPrivateGatewaysCmd;15
+#deletePrivateGateway=com.cloud.api.commands.DeletePrivateGatewayCmd;15
 
 #### Private network command
 createPrivateNetwork=com.cloud.api.commands.CreatePrivateNetworkCmd;1
-deletePrivateNetwork=com.cloud.api.commands.CreatePrivateNetworkCmd;1
 
