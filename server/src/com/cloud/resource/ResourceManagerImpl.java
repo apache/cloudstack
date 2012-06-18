@@ -576,6 +576,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             if (!success) {
                 _clusterDetailsDao.deleteDetails(clusterId);
                 _clusterDao.remove(clusterId);
+                _clusterVSMDao.removeByClusterId(clusterId);
             }
         }
     }
