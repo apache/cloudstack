@@ -15,6 +15,7 @@ package com.cloud.network.router;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -363,8 +364,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     public boolean finalizeStart(VirtualMachineProfile<DomainRouterVO> profile, long hostId, Commands cmds,
             ReservationContext context) {
         
-
-        
         if (!super.finalizeStart(profile, hostId, cmds, context)) {
             return false;
         } else if (profile.getVirtualMachine().getVpcId() == null) {
@@ -686,20 +685,23 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
     
     
-//    @Override
-//    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, 
-//            ReservationContext context) {
-//        //remove public and guest nics as we will plug them later
-//        Iterator<NicProfile> it = profile.getNics().iterator();
-//        while (it.hasNext()) {
-//            NicProfile nic = it.next();
-//            if (nic.getTrafficType() == TrafficType.Public || nic.getTrafficType() == TrafficType.Guest) {
-//                s_logger.debug("Removing nic of type " + nic.getTrafficType() + " from the nics passed on vm start. " +
-//                		"The nic will be plugged later");
-//                it.remove();
-//            }
-//        }
-//        
-//        return super.finalizeVirtualMachineProfile(profile, dest, context);
-//    }
+    @Override
+    public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, 
+            ReservationContext context) {
+        
+        if (profile.getVirtualMachine().getVpcId() != null) {
+          //remove public and guest nics as we will plug them later
+            Iterator<NicProfile> it = profile.getNics().iterator();
+            while (it.hasNext()) {
+                NicProfile nic = it.next();
+                if (nic.getTrafficType() == TrafficType.Public || nic.getTrafficType() == TrafficType.Guest) {
+                    s_logger.debug("Removing nic of type " + nic.getTrafficType() + " from the nics passed on vm start. " +
+                            "The nic will be plugged later");
+                    it.remove();
+                }
+            }
+        }
+        
+        return super.finalizeVirtualMachineProfile(profile, dest, context);
+    }
 }
