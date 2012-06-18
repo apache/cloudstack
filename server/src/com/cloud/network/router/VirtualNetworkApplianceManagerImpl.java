@@ -1682,7 +1682,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             } else if (nic.getTrafficType() == TrafficType.Public) {
                 publicNetwork = true;
             }
-                }
+        }
 
         if (controlNic == null) {
             throw new CloudRuntimeException("Didn't start a control port");
