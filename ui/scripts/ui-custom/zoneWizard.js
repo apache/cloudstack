@@ -576,9 +576,12 @@
 						$('<option>').attr({
 							value: 'VLAN'
 						}).html('VLAN'),						
+						//User should not be given the option to create a physical network with "L3" isolation method. (CS-15312)
+						/*
 						$('<option>').attr({
 							value: 'L3'
-						}).html('L3'),						
+						}).html('L3'),		
+            */						
 						$('<option>').attr({
 							value: 'GRE'
 						}).html('GRE')	
