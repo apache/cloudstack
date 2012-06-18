@@ -1864,7 +1864,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
             if (result == null || result.isEmpty()) {
-                throw new InternalErrorException("Xen plugin \"ipassoc\" failed.");
+                throw new InternalErrorException("Xen plugin \"vpc_ipassoc\" failed.");
             }
         } catch (Exception e) {
             String msg = "Unable to assign public IP address due to " + e.toString();
