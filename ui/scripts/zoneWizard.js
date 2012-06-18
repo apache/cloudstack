@@ -1292,7 +1292,7 @@
 
           var returnedPhysicalNetworks = [];
 
-          if(args.data.zone.networkType == "Basic") {
+          if(args.data.zone.networkType == "Basic") { //Basic zone ***
             var requestedTrafficTypeCount = 2; //request guest traffic type, management traffic type
             if(selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true)
               requestedTrafficTypeCount++; //request public traffic type
@@ -1300,9 +1300,7 @@
 						//Basic zone has only one physical network
 						var array1 = [];	            
 						if("physicalNetworks" in args.data) {	//from add-zone-wizard		
-							array1.push("&name=" + todb(args.data.physicalNetworks[0].name));
-							if(args.data.physicalNetworks[0].isolationMethod != null && args.data.physicalNetworks[0].isolationMethod.length > 0)
-								array1.push("&isolationmethods=" + todb(args.data.physicalNetworks[0].isolationMethod));	
+							array1.push("&name=" + todb(args.data.physicalNetworks[0].name));							
 						}
 						else { //from quick-install-wizard
 						  array1.push("&name=PhysicalNetworkInBasicZone");

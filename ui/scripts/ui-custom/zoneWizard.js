@@ -560,34 +560,46 @@
             .attr({ title: 'Remove this physical network' })
             .append('<span>').addClass('icon').html('&nbsp;');
       var $icon = $('<div>').addClass('physical-network-icon');
-      var $nameField = $('<div>').addClass('field name').append(
+      
+			var $nameField = $('<div>').addClass('field name').append(
         $('<div>').addClass('name').append(
           $('<label>').html('Physical network name')
 				),
 				$('<div>').addClass('value').append(
 					$('<input>').attr({ type: 'text' }).addClass('required')
-        ),
-				$('<div>').append(
-          $('<span style=\"font-size:11px\;padding-right:5px;padding-left:50px">').html('Isolation method'),
-					$('<select>').append(						
-					  $('<option>').attr({
-							value: ''
-						}).html(''),					
-						$('<option>').attr({
-							value: 'VLAN'
-						}).html('VLAN'),						
-						//User should not be given the option to create a physical network with "L3" isolation method. (CS-15312)
-						/*
-						$('<option>').attr({
-							value: 'L3'
-						}).html('L3'),		
-            */						
-						$('<option>').attr({
-							value: 'GRE'
-						}).html('GRE')	
+        )				
+      );			
+			if($wizard.find('.select-network-model input:radio[name=network-model]:checked').val() == 'Advanced') {
+				$nameField.append(
+					$('<div>').addClass('name').append(
+						$('<label>').html('Physical network name')
+					),
+					$('<div>').addClass('value').append(
+						$('<input>').attr({ type: 'text' }).addClass('required')
+					),
+					$('<div>').append(
+						$('<span style=\"font-size:11px\;padding-right:5px;padding-left:50px">').html('Isolation method'),
+						$('<select>').append(						
+							$('<option>').attr({
+								value: ''
+							}).html(''),					
+							$('<option>').attr({
+								value: 'VLAN'
+							}).html('VLAN'),						
+							//User should not be given the option to create a physical network with "L3" isolation method. (CS-15312)
+							/*
+							$('<option>').attr({
+								value: 'L3'
+							}).html('L3'),		
+							*/						
+							$('<option>').attr({
+								value: 'GRE'
+							}).html('GRE')	
+						)
 					)
-        )
-      );
+				);
+			}
+			
       var $dropContainer = $('<div>').addClass('drop-container').append(
         $('<span>').addClass('empty-message').html(
           'Drag and drop traffic types you would like to add here.'
