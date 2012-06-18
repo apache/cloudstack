@@ -25,8 +25,8 @@ then
 fi
 
 usage() {
-  printf "Usage:\n %s -A  -c <dev> -g <gateway> -m <network mask> -d <dns ip> -r <dhcp ip range> [-f] \n" $(basename $0) >&2
-  printf " %s -D -c <dev>  \n" $(basename $0) >&2
+  printf "Usage:\n %s -A  -d <dev> -i <ip address> -g <gateway> -m <network mask> -s <dns ip> -e < domain> [-f] \n" $(basename $0) >&2
+  printf " %s -D -d <dev> -i <ip address> \n" $(basename $0) >&2
 }
 
 
@@ -73,7 +73,7 @@ create_guest_network() {
   # setup ip configuration
   sudo ip addr add dev $dev $ip/$mask
   sudo ip link set $dev up
-  sudo arping -c 3 -I $dev -A -U -s $ip $ip;
+  sudo arping -c 3 -I $dev -A -U -s $ip $ip
   # setup rules to allow dhcp/dns request
   sudo iptables -A INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
   sudo iptables -A INPUT -i $dev -p udp -m udp --dport 53 -j ACCEPT
@@ -112,9 +112,10 @@ destroy_guest_network() {
 }
 
 #set -x
+iflag=0
+mflag=0
 nflag=0
 dflag=
-cflag=
 gflag=
 Cflag=
 Dflag=
@@ -165,7 +166,7 @@ then
     unlock_exit 2 $lock $locked
 fi
 
-if [ "$Cflag" == "1" ] && ["$iflag$gflag$mflag" != "111" ] 
+if [ "$Cflag" == "1" ] && [ "$iflag$gflag$mflag" != "111" ]
 then
     usage
     unlock_exit 2 $lock $locked
