@@ -16,7 +16,6 @@
 
  
 
-# $Id: ipassoc.sh 9804 2010-06-22 18:36:49Z alex $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/network/domr/ipassoc.sh $
 # ipassoc.sh -- associate/disassociate a public ip with an instance
 # @VERSION@
 
@@ -34,9 +33,6 @@ usage() {
   printf " %s -D -l <public-ip-address> -c <dev> [-f] \n" $(basename $0) >&2
 }
 
-remove_routing() {
-}
-
 add_routing() {
   logger -t cloud "$(basename $0):Add routing $pubIp on interface $ethDev"
 
@@ -44,20 +40,26 @@ add_routing() {
   sudo ip route add $subnet/$mask dev $ethDev table $tableName proto static
   sudo ip route add default via $defaultGwIP table $tableName proto static
   sudo ip route flush cache
-  return 0;
+  return 0
 }
 
 
+remove_routing() {
+  return 0
+}
+
 add_an_ip () {
   logger -t cloud "$(basename $0):Adding ip $pubIp on interface $ethDev"
+  sudo ip link show $ethDev | grep "state DOWN" > /dev/null
+  local old_state=$?
 
   sudo ip addr add dev $ethDev $pubIp/$mask
-  if [ $if_keep_state -ne 1 -o $old_state -ne 0 ]
+  if [ $old_state -eq 0 ]
   then
     sudo ip link set $ethDev up
-    sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
+    sudo arping -c 3 -I $ethDev -A -U -s $pubIp $pubIp
   fi
-  add_routing $1 
+  add_routing 
   return $?
    
 }
@@ -77,7 +79,7 @@ remove_an_ip () {
     sudo ip addr add dev $ethDev $ipMask
   done
 
-  remove_routing $1
+  remove_routing
   return 0
 }
 
@@ -90,7 +92,7 @@ nflag=0
 op=""
 
 
-while getopts 'ADl:c:g:' OPTION
+while getopts 'ADl:c:g:m:n:' OPTION
 do
   case $OPTION in
   A)	Aflag=1

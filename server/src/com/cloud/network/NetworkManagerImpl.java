@@ -2507,20 +2507,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return;
         }
 
-        String currCidrAddress = getCidrAddress(cidr);
-        int currCidrSize = getCidrSize(cidr);
-
         for (long networkId : networkToCidr.keySet()) {
             String ntwkCidr = networkToCidr.get(networkId);
-            String ntwkCidrAddress = getCidrAddress(ntwkCidr);
-            int ntwkCidrSize = getCidrSize(ntwkCidr);
-
-            long cidrSizeToUse = currCidrSize < ntwkCidrSize ? currCidrSize : ntwkCidrSize;
-
-            String ntwkCidrSubnet = NetUtils.getCidrSubNet(ntwkCidrAddress, cidrSizeToUse);
-            String cidrSubnet = NetUtils.getCidrSubNet(currCidrAddress, cidrSizeToUse);
-
-            if (cidrSubnet.equals(ntwkCidrSubnet)) {
+            if (NetUtils.isNetworksOverlap(ntwkCidr, cidr)) {
             	InvalidParameterValueException ex = new InvalidParameterValueException("Warning: The specified existing network has conflict CIDR subnets with new network!");
             	ex.addProxyObject("networks", networkId, "networkId");
             	throw ex;
