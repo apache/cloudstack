@@ -1812,6 +1812,67 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    protected void assignVPCPublicIpAddress(Connection conn, String vmName, String privateIpAddress, String publicIpAddress, boolean add,
+            String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, String guestIp,TrafficType trafficType, String name) throws InternalErrorException {
+
+        try {
+            VM router = getVM(conn, vmName);
+
+            NicTO nic = new NicTO();
+            nic.setMac(vifMacAddress);
+            nic.setType(trafficType);
+            if (vlanId == null) {
+                nic.setBroadcastType(BroadcastDomainType.Native);
+            } else {
+                nic.setBroadcastType(BroadcastDomainType.Vlan);
+                nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanId));
+            }
+            nic.setName(name);
+            Network network = getNetwork(conn, nic);
+            // Determine the correct VIF on DomR to associate/disassociate the
+            // IP address with
+            VIF correctVif = getCorrectVif(conn, router, network);
+
+
+            if (correctVif == null) {
+                throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
+            }
+
+            String args = "vpc_ipassoc.sh " + privateIpAddress;
+
+            if (add) {
+                args += " -A ";
+            } else {
+                args += " -D ";
+            }
+
+            args += " -l ";
+            args += publicIpAddress;
+
+            args += " -c ";
+            args += "eth" + correctVif.getDevice(conn);
+            
+            args += " -g ";
+            args += vlanGateway;
+            
+            args += " -m ";
+            args += Long.toString(NetUtils.getCidrSize(vlanNetmask));
+            
+            
+            args += " -n ";
+            args += NetUtils.getSubNet(publicIpAddress, vlanNetmask);
+
+            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            if (result == null || result.isEmpty()) {
+                throw new InternalErrorException("Xen plugin \"ipassoc\" failed.");
+            }
+        } catch (Exception e) {
+            String msg = "Unable to assign public IP address due to " + e.toString();
+            s_logger.warn(msg, e);
+            throw new InternalErrorException(msg);
+        }
+    }
+    
     protected String networkUsage(Connection conn, final String privateIpAddress, final String option, final String vif) {
 
         if (option.equals("get")) {
@@ -7124,14 +7185,72 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected IpAssocAnswer execute(IpAssocVpcCommand cmd) {
-        //FIXME - add implementation here
-        return null;
+        Connection conn = getConnection();
+        String[] results = new String[cmd.getIpAddresses().length];
+        int i = 0;
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        try {
+            IpAddressTO[] ips = cmd.getIpAddresses();
+            for (IpAddressTO ip : ips) {
+
+                assignVPCPublicIpAddress(conn, routerName, routerIp, ip.getPublicIp(), ip.isAdd(), ip.getVlanId(),
+                        ip.getVlanGateway(), ip.getVlanNetmask(), ip.getVifMacAddress(), ip.getGuestIp(), ip.getTrafficType(), ip.getNetworkName());
+                results[i++] = ip.getPublicIp() + " - success";
+            }
+        } catch (InternalErrorException e) {
+            s_logger.error(
+                    "Ip Assoc failure on applying one ip due to exception:  ", e);
+            results[i++] = IpAssocAnswer.errorResult;
+        }
+
+        return new IpAssocAnswer(cmd, results);
     }
 
 
     protected SetSourceNatAnswer execute(SetSourceNatCommand cmd) {
-        //FIXME - add implementation here
-        return null;
+        Connection conn = getConnection();
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        IpAddressTO pubIp = cmd.getIpAddress();
+        try {
+            VM router = getVM(conn, routerName);
+
+            NicTO nic = new NicTO();
+            nic.setMac(pubIp.getVifMacAddress());
+            nic.setType(pubIp.getTrafficType());
+            String vlanId = pubIp.getVlanId();
+            if (vlanId == null) {
+                nic.setBroadcastType(BroadcastDomainType.Native);
+            } else {
+                nic.setBroadcastType(BroadcastDomainType.Vlan);
+                nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanId));
+            }
+            nic.setName(pubIp.getNetworkName());
+            Network network = getNetwork(conn, nic);
+            // Determine the correct VIF on DomR to SNAT the
+            // IP address with
+            VIF correctVif = getCorrectVif(conn, router, network);
+            
+            String args = "vpc_snat.sh " + routerIp;
+
+            args += " -A ";
+            args += " -l ";
+            args += pubIp;
+
+            args += " -c ";
+            args += "eth" + correctVif.getDevice(conn);
+            
+            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            if (result == null || result.isEmpty()) {
+                throw new InternalErrorException("Xen plugin \"vpc_snat\" failed.");
+            }
+            return new SetSourceNatAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = "Ip SNAT failure due to " + e.toString();
+            s_logger.error(msg, e);
+            return new SetSourceNatAnswer(cmd, false, msg);
+        }
     }
 
 
