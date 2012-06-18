@@ -2716,9 +2716,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Cannot specify CIDR when using network offering with external devices!");
         }
 
-        if (cidr != null) {
-            checkVirtualNetworkCidrOverlap(zoneId, cidr);
-        }
         // Vlan is created in 2 cases - works in Advance zone only:
         // 1) GuestType is Shared
         // 2) GuestType is Isolated, but SourceNat service is disabled
