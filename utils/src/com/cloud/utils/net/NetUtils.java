@@ -780,6 +780,16 @@ public class NetUtils {
         long shift = 32 - cidrBLong[1];
         return ((cidrALong[0] >> shift) == (cidrBLong[0] >> shift));
     }
+    
+    public static boolean isNetworksOverlap(String cidrA, String cidrB) {
+        Long[] cidrALong = cidrToLong(cidrA);
+        Long[] cidrBLong = cidrToLong(cidrB);
+        if (cidrALong == null || cidrBLong == null) {
+            return false;
+        }
+        long shift = 32 - (cidrALong[1] > cidrBLong[1] ? cidrBLong[1] : cidrALong[1]);
+        return ((cidrALong[0] >> shift) == (cidrBLong[0] >> shift));
+    }
 
     public static Long[] cidrToLong(String cidr) {
         if (cidr == null || cidr.isEmpty()) {
