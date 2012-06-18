@@ -365,7 +365,13 @@
                   });
 
                   var array2 = [];
-                  array2.push("&ispublic=" + (args.data.ispublic=="on"));
+                  
+									//array2.push("&ispublic=" + (args.data.ispublic=="on"));
+									if(args.data.ispublic == "on")
+                    array2.push("&ispublic=true");
+									else if(args.data.ispublic == "off")
+                    array2.push("&ispublic=false");	
+									//if args.data.ispublic is undefined, do not pass ispublic to API call.
 									
 									if(args.data.isfeatured == "on")
                     array2.push("&isfeatured=true");
@@ -613,7 +619,17 @@
                     ispublic: {
                       label: 'label.public',
                       isBoolean: true,
-                      isEditable: true,
+                      isEditable: function() {
+											  if(isAdmin()) {
+											    return true;
+												}
+												else {
+												  if (g_userPublicTemplateEnabled == "true")
+													  return true;
+													else 
+												    return false;
+												}
+											},
                       converter:cloudStack.converters.toBooleanText
                     },
                     isfeatured: {
