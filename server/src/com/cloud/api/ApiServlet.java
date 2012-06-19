@@ -430,7 +430,10 @@ public class ApiServlet extends HttpServlet {
         if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             sb.append("{ \"logoutresponse\" : { \"description\" : \"success\" } }");
         } else {
-            sb.append("<logoutresponse><description>success</description></logoutresponse>");
+            sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
+            sb.append("<logoutresponse cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
+            sb.append("<description>success</description>");
+            sb.append("</logoutresponse>");
         }
         return sb.toString();
     }
