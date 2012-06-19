@@ -149,6 +149,17 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                    DataCenter.class, network.getDataCenterId());
        }
        
+       for (VirtualRouter router : routers) {
+           //Add router to guest network
+           if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
+               if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(router, network, false)) {
+                   throw new CloudRuntimeException("Failed to add VPC router " + router + " to guest network " + network);
+               } else {
+                   s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);
+               }
+           }
+       }
+       
        return true;       
     }
     
@@ -169,28 +180,16 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return false;
         }
         
-        Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
-        params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
-        
-        List<DomainRouterVO> routers = _vpcRouterMgr.deployVirtualRouterInVpc(vpc, dest, 
-                _accountMgr.getAccount(vpc.getAccountId()), params);
-        if ((routers == null) || (routers.size() == 0)) {
-            throw new ResourceUnavailableException("Can't find at least one running router!",
-                    DataCenter.class, network.getDataCenterId());
-        }
-        
         if (vm.getType() == Type.User) {
-            for (VirtualRouter router : routers) {
-                //Add router to guest network
-                if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
-                    if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(router, network, false)) {
-                        throw new CloudRuntimeException("Failed to add VPC router " + router + " to guest network " + network);
-                    } else {
-                        s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);
-                    }
-                } 
+            Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
+            params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
+            List<DomainRouterVO> routers = _vpcRouterMgr.deployVirtualRouterInVpc(vpc, dest, 
+                    _accountMgr.getAccount(vpc.getAccountId()), params);
+            if ((routers == null) || (routers.size() == 0)) {
+                throw new ResourceUnavailableException("Can't find at least one running router!",
+                        DataCenter.class, network.getDataCenterId());
             }
-        } 
+        }
        
         return true;
     }
@@ -198,7 +197,30 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) 
             throws ConcurrentOperationException, ResourceUnavailableException {
-        return true;
+        boolean success = true;
+        Long vpcId = network.getVpcId();
+        if (vpcId == null) {
+            s_logger.debug("Network " + network + " doesn't belong to any vpc, so skipping unplug nic part");
+            return success;
+        }
+        
+        List<? extends VirtualRouter> routers = _routerDao.listRoutersByVpcId(vpcId);
+        for (VirtualRouter router : routers) {
+            //1) Check if router is already a part of the network
+            if (!_ntwkService.isVmPartOfNetwork(router.getId(), network.getId())) {
+                s_logger.debug("Router " + router + " is not a part the network " + network);
+                continue;
+            }
+            //2) Call unplugNics in the network service
+            success = success && _vpcRouterMgr.removeRouterFromGuestNetwork(router, network, false);
+            if (!success) {
+                s_logger.warn("Failed to unplug nic in network " + network + " for virtual router " + router);
+            } else {
+                s_logger.debug("Successfully unplugged nic in network " + network + " for virtual router " + router);
+            }
+        }
+        
+        return success;
     }
 
     @Override
