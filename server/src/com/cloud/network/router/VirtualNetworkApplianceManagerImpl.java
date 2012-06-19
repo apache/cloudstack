@@ -770,9 +770,17 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
                         
                         for (Long guestNtwkId : routerGuestNtwkIds) {
-                            final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName());
-                            UserStatisticsVO previousStats = _statsDao.findBy(router.getAccountId(), 
-                                    router.getDataCenterIdToDeployIn(), guestNtwkId, null, router.getId(), router.getType().toString());
+                            boolean forVpc = router.getVpcId() != null;
+                            Network guestNtwk = _networkMgr.getNetwork(guestNtwkId);
+                            Nic guestNic = _nicDao.findByInstanceIdAndNetworkId(guestNtwk.getId(), router.getId());
+                            NicProfile guestNicProfile = new NicProfile(guestNic, guestNtwk, guestNic.getBroadcastUri(), 
+                                    guestNic.getIsolationUri(), _networkMgr.getNetworkRate(guestNtwk.getId(), router.getId()), 
+                                    _networkMgr.isSecurityGroupSupportedInNetwork(guestNtwk), 
+                                    _networkMgr.getNetworkTag(router.getHypervisorType(), guestNtwk));
+                            final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(),
+                                    forVpc, _itMgr.toNicTO(guestNicProfile, router.getHypervisorType()));
+                                UserStatisticsVO previousStats = _statsDao.findBy(router.getAccountId(), 
+                                        router.getDataCenterIdToDeployIn(), guestNtwkId, null, router.getId(), router.getType().toString());
                             NetworkUsageAnswer answer = null;
                             try {
                                 answer = (NetworkUsageAnswer) _agentMgr.easySend(router.getHostId(), usageCmd);
@@ -793,27 +801,27 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                                         continue;
                                     }
                                     txn.start();
-                                    UserStatisticsVO stats = _statsDao.lock(router.getAccountId(), 
-                                            router.getDataCenterIdToDeployIn(), guestNtwkId, null, router.getId(), router.getType().toString());
+                                        UserStatisticsVO stats = _statsDao.lock(router.getAccountId(), 
+                                                router.getDataCenterIdToDeployIn(), guestNtwkId, null, router.getId(), router.getType().toString());
                                     if (stats == null) {
                                         s_logger.warn("unable to find stats for account: " + router.getAccountId());
                                         continue;
                                     }
-
+    
                                     if(previousStats != null 
-                                            && ((previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived()) 
-                                                    || (previousStats.getCurrentBytesSent() != stats.getCurrentBytesSent()))){
-                                        s_logger.debug("Router stats changed from the time NetworkUsageCommand was sent. " +
-                                        		"Ignoring current answer. Router: "+answer.getRouterName()+" Rcvd: " + 
-                                                answer.getBytesReceived()+ "Sent: " +answer.getBytesSent());
+                                                && ((previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived()) 
+                                                        || (previousStats.getCurrentBytesSent() != stats.getCurrentBytesSent()))){
+                                            s_logger.debug("Router stats changed from the time NetworkUsageCommand was sent. " +
+                                            		"Ignoring current answer. Router: "+answer.getRouterName()+" Rcvd: " + 
+                                                    answer.getBytesReceived()+ "Sent: " +answer.getBytesSent());
                                         continue;
                                     }
-
+    
                                     if (stats.getCurrentBytesReceived() > answer.getBytesReceived()) {
                                         if (s_logger.isDebugEnabled()) {
-                                            s_logger.debug("Received # of bytes that's less than the last one.  " +
-                                            		"Assuming something went wrong and persisting it. Router: " + 
-                                                    answer.getRouterName()+" Reported: " + answer.getBytesReceived()
+                                                s_logger.debug("Received # of bytes that's less than the last one.  " +
+                                                		"Assuming something went wrong and persisting it. Router: " + 
+                                                        answer.getRouterName()+" Reported: " + answer.getBytesReceived()
                                                     + " Stored: " + stats.getCurrentBytesReceived());
                                         }
                                         stats.setNetBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
@@ -821,9 +829,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                                     stats.setCurrentBytesReceived(answer.getBytesReceived());
                                     if (stats.getCurrentBytesSent() > answer.getBytesSent()) {
                                         if (s_logger.isDebugEnabled()) {
-                                            s_logger.debug("Received # of bytes that's less than the last one.  " +
-                                            		"Assuming something went wrong and persisting it. Router: " + 
-                                                    answer.getRouterName()+" Reported: " + answer.getBytesSent()
+                                                s_logger.debug("Received # of bytes that's less than the last one.  " +
+                                                		"Assuming something went wrong and persisting it. Router: " + 
+                                                        answer.getRouterName()+" Reported: " + answer.getBytesSent()
                                                     + " Stored: " + stats.getCurrentBytesSent());
                                         }
                                         stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
@@ -1890,7 +1898,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         cmds.addCommand("getDomRVersion", command);
 
         // Network usage command to create iptables rules
-        cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getHostName(), "create"));
+        boolean forVpc = profile.getVirtualMachine().getVpcId() != null;
+        cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getHostName(), "create", forVpc));
 
         // restart network if restartNetwork = false is not specified in profile parameters
         boolean reprogramGuestNtwks = true;
