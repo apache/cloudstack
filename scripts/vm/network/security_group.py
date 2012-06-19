@@ -215,14 +215,10 @@ def default_ebtables_rules(vm_name, vm_ip, vm_mac, vif):
         return 'false' 
     
             
-def default_network_rules_systemvm(vm_name, brname):
-    if not addFWFramework(brname):
-        return False 
-
-    vifs = getVifs(vm_name)
+def default_network_rules_systemvm(vm_name, localbrname):
+    bridges = getBridges(vm_name)
     domid = getvmId(vm_name)
     vmchain = vm_name
-    brfw = "BF-" + brname
  
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
   
@@ -231,14 +227,20 @@ def default_network_rules_systemvm(vm_name, brname):
     except:
         execute("iptables -F " + vmchain)
 
-    for vif in vifs:
-        try:
-            execute("iptables -A " + brfw + "-OUT" +  " -m physdev --physdev-is-bridged --physdev-out " + vif +  " -j " + vmchain)
-            execute("iptables -A " + brfw + "-IN" + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -j " +  vmchain)
-            execute("iptables -A " + vmchain + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -j RETURN")
-        except:
-            logging.debug("Failed to program default rules")
-            return 'false'
+    for bridge in bridges:
+        if bridge != localbrname:
+            if not addFWFramework(bridge):
+                return False 
+            brfw = "BF-" + bridge
+            vifs = getVifsForBridge(vm_name, bridge)
+            for vif in vifs:
+                try:
+                    execute("iptables -A " + brfw + "-OUT" +  " -m physdev --physdev-is-bridged --physdev-out " + vif +  " -j " + vmchain)
+                    execute("iptables -A " + brfw + "-IN" + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -j " +  vmchain)
+                    execute("iptables -A " + vmchain + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -j RETURN")
+                except:
+                    logging.debug("Failed to program default rules")
+                    return 'false'
 
     execute("iptables -A " + vmchain + " -j ACCEPT")
     
@@ -678,12 +680,43 @@ def getVifs(vmName):
         return vifs    
 
     dom = xml.dom.minidom.parseString(xmlfile)
-    vifs = []
     for network in dom.getElementsByTagName("interface"):
         target = network.getElementsByTagName('target')[0]
         nicdev = target.getAttribute("dev").strip()
         vifs.append(nicdev) 
     return vifs
+
+def getVifsForBridge(vmName, brname):
+    vifs = []
+    try:
+        xmlfile = virsh("dumpxml", vmName).stdout
+    except:
+        return vifs
+
+    dom = xml.dom.minidom.parseString(xmlfile)
+    for network in dom.getElementsByTagName("interface"):
+        source = network.getElementsByTagName('source')[0]
+        bridge = source.getAttribute("bridge").strip()
+        if bridge == brname:
+            target = network.getElementsByTagName('target')[0]
+            nicdev = target.getAttribute("dev").strip()
+            vifs.append(nicdev)
+    return list(set(vifs))
+
+def getBridges(vmName):
+    bridges = []
+    try:
+        xmlfile = virsh("dumpxml", vmName).stdout
+    except:
+        return bridges
+
+    dom = xml.dom.minidom.parseString(xmlfile)
+    for network in dom.getElementsByTagName("interface"):
+        for source in network.getElementsByTagName('source'):
+            bridge = source.getAttribute("bridge").strip()
+            bridges.append(bridge)
+    return list(set(bridges))
+
 def getvmId(vmName):
     cmd = "virsh list |grep " + vmName + " | awk '{print $1}'"
     return bash("-c", cmd).stdout.strip()
@@ -753,6 +786,7 @@ if __name__ == '__main__':
     parser.add_option("--seq", dest="seq")
     parser.add_option("--rules", dest="rules")
     parser.add_option("--brname", dest="brname")
+    parser.add_option("--localbrname", dest="localbrname")
     parser.add_option("--dhcpSvr", dest="dhcpSvr")
     parser.add_option("--hostIp", dest="hostIp")
     parser.add_option("--hostMacAddr", dest="hostMacAddr")
@@ -765,7 +799,7 @@ if __name__ == '__main__':
     elif cmd == "destroy_network_rules_for_vm":
         destroy_network_rules_for_vm(option.vmName, option.vif) 
     elif cmd == "default_network_rules_systemvm":
-        default_network_rules_systemvm(option.vmName, option.brname)
+        default_network_rules_systemvm(option.vmName, option.localbrname)
     elif cmd == "get_rule_logs_for_vms":
         get_rule_logs_for_vms()
     elif cmd == "add_network_rules":

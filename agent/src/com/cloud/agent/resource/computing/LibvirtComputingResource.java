@@ -3950,24 +3950,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		if (!_can_bridge_firewall) {
 			return false;
 		}
-		List<InterfaceDef> intfs = getInterfaces(conn, vmName);
-		if (intfs.size() < 1) {
-			return false;
-		}
-		/* FIX ME: */
-		String brname = null;
-		if (vmName.startsWith("r-")) {
-			InterfaceDef intf = intfs.get(0);
-			brname = intf.getBrName();
-		} else {
-			InterfaceDef intf = intfs.get(intfs.size() - 1);
-			brname = intf.getBrName();
-		}
 
 		Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
 		cmd.add("default_network_rules_systemvm");
 		cmd.add("--vmname", vmName);
-		cmd.add("--brname", brname);
+		cmd.add("--localbrname", _linkLocalBridgeName);
 		String result = cmd.execute();
 		if (result != null) {
 			return false;
