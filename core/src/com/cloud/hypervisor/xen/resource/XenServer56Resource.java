@@ -162,6 +162,9 @@ public class XenServer56Resource extends CitrixResourceBase {
 
     protected NetworkUsageAnswer execute(NetworkUsageCommand cmd) {
         try {
+            if ( cmd.isForVpc() ) {
+                return new NetworkUsageAnswer(cmd, "seccess", 0L, 0L);
+            }
             Connection conn = getConnection();
             if(cmd.getOption()!=null && cmd.getOption().equals("create") ){
                 String result = networkUsage(conn, cmd.getPrivateIP(), "create", null);

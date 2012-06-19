@@ -55,6 +55,14 @@ public class NetworkUsageCommand extends Command {
         return option;
     }
 
+    public boolean isForVpc() {
+        return forVpc;
+    }
+
+    public NicTO getGuestNic() {
+        return guestNic;
+    }
+
     @Override
     public boolean executeInSequence() {
         return false;
