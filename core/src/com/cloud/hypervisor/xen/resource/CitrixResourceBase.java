@@ -774,7 +774,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating VIF for " + vmName + " on nic " + nic);
         }
-
         VIF.Record vifr = new VIF.Record();
         vifr.VM = vm;
         vifr.device = Integer.toString(nic.getDeviceId());
@@ -3581,6 +3580,22 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.warn(msg, e);
         }
         throw new CloudRuntimeException("Could not find an available slot in VM with name to attach a new disk.");
+    }
+
+
+    protected String getUnusedVIFNum(Connection conn, VM vm) {
+        String vmName = "";
+        try {
+            vmName = vm.getNameLabel(conn);
+            Set<String> allowedVIFDevices = vm.getAllowedVIFDevices(conn);
+            if (allowedVIFDevices.size() > 0) {
+                return allowedVIFDevices.iterator().next();
+            }
+        } catch (Exception e) {
+            String msg = "getUnusedVIFNum failed due to " + e.toString();
+            s_logger.warn(msg, e);
+        }
+        throw new CloudRuntimeException("Could not find available VIF slot in VM with name: " + vmName + " to plug a VIF");
     }
 
     protected String callHostPlugin(Connection conn, String plugin, String cmd, String... params) {
@@ -7109,6 +7124,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             VM vm = vms.iterator().next();
             NicTO nic = cmd.getNic();
+            String deviceId = getUnusedVIFNum(conn, vm);
+            nic.setDeviceId(Integer.parseInt(deviceId));
             VIF vif = createVif(conn, vmName, vm, nic);
             vif.plug(conn);
             return new PlugNicAnswer(cmd, true, "success");
