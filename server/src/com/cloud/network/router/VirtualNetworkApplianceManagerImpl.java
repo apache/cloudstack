@@ -1254,8 +1254,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 return null;
             }
             
-    
-            
             Long offeringId = _networkOfferingDao.findById(guestNetwork.getNetworkOfferingId()).getServiceOfferingId();
             if (offeringId == null) {
                 offeringId = _offering.getId();
