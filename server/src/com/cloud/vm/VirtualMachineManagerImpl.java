@@ -2457,6 +2457,11 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             if (nicVO != null) {
                 nic = _networkMgr.getNicProfile(vm, network.getId());
             }
+        } else {
+            NicVO nicVO = _nicsDao.findByInstanceIdAndNetworkId(network.getId(), vm.getId());
+            if (nicVO != null) {
+                nic = _networkMgr.getNicProfile(vm, network.getId());
+            }
         }
         
         if (nic == null) {

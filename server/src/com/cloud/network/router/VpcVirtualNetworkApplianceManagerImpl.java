@@ -504,7 +504,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         boolean result = true;
         
         Nic nic = _nicDao.findByInstanceIdAndNetworkId(network.getId(), router.getId());
-        long guestVlanTag = Long.parseLong(nic.getBroadcastUri().getHost());
+        long guestVlanTag = Long.parseLong(network.getBroadcastUri().getHost());
         
         String brd = NetUtils.long2Ip(NetUtils.ip2Long(guestNic.getIp4Address()) | ~NetUtils.ip2Long(guestNic.getNetmask()));
         Integer priority = null;

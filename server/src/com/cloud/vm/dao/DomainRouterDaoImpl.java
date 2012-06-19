@@ -264,7 +264,9 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         if (guestNetworks != null && !guestNetworks.isEmpty()) {
             // 2) add router to the network
             for (Network guestNetwork : guestNetworks) {
-                addRouterToGuestNetwork(router, guestNetwork);
+                if (!isRouterPartOfGuestNetwork(router.getId(), guestNetwork.getId())) {
+                    addRouterToGuestNetwork(router, guestNetwork);
+                }
             }
         }
        
