@@ -31,13 +31,13 @@ usage() {
 
 add_snat() {
   logger -t cloud "$(basename $0):Added SourceNAT $pubIp on interface $ethDev"
-  sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $pubIp ;
-  sudo iptables -t nat -A POSTROUTING   -j SNAT -o $ethDev --to-source $pubIp ;
+  sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $pubIp
+  sudo iptables -t nat -A POSTROUTING   -j SNAT -o $ethDev --to-source $pubIp
   return $?
 }
 remove_snat() {
   logger -t cloud "$(basename $0):Removing SourceNAT $pubIp on interface $ethDev"
-  sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $pubIp;
+  sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $pubIp
   return $?
 }
 
@@ -46,7 +46,7 @@ lflag=0
 cflag=0
 op=""
 
-while getopts 'ADl:c' OPTION
+while getopts 'ADl:c:' OPTION
 do
   case $OPTION in
   A)	Aflag=1
@@ -73,7 +73,7 @@ then
   unlock_exit 2 $lock $locked
 fi
 
-if [ "$lflag$cflag" != "11" ] 
+if [ "$lflag$cflag" != "11" ]
 then
   usage
   unlock_exit 2 $lock $locked
@@ -81,12 +81,14 @@ fi
 
 if [ "$Aflag" == "1" ]
 then
-  add_snat  $publicIp  &&
+  add_snat  $publicIp
   unlock_exit $? $lock $locked
 fi
 
 if [ "$Dflag" == "1" ]
 then
-  remove_sat  $publicIp &&
+  remove_sat  $publicIp
   unlock_exit $? $lock $locked
 fi
+
+unlock_exit 1 $lock $locked
