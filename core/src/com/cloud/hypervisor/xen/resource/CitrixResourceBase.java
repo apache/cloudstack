@@ -7236,7 +7236,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
             args += " -A ";
             args += " -l ";
-            args += pubIp;
+            args += pubIp.getPublicIp();
 
             args += " -c ";
             args += "eth" + correctVif.getDevice(conn);

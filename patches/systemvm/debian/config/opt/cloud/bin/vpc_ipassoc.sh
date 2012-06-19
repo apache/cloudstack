@@ -150,3 +150,4 @@ then
 fi
 
 
+unlock_exit 1 $lock $locked
