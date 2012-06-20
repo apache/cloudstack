@@ -348,7 +348,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         Long networkId = null;
 
         if (ipAddress.getAssociatedWithNetworkId() == null) {
-            throw new InvalidParameterValueException("Unable to create port forwarding rule ; ip id=" + 
+            throw new InvalidParameterValueException("Unable to create firewall rule ; ip id=" + 
                     ipAddress.getId() + " is not associated with any network");
         } else {
             networkId = ipAddress.getAssociatedWithNetworkId();
@@ -358,20 +358,27 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         assert network != null : "Can't create port forwarding rule as network associated with public ip address is null?";
 
         // Verify that the network guru supports the protocol specified
-        Map<Network.Capability, String> protocolCapabilities = null;
+        Map<Network.Capability, String> caps = null;
 
         if (purpose == Purpose.LoadBalancing) {
             if (!_elbEnabled) {
-                protocolCapabilities = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.Lb);
+                caps = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.Lb);
             }
         } else if (purpose == Purpose.Firewall) {
-            protocolCapabilities = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.Firewall);
+            caps = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.Firewall);
+            if (caps != null) {
+                String firewallType = caps.get(Capability.FirewallType);
+                //regular firewall rules are not supported in networks supporting network ACLs
+                if (firewallType.equalsIgnoreCase("networkacl")) {
+                    throw new UnsupportedOperationException("Firewall rules are not supported in network " + network);
+                }
+            }
         } else if (purpose == Purpose.PortForwarding) {
-            protocolCapabilities = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.PortForwarding);
+            caps = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.PortForwarding);
         }
 
-        if (protocolCapabilities != null) {
-            String supportedProtocols = protocolCapabilities.get(Capability.SupportedProtocols).toLowerCase();
+        if (caps != null) {
+            String supportedProtocols = caps.get(Capability.SupportedProtocols).toLowerCase();
             if (!supportedProtocols.contains(proto.toLowerCase())) {
                 throw new InvalidParameterValueException("Protocol " + proto + " is not supported in zone " + network.getDataCenterId());
             } else if (proto.equalsIgnoreCase(NetUtils.ICMP_PROTO) && purpose != Purpose.Firewall) {

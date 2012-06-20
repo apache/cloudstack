@@ -361,5 +361,5 @@ createPrivateNetwork=com.cloud.api.commands.CreatePrivateNetworkCmd;1
 
 #### 
 createNetworkACL=com.cloud.api.commands.CreateNetworkACLCmd;15
-#deleteNetworkACL=com.cloud.api.commands.DeleteNetworkACLCmd;15
-#listNetworkACLs=com.cloud.api.commands.ListNetworkACLsCmd;15
+deleteNetworkACL=com.cloud.api.commands.DeleteNetworkACLCmd;15
+listNetworkACLs=com.cloud.api.commands.ListNetworkACLsCmd;15

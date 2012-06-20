@@ -31,7 +31,7 @@ import com.cloud.utils.net.NetUtils;
 @Implementation(description = "Creates a ACL rule the given network (the network has to belong to VPC)", 
 responseObject = NetworkACLResponse.class)
 public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements NetworkACL {
-    public static final Logger s_logger = Logger.getLogger(CreateFirewallRuleCmd.class.getName());
+    public static final Logger s_logger = Logger.getLogger(CreateNetworkACLCmd.class.getName());
 
     private static final String s_name = "createnetworkaclresponse";
 
