@@ -81,6 +81,7 @@ known_categories = {
     'Pod': 'Pod',
     'Zone': 'Zone',
     'NetworkOffering': 'Network Offering',
+    'NetworkACL': 'Network ACL',
     'Network': 'Network',
     'CiscoNexus': 'Network',
     'Vpn': 'VPN',

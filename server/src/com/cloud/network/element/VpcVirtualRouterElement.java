@@ -281,7 +281,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         capabilities.put(Service.Vpn, vpnCapabilities);
         
         Map<Capability, String> firewallCapabilities = capabilities.get(Service.Firewall);
-        firewallCapabilities.put(Capability.FirewallType, "percidr");
+        firewallCapabilities.put(Capability.FirewallType, "networkacl");
         capabilities.put(Service.Firewall, firewallCapabilities);
 
         return capabilities;
