@@ -7191,6 +7191,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -i " + domrGIP;
             args += " -g " + gw;
             args += " -m " + cidr;
+            args += " -n " + NetUtils.getSubNet(domrGIP, nic.getNetmask());
             if ( dns != null && !dns.isEmpty() ) {
                 args += " -s " + dns;
             }

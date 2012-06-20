@@ -56,7 +56,7 @@ acl_restore() {
 acl_save() {
   acl_remove_backup
   sudo iptables -E ACL_INBOUND_$ip _ACL_INBOUND_$ip 2>/dev/null
-  sudo iptables -E ACL_OUTBOUND_$ip _ACL_OUTBOUND_$gGW 2>/dev/null
+  sudo iptables -E ACL_OUTBOUND_$ip _ACL_OUTBOUND_$ip 2>/dev/null
 }
 
 acl_chain_for_guest_network () {
@@ -99,19 +99,19 @@ acl_entry_for_guest_network() {
       [ "$sport" == "-1" ] && typecode="any"
       if [ "$inbound" == "1" ]
       then
-        sudo iptables -I ACL_INBOUND_$gGW -p $prot -s $lcidr  \
+        sudo iptables -I ACL_INBOUND_$ip -p $prot -s $lcidr  \
                     --icmp-type $typecode  -j ACCEPT
       else
-        sudo iptables -I ACL_OUTBOUND_$gGW -p $prot -d $lcidr  \
+        sudo iptables -I ACL_OUTBOUND_$ip -p $prot -d $lcidr  \
                     --icmp-type $typecode  -j ACCEPT
       fi
     else
       if [ "$inbound" == "1" ]
       then
-        sudo iptables -I ACL_INBOUND_$gGW -p $prot -s $lcidr \
+        sudo iptables -I ACL_INBOUND_$ip -p $prot -s $lcidr \
                     --dport $sport:$eport -j ACCEPT
       else
-        sudo iptables -I ACL_OUTBOUND_$gGW -p $prot -d $lcidr \
+        sudo iptables -I ACL_OUTBOUND_$ip -p $prot -d $lcidr \
                     --dport $sport:$eport -j ACCEP`T
     fi
     result=$?

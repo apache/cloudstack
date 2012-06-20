@@ -77,6 +77,8 @@ create_guest_network() {
   # setup rules to allow dhcp/dns request
   sudo iptables -A INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
   sudo iptables -A INPUT -i $dev -p udp -m udp --dport 53 -j ACCEPT
+  local tableName="Table_$dev"
+  sudo ip route add $subnet/$mask dev $dev table $tableName proto static
 
   # create inbound acl chain
   if sudo iptables -N ACL_INBOUND_$ip 2>/dev/null
@@ -108,6 +110,9 @@ destroy_guest_network() {
   sudo iptables -D FORWARD -i $dev -s $ip/$mask -j ACL_OUTBOUND_$ip  2>/dev/null
   sudo iptables -X ACL_OUTBOUND_$ip 2>/dev/null
 
+  sudo ip addr del dev $dev $ip/$mask
+  sudo iptables -D INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
+  sudo iptables -D INPUT -i $dev -p udp -m udp --dport 53 -j ACCEPT
   desetup_dnsmasq
 }
 
@@ -133,7 +138,7 @@ do
 		op="-D"
 		;;
   n)	nflag=1
-		network="$OPTAGR"
+		subnet="$OPTAGR"
 		;;
   m)	mflag=1
 		mask="$OPTARG"
