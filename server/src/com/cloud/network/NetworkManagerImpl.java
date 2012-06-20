@@ -2856,12 +2856,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public boolean canUseForDeploy(Network network) {
+        if (network.getTrafficType() != TrafficType.Guest) {
+            return false;
+        }
         boolean hasFreeIps = true;
         if (network.getGuestType() == GuestType.Shared) {
             hasFreeIps = _ipAddressDao.countFreeIPsInNetwork(network.getId()) > 0;
         } else {
             hasFreeIps = (getAvailableIps(network, null)).size() > 0;
         }
+       
         return hasFreeIps;
     }
 
