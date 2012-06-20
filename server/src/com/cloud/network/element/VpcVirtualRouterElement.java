@@ -189,6 +189,16 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 throw new ResourceUnavailableException("Can't find at least one running router!",
                         DataCenter.class, network.getDataCenterId());
             }
+            for (VirtualRouter router : routers) {
+                //Add router to guest network if needed
+                if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
+                    if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(router, network, false)) {
+                        throw new CloudRuntimeException("Failed to add VPC router " + router + " to guest network " + network);
+                    } else {
+                        s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);
+                    }
+                }
+            }
         }
        
         return true;
