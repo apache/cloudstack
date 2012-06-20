@@ -23,6 +23,7 @@ public interface FirewallRule extends ControlledEntity {
         LoadBalancing,
         Vpn,
         StaticNat,
+        NetworkACL,
     }
     
     enum FirewallRuleType {
@@ -35,6 +36,11 @@ public interface FirewallRule extends ControlledEntity {
         Add,    // Add means the rule has been created and has gone through network rule conflict detection.
         Active, // Rule has been sent to the network elements and reported to be active.
         Revoke  // Revoke means this rule has been revoked. If this rule has been sent to the network elements, the rule will be deleted from database.
+    }
+    
+    enum TrafficType {
+        Ingress,
+        Egress
     }
     
     /**
@@ -68,7 +74,7 @@ public interface FirewallRule extends ControlledEntity {
     
     long getNetworkId();
     
-    long getSourceIpAddressId();
+    Long getSourceIpAddressId();
 
     Integer getIcmpCode();
 

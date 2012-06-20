@@ -90,7 +90,7 @@ public class StaticNatRuleImpl implements StaticNatRule{
     }
 
     @Override
-    public long getSourceIpAddressId() {
+    public Long getSourceIpAddressId() {
         return sourceIpAddressId;
     }
 

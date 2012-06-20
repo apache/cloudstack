@@ -125,6 +125,7 @@ import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.LoadBalancingServiceProvider;
+import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.PortForwardingServiceProvider;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
@@ -172,7 +173,6 @@ import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
-import com.cloud.utils.AnnotationHelper;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
@@ -3685,6 +3685,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         continue;
                     }
                     handled = ((FirewallServiceProvider) ne).applyFWRules(network, rules);
+                    break;
+                case NetworkACL:
+                    boolean isNetworkACLProvider = isProviderSupportServiceInNetwork(network.getId(), Service.Firewall, provider);
+                    if (!(ne instanceof NetworkACLServiceProvider && isNetworkACLProvider)) {
+                        continue;
+                    }
+                    handled = ((NetworkACLServiceProvider) ne).applyNetworkACLs(network, rules);
                     break;
                 default:
                     s_logger.debug("Unable to handle network rules for purpose: " + purpose.toString());

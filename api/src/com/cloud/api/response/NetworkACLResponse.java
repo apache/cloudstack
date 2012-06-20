@@ -18,24 +18,21 @@ import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
-public class FirewallResponse extends BaseResponse {
-    @SerializedName(ApiConstants.ID) @Param(description="the ID of the firewall rule")
+public class NetworkACLResponse extends BaseResponse {
+    @SerializedName(ApiConstants.ID) @Param(description="the ID of the ACL")
     private IdentityProxy id = new IdentityProxy("firewall_rules");
 
-    @SerializedName(ApiConstants.PROTOCOL) @Param(description="the protocol of the firewall rule")
+    @SerializedName(ApiConstants.PROTOCOL) @Param(description="the protocol of the ACL")
     private String protocol;
 
-    @SerializedName(ApiConstants.START_PORT) @Param(description="the starting port of firewall rule's port range")
+    @SerializedName(ApiConstants.START_PORT) @Param(description="the starting port of ACL's port range")
     private String startPort;
 
-    @SerializedName(ApiConstants.END_PORT)  @Param(description = "the ending port of firewall rule's port range")
+    @SerializedName(ApiConstants.END_PORT)  @Param(description = "the ending port of ACL's port range")
     private String endPort;
-    
-    @SerializedName(ApiConstants.IP_ADDRESS_ID) @Param(description="the public ip address id for the firewall rule")
-    private Long publicIpAddressId;
 
-    @SerializedName(ApiConstants.IP_ADDRESS) @Param(description="the public ip address for the firewall rule")
-    private String publicIpAddress;
+    @SerializedName(ApiConstants.TRAFFIC_TYPE) @Param(description="the traffic type for the ACL")
+    private String trafficType;
     
     @SerializedName(ApiConstants.STATE) @Param(description="the state of the rule")
     private String state;
@@ -65,14 +62,6 @@ public class FirewallResponse extends BaseResponse {
         this.endPort = endPort;
     }
 
-    public void setPublicIpAddressId(Long publicIpAddressId) {
-        this.publicIpAddressId = publicIpAddressId;
-    }
-
-    public void setPublicIpAddress(String publicIpAddress) {
-        this.publicIpAddress = publicIpAddress;
-    }
-
     public void setState(String state) {
         this.state = state;
     }
@@ -87,5 +76,9 @@ public class FirewallResponse extends BaseResponse {
 
     public void setIcmpCode(Integer icmpCode) {
         this.icmpCode = icmpCode;
+    }
+
+    public void setTrafficType(String trafficType) {
+        this.trafficType = trafficType;
     }
 }

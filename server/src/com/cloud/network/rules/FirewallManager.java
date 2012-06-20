@@ -17,7 +17,6 @@ import java.util.List;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
-import com.cloud.network.IpAddress;
 import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -37,13 +36,12 @@ public interface FirewallManager extends FirewallService {
      * 
      * @param newRule
      *            the new rule created.
-     * @param ipAddress
-     *            ip address that back up the new rule.
      * @throws NetworkRuleConflictException
      */
-    void detectRulesConflict(FirewallRule newRule, IpAddress ipAddress) throws NetworkRuleConflictException;
+    void detectRulesConflict(FirewallRule newRule) throws NetworkRuleConflictException;
 
-    void validateFirewallRule(Account caller, IPAddressVO ipAddress, Integer portStart, Integer portEnd, String proto, Purpose purpose, FirewallRuleType type);
+    void validateFirewallRule(Account caller, IPAddressVO ipAddress, Integer portStart, Integer portEnd, String proto,
+            Purpose purpose, FirewallRuleType type);
 
     boolean applyRules(List<? extends FirewallRule> rules, boolean continueOnError, boolean updateRulesInDB) throws ResourceUnavailableException;
 

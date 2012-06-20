@@ -33,7 +33,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -73,7 +72,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
-@Local(value = { FirewallService.class, FirewallManager.class })
+@Local(value = { FirewallService.class, FirewallManager.class})
 public class FirewallManagerImpl implements FirewallService, FirewallManager, Manager {
     private static final Logger s_logger = Logger.getLogger(FirewallManagerImpl.class);
     String _name;
@@ -147,20 +146,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         IPAddressVO ipAddress = _ipAddressDao.findById(ipAddrId);
         // Validate ip address
         if (ipAddress == null && type == FirewallRule.FirewallRuleType.User) {
-            throw new InvalidParameterValueException("Unable to create port forwarding rule; ip id=" + ipAddrId + 
+            throw new InvalidParameterValueException("Unable to create firewall rule; ip id=" + ipAddrId + 
                     " doesn't exist in the system");
-        }
-        
-        //associate ip address to network (if needed)
-        if (ipAddress.getAssociatedWithNetworkId() == null) {
-            s_logger.debug("The ip is not associated with the network id="+ networkId + " so assigning");
-            try {
-                _networkMgr.associateIPToGuestNetwork(ipAddrId, networkId);
-            } catch (Exception ex) {
-                s_logger.warn("Failed to associate ip id=" + ipAddrId + " to network id=" + networkId + " as " +
-                        "a part of firewall rule creation");
-                return null;
-            }
         }
         
         _networkMgr.checkIpForService(ipAddress, Service.Firewall);  
@@ -184,16 +171,16 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             domainId = ipAddress.getAllocatedInDomainId();
         }
 
-
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        FirewallRuleVO newRule = new FirewallRuleVO(xId, ipAddrId, portStart, portEnd, protocol.toLowerCase(), networkId, accountId, domainId, Purpose.Firewall, sourceCidrList, icmpCode, icmpType, relatedRuleId);
+        FirewallRuleVO newRule = new FirewallRuleVO(xId, ipAddrId, portStart, portEnd, protocol.toLowerCase(), networkId,
+                accountId, domainId, Purpose.Firewall, sourceCidrList, icmpCode, icmpType, relatedRuleId, null);
         newRule.setType(type);
         newRule = _firewallDao.persist(newRule);
 
         if (type == FirewallRuleType.User)
-            detectRulesConflict(newRule, ipAddress);
+            detectRulesConflict(newRule);
 
         if (!_firewallDao.setStateToAdd(newRule)) {
             throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
@@ -252,18 +239,19 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     }
 
     @Override
-    public void detectRulesConflict(FirewallRule newRule, IpAddress ipAddress) throws NetworkRuleConflictException {
-        assert newRule.getSourceIpAddressId() == ipAddress.getId() : "You passed in an ip address that doesn't match the address in the new rule";
+    public void detectRulesConflict(FirewallRule newRule) throws NetworkRuleConflictException {
 
         List<FirewallRuleVO> rules = _firewallDao.listByIpAndPurposeAndNotRevoked(newRule.getSourceIpAddressId(), null);
-        assert (rules.size() >= 1) : "For network rules, we now always first persist the rule and then check for network conflicts so we should at least have one rule at this point.";
+        assert (rules.size() >= 1) : "For network rules, we now always first persist the rule and then check for " +
+        		"network conflicts so we should at least have one rule at this point.";
 
         for (FirewallRuleVO rule : rules) {
             if (rule.getId() == newRule.getId()) {
                 continue; // Skips my own rule.
             }
 
-            boolean oneOfRulesIsFirewall = ((rule.getPurpose() == Purpose.Firewall || newRule.getPurpose() == Purpose.Firewall) && ((newRule.getPurpose() != rule.getPurpose()) || (!newRule.getProtocol()
+            boolean oneOfRulesIsFirewall = ((rule.getPurpose() == Purpose.Firewall || newRule.getPurpose() == Purpose.Firewall)
+                    && ((newRule.getPurpose() != rule.getPurpose()) || (!newRule.getProtocol()
                     .equalsIgnoreCase(rule.getProtocol()))));
 
             // if both rules are firewall and their cidrs are different, we can skip port ranges verification
@@ -288,24 +276,29 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
 
             if (!oneOfRulesIsFirewall) {
                 if (rule.getPurpose() == Purpose.StaticNat && newRule.getPurpose() != Purpose.StaticNat) {
-                    throw new NetworkRuleConflictException("There is 1 to 1 Nat rule specified for the ip address id=" + newRule.getSourceIpAddressId());
+                    throw new NetworkRuleConflictException("There is 1 to 1 Nat rule specified for the ip address id=" 
+                + newRule.getSourceIpAddressId());
                 } else if (rule.getPurpose() != Purpose.StaticNat && newRule.getPurpose() == Purpose.StaticNat) {
-                    throw new NetworkRuleConflictException("There is already firewall rule specified for the ip address id=" + newRule.getSourceIpAddressId());
+                    throw new NetworkRuleConflictException("There is already firewall rule specified for the ip address id="
+                + newRule.getSourceIpAddressId());
                 }
             }
 
             if (rule.getNetworkId() != newRule.getNetworkId() && rule.getState() != State.Revoke) {
-                throw new NetworkRuleConflictException("New rule is for a different network than what's specified in rule " + rule.getXid());
+                throw new NetworkRuleConflictException("New rule is for a different network than what's specified in rule "
+            + rule.getXid());
             }
 
             if (newRule.getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO) && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol())) {
-                if (newRule.getIcmpCode().longValue() == rule.getIcmpCode().longValue() && newRule.getIcmpType().longValue() == rule.getIcmpType().longValue()
+                if (newRule.getIcmpCode().longValue() == rule.getIcmpCode().longValue() 
+                        && newRule.getIcmpType().longValue() == rule.getIcmpType().longValue()
                         && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()) && duplicatedCidrs) {
                     throw new InvalidParameterValueException("New rule conflicts with existing rule id=" + rule.getId());
                 }
             }
 
-            boolean notNullPorts = (newRule.getSourcePortStart() != null && newRule.getSourcePortEnd() != null && rule.getSourcePortStart() != null && rule.getSourcePortEnd() != null);
+            boolean notNullPorts = (newRule.getSourcePortStart() != null && newRule.getSourcePortEnd() != null && 
+                    rule.getSourcePortStart() != null && rule.getSourcePortEnd() != null);
             if (!notNullPorts) {
                 continue;
             } else if (!oneOfRulesIsFirewall && !(bothRulesFirewall && !duplicatedCidrs)
@@ -331,7 +324,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     }
 
     @Override
-    public void validateFirewallRule(Account caller, IPAddressVO ipAddress, Integer portStart, Integer portEnd, String proto, Purpose purpose, FirewallRuleType type) {
+    public void validateFirewallRule(Account caller, IPAddressVO ipAddress, Integer portStart, Integer portEnd, 
+            String proto, Purpose purpose, FirewallRuleType type) {
         if (portStart != null && !NetUtils.isValidPort(portStart)) {
             throw new InvalidParameterValueException("publicPort is an invalid value: " + portStart);
         }
@@ -351,10 +345,13 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         // Validate ip address
         _accountMgr.checkAccess(caller, null, true, ipAddress);
 
-        Long networkId = ipAddress.getAssociatedWithNetworkId();
-        if (networkId == null) {
-            throw new InvalidParameterValueException("Unable to create port forwarding rule ; ip id=" + ipAddress.getId() + " is not associated with any network");
+        Long networkId = null;
 
+        if (ipAddress.getAssociatedWithNetworkId() == null) {
+            throw new InvalidParameterValueException("Unable to create port forwarding rule ; ip id=" + 
+                    ipAddress.getId() + " is not associated with any network");
+        } else {
+            networkId = ipAddress.getAssociatedWithNetworkId();
         }
 
         Network network = _networkMgr.getNetwork(networkId);
@@ -441,7 +438,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     public boolean applyFirewallRules(List<FirewallRuleVO> rules, boolean continueOnError, Account caller) {
 
         if (rules.size() == 0) {
-            s_logger.debug("There are no firewall rules to apply for ip id=" + rules);
+            s_logger.debug("There are no firewall rules to apply");
             return true;
         }
 
@@ -493,7 +490,6 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         }
 
         return success;
-
     }
 
     @Override

@@ -21,6 +21,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
+import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
@@ -69,6 +70,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         NotRevokedSearch.and("sourcePortStart", NotRevokedSearch.entity().getSourcePortStart(), Op.EQ);
         NotRevokedSearch.and("sourcePortEnd", NotRevokedSearch.entity().getSourcePortEnd(), Op.EQ);
         NotRevokedSearch.and("networkId", NotRevokedSearch.entity().getNetworkId(), Op.EQ);
+        NotRevokedSearch.and("trafficType", NotRevokedSearch.entity().getTrafficType(), Op.EQ);
         NotRevokedSearch.done();
 
         ReleaseSearch = createSearchBuilder();
@@ -263,6 +265,21 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         SearchCriteria<Long> sc = RulesByIpCount.create();
         sc.setParameters("ipAddressId", sourceIpId);
         return customSearch(sc, null).get(0);
+    }
+
+    @Override
+    public List<FirewallRuleVO> listByNetworkPurposeTrafficTypeAndNotRevoked(long networkId, Purpose purpose, TrafficType trafficType) {
+        SearchCriteria<FirewallRuleVO> sc = NotRevokedSearch.create();
+        sc.setParameters("networkId", networkId);
+        sc.setParameters("state", State.Revoke);
+
+        if (purpose != null) {
+            sc.setParameters("purpose", purpose);
+        }
+        
+        sc.setParameters("trafficType", trafficType);
+
+        return listBy(sc);
     }
 
 }

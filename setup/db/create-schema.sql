@@ -647,7 +647,7 @@ CREATE TABLE `cloud`.`op_dc_vnet_alloc` (
 CREATE TABLE `cloud`.`firewall_rules` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
-  `ip_address_id` bigint unsigned NOT NULL COMMENT 'id of the corresponding ip address',
+  `ip_address_id` bigint unsigned COMMENT 'id of the corresponding ip address',
   `start_port` int(10) COMMENT 'starting port of a port range',
   `end_port` int(10) COMMENT 'end port of a port range',
   `state` char(32) NOT NULL COMMENT 'current state of this rule',
@@ -662,12 +662,15 @@ CREATE TABLE `cloud`.`firewall_rules` (
   `icmp_type` int(10) COMMENT 'The ICMP type (if protocol=ICMP). A value of -1 means all types.',
   `related` bigint unsigned COMMENT 'related to what other firewall rule',
   `type` varchar(10) NOT NULL DEFAULT 'USER',
+  `vpc_id` bigint unsigned COMMENT 'vpc the firewall rule is associated with',
+  `traffic_type` char(32) COMMENT 'the traffic type of the rule, can be Ingress or Egress',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_firewall_rules__ip_address_id` FOREIGN KEY(`ip_address_id`) REFERENCES `user_ip_address`(`id`),
   CONSTRAINT `fk_firewall_rules__network_id` FOREIGN KEY(`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_firewall_rules__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_firewall_rules__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_firewall_rules__related` FOREIGN KEY(`related`) REFERENCES `firewall_rules`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_firewall_rules__vpc_id` FOREIGN KEY (`vpc_id`) REFERENCES `vpc`(`id`) ON DELETE CASCADE,
   INDEX `i_firewall_rules__purpose`(`purpose`),
   CONSTRAINT `uc_firewall_rules__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

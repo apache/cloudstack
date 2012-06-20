@@ -37,6 +37,7 @@ import com.cloud.network.NetworkService;
 import com.cloud.network.StorageNetworkService;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.firewall.FirewallService;
+import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
@@ -56,7 +57,6 @@ import com.cloud.user.DomainService;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
-import com.cloud.utils.AnnotationHelper;
 import com.cloud.vm.BareMetalVmService;
 import com.cloud.vm.UserVmService;
 
@@ -128,6 +128,7 @@ public abstract class BaseCmd {
     public static StorageNetworkService _storageNetworkService;
     public static TaggedResourceService _taggedResourceService;
     public static VpcService _vpcService;
+    public static NetworkACLService _networkACLService;
 
     static void setComponents(ResponseGenerator generator) {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
@@ -157,6 +158,7 @@ public abstract class BaseCmd {
         _storageNetworkService = locator.getManager(StorageNetworkService.class);
         _taggedResourceService = locator.getManager(TaggedResourceService.class);
         _vpcService = locator.getManager(VpcService.class);
+        _networkACLService = locator.getManager(NetworkACLService.class);
     }
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;

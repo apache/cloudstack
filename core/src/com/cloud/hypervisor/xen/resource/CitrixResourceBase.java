@@ -148,8 +148,11 @@ import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetNetworkACLAnswer;
+import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
@@ -531,10 +534,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((IpAssocVpcCommand) cmd);
         } else if (clazz == SetSourceNatCommand.class) {
             return execute((SetSourceNatCommand) cmd);
+        } else if (clazz == SetNetworkACLCommand.class) {
+            return execute((SetNetworkACLCommand) cmd);
+        } else if (clazz == SetPortForwardingRulesVpcCommand.class) {
+            return execute((SetPortForwardingRulesVpcCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
+
 
     protected XsLocalNetwork getNativeNetworkForTraffic(Connection conn, TrafficType type, String name) throws XenAPIException, XmlRpcException {
         if (name != null) {
@@ -7270,5 +7278,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    private SetNetworkACLAnswer execute(SetNetworkACLCommand cmd) {
+        // TODO - add implementation logic here
+        return null;
+    }
 
+    protected SetPortForwardingRulesAnswer execute(SetPortForwardingRulesVpcCommand cmd) {
+       //TODO - add implementation
+        return null;
+    }
 }
