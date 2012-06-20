@@ -17,12 +17,14 @@
 package com.cloud.agent.api;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.host.Host;
 
 /**
  */
 public class StartCommand extends Command {
     VirtualMachineTO vm;
-    
+    String hostIp;
+
     public VirtualMachineTO getVirtualMachine() {
         return vm;
     }
@@ -34,8 +36,17 @@ public class StartCommand extends Command {
     
     protected StartCommand() {
     }
-    
+
     public StartCommand(VirtualMachineTO vm) {
         this.vm = vm;
+    }
+
+    public StartCommand(VirtualMachineTO vm, Host host) {
+        this.vm = vm;
+        this.hostIp = host.getPrivateIpAddress();
+    }
+
+    public String getHostIp() {
+        return this.hostIp;
     }
 }

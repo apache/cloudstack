@@ -2481,7 +2481,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		ConsoleDef console = new ConsoleDef("pty", null, null, (short) 0);
 		devices.addDevice(console);
 
-		GraphicDef grap = new GraphicDef("vnc", (short) 0, true, null, null,
+		GraphicDef grap = new GraphicDef("vnc", (short) 0, true, vmTO.getVncAddr(), null,
 				null);
 		devices.addDevice(grap);
 
@@ -2507,6 +2507,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
 	protected synchronized StartAnswer execute(StartCommand cmd) {
 		VirtualMachineTO vmSpec = cmd.getVirtualMachine();
+        vmSpec.setVncAddr(cmd.getHostIp());
 		String vmName = vmSpec.getName();
 		LibvirtVMDef vm = null;
 
