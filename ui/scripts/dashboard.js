@@ -202,7 +202,8 @@
                   alerts: $.map(alerts, function(alert) {
                     return {
                       name: cloudStack.converters.toAlertType(alert.type),
-                      description: alert.description
+                      description: alert.description,
+                      sent: cloudStack.converters.toLocalDate(alert.sent)
                     };
                   })
                 }));

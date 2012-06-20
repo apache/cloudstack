@@ -1158,6 +1158,7 @@
               <div class="content">
                 <span class="title" data-list-item="name">Alert 1</span>
                 <p data-list-item="description">Alert 1</p>
+				        <p data-list-item="sent">Alert 1</p>
               </div>
             </li>
           </ul>
