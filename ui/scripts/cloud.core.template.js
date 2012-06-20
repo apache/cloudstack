@@ -376,7 +376,7 @@ function templateJsonToDetailsTab() {
         dataType: "json",
         async: false,
         success: function(json) {            
-            var items = json.listtemplatesresponse.template;
+            var items = json.listtemplatesresponse.template;						
             if(items != null && items.length > 0) {
                 jsonObj = items[0];
                 $midmenuItem1.data("jsonObj", jsonObj);                  
@@ -747,16 +747,21 @@ function doEditTemplate2($actionLink, $detailsTab, $midmenuItem1, $readonlyField
 		
 	//updateTemplatePermissions	
 	var array2 = [];		
-	var oldIsPublic = jsonObj.ispublic.toString();	
-	var newIsPublic = $detailsTab.find("#ispublic_edit").val();        
-	if(newIsPublic != oldIsPublic)
-	    array2.push("&ispublic="+newIsPublic);
-	    
-	var oldIsFeatured = jsonObj.isfeatured.toString();	
-	var newIsFeatured = $detailsTab.find("#isfeatured_edit").val();           
-    if(newIsFeatured != oldIsFeatured)
-        array2.push("&isfeatured="+newIsFeatured);											
-								
+	
+	if($detailsTab.find("#ispublic_edit").css("display") != "none" ) {
+		var oldIsPublic = jsonObj.ispublic.toString();	
+		var newIsPublic = $detailsTab.find("#ispublic_edit").val();        
+		if(newIsPublic != oldIsPublic)
+			array2.push("&ispublic="+newIsPublic);
+	}
+   
+	if($detailsTab.find("#isfeatured_edit").css("display") != "none" ) {
+		var oldIsFeatured = jsonObj.isfeatured.toString();	
+		var newIsFeatured = $detailsTab.find("#isfeatured_edit").val();           
+		if(newIsFeatured != oldIsFeatured)
+			array2.push("&isfeatured="+newIsFeatured);											
+	}
+	
 	if(array2.length > 0) {	
 	    $.ajax({
 		    data: createURL("command=updateTemplatePermissions&id="+id+array2.join("")),
