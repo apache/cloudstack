@@ -76,7 +76,7 @@
   <property name="deps.dir" location="${top.dir}/deps" />
   
   <property name="ovm.jar" value="cloud-ovm.jar" />
-  <property name="ovm-scripts.dir" location="${ovm.base.dir}/scripts" />
+  <property name="ovm-scripts.dir" location="${base.dir}/plugins/hypervisors/ovm/scripts" />
 	
   <import file="${build.dir}/build-common.xml"/>
 
@@ -102,8 +102,16 @@
   </path>
 	
   <!-- This section needs to be replaced by some kind of dependency library-->
-	
-	
+
+  <target name="deploy-ovm" >
+      <echo level="info" message="Copying OVM scripts from ${ovm-scripts.dir} to ${server.deploy.to.dir}/webapps/client/WEB-INF/lib/scripts" />
+      <copy todir="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/scripts">
+          <fileset dir="${ovm-scripts.dir}">
+              <include name="**/*"/>
+          </fileset>
+      </copy>
+  </target>
+
   <target name="init" description="Initialize binaries directory">
   	<mkdir dir="${classes.dir}/${ovm.jar}"/>
   	<mkdir dir="${jar.dir}"/>
