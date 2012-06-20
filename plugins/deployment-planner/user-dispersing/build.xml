@@ -17,7 +17,7 @@
 -->
 
 
-<project name="Cloud Stack" default="help" basedir=".">
+<project name="Cloud Stack User Dispersing Deployment Planner" default="help" basedir=".">
   <description>
 		Cloud Stack ant build file
     </description>
@@ -480,7 +480,7 @@
 
   <target name="build-servers" depends="-init, build-server" />
 
-  <target name="build-opensource" depends="-init, build-server, build-agent, build-scripts, build-ui, build-console-proxy, build-ovm, package-oss-systemvm-iso">
+  <target name="build-opensource" depends="-init, build-server, build-agent, build-scripts, build-ui, build-ovm, package-oss-systemvm-iso">
     <copy overwrite="true" todir="${dist.dir}">
       <fileset dir="${base.dir}/build/deploy/">
         <include name="deploy-agent.sh" />
@@ -588,8 +588,15 @@
   </target>
   
   <!-- ===================== Ovm.Jar ===================== -->
+  <property name="ovm.jar" value="cloud-ovm.jar" />
+  <property name="ovm.dir" location="${base.dir}/ovm" />
+  <property name="ovm-scripts.dir" location="${ovm.dir}/scripts" />
+  <path id="ovm.classpath" >
+    <path refid="deps.classpath" />
+    <path refid="dist.classpath" />
+  </path>
   <target name="compile-ovm" depends="-init, compile-server" description="Compile OVM">
-  	<ant antfile="${base.dir}/plugins/hypervisors/ovm/build.xml" target="build"/>
+    <compile-java jar.name="${ovm.jar}" top.dir="${ovm.dir}" classpath="ovm.classpath" />
   </target>
 
   <target name="compile-all" description="Compile all of the jars" depends="compile-utils, compile-api, compile-core, compile-server, compile-ovm"/>

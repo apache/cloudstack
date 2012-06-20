@@ -73,7 +73,7 @@
         <manifest>
           <attribute name="Class-Path" value="" />
           <attribute name="Built-By" value="${built.by}" />
-          <attribute name="Specification-Title" value="VMOps Cloud Stack" />
+          <attribute name="Specification-Title" value="Apache Cloud Stack" />
           <attribute name="Specification-Version" value="${impl.version}" />
           <attribute name="Specification-Vendor" value="${company.name}" />
           <attribute name="Implementation-Title" value="@{jar.name}" />
