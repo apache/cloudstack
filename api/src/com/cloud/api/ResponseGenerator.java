@@ -23,6 +23,7 @@ import java.util.List;
 import com.cloud.api.ApiConstants.HostDetails;
 import com.cloud.api.ApiConstants.VMDetails;
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
+import com.cloud.api.response.NetworkACLResponse;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.AsyncJobResponse;
 import com.cloud.api.response.CapacityResponse;
@@ -103,6 +104,7 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.NetworkACL;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StickinessPolicy;
@@ -296,4 +298,10 @@ public interface ResponseGenerator {
      * @return
      */
     VpcResponse createVpcResponse(Vpc vpc);
+
+    /**
+     * @param networkACL
+     * @return
+     */
+    NetworkACLResponse createNetworkACLResponse(NetworkACL networkACL);
 }

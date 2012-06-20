@@ -236,7 +236,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         try {
-            _firewallMgr.detectRulesConflict(newRule, ipAddress);
+            _firewallMgr.detectRulesConflict(newRule);
             if (!_firewallDao.setStateToAdd(newRule)) {
                 throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
             }
@@ -299,7 +299,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         txn.start();
 
         FirewallRuleVO newRule = new FirewallRuleVO(rule.getXid(), rule.getSourceIpAddressId(), rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol().toLowerCase(),
-                networkId, accountId, domainId, rule.getPurpose(), null, null, null, null);
+                networkId, accountId, domainId, rule.getPurpose(), null, null, null, null, null);
 
         newRule = _firewallDao.persist(newRule);
 
@@ -309,7 +309,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         try {
-            _firewallMgr.detectRulesConflict(newRule, ipAddress);
+            _firewallMgr.detectRulesConflict(newRule);
             if (!_firewallDao.setStateToAdd(newRule)) {
                 throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
             }
@@ -1009,7 +1009,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         boolean success = false;
         try {
             for (FirewallRuleVO newRule : rules) {
-                _firewallMgr.detectRulesConflict(newRule, ip);
+                _firewallMgr.detectRulesConflict(newRule);
             }
             success = true;
             return rules;

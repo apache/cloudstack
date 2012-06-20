@@ -32,6 +32,7 @@ import javax.persistence.Transient;
 
 import com.cloud.api.Identity;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
+import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
@@ -40,7 +41,7 @@ import com.cloud.utils.net.NetUtils;
 @Table(name="firewall_rules")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="purpose", discriminatorType=DiscriminatorType.STRING, length=32)
-public class FirewallRuleVO implements FirewallRule, Identity {
+public class FirewallRuleVO implements Identity, NetworkACL {
     protected final FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
     
     @Id
@@ -59,7 +60,7 @@ public class FirewallRuleVO implements FirewallRule, Identity {
     long accountId;
     
     @Column(name="ip_address_id", updatable=false)
-    long sourceIpAddressId;
+    Long sourceIpAddressId;
     
     @Column(name="start_port", updatable=false)
     Integer sourcePortStart;
@@ -98,6 +99,10 @@ public class FirewallRuleVO implements FirewallRule, Identity {
     @Enumerated(value=EnumType.STRING)
     FirewallRuleType type;
     
+    @Column(name="traffic_type")
+    @Enumerated(value=EnumType.STRING)
+    TrafficType trafficType;
+    
     
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
@@ -114,7 +119,7 @@ public class FirewallRuleVO implements FirewallRule, Identity {
 
     @Override
     public List<String> getSourceCidrList() {
-        if (sourceCidrs == null && purpose == Purpose.Firewall) {
+        if (sourceCidrs == null && (purpose == Purpose.Firewall || purpose == Purpose.NetworkACL)) {
             return _firewallRulesCidrsDao.getSourceCidrs(id);
         }   
         return sourceCidrs;
@@ -141,7 +146,7 @@ public class FirewallRuleVO implements FirewallRule, Identity {
     }
 
     @Override
-    public long getSourceIpAddressId() {
+    public Long getSourceIpAddressId() {
         return sourceIpAddressId;
     }
 
@@ -191,13 +196,20 @@ public class FirewallRuleVO implements FirewallRule, Identity {
     	this.uuid = UUID.randomUUID().toString();
     }
     
-    public FirewallRuleVO(String xId, long ipAddressId, Integer portStart, Integer portEnd, String protocol, long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related) {
+    public FirewallRuleVO(String xId, Long ipAddressId, Integer portStart, Integer portEnd, String protocol, 
+            long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode,
+            Integer icmpType, Long related, TrafficType trafficType) {
         this.xId = xId;
         if (xId == null) {
             this.xId = UUID.randomUUID().toString();
         }
         this.accountId = accountId;
         this.domainId = domainId;
+        
+        if (sourceIpAddressId == null) {
+            assert (purpose == Purpose.NetworkACL) : "ipAddressId can be null for " + Purpose.NetworkACL + " only";
+        }
+        
         this.sourceIpAddressId = ipAddressId;
         this.sourcePortStart = portStart;
         this.sourcePortEnd = portEnd;
@@ -216,10 +228,13 @@ public class FirewallRuleVO implements FirewallRule, Identity {
         this.related = related;
     	this.uuid = UUID.randomUUID().toString();
     	this.type = FirewallRuleType.User;
+    	this.trafficType = trafficType;
     }
     
-    public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId, long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related) {
-        this(xId, ipAddressId, port, port, protocol, networkId, accountId, domainId, purpose, sourceCidrs, icmpCode, icmpType, related);
+    
+    public FirewallRuleVO(String xId, long ipAddressId, int port, String protocol, long networkId, long accountId, 
+            long domainId, Purpose purpose, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, Long related) {
+        this(xId, ipAddressId, port, port, protocol, networkId, accountId, domainId, purpose, sourceCidrs, icmpCode, icmpType, related, null);
     }
     
     @Override
@@ -253,5 +268,10 @@ public class FirewallRuleVO implements FirewallRule, Identity {
     
     public void setType(FirewallRuleType type) {
     	this.type = type;
+    }
+
+    @Override
+    public TrafficType getTrafficType() {
+        return trafficType;
     }
 }

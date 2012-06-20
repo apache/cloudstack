@@ -732,7 +732,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         List<StaticNatRuleTO> staticNatRules = new ArrayList<StaticNatRuleTO>();
         IPAddressVO ipVO = _ipAddressDao.listByDcIdIpAddress(zone.getId(), publicIp).get(0);
         VlanVO vlan = _vlanDao.findById(ipVO.getVlanId());
-        FirewallRuleVO fwRule = new FirewallRuleVO(null, ipVO.getId(), -1, -1, "any", network.getId(), network.getAccountId(), network.getDomainId(), Purpose.StaticNat, null, null, null, null);
+        FirewallRuleVO fwRule = new FirewallRuleVO(null, ipVO.getId(), -1, -1, "any", network.getId(), network.getAccountId(), network.getDomainId(), Purpose.StaticNat, null, null, null, null, null);
         FirewallRule.State state = !revoked ? FirewallRule.State.Add : FirewallRule.State.Revoke;
         fwRule.setState(state);
         StaticNatRule rule = new StaticNatRuleImpl(fwRule, privateIp);

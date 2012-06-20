@@ -106,6 +106,7 @@ import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.network.firewall.FirewallManagerImpl;
+import com.cloud.network.firewall.NetworkACLManagerImpl;
 import com.cloud.network.lb.ElasticLoadBalancerManagerImpl;
 import com.cloud.network.lb.LoadBalancingRulesManagerImpl;
 import com.cloud.network.lb.dao.ElasticLbVmMapDaoImpl;
@@ -397,6 +398,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("HA Manager", HighAvailabilityManagerImpl.class);
         addManager("VPC Manager", VpcManagerImpl.class);
         addManager("VpcVirtualRouterManager", VpcVirtualNetworkApplianceManagerImpl.class);
+        addManager("NetworkACLManager", NetworkACLManagerImpl.class);
     }
 
     @Override

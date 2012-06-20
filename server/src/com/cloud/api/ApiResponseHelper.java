@@ -32,6 +32,7 @@ import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.api.ApiConstants.HostDetails;
 import com.cloud.api.ApiConstants.VMDetails;
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
+import com.cloud.api.response.NetworkACLResponse;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.AsyncJobResponse;
@@ -137,6 +138,7 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.NetworkACL;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StickinessPolicy;
@@ -2957,6 +2959,39 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setState(stateToSet);
         response.setObjectName("firewallrule");
+        return response;
+    }
+    
+    @Override
+    public NetworkACLResponse createNetworkACLResponse(NetworkACL networkACL) {
+        NetworkACLResponse response = new NetworkACLResponse();
+
+        response.setId(networkACL.getId());
+        response.setProtocol(networkACL.getProtocol());
+        if (networkACL.getSourcePortStart() != null) {
+            response.setStartPort(Integer.toString(networkACL.getSourcePortStart()));
+        }
+
+        if (networkACL.getSourcePortEnd() != null) {
+            response.setEndPort(Integer.toString(networkACL.getSourcePortEnd()));
+        }
+
+        List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(networkACL.getId());
+        response.setCidrList(StringUtils.join(cidrs, ","));
+
+        response.setTrafficType(networkACL.getTrafficType().toString());
+
+        FirewallRule.State state = networkACL.getState();
+        String stateToSet = state.toString();
+        if (state.equals(FirewallRule.State.Revoke)) {
+            stateToSet = "Deleting";
+        }
+
+        response.setIcmpCode(networkACL.getIcmpCode());
+        response.setIcmpType(networkACL.getIcmpType());
+
+        response.setState(stateToSet);
+        response.setObjectName("networkacl");
         return response;
     }
 

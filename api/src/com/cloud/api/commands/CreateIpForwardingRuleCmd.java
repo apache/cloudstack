@@ -199,7 +199,7 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     }
 
     @Override
-    public long getSourceIpAddressId() {
+    public Long getSourceIpAddressId() {
         return ipAddressId;
     }
 
