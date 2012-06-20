@@ -717,11 +717,11 @@ public class LibvirtVMDef {
 		private final String _passwd;
 		private final String _keyMap;
 
-		public GraphicDef(String type, short port, boolean auotPort,
+		public GraphicDef(String type, short port, boolean autoPort,
 				String listenAddr, String passwd, String keyMap) {
 			_type = type;
 			_port = port;
-			_autoPort = auotPort;
+			_autoPort = autoPort;
 			_listenAddr = listenAddr;
 			_passwd = passwd;
 			_keyMap = keyMap;
