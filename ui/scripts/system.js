@@ -5824,8 +5824,11 @@
                         actionFilter: podActionfilter,
                         data:item
                       });
-                    }
-                  });
+                     },
+                      error: function(data) {
+                          args.response.error(parseXMLHttpResponse(data));
+                          }
+                   });
                 }
               },
 
