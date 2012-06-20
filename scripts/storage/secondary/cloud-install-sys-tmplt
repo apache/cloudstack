@@ -1,7 +1,7 @@
 #!/bin/bash
 # $Id: installrtng.sh 11251 2010-07-23 23:40:44Z abhishek $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/secondary/installrtng.sh $
 usage() {
-  printf "Usage: %s: -m <secondary storage mount point> -f <system vm template file> [-h <hypervisor name: kvm|vmware|xenserver> ] [ -s <mgmt server secret key, if you specified any when running cloud-setup-database, default is password>][-u <Url to system vm template>] [-F <clean up system templates of specified hypervisor>] [-e <Template suffix, e.g vhd, ova, qcow2>]\n" $(basename $0) >&2
+  printf "Usage: %s: -m <secondary storage mount point> -f <system vm template file> [-h <hypervisor name: kvm|vmware|xenserver> ] [ -s <mgmt server secret key, if you specified any when running cloud-setup-database, default is password>][-u <Url to system vm template>] [-F <clean up system templates of specified hypervisor>] [-e <Template suffix, e.g vhd, ova, qcow2>] [-o <Database server hostname or ip, e.g localhost>] [-r <Database user name, e.g root>] [-d <Database password. Fllowed by nothing if the password is empty>]\n" $(basename $0) >&2
   printf "or\n" >&2
   printf "%s: -m <secondary storage mount point> -u <http url for system vm template> [-h <hypervisor name: kvm|vmware|xenserver> ] [ -s <mgmt server secret key>]\n" $(basename $0) >&2
 }
@@ -18,7 +18,10 @@ templateId=1
 hyper=
 msKey=password
 DISKSPACE=5120000  #free disk space required in kilobytes
-while getopts 'm:h:f:u:Ft:e:s:' OPTION
+dbHost=
+dbUser=
+dbPassword=
+while getopts 'm:h:f:u:Ft:e:s:o:r:d' OPTION
 do
   case $OPTION in
   m)	mflag=1
@@ -39,6 +42,15 @@ do
   		;;
   s)    sflag=1
 		msKey="$OPTARG"
+                ;;
+  o)    oflag=1
+        dbHost="$OPTARG"
+                ;;
+  r)    rflag=1
+        dbUser="$OPTARG"
+                ;;
+  d)    dflag=1
+        dbPassword="$OPTARG"
                 ;;
   ?)	usage
 		failed 2
@@ -70,19 +82,27 @@ then
   failed 3
 fi
 
-dbHost=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.host'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-dbUser=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.username'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-encType=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.encryption.type'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
-if [ "$encType" == "file" ]
-then
-	msKey=$(cat /etc/cloud/management/key)
-elif [ "$encType" == "web" ]
-then
-	if [ ! "$sflag" == "1" ]
-	then
-		echo "Encryption type web requires mgmt secret key using -s option"
-		failed 9
-	fi
+
+if [ "$oflag" != 1 ]; then
+    dbHost=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.host'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+fi
+if [ "$rflag" != 1]; then
+    dbUser=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.username'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+fi
+
+if [ -f /etc/cloud/management/db.properties ]; then
+    encType=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.encryption.type'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    if [ "$encType" == "file" ]
+    then
+        msKey=$(cat /etc/cloud/management/key)
+    elif [ "$encType" == "web" ]
+    then
+        if [ ! "$sflag" == "1" ]
+        then
+            echo "Encryption type web requires mgmt secret key using -s option"
+            failed 9
+        fi
+    fi
 fi
 
 if [[ "$encType" == "file" || "$encType" == "web" ]]
@@ -98,7 +118,9 @@ then
 		fi
 	fi
 else
-	dbPassword=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i )
+    if [ "$dflag" != 1]; then
+        dbPassword=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i )
+    fi
 fi
 
 if [ "$hyper" == "kvm" ]
