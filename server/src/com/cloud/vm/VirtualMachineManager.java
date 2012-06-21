@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.AgentUnavailableException;
@@ -163,5 +164,12 @@ public interface VirtualMachineManager extends Manager {
      * @return
      */
     NicTO toNicTO(NicProfile nic, HypervisorType hypervisorType);
+
+    /**
+     * @param profile
+     * @param hvGuru
+     * @return
+     */
+    VirtualMachineTO toVmTO(VirtualMachineProfile<? extends VMInstanceVO> profile);
 
 }

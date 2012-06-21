@@ -1925,19 +1925,19 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 List<PublicIp> allPublicIps = new ArrayList<PublicIp>();
                 if (userIps != null && !userIps.isEmpty()) {
                     for (IPAddressVO userIp : userIps) {
-                        PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
-                                NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
-                        allPublicIps.add(publicIp);
+                            PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
+                                    NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                            allPublicIps.add(publicIp);
                     }
                 }
-                
+                    
                 //Get public Ips that should be handled by router
                 Network network = _networkDao.findById(guestNetworkId);
                 Map<PublicIp, Set<Service>> ipToServices = _networkMgr.getIpToServices(allPublicIps, false, false);
                 Map<Provider, ArrayList<PublicIp>> providerToIpList = _networkMgr.getProviderToIpList(network, ipToServices);
                 // Only cover virtual router for now, if ELB use it this need to be modified
                 ArrayList<PublicIp> publicIps = providerToIpList.get(Provider.VirtualRouter);
-
+    
                 s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + router + " start.");
 
                 if (!publicIps.isEmpty()) {
@@ -1953,27 +1953,26 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         createAssociateIPCommands(router, publicIps, cmds, 0);
                     }
 
-                    //Get information about all the rules (StaticNats and StaticNatRules; PFVPN to reapply on domR start)
-                    for (PublicIp ip : publicIps) {
-                        if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.PortForwarding, provider)) {
-                            pfRules.addAll(_pfRulesDao.listForApplication(ip.getId()));
-                        }
-                        if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.StaticNat, provider)) {
-                            staticNatFirewallRules.addAll(_rulesDao.listByIpAndPurpose(ip.getId(), Purpose.StaticNat));
-                        }
-                        if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
-                            firewallRules.addAll(_rulesDao.listByIpAndPurpose(ip.getId(), Purpose.Firewall));
+                //Get information about all the rules (StaticNats and StaticNatRules; PFVPN to reapply on domR start)
+                for (PublicIp ip : publicIps) {
+                    if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.PortForwarding, provider)) {
+                        pfRules.addAll(_pfRulesDao.listForApplication(ip.getId()));
+                    }
+                    if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.StaticNat, provider)) {
+                        staticNatFirewallRules.addAll(_rulesDao.listByIpAndPurpose(ip.getId(), Purpose.StaticNat));
+                    }
+                    if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
+                        firewallRules.addAll(_rulesDao.listByIpAndPurpose(ip.getId(), Purpose.Firewall));
+                    }
+
+                    if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Vpn, provider)) {
+                        RemoteAccessVpn vpn = _vpnDao.findById(ip.getId());
+                        if (vpn != null) {
+                            vpns.add(vpn);
                         }
 
-                        if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Vpn, provider)) {
-                            RemoteAccessVpn vpn = _vpnDao.findById(ip.getId());
-                            if (vpn != null) {
-                                vpns.add(vpn);
-                            }
-                        }
-
-                        if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.StaticNat, provider)) {
-                            if (ip.isOneToOneNat()) {
+                    if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.StaticNat, provider)) {
+                        if (ip.isOneToOneNat()) {
                                 String dstIp = _networkMgr.getIpInNetwork(ip.getAssociatedWithVmId(), guestNetworkId);
                                 StaticNatImpl staticNat = new StaticNatImpl(ip.getAccountId(), ip.getDomainId(), guestNetworkId, ip.getId(), dstIp, false);
                                 staticNats.add(staticNat);
@@ -2035,6 +2034,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     }
                 }
                 
+                }
             }
 
             if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Dhcp, provider)) {

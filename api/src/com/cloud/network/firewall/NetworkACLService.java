@@ -43,4 +43,6 @@ public interface NetworkACLService {
      * @return
      */
     List<? extends NetworkACL> listNetworkACLs(ListNetworkACLsCmd cmd);
+    
+    List<? extends NetworkACL> listNetworkACLs(long guestNtwkId);
 }
