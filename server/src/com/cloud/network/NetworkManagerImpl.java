@@ -134,6 +134,7 @@ import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VpcVirtualRouterElement;
+import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
@@ -173,7 +174,6 @@ import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserStatisticsDao;
-import com.cloud.utils.AnnotationHelper;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Adapters;
@@ -307,6 +307,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     VpcManager _vpcMgr;
     @Inject
     PrivateIpDao _privateIpDao;
+    @Inject
+    NetworkACLService _networkACLMgr;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
 
@@ -3935,6 +3937,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
             }
         }
+        
+        //apply network ACLs
+        if (!_networkACLMgr.applyNetworkACLs(networkId, caller)) {
+            s_logger.warn("Failed to reapply network ACLs as a part of  of network id=" + networkId + " restart");
+            success = false;
+        }
+        
         return success;
     }
 
@@ -4011,11 +4020,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         // FIXME - in post 3.0 we are going to support multiple providers for the same service per network offering, so
-// we have to calculate capabilities for all of them
+        // we have to calculate capabilities for all of them
         String provider = providers.get(0);
 
         // FIXME we return the capabilities of the first provider of the service - what if we have multiple providers
-// for same Service?
+        // for same Service?
         NetworkElement element = getElementImplementingProvider(provider);
         if (element != null) {
             Map<Service, Map<Capability, String>> elementCapabilities = element.getCapabilities();

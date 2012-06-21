@@ -1304,9 +1304,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
         _networkMgr.prepareNicForMigration(profile, dest);
         _storageMgr.prepareForMigration(profile, dest);
-        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
 
-        VirtualMachineTO to = hvGuru.implement(profile);
+        VirtualMachineTO to = toVmTO(profile);
         PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(to);
 
         ItWorkVO work = new ItWorkVO(UUID.randomUUID().toString(), _nodeId, State.Migrating, vm.getType(), vm.getId());
@@ -1409,6 +1408,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             work.setStep(Step.Done);
             _workDao.update(work.getId(), work);
         }
+    }
+
+    @Override
+    public VirtualMachineTO toVmTO(VirtualMachineProfile<? extends VMInstanceVO> profile) {
+        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(profile.getVirtualMachine().getHypervisorType());
+        VirtualMachineTO to = hvGuru.implement(profile);
+        return to;
     }
 
     protected void cancelWorkItems(long nodeId) {

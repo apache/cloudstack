@@ -361,5 +361,11 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLService{
 
         return _firewallDao.search(sc, filter);
     }
+
+
+    @Override
+    public List<? extends NetworkACL> listNetworkACLs(long guestNtwkId) {
+        return _firewallDao.listByNetworkAndPurpose(guestNtwkId, Purpose.NetworkACL);
+    }
     
 }
