@@ -615,10 +615,17 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         //set source nat ip
         if (sourceNatIpAdd != null) {
             IpAddressTO sourceNatIp = sourceNatIpAdd.first();
-            Long networkId = sourceNatIpAdd.second();
-            SetSourceNatCommand cmd = new SetSourceNatCommand(sourceNatIp, addSourceNat);
+            Long publicNetworkId = sourceNatIpAdd.second();
+            
+            Network guestNetwork = _networkMgr.getNetwork(publicNetworkId);
+            Nic nic = _nicDao.findByInstanceIdAndNetworkId(guestNetwork.getId(), router.getId());
+            NicProfile nicProfile = new NicProfile(nic, guestNetwork, nic.getBroadcastUri(), nic.getIsolationUri(), 
+                    _networkMgr.getNetworkRate(guestNetwork.getId(), router.getId()), 
+                    _networkMgr.isSecurityGroupSupportedInNetwork(guestNetwork), 
+                    _networkMgr.getNetworkTag(router.getHypervisorType(), guestNetwork));
+
+            SetSourceNatCommand cmd = new SetSourceNatCommand(sourceNatIp, addSourceNat, _itMgr.toNicTO(nicProfile, router.getHypervisorType()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
-            cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(networkId, router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
             DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
@@ -728,7 +735,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         Commands cmds = new Commands(OnError.Continue);
         createNetworkACLsCommands(rules, router, cmds, guestNetworkId);
         return sendCommandsToRouter(router, cmds);
-    
     }
     
     private void createNetworkACLsCommands(List<NetworkACL> rules, VirtualRouter router, Commands cmds, long guestNetworkId) {
@@ -748,8 +754,14 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 rulesTO.add(ruleTO);
             }
         }
+        
+        Network network = _networkMgr.getNetwork(guestNetworkId);
+        Nic nic = _nicDao.findByInstanceIdAndNetworkId(network.getId(), router.getId());
+        NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
+                _networkMgr.getNetworkRate(network.getId(), router.getId()), 
+                _networkMgr.isSecurityGroupSupportedInNetwork(network), _networkMgr.getNetworkTag(router.getHypervisorType(), network));
 
-        SetNetworkACLCommand cmd = new SetNetworkACLCommand(rulesTO);
+        SetNetworkACLCommand cmd = new SetNetworkACLCommand(rulesTO, _itMgr.toNicTO(nicProfile, router.getHypervisorType()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, guestVlan);

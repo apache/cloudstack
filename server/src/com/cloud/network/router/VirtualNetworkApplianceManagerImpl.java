@@ -2593,8 +2593,16 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             DomainRouterVO domr = (DomainRouterVO)router;
             RouterPublicIp = domr.getPublicIpAddress();
         }
+        
+        Network guestNetwork = _networkMgr.getNetwork(guestNetworkId);
+        Nic nic = _nicDao.findByInstanceIdAndNetworkId(guestNetwork.getId(), router.getId());
+        NicProfile nicProfile = new NicProfile(nic, guestNetwork, nic.getBroadcastUri(), nic.getIsolationUri(), 
+                _networkMgr.getNetworkRate(guestNetwork.getId(), router.getId()), 
+                _networkMgr.isSecurityGroupSupportedInNetwork(guestNetwork), 
+                _networkMgr.getNetworkTag(router.getHypervisorType(), guestNetwork));
 
-        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs,RouterPublicIp, getRouterIpInNetwork(guestNetworkId, router.getId()),router.getPrivateIpAddress());
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs,RouterPublicIp, 
+                getRouterIpInNetwork(guestNetworkId, router.getId()),router.getPrivateIpAddress(), _itMgr.toNicTO(nicProfile, router.getHypervisorType()));
 
         cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
         cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());

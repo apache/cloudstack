@@ -15,21 +15,28 @@ package com.cloud.agent.api.routing;
 import java.util.List;
 
 import com.cloud.agent.api.to.NetworkACLTO;
+import com.cloud.agent.api.to.NicTO;
 
 /**
  * @author Alena Prokharchyk
  */
 public class SetNetworkACLCommand extends NetworkElementCommand{
     NetworkACLTO[] rules;
+    NicTO nic;
 
     protected SetNetworkACLCommand() {
     }
     
-    public SetNetworkACLCommand(List<NetworkACLTO> rules) {
+    public SetNetworkACLCommand(List<NetworkACLTO> rules, NicTO nic) {
         this.rules = rules.toArray(new NetworkACLTO[rules.size()]); 
+        this.nic = nic;
     }
     
     public NetworkACLTO[] getRules() {
         return rules;
+    }
+    
+    public NicTO getNic() {
+        return nic;
     }
 }
