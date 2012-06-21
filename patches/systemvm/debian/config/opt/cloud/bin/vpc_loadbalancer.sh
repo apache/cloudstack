@@ -135,24 +135,6 @@ restore_lb() {
   fi
 }
 
-get_vif_list() {
-  local vif_list=""
-  for i in /sys/class/net/eth*; do 
-    vif=$(basename $i);
-    if [ "$vif" != "eth0" ] && [ "$vif" != "eth1" ]
-    then
-      vif_list="$vif_list $vif";
-    fi
-  done
-  if [ "$vif_list" == "" ]
-  then
-      vif_list="eth0"
-  fi
-  
-  logger -t cloud "Loadbalancer public interfaces = $vif_list"
-  echo $vif_list
-}
-
 mflag=
 iflag=
 aflag=
