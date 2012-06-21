@@ -80,35 +80,11 @@ create_guest_network() {
   local tableName="Table_$dev"
   sudo ip route add $subnet/$mask dev $dev table $tableName proto static
 
-  # create inbound acl chain
-  if sudo iptables -N ACL_INBOUND_$ip 2>/dev/null
-  then
-    logger -t cloud "$(basename $0): create VPC inbound acl chain for network $ip/$mask"
-    # policy drop
-    sudo iptables -A ACL_INBOUND_$ip -j DROP >/dev/null
-    sudo iptables -A FORWARD -o $dev -d $ip/$mask -j ACL_INBOUND_$ip
-  fi
-  # create outbound acl chain
-  if sudo iptables -N ACL_OUTBOUND_$ip 2>/dev/null
-  then
-    logger -t cloud "$(basename $0): create VPC outbound acl chain for network $ip/$mask"
-    sudo iptables -A ACL_OUTBOUND_$ip -j DROP >/dev/null
-    sudo iptables -A FORWARD -i $dev -s $ip/$mask -j ACL_OUTBOUND_$ip
-  fi
-
   setup_dnsmasq
 }
 
 destroy_guest_network() {
   logger -t cloud " $(basename $0): Create network on interface $dev,  gateway $gw, network $ip/$mask "
-  # destroy inbound acl chain
-  sudo iptables -F ACL_INBOUND_$ip 2>/dev/null
-  sudo iptables -D FORWARD -o $dev -d $ip/$mask -j ACL_INBOUND_$ip  2>/dev/null
-  sudo iptables -X ACL_INBOUND_$ip 2>/dev/null
-  # destroy outbound acl chain
-  sudo iptables -F ACL_OUTBOUND_$ip 2>/dev/null
-  sudo iptables -D FORWARD -i $dev -s $ip/$mask -j ACL_OUTBOUND_$ip  2>/dev/null
-  sudo iptables -X ACL_OUTBOUND_$ip 2>/dev/null
 
   sudo ip addr del dev $dev $ip/$mask
   sudo iptables -D INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT

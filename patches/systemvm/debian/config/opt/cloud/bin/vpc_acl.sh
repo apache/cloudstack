@@ -62,13 +62,11 @@ acl_save() {
 acl_chain_for_guest_network () {
   acl_save
   # inbound
-  sudo iptables -E ACL_INBOUND_$ip _ACL_INBOUND_$ip 2>/dev/null
   sudo iptables -N ACL_INBOUND_$ip 2>/dev/null
   # drop if no rules match (this will be the last rule in the chain)
   sudo iptables -A ACL_INBOUND_$ip -j DROP 2>/dev/null
   sudo iptables -A FORWARD -o $dev -d $gcidr -j ACL_INBOUND_$ip  2>/dev/null
   # outbound
-  sudo iptables -E ACL_OUTBOUND_$ip _ACL_OUTBOUND_$ip 2>/dev/null
   sudo iptables -N ACL_OUTBOUND_$ip 2>/dev/null
   sudo iptables -A ACL_OUTBOUND_$ip -j DROP 2>/dev/null
   sudo iptables -D FORWARD -i $dev -s $gcidr -j ACL_OUTBOUND_$ip  2>/dev/null
@@ -79,7 +77,7 @@ acl_chain_for_guest_network () {
 acl_entry_for_guest_network() {
   local rule=$1
 
-  local inbound=$(echo $rule | cut -d: -f1)
+  local ttype=$(echo $rule | cut -d: -f1)
   local prot=$(echo $rules | cut -d: -f2)
   local sport=$(echo $rules | cut -d: -f3)    
   local eport=$(echo $rules | cut -d: -f4)    
@@ -97,7 +95,7 @@ acl_entry_for_guest_network() {
       typecode="$sport/$eport"
       [ "$eport" == "-1" ] && typecode="$sport"
       [ "$sport" == "-1" ] && typecode="any"
-      if [ "$inbound" == "1" ]
+      if [ "$ttype" == "Ingress" ]
       then
         sudo iptables -I ACL_INBOUND_$ip -p $prot -s $lcidr  \
                     --icmp-type $typecode  -j ACCEPT
@@ -106,13 +104,14 @@ acl_entry_for_guest_network() {
                     --icmp-type $typecode  -j ACCEPT
       fi
     else
-      if [ "$inbound" == "1" ]
+      if [ "$ttype" == "Egress" ]
       then
         sudo iptables -I ACL_INBOUND_$ip -p $prot -s $lcidr \
                     --dport $sport:$eport -j ACCEPT
       else
         sudo iptables -I ACL_OUTBOUND_$ip -p $prot -d $lcidr \
-                    --dport $sport:$eport -j ACCEP`T
+                    --dport $sport:$eport -j ACCEP
+      fi
     fi
     result=$?
     [ $result -gt 0 ] && 
@@ -134,7 +133,7 @@ rules_list=""
 gcidr=""
 ip=""
 dev=""
-while getopts ':d:g:a:' OPTION
+while getopts 'd:g:a:' OPTION
 do
   case $OPTION in
   d)    dflag=1
