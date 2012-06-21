@@ -37,6 +37,7 @@ setup(name="Marvin",
       license="LICENSE.txt",
       install_requires=[
           "paramiko",
-          "nose"
+          "nose",
+          "unittest-xml-reporting"
       ],         
      )
