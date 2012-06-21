@@ -110,6 +110,8 @@ fw_entry() {
   if [ $success -ge 0 ]
   then
     fw_restore
+  else
+    fw_remove_backup
   fi  
   return $success
 }
