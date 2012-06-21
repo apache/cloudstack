@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -250,7 +251,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         }
         Map<Long, String> ipToNetworkMap = null;
         if (ipToNetworkList != null && !ipToNetworkList.isEmpty()) {
-            ipToNetworkMap = new HashMap<Long, String>();
+            ipToNetworkMap = new LinkedHashMap<Long, String>();
             Collection ipsCollection = ipToNetworkList.values();
             Iterator iter = ipsCollection.iterator();
             while (iter.hasNext()) {
