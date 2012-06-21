@@ -20,6 +20,7 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.AgentUnavailableException;
@@ -261,6 +262,15 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
      */
     @Override
     public NicTO toNicTO(NicProfile nic, HypervisorType hypervisorType) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.vm.VirtualMachineManager#toVmTO(com.cloud.vm.VirtualMachineProfile)
+     */
+    @Override
+    public VirtualMachineTO toVmTO(VirtualMachineProfile<? extends VMInstanceVO> profile) {
         // TODO Auto-generated method stub
         return null;
     }

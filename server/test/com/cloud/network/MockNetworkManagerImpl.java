@@ -1039,4 +1039,13 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         // TODO Auto-generated method stub
         return null;
     }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkService#canUseForDeploy(com.cloud.network.Network)
+     */
+    @Override
+    public boolean canUseForDeploy(Network network) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 }
