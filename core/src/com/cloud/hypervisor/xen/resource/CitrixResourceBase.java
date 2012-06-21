@@ -167,6 +167,7 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.IpAddressTO;
+import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
@@ -7280,8 +7281,40 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     private SetNetworkACLAnswer execute(SetNetworkACLCommand cmd) {
-        // TODO - add implementation logic here
-        return null;
+        String[] results = new String[cmd.getRules().length];
+        String callResult;
+        Connection conn = getConnection();
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+
+        if (routerIp == null) {
+            return new SetNetworkACLAnswer(cmd, false, results);
+        }
+
+        String [][] rules = cmd.generateFwRules();
+        StringBuilder sb = new StringBuilder();
+        String[] aclRules = rules[0];
+        if (aclRules.length == 0) {
+            return new SetNetworkACLAnswer(cmd, true, results);
+        }
+        
+        for (int i = 0; i < aclRules.length; i++) {
+            sb.append(aclRules[i]).append(',');
+        }
+        
+        String args = "vpc_acl.sh " + routerIp;
+        args += routerIp + " -F ";
+        args += " -a " + sb.toString();
+
+        callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+
+        if (callResult == null || callResult.isEmpty()) {
+            //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
+            for (int i=0; i < results.length; i++) {
+                results[i] = "Failed";
+            }
+            return new SetNetworkACLAnswer(cmd, false, results);
+        }
+        return new SetNetworkACLAnswer(cmd, true, results);
     }
 
     protected SetPortForwardingRulesAnswer execute(SetPortForwardingRulesVpcCommand cmd) {
