@@ -185,7 +185,7 @@
                     $loading.remove();
                   }
                 );
-
+								
                 return true;
               },
               error: function(args) {		//args here is parsed errortext from API response
@@ -310,7 +310,7 @@
             ));
           else if ($input.is('input[type=checkbox]')) {
             var val = $input.is(':checked');
-            
+
             $value.data('detail-view-boolean-value', _s(val));
             $value.html(_s(val) ? _l('label.yes') : _l('label.no'));
           }
@@ -347,7 +347,7 @@
             var $input = $(this);
 
             if ($input.is('[type=checkbox]')) {
-              data[$input.attr('name')] = $input.is(':checked') ? 'on' : null;
+              data[$input.attr('name')] = $input.is(':checked') ? 'on' : 'off';
             } else {
               data[$input.attr('name')] = $input.val();
             }
@@ -702,8 +702,11 @@
         $name.html(_l(value.label));
         $value.html(_s(content));
 
-        // Set up editable metadata
-        $value.data('detail-view-is-editable', value.isEditable);
+        // Set up editable metadata				
+				if(typeof(value.isEditable) == 'function')
+				  $value.data('detail-view-is-editable', value.isEditable());
+				else //typeof(value.isEditable) == 'boolean' or 'undefined'
+          $value.data('detail-view-is-editable', value.isEditable);
         if (value.select) {
           value.selected = $value.html();
 

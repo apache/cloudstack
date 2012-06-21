@@ -365,9 +365,26 @@
                   });
 
                   var array2 = [];
-                  array2.push("&ispublic=" + (args.data.ispublic=="on"));
-                  array2.push("&isfeatured=" + (args.data.isfeatured=="on"));
-                  array2.push("&isextractable=" + (args.data.isextractable=="on"));
+                  
+									//array2.push("&ispublic=" + (args.data.ispublic=="on"));
+									if(args.data.ispublic == "on")
+                    array2.push("&ispublic=true");
+									else if(args.data.ispublic == "off")
+                    array2.push("&ispublic=false");	
+									//if args.data.ispublic is undefined, do not pass ispublic to API call.
+									
+									if(args.data.isfeatured == "on")
+                    array2.push("&isfeatured=true");
+									else if(args.data.isfeatured == "off")
+                    array2.push("&isfeatured=false");	
+									//if args.data.isfeatured is undefined, do not pass isfeatured to API call.
+									                  
+									if(args.data.isextractable == "on")
+                    array2.push("&isextractable=true");
+									else if(args.data.isextractable == "off")
+                    array2.push("&isextractable=false");	
+									//if args.data.isextractable is undefined, do not pass isextractable to API call.
+																		
                   $.ajax({
                     url: createURL("updateTemplatePermissions&id=" + args.context.templates[0].id + "&zoneid=" + args.context.templates[0].zoneid + array2.join("")),
                     dataType: "json",
@@ -585,7 +602,12 @@
                     isextractable: {
                       label: 'extractable',
                       isBoolean: true,
-                      isEditable: true,
+                      isEditable: function() {
+											  if(isAdmin())
+											    return true;
+												else
+												  return false;
+											},
                       converter:cloudStack.converters.toBooleanText
                     },
                     passwordenabled: {
@@ -597,13 +619,28 @@
                     ispublic: {
                       label: 'label.public',
                       isBoolean: true,
-                      isEditable: true,
+                      isEditable: function() {
+											  if(isAdmin()) {
+											    return true;
+												}
+												else {
+												  if (g_userPublicTemplateEnabled == "true")
+													  return true;
+													else 
+												    return false;
+												}
+											},
                       converter:cloudStack.converters.toBooleanText
                     },
                     isfeatured: {
                       label: 'label.featured',
                       isBoolean: true,
-                      isEditable: true,
+                      isEditable: function() {
+											  if(isAdmin())
+											    return true;
+												else
+												  return false;
+											},
                       converter:cloudStack.converters.toBooleanText
                     },
                     crossZones: {
