@@ -16,20 +16,22 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.cloud.agent.api.to.FirewallRuleTO;
 import com.cloud.agent.api.to.NetworkACLTO;
+import com.cloud.agent.api.to.NicTO;
 
 /**
  * @author Alena Prokharchyk
  */
 public class SetNetworkACLCommand extends NetworkElementCommand{
     NetworkACLTO[] rules;
+    NicTO nic;
 
     protected SetNetworkACLCommand() {
     }
     
-    public SetNetworkACLCommand(List<NetworkACLTO> rules) {
+    public SetNetworkACLCommand(List<NetworkACLTO> rules, NicTO nic) {
         this.rules = rules.toArray(new NetworkACLTO[rules.size()]); 
+        this.nic = nic;
     }
     
     public NetworkACLTO[] getRules() {
@@ -85,5 +87,9 @@ public class SetNetworkACLCommand extends NetworkElementCommand{
         result[0] = toAdd.toArray(new String[toAdd.size()]);
         
         return result;
+    }
+    
+    public NicTO getNic() {
+        return nic;
     }
 }
