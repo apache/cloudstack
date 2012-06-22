@@ -285,7 +285,6 @@
     </copy>
   </target>
 
-  <target name="build-ovm" depends="compile-ovm" />
 
   <target name="build-server" depends="compile-server">
     <mkdir dir="${server.dist.dir}" />
@@ -480,7 +479,7 @@
 
   <target name="build-servers" depends="-init, build-server" />
 
-  <target name="build-opensource" depends="-init, build-server, build-agent, build-scripts, build-ui, build-console-proxy, build-ovm, package-oss-systemvm-iso">
+  <target name="build-opensource" depends="-init, build-server, build-agent, build-scripts, build-ui, build-console-proxy, build-ovm, package-oss-systemvm-iso, build-netscaler, build-dp-user-dispersing">
     <copy overwrite="true" todir="${dist.dir}">
       <fileset dir="${base.dir}/build/deploy/">
         <include name="deploy-agent.sh" />
@@ -586,17 +585,29 @@
     <delete dir="${dist.dir}" />
     <delete dir="${unittest.dir}"/>
   </target>
-  
-  <!-- ===================== Ovm.Jar ===================== -->
-  <target name="compile-ovm" depends="-init, compile-server" description="Compile OVM">
-  	<ant antfile="${base.dir}/plugins/hypervisors/ovm/build.xml" target="build"/>
-  </target>
 
-  <target name="compile-all" description="Compile all of the jars" depends="compile-utils, compile-api, compile-core, compile-server, compile-ovm"/>
+  <target name="compile-all" description="Compile all of the jars" depends="compile-utils, compile-api, compile-core, compile-server, compile-ovm, compile-netscaler"/>
 
   <target name="clean-all" depends="clean, clean-awsapi" description="Clean all of the generated files, including dependency cache and javadoc">
     <delete dir="${target.dir}" />
   </target>
+
+  <!-- ===================== Ovm.Jar ===================== -->
+  <target name="compile-ovm" depends="-init, compile-server" description="Compile OVM">
+  	<ant antfile="${base.dir}/plugins/hypervisors/ovm/build.xml" target="build"/>
+  </target>
+  <target name="build-ovm" depends="compile-ovm" />
+
+  <!-- =====================cloud-dp-user-dispersing.jar.Jar ===================== -->
+  <target name="compile-dp-user-dispersing" depends="-init, compile-server" description="Compile dp-user-dispersing">
+  	<ant antfile="${base.dir}/plugins/deployment-planners/user-dispersing/build.xml" target="build"/>
+  </target>
+  <target name="build-dp-user-dispersing" depends="compile-dp-user-dispersing" />
+
+  <!-- ===================== Cloud-Plugin-Netscaler.Jar ===================== -->
+  <target name="compile-netscaler" depends="-init, compile-server" description="Compile NetScaler plugin">
+  	<ant antfile="${base.dir}/plugins/network-elements/netscaler/build.xml" target="build"/>
+  </target>
+  <target name="build-netscaler" depends="compile-netscaler"/>
+
 </project>
-
-

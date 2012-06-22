@@ -81,7 +81,6 @@ import com.cloud.network.dao.InlineLoadBalancerNicMapDaoImpl;
 import com.cloud.network.dao.LBStickinessPolicyDaoImpl;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
 import com.cloud.network.dao.LoadBalancerVMMapDaoImpl;
-import com.cloud.network.dao.NetScalerPodDaoImpl;
 import com.cloud.network.dao.NetworkDaoImpl;
 import com.cloud.network.dao.NetworkDomainDaoImpl;
 import com.cloud.network.dao.NetworkExternalFirewallDaoImpl;
@@ -101,8 +100,6 @@ import com.cloud.network.element.F5ExternalLoadBalancerElement;
 import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.network.element.JuniperSRXExternalFirewallElement;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
-import com.cloud.network.element.NetscalerElement;
-import com.cloud.network.element.NetscalerLoadBalancerElementService;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.network.firewall.FirewallManagerImpl;
@@ -323,7 +320,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("ExternalFirewallDeviceDao", ExternalFirewallDeviceDaoImpl.class);
         addDao("NetworkExternalLoadBalancerDao", NetworkExternalLoadBalancerDaoImpl.class);
         addDao("NetworkExternalFirewallDao", NetworkExternalFirewallDaoImpl.class);
-        addDao("NetScalerPodDao", NetScalerPodDaoImpl.class);
         addDao("CiscoNexusVSMDeviceDao", CiscoNexusVSMDeviceDaoImpl.class);
         addDao("ClusterVSMMapDao", ClusterVSMMapDaoImpl.class);
         addDao("PortProfileDao", PortProfileDaoImpl.class);
@@ -420,7 +416,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
 
     protected void populateServices() {
         addService("VirtualRouterElementService", VirtualRouterElementService.class, VirtualRouterElement.class);
-        addService("NetscalerExternalLoadBalancerElementService", NetscalerLoadBalancerElementService.class, NetscalerElement.class);
         addService("F5LoadBalancerElementService", F5ExternalLoadBalancerElementService.class, F5ExternalLoadBalancerElement.class);
         addService("JuniperSRXFirewallElementService", JuniperSRXFirewallElementService.class, JuniperSRXExternalFirewallElement.class);
         addService("CiscoNexusVSMElementService", CiscoNexusVSMElementService.class, CiscoNexusVSMElement.class);
