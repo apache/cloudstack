@@ -40,6 +40,11 @@ add_routing() {
   sudo ip route add $subnet/$mask dev $ethDev table $tableName proto static
   sudo ip route add default via $defaultGwIP table $tableName proto static
   sudo ip route flush cache
+  sudo ip route | grep default
+  if [ $? -gt 0 ]
+  then
+    sudo ip route add default via $defaultGwIP
+  fi
   return 0
 }
 
@@ -61,7 +66,6 @@ add_an_ip () {
   fi
   add_routing 
   return $?
-   
 }
 
 remove_an_ip () {
