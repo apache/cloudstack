@@ -706,13 +706,22 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         DomainRouterVO router = profile.getVirtualMachine();
 
         boolean isVpc = (router.getVpcId() != null);
-        boolean result = super.finalizeCommandsOnStart(cmds, profile);
-        
         if (!isVpc) {
-            return result;
+            return super.finalizeCommandsOnStart(cmds, profile);
         }
         
-        //Get guest nic info
+        
+        //1) FORM SSH CHECK COMMAND
+        NicProfile controlNic = getControlNic(profile);
+        if (controlNic == null) {
+            s_logger.error("Control network doesn't exist for the router " + router);
+            return false;
+        }
+
+        finalizeSshAndVersionAndNetworkUsageOnStart(cmds, profile, router, controlNic);
+        
+        
+        //2) FORM PLUG NIC COMMANDS
         Map<Nic, Network> guestNics = new HashMap<Nic, Network>();
         Map<Nic, Network> publicNics = new HashMap<Nic, Network>();
         
@@ -767,27 +776,47 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             return false;
         }
         
+        //3) REAPPLY FIREWALL RULES
         boolean reprogramGuestNtwks = true;
-        if (profile.getParameter(Param.ReProgramGuestNetworks) != null && (Boolean) profile.getParameter(Param.ReProgramGuestNetworks) == false) {
+        if (profile.getParameter(Param.ReProgramGuestNetworks) != null 
+                && (Boolean) profile.getParameter(Param.ReProgramGuestNetworks) == false) {
             reprogramGuestNtwks = false;
         }
-        
-        //get network ACLs for the router
+
+        VirtualRouterProvider vrProvider = _vrProviderDao.findById(router.getElementId());
+        if (vrProvider == null) {
+            throw new CloudRuntimeException("Cannot find related virtual router provider of router: " + router.getHostName());
+        }
+        Provider provider = Network.Provider.getProvider(vrProvider.getType().toString());
+        if (provider == null) {
+            throw new CloudRuntimeException("Cannot find related provider of virtual router provider: " + vrProvider.getType().toString());
+        }
+
         List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
-        if (reprogramGuestNtwks) { 
-            for (Long guestNetworkId : routerGuestNtwkIds) {
-                s_logger.debug("Resending network ACLs as a part of VPC Virtual router start");
-                
-                if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, Provider.VPCVirtualRouter)) {
-                    List<? extends NetworkACL> networkACLs = _networkACLService.listNetworkACLs(guestNetworkId);
-                    s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + router + " start.");
-                    if (!networkACLs.isEmpty()) {
-                        createNetworkACLsCommands((List<NetworkACL>)networkACLs, router, cmds, guestNetworkId);
-                    }
-                }    
+        for (Long guestNetworkId : routerGuestNtwkIds) {
+            if (reprogramGuestNtwks) {
+                finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
             }
+
+            finalizeUserDataAndDhcpOnStart(cmds, router, provider, guestNetworkId);
         }
   
-        return result;
+        return true;
+    }
+    
+    
+    @Override
+    protected void finalizeNetworkRulesForNetwork(Commands cmds, DomainRouterVO router, Provider provider, Long guestNetworkId) {
+        
+        super.finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
+        
+        if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, Provider.VPCVirtualRouter)) {
+            List<? extends NetworkACL> networkACLs = _networkACLService.listNetworkACLs(guestNetworkId);
+            s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + router 
+                    + " start for guest network id=" + guestNetworkId);
+            if (!networkACLs.isEmpty()) {
+                createNetworkACLsCommands((List<NetworkACL>)networkACLs, router, cmds, guestNetworkId);
+            }
+        }
     }
 }
