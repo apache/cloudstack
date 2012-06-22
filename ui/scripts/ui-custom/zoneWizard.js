@@ -568,37 +568,58 @@
 				$('<div>').addClass('value').append(
 					$('<input>').attr({ type: 'text' }).addClass('required')
         )				
-      );			
-			if($wizard.find('.select-network-model input:radio[name=network-model]:checked').val() == 'Advanced') {
-				$nameField.append(
-					$('<div>').addClass('name').append(
-						$('<label>').html('Physical network name')
-					),
-					$('<div>').addClass('value').append(
-						$('<input>').attr({ type: 'text' }).addClass('required')
-					),
-					$('<div>').append(
-						$('<span style=\"font-size:11px\;padding-right:5px;padding-left:50px">').html('Isolation method'),
-						$('<select>').append(						
-							$('<option>').attr({
-								value: ''
-							}).html(''),					
-							$('<option>').attr({
-								value: 'VLAN'
-							}).html('VLAN'),						
-							//User should not be given the option to create a physical network with "L3" isolation method. (CS-15312)
-							/*
-							$('<option>').attr({
-								value: 'L3'
-							}).html('L3'),		
-							*/						
-							$('<option>').attr({
-								value: 'GRE'
-							}).html('GRE')	
+      );	
+
+      
+			var ovsTunnelManager = false;
+			$.ajax({
+				url: createURL('listConfigurations'),
+				data: {
+					name: 'sdn.ovs.controller'
+				},
+				dataType: "json",
+				async: false,
+				success: function(json) {					 
+					var items = json.listconfigurationsresponse.configuration; //2 entries returned: 'sdn.ovs.controller', 'sdn.ovs.controller.default.label'
+					$(items).each(function(){						  
+						if(this.name == 'sdn.ovs.controller') {
+							if(this.value == 'true' || this.value == true) {
+								ovsTunnelManager = true;
+							}
+							return false; //break each loop
+						}
+					});						
+				}
+			});	
+      //when OVS tunnel manager is used			
+      if(ovsTunnelManager == true) {	
+			  //Advanced zone supports 2 isolation method(VLAN, GRE), so show dropdown including the 2 options
+				if($wizard.find('.select-network-model input:radio[name=network-model]:checked').val() == 'Advanced') { 
+					$nameField.append(
+						$('<div>').addClass('name').append(
+							$('<label>').html('Physical network name')
+						),
+						$('<div>').addClass('value').append(
+							$('<input>').attr({ type: 'text' }).addClass('required')
+						),
+						$('<div>').append(
+							$('<span style=\"font-size:11px\;padding-right:5px;padding-left:50px">').html('Isolation method'),
+							$('<select>').append(		
+								$('<option>').attr({
+									value: 'VLAN'
+								}).html('VLAN'),	
+								$('<option>').attr({
+									value: 'GRE'
+								}).html('GRE')	
+							)
 						)
-					)
-				);
+					);
+				}
+				//Basic zone supports only 1 isolation method (L3), so there is no point showing dropdown.
 			}
+			//when OVS tunnel manager is not used, isolationmethods parameter in createPhysicalNetwork API is ignored. So no showing dropdown.	
+      //isolationmethods parameter has not been used by network gurus so far. By default(i.e. when OVS tunnel manager is not used), networks are isolated with VLANs in Advanced zone, with L3 in basic zone.
+						
 			
       var $dropContainer = $('<div>').addClass('drop-container').append(
         $('<span>').addClass('empty-message').html(
