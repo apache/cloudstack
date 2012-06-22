@@ -420,15 +420,15 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
 
     @DB
     protected void removeRule(FirewallRule rule) {
-        //Lock ip address
-        IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
-       
+        
         Transaction txn = Transaction.currentTxn();
         txn.start();
         //remove the rule
         _firewallDao.remove(rule.getId());
-        if (ip.getVpcId() != null && _firewallDao.listByIp(ip.getId()).isEmpty()) {
-          //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
+        
+        //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
+        IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
+        if (ip != null && ip.getVpcId() != null && _firewallDao.listByIp(ip.getId()).isEmpty()) {
             _networkMgr.unassignIPFromVpcNetwork(ip.getId());
         }
         
