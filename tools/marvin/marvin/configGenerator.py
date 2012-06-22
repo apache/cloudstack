@@ -198,8 +198,8 @@ def describe_setup_in_basic_mode():
                     h.password = "password"
                     memory = 8*1024*1024*1024
                     localstorage=1*1024*1024*1024*1024
-                    #h.url = "http://Sim/%d%d%d%d/cpucore=1&cpuspeed=8000&memory=%d&localstorage=%d"%(l,i,j,k,memory,localstorage)
-                    h.url = "http://Sim/%d%d%d%d"%(l,i,j,k)
+                    #h.url = "http://sim/%d%d%d%d/cpucore=1&cpuspeed=8000&memory=%d&localstorage=%d"%(l,i,j,k,memory,localstorage)
+                    h.url = "http://sim/%d%d%d%d"%(l,i,j,k)
                     c.hosts.append(h)
                 
                 '''add 2 primary storages'''
@@ -297,8 +297,8 @@ def describe_setup_in_advanced_mode():
                     h.password = "password"
                     memory = 8*1024*1024*1024
                     localstorage=1*1024*1024*1024*1024
-                    #h.url = "http://Sim/%d%d%d%d/cpucore=1&cpuspeed=8000&memory=%d&localstorage=%d"%(l,i,j,k,memory,localstorage)
-                    h.url = "http://Sim/%d%d%d%d"%(l,i,j,k)
+                    #h.url = "http://sim/%d%d%d%d/cpucore=1&cpuspeed=8000&memory=%d&localstorage=%d"%(l,i,j,k,memory,localstorage)
+                    h.url = "http://sim/%d%d%d%d"%(l,i,j,k)
                     c.hosts.append(h)
                 
                 '''add 2 primary storages'''
