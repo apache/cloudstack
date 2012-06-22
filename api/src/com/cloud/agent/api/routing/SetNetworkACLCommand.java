@@ -52,8 +52,8 @@ public class SetNetworkACLCommand extends NetworkElementCommand{
                 StringBuilder sb = new StringBuilder();
                 /* This entry is added just to make sure atleast there will one entry in the list to get the ipaddress */
                 sb.append(aclTO.getTrafficType().toString()).append(":reverted:0:0:0:"); 
-                String fwRuleEntry = sb.toString();
-                toAdd.add(fwRuleEntry);
+                String aclRuleEntry = sb.toString();
+                toAdd.add(aclRuleEntry);
                 continue;
             }
             

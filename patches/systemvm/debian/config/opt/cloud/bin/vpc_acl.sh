@@ -78,16 +78,21 @@ acl_entry_for_guest_network() {
   local rule=$1
 
   local ttype=$(echo $rule | cut -d: -f1)
-  local prot=$(echo $rules | cut -d: -f2)
-  local sport=$(echo $rules | cut -d: -f3)    
-  local eport=$(echo $rules | cut -d: -f4)    
-  local cidrs=$(echo $rules | cut -d: -f5 | sed 's/-/ /g')
-  
+  local prot=$(echo $rule | cut -d: -f2)
+  local sport=$(echo $rule | cut -d: -f3)
+  local eport=$(echo $rule | cut -d: -f4)
+  local cidrs=$(echo $rule | cut -d: -f5 | sed 's/-/ /g')
+  if [ "$sport" == "0" -a "$eport" == "0" ]
+  then
+      DPORT = ""
+  else
+      DPORT = "--dport $sport:$eport"
+  fi
   logger -t cloud "$(basename $0): enter apply acl rules for guest network: $gcidr, inbound:$inbound:$prot:$sport:$eport:$cidrs"  
-
+  
   # note that rules are inserted after the RELATED,ESTABLISHED rule 
   # but before the DROP rule
-  for lcidr in $scidrs
+  for lcidr in $cidrs
   do
     [ "$prot" == "reverted" ] && continue;
     if [ "$prot" == "icmp" ]
@@ -104,13 +109,13 @@ acl_entry_for_guest_network() {
                     --icmp-type $typecode  -j ACCEPT
       fi
     else
-      if [ "$ttype" == "Egress" ]
+      if [ "$ttype" == "Ingress" ]
       then
         sudo iptables -I ACL_INBOUND_$ip -p $prot -s $lcidr \
-                    --dport $sport:$eport -j ACCEPT
+                    $DPORT -j ACCEPT
       else
         sudo iptables -I ACL_OUTBOUND_$ip -p $prot -d $lcidr \
-                    --dport $sport:$eport -j ACCEP
+                    $DPORT -j ACCEP
       fi
     fi
     result=$?
