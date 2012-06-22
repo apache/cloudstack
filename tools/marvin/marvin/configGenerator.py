@@ -389,8 +389,14 @@ def get_setup_config(file):
 if __name__ == "__main__":
     parser = OptionParser()
   
+    parser.add_option("-a", "--advanced", action="store_true", default=False, dest="advanced", help="use advanced networking")
     parser.add_option("-o", "--output", action="store", default="./datacenterCfg", dest="output", help="the path where the json config file generated, by default is ./datacenterCfg")
     
     (options, args) = parser.parse_args()
-    config = describe_setup_in_basic_mode()
+    
+    if options.advanced:
+        config = describe_setup_in_advanced_mode()
+    else:
+        config = describe_setup_in_basic_mode()
+        
     generate_setup_config(config, options.output)
