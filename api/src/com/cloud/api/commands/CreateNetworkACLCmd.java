@@ -64,7 +64,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements NetworkAC
         description="The network of the vm the ACL will be created for")
     private Long networkId;
     
-    @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.LONG, description="the traffic type for the ACL," +
+    @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, description="the traffic type for the ACL," +
     		"can be Ingress or Egress, defaulted to Ingress if not specified")
     private String trafficType;
     
