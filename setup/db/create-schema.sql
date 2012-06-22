@@ -2213,7 +2213,7 @@ CREATE TABLE `cloud`.`vpc_gateways` (
   `network_id` bigint unsigned NOT NULL COMMENT 'network id vpc gateway belongs to',
   `vpc_id` bigint unsigned NOT NULL COMMENT 'id of the vpc the gateway belongs to',
   `zone_id` bigint unsigned NOT NULL COMMENT 'id of the zone the gateway belongs to',
-  `created` datetime NOT NULL COMMENT 'date created',
+  `created` datetime COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_vpc_gateways__network_id` FOREIGN KEY `fk_vpc_gateways__network_id`(`network_id`) REFERENCES `networks`(`id`),
@@ -2228,6 +2228,7 @@ CREATE TABLE `cloud`.`private_ip_address` (
   `ip_address` char(40) NOT NULL COMMENT 'ip address',
   `network_id` bigint unsigned NOT NULL COMMENT 'id of the network ip belongs to',
   `reservation_id` char(40) COMMENT 'reservation id',
+  `mac_address` varchar(17) COMMENT 'mac address',
   `taken` datetime COMMENT 'Date taken',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_private_ip_address__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks` (`id`) ON DELETE CASCADE

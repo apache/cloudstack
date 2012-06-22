@@ -127,6 +127,7 @@ import com.cloud.network.security.dao.VmRulesetLogDaoImpl;
 import com.cloud.network.vpc.VpcManagerImpl;
 import com.cloud.network.vpc.Dao.PrivateIpDaoImpl;
 import com.cloud.network.vpc.Dao.VpcDaoImpl;
+import com.cloud.network.vpc.Dao.VpcGatewayDaoImpl;
 import com.cloud.network.vpc.Dao.VpcOfferingDaoImpl;
 import com.cloud.network.vpc.Dao.VpcOfferingServiceMapDaoImpl;
 import com.cloud.network.vpn.RemoteAccessVpnManagerImpl;
@@ -340,6 +341,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("VpcOfferingDao", VpcOfferingDaoImpl.class);
         addDao("VpcOfferingServiceMapDao", VpcOfferingServiceMapDaoImpl.class);
         addDao("PrivateIpDao", PrivateIpDaoImpl.class);
+        addDao("VpcGatewayDao", VpcGatewayDaoImpl.class);
     }
 
     @Override

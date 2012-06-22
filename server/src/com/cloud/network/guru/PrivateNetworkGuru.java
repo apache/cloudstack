@@ -21,17 +21,22 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.State;
+import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.vpc.PrivateIpAddress;
 import com.cloud.network.vpc.PrivateIpVO;
 import com.cloud.network.vpc.Dao.PrivateIpDao;
 import com.cloud.offering.NetworkOffering;
@@ -53,6 +58,8 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     protected ConfigurationManager _configMgr;
     @Inject
     protected PrivateIpDao _privateIpDao;
+    @Inject
+    protected NetworkManager _networkMgr;
     
     private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
 
@@ -106,14 +113,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
                 network.setCidr(userSpecified.getCidr());
                 network.setGateway(userSpecified.getGateway());
             } else {
-                String guestNetworkCidr = dc.getGuestNetworkCidr();
-                if (guestNetworkCidr != null) {
-                    String[] cidrTuple = guestNetworkCidr.split("\\/");
-                    network.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
-                    network.setCidr(guestNetworkCidr);
-                } else if (dc.getNetworkType() == NetworkType.Advanced) {
-                    throw new CloudRuntimeException("Can't design network " + network + "; guest CIDR is not configured per zone " + dc);
-                }
+                throw new InvalidParameterValueException("Can't design network " + network + "; netmask/gateway must be passed in");
             }
 
             if (offering.getSpecifyVlan()) {
@@ -157,20 +157,47 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
         if (!canHandle(offering, dc)) {
             return null;
         }
-
+        
         if (nic == null) {
             nic = new NicProfile(ReservationStrategy.Create, null, null, null, null);
-        } else if (nic.getIp4Address() == null) {
+        }
+        
+        getIp(nic, dc, network);
+
+        if (nic.getIp4Address() == null) {
             nic.setStrategy(ReservationStrategy.Start);
         } else {
             nic.setStrategy(ReservationStrategy.Create);
         }
 
-        _privateIpDao.allocateIpAddress(network.getDataCenterId(), network.getId());
-        nic.setStrategy(ReservationStrategy.Create);
-
         return nic;
     }
+    
+    
+    protected void getIp(NicProfile nic, DataCenter dc, Network network)
+            throws InsufficientVirtualNetworkCapcityException,
+    InsufficientAddressCapacityException {
+        if (nic.getIp4Address() == null) {
+            PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(network.getDataCenterId(), network.getId());
+            String vlanTag = network.getBroadcastUri().getHost();
+            String netmask = NetUtils.getCidrNetmask(network.getCidr());
+            PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, ipVO.getMacAddress());
+
+            nic.setIp4Address(ip.getIpAddress());
+            nic.setGateway(ip.getGateway());
+            nic.setNetmask(ip.getNetmask());
+            nic.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
+            nic.setBroadcastUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
+            nic.setBroadcastType(BroadcastDomainType.Vlan);
+            nic.setFormat(AddressFormat.Ip4);
+            nic.setReservationId(String.valueOf(ip.getVlanTag()));
+            nic.setMacAddress(ip.getMacAddress());
+        }
+
+        nic.setDns1(dc.getDns1());
+        nic.setDns2(dc.getDns2());
+    }
+    
 
     @Override
     public void updateNicProfile(NicProfile profile, Network network) {
@@ -186,7 +213,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
             DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         if (nic.getIp4Address() == null) {
-            _privateIpDao.allocateIpAddress(network.getDataCenterId(), network.getId());
+            getIp(nic, _configMgr.getZone(network.getDataCenterId()), network);
             nic.setStrategy(ReservationStrategy.Create);
         }
     }

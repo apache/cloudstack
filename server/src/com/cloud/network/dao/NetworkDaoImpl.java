@@ -31,6 +31,7 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
@@ -88,6 +89,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         AllFieldsSearch.and("related", AllFieldsSearch.entity().getRelated(), Op.EQ);
         AllFieldsSearch.and("guestType", AllFieldsSearch.entity().getGuestType(), Op.EQ);
         AllFieldsSearch.and("physicalNetwork", AllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
+        AllFieldsSearch.and("broadcastUri", AllFieldsSearch.entity().getBroadcastUri(), Op.EQ);
         AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), Op.EQ);
         AllFieldsSearch.done();
 
@@ -469,6 +471,18 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         sc.setParameters("vpcId", vpcId);
 
         return listBy(sc, null);
+    }
+
+
+    @Override
+    public NetworkVO getPrivateNetwork(String broadcastUri, String cidr, long accountId, long zoneId) {
+        SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
+        sc.setParameters("datacenter", zoneId);
+        sc.setParameters("broadcastUri", broadcastUri);
+        sc.setParameters("cidr", cidr);
+        sc.setParameters("account", accountId);
+        sc.setParameters("offering", _ntwkOffDao.findByUniqueName(NetworkOffering.SystemPrivateGatewayNetworkOffering).getId());
+        return findOneBy(sc);
     }
 
 }

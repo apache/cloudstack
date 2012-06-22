@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 import com.cloud.agent.AgentManager.OnError;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
+import com.cloud.agent.api.SetSourceNatAnswer;
 import com.cloud.agent.api.SetupGuestNetworkAnswer;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
@@ -70,6 +71,7 @@ import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.rules.NetworkACL;
+import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.Dao.VpcDao;
 import com.cloud.network.vpc.Dao.VpcOfferingDao;
@@ -552,7 +554,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         //set source nat ip
         if (sourceNatIpAdd != null) {
             IpAddressTO sourceNatIp = sourceNatIpAdd.first();
-            SetSourceNatCommand cmd = new SetSourceNatCommand(sourceNatIp, addSourceNat, null);
+            SetSourceNatCommand cmd = new SetSourceNatCommand(sourceNatIp, addSourceNat);
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
             DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
@@ -754,7 +756,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 cmds.addCommand(plugNicCmd);
             }
             
-            //if ip is source nat, create source nat command
+            // create vpc assoc commands
             if (!publicIps.isEmpty()) {
                 createVpcAssociateIPCommands(router, publicIps, cmds);
             }
@@ -764,12 +766,21 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 PlugNicCommand plugNicCmd = new PlugNicCommand(_itMgr.toVmTO(profile), getNicTO(router, guestNic.getNetworkId()));
                 cmds.addCommand(plugNicCmd);
                 
-                //and set guest network
-                VirtualMachine vm = _vmDao.findById(router.getId());
-                NicProfile nicProfile = _networkMgr.getNicProfile(vm, guestNic.getNetworkId());
-                SetupGuestNetworkCommand setupCmd = createSetupGuestNetworkCommand(router, true, nicProfile);
-                cmds.addCommand(setupCmd);
-               
+                if (!_networkMgr.isPrivateGateway(guestNic)) {
+                    //set guest network
+                    VirtualMachine vm = _vmDao.findById(router.getId());
+                    NicProfile nicProfile = _networkMgr.getNicProfile(vm, guestNic.getNetworkId());
+                    SetupGuestNetworkCommand setupCmd = createSetupGuestNetworkCommand(router, true, nicProfile);
+                    cmds.addCommand(setupCmd);
+                } else {
+                    //set source nat
+                    Integer networkRate = _networkMgr.getNetworkRate(guestNic.getNetworkId(), router.getId());
+                    IpAddressTO ip = new IpAddressTO(Account.ACCOUNT_ID_SYSTEM, guestNic.getIp4Address(), true, false, 
+                            true, guestNic.getBroadcastUri().getHost(), guestNic.getGateway(), guestNic.getNetmask(), guestNic.getMacAddress(),
+                            null, networkRate, false);
+                    SetSourceNatCommand cmd = new SetSourceNatCommand(ip, true);
+                    cmds.addCommand(cmd);
+                } 
             }
         } catch (Exception ex) {
             s_logger.warn("Failed to add router " + router + " to network due to exception ", ex);
@@ -818,5 +829,97 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 createNetworkACLsCommands((List<NetworkACL>)networkACLs, router, cmds, guestNetworkId);
             }
         }
+    }
+
+    @Override
+    public boolean setupPrivateGateway(PrivateGateway gateway, VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException {
+        boolean result = true;
+        try {
+            Network network = _networkMgr.getNetwork(gateway.getNetworkId());
+            NicProfile guestNic = _itMgr.addVmToNetwork(router, network, null);
+            
+            //setup source nat
+            if (guestNic != null) {
+                result = setupVpcPrivateNetwork(router, true, guestNic);
+            } else {
+                s_logger.warn("Failed to setup gateway " + gateway + " on router " + router + " with the source nat");
+                result = false;
+            }
+        } catch (Exception ex) {
+            s_logger.warn("Failed to create private gateway " + gateway + " on router " + router + " due to ", ex);
+            result = false;
+        } finally {
+            if (!result) {
+                s_logger.debug("Removing gateway " + gateway + " from router " + router + " as a part of cleanup");
+                if (destroyPrivateGateway(gateway, router)) {
+                    s_logger.debug("Removed the gateway " + gateway + " from router " + router + " as a part of cleanup");
+                } else {
+                    s_logger.warn("Failed to remove the gateway " + gateway + " from router " + router + " as a part of cleanup");
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * @param router
+     * @param add
+     * @param privateNic
+     * @return
+     * @throws AgentUnavailableException 
+     */
+    protected boolean setupVpcPrivateNetwork(VirtualRouter router, boolean add, NicProfile privateNic) 
+            throws AgentUnavailableException {
+        boolean result = true;
+        Commands cmds = new Commands(OnError.Stop);
+        
+        Integer networkRate = _networkMgr.getNetworkRate(privateNic.getNetworkId(), router.getId());
+        IpAddressTO ip = new IpAddressTO(Account.ACCOUNT_ID_SYSTEM, privateNic.getIp4Address(), add, false, 
+                true, privateNic.getBroadCastUri().getHost(), privateNic.getGateway(), privateNic.getNetmask(), privateNic.getMacAddress(),
+                null, networkRate, false);
+        Network network = _networkMgr.getNetwork(privateNic.getNetworkId());
+        ip.setTrafficType(network.getTrafficType());
+        
+        SetSourceNatCommand cmd = new SetSourceNatCommand(ip, add);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+        cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+        cmds.addCommand("SetSourceNatCommand", cmd);
+        sendCommandsToRouter(router, cmds);
+        
+        SetSourceNatAnswer setupAnswer = cmds.getAnswer(SetSourceNatAnswer.class);
+        String setup = add ? "set" : "destroy";
+        if (!(setupAnswer != null && setupAnswer.getResult())) {
+            s_logger.warn("Unable to " + setup + " source nat for private gateway " + privateNic + " on router " + router);
+            result = false;
+        } 
+        
+        return result;
+    }
+
+    @Override
+    public boolean destroyPrivateGateway(PrivateGateway gateway, VirtualRouter router) 
+            throws ConcurrentOperationException, ResourceUnavailableException {
+        
+        if (!_networkMgr.isVmPartOfNetwork(router.getId(), gateway.getNetworkId())) {
+            s_logger.debug("Router doesn't have nic for gateway " + gateway + " so no need to removed it");
+            return true;
+        }
+        
+        Network privateNetwork = _networkMgr.getNetwork(gateway.getNetworkId());
+        
+        s_logger.debug("Unsetting source nat for " + router + "'s private gateway " + gateway + " as a part of delete private gateway");
+        boolean result = setupVpcPrivateNetwork(router, false, _networkMgr.getNicProfile(router, privateNetwork.getId()));
+        if (!result) {
+            s_logger.warn("Failed to delete private gateway " + gateway + " on router " + router);
+            return false;
+        }
+        
+        s_logger.debug("Removing router " + router + " from private network " + privateNetwork + " as a part of delete private gateway");
+        result = result && _itMgr.removeVmFromNetwork(router, privateNetwork, null);
+        s_logger.debug("Private gateawy " + gateway + " is removed from router " + router);
+        
+        return result;
     }
 }

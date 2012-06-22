@@ -18,7 +18,6 @@ package com.cloud.agent.api.to;
 
 import com.cloud.network.Networks.TrafficType;
 
-
 public class IpAddressTO {
 
     private long accountId;

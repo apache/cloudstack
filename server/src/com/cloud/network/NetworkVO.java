@@ -458,7 +458,6 @@ public class NetworkVO implements Network, Identity {
         return buf.toString();
     }
 
-
     public String getUuid() {
     	return this.uuid;
     }

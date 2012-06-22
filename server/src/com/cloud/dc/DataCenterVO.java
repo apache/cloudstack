@@ -97,7 +97,7 @@ public class DataCenterVO implements DataCenter, Identity {
     @Column(name="firewall_provider")
     private String firewallProvider;
     
-    @Column(name="mac_address", updatable = false, nullable=false)
+    @Column(name="mac_address", nullable=false)
     @TableGenerator(name="mac_address_sq", table="data_center", pkColumnName="id", valueColumnName="mac_address", allocationSize=1)
     private long macAddress = 1;
     
@@ -406,4 +406,12 @@ public class DataCenterVO implements DataCenter, Identity {
  	public void setUuid(String uuid) {
  		this.uuid = uuid;
  	}
+
+    public long getMacAddress() {
+        return macAddress;
+    }
+
+    public void setMacAddress(long macAddress) {
+        this.macAddress = macAddress;
+    }
 }

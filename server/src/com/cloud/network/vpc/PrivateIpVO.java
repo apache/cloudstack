@@ -39,6 +39,9 @@ public class PrivateIpVO {
     @Column(name="ip_address", updatable=false, nullable=false)
     String ipAddress;
     
+    @Column(name="mac_address")
+    private long macAddress;
+    
     @Column(name="taken")
     @Temporal(value=TemporalType.TIMESTAMP)
     private Date takenAt;
@@ -49,9 +52,10 @@ public class PrivateIpVO {
     public PrivateIpVO() {
     } 
 
-    public PrivateIpVO(String ipAddress, long networkId) {
+    public PrivateIpVO(String ipAddress, long networkId, long macAddress) {
         this.ipAddress = ipAddress;
         this.networkId = networkId;
+        this.macAddress = macAddress;
     }
     
     public void setTakenAt(Date takenDate) {
@@ -72,5 +76,9 @@ public class PrivateIpVO {
 
     public long getId() {
         return id;
+    }
+
+    public long getMacAddress() {
+        return macAddress;
     }
 }

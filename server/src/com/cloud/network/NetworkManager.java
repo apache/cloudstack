@@ -444,6 +444,21 @@ public interface NetworkManager extends NetworkService {
      */
     NicProfile releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NetworkVO network, URI broadcastUri) 
             throws ConcurrentOperationException, ResourceUnavailableException;
+
+
+    /**
+     * @param zoneId
+     * @param trafficType
+     * @return
+     */
+    List<? extends PhysicalNetwork> getPhysicalNtwksSupportingTrafficType(long zoneId, TrafficType trafficType);
+
+
+    /**
+     * @param guestNic
+     * @return
+     */
+    boolean isPrivateGateway(Nic guestNic);
     
 
 }

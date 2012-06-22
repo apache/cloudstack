@@ -1,3 +1,4 @@
+
 // Copyright 2012 Citrix Systems, Inc. Licensed under the
 // Apache License, Version 2.0 (the "License"); you may not use this
 // file except in compliance with the License.  Citrix Systems, Inc.
@@ -39,7 +40,9 @@ import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.NetworkACL;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -99,7 +102,6 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         return true;
     }
-
     
     @Override
     public boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, 
@@ -152,14 +154,17 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                    DataCenter.class, network.getDataCenterId());
        }
        
-       for (VirtualRouter router : routers) {
-           //Add router to guest network
-           if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
-               if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(router, network, false)) {
-                   throw new CloudRuntimeException("Failed to add VPC router " + router + " to guest network " + network);
-               } else {
-                   s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);
-               }
+       if (routers.size() > 1) {
+           throw new CloudRuntimeException("Found more than one router in vpc " + vpc);
+       }
+       
+       DomainRouterVO router = routers.get(0);
+       //Add router to guest network if needed
+       if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
+           if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(router, network, false)) {
+               throw new CloudRuntimeException("Failed to add VPC router " + router + " to guest network " + network);
+           } else {
+               s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);
            }
        }
        
@@ -192,14 +197,18 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 throw new ResourceUnavailableException("Can't find at least one running router!",
                         DataCenter.class, network.getDataCenterId());
             }
-            for (VirtualRouter router : routers) {
-                //Add router to guest network if needed
-                if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
-                    if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(router, network, false)) {
-                        throw new CloudRuntimeException("Failed to add VPC router " + router + " to guest network " + network);
-                    } else {
-                        s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);
-                    }
+            
+            if (routers.size() > 1) {
+                throw new CloudRuntimeException("Found more than one router in vpc " + vpc);
+            }
+            
+            DomainRouterVO router = routers.get(0);
+            //Add router to guest network if needed
+            if (!_networkMgr.isVmPartOfNetwork(router.getId(), network.getId())) {
+                if (!_vpcRouterMgr.addVpcRouterToGuestNetwork(router, network, false)) {
+                    throw new CloudRuntimeException("Failed to add VPC router " + router + " to guest network " + network);
+                } else {
+                    s_logger.debug("Successfully added VPC router " + router + " to guest network " + network);
                 }
             }
         }
@@ -293,27 +302,49 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
     
     @Override
-    public boolean createPrivateGateway() {
-        //TODO - add implementation here
-        return true;
+    public boolean createPrivateGateway(PrivateGateway gateway) throws ConcurrentOperationException, ResourceUnavailableException {
+        if (gateway.getType() != VpcGateway.Type.Private) {
+            s_logger.warn("Type of vpc gateway is not " + VpcGateway.Type.Private);
+            return false;
+        }
+        
+        List<DomainRouterVO> routers = _vpcMgr.getVpcRouters(gateway.getVpcId());
+        if (routers == null || routers.isEmpty()) {
+            s_logger.debug(this.getName() + " element doesn't need to create Private gateway on the backend; VPC virtual " +
+                    "router doesn't exist in the vpc id=" + gateway.getVpcId());
+            return true;
+        }
+        
+        if (routers.size() > 1) {
+            throw new CloudRuntimeException("Found more than one router in vpc " + gateway.getVpcId());
+        }
+        
+        VirtualRouter router = routers.get(0);
+        
+        return _vpcRouterMgr.setupPrivateGateway(gateway, router);
     }
     
     @Override
-    public boolean createVpnGateway() {
-        //TODO - add implementation here
-        return true;
-    }
-    
-    @Override
-    public boolean deletePrivateGateway() {
-        //TODO - add implementation here
-        return true;
-    }
-    
-    @Override
-    public boolean deleteVpnGateway() {
-        //TODO - add implementation here
-        return true;
+    public boolean deletePrivateGateway(PrivateGateway gateway) throws ConcurrentOperationException, ResourceUnavailableException {
+        if (gateway.getType() != VpcGateway.Type.Private) {
+            s_logger.warn("Type of vpc gateway is not " + VpcGateway.Type.Private);
+            return false;
+        }
+        
+        List<DomainRouterVO> routers = _vpcMgr.getVpcRouters(gateway.getVpcId());
+        if (routers == null || routers.isEmpty()) {
+            s_logger.debug(this.getName() + " element doesn't need to delete Private gateway on the backend; VPC virtual " +
+                    "router doesn't exist in the vpc id=" + gateway.getVpcId());
+            return true;
+        }
+        
+        if (routers.size() > 1) {
+            throw new CloudRuntimeException("Found more than one router in vpc " + gateway.getVpcId());
+        }
+        
+        VirtualRouter router = routers.get(0);
+        
+        return _vpcRouterMgr.destroyPrivateGateway(gateway, router);
     }
     
     @Override

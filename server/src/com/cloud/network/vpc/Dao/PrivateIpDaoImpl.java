@@ -40,6 +40,7 @@ public class PrivateIpDaoImpl extends GenericDaoBase<PrivateIpVO, Long> implemen
 
     private final SearchBuilder<PrivateIpVO> AllFieldsSearch;
     private final GenericSearchBuilder<PrivateIpVO, Integer> CountAllocatedByNetworkId;
+    private final GenericSearchBuilder<PrivateIpVO, Integer> CountByNetworkId;
 
     
     protected PrivateIpDaoImpl() {
@@ -57,6 +58,11 @@ public class PrivateIpDaoImpl extends GenericDaoBase<PrivateIpVO, Long> implemen
         CountAllocatedByNetworkId.and("networkId", CountAllocatedByNetworkId.entity().getNetworkId(), Op.EQ);
         CountAllocatedByNetworkId.and("taken", CountAllocatedByNetworkId.entity().getTakenAt(), Op.NNULL);
         CountAllocatedByNetworkId.done();
+        
+        CountByNetworkId = createSearchBuilder(Integer.class);
+        CountByNetworkId.select(null, Func.COUNT, CountByNetworkId.entity().getId());
+        CountByNetworkId.and("networkId", CountByNetworkId.entity().getNetworkId(), Op.EQ);
+        CountByNetworkId.done();
     }
     
     @Override
@@ -125,5 +131,13 @@ public class PrivateIpDaoImpl extends GenericDaoBase<PrivateIpVO, Long> implemen
         SearchCriteria<PrivateIpVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkId", networkId);
         remove(sc);
+    }
+
+    @Override
+    public int countByNetworkId(long ntwkId) {
+        SearchCriteria<Integer> sc = CountByNetworkId.create();
+        sc.setParameters("networkId", ntwkId);
+        List<Integer> results = customSearch(sc, null);
+        return results.get(0);
     }
 }
