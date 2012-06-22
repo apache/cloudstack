@@ -93,17 +93,17 @@
 
                 // Error
                 function(args) {
-					if (args && args.updatedData) {
-						if ($item.is(':visible') && !isHeader) {
-							replaceItem(
-							  $item,
-							  args.updatedData,
-							  args.actionFilter
-							);
-						}
-					} else {
-						$item.remove();
-					}
+									if (args && args.updatedData) {
+										if ($item.is(':visible') && !isHeader) {
+											replaceItem(
+												$item,
+												args.updatedData,
+												args.actionFilter
+											);
+										}
+									} else {
+										$item.remove();
+									}
                 }
               );
             }
