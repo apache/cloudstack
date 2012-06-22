@@ -1709,6 +1709,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new Answer(cmd);
     }
 
+
     protected void assignPublicIpAddress(Connection conn, String vmName, String privateIpAddress, String publicIpAddress, boolean add, boolean firstIP,
             boolean sourceNat, String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, String guestIp, Integer networkRate, TrafficType trafficType, String name) throws InternalErrorException {
 
@@ -1820,55 +1821,39 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    protected void assignVPCPublicIpAddress(Connection conn, String vmName, String privateIpAddress, String publicIpAddress, boolean add,
-            String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, String guestIp,TrafficType trafficType, String name) throws InternalErrorException {
+    protected void assignVPCPublicIpAddress(Connection conn, String vmName, String routerIp, IpAddressTO ip) throws Exception {
 
         try {
             VM router = getVM(conn, vmName);
-
-            NicTO nic = new NicTO();
-            nic.setMac(vifMacAddress);
-            nic.setType(trafficType);
-            if (vlanId == null) {
-                nic.setBroadcastType(BroadcastDomainType.Native);
-            } else {
-                nic.setBroadcastType(BroadcastDomainType.Vlan);
-                nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanId));
-            }
-            nic.setName(name);
-            Network network = getNetwork(conn, nic);
-            // Determine the correct VIF on DomR to associate/disassociate the
-            // IP address with
-            VIF correctVif = getCorrectVif(conn, router, network);
-
-
+            
+            VIF correctVif = getCorrectVif(conn, router, ip);
             if (correctVif == null) {
                 throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
-            }
+            }           
+           
+            String args = "vpc_ipassoc.sh " + routerIp;
 
-            String args = "vpc_ipassoc.sh " + privateIpAddress;
-
-            if (add) {
+            if (ip.isAdd()) {
                 args += " -A ";
             } else {
                 args += " -D ";
             }
 
             args += " -l ";
-            args += publicIpAddress;
+            args += ip.getPublicIp();
 
             args += " -c ";
             args += "eth" + correctVif.getDevice(conn);
             
             args += " -g ";
-            args += vlanGateway;
+            args += ip.getVlanGateway();
             
             args += " -m ";
-            args += Long.toString(NetUtils.getCidrSize(vlanNetmask));
+            args += Long.toString(NetUtils.getCidrSize(ip.getVlanNetmask()));
             
             
             args += " -n ";
-            args += NetUtils.getSubNet(publicIpAddress, vlanNetmask);
+            args += NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
 
             String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
             if (result == null || result.isEmpty()) {
@@ -1877,7 +1862,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } catch (Exception e) {
             String msg = "Unable to assign public IP address due to " + e.toString();
             s_logger.warn(msg, e);
-            throw new InternalErrorException(msg);
+            throw new Exception(msg);
         }
     }
     
@@ -3699,6 +3684,41 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         }
 
+        return null;
+    }
+    
+    protected VIF getCorrectVif(Connection conn, VM router, IpAddressTO ip) throws XmlRpcException, XenAPIException {
+        NicTO nic = new NicTO();
+        nic.setType(ip.getTrafficType());
+        nic.setName(ip.getNetworkName());
+        if (ip.getVlanId() == null) {
+            nic.setBroadcastType(BroadcastDomainType.Native);
+        } else {
+            nic.setBroadcastType(BroadcastDomainType.Vlan);
+            nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanId()));
+        }
+        Network network = getNetwork(conn, nic);
+        // Determine the correct VIF on DomR to associate/disassociate the
+        // IP address with
+        Set<VIF> routerVIFs = router.getVIFs(conn);
+        for (VIF vif : routerVIFs) {
+            Network vifNetwork = vif.getNetwork(conn);
+            if (vifNetwork.getUuid(conn).equals(network.getUuid(conn))) {
+                return vif;
+            }
+        }
+        return null;
+    }
+    
+    protected VIF getVifByMac(Connection conn, VM router, String mac) throws XmlRpcException, XenAPIException {
+        Set<VIF> routerVIFs = router.getVIFs(conn);
+        mac = mac.trim();
+        for (VIF vif : routerVIFs) {
+            String lmac = vif.getMAC(conn);
+            if (lmac.trim().equals(mac)) {
+                return vif;
+            }
+        }
         return null;
     }
 
@@ -7221,13 +7241,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             IpAddressTO[] ips = cmd.getIpAddresses();
             for (IpAddressTO ip : ips) {
 
-                assignVPCPublicIpAddress(conn, routerName, routerIp, ip.getPublicIp(), ip.isAdd(), ip.getVlanId(),
-                        ip.getVlanGateway(), ip.getVlanNetmask(), ip.getVifMacAddress(), ip.getGuestIp(), ip.getTrafficType(), ip.getNetworkName());
+                assignVPCPublicIpAddress(conn, routerName, routerIp, ip);
                 results[i++] = ip.getPublicIp() + " - success";
             }
-        } catch (InternalErrorException e) {
-            s_logger.error(
-                    "Ip Assoc failure on applying one ip due to exception:  ", e);
+        } catch (Exception e) {
+            s_logger.error("Ip Assoc failure on applying one ip due to exception:  ", e);
             results[i++] = IpAssocAnswer.errorResult;
         }
 
@@ -7243,21 +7261,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         try {
             VM router = getVM(conn, routerName);
 
-            NicTO nic = new NicTO();
-            nic.setMac(pubIp.getVifMacAddress());
-            nic.setType(pubIp.getTrafficType());
-            String vlanId = pubIp.getVlanId();
-            if (vlanId == null) {
-                nic.setBroadcastType(BroadcastDomainType.Native);
-            } else {
-                nic.setBroadcastType(BroadcastDomainType.Vlan);
-                nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanId));
-            }
-            nic.setName(pubIp.getNetworkName());
-            Network network = getNetwork(conn, nic);
-            // Determine the correct VIF on DomR to SNAT the
-            // IP address with
-            VIF correctVif = getCorrectVif(conn, router, network);
+            VIF correctVif = getCorrectVif(conn, router, pubIp);
             
             String args = "vpc_snat.sh " + routerIp;
 
@@ -7284,37 +7288,42 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String[] results = new String[cmd.getRules().length];
         String callResult;
         Connection conn = getConnection();
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-
-        if (routerIp == null) {
-            return new SetNetworkACLAnswer(cmd, false, results);
-        }
-
-        String [][] rules = cmd.generateFwRules();
-        StringBuilder sb = new StringBuilder();
-        String[] aclRules = rules[0];
-        if (aclRules.length == 0) {
-            return new SetNetworkACLAnswer(cmd, true, results);
-        }
-        
-        for (int i = 0; i < aclRules.length; i++) {
-            sb.append(aclRules[i]).append(',');
-        }
-        
-        String args = "vpc_acl.sh " + routerIp;
-        args += routerIp + " -F ";
-        args += " -a " + sb.toString();
-
-        callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
-
-        if (callResult == null || callResult.isEmpty()) {
-            //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
-            for (int i=0; i < results.length; i++) {
-                results[i] = "Failed";
+        try {
+            VM router = getVM(conn, routerName);
+            String [][] rules = cmd.generateFwRules();
+            StringBuilder sb = new StringBuilder();
+            String[] aclRules = rules[0];
+            if (aclRules.length == 0) {
+                return new SetNetworkACLAnswer(cmd, true, results);
             }
+            
+            for (int i = 0; i < aclRules.length; i++) {
+                sb.append(aclRules[i]).append(',');
+            }
+            
+            NicTO nic = cmd.getNic();
+            VIF vif = getVifByMac(conn, router, nic.getMac());
+            String args = "vpc_acl.sh " + routerIp;
+            args += " -d " + "eth" + vif.getDevice(conn);
+            args += " -i " + nic.getIp();
+            args += " -m " + Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
+            args += " -a " + sb.toString();
+            callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            if (callResult == null || callResult.isEmpty()) {
+                //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
+                for (int i=0; i < results.length; i++) {
+                    results[i] = "Failed";
+                }
+                return new SetNetworkACLAnswer(cmd, false, results);
+            }
+            return new SetNetworkACLAnswer(cmd, true, results);
+        } catch (Exception e) {
+            String msg = "SetNetworkACLC failed due to " + e.toString();
+            s_logger.error(msg, e);
             return new SetNetworkACLAnswer(cmd, false, results);
         }
-        return new SetNetworkACLAnswer(cmd, true, results);
     }
 
     protected SetPortForwardingRulesAnswer execute(SetPortForwardingRulesVpcCommand cmd) {

@@ -124,22 +124,25 @@ acl_entry_for_guest_network() {
 }
 
 
-shift 
 dflag=0
 gflag=0
 aflag=0
 rules=""
 rules_list=""
-gcidr=""
 ip=""
 dev=""
-while getopts 'd:g:a:' OPTION
+while getopts 'd:i:m:a:' OPTION
 do
   case $OPTION in
   d)    dflag=1
-                dev="$OPTAGR"
-  g)    gflag=1
-                gcidr="$OPTAGR"
+                dev="$OPTARG"
+                ;;
+  i)    iflag=1
+                ip="$OPTARG"
+                ;;
+  m)    mflag=1
+                mask="$OPTARG"
+                ;;
   a)	aflag=1
 		rules="$OPTARG"
 		;;
@@ -149,13 +152,14 @@ do
   esac
 done
 
-if [ "$dflag$gflag$aflag" != "!11" ]
+if [ "$dflag$iflag$mflag$aflag" != "1111" ]
 then
-  usage()
+  usage
+  unlock_exit 2 $lock $locked
 fi
 
-
-if [ -n "$rules" == "" ]
+gcidr="$ip/$mask"
+if [ -n "$rules" ]
 then
   rules_list=$(echo $rules | cut -d, -f1- --output-delimiter=" ")
 fi
@@ -167,7 +171,6 @@ fi
 # example : 172.16.92.44:tcp:80:80:0.0.0.0/0:,172.16.92.44:tcp:220:220:0.0.0.0/0:,200.1.1.2:reverted:0:0:0 
 
 success=0
-ip=$(echo $gcidr | awk -F'/' '{print $1}')
 
 acl_chain_for_guest_network
 
