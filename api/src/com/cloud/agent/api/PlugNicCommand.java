@@ -21,7 +21,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 public class PlugNicCommand extends Command {
     
     VirtualMachineTO vm;
-    NicTO nic;
+    NicTO nic;    
     
     public VirtualMachineTO getVirtualMachine() {
         return vm;
@@ -43,4 +43,5 @@ public class PlugNicCommand extends Command {
         this.vm = vm;
         this.nic = nic;
     }
+
 }

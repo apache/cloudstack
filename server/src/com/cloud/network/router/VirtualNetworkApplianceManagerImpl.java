@@ -1863,46 +1863,19 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     @Override
     public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile) {
         DomainRouterVO router = profile.getVirtualMachine();
-        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
-
-        NicProfile controlNic = null;
-
-        if(profile.getHypervisorType() == HypervisorType.VMware && dcVo.getNetworkType() == NetworkType.Basic) {
-            // TODO this is a ugly to test hypervisor type here
-            // for basic network mode, we will use the guest NIC for control NIC
-            for (NicProfile nic : profile.getNics()) {
-                if (nic.getTrafficType() == TrafficType.Guest && nic.getIp4Address() != null) {
-                    controlNic = nic;
-                }
-            }
-        } else {
-            for (NicProfile nic : profile.getNics()) {
-                if (nic.getTrafficType() == TrafficType.Control && nic.getIp4Address() != null) {
-                    controlNic = nic;
-                }
-            }
-        }
+        NicProfile controlNic = getControlNic(profile);
 
         if (controlNic == null) {
             s_logger.error("Control network doesn't exist for the router " + router);
             return false;
         }
 
-        cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922));
-
-        // Update router template/scripts version
-        final GetDomRVersionCmd command = new GetDomRVersionCmd();
-        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlNic.getIp4Address());
-        command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        cmds.addCommand("getDomRVersion", command);
-
-        // Network usage command to create iptables rules
-        boolean forVpc = profile.getVirtualMachine().getVpcId() != null;
-        cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getHostName(), "create", forVpc));
+        finalizeSshAndVersionAndNetworkUsageOnStart(cmds, profile, router, controlNic);
 
         // restart network if restartNetwork = false is not specified in profile parameters
         boolean reprogramGuestNtwks = true;
-        if (profile.getParameter(Param.ReProgramGuestNetworks) != null && (Boolean) profile.getParameter(Param.ReProgramGuestNetworks) == false) {
+        if (profile.getParameter(Param.ReProgramGuestNetworks) != null 
+                && (Boolean) profile.getParameter(Param.ReProgramGuestNetworks) == false) {
             reprogramGuestNtwks = false;
         }
 
@@ -1918,140 +1891,182 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
         for (Long guestNetworkId : routerGuestNtwkIds) {
             if (reprogramGuestNtwks) {
-            s_logger.debug("Resending ipAssoc, port forwarding, load balancing rules as a part of Virtual router start");
-            long ownerId = router.getAccountId();
-
-            final List<IPAddressVO> userIps = _networkMgr.listPublicIpsAssignedToGuestNtwk(ownerId, guestNetworkId, null);
-            List<PublicIp> allPublicIps = new ArrayList<PublicIp>();
-            if (userIps != null && !userIps.isEmpty()) {
-                for (IPAddressVO userIp : userIps) {
-                        PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
-                                NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
-                    allPublicIps.add(publicIp);
-                }
+                finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
             }
-            
-            //Get public Ips that should be handled by router
-                Network network = _networkDao.findById(guestNetworkId);
-            Map<PublicIp, Set<Service>> ipToServices = _networkMgr.getIpToServices(allPublicIps, false, false);
-            Map<Provider, ArrayList<PublicIp>> providerToIpList = _networkMgr.getProviderToIpList(network, ipToServices);
-            // Only cover virtual router for now, if ELB use it this need to be modified
 
-            ArrayList<PublicIp> publicIps = providerToIpList.get(provider);
-
-            s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + router + " start.");
-
-            if (!publicIps.isEmpty()) {
-
-                List<RemoteAccessVpn> vpns = new ArrayList<RemoteAccessVpn>();
-                List<PortForwardingRule> pfRules = new ArrayList<PortForwardingRule>();
-                List<FirewallRule> staticNatFirewallRules = new ArrayList<FirewallRule>();
-                List<StaticNat> staticNats = new ArrayList<StaticNat>();
-                List<FirewallRule> firewallRules = new ArrayList<FirewallRule>();
-
-                // Re-apply public ip addresses - should come before PF/LB/VPN
-                    if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
-                    createAssociateIPCommands(router, publicIps, cmds, 0);
-                }
-
-                //Get information about all the rules (StaticNats and StaticNatRules; PFVPN to reapply on domR start)
-                for (PublicIp ip : publicIps) {
-                    if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.PortForwarding, provider)) {
-                        pfRules.addAll(_pfRulesDao.listForApplication(ip.getId()));
-                    }
-                    if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.StaticNat, provider)) {
-                        staticNatFirewallRules.addAll(_rulesDao.listByIpAndPurpose(ip.getId(), Purpose.StaticNat));
-                    }
-                    if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
-                        firewallRules.addAll(_rulesDao.listByIpAndPurpose(ip.getId(), Purpose.Firewall));
-                    }
-
-                    if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Vpn, provider)) {
-                        RemoteAccessVpn vpn = _vpnDao.findById(ip.getId());
-                        if (vpn != null) {
-                            vpns.add(vpn);
-                        }
-                    }
-
-                    if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.StaticNat, provider)) {
-                        if (ip.isOneToOneNat()) {
-                                String dstIp = _networkMgr.getIpInNetwork(ip.getAssociatedWithVmId(), guestNetworkId);
-                                StaticNatImpl staticNat = new StaticNatImpl(ip.getAccountId(), ip.getDomainId(), guestNetworkId, ip.getId(), dstIp, false);
-                            staticNats.add(staticNat);
-                        }
-                    }
-                }
-
-                //Re-apply static nats
-                s_logger.debug("Found " + staticNats.size() + " static nat(s) to apply as a part of domR " + router + " start.");
-                if (!staticNats.isEmpty()) {
-                        createApplyStaticNatCommands(staticNats, router, cmds, guestNetworkId);
-                }
-
-                //Re-apply firewall rules
-                s_logger.debug("Found " + staticNats.size() + " firewall rule(s) to apply as a part of domR " + router + " start.");
-                if (!firewallRules.isEmpty()) {
-                        createFirewallRulesCommands(firewallRules, router, cmds, guestNetworkId);
-                }
-
-                // Re-apply port forwarding rules
-                s_logger.debug("Found " + pfRules.size() + " port forwarding rule(s) to apply as a part of domR " + router + " start.");
-                if (!pfRules.isEmpty()) {
-                        createApplyPortForwardingRulesCommands(pfRules, router, cmds, guestNetworkId);
-                }
-
-                // Re-apply static nat rules
-                s_logger.debug("Found " + staticNatFirewallRules.size() + " static nat rule(s) to apply as a part of domR " + router + " start.");
-                if (!staticNatFirewallRules.isEmpty()) {
-                    List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
-                    for (FirewallRule rule : staticNatFirewallRules) {
-                        staticNatRules.add(_rulesMgr.buildStaticNatRule(rule, false));
-                    }
-                        createApplyStaticNatRulesCommands(staticNatRules, router, cmds, guestNetworkId);
-                }
-
-                // Re-apply vpn rules
-                s_logger.debug("Found " + vpns.size() + " vpn(s) to apply as a part of domR " + router + " start.");
-                if (!vpns.isEmpty()) {
-                    for (RemoteAccessVpn vpn : vpns) {
-                        createApplyVpnCommands(vpn, router, cmds);
-                    }
-                }
-
-                    List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkId(guestNetworkId);
-                    List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
-                    if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Lb, provider)) {
-                    // Re-apply load balancing rules
-                    for (LoadBalancerVO lb : lbs) {
-                        List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
-                        List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
-                        LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList);
-                        lbRules.add(loadBalancing);
-                    }
-                }
-
-                s_logger.debug("Found " + lbRules.size() + " load balancing rule(s) to apply as a part of domR " + router + " start.");
-                if (!lbRules.isEmpty()) {
-                        createApplyLoadBalancingRulesCommands(lbRules, router, cmds, guestNetworkId);
-                }
-            }
-                
-        }
-
-            if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Dhcp, provider)) {
-            // Resend dhcp
-            s_logger.debug("Reapplying dhcp entries as a part of domR " + router + " start...");
-                createDhcpEntryCommandsForVMs(router, cmds, guestNetworkId);
-        }
-
-            if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.UserData, provider)) {
-            // Resend user data
-            s_logger.debug("Reapplying vm data (userData and metaData) entries as a part of domR " + router + " start...");
-                createVmDataCommandForVMs(router, cmds, guestNetworkId);
-            }
+            finalizeUserDataAndDhcpOnStart(cmds, router, provider, guestNetworkId);
         }
 
         return true;
+    }
+
+    protected NicProfile getControlNic(VirtualMachineProfile<DomainRouterVO> profile) {
+        DomainRouterVO router = profile.getVirtualMachine();
+        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+        NicProfile controlNic = null;
+        if (profile.getHypervisorType() == HypervisorType.VMware && dcVo.getNetworkType() == NetworkType.Basic) {
+            // TODO this is a ugly to test hypervisor type here
+            // for basic network mode, we will use the guest NIC for control NIC
+            for (NicProfile nic : profile.getNics()) {
+                if (nic.getTrafficType() == TrafficType.Guest && nic.getIp4Address() != null) {
+                    controlNic = nic;
+                }
+            }
+        } else {
+            for (NicProfile nic : profile.getNics()) {
+                if (nic.getTrafficType() == TrafficType.Control && nic.getIp4Address() != null) {
+                    controlNic = nic;
+                }
+            }
+        }
+        return controlNic;
+    }
+
+    protected void finalizeSshAndVersionAndNetworkUsageOnStart(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile, DomainRouterVO router, NicProfile controlNic) {
+        cmds.addCommand("checkSsh", new CheckSshCommand(profile.getInstanceName(), controlNic.getIp4Address(), 3922));
+
+        // Update router template/scripts version
+        final GetDomRVersionCmd command = new GetDomRVersionCmd();
+        command.setAccessDetail(NetworkElementCommand.ROUTER_IP, controlNic.getIp4Address());
+        command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        cmds.addCommand("getDomRVersion", command);
+
+        // Network usage command to create iptables rules
+        boolean forVpc = profile.getVirtualMachine().getVpcId() != null;
+        cmds.addCommand("networkUsage", new NetworkUsageCommand(controlNic.getIp4Address(), router.getHostName(), "create", forVpc));
+    }
+
+    protected void finalizeUserDataAndDhcpOnStart(Commands cmds, DomainRouterVO router, Provider provider, Long guestNetworkId) {
+        if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Dhcp, provider)) {
+            // Resend dhcp
+            s_logger.debug("Reapplying dhcp entries as a part of domR " + router + " start...");
+            createDhcpEntryCommandsForVMs(router, cmds, guestNetworkId);
+        }
+   
+        if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.UserData, provider)) {
+            // Resend user data
+            s_logger.debug("Reapplying vm data (userData and metaData) entries as a part of domR " + router + " start...");
+            createVmDataCommandForVMs(router, cmds, guestNetworkId);
+        }
+    }
+
+    protected void finalizeNetworkRulesForNetwork(Commands cmds, DomainRouterVO router, Provider provider, Long guestNetworkId) {
+        s_logger.debug("Resending ipAssoc, port forwarding, load balancing rules as a part of Virtual router start");
+        long ownerId = router.getAccountId();
+      
+        final List<IPAddressVO> userIps = _networkMgr.listPublicIpsAssignedToGuestNtwk(ownerId, guestNetworkId, null);
+        List<PublicIp> allPublicIps = new ArrayList<PublicIp>();
+        if (userIps != null && !userIps.isEmpty()) {
+            for (IPAddressVO userIp : userIps) {
+                    PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
+                            NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                allPublicIps.add(publicIp);
+            }
+        }
+        
+        //Get public Ips that should be handled by router
+            Network network = _networkDao.findById(guestNetworkId);
+        Map<PublicIp, Set<Service>> ipToServices = _networkMgr.getIpToServices(allPublicIps, false, false);
+        Map<Provider, ArrayList<PublicIp>> providerToIpList = _networkMgr.getProviderToIpList(network, ipToServices);
+        // Only cover virtual router for now, if ELB use it this need to be modified
+      
+        ArrayList<PublicIp> publicIps = providerToIpList.get(provider);
+      
+        s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + router + " start.");
+      
+        if (!publicIps.isEmpty()) {
+            List<RemoteAccessVpn> vpns = new ArrayList<RemoteAccessVpn>();
+            List<PortForwardingRule> pfRules = new ArrayList<PortForwardingRule>();
+            List<FirewallRule> staticNatFirewallRules = new ArrayList<FirewallRule>();
+            List<StaticNat> staticNats = new ArrayList<StaticNat>();
+            List<FirewallRule> firewallRules = new ArrayList<FirewallRule>();
+      
+            // Re-apply public ip addresses - should come before PF/LB/VPN
+                if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
+                createAssociateIPCommands(router, publicIps, cmds, 0);
+            }
+      
+            //Get information about all the rules (StaticNats and StaticNatRules; PFVPN to reapply on domR start)
+            for (PublicIp ip : publicIps) {
+                if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.PortForwarding, provider)) {
+                    pfRules.addAll(_pfRulesDao.listForApplication(ip.getId()));
+                }
+                if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.StaticNat, provider)) {
+                    staticNatFirewallRules.addAll(_rulesDao.listByIpAndPurpose(ip.getId(), Purpose.StaticNat));
+                }
+                if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
+                    firewallRules.addAll(_rulesDao.listByIpAndPurpose(ip.getId(), Purpose.Firewall));
+                }
+      
+                if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Vpn, provider)) {
+                    RemoteAccessVpn vpn = _vpnDao.findById(ip.getId());
+                    if (vpn != null) {
+                        vpns.add(vpn);
+                    }
+                }
+      
+                if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.StaticNat, provider)) {
+                    if (ip.isOneToOneNat()) {
+                            String dstIp = _networkMgr.getIpInNetwork(ip.getAssociatedWithVmId(), guestNetworkId);
+                            StaticNatImpl staticNat = new StaticNatImpl(ip.getAccountId(), ip.getDomainId(), guestNetworkId, ip.getId(), dstIp, false);
+                        staticNats.add(staticNat);
+                    }
+                }
+            }
+   
+        //Re-apply static nats
+        s_logger.debug("Found " + staticNats.size() + " static nat(s) to apply as a part of domR " + router + " start.");
+        if (!staticNats.isEmpty()) {
+                createApplyStaticNatCommands(staticNats, router, cmds, guestNetworkId);
+        }
+   
+        //Re-apply firewall rules
+        s_logger.debug("Found " + staticNats.size() + " firewall rule(s) to apply as a part of domR " + router + " start.");
+        if (!firewallRules.isEmpty()) {
+                createFirewallRulesCommands(firewallRules, router, cmds, guestNetworkId);
+        }
+   
+        // Re-apply port forwarding rules
+        s_logger.debug("Found " + pfRules.size() + " port forwarding rule(s) to apply as a part of domR " + router + " start.");
+        if (!pfRules.isEmpty()) {
+                createApplyPortForwardingRulesCommands(pfRules, router, cmds, guestNetworkId);
+        }
+   
+        // Re-apply static nat rules
+        s_logger.debug("Found " + staticNatFirewallRules.size() + " static nat rule(s) to apply as a part of domR " + router + " start.");
+        if (!staticNatFirewallRules.isEmpty()) {
+            List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
+            for (FirewallRule rule : staticNatFirewallRules) {
+                staticNatRules.add(_rulesMgr.buildStaticNatRule(rule, false));
+            }
+                createApplyStaticNatRulesCommands(staticNatRules, router, cmds, guestNetworkId);
+        }
+   
+        // Re-apply vpn rules
+        s_logger.debug("Found " + vpns.size() + " vpn(s) to apply as a part of domR " + router + " start.");
+        if (!vpns.isEmpty()) {
+            for (RemoteAccessVpn vpn : vpns) {
+                createApplyVpnCommands(vpn, router, cmds);
+            }
+        }
+   
+            List<LoadBalancerVO> lbs = _loadBalancerDao.listByNetworkId(guestNetworkId);
+            List<LoadBalancingRule> lbRules = new ArrayList<LoadBalancingRule>();
+            if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Lb, provider)) {
+            // Re-apply load balancing rules
+            for (LoadBalancerVO lb : lbs) {
+                List<LbDestination> dstList = _lbMgr.getExistingDestinations(lb.getId());
+                List<LbStickinessPolicy> policyList = _lbMgr.getStickinessPolicies(lb.getId());
+                LoadBalancingRule loadBalancing = new LoadBalancingRule(lb, dstList, policyList);
+                lbRules.add(loadBalancing);
+            }
+        }
+   
+        s_logger.debug("Found " + lbRules.size() + " load balancing rule(s) to apply as a part of domR " + router + " start.");
+        if (!lbRules.isEmpty()) {
+                createApplyLoadBalancingRulesCommands(lbRules, router, cmds, guestNetworkId);
+        }
+            }
     }
 
     @Override
