@@ -46,6 +46,7 @@ import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.PhysicalNetworkResponse;
 import com.cloud.api.response.PodResponse;
+import com.cloud.api.response.PrivateGatewayResponse;
 import com.cloud.api.response.ProjectAccountResponse;
 import com.cloud.api.response.ProjectInvitationResponse;
 import com.cloud.api.response.ProjectResponse;
@@ -110,6 +111,7 @@ import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcOffering;
+import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -309,4 +311,10 @@ public interface ResponseGenerator {
      * @return
      */
     NetworkACLResponse createNetworkACLResponse(NetworkACL networkACL);
+
+    /**
+     * @param result
+     * @return
+     */
+    PrivateGatewayResponse createPrivateGatewayResponseResponse(PrivateGateway result);
 }

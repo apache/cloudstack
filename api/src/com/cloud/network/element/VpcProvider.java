@@ -17,6 +17,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.vm.ReservationContext;
 
@@ -40,11 +41,8 @@ public interface VpcProvider extends NetworkElement{
      */
     boolean shutdownVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException;
     
-    boolean createPrivateGateway();
-        
-    boolean createVpnGateway();
+    boolean createPrivateGateway(PrivateGateway gateway) throws ConcurrentOperationException, ResourceUnavailableException;
     
-    boolean deletePrivateGateway();
-        
-    boolean deleteVpnGateway();
+    boolean deletePrivateGateway(PrivateGateway privateGateway) throws ConcurrentOperationException, ResourceUnavailableException;
+
 }

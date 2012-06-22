@@ -23,6 +23,7 @@ import com.cloud.network.Network;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.rules.NetworkACL;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineProfile.Param;
@@ -55,5 +56,23 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      */
     boolean applyNetworkACLs(Network network, List<? extends NetworkACL> rules, List<? extends VirtualRouter> routers) 
             throws ResourceUnavailableException;
+
+    /**
+     * @param gateway
+     * @param router TODO
+     * @return
+     * @throws ResourceUnavailableException 
+     * @throws ConcurrentOperationException 
+     */
+    boolean setupPrivateGateway(PrivateGateway gateway, VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException;
+
+    /**
+     * @param gateway
+     * @param router
+     * @return
+     * @throws ResourceUnavailableException 
+     * @throws ConcurrentOperationException 
+     */
+    boolean destroyPrivateGateway(PrivateGateway gateway, VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException;
 
 }

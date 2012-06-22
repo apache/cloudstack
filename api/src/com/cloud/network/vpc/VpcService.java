@@ -18,6 +18,7 @@ import java.util.Set;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
@@ -133,6 +134,41 @@ public interface VpcService {
      * @return
      * @throws InsufficientCapacityException 
      */
-    boolean restartVpc(Long id) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean restartVpc(long id) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    
+    PrivateGateway getVpcPrivateGateway(long id);
+
+    /**
+     * @param vpcId TODO
+     * @param physicalNetworkId
+     * @param vlan
+     * @param ipAddress
+     * @param gateway
+     * @param netmask
+     * @param gatewayOwnerId
+     * @return
+     * @throws InsufficientCapacityException 
+     * @throws ConcurrentOperationException 
+     * @throws ResourceAllocationException 
+     */
+    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, 
+            String gateway, String netmask, long gatewayOwnerId) throws ResourceAllocationException, 
+            ConcurrentOperationException, InsufficientCapacityException;
+
+    /**
+     * @param gatewayId
+     * @return
+     * @throws ResourceUnavailableException 
+     * @throws ConcurrentOperationException 
+     */
+    public PrivateGateway applyVpcGateway(Long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException;
+    
+    /**
+     * @param id
+     * @return
+     * @throws ResourceUnavailableException 
+     * @throws ConcurrentOperationException 
+     */
+    boolean deleteVpcPrivateGateway(Long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException;
 
 }

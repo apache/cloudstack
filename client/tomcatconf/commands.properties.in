@@ -352,12 +352,9 @@ deleteVPCOffering=com.cloud.api.commands.DeleteVPCOfferingCmd;1
 listVPCOfferings=com.cloud.api.commands.ListVPCOfferingsCmd;15
 
 #### Private gateway commands
-#createPrivateGateway=com.cloud.api.commands.CreatePrivateGatewayCmd;15
-#listPrivateGateways=com.cloud.api.commands.ListPrivateGatewaysCmd;15
-#deletePrivateGateway=com.cloud.api.commands.DeletePrivateGatewayCmd;15
-
-#### Private network command
-createPrivateNetwork=com.cloud.api.commands.CreatePrivateNetworkCmd;1
+createPrivateGateway=com.cloud.api.commands.CreatePrivateGatewayCmd;1
+#listPrivateGateways=com.cloud.api.commands.ListPrivateGatewaysCmd;1
+deletePrivateGateway=com.cloud.api.commands.DeletePrivateGatewayCmd;1
 
 #### 
 createNetworkACL=com.cloud.api.commands.CreateNetworkACLCmd;15

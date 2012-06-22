@@ -266,8 +266,12 @@ public class EventTypes {
     public static final String EVENT_VPC_DELETE = "VPC.DELETE";
     public static final String EVENT_VPC_RESTART = "VPC.RESTART";
     
-    
+    // VPC offerings
     public static final String EVENT_VPC_OFFERING_CREATE = "VPC.OFFERING.CREATE";
     public static final String EVENT_VPC_OFFERING_UPDATE = "VPC.OFFERING.UPDATE";
     public static final String EVENT_VPC_OFFERING_DELETE = "VPC.OFFERING.DELETE";
+    
+    // Private gateway
+    public static final String EVENT_PRIVATE_GATEWAY_CREATE = "PRIVATE.GATEWAY.CREATE";
+    public static final String EVENT_PRIVATE_GATEWAY_DELETE = "PRIVATE.GATEWAY.DELETE";
 }

@@ -23,6 +23,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -311,6 +312,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     NetworkACLService _networkACLMgr;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
+    private static Long _privateOfferingId = null;
 
     ScheduledExecutorService _executor;
 
@@ -1345,6 +1347,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 GuestType.Isolated);
         privateGatewayNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(privateGatewayNetworkOffering);
         _systemNetworks.put(NetworkOfferingVO.SystemPrivateGatewayNetworkOffering, privateGatewayNetworkOffering);
+        _privateOfferingId = privateGatewayNetworkOffering.getId();
 
 
         // populate providers
@@ -3382,8 +3385,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public boolean shutdownNetwork(long networkId, ReservationContext context, boolean cleanupElements) {
         boolean result = false;
         
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
         NetworkVO network = _networksDao.lockRow(networkId, true);
         if (network == null) {
             s_logger.debug("Unable to find network with id: " + networkId);
@@ -3396,10 +3397,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         network.setState(Network.State.Shutdown);
         _networksDao.update(network.getId(), network);
-        txn.commit();
 
         boolean success = shutdownNetworkElementsAndResources(context, cleanupElements, network);
 
+        Transaction txn = Transaction.currentTxn();
         txn.start();
         if (success) {
             if (s_logger.isDebugEnabled()) {
@@ -6122,7 +6123,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new CloudRuntimeException("This physical network already supports the traffic type: " + trafficType);
         }
         // For Storage, Control, Management, Public check if the zone has any other physical network with this
-// traffictype already present
+        // traffictype already present
         // If yes, we cant add these traffics to one more physical network in the zone.
 
         if (TrafficType.isSystemNetwork(trafficType) || TrafficType.Public.equals(trafficType) || TrafficType.Storage.equals(trafficType)) {
@@ -7113,7 +7114,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // Get system network offeirng
         NetworkOfferingVO ntwkOff = _systemNetworks.get(NetworkOffering.SystemPrivateGatewayNetworkOffering);
         
-        
         // Validate physical network
         PhysicalNetwork pNtwk = _physicalNetworkDao.findById(physicalNetworkId);
         if (pNtwk == null) {
@@ -7147,13 +7147,37 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        //create Guest network
-        Network privateNetwork = createGuestNetwork(ntwkOff.getId(), networkName, displayText, gateway, cidr, vlan, 
-                null, owner, null, pNtwk, pNtwk.getDataCenterId(), ACLType.Account, null, null);
+        
+        //lock datacenter as we need to get mac address seq from there
+        DataCenterVO dc = _dcDao.lockRow(pNtwk.getDataCenterId(), true);
+        
+        //check if we need to create guest network
+        Network privateNetwork = _networksDao.getPrivateNetwork(BroadcastDomainType.Vlan.toUri(vlan).toString(), cidr,
+                networkOwnerId, pNtwk.getDataCenterId());
+        if (privateNetwork == null) {
+            //create Guest network
+            privateNetwork = createGuestNetwork(ntwkOff.getId(), networkName, displayText, gateway, cidr, vlan, 
+                    null, owner, null, pNtwk, pNtwk.getDataCenterId(), ACLType.Account, null, null);
+            s_logger.debug("Created private network " + privateNetwork);
+        } else {
+            s_logger.debug("Private network already exists: " + privateNetwork);
+        }
         
         //add entry to private_ip_address table
-        PrivateIpVO privateIp = new PrivateIpVO(startIp, privateNetwork.getId());
+        PrivateIpVO privateIp = _privateIpDao.findByIpAndSourceNetworkId(privateNetwork.getId(), startIp);
+        if (privateIp != null) {
+            throw new InvalidParameterValueException("Private ip address " + startIp + " already used for private gateway" +
+            		" in zone " + _configMgr.getZone(pNtwk.getDataCenterId()).getName());
+        }
+        
+        Long mac = dc.getMacAddress();
+        Long nextMac = mac + 1;
+        dc.setMacAddress(nextMac);
+        
+        privateIp = new PrivateIpVO(startIp, privateNetwork.getId(), nextMac);
         _privateIpDao.persist(privateIp);
+        
+        _dcDao.update(dc.getId(), dc);
         
         txn.commit();
         s_logger.debug("Private network " + privateNetwork + " is created");
@@ -7169,5 +7193,29 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         boolean setupDns = dnsProvided || dhcpProvided;
         return setupDns;
+    }
+    
+    @Override
+    public List<? extends PhysicalNetwork> getPhysicalNtwksSupportingTrafficType(long zoneId, TrafficType trafficType) {
+        
+        List<? extends PhysicalNetwork> pNtwks = _physicalNetworkDao.listByZone(zoneId);
+        
+        Iterator<? extends PhysicalNetwork> it = pNtwks.iterator();
+        while (it.hasNext()) {
+            PhysicalNetwork pNtwk = it.next();
+            if (!_pNTrafficTypeDao.isTrafficTypeSupported(pNtwk.getId(), trafficType)) {
+                it.remove();
+            }
+        }
+        return pNtwks;
+    }
+    
+    @Override
+    public boolean isPrivateGateway(Nic guestNic) {
+        Network network = getNetwork(guestNic.getNetworkId());
+        if (network.getTrafficType() != TrafficType.Guest || network.getNetworkOfferingId() != _privateOfferingId.longValue()) {
+            return false;
+        }
+        return true;
     }
 }

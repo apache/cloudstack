@@ -32,7 +32,6 @@ import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.api.ApiConstants.HostDetails;
 import com.cloud.api.ApiConstants.VMDetails;
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
-import com.cloud.api.response.NetworkACLResponse;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.AsyncJobResponse;
@@ -59,11 +58,13 @@ import com.cloud.api.response.LBStickinessResponse;
 import com.cloud.api.response.LDAPConfigResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
+import com.cloud.api.response.NetworkACLResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.NicResponse;
 import com.cloud.api.response.PhysicalNetworkResponse;
 import com.cloud.api.response.PodResponse;
+import com.cloud.api.response.PrivateGatewayResponse;
 import com.cloud.api.response.ProjectAccountResponse;
 import com.cloud.api.response.ProjectInvitationResponse;
 import com.cloud.api.response.ProjectResponse;
@@ -150,6 +151,7 @@ import com.cloud.network.security.SecurityRule;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcOffering;
+import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -3563,6 +3565,24 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setNetworks(networkResponses);
         response.setServices(serviceResponses);
         response.setObjectName("vpcoffering");
+        return response;
+    }
+
+    @Override
+    public PrivateGatewayResponse createPrivateGatewayResponseResponse(PrivateGateway result) {
+        PrivateGatewayResponse response = new PrivateGatewayResponse();
+        response.setId(result.getId());
+        response.setVlan(result.getVlanTag());
+        response.setGateway(result.getGateway());
+        response.setNetmask(result.getNetmask());
+        response.setVpcId(result.getVpcId());
+        response.setZoneId(result.getZoneId());
+        DataCenter zone = ApiDBUtils.findZoneById(result.getZoneId());
+        response.setZoneName(zone.getName());
+        response.setAddress(result.getIp4Address());
+        response.setPhysicalNetworkId(result.getPhysicalNetworkId());
+        response.setObjectName("privategateway");
+        
         return response;
     }
     

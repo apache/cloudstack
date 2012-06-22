@@ -43,7 +43,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;

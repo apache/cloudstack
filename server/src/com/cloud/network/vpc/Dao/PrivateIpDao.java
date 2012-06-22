@@ -58,5 +58,8 @@ public interface PrivateIpDao extends GenericDao<PrivateIpVO, Long>{
      * @param networkId
      */
     void deleteByNetworkId(long networkId);
+    
+    int countByNetworkId(long ntwkId);
+
 
 }

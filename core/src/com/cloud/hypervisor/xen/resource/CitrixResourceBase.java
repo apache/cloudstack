@@ -167,7 +167,6 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.IpAddressTO;
-import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;

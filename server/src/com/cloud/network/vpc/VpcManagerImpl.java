@@ -34,6 +34,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.network.IPAddressVO;
@@ -42,11 +43,15 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.vpc.VpcOffering.State;
+import com.cloud.network.vpc.Dao.PrivateIpDao;
 import com.cloud.network.vpc.Dao.VpcDao;
+import com.cloud.network.vpc.Dao.VpcGatewayDao;
 import com.cloud.network.vpc.Dao.VpcOfferingDao;
 import com.cloud.network.vpc.Dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
@@ -97,6 +102,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
     IPAddressDao _ipAddressDao;
     @Inject
     DomainRouterDao _routerDao;
+    @Inject
+    VpcGatewayDao _vpcGatewayDao;
+    @Inject
+    PrivateIpDao _privateIpDao;
     
     private VpcProvider vpcElement = null;
     
@@ -223,9 +232,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 }
             }
         }
-        
-        
-
         txn.commit();
 
         UserContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
@@ -874,7 +880,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_RESTART, eventDescription = "restarting vpc")
-    public boolean restartVpc(Long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, 
+    public boolean restartVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, 
                                         InsufficientCapacityException {
         Account caller = UserContext.current().getCaller();
 
@@ -914,5 +920,133 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @Override
     public List<DomainRouterVO> getVpcRouters(long vpcId) {
         return _routerDao.listRoutersByVpcId(vpcId);
+    }
+
+    @Override
+    public PrivateGateway getVpcPrivateGateway(long id) {
+        VpcGateway gateway = _vpcGatewayDao.findById(id);
+
+        if (gateway == null || gateway.getType() != VpcGateway.Type.Private) {
+            return null;
+        }
+        Network network = _ntwkMgr.getNetwork(gateway.getNetworkId());
+        String vlanTag = network.getBroadcastUri().getHost();
+        String netmask = NetUtils.getCidrNetmask(network.getCidr());
+        return new PrivateGatewayProfile(gateway, vlanTag, network.getGateway(),netmask, network.getPhysicalNetworkId());
+    }
+
+    @Override
+    @DB
+    public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, 
+            String gateway, String netmask, long gatewayOwnerId) throws ResourceAllocationException, 
+            ConcurrentOperationException, InsufficientCapacityException {
+        
+        //Validate parameters
+        Vpc vpc = getVpc(vpcId);
+        if (vpc == null) {
+            throw new InvalidParameterValueException("Unable to find VPC by id given");
+        }
+        
+        //allow only one private gateway per vpc
+        VpcGatewayVO gatewayVO = _vpcGatewayDao.getPrivateGateway(vpcId);
+        if (gatewayVO != null) {
+            throw new InvalidParameterValueException("Private ip address already exists for vpc " + vpc);
+        }
+        
+        //Validate physical network
+        if (physicalNetworkId == null) {
+            List<? extends PhysicalNetwork> pNtwks = _ntwkMgr.getPhysicalNtwksSupportingTrafficType(vpc.getZoneId(), TrafficType.Guest);
+            if (pNtwks.isEmpty() || pNtwks.size() != 1) {
+                throw new InvalidParameterValueException("Physical network can't be determined; pass physical network id");
+            }
+            physicalNetworkId = pNtwks.get(0).getId();
+        }
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        s_logger.debug("Creating Private gateway for VPC " + vpc);
+        //1) create private network
+        String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
+        Network privateNtwk = _ntwkMgr.createPrivateNetwork(networkName, networkName, physicalNetworkId, 
+                vlan, ipAddress, null, gateway, netmask, gatewayOwnerId);
+        
+        //2) create gateway entry
+        gatewayVO = new VpcGatewayVO(ipAddress, VpcGateway.Type.Private, vpcId, privateNtwk.getDataCenterId(),
+                privateNtwk.getId());
+        _vpcGatewayDao.persist(gatewayVO);
+        
+        s_logger.debug("Created vpc gateway entry " + gatewayVO);
+        
+        txn.commit();
+        
+        return getVpcPrivateGateway(gatewayVO.getId());     
+    }
+
+
+    @Override
+    public PrivateGateway applyVpcGateway(Long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException {
+        PrivateGateway gateway = getVpcPrivateGateway(gatewayId);
+        if (getVpcElement().createPrivateGateway(gateway)) {
+            s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
+            return gateway;
+        } else {
+            s_logger.warn("Private gateway " + gateway + " failed to apply on the backend");
+            return null;
+        }
+    }
+
+    @Override
+    public boolean deleteVpcPrivateGateway(Long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException {
+        VpcGatewayVO gatewayVO = _vpcGatewayDao.findById(gatewayId);
+        if (gatewayVO == null || gatewayVO.getType() != VpcGateway.Type.Private) {
+            throw new InvalidParameterValueException("Can't find private gateway by id specified");
+        }
+                
+        //1) delete the gateaway on the backend
+        PrivateGateway gateway = getVpcPrivateGateway(gatewayId);
+        if (getVpcElement().deletePrivateGateway(gateway)) {
+            s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
+        } else {
+            s_logger.warn("Private gateway " + gateway + " failed to apply on the backend");
+            return false;
+        }
+        
+        //2) Delete private gateway
+        return deletePrivateGateway(gateway);
+    }
+    
+    @DB
+    public boolean deletePrivateGateway(PrivateGateway gateway) {
+        //check if there are ips allocted in the network
+        long networkId = gateway.getNetworkId();
+        boolean deleteNetwork = true;
+        List<PrivateIpVO> privateIps = _privateIpDao.listByNetworkId(networkId);
+        if (privateIps.size() > 1 || !privateIps.get(0).getIpAddress().equalsIgnoreCase(gateway.getIp4Address())) {
+            s_logger.debug("Not removing network id=" + gateway.getNetworkId() + " as it has private ip addresses for other gateways");
+            deleteNetwork = false;
+        } 
+        
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
+        PrivateIpVO ip = _privateIpDao.findByIpAndSourceNetworkId(gateway.getNetworkId(), gateway.getIp4Address());
+        if (ip != null) {
+            _privateIpDao.remove(ip.getId());
+            s_logger.debug("Deleted private ip " + ip);
+        }
+        
+        if (deleteNetwork) {
+            User callerUser = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
+            Account owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
+            ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
+            _ntwkMgr.destroyNetwork(networkId, context);
+            s_logger.debug("Deleted private network id=" + networkId);
+        }
+        
+        _vpcGatewayDao.remove(gateway.getId());
+        s_logger.debug("Deleted private gateway " + gateway);
+        
+        txn.commit();
+        return true;
     }
 }
