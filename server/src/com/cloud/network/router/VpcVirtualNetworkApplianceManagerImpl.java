@@ -778,7 +778,11 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     IpAddressTO ip = new IpAddressTO(Account.ACCOUNT_ID_SYSTEM, guestNic.getIp4Address(), true, false, 
                             true, guestNic.getBroadcastUri().getHost(), guestNic.getGateway(), guestNic.getNetmask(), guestNic.getMacAddress(),
                             null, networkRate, false);
+                    Network network = _networkMgr.getNetwork(guestNic.getNetworkId());
+                    ip.setTrafficType(network.getTrafficType());
                     SetSourceNatCommand cmd = new SetSourceNatCommand(ip, true);
+                    cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
+                    cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
                     cmds.addCommand(cmd);
                 } 
             }

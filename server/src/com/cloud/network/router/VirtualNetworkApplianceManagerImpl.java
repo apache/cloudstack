@@ -1972,9 +1972,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
       
         ArrayList<PublicIp> publicIps = providerToIpList.get(provider);
       
-        s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + router + " start.");
-      
-        if (!publicIps.isEmpty()) {
+        if (publicIps != null && !publicIps.isEmpty()) {
+            s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + router + " start.");
             List<RemoteAccessVpn> vpns = new ArrayList<RemoteAccessVpn>();
             List<PortForwardingRule> pfRules = new ArrayList<PortForwardingRule>();
             List<FirewallRule> staticNatFirewallRules = new ArrayList<FirewallRule>();
