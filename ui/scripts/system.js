@@ -7351,7 +7351,8 @@
           fields: {
             name: { label: 'label.name' },
             ipaddress: { label: 'label.server' },
-						path: { label: 'label.path' }
+						path: { label: 'label.path' },
+						clustername: { label: 'label.cluster'}
           },
 
           dataProvider: function(args) {
