@@ -75,6 +75,8 @@ create_guest_network() {
   sudo ip link set $dev up
   sudo arping -c 3 -I $dev -A -U -s $ip $ip
   # setup rules to allow dhcp/dns request
+  sudo iptables -D INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
+  sudo iptables -D INPUT -i $dev -p udp -m udp --dport 53 -j ACCEPT
   sudo iptables -A INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
   sudo iptables -A INPUT -i $dev -p udp -m udp --dport 53 -j ACCEPT
   local tableName="Table_$dev"
@@ -114,7 +116,7 @@ do
 		op="-D"
 		;;
   n)	nflag=1
-		subnet="$OPTAGR"
+		subnet="$OPTARG"
 		;;
   m)	mflag=1
 		mask="$OPTARG"
