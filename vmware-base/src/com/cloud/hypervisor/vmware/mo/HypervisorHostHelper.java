@@ -194,6 +194,7 @@ public class HypervisorHostHelper {
                 netconfClient.disconnect();
                 s_logger.debug("Disconnected Nexus 1000v session.");
             }
+            throw new CloudRuntimeException(msg);
         }
 
         List<Pair<OperationType, String>> params = new ArrayList<Pair<OperationType, String>>();
@@ -212,6 +213,7 @@ public class HypervisorHostHelper {
                 	netconfClient.disconnect();
                 	s_logger.debug("Disconnected Nexus 1000v session.");
                 }
+                throw new CloudRuntimeException(msg);
             }
         }
 
@@ -230,6 +232,7 @@ public class HypervisorHostHelper {
                 netconfClient.disconnect();
                 s_logger.debug("Disconnected Nexus 1000v session.");
             }
+            throw new CloudRuntimeException(msg);
         }
 
         try {
@@ -241,7 +244,8 @@ public class HypervisorHostHelper {
         catch(CloudRuntimeException e) {
             msg = "Failed to associate policy map " + policyName + " with port profile " + networkName
                     + ". Exception: " + e.toString();
-            s_logger.error(msg);           
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
         } finally {
             if (netconfClient != null) {
                 netconfClient.disconnect();
@@ -301,6 +305,7 @@ public class HypervisorHostHelper {
                         netconfClient.disconnect();
                         s_logger.debug("Disconnected Nexus 1000v session.");
                     }
+                    throw new CloudRuntimeException(msg);
                 }
 
                 try {
@@ -315,6 +320,7 @@ public class HypervisorHostHelper {
                         netconfClient.disconnect();
                         s_logger.debug("Disconnected Nexus 1000v session.");
                     }
+                    throw new CloudRuntimeException(msg);
                 }
             }
         }
@@ -352,6 +358,7 @@ public class HypervisorHostHelper {
                 netconfClient.disconnect();
                 s_logger.debug("Disconnected Nexus 1000v session.");
             }
+            throw new CloudRuntimeException(msg);
         }
 
         try {
@@ -364,6 +371,7 @@ public class HypervisorHostHelper {
                 netconfClient.disconnect();
                 s_logger.debug("Disconnected Nexus 1000v session.");
             }
+            throw new CloudRuntimeException(msg);
         }
     }
 
