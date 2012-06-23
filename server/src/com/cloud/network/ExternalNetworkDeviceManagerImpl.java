@@ -54,9 +54,7 @@ import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.VpnUserDao;
-import com.cloud.network.element.F5ExternalLoadBalancerElementService;
 import com.cloud.network.element.JuniperSRXFirewallElementService;
-import com.cloud.network.resource.F5BigIpResource;
 import com.cloud.network.resource.JuniperSrxResource;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -104,7 +102,6 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     @Inject NetworkExternalLoadBalancerDao _networkExternalLBDao;
     @Inject NetworkExternalFirewallDao _networkExternalFirewallDao;
 
-    @PlugService F5ExternalLoadBalancerElementService _f5LbElementService;
     @PlugService JuniperSRXFirewallElementService _srxElementService;
 
     ScheduledExecutorService _executor;
@@ -184,19 +181,6 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             } else {
                 throw new CloudRuntimeException("Failed to add SRX firewall device due to internal error");
             }
-        } else if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.F5BigIpLoadBalancer.getName())) {
-            Long physicalNetworkId = (params.get(ApiConstants.PHYSICAL_NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.PHYSICAL_NETWORK_ID)):null;
-            String url = (String) params.get(ApiConstants.URL);
-            String username = (String) params.get(ApiConstants.USERNAME);
-            String password = (String) params.get(ApiConstants.PASSWORD);
-            ExternalLoadBalancerDeviceManager lbDeviceMgr = (ExternalLoadBalancerDeviceManager) _f5LbElementService;
-            ExternalLoadBalancerDeviceVO lbDeviceVO =  lbDeviceMgr.addExternalLoadBalancer(physicalNetworkId, url, username, password,
-                    cmd.getDeviceType(), (ServerResource) new F5BigIpResource());
-            if (lbDeviceVO != null) {
-                return _hostDao.findById(lbDeviceVO.getHostId());
-            } else {
-                throw new CloudRuntimeException("Failed to add Netscaler load balancer device due to internal error");
-            }
         } else {
             throw new CloudRuntimeException("Unsupported network device type:" + cmd.getDeviceType());
         }
@@ -229,9 +213,6 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             } else {
                 throw new CloudRuntimeException("Unsupported PXE server type:" + pxeType);
             }
-        } else if (host.getType() == Host.Type.ExternalLoadBalancer) {
-            ExternalLoadBalancerDeviceManager lbDeviceMgr = (ExternalLoadBalancerDeviceManager) _f5LbElementService;
-            response = _f5LbElementService.createExternalLoadBalancerResponse(host);
         } else if (host.getType() == Host.Type.ExternalFirewall) {
             response = _srxElementService.createExternalFirewallResponse(host);
         } else {
@@ -278,14 +259,6 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
             Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
             res = listNetworkDevice(zoneId, null, podId, Host.Type.PxeServer);
-        } else if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.NetscalerMPXLoadBalancer.getName()) ||
-                cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.NetscalerVPXLoadBalancer.getName()) ||
-                cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.NetscalerSDXLoadBalancer.getName()) ||
-                cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.F5BigIpLoadBalancer.getName())) {
-            Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
-            Long physicalNetworkId = (params.get(ApiConstants.PHYSICAL_NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.PHYSICAL_NETWORK_ID)):null;
-            ExternalLoadBalancerDeviceManager lbDeviceMgr = (ExternalLoadBalancerDeviceManager) _f5LbElementService;
-            return lbDeviceMgr.listExternalLoadBalancers(physicalNetworkId, cmd.getDeviceType());
         } else if (NetworkDevice.JuniperSRXFirewall.getName().equalsIgnoreCase(cmd.getDeviceType())) {
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
             Long physicalNetworkId = (params.get(ApiConstants.PHYSICAL_NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.PHYSICAL_NETWORK_ID)):null;
@@ -315,10 +288,7 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     @Override
     public boolean deleteNetworkDevice(DeleteNetworkDeviceCmd cmd) {
        HostVO device = _hostDao.findById(cmd.getId());
-       if (device.getType() == Type.ExternalLoadBalancer) {
-           ExternalLoadBalancerDeviceManager lbDeviceMgr = (ExternalLoadBalancerDeviceManager) _f5LbElementService;
-           return lbDeviceMgr.deleteExternalLoadBalancer(cmd.getId());
-       } else if (device.getType() == Type.ExternalLoadBalancer) {
+       if (device.getType() == Type.ExternalFirewall) {
            ExternalFirewallDeviceManager fwDeviceManager = (ExternalFirewallDeviceManager) _srxElementService;
            return fwDeviceManager.deleteExternalFirewall(cmd.getId());
        }

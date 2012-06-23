@@ -159,6 +159,7 @@
         </adapters>
         <pluggableservice name="VirtualRouterElementService" key="com.cloud.network.element.VirtualRouterElementService" class="com.cloud.network.element.VirtualRouterElement"/>
         <pluggableservice name="NetscalerExternalLoadBalancerElementService" key="com.cloud.network.element.NetscalerLoadBalancerElementService" class="com.cloud.network.element.NetscalerElement"/>
+        <pluggableservice name="F5ExternalLoadBalancerElementService" key="com.cloud.network.element.F5ExternalLoadBalancerElementService" class="com.cloud.network.element.F5ExternalLoadBalancerElement"/>
         <dao name="NetScalerPodDao" class="com.cloud.network.dao.NetScalerPodDaoImpl" singleton="false"/>
     </management-server>
 

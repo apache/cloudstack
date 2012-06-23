@@ -479,7 +479,7 @@
 
   <target name="build-servers" depends="-init, build-server" />
 
-  <target name="build-opensource" depends="-init, build-server, build-agent, build-scripts, build-ui, build-console-proxy, build-ovm, package-oss-systemvm-iso, build-netscaler, build-dp-user-dispersing">
+  <target name="build-opensource" depends="-init, build-server, build-agent, build-scripts, build-ui, build-console-proxy, build-ovm, package-oss-systemvm-iso, build-netscaler, build-f5, build-dp-user-dispersing">
     <copy overwrite="true" todir="${dist.dir}">
       <fileset dir="${base.dir}/build/deploy/">
         <include name="deploy-agent.sh" />
@@ -586,7 +586,7 @@
     <delete dir="${unittest.dir}"/>
   </target>
 
-  <target name="compile-all" description="Compile all of the jars" depends="compile-utils, compile-api, compile-core, compile-server, compile-ovm, compile-netscaler"/>
+  <target name="compile-all" description="Compile all of the jars" depends="compile-utils, compile-api, compile-core, compile-server, compile-ovm, compile-netscaler, compile-f5"/>
 
   <target name="clean-all" depends="clean, clean-awsapi" description="Clean all of the generated files, including dependency cache and javadoc">
     <delete dir="${target.dir}" />
@@ -609,5 +609,11 @@
   	<ant antfile="${base.dir}/plugins/network-elements/netscaler/build.xml" target="build"/>
   </target>
   <target name="build-netscaler" depends="compile-netscaler"/>
+
+  <!-- ===================== Cloud-Plugin-F5.Jar ===================== -->
+  <target name="compile-f5" depends="-init, compile-server" description="Compile F5 plugin">
+  	<ant antfile="${base.dir}/plugins/network-elements/f5/build.xml" target="build"/>
+  </target>
+  <target name="build-f5" depends="compile-f5"/>
 
 </project>
