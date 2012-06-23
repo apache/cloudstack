@@ -7319,14 +7319,38 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             return new SetNetworkACLAnswer(cmd, true, results);
         } catch (Exception e) {
-            String msg = "SetNetworkACLC failed due to " + e.toString();
+            String msg = "SetNetworkACL failed due to " + e.toString();
             s_logger.error(msg, e);
             return new SetNetworkACLAnswer(cmd, false, results);
         }
     }
 
     protected SetPortForwardingRulesAnswer execute(SetPortForwardingRulesVpcCommand cmd) {
-       //TODO - add implementation
-        return null;
+        Connection conn = getConnection();
+
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String[] results = new String[cmd.getRules().length];
+        int i = 0;
+
+        boolean endResult = true;
+        for (PortForwardingRuleTO rule : cmd.getRules()) {
+            String args ="vpc_portforwarding " + routerIp;
+            args += rule.revoked() ? " -D" : " -A";
+            args += " -P " + rule.getProtocol().toLowerCase();
+            args += " -l " + rule.getSrcIp();
+            args += " -p " + rule.getStringSrcPortRange().replace(":", "-");
+            args += " -r " + rule.getDstIp();
+            args += " -d " + rule.getStringDstPortRange().replace(":", "-");
+
+            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args.toString());
+
+            if (result == null || result.isEmpty()) {
+                results[i++] = "Failed";
+                endResult = false;
+            } else {
+                results[i++] = null;
+            }
+        }
+        return new SetPortForwardingRulesAnswer(cmd, results, endResult);
     }
 }

@@ -30,52 +30,48 @@ usage() {
 
 #Port (address translation) forwarding for tcp or udp
 tcp_or_udp_nat() {
-  local instIp=$1
-  local dport0=$2
-  local dport=$(echo $2 | sed 's/:/-/')
+  local op=$1
+  local proto=$2
   local publicIp=$3
-  local port=$4
-  local op=$5
-  local proto=$6
-  local cidrs=$7
+  local ports=$4
+  local instIp=$5
+  local dports=$6
 
   logger -t cloud "$(basename $0): creating port fwd entry for PAT: public ip=$publicIp \
   instance ip=$instIp proto=$proto port=$port dport=$dport op=$op"
 
   #if adding, this might be a duplicate, so delete the old one first
-  [ "$op" == "-A" ] && tcp_or_udp_entry $instIp $dport0 $publicIp $port "-D" $proto $cidrs
+  [ "$op" == "-A" ] && tcp_or_udp_entry "-D" $proto $publicIp $ports $instIp $dports
   # the delete operation may have errored out but the only possible reason is 
   # that the rules didn't exist in the first place
   # shortcircuit the process if error and it is an append operation
   # continue if it is delete
-  (sudo iptables -t nat $op PREROUTING --proto $proto -d $publicIp \
-           --destination-port $port -j DNAT  \
-           --to-destination $instIp:$dport &>> $OUTFILE || [ "$op" == "-D" ]) &&
+  local PROTO=""
+  if [ "$proto" != "any" ]
+  then
+    PROTO="--proto $proto"
+  fi
+
+  local DEST_PORT=""
+  if [ "$ports" != "any" ]
+  then
+    DEST_PORT="--destination-port $ports"
+  fi
+  
+  local TO_DEST="--to-destination $instIp"
+  if [ "$dports" != "any" ]
+  then
+    TO_DEST="--to-destination $instIp:$dports"
+  fi
+
+  sudo iptables -t nat $op PREROUTING $PROTO -d $publicIp  $DEST_PORT -j DNAT  \
+           $TO_DEST &>> $OUTFILE 
       
   local result=$?
   logger -t cloud "$(basename $0): done port fwd entry for PAT: public ip=$publicIp op=$op result=$result"
   return $result
 }
 
-#Forward icmp
-icmp_entry() {
-  local instIp=$1
-  local icmptype=$2
-  local publicIp=$3
-  local op=$4
-  
-  logger -t cloud "$(basename $0): creating port fwd entry for PAT: public ip=$publicIp \
-  instance ip=$instIp proto=icmp port=$port dport=$dport op=$op"
-  #if adding, this might be a duplicate, so delete the old one first
-  [ "$op" == "-A" ] && icmp_entry $instIp $icmpType $publicIp "-D" 
-  # the delete operation may have errored out but the only possible reason is 
-  # that the rules didn't exist in the first place
-  sudo iptables -t nat $op PREROUTING --proto icmp -d $publicIp --icmp-type $icmptype -j DNAT --to-destination $instIp &>>  $OUTFILE
-      
-  result=$?
-  logger -t cloud "$(basename $0): done port fwd entry for PAT: public ip=$publicIp op=$op result=$result"
-  return $result
-}
 
 one_to_one_fw_entry() {
   local publicIp=$1
@@ -154,14 +150,13 @@ static_nat() {
 rflag=
 Pflag=
 pflag=
-tflag=
 lflag=
 dflag=
-sflag=
-Gflag=
 op=""
-
-while getopts 'ADr:P:p:t:l:d:s:G' OPTION
+protocal="none"
+ports="none"
+dports="none"
+while getopts 'ADr:P:p:l:d:' OPTION
 do
   case $OPTION in
   A)    op="-A"
@@ -177,19 +172,11 @@ do
   p)    pflag=1
         ports="$OPTARG"
         ;;
-  t)    tflag=1
-        icmptype="$OPTARG"
-        ;;
   l)    lflag=1
         publicIp="$OPTARG"
         ;;
-  s)    sflag=1
-        cidrs="$OPTARG"
-        ;;
   d)    dflag=1
-        dport="$OPTARG"
-        ;;
-  G)    Gflag=1
+        dports="$OPTARG"
         ;;
   ?)    usage
         unlock_exit 2 $lock $locked
@@ -197,59 +184,6 @@ do
   esac
 done
 
-DEV_LIST=$(get_dev_list)
-OUTFILE=$(mktemp)
-
-#Firewall ports for one-to-one/static NAT
-if [ "$Gflag" == "1" ]
-then
-  if [ "$protocol" == "" ] 
-  then
-    static_nat $publicIp $instanceIp  $op
-  else
-    one_to_one_fw_entry $publicIp $instanceIp  $protocol $dport $op
-  fi
-  result=$?
-  if [ "$result" -ne 0 ] && [ "$op" != "-D" ]; then
-      cat $OUTFILE >&2
-  fi
-  rm -f $OUTFILE
-  if [ "$op" == "-D" ];then
-     result=0
-  fi
-  unlock_exit $result $lock $locked
-fi
-
-if [ "$sflag" != "1" ]
-then
-    cidrs="0/0"
-fi
-
-case $protocol  in
-  tcp|udp)    
-        tcp_or_udp_entry $instanceIp $dport $publicIp $ports $op $protocol $cidrs
-        result=$?
-        if [ "$result" -ne 0 ] && [ "$op" != "-D" ];then
-           cat $OUTFILE >&2
-        fi
-        rm -f $OUTFILE
-        if [ "$op" == "-D" ];then
-           result=0
-        fi
-        unlock_exit $result $lock $locked
-        ;;
-  "icmp")  
-  
-        icmp_entry $instanceIp $icmptype $publicIp $op 
-        if [ "$op" == "-D" ];then
-           result=0
-        fi
-        unlock_exit $? $lock $locked
-        ;;
-      *)
-        printf "Invalid protocol-- must be tcp, udp or icmp\n" >&2
-        unlock_exit 5 $lock $locked
-        ;;
-esac
-
-unlock_exit 0 $lock $locked
+tcp_or_udp_entry $op $protocol $publicIp $ports $instanceIp $dports
+result=$?
+unlock_exit $result $lock $locked
