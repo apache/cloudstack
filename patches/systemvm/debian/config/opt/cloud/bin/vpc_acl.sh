@@ -69,7 +69,7 @@ acl_chain_for_guest_network () {
   # outbound
   sudo iptables -N ACL_OUTBOUND_$ip 2>/dev/null
   sudo iptables -A ACL_OUTBOUND_$ip -j DROP 2>/dev/null
-  sudo iptables -D FORWARD -i $dev -s $gcidr -j ACL_OUTBOUND_$ip  2>/dev/null
+  sudo iptables -A FORWARD -i $dev -s $gcidr -j ACL_OUTBOUND_$ip  2>/dev/null
 }
 
 
@@ -84,9 +84,9 @@ acl_entry_for_guest_network() {
   local cidrs=$(echo $rule | cut -d: -f5 | sed 's/-/ /g')
   if [ "$sport" == "0" -a "$eport" == "0" ]
   then
-      DPORT = ""
+      DPORT=""
   else
-      DPORT = "--dport $sport:$eport"
+      DPORT="--dport $sport:$eport"
   fi
   logger -t cloud "$(basename $0): enter apply acl rules for guest network: $gcidr, inbound:$inbound:$prot:$sport:$eport:$cidrs"  
   
@@ -115,7 +115,7 @@ acl_entry_for_guest_network() {
                     $DPORT -j ACCEPT
       else
         sudo iptables -I ACL_OUTBOUND_$ip -p $prot -d $lcidr \
-                    $DPORT -j ACCEP
+                    $DPORT -j ACCEPT
       fi
     fi
     result=$?
