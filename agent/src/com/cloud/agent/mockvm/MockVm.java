@@ -21,61 +21,61 @@ import com.cloud.vm.VirtualMachine.State;
 // As storage is mapped from storage device, can virtually treat that VM here does
 public class MockVm {
 
-	private String vmName;
-	private State state = State.Stopped;
+    private String vmName;
+    private State state = State.Stopped;
 
-	private long ramSize; // unit of Mbytes
-	private int cpuCount;
-	private int utilization; // in percentage
-	private int vncPort; // 0-based allocation, real port number needs to be
-							// applied with base
+    private long ramSize; // unit of Mbytes
+    private int cpuCount;
+    private int utilization; // in percentage
+    private int vncPort; // 0-based allocation, real port number needs to be
+                            // applied with base
 
-	public MockVm() {
-	}
+    public MockVm() {
+    }
 
-	public MockVm(String vmName, State state, long ramSize, int cpuCount,
-			int utilization, int vncPort) {
-		this.vmName = vmName;
-		this.state = state;
-		this.ramSize = ramSize;
-		this.cpuCount = cpuCount;
-		this.utilization = utilization;
-		this.vncPort = vncPort;
-	}
+    public MockVm(String vmName, State state, long ramSize, int cpuCount,
+            int utilization, int vncPort) {
+        this.vmName = vmName;
+        this.state = state;
+        this.ramSize = ramSize;
+        this.cpuCount = cpuCount;
+        this.utilization = utilization;
+        this.vncPort = vncPort;
+    }
 
-	public String getName() {
-		return vmName;
-	}
+    public String getName() {
+        return vmName;
+    }
 
-	public State getState() {
-		return state;
-	}
+    public State getState() {
+        return state;
+    }
 
-	public void setState(State state) {
-		this.state = state;
-	}
+    public void setState(State state) {
+        this.state = state;
+    }
 
-	public long getRamSize() {
-		return ramSize;
-	}
+    public long getRamSize() {
+        return ramSize;
+    }
 
-	public int getCpuCount() {
-		return cpuCount;
-	}
+    public int getCpuCount() {
+        return cpuCount;
+    }
 
-	public int getUtilization() {
-		return utilization;
-	}
+    public int getUtilization() {
+        return utilization;
+    }
 
-	public int getVncPort() {
-		return vncPort;
-	}
+    public int getVncPort() {
+        return vncPort;
+    }
 
-	public static void main(String[] args) {
-		long i = 10;
-		Long l = null;
-		if (i == l) {
-			System.out.print("fdfd");
-		}
-	}
+    public static void main(String[] args) {
+        long i = 10;
+        Long l = null;
+        if (i == l) {
+            System.out.print("fdfd");
+        }
+    }
 }

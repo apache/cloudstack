@@ -17,75 +17,75 @@
 package com.cloud.agent.resource.computing;
 
 public class LibvirtStorageVolumeDef {
-	public enum volFormat {
-		RAW("raw"), QCOW2("qcow2"), DIR("dir");
-		private String _format;
+    public enum volFormat {
+        RAW("raw"), QCOW2("qcow2"), DIR("dir");
+        private String _format;
 
-		volFormat(String format) {
-			_format = format;
-		}
+        volFormat(String format) {
+            _format = format;
+        }
 
-		@Override
-		public String toString() {
-			return _format;
-		}
+        @Override
+        public String toString() {
+            return _format;
+        }
 
-		public static volFormat getFormat(String format) {
-			if (format == null) {
-				return null;
-			}
-			if (format.equalsIgnoreCase("raw")) {
-				return RAW;
-			} else if (format.equalsIgnoreCase("qcow2")) {
-				return QCOW2;
-			}
-			return null;
-		}
-	}
+        public static volFormat getFormat(String format) {
+            if (format == null) {
+                return null;
+            }
+            if (format.equalsIgnoreCase("raw")) {
+                return RAW;
+            } else if (format.equalsIgnoreCase("qcow2")) {
+                return QCOW2;
+            }
+            return null;
+        }
+    }
 
-	private String _volName;
-	private Long _volSize;
-	private volFormat _volFormat;
-	private String _backingPath;
-	private volFormat _backingFormat;
+    private String _volName;
+    private Long _volSize;
+    private volFormat _volFormat;
+    private String _backingPath;
+    private volFormat _backingFormat;
 
-	public LibvirtStorageVolumeDef(String volName, Long size, volFormat format,
-			String tmplPath, volFormat tmplFormat) {
-		_volName = volName;
-		_volSize = size;
-		_volFormat = format;
-		_backingPath = tmplPath;
-		_backingFormat = tmplFormat;
-	}
+    public LibvirtStorageVolumeDef(String volName, Long size, volFormat format,
+            String tmplPath, volFormat tmplFormat) {
+        _volName = volName;
+        _volSize = size;
+        _volFormat = format;
+        _backingPath = tmplPath;
+        _backingFormat = tmplFormat;
+    }
 
-	public volFormat getFormat() {
-		return this._volFormat;
-	}
+    public volFormat getFormat() {
+        return this._volFormat;
+    }
 
-	@Override
-	public String toString() {
-		StringBuilder storageVolBuilder = new StringBuilder();
-		storageVolBuilder.append("<volume>\n");
-		storageVolBuilder.append("<name>" + _volName + "</name>\n");
-		if (_volSize != null) {
-			storageVolBuilder
-					.append("<capacity >" + _volSize + "</capacity>\n");
-		}
-		storageVolBuilder.append("<target>\n");
-		storageVolBuilder.append("<format type='" + _volFormat + "'/>\n");
-		storageVolBuilder.append("<permissions>");
-		storageVolBuilder.append("<mode>0744</mode>");
-		storageVolBuilder.append("</permissions>");
-		storageVolBuilder.append("</target>\n");
-		if (_backingPath != null) {
-			storageVolBuilder.append("<backingStore>\n");
-			storageVolBuilder.append("<path>" + _backingPath + "</path>\n");
-			storageVolBuilder.append("<format type='" + _backingFormat
-					+ "'/>\n");
-			storageVolBuilder.append("</backingStore>\n");
-		}
-		storageVolBuilder.append("</volume>\n");
-		return storageVolBuilder.toString();
-	}
+    @Override
+    public String toString() {
+        StringBuilder storageVolBuilder = new StringBuilder();
+        storageVolBuilder.append("<volume>\n");
+        storageVolBuilder.append("<name>" + _volName + "</name>\n");
+        if (_volSize != null) {
+            storageVolBuilder
+                    .append("<capacity >" + _volSize + "</capacity>\n");
+        }
+        storageVolBuilder.append("<target>\n");
+        storageVolBuilder.append("<format type='" + _volFormat + "'/>\n");
+        storageVolBuilder.append("<permissions>");
+        storageVolBuilder.append("<mode>0744</mode>");
+        storageVolBuilder.append("</permissions>");
+        storageVolBuilder.append("</target>\n");
+        if (_backingPath != null) {
+            storageVolBuilder.append("<backingStore>\n");
+            storageVolBuilder.append("<path>" + _backingPath + "</path>\n");
+            storageVolBuilder.append("<format type='" + _backingFormat
+                    + "'/>\n");
+            storageVolBuilder.append("</backingStore>\n");
+        }
+        storageVolBuilder.append("</volume>\n");
+        return storageVolBuilder.toString();
+    }
 
 }
