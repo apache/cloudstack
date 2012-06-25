@@ -1954,7 +1954,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     protected void finalizeNetworkRulesForNetwork(Commands cmds, DomainRouterVO router, Provider provider, Long guestNetworkId) {
         s_logger.debug("Resending ipAssoc, port forwarding, load balancing rules as a part of Virtual router start");
       
-        ArrayList<PublicIp> publicIps = getPublicIpsToApply(router, provider, guestNetworkId);
+        ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(router, provider, guestNetworkId);
 
         if (publicIps != null && !publicIps.isEmpty()) {
             List<RemoteAccessVpn> vpns = new ArrayList<RemoteAccessVpn>();
@@ -1964,7 +1964,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             List<FirewallRule> firewallRules = new ArrayList<FirewallRule>();
       
             //Get information about all the rules (StaticNats and StaticNatRules; PFVPN to reapply on domR start)
-            for (PublicIp ip : publicIps) {
+            for (PublicIpAddress ip : publicIps) {
                 if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.PortForwarding, provider)) {
                     pfRules.addAll(_pfRulesDao.listForApplication(ip.getId()));
                 }
@@ -2046,10 +2046,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
     }
 
-    protected ArrayList<PublicIp> finalizeIpAssocForNetwork(Commands cmds, DomainRouterVO router, Provider provider, 
+    protected void finalizeIpAssocForNetwork(Commands cmds, VirtualRouter router, Provider provider, 
             Long guestNetworkId) {
         
-        ArrayList<PublicIp> publicIps = getPublicIpsToApply(router, provider, guestNetworkId);
+        ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(router, provider, guestNetworkId);
         
         if (publicIps != null && !publicIps.isEmpty()) {
             s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + router + " start.");
@@ -2058,10 +2058,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 createAssociateIPCommands(router, publicIps, cmds, 0);
             }
         }
-        return publicIps;
     }
 
-    protected ArrayList<PublicIp> getPublicIpsToApply(DomainRouterVO router, Provider provider, Long guestNetworkId) {
+    protected ArrayList<? extends PublicIpAddress> getPublicIpsToApply(VirtualRouter router, Provider provider, Long guestNetworkId) {
         long ownerId = router.getAccountId();
         final List<IPAddressVO> userIps = _networkMgr.listPublicIpsAssignedToGuestNtwk(ownerId, guestNetworkId, null);
         List<PublicIp> allPublicIps = new ArrayList<PublicIp>();

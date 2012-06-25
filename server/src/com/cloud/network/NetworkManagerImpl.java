@@ -1179,7 +1179,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         boolean isSourceNat = false;
         if (!sharedSourceNat) {
             if (getExistingSourceNat(owner.getId(), networkId, null) == null) {
-                if (network.getGuestType() == GuestType.Isolated) {
+                if (network.getGuestType() == GuestType.Isolated && network.getVpcId() == null) {
                     isSourceNat = true;
                 }
             }
