@@ -32,6 +32,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.NetworkService;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.router.VirtualRouter;
@@ -394,5 +395,10 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         } else {
             return true;
         }
+    }
+    
+    @Override
+    protected VirtualRouterProviderType getVirtualRouterProvider() {
+        return VirtualRouterProviderType.VPCVirtualRouter;
     }
 }
