@@ -82,7 +82,14 @@ var pollAsyncJobResult = function(args) {
         }
         else if (result.jobstatus == 2) { // Failed          
           var msg = (result.jobresult.errortext == null)? "": result.jobresult.errortext;
-          args.error({message: msg});
+		  if (args._custom.getUpdatedData != null && args._custom.getActionFilter != null) {
+			args.error({message: msg, updatedData: args._custom.getUpdatedData(), actionFilter: args._custom.getActionFilter()});
+		  } else if (args._custom.getUpdatedData != null && args._custom.getActionFilter == null) {
+			args.error({message: msg, updatedData: args._custom.getUpdatedData()});
+		  }
+		  else {
+			args.error({message: msg});
+		  }
         }
       }
     },
