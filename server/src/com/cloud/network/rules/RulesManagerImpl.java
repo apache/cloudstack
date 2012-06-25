@@ -176,8 +176,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         if (ipAddress.getAssociatedWithNetworkId() == null) {
             s_logger.debug("The ip is not associated with the network id="+ networkId + " so assigning");
             try {
-                _networkMgr.associateIPToGuestNetwork(ipAddrId, networkId);
-                ipAddress = _ipAddressDao.findById(ipAddrId);
+                ipAddress = _networkMgr.associateIPToGuestNetwork(ipAddrId, networkId);
             } catch (Exception ex) {
                 s_logger.warn("Failed to associate ip id=" + ipAddrId + " to network id=" + networkId + " as " +
                         "a part of port forwarding rule creation");
@@ -364,7 +363,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         if (ipAddress.getAssociatedWithNetworkId() == null) {
             s_logger.debug("The ip is not associated with the network id="+ networkId + " so assigning");
             try {
-                _networkMgr.associateIPToGuestNetwork(ipId, networkId);
+                ipAddress = _networkMgr.associateIPToGuestNetwork(ipId, networkId);
             } catch (Exception ex) {
                 s_logger.warn("Failed to associate ip id=" + ipId + " to network id=" + networkId + " as " +
                         "a part of enable static nat");

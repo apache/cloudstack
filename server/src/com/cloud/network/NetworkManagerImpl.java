@@ -1125,12 +1125,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @DB
     @Override
-    public IpAddress associateIPToGuestNetwork(long ipId, long networkId) throws ResourceAllocationException, ResourceUnavailableException, 
+    public IPAddressVO associateIPToGuestNetwork(long ipId, long networkId) throws ResourceAllocationException, ResourceUnavailableException, 
         InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
         Account owner = null;
 
-        IpAddress ipToAssoc = getIp(ipId);
+        IPAddressVO ipToAssoc = _ipAddressDao.findById(ipId);
         if (ipToAssoc != null) {
             _accountMgr.checkAccess(caller, null, true, ipToAssoc);
             owner = _accountMgr.getAccount(ipToAssoc.getAllocatedToAccountId());
