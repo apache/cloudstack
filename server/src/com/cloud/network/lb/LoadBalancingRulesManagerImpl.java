@@ -732,13 +732,11 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 ip = _networkMgr.assignSystemIp(lb.getNetworkId(), lbOwner, true, false);
                 lb.setSourceIpAddressId(ip.getId());
             }
-            
-            
-            
+             
             try {
                 if (ip.getAssociatedWithNetworkId() == null) {
                     s_logger.debug("The ip is not associated with the network id="+ lb.getNetworkId() + " so assigning");
-                    _networkMgr.associateIPToGuestNetwork(ipAddrId, lb.getNetworkId());
+                    ip = _networkMgr.associateIPToGuestNetwork(ipAddrId, lb.getNetworkId());
                 }
                 result = createLoadBalancer(lb, openFirewall);
             } catch (Exception ex) {

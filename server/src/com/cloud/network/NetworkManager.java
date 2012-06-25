@@ -408,7 +408,7 @@ public interface NetworkManager extends NetworkService {
      * @param ipAddrId
      * @param networkId
      */
-    IpAddress associateIPToGuestNetwork(long ipAddrId, long networkId) throws ResourceAllocationException, ResourceUnavailableException, 
+    IPAddressVO associateIPToGuestNetwork(long ipAddrId, long networkId) throws ResourceAllocationException, ResourceUnavailableException, 
         InsufficientAddressCapacityException, ConcurrentOperationException;
 
 

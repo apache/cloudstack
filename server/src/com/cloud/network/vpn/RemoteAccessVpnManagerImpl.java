@@ -125,7 +125,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         if (ipAddress.getAssociatedWithNetworkId() == null) {
             s_logger.debug("The ip is not associated with the network id="+ networkId + " so assigning");
             try {
-                _networkMgr.associateIPToGuestNetwork(publicIpId, networkId);
+                ipAddress = _networkMgr.associateIPToGuestNetwork(publicIpId, networkId);
             } catch (Exception ex) {
                 s_logger.warn("Failed to associate ip id=" + publicIpId + " to network id=" + networkId + " as " +
                         "a part of remote access vpn creation");
