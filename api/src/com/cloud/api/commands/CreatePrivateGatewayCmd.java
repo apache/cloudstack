@@ -127,7 +127,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
                                 ResourceAllocationException, ResourceUnavailableException {
         PrivateGateway result = _vpcService.applyVpcGateway(getEntityId());
         if (result != null) {
-            PrivateGatewayResponse response = _responseGenerator.createPrivateGatewayResponseResponse(result);
+            PrivateGatewayResponse response = _responseGenerator.createPrivateGatewayResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
         } else {

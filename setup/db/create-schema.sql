@@ -2241,5 +2241,20 @@ CREATE TABLE `cloud`.`private_ip_address` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+CREATE TABLE `cloud`.`static_routes` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40),
+  `vpc_gateway_id` bigint unsigned COMMENT 'id of the corresponding ip address',
+  `cidr` varchar(18) COMMENT 'cidr for the static route', 
+  `state` char(32) NOT NULL COMMENT 'current state of this rule',
+  `vpc_id` bigint unsigned COMMENT 'vpc the firewall rule is associated with',
+  `created` datetime COMMENT 'Date created',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_static_routes__vpc_gateway_id` FOREIGN KEY(`vpc_gateway_id`) REFERENCES `vpc_gateways`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_static_routes__vpc_id` FOREIGN KEY (`vpc_id`) REFERENCES `vpc`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_static_routes__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 SET foreign_key_checks = 1;
 

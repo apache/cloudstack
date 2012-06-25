@@ -356,7 +356,12 @@ createPrivateGateway=com.cloud.api.commands.CreatePrivateGatewayCmd;1
 listPrivateGateways=com.cloud.api.commands.ListPrivateGatewaysCmd;1
 deletePrivateGateway=com.cloud.api.commands.DeletePrivateGatewayCmd;1
 
-#### 
+#### Network ACL commands
 createNetworkACL=com.cloud.api.commands.CreateNetworkACLCmd;15
 deleteNetworkACL=com.cloud.api.commands.DeleteNetworkACLCmd;15
 listNetworkACLs=com.cloud.api.commands.ListNetworkACLsCmd;15
+
+#### Static route commands
+#createStaticRoute=com.cloud.api.commands.CreateStaticRouteCmd;15
+#deleteStaticRoute=com.cloud.api.commands.DeleteStaticRouteCmd;15
+#listStaticRoutes=com.cloud.api.commands.ListStaticRoutesCmd;15

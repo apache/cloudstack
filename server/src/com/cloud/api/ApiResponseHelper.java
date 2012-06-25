@@ -81,6 +81,7 @@ import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.ServiceResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.api.response.SnapshotResponse;
+import com.cloud.api.response.StaticRouteResponse;
 import com.cloud.api.response.StorageNetworkIpRangeResponse;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.api.response.SwiftResponse;
@@ -149,9 +150,10 @@ import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcOffering;
-import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -3569,7 +3571,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public PrivateGatewayResponse createPrivateGatewayResponseResponse(PrivateGateway result) {
+    public PrivateGatewayResponse createPrivateGatewayResponse(PrivateGateway result) {
         PrivateGatewayResponse response = new PrivateGatewayResponse();
         response.setId(result.getId());
         response.setVlan(result.getVlanTag());
@@ -3582,6 +3584,25 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setAddress(result.getIp4Address());
         response.setPhysicalNetworkId(result.getPhysicalNetworkId());
         response.setObjectName("privategateway");
+        
+        return response;
+    }
+    
+    
+    @Override
+    public StaticRouteResponse createStaticRouteResponse(StaticRoute result) {
+        StaticRouteResponse response = new StaticRouteResponse();
+        response.setId(result.getId());
+        response.setVpcId(result.getVpcId());
+        response.setCidr(result.getCidr());
+        
+        StaticRoute.State state = result.getState();
+        String stateToSet = state.toString();
+        if (state.equals(FirewallRule.State.Revoke)) {
+            stateToSet = "Deleting";
+        }
+        response.setState(stateToSet);
+        response.setObjectName("staticroute");
         
         return response;
     }

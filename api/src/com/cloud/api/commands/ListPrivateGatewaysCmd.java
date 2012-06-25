@@ -80,7 +80,7 @@ public class ListPrivateGatewaysCmd extends BaseListCmd{
         ListResponse<PrivateGatewayResponse> response = new ListResponse<PrivateGatewayResponse>();
         List<PrivateGatewayResponse> projectResponses = new ArrayList<PrivateGatewayResponse>();
         for (PrivateGateway gateway : gateways) {
-            PrivateGatewayResponse gatewayResponse = _responseGenerator.createPrivateGatewayResponseResponse(gateway);
+            PrivateGatewayResponse gatewayResponse = _responseGenerator.createPrivateGatewayResponse(gateway);
             projectResponses.add(gatewayResponse);
         }
         response.setResponses(projectResponses);

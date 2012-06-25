@@ -32,7 +32,6 @@ import javax.persistence.Transient;
 
 import com.cloud.api.Identity;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
-import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
