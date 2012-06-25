@@ -326,6 +326,14 @@ class VirtualMachine:
         cmd.id = self.id
         apiclient.destroyVirtualMachine(cmd)
 
+    def migrate(self, apiclient, hostid=None):
+        """migrate an Instance"""
+        cmd = migrateVirtualMachine.migrateVirtualMachineCmd()
+        cmd.virtualmachineid = self.id
+        if hostid:
+            cmd.hostid = hostid
+        apiclient.migrateVirtualMachine(cmd)
+
     def attach_volume(self, apiclient, volume):
         """Attach volume to instance"""
         cmd = attachVolume.attachVolumeCmd()
@@ -472,6 +480,57 @@ class Volume:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listVolumes(cmd))
 
+    @classmethod
+    def upload(cls, apiclient, services, zoneid=None, account=None, domainid=None):
+        """Uploads the volume to specified account"""
+
+        cmd = uploadVolume.uploadVolumeCmd()
+        if zoneid:
+            cmd.zoneid = zoneid
+        if account:
+            cmd.account = account
+        if domainid:
+            cmd.domainid = domainid
+        cmd.format = services["format"]
+        cmd.name = services["diskname"]
+        cmd.url = services["url"]
+        return Volume(apiclient.uploadVolume(cmd).__dict__)
+
+    def wait_for_upload(self, apiclient, timeout=5, interval=60):
+        """Wait for upload"""
+        #Sleep to ensure template is in proper state before download
+        time.sleep(interval)
+
+        while True:
+            volume_response = Volume.list(
+                                    apiclient,
+                                    id=self.id,
+                                    zoneid=self.zoneid,
+                                    templatefilter='self'
+                                    )
+            if isinstance(volume_response, list):
+
+                volume = volume_response[0]
+                # If volume is ready,
+                # volume.state = Allocated
+                if volue.state == 'Allocated':
+                    break
+
+                elif 'Uploading' in volume.state:
+                    time.sleep(interval)
+
+                elif 'Installing' not in volume.state:
+                    raise Exception(
+                        "Error in uploading volume: status - %s" %
+                                                            volume.state)
+
+            elif timeout == 0:
+                break
+
+            else:
+                time.sleep(interval)
+                timeout = timeout - 1
+        return
 
 class Snapshot:
     """Manage Snapshot Lifecycle
@@ -527,7 +586,6 @@ class Template:
         cmd.isfeatured = services["isfeatured"] if "isfeatured" in services else False
         cmd.ispublic = services["ispublic"] if "ispublic" in services else False
         cmd.isextractable = services["isextractable"] if "isextractable" in services else False
-        cmd.passwordenabled = services["passwordenabled"] if "passwordenabled" in services else False
         cmd.passwordenabled = services["passwordenabled"] if "passwordenabled" in services else False
 
         if volumeid:
