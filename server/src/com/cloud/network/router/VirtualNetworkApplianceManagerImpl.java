@@ -1891,6 +1891,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
         for (Long guestNetworkId : routerGuestNtwkIds) {
             if (reprogramGuestNtwks) {
+                finalizeIpAssocForNetwork(cmds, router, provider, guestNetworkId);
                 finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
             }
 
@@ -1952,39 +1953,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     protected void finalizeNetworkRulesForNetwork(Commands cmds, DomainRouterVO router, Provider provider, Long guestNetworkId) {
         s_logger.debug("Resending ipAssoc, port forwarding, load balancing rules as a part of Virtual router start");
-        long ownerId = router.getAccountId();
       
-        final List<IPAddressVO> userIps = _networkMgr.listPublicIpsAssignedToGuestNtwk(ownerId, guestNetworkId, null);
-        List<PublicIp> allPublicIps = new ArrayList<PublicIp>();
-        if (userIps != null && !userIps.isEmpty()) {
-            for (IPAddressVO userIp : userIps) {
-                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
-                            NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
-                allPublicIps.add(publicIp);
-            }
-        }
-        
-        //Get public Ips that should be handled by router
-        Network network = _networkDao.findById(guestNetworkId);
-        Map<PublicIp, Set<Service>> ipToServices = _networkMgr.getIpToServices(allPublicIps, false, false);
-        Map<Provider, ArrayList<PublicIp>> providerToIpList = _networkMgr.getProviderToIpList(network, ipToServices);
-        // Only cover virtual router for now, if ELB use it this need to be modified
-      
-        ArrayList<PublicIp> publicIps = providerToIpList.get(provider);
-      
-        s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + router + " start.");
-      
-        if (!publicIps.isEmpty()) {
+        ArrayList<PublicIp> publicIps = getPublicIpsToApply(router, provider, guestNetworkId);
+
+        if (publicIps != null && !publicIps.isEmpty()) {
             List<RemoteAccessVpn> vpns = new ArrayList<RemoteAccessVpn>();
             List<PortForwardingRule> pfRules = new ArrayList<PortForwardingRule>();
             List<FirewallRule> staticNatFirewallRules = new ArrayList<FirewallRule>();
             List<StaticNat> staticNats = new ArrayList<StaticNat>();
             List<FirewallRule> firewallRules = new ArrayList<FirewallRule>();
-      
-            // Re-apply public ip addresses - should come before PF/LB/VPN
-                if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
-                createAssociateIPCommands(router, publicIps, cmds, 0);
-            }
       
             //Get information about all the rules (StaticNats and StaticNatRules; PFVPN to reapply on domR start)
             for (PublicIp ip : publicIps) {
@@ -2031,7 +2008,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             if (!pfRules.isEmpty()) {
                     createApplyPortForwardingRulesCommands(pfRules, router, cmds, guestNetworkId);
             }
-   
+       
             // Re-apply static nat rules
             s_logger.debug("Found " + staticNatFirewallRules.size() + " static nat rule(s) to apply as a part of domR " + router + " start.");
             if (!staticNatFirewallRules.isEmpty()) {
@@ -2039,7 +2016,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 for (FirewallRule rule : staticNatFirewallRules) {
                     staticNatRules.add(_rulesMgr.buildStaticNatRule(rule, false));
                 }
-                createApplyStaticNatRulesCommands(staticNatRules, router, cmds, guestNetworkId);
+                    createApplyStaticNatRulesCommands(staticNatRules, router, cmds, guestNetworkId);
             }
    
             // Re-apply vpn rules
@@ -2067,6 +2044,43 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     createApplyLoadBalancingRulesCommands(lbRules, router, cmds, guestNetworkId);
             }
         }
+    }
+
+    protected ArrayList<PublicIp> finalizeIpAssocForNetwork(Commands cmds, DomainRouterVO router, Provider provider, 
+            Long guestNetworkId) {
+        
+        ArrayList<PublicIp> publicIps = getPublicIpsToApply(router, provider, guestNetworkId);
+        
+        if (publicIps != null && !publicIps.isEmpty()) {
+            s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + router + " start.");
+            // Re-apply public ip addresses - should come before PF/LB/VPN
+            if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
+                createAssociateIPCommands(router, publicIps, cmds, 0);
+            }
+        }
+        return publicIps;
+    }
+
+    protected ArrayList<PublicIp> getPublicIpsToApply(DomainRouterVO router, Provider provider, Long guestNetworkId) {
+        long ownerId = router.getAccountId();
+        final List<IPAddressVO> userIps = _networkMgr.listPublicIpsAssignedToGuestNtwk(ownerId, guestNetworkId, null);
+        List<PublicIp> allPublicIps = new ArrayList<PublicIp>();
+        if (userIps != null && !userIps.isEmpty()) {
+            for (IPAddressVO userIp : userIps) {
+                    PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
+                            NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                allPublicIps.add(publicIp);
+            }
+        }
+        
+        //Get public Ips that should be handled by router
+        Network network = _networkDao.findById(guestNetworkId);
+        Map<PublicIp, Set<Service>> ipToServices = _networkMgr.getIpToServices(allPublicIps, false, false);
+        Map<Provider, ArrayList<PublicIp>> providerToIpList = _networkMgr.getProviderToIpList(network, ipToServices);
+        // Only cover virtual router for now, if ELB use it this need to be modified
+      
+        ArrayList<PublicIp> publicIps = providerToIpList.get(provider);
+        return publicIps;
     }
 
     @Override

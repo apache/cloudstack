@@ -63,6 +63,7 @@ import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.ServiceResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.api.response.SnapshotResponse;
+import com.cloud.api.response.StaticRouteResponse;
 import com.cloud.api.response.StorageNetworkIpRangeResponse;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.api.response.SwiftResponse;
@@ -112,6 +113,7 @@ import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.network.security.SecurityRule;
+import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.PrivateGateway;
@@ -311,5 +313,11 @@ public interface ResponseGenerator {
      * @param result
      * @return
      */
-    PrivateGatewayResponse createPrivateGatewayResponseResponse(PrivateGateway result);
+    PrivateGatewayResponse createPrivateGatewayResponse(PrivateGateway result);
+
+    /**
+     * @param result
+     * @return
+     */
+    StaticRouteResponse createStaticRouteResponse(StaticRoute result);
 }
