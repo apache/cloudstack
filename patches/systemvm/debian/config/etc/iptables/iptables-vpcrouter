@@ -13,6 +13,7 @@ COMMIT
 -A INPUT -p icmp -j ACCEPT
 -A INPUT -i lo -j ACCEPT
 -A INPUT -i eth0 -p tcp -m state --state NEW --dport 3922 -j ACCEPT
+-A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
 COMMIT
 *mangle
 :PREROUTING ACCEPT [0:0]
@@ -20,7 +21,5 @@ COMMIT
 :FORWARD ACCEPT [0:0]
 :OUTPUT ACCEPT [0:0]
 :POSTROUTING ACCEPT [0:0]
--A PREROUTING -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
--A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
 -A OUTPUT -p udp --dport bootpc -j CHECKSUM --checksum-fill
 COMMIT

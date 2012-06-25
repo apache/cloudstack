@@ -81,7 +81,7 @@ create_guest_network() {
   sudo iptables -A INPUT -i $dev -p udp -m udp --dport 53 -j ACCEPT
   local tableName="Table_$dev"
   sudo ip route add $subnet/$mask dev $dev table $tableName proto static
-
+  sudo iptables -t mangle -A PREROUTING -i $dev -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
   setup_dnsmasq
 }
 
@@ -91,6 +91,7 @@ destroy_guest_network() {
   sudo ip addr del dev $dev $ip/$mask
   sudo iptables -D INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
   sudo iptables -D INPUT -i $dev -p udp -m udp --dport 53 -j ACCEPT
+  sudo iptables -t mangle -D PREROUTING -i $dev -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
   desetup_dnsmasq
 }
 
