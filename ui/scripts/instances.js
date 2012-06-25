@@ -541,6 +541,7 @@
                   dataType: "json",
                   success: function(json) {
                     var jid = json.deployvirtualmachineresponse.jobid;
+					var vmid = json.deployvirtualmachineresponse.id;
                     args.response.success(
                       {_custom:
                        {jobId: jid,
@@ -552,7 +553,19 @@
                         },
                         getActionFilter: function() {
                           return vmActionfilter;
-                        }
+                        },
+						getUpdatedData: function() {
+							var item;
+							$.ajax({
+							  url: createURL("listVirtualMachines&id="+vmid),
+							  dataType: "json",
+							  async: false,
+							  success: function(json) {
+								item = json.listvirtualmachinesresponse.virtualmachine[0];
+							  }
+							});
+							return item;
+						}
                        }
                       }
                     );
