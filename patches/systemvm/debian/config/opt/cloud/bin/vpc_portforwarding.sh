@@ -41,7 +41,7 @@ tcp_or_udp_nat() {
   instance ip=$instIp proto=$proto port=$port dport=$dport op=$op"
 
   #if adding, this might be a duplicate, so delete the old one first
-  [ "$op" == "-A" ] && tcp_or_udp_entry "-D" $proto $publicIp $ports $instIp $dports
+  [ "$op" == "-A" ] && tcp_or_udp_nat "-D" $proto $publicIp $ports $instIp $dports
   # the delete operation may have errored out but the only possible reason is 
   # that the rules didn't exist in the first place
   # shortcircuit the process if error and it is an append operation
@@ -66,9 +66,14 @@ tcp_or_udp_nat() {
 
   sudo iptables -t nat $op PREROUTING $PROTO -d $publicIp  $DEST_PORT -j DNAT  \
            $TO_DEST &>> $OUTFILE 
-      
+        
   local result=$?
   logger -t cloud "$(basename $0): done port fwd entry for PAT: public ip=$publicIp op=$op result=$result"
+  # the rule may not exist
+  if [ "$op" == "-D" ]
+  then
+    return 0
+  fi
   return $result
 }
 
@@ -184,6 +189,8 @@ do
   esac
 done
 
-tcp_or_udp_entry $op $protocol $publicIp $ports $instanceIp $dports
+OUTFILE=$(mktemp)
+
+tcp_or_udp_nat $op $protocol $publicIp $ports $instanceIp $dports
 result=$?
 unlock_exit $result $lock $locked

@@ -7334,11 +7334,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         boolean endResult = true;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
-            String args ="vpc_portforwarding " + routerIp;
+            String args ="vpc_portforwarding.sh " + routerIp;
             args += rule.revoked() ? " -D" : " -A";
             args += " -P " + rule.getProtocol().toLowerCase();
             args += " -l " + rule.getSrcIp();
-            args += " -p " + rule.getStringSrcPortRange().replace(":", "-");
+            args += " -p " + rule.getStringSrcPortRange();
             args += " -r " + rule.getDstIp();
             args += " -d " + rule.getStringDstPortRange().replace(":", "-");
 
