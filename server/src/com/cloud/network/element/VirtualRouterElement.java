@@ -711,7 +711,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
-        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(), VirtualRouterProviderType.VirtualRouter);
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(), 
+                getVirtualRouterProvider());
         if (element == null) {
             return false;
         }
@@ -722,7 +723,8 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) 
             throws ConcurrentOperationException,
             ResourceUnavailableException {
-        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(), VirtualRouterProviderType.VirtualRouter);
+        VirtualRouterProviderVO element = _vrProviderDao.findByNspIdAndType(provider.getId(), 
+                getVirtualRouterProvider());
         if (element == null) {
             return true;
         }
@@ -873,5 +875,9 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Override
     public IpDeployer getIpDeployer(Network network) {
         return this;
+    }
+    
+    protected VirtualRouterProviderType getVirtualRouterProvider() {
+        return VirtualRouterProviderType.VirtualRouter;
     }
 }
