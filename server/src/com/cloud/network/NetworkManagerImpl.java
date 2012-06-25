@@ -7068,6 +7068,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         
         if (networkId != null) {
+            Network network = _networksDao.findById(networkId);
+            if (network == null) {
+                throw new InvalidParameterValueException("Invalid network id is given");
+            }
+            
+            if (network.getVpcId() != null) {
+                throw new InvalidParameterValueException("Specify vpcId to associate ip address to VPC");
+            }
             return associateIPToGuestNetwork(ipId, networkId);
         }
         
