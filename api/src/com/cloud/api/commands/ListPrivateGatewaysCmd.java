@@ -20,6 +20,7 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.PrivateGatewayResponse;
@@ -28,6 +29,7 @@ import com.cloud.network.vpc.PrivateGateway;
 /**
  * @author Alena Prokharchyk
  */
+@Implementation(description="List private gateways", responseObject=PrivateGatewayResponse.class)
 public class ListPrivateGatewaysCmd extends BaseListCmd{
     public static final Logger s_logger = Logger.getLogger(ListPrivateGatewaysCmd.class.getName());
 
