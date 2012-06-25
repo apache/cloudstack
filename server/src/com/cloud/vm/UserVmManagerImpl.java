@@ -2346,11 +2346,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             
             if (defaultNetworkNumber == 0) {
             	 defaultNetworkNumber++;
-            	 profile.setDefaultNic(true);
                  // if user requested specific ip for default network, add it
                  if (defaultNetworkIp != null) {
                      profile = new NicProfile(defaultNetworkIp);
                  }
+                 
+                 profile.setDefaultNic(true);
             }
 
             networks.add(new Pair<NetworkVO, NicProfile>(network, profile));
