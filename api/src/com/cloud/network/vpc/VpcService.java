@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.api.commands.ListPrivateGatewaysCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
@@ -170,5 +171,11 @@ public interface VpcService {
      * @throws ConcurrentOperationException 
      */
     boolean deleteVpcPrivateGateway(Long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException;
+
+    /**
+     * @param listPrivateGatewaysCmd
+     * @return
+     */
+    public List<PrivateGateway> listPrivateGateway(ListPrivateGatewaysCmd listPrivateGatewaysCmd);
 
 }

@@ -24,6 +24,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.commands.ListPrivateGatewaysCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
@@ -43,6 +44,8 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.IPAddressDao;
@@ -66,8 +69,10 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
@@ -930,6 +935,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
         if (gateway == null || gateway.getType() != VpcGateway.Type.Private) {
             return null;
         }
+        return getPrivateGatewayProfile(gateway);
+    }
+
+    protected PrivateGateway getPrivateGatewayProfile(VpcGateway gateway) {
         Network network = _ntwkMgr.getNetwork(gateway.getNetworkId());
         String vlanTag = network.getBroadcastUri().getHost();
         String netmask = NetUtils.getCidrNetmask(network.getCidr());
@@ -1049,5 +1058,44 @@ public class VpcManagerImpl implements VpcManager, Manager{
         
         txn.commit();
         return true;
+    }
+
+    @Override
+    public List<PrivateGateway> listPrivateGateway(ListPrivateGatewaysCmd cmd) {
+        String ipAddress = cmd.getIpAddress();
+        String vlan = cmd.getVlan();
+        Long vpcId = cmd.getVpcId();
+        
+        Filter searchFilter = new Filter(VpcGatewayVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<VpcGatewayVO> sb = _vpcGatewayDao.createSearchBuilder();
+        
+        if (vlan != null) {
+            SearchBuilder<NetworkVO> ntwkSearch = _ntwkDao.createSearchBuilder();
+            ntwkSearch.and("vlan", ntwkSearch.entity().getBroadcastUri(), SearchCriteria.Op.EQ);
+            sb.join("networkSearch", ntwkSearch, sb.entity().getNetworkId(), ntwkSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+        
+        
+        SearchCriteria<VpcGatewayVO> sc = sb.create();
+        
+        if (ipAddress != null) {
+            sc.addAnd("ip4Address", Op.EQ, ipAddress);
+        }
+        
+        if (vpcId != null) {
+            sc.addAnd("vpcId", Op.EQ, vpcId);
+        }
+        
+        if (vlan != null) {
+            sc.setJoinParameters("networkSearch", "vlan", BroadcastDomainType.Vlan.toUri(vlan));
+        }
+       
+        List<VpcGatewayVO> vos = _vpcGatewayDao.search(sc, searchFilter);
+        List<PrivateGateway> privateGtws = new ArrayList<PrivateGateway>(vos.size());
+        for (VpcGateway vo : vos) {
+            privateGtws.add(getPrivateGatewayProfile(vo));
+        }
+        
+        return privateGtws;
     }
 }
