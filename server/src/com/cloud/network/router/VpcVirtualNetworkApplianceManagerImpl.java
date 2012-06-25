@@ -712,7 +712,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             return super.finalizeCommandsOnStart(cmds, profile);
         }
         
-        
         //1) FORM SSH CHECK COMMAND
         NicProfile controlNic = getControlNic(profile);
         if (controlNic == null) {
@@ -737,26 +736,25 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             }
         }
         
-        List<PublicIp> publicIps = new ArrayList<PublicIp>(1);
         try {
             //add VPC router to public networks
+            List<PublicIp> publicIps = new ArrayList<PublicIp>(1);
             for (Nic publicNic : publicNics.keySet()) {
                 Network publicNtwk = publicNics.get(publicNic);
                 IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(publicNtwk.getId(), 
                         publicNic.getIp4Address());
-                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
-                        NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
-              
-
-                if (publicIp.isSourceNat()) {
+               
+                if (userIp.isSourceNat()) {
+                    PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
+                            NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
                     publicIps.add(publicIp);
                 }
                 
                 PlugNicCommand plugNicCmd = new PlugNicCommand(_itMgr.toVmTO(profile), getNicTO(router, publicNic.getNetworkId()));
-                cmds.addCommand(plugNicCmd);
+                cmds.addCommand(plugNicCmd); 
             }
             
-            // create vpc assoc commands
+            // create ip assoc for source nat
             if (!publicIps.isEmpty()) {
                 createVpcAssociateIPCommands(router, publicIps, cmds);
             }
@@ -791,7 +789,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             return false;
         }
         
-        //3) REAPPLY FIREWALL RULES
+        //3) REPROGRAM GUEST NETWORK
         boolean reprogramGuestNtwks = true;
         if (profile.getParameter(Param.ReProgramGuestNetworks) != null 
                 && (Boolean) profile.getParameter(Param.ReProgramGuestNetworks) == false) {
@@ -810,6 +808,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
         for (Long guestNetworkId : routerGuestNtwkIds) {
             if (reprogramGuestNtwks) {
+                finalizeIpAssocForNetwork(cmds, router, provider, guestNetworkId);
                 finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
             }
 
@@ -925,5 +924,20 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         s_logger.debug("Private gateawy " + gateway + " is removed from router " + router);
         
         return result;
+    }
+    
+    @Override
+    protected void finalizeIpAssocForNetwork(Commands cmds, VirtualRouter router, Provider provider, 
+            Long guestNetworkId) {
+        
+        ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(router, provider, guestNetworkId);
+        
+        if (publicIps != null && !publicIps.isEmpty()) {
+            s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + router + " start.");
+            // Re-apply public ip addresses - should come before PF/LB/VPN
+            if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
+                createVpcAssociateIPCommands(router, publicIps, cmds);
+            }
+        }
     }
 }

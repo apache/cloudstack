@@ -177,6 +177,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             s_logger.debug("The ip is not associated with the network id="+ networkId + " so assigning");
             try {
                 _networkMgr.associateIPToGuestNetwork(ipAddrId, networkId);
+                ipAddress = _ipAddressDao.findById(ipAddrId);
             } catch (Exception ex) {
                 s_logger.warn("Failed to associate ip id=" + ipAddrId + " to network id=" + networkId + " as " +
                         "a part of port forwarding rule creation");
