@@ -206,7 +206,7 @@ public class FirewallRuleVO implements Identity, NetworkACL {
         this.accountId = accountId;
         this.domainId = domainId;
         
-        if (sourceIpAddressId == null) {
+        if (ipAddressId == null) {
             assert (purpose == Purpose.NetworkACL) : "ipAddressId can be null for " + Purpose.NetworkACL + " only";
         }
         
