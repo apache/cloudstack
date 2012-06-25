@@ -96,8 +96,6 @@ import com.cloud.network.dao.VirtualRouterProviderDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
 import com.cloud.network.element.CiscoNexusVSMElement;
 import com.cloud.network.element.CiscoNexusVSMElementService;
-import com.cloud.network.element.JuniperSRXExternalFirewallElement;
-import com.cloud.network.element.JuniperSRXFirewallElementService;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.network.firewall.FirewallManagerImpl;
@@ -414,7 +412,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
 
     protected void populateServices() {
         addService("VirtualRouterElementService", VirtualRouterElementService.class, VirtualRouterElement.class);
-        addService("JuniperSRXFirewallElementService", JuniperSRXFirewallElementService.class, JuniperSRXExternalFirewallElement.class);
         addService("CiscoNexusVSMElementService", CiscoNexusVSMElementService.class, CiscoNexusVSMElement.class);
     }
 

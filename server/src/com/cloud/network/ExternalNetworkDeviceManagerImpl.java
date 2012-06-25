@@ -54,8 +54,6 @@ import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.VpnUserDao;
-import com.cloud.network.element.JuniperSRXFirewallElementService;
-import com.cloud.network.resource.JuniperSrxResource;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.resource.ServerResource;
@@ -101,8 +99,6 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     @Inject ExternalFirewallDeviceDao _externalFirewallDeviceDao;
     @Inject NetworkExternalLoadBalancerDao _networkExternalLBDao;
     @Inject NetworkExternalFirewallDao _networkExternalFirewallDao;
-
-    @PlugService JuniperSRXFirewallElementService _srxElementService;
 
     ScheduledExecutorService _executor;
     int _externalNetworkStatsInterval;
@@ -169,18 +165,6 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             PxeServerProfile profile = new PxeServerProfile(zoneId, podId, url, username, password, type, pingStorageServerIp, pingDir, tftpDir,
                     pingCifsUsername, pingCifsPassword);
             return _pxeMgr.addPxeServer(profile);
-        } else if (cmd.getDeviceType().equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
-            Long physicalNetworkId = (params.get(ApiConstants.PHYSICAL_NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.PHYSICAL_NETWORK_ID)):null;
-            String url = (String) params.get(ApiConstants.URL);
-            String username = (String) params.get(ApiConstants.USERNAME);
-            String password = (String) params.get(ApiConstants.PASSWORD);
-            ExternalFirewallDeviceManager fwDeviceManager = (ExternalFirewallDeviceManager) _srxElementService;
-            ExternalFirewallDeviceVO fwDeviceVO = fwDeviceManager.addExternalFirewall(physicalNetworkId, url, username, password, NetworkDevice.JuniperSRXFirewall.getName(),new JuniperSrxResource());
-            if (fwDeviceVO != null) {
-                return _hostDao.findById(fwDeviceVO.getHostId());
-            } else {
-                throw new CloudRuntimeException("Failed to add SRX firewall device due to internal error");
-            }
         } else {
             throw new CloudRuntimeException("Unsupported network device type:" + cmd.getDeviceType());
         }
@@ -213,8 +197,6 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             } else {
                 throw new CloudRuntimeException("Unsupported PXE server type:" + pxeType);
             }
-        } else if (host.getType() == Host.Type.ExternalFirewall) {
-            response = _srxElementService.createExternalFirewallResponse(host);
         } else {
             throw new CloudRuntimeException("Unsupported network device type:" + host.getType());
         }
@@ -259,11 +241,6 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
             Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
             res = listNetworkDevice(zoneId, null, podId, Host.Type.PxeServer);
-        } else if (NetworkDevice.JuniperSRXFirewall.getName().equalsIgnoreCase(cmd.getDeviceType())) {
-            Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
-            Long physicalNetworkId = (params.get(ApiConstants.PHYSICAL_NETWORK_ID)==null)?Long.parseLong((String)params.get(ApiConstants.PHYSICAL_NETWORK_ID)):null;
-            ExternalFirewallDeviceManager fwDeviceManager = (ExternalFirewallDeviceManager) _srxElementService;
-            return fwDeviceManager.listExternalFirewalls(physicalNetworkId, NetworkDevice.JuniperSRXFirewall.getName());
         } else if (cmd.getDeviceType() == null){
             Long zoneId = Long.parseLong((String) params.get(ApiConstants.ZONE_ID));
             Long podId = Long.parseLong((String)params.get(ApiConstants.POD_ID));
@@ -288,10 +265,6 @@ public class ExternalNetworkDeviceManagerImpl implements ExternalNetworkDeviceMa
     @Override
     public boolean deleteNetworkDevice(DeleteNetworkDeviceCmd cmd) {
        HostVO device = _hostDao.findById(cmd.getId());
-       if (device.getType() == Type.ExternalFirewall) {
-           ExternalFirewallDeviceManager fwDeviceManager = (ExternalFirewallDeviceManager) _srxElementService;
-           return fwDeviceManager.deleteExternalFirewall(cmd.getId());
-       }
        return true;
     }
 }
