@@ -36,7 +36,7 @@ public class InstanceGroup218To224UpgradeTest extends TestCase {
     @Override
     @Before
     public void setUp() throws Exception {
-        DbTestUtils.executeScript("cleanup.sql", false, true);
+    // DbTestUtils.executeScript("cleanup.sql", false, true);
     }
     
     @Override

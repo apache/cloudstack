@@ -37,8 +37,7 @@ public class Template2214To30UpgradeTest extends TestCase {
     @Override
     @Before
     public void setUp() throws Exception {
-        DbTestUtils.executeScript("cleanup.sql", false,
-                true);
+    // DbTestUtils.executeScript("cleanup.sql", false, true);
     }
 
     @Override
