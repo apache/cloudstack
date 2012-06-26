@@ -479,7 +479,7 @@
 
   <target name="build-servers" depends="-init, build-server" />
 
-  <target name="build-opensource" depends="-init, build-server, build-agent, build-scripts, build-ui, build-console-proxy, build-ovm, package-oss-systemvm-iso, build-netscaler, build-f5, build-srx, build-dp-user-dispersing">
+  <target name="build-opensource" depends="-init, build-server, build-agent, build-scripts, build-ui, build-console-proxy, build-ovm, package-oss-systemvm-iso, build-netscaler, build-f5, build-srx, build-dp-user-dispersing, build-dp-user-concentrated-pod">
     <copy overwrite="true" todir="${dist.dir}">
       <fileset dir="${base.dir}/build/deploy/">
         <include name="deploy-agent.sh" />
@@ -598,13 +598,19 @@
   </target>
   <target name="build-ovm" depends="compile-ovm" />
 
-  <!-- =====================cloud-dp-user-dispersing.jar.Jar ===================== -->
+  <!-- =====================cloud-dp-user-dispersing.Jar ===================== -->
   <target name="compile-dp-user-dispersing" depends="-init, compile-server" description="Compile dp-user-dispersing">
   	<ant antfile="${base.dir}/plugins/deployment-planners/user-dispersing/build.xml" target="build"/>
   </target>
   <target name="build-dp-user-dispersing" depends="compile-dp-user-dispersing" />
 
-  <!-- ===================== Cloud-Plugin-Netscaler.Jar ===================== -->
+  <!-- =====================cloud-dp-user-concentrated-pod.Jar ===================== -->
+  <target name="compile-dp-user-concentrated-pod" depends="-init, compile-server" description="Compile ">
+  	<ant antfile="${base.dir}/plugins/deployment-planners/user-concentrated-pod/build.xml" target="build"/>
+  </target>
+  <target name="build-dp-user-concentrated-pod" depends="compile-dp-user-concentrated-pod" />
+ 
+ <!-- ===================== Cloud-Plugin-Netscaler.Jar ===================== -->
   <target name="compile-netscaler" depends="-init, compile-server" description="Compile NetScaler plugin">
   	<ant antfile="${base.dir}/plugins/network-elements/netscaler/build.xml" target="build"/>
   </target>
