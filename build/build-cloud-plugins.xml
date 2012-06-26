@@ -184,9 +184,9 @@
   </path>
 
 
-  <target name="compile-plugins" description="Compile all of the jars corresponding to plugins" depends="compile-utils, compile-api, compile-core, compile-server, compile-hypervisors, compile-deployment-planners, compile-host-allocators, compile-network-elements, compile-user-authenticators "/>
+  <target name="compile-plugins" description="Compile all of the jars corresponding to plugins" depends="compile-utils, compile-api, compile-core, compile-server, compile-hypervisors, compile-deployment-planners, compile-host-allocators, compile-network-elements, compile-user-authenticators, compile-storage-allocators "/>
 
-  <target name="build-plugins" depends="build-hypervisors, build-network-elements, build-deployment-planners, build-host-allocators, build-user-authenticators" description="Builds all jar's for the plug-in's"/>
+  <target name="build-plugins" depends="build-hypervisors, build-network-elements, build-deployment-planners, build-host-allocators, build-storage-allocators, build-user-authenticators" description="Builds all jar's for the plug-in's"/>
 
   <target name="clean-plugins" description="Clean all of the generated files by the plugins">
       <delete file="${build.log}" />
@@ -232,6 +232,17 @@
   	<ant antfile="${base.dir}/plugins/host-allocators/random/build.xml" target="build"/>
   </target>
   <target name="build-host-allocator-random" depends="compile-host-allocator-random" />
+
+
+  <!-- ===================== Storage Allocators ===================== -->
+
+  <target name="compile-storage-allocators" depends="compile-storage-allocator-random" description="Compile all storage allocators"/>
+  <target name="build-storage-allocators" depends="build-storage-allocator-random" description="builds all storage allocators"/>
+ 
+  <target name="compile-storage-allocator-random" depends="-init, compile-server" description="Compile ">
+  	<ant antfile="${base.dir}/plugins/storage-allocators/random/build.xml" target="build"/>
+  </target>
+  <target name="build-storage-allocator-random" depends="compile-storage-allocator-random" />
 
 
   <!-- ===================== User Authenticators ================== -->
