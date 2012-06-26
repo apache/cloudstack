@@ -744,7 +744,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
     protected void applyStaticNatRules(List<StaticNatRuleTO> staticNatRules, Network network, long firewallHostId) throws ResourceUnavailableException {
         if (!staticNatRules.isEmpty()) {
-            SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(staticNatRules);
+            SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(staticNatRules, null);
             Answer answer = _agentMgr.easySend(firewallHostId, cmd);
             if (answer == null || !answer.getResult()) {
                 String details = (answer != null) ? answer.getDetails() : "details unavailable";
@@ -869,7 +869,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         if (loadBalancersToApply.size() > 0) {
             int numLoadBalancersForCommand = loadBalancersToApply.size();
             LoadBalancerTO[] loadBalancersForCommand = loadBalancersToApply.toArray(new LoadBalancerTO[numLoadBalancersForCommand]);
-            LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(loadBalancersForCommand);
+            LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(loadBalancersForCommand, null);
             long guestVlanTag = Integer.parseInt(network.getBroadcastUri().getHost());
             cmd.setAccessDetail(NetworkElementCommand.GUEST_VLAN_TAG, String.valueOf(guestVlanTag));
             Answer answer = _agentMgr.easySend(externalLoadBalancer.getId(), cmd);

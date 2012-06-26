@@ -41,9 +41,9 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.HostPodVO;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.deploy.DeployDestination;
@@ -667,7 +667,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         if (loadBalancersToApply.size() > 0) {
             int numLoadBalancersForCommand = loadBalancersToApply.size();
             LoadBalancerTO[] loadBalancersForCommand = loadBalancersToApply.toArray(new LoadBalancerTO[numLoadBalancersForCommand]);
-            LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(loadBalancersForCommand);
+            LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(loadBalancersForCommand, null);
 
             HostVO externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
             Answer answer = _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
@@ -721,7 +721,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
                     }
                 }
 
-                SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO);
+                SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO, null);
                 answer = (SetStaticNatRulesAnswer) _agentMgr.send(lbDevice.getHostId(), cmd);
                 if (answer == null) {
                     return false;
@@ -743,7 +743,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
                         IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
                         StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
                         rulesTO.add(ruleTO);
-                        SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO);
+                        SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO, null);
 
                         // send commands to configure INAT rule on the NetScaler device
                         SetStaticNatRulesAnswer answer = (SetStaticNatRulesAnswer) _agentMgr.send(lbDevice.getHostId(), cmd);

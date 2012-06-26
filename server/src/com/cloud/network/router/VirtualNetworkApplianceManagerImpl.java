@@ -2591,7 +2591,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
         }
 
-        SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO);
+        SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO, router.getVpcId());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
@@ -2631,7 +2631,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 _networkMgr.getNetworkTag(router.getHypervisorType(), guestNetwork));
 
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs,RouterPublicIp, 
-                getRouterIpInNetwork(guestNetworkId, router.getId()),router.getPrivateIpAddress(), _itMgr.toNicTO(nicProfile, router.getHypervisorType()));
+                getRouterIpInNetwork(guestNetworkId, router.getId()),router.getPrivateIpAddress(), 
+                _itMgr.toNicTO(nicProfile, router.getHypervisorType()), router.getVpcId());
 
         cmd.lbStatsVisibility = _configDao.getValue(Config.NetworkLBHaproxyStatsVisbility.key());
         cmd.lbStatsUri = _configDao.getValue(Config.NetworkLBHaproxyStatsUri.key());
@@ -3070,7 +3071,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return sendCommandsToRouter(router, cmds);
     }
 
-    private void createApplyStaticNatCommands(List<? extends StaticNat> rules, VirtualRouter router, Commands cmds, long guestNetworkId) {
+    private void createApplyStaticNatCommands(List<? extends StaticNat> rules, VirtualRouter router, Commands cmds,
+            long guestNetworkId) {
         List<StaticNatRuleTO> rulesTO = null;
         if (rules != null) {
             rulesTO = new ArrayList<StaticNatRuleTO>();
@@ -3082,7 +3084,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
         }
 
-        SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO);
+        SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO, router.getVpcId());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, getRouterIpInNetwork(guestNetworkId, router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
