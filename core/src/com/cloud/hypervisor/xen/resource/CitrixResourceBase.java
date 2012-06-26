@@ -100,6 +100,7 @@ import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.PingCommand;
+import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.PingRoutingWithOvsCommand;
 import com.cloud.agent.api.PingTestCommand;
@@ -4087,10 +4088,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
             }
             Connection conn = getConnection();
-            /**if (!_canBridgeFirewall && !_isOvs) {
+            if (!_canBridgeFirewall && !_isOvs) {
             	return new PingRoutingCommand(getType(), id, null);
-            } else**/ 
-            if (_isOvs) {
+            } else if (_isOvs) {
                 List<Pair<String, Long>>ovsStates = ovsFullSyncStates();
                 return new PingRoutingWithOvsCommand(getType(), id, null, ovsStates);
             }else {
