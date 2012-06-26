@@ -1744,7 +1744,7 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         // don't show SSVM/CPVM ips
-        if (vlanType == VlanType.VirtualNetwork && (allocatedOnly)) {
+        if (vlanType == VlanType.VirtualNetwork && (allocatedOnly) && vpcId == null) {
             sb.and("associatedNetworkId", sb.entity().getAssociatedWithNetworkId(), SearchCriteria.Op.NNULL);
         }
 
