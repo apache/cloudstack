@@ -6658,7 +6658,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             physicalNetworkId = getNonGuestNetworkPhysicalNetworkId(network);
         } else {
             NetworkOffering offering = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
-            physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), offering.getTags(), offering.getTrafficType());
+            physicalNetworkId = network.getPhysicalNetworkId();
+            if(physicalNetworkId == null){
+                physicalNetworkId = findPhysicalNetworkId(network.getDataCenterId(), offering.getTags(), offering.getTrafficType());
+            }
         }
 
         if (physicalNetworkId == null) {

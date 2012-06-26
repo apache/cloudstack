@@ -278,7 +278,12 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         long dcId = dest.getDataCenter().getId();
 
         //get physical network id
-        long physicalNetworkId = _networkMgr.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
+        Long physicalNetworkId = network.getPhysicalNetworkId();
+
+        // physical network id can be null in Guest Network in Basic zone, so locate the physical network
+        if (physicalNetworkId == null) {
+             physicalNetworkId = _networkMgr.findPhysicalNetworkId(dcId, offering.getTags(), offering.getTrafficType());
+        }
 
         NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), 
                 network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
