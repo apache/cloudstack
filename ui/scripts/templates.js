@@ -575,7 +575,8 @@
                   {
                     name: {
                       label: 'label.name',
-                      isEditable: true
+                      isEditable: true,
+                      validation: { required: true }
                     }
                   },
                   {
@@ -584,7 +585,8 @@
                     zoneid: { label: 'label.zone.id' },
                     displaytext: {
                       label: 'label.description',
-                      isEditable: true
+                      isEditable: true,
+                      validation: { required: true }
                     },
                     hypervisor: { label: 'label.hypervisor' },
                     templatetype: { label: 'label.type' },
@@ -1110,7 +1112,8 @@
                   {
                     name: {
                       label: 'label.name',
-                      isEditable: true
+                      isEditable: true,
+                      validation: { required: true }
                     }
                   },
                   {
@@ -1119,7 +1122,8 @@
                     zoneid: { label: 'label.zone.id' },
                     displaytext: {
                       label: 'label.description',
-                      isEditable: true
+                      isEditable: true,
+                      validation: { required: true }
                     },
                     isready: { label: 'state.Ready', converter:cloudStack.converters.toBooleanText },
                     status: { label: 'label.status' },

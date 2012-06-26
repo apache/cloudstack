@@ -320,6 +320,18 @@
           }
         });
       };
+	    
+	    var removeEditForm = function() {
+		    // Remove Edit form
+		    var $form = $detailView.find('form');
+		    if ($form.size()) {
+			    var $mainGroups = $form.find('div.main-groups').detach();
+			    $form.parent('div').append($mainGroups);
+			    $form.remove();
+		    }
+		    //Remove required labels
+		    $detailView.find('span.field-required').remove();
+	    }
 
       // Put in original values
       var cancelEdits = function($inputs, $editButton) {
@@ -334,6 +346,8 @@
         $editButton.fadeOut('fast', function() {
           $editButton.remove();
         });
+		    
+		    removeEditForm();
       };
 
       var applyEdits = function($inputs, $editButton) {
@@ -375,6 +389,7 @@
                     notificationArgs, function() {}, []
                   );
                   replaceListViewItem($detailView, data);
+				          removeEditForm();
                 } else {
                   $loading.appendTo($detailView);
                   cloudStack.ui.notifications.add(
@@ -383,6 +398,7 @@
                       replaceListViewItem($detailView, data);
 
                       convertInputs($inputs);
+					            removeEditForm();
                       $loading.remove();
                     }, [],
                     function() {
@@ -401,17 +417,24 @@
         }
       };
 
-      $editButton.click(function() {
-        var $inputs = $detailView.find('input, select');
+	    $editButton.click(function() {
+        var $inputs = $detailView.find('input, select'),
+			      $form = $detailView.find('form');
 
         if ($(this).hasClass('done')) {
-          applyEdits($inputs, $editButton);
+			    if (!$form.valid()) {
+				    // Ignore hidden field validation
+				    if ($form.find('input.error:visible, select.error:visible').size()) {
+					    return false;
+				    }
+			    }
+			    applyEdits($inputs, $editButton);
         } else { // Cancel
           cancelEdits($inputs, $editButton);
         }
       });
-
-      $detailView.find('td.value span').each(function() {
+	    
+	    $detailView.find('td.value span').each(function() {
         var name = $(this).closest('tr').data('detail-view-field');
         var $value = $(this);
         if (!$value.data('detail-view-is-editable')) return true;
@@ -420,6 +443,7 @@
         var selectData = $value.data('detail-view-editable-select');
         var isBoolean = $value.data('detail-view-editable-boolean');
         var data = !isBoolean ? cloudStack.sanitizeReverse($value.html()) : $value.data('detail-view-boolean-value');
+		    var rules = $value.data('validation-rules') ? $value.data('validation-rules') : {};
 
         $value.html('');
 
@@ -461,12 +485,35 @@
               name: name,
               type: 'text',
               value: data
-            }).data('original-value', data)
+			      }).data('original-value', data)
           );
         }
+		    
+		    if (rules && rules.required) {
+		      var $required = $('<span>').addClass('field-required').text(' *');
+		      $value.parent('td.value').prev('td.name').append($required);
+		    }
 
         return true;
       });
+
+		  if ($detailView.find('td.value span:data(detail-view-is-editable)').size()) {
+			  var $detailsEdit = $detailView.find('div.main-groups').detach(),
+				 $detailsEditForm = $('<form>').append($detailsEdit);
+
+			  $detailView.find('div.details').append($detailsEditForm);
+		  }
+	    
+		  // Setup form validation
+		  $detailView.find('form').validate();
+		  $detailView.find('form').find('input, select').each(function() {
+			  var data = $(this).parent('span').data('validation-rules');
+			  if (data) {
+				  $(this).rules('add', data);
+			  } else {
+			    $(this).rules('add', {});
+			  }
+		  });
 
       return $detailView;
     }
@@ -683,22 +730,25 @@
 				
 				//???
 				/*
-				if("pollAgainIfValueIsIn" in value) {				  
-					if ((content in value.pollAgainIfValueIsIn) && (value.pollAgainFn != null)) {
-					  //poll again 
-						var intervalKey = setInterval(function() {						  
-						  var toClearInterval = value.pollAgainFn(context);							
-							if(toClearInterval == true) {
-							  clearInterval(intervalKey);		
-								$('.detail-view .toolbar .button.refresh').click();	 //click Refresh button to refresh detailView				
-							}
-						}, 2000);						            
-					}
-				}
-				*/
-								
+				 if("pollAgainIfValueIsIn" in value) {				  
+				 if ((content in value.pollAgainIfValueIsIn) && (value.pollAgainFn != null)) {
+				 //poll again 
+				 var intervalKey = setInterval(function() {						  
+				 var toClearInterval = value.pollAgainFn(context);							
+				 if(toClearInterval == true) {
+				 clearInterval(intervalKey);		
+				 $('.detail-view .toolbar .button.refresh').click();	 //click Refresh button to refresh detailView				
+				 }
+				 }, 2000);						            
+				 }
+				 }
+				 */
+				
         $name.html(_l(value.label));
         $value.html(_s(content));
+
+        // Set up validation metadata
+        $value.data('validation-rules', value.validation);
 
         // Set up editable metadata				
 				if(typeof(value.isEditable) == 'function')

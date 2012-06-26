@@ -510,7 +510,8 @@
                   {
                     name: {
                       label: 'label.name',
-                      isEditable: true
+                      isEditable: true,
+					            validation: { required: true }
                     }
                   },
                   {
@@ -812,16 +813,16 @@
                       label: 'label.new.password',
                       isPassword: true,
                       validation: { required: true },
-					  id: 'newPassword'
+					            id: 'newPassword'
                     },
-					'password-confirm': {
-						label: 'label.confirm.password',
-						validation: {
-							required: true,
-							equalTo: '#newPassword'
-						},
-						isPassword: true
-					}
+					          'password-confirm': {
+						          label: 'label.confirm.password',
+						          validation: {
+							          required: true,
+							          equalTo: '#newPassword'
+						          },
+						          isPassword: true
+					          }
                   }
                 },
                 action: function(args) {
@@ -975,7 +976,8 @@
                   {
                     username: {
                       label: 'label.name',
-                      isEditable: true
+                      isEditable: true,
+					            validation: { required: true }
                     }
                   },
                   {
@@ -993,15 +995,18 @@
                     domain: { label: 'label.domain' },
                     email: {
                       label: 'label.email',
-                      isEditable: true
+                      isEditable: true,
+					            validation: { required: true, email: true }
                     },
                     firstname: {
                       label: 'label.first.name',
-                      isEditable: true
+                      isEditable: true,
+					            validation: { required: true }
                     },
                     lastname: {
                       label: 'label.last.name',
-                      isEditable: true
+                      isEditable: true,
+					            validation: { required: true }
                     },
                     timezone: {
                       label: 'label.timezone',
