@@ -236,18 +236,24 @@
 
   <!-- ===================== User Authenticators ================== -->
 
-  <target name="compile-user-authenticators" depends="compile-user-authenticator-ldap, compile-user-authenticator-md5" description="Compile all user authenicators"/>
-  <target name="build-user-authenticators" depends="build-user-authenticator-ldap, build-user-authenticator-md5" description="builds all user authenticators"/>
+  <target name="compile-user-authenticators" depends="compile-user-authenticator-ldap, compile-user-authenticator-md5, compile-user-authenticator-plaintext" description="Compile all user authenicators"/>
+  <target name="build-user-authenticators" depends="build-user-authenticator-ldap, build-user-authenticator-md5, build-user-authenticator-plaintext" description="builds all user authenticators"/>
 
-  <target name="compile-user-authenticator-ldap" depends="-init, compile-server" description="Compile ">
+  <target name="compile-user-authenticator-ldap" depends="-init, compile-server" description="Compiles LDAP user authenticator">
   	<ant antfile="${base.dir}/plugins/user-authenticators/ldap/build.xml" target="build"/>
   </target>
   <target name="build-user-authenticator-ldap" depends="compile-user-authenticator-ldap" />
 
-  <target name="compile-user-authenticator-md5" depends="-init, compile-server" description="Compile ">
+  <target name="compile-user-authenticator-md5" depends="-init, compile-server" description="Compiles MD5 user authenticator">
   	<ant antfile="${base.dir}/plugins/user-authenticators/md5/build.xml" target="build"/>
   </target>
   <target name="build-user-authenticator-md5" depends="compile-user-authenticator-md5" />
+
+  <target name="compile-user-authenticator-plaintext" depends="-init, compile-server" description="Compiles plaintext user authenticator">
+  	<ant antfile="${base.dir}/plugins/user-authenticators/plain-text/build.xml" target="build"/>
+  </target>
+  <target name="build-user-authenticator-plaintext" depends="compile-user-authenticator-plaintext" />
+
 
   <!-- ===================== Network Elements ===================== -->
 
