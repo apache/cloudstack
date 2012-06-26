@@ -175,7 +175,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CREATE, eventDescription = "creating vpc offering")
+    @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CREATE, eventDescription = "creating vpc offering", create=true)
     public VpcOffering createVpcOffering(String name, String displayText, List<String> supportedServices) {
         Map<Network.Service, Set<Network.Provider>> svcProviderMap = new HashMap<Network.Service, Set<Network.Provider>>();
         Set<Network.Provider> defaultProviders = new HashSet<Network.Provider>();
@@ -428,7 +428,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc")
+    @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create=true)
     public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, 
             String networkDomain) {
         Account caller = UserContext.current().getCaller();
@@ -952,6 +952,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_CREATE, eventDescription = "creating vpc private gateway", create=true)
     public PrivateGateway createVpcPrivateGateway(long vpcId, Long physicalNetworkId, String vlan, String ipAddress, 
             String gateway, String netmask, long gatewayOwnerId) throws ResourceAllocationException, 
             ConcurrentOperationException, InsufficientCapacityException {
@@ -1011,6 +1012,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_DELETE, eventDescription = "deleting private gateway")
     public boolean deleteVpcPrivateGateway(Long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException {
         VpcGatewayVO gatewayVO = _vpcGatewayDao.findById(gatewayId);
         if (gatewayVO == null || gatewayVO.getType() != VpcGateway.Type.Private) {
@@ -1165,6 +1167,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_STATIC_ROUTE_DELETE, eventDescription = "deleting static route")
     public boolean revokeStaticRoute(long routeId) throws ResourceUnavailableException {
         Account caller = UserContext.current().getCaller();
         
@@ -1183,6 +1186,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
     @Override
     @DB
+    @ActionEvent(eventType = EventTypes.EVENT_STATIC_ROUTE_CREATE, eventDescription = "creating static route", create=true)
     public StaticRoute createStaticRoute(long gatewayId, String cidr) throws NetworkRuleConflictException {
         Account caller = UserContext.current().getCaller();
         
