@@ -2,9 +2,6 @@
 
 
 plug_nic() {
-  sudo iptables -t mangle -A PREROUTING -i $dev -m state --state NEW -j MARK --set-mark $tableNo 2>/dev/null
-  sudo iptables -t mangle -A PREROUTING -i $dev -m state --state NEW -j CONNMARK --save-mark 2>/dev/null
-
   sudo echo "$tableNo $tableName" >> /etc/iproute2/rt_tables 2>/dev/null
   sudo ip rule add fwmark $tableNo table $tableName 2>/dev/null
   sudo ip route flush table $tableName
@@ -13,8 +10,7 @@ plug_nic() {
 
 
 unplug_nic() {
-  sudo iptables -t mangle -D PREROUTING -i $dev -m state --state NEW -j MARK --set-mark $tableNo 2>/dev/null
-  sudo iptables -t mangle -D PREROUTING -i $dev -m state --state NEW -j CONNMARK --save-mark 2>/dev/null
+  sudo iptables -t mangle -D PREROUTING -i $dev -m state --state NEW -j CONNMARK --set-mark $tableNo 2>/dev/null
 
   sudo ip rule del fwmark $tableNo 2>/dev/null
   sudo ip route flush table $tableName
