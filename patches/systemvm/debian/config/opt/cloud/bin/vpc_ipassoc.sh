@@ -64,7 +64,7 @@ add_an_ip () {
     sudo ip link set $ethDev up
     sudo arping -c 3 -I $ethDev -A -U -s $pubIp $pubIp
   fi
-  local tableNo=$(echo $ethDev | awk -F'eth' '{print $2}') 
+  local tableNo=${ethDev:3} 
   sudo iptables-save -t mangle | grep  "PREROUTING -i $ethDev -m state --state NEW -j CONNMARK --set-mark" 2>/dev/null
   if [ $? -gt 0 ]
   then

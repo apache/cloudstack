@@ -23,53 +23,38 @@ then
 fi
 
 usage() {
-  printf "Usage: %s: (-A|-D)   -r <target-instance-ip> -P protocol (-p port_range | -t icmp_type_code)  -l <public ip address> -d <target port> -s <source cidrs> [-G]   \n" $(basename $0) >&2
+  printf "Usage: %s: (-A|-D)   -r <target-instance-ip>  -l <public ip address> -d < eth device>  \n" $(basename $0) >&2
 }
 
 #set -x
 
-#Port (address translation) forwarding for tcp or udp
-tcp_or_udp_nat() {
+static_nat() {
   local op=$1
-  local proto=$2
-  local publicIp=$3
-  local ports=$4
-  local instIp=$5
-  local dports=$6
+  local publicIp=$2
+  local instIp=$3
+  local op2="-D"
+  local tableNo=${ethDev:3}
 
-  logger -t cloud "$(basename $0): creating port fwd entry for PAT: public ip=$publicIp \
-  instance ip=$instIp proto=$proto port=$port dport=$dport op=$op"
-
+  logger -t cloud "$(basename $0): static nat: public ip=$publicIp \
+  instance ip=$instIp  op=$op"
   #if adding, this might be a duplicate, so delete the old one first
-  [ "$op" == "-A" ] && tcp_or_udp_nat "-D" $proto $publicIp $ports $instIp $dports
+  [ "$op" == "-A" ] && static_nat "-D" $publicIp $instIp 
   # the delete operation may have errored out but the only possible reason is 
   # that the rules didn't exist in the first place
+  [ "$op" == "-A" ] && rulenum=1
+  [ "$op" == "-A" ] && op2="-I"
+
   # shortcircuit the process if error and it is an append operation
   # continue if it is delete
-  local PROTO=""
-  if [ "$proto" != "any" ]
-  then
-    PROTO="--proto $proto"
-  fi
-
-  local DEST_PORT=""
-  if [ "$ports" != "any" ]
-  then
-    DEST_PORT="--destination-port $ports"
-  fi
-  
-  local TO_DEST="--to-destination $instIp"
-  if [ "$dports" != "any" ]
-  then
-    TO_DEST="--to-destination $instIp:$dports"
-  fi
-
-  sudo iptables -t nat $op PREROUTING $PROTO -d $publicIp  $DEST_PORT -j DNAT  \
-           $TO_DEST &>> $OUTFILE 
-        
-  local result=$?
-  logger -t cloud "$(basename $0): done port fwd entry for PAT: public ip=$publicIp op=$op result=$result"
-  # the rule may not exist
+  (sudo iptables -t nat $op  PREROUTING -i $ethDev -d $publicIp -j DNAT \
+           --to-destination $instIp &>>  $OUTFILE || [ "$op" == "-D" ]) &&
+  # add mark to force the package go out through the eth the public IP is on
+  (sudo iptables -t mangle $op PREROUTING -s $instIp -j MARK \
+           --set-mark $tableNo &> $OUTFILE ||  [ "$op" == "-D" ]) &&
+  (sudo iptables -t nat $op2 POSTROUTING -i $ethDev -s $instIp -j SNAT \
+           --to-source $publicIp &>> $OUTFILE )
+  result=$?
+  logger -t cloud "$(basename $0): done static nat entry public ip=$publicIp op=$op result=$result"
   if [ "$op" == "-D" ]
   then
     return 0
@@ -78,16 +63,13 @@ tcp_or_udp_nat() {
 }
 
 
+
 rflag=
-Pflag=
-pflag=
 lflag=
 dflag=
 op=""
-protocal="any"
-ports="any"
-dports="any"
-while getopts 'ADr:P:p:l:d:' OPTION
+while getopts 'ADr:l:d:' OPTION
+
 do
   case $OPTION in
   A)    op="-A"
@@ -97,17 +79,11 @@ do
   r)    rflag=1
         instanceIp="$OPTARG"
         ;;
-  P)    Pflag=1
-        protocol="$OPTARG"
-        ;;
-  p)    pflag=1
-        ports="$OPTARG"
-        ;;
   l)    lflag=1
         publicIp="$OPTARG"
         ;;
   d)    dflag=1
-        dports="$OPTARG"
+        ethDev="$OPTARG"
         ;;
   ?)    usage
         unlock_exit 2 $lock $locked
@@ -117,6 +93,6 @@ done
 
 OUTFILE=$(mktemp)
 
-tcp_or_udp_nat $op $protocol $publicIp $ports $instanceIp $dports
+static_nat $op $publicIp $instanceIp
 result=$?
 unlock_exit $result $lock $locked
