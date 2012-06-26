@@ -1036,12 +1036,20 @@ public class VpcManagerImpl implements VpcManager, Manager{
     public boolean deletePrivateGateway(PrivateGateway gateway) {
         //check if there are ips allocted in the network
         long networkId = gateway.getNetworkId();
+        
+        //don't allow to remove gateway when there are static routes associated with it
+        long routeCount = _staticRouteDao.countRoutesByGateway(gateway.getId());
+        if (routeCount > 0) {
+            throw new CloudRuntimeException("Can't delete private gateway " + gateway + " as it has " + routeCount +
+                    " static routes applied. Remove the routes first");
+        }
+        
         boolean deleteNetwork = true;
         List<PrivateIpVO> privateIps = _privateIpDao.listByNetworkId(networkId);
         if (privateIps.size() > 1 || !privateIps.get(0).getIpAddress().equalsIgnoreCase(gateway.getIp4Address())) {
             s_logger.debug("Not removing network id=" + gateway.getNetworkId() + " as it has private ip addresses for other gateways");
             deleteNetwork = false;
-        } 
+        }
         
         Transaction txn = Transaction.currentTxn();
         txn.start();

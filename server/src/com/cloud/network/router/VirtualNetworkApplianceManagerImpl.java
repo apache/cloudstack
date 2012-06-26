@@ -1994,19 +1994,19 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             //Re-apply static nats
             s_logger.debug("Found " + staticNats.size() + " static nat(s) to apply as a part of domR " + router + " start.");
             if (!staticNats.isEmpty()) {
-                    createApplyStaticNatCommands(staticNats, router, cmds, guestNetworkId);
+                createApplyStaticNatCommands(staticNats, router, cmds, guestNetworkId);
             }
        
             //Re-apply firewall rules
             s_logger.debug("Found " + staticNats.size() + " firewall rule(s) to apply as a part of domR " + router + " start.");
             if (!firewallRules.isEmpty()) {
-                    createFirewallRulesCommands(firewallRules, router, cmds, guestNetworkId);
+                createFirewallRulesCommands(firewallRules, router, cmds, guestNetworkId);
             }
        
             // Re-apply port forwarding rules
             s_logger.debug("Found " + pfRules.size() + " port forwarding rule(s) to apply as a part of domR " + router + " start.");
             if (!pfRules.isEmpty()) {
-                    createApplyPortForwardingRulesCommands(pfRules, router, cmds, guestNetworkId);
+                createApplyPortForwardingRulesCommands(pfRules, router, cmds, guestNetworkId);
             }
        
             // Re-apply static nat rules
@@ -2016,7 +2016,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 for (FirewallRule rule : staticNatFirewallRules) {
                     staticNatRules.add(_rulesMgr.buildStaticNatRule(rule, false));
                 }
-                    createApplyStaticNatRulesCommands(staticNatRules, router, cmds, guestNetworkId);
+                createApplyStaticNatRulesCommands(staticNatRules, router, cmds, guestNetworkId);
             }
    
             // Re-apply vpn rules

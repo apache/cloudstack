@@ -20,8 +20,10 @@ import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 
 /**
@@ -33,6 +35,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 public class StaticRouteDaoImpl extends GenericDaoBase<StaticRouteVO, Long> implements StaticRouteDao{
     protected final SearchBuilder<StaticRouteVO> AllFieldsSearch;
     protected final SearchBuilder<StaticRouteVO> NotRevokedSearch;
+    protected final GenericSearchBuilder<StaticRouteVO, Long> RoutesByGatewayCount;
     
     protected StaticRouteDaoImpl() {
         super();
@@ -48,6 +51,11 @@ public class StaticRouteDaoImpl extends GenericDaoBase<StaticRouteVO, Long> impl
         NotRevokedSearch.and("gatewayId", NotRevokedSearch.entity().getVpcGatewayId(), Op.EQ);
         NotRevokedSearch.and("state", NotRevokedSearch.entity().getState(), Op.NEQ);
         NotRevokedSearch.done();
+        
+        RoutesByGatewayCount = createSearchBuilder(Long.class);
+        RoutesByGatewayCount.select(null, Func.COUNT, RoutesByGatewayCount.entity().getId());
+        RoutesByGatewayCount.and("gatewayId", RoutesByGatewayCount.entity().getVpcGatewayId(), Op.EQ);
+        RoutesByGatewayCount.done();
     }
 
     
@@ -76,5 +84,12 @@ public class StaticRouteDaoImpl extends GenericDaoBase<StaticRouteVO, Long> impl
         SearchCriteria<StaticRouteVO> sc = AllFieldsSearch.create();
         sc.setParameters("vpcId", vpcId);
         return listBy(sc);
+    }
+
+    @Override
+    public long countRoutesByGateway(long gatewayId) {
+        SearchCriteria<Long> sc = RoutesByGatewayCount.create();
+        sc.setParameters("gatewayId", gatewayId);
+        return customSearch(sc, null).get(0);
     }
 }

@@ -73,8 +73,11 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.rules.NetworkACL;
 import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.Dao.StaticRouteDao;
 import com.cloud.network.vpc.Dao.VpcDao;
 import com.cloud.network.vpc.Dao.VpcOfferingDao;
 import com.cloud.user.Account;
@@ -112,6 +115,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     NetworkACLService _networkACLService = null;
     @Inject
     VMInstanceDao _vmDao;
+    @Inject
+    StaticRouteDao _staticRouteDao;
+    @Inject
+    VpcManager _vpcMgr;
     
     @Override
     public List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner, 
@@ -788,7 +795,24 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             return false;
         }
         
-        //3) REPROGRAM GUEST NETWORK
+        //3) RE-APPLY ALL STATIC ROUTE RULES
+        List<? extends StaticRoute> routes = _staticRouteDao.listByVpcId(router.getVpcId());
+        List<StaticRouteProfile> staticRouteProfiles = new ArrayList<StaticRouteProfile>(routes.size());
+        Map<Long, PrivateGateway> gatewayMap = new HashMap<Long, PrivateGateway>();
+        for (StaticRoute route : routes) {
+            PrivateGateway gateway = gatewayMap.get(route.getVpcGatewayId());
+            if (gateway == null) {
+                gateway = _vpcMgr.getVpcPrivateGateway(route.getVpcGatewayId());
+                gatewayMap.put(gateway.getId(), gateway);
+            }
+            staticRouteProfiles.add(new StaticRouteProfile(route, gateway));
+        }
+        
+        s_logger.debug("Found " + staticRouteProfiles.size() + " static routes to apply as a part of vpc route " 
+                + router + " start");
+        createStaticRouteCommands(staticRouteProfiles, router, cmds);
+        
+        //4) REPROGRAM GUEST NETWORK
         boolean reprogramGuestNtwks = true;
         if (profile.getParameter(Param.ReProgramGuestNetworks) != null 
                 && (Boolean) profile.getParameter(Param.ReProgramGuestNetworks) == false) {
