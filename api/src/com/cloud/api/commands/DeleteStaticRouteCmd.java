@@ -24,29 +24,32 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.vpc.VpcGateway;
-import com.cloud.user.Account;
+import com.cloud.network.vpc.StaticRoute;
 import com.cloud.user.UserContext;
 
 /**
  * @author Alena Prokharchyk
  */
-@Implementation(description="Deletes a Private gateway", responseObject=SuccessResponse.class)
-public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeletePrivateGatewayCmd.class.getName());
-    private static final String s_name = "deleteprivategatewayresponse";
+
+@Implementation(description="Deletes a static route", responseObject=SuccessResponse.class)
+public class DeleteStaticRouteCmd extends BaseAsyncCmd{
+    public static final Logger s_logger = Logger.getLogger(DeleteStaticRouteCmd.class.getName());
+    private static final String s_name = "deletestaticrouteresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="vpc_gateways")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the private gateway")
+    @IdentityMapper(entityTableName="static_routes")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the static route")
     private Long id;
 
+    // unexposed parameter needed for events logging
+    @IdentityMapper(entityTableName="account")
+    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, expose=false)
+    private Long ownerId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -65,49 +68,57 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
     
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_PRIVATE_GATEWAY_DELETE;
+        return EventTypes.EVENT_STATIC_ROUTE_DELETE;
     }
 
     @Override
     public String getEventDescription() {
-        return  ("Deleting private gateway id=" + id);
+        return  ("Deleting static route id=" + id);
     }
     
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+        if (ownerId == null) {
+            StaticRoute route = _entityMgr.findById(StaticRoute.class, id);
+            if (route == null) {
+                throw new InvalidParameterValueException("Unable to find static route by id=" + id);
+            } else {
+                ownerId = route.getAccountId();
+            }
+        }
+        return ownerId;
     }
     
     @Override
-    public void execute() throws ResourceUnavailableException, ConcurrentOperationException {
-        UserContext.current().setEventDetails("Network ACL Id: " + id);
-        boolean result = _vpcService.deleteVpcPrivateGateway(id);        
+    public void execute() throws ResourceUnavailableException {
+        UserContext.current().setEventDetails("Route Id: " + id);
+        boolean result = _vpcService.revokeStaticRoute(id);
+        
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete private gateway");
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete static route");
         }
     }
     
     
     @Override
     public String getSyncObjType() {
-        return BaseAsyncCmd.networkSyncObject;
+        return BaseAsyncCmd.vpcSyncObject;
     }
 
     @Override
     public Long getSyncObjId() {
-        VpcGateway gateway = _vpcService.getVpcPrivateGateway(getId());
-        if (gateway == null) {
-            throw new InvalidParameterValueException("Invalid private gateway id");
+        StaticRoute route =  _vpcService.getStaticRoute(id);
+        if (route == null) {
+            throw new InvalidParameterValueException("Invalid id is specified for the static route");
         }
-        return gateway.getVpcId();
+        return route.getVpcId();
     }
     
     @Override
     public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.PrivateGateway;
+        return AsyncJob.Type.StaticRoute;
     }
-    
 }

@@ -118,6 +118,7 @@ known_categories = {
     'Pool': 'Pool',
     'VPC': 'VPC', 
     'PrivateGateway': 'VPC',
+    'StaticRoute': 'VPC',
     }
 
 

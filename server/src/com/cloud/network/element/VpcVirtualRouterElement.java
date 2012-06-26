@@ -40,6 +40,7 @@ import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.NetworkACL;
+import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcManager;
@@ -400,5 +401,14 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     @Override
     protected VirtualRouterProviderType getVirtualRouterProvider() {
         return VirtualRouterProviderType.VPCVirtualRouter;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.element.VpcProvider#applyStaticRoutes(com.cloud.network.vpc.Vpc, java.util.List)
+     */
+    @Override
+    public boolean applyStaticRoutes(Vpc vpc, List<? extends StaticRoute> routes) throws ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

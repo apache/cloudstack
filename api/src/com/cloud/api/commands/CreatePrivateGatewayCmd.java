@@ -15,6 +15,7 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
@@ -22,12 +23,15 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.PrivateGatewayResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
 /**
@@ -148,11 +152,30 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     @Override
     public String getEventDescription() {
         return  "creating private gateway";
-
     }
     
     @Override
     public String getEntityTable() {
         return "vpc_gateways";
+    }
+    
+    
+    @Override
+    public String getSyncObjType() {
+        return BaseAsyncCmd.vpcSyncObject;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        Vpc vpc =  _vpcService.getVpc(vpcId);
+        if (vpc == null) {
+            throw new InvalidParameterValueException("Invalid id is specified for the vpc");
+        }
+        return vpc.getId();
+    }
+    
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.PrivateGateway;
     }
 }

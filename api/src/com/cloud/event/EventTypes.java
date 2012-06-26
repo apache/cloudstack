@@ -274,4 +274,8 @@ public class EventTypes {
     // Private gateway
     public static final String EVENT_PRIVATE_GATEWAY_CREATE = "PRIVATE.GATEWAY.CREATE";
     public static final String EVENT_PRIVATE_GATEWAY_DELETE = "PRIVATE.GATEWAY.DELETE";
+    
+    // Static routes
+    public static final String EVENT_STATIC_ROUTE_CREATE = "STATIC.ROUTE.CREATE";
+    public static final String EVENT_STATIC_ROUTE_DELETE = "STATIC.ROUTE.DELETE";
 }

@@ -55,8 +55,18 @@ public class StaticRouteVO implements Identity, StaticRoute{
     @Column(name="vpc_id")
     private Long vpcId;
     
+    @Column(name = "account_id")
+    long accountId;
+
+    @Column(name = "domain_id")
+    long domainId;
+    
     @Column(name=GenericDao.CREATED_COLUMN)
-    Date created;    
+    Date created;
+    
+    protected StaticRouteVO(){
+        this.uuid = UUID.randomUUID().toString();
+    }
     
     /**
      * @param vpcGatewayId
@@ -100,5 +110,15 @@ public class StaticRouteVO implements Identity, StaticRoute{
     @Override
     public long getId() {
         return id;
+    }
+
+    @Override
+    public long getAccountId() {
+        return accountId;
+    }
+
+    @Override
+    public long getDomainId() {
+        return domainId;
     }
 }

@@ -17,8 +17,10 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.api.commands.ListPrivateGatewaysCmd;
+import com.cloud.api.commands.ListStaticRoutesCmd;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
@@ -177,5 +179,36 @@ public interface VpcService {
      * @return
      */
     public List<PrivateGateway> listPrivateGateway(ListPrivateGatewaysCmd listPrivateGatewaysCmd);
+
+    /**
+     * @param routeId
+     * @return
+     */
+    StaticRoute getStaticRoute(long routeId);
+
+    /**
+     * @param vpcId
+     * @return
+     */
+    public boolean applyStaticRoutes(long vpcId);
+
+    /**
+     * @param routeId
+     * @return TODO
+     */
+    public boolean revokeStaticRoute(long routeId);
+
+    /**
+     * @param gatewayId
+     * @param cidr
+     * @return
+     */
+    public StaticRoute createStaticRoute(long gatewayId, String cidr) throws NetworkRuleConflictException;
+
+    /**
+     * @param listStaticRoutesCmd
+     * @return
+     */
+    public List<? extends StaticRoute> listStaticRoutes(ListStaticRoutesCmd cmd);
 
 }
