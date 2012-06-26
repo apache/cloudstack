@@ -1048,4 +1048,22 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         // TODO Auto-generated method stub
         return false;
     }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#getPhysicalNtwksSupportingTrafficType(long, com.cloud.network.Networks.TrafficType)
+     */
+    @Override
+    public List<? extends PhysicalNetwork> getPhysicalNtwksSupportingTrafficType(long zoneId, TrafficType trafficType) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#isPrivateGateway(com.cloud.vm.Nic)
+     */
+    @Override
+    public boolean isPrivateGateway(Nic guestNic) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 }
