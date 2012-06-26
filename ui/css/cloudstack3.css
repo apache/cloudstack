@@ -1641,6 +1641,12 @@ div.details div.detail-group td.value input[type=text] {
   width: 93%;
 }
 
+div.details .main-groups label.error {
+  position: absolute;
+  right: 10%;
+  top: 6px;
+}
+
 /*** Actions*/
 div.detail-group.actions {
   padding: 0;

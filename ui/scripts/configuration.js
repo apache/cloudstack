@@ -285,14 +285,16 @@
                   {
                     name: {
                       label: 'label.name',
-                      isEditable: true
+                      isEditable: true,
+					            validation: { required: true }
                     }
                   },
                   {
                     id: { label: 'label.id' },
                     displaytext: {
                       label: 'label.description',
-                      isEditable: true
+                      isEditable: true,
+					            validation: { required: true }
                     },
                     storagetype: { label: 'label.storage.type' },
                     cpunumber: { label: 'label.num.cpu.cores' },
@@ -615,14 +617,16 @@
                   {
                     name: {
                       label: 'label.name',
-                      isEditable: true
+                      isEditable: true,
+					            validation: { required: true }
                     }
                   },
                   {
                     id: { label: 'label.id' },
                     displaytext: {
                       label: 'label.description',
-                      isEditable: true
+                      isEditable: true,
+					            validation: { required: true }
                     },								
 										systemvmtype: { 
 										  label: 'label.system.vm.type',
@@ -911,14 +915,16 @@
                   {
                     name: {
                       label: 'label.name',
-                      isEditable: true
+                      isEditable: true,
+					            validation: { required: true }
                     }
                   },
                   {
                     id: { label: 'label.id' },
                     displaytext: {
                       label: 'label.description',
-                      isEditable: true
+                      isEditable: true,
+					            validation: { required: true }
                     },
                     iscustomized: {
                       label: 'label.custom.disk.size',
@@ -1701,14 +1707,16 @@
                   {
                     name: {
                       label: 'label.name',
-                      isEditable: true
+                      isEditable: true,
+					            validation: { required: true }
                     }
                   },
                   {
                     id: { label: 'label.id' },
                     displaytext: {
                       label: 'label.description',
-                      isEditable: true
+                      isEditable: true,
+					            validation: { required: true }
                     },
                     state: { label: 'label.state' },
                     guestiptype: {
