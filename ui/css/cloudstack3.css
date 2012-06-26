@@ -2831,6 +2831,7 @@ Dialogs*/
   -webkit-box-shadow: 0px -4px 15px #4C4A4A;
   -o-box-shadow: 0px -4px 15px #4C4A4A;
   box-shadow: 0px -4px 15px #4C4A4A;
+  position:absolute;
 }
 
 .ui-dialog .ui-widget-content {

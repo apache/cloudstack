@@ -39,4 +39,8 @@
 
     return this;
   };
+  
+  $(window).bind('resize scroll', function() {
+	  $('.overlay').css( 'top', $(window).scrollTop());
+  });
 })(window.jQuery);
