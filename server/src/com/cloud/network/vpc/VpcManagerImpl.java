@@ -25,6 +25,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.ListPrivateGatewaysCmd;
+import com.cloud.api.commands.ListStaticRoutesCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
@@ -34,6 +35,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -53,6 +55,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.vpc.VpcOffering.State;
 import com.cloud.network.vpc.Dao.PrivateIpDao;
+import com.cloud.network.vpc.Dao.StaticRouteDao;
 import com.cloud.network.vpc.Dao.VpcDao;
 import com.cloud.network.vpc.Dao.VpcGatewayDao;
 import com.cloud.network.vpc.Dao.VpcOfferingDao;
@@ -111,6 +114,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
     VpcGatewayDao _vpcGatewayDao;
     @Inject
     PrivateIpDao _privateIpDao;
+    @Inject
+    StaticRouteDao _staticRouteDao;
     
     private VpcProvider vpcElement = null;
     
@@ -1096,5 +1101,34 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
         
         return privateGtws;
+    }
+    
+    @Override
+    public StaticRoute getStaticRoute(long routeId) {
+        return _staticRouteDao.findById(routeId);
+    }
+
+    @Override
+    public boolean applyStaticRoutes(long vpcId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean revokeStaticRoute(long routeId) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public StaticRoute createStaticRoute(long gatewayId, String cidr) throws NetworkRuleConflictException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<? extends StaticRoute> listStaticRoutes(ListStaticRoutesCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

@@ -29,7 +29,6 @@ import com.cloud.network.rules.FirewallRule;
 @Implementation(description="Lists all firewall rules for an IP address.", responseObject=FirewallResponse.class)
 public class ListFirewallRulesCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListFirewallRulesCmd.class.getName());
-
     private static final String s_name = "listfirewallrulesresponse";
 
     /////////////////////////////////////////////////////

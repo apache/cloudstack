@@ -362,6 +362,6 @@ deleteNetworkACL=com.cloud.api.commands.DeleteNetworkACLCmd;15
 listNetworkACLs=com.cloud.api.commands.ListNetworkACLsCmd;15
 
 #### Static route commands
-#createStaticRoute=com.cloud.api.commands.CreateStaticRouteCmd;15
-#deleteStaticRoute=com.cloud.api.commands.DeleteStaticRouteCmd;15
-#listStaticRoutes=com.cloud.api.commands.ListStaticRoutesCmd;15
+createStaticRoute=com.cloud.api.commands.CreateStaticRouteCmd;15
+deleteStaticRoute=com.cloud.api.commands.DeleteStaticRouteCmd;15
+listStaticRoutes=com.cloud.api.commands.ListStaticRoutesCmd;15

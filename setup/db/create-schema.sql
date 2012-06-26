@@ -2248,10 +2248,14 @@ CREATE TABLE `cloud`.`static_routes` (
   `cidr` varchar(18) COMMENT 'cidr for the static route', 
   `state` char(32) NOT NULL COMMENT 'current state of this rule',
   `vpc_id` bigint unsigned COMMENT 'vpc the firewall rule is associated with',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner id',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain id',
   `created` datetime COMMENT 'Date created',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_static_routes__vpc_gateway_id` FOREIGN KEY(`vpc_gateway_id`) REFERENCES `vpc_gateways`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_static_routes__vpc_id` FOREIGN KEY (`vpc_id`) REFERENCES `vpc`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_static_routes__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_static_routes__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
   CONSTRAINT `uc_static_routes__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

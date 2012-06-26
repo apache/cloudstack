@@ -360,7 +360,7 @@ public class ApiConstants {
     public static final String NETWORK = "network";
     public static final String VPC_ID = "vpcid";
     public static final String CAN_USE_FOR_DEPLOY = "canusefordeploy";
-    public static final String GATEWAY_ID = "gatewaycid";
+    public static final String GATEWAY_ID = "gatewayid";
 
     
     public enum HostDetails {

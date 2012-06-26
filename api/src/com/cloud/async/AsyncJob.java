@@ -37,7 +37,8 @@ public interface AsyncJob extends Identity {
         FirewallRule,
         Account,
         User,
-        Vpc
+        PrivateGateway,
+        StaticRoute
     }
 
     Long getId();
