@@ -608,7 +608,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         if (loadBalancersToApply.size() > 0) {
             int numLoadBalancersForCommand = loadBalancersToApply.size();
             LoadBalancerTO[] loadBalancersForCommand = loadBalancersToApply.toArray(new LoadBalancerTO[numLoadBalancersForCommand]);
-            LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(loadBalancersForCommand);
+            LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(loadBalancersForCommand, null);
 
             HostVO externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
             Answer answer = _agentMgr.easySend(externalLoadBalancer.getId(), cmd);
@@ -660,7 +660,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
                 }
             }
 
-            SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO);
+            SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO, null);
             answer = (SetStaticNatRulesAnswer) _agentMgr.send(lbDevice.getHostId(), cmd);
             if (answer == null) {
                 return false;

@@ -299,7 +299,7 @@ public class ElasticLoadBalancerManagerImpl implements
         }
 
         LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs,elbVm.getPublicIpAddress(),
-                _nicDao.getIpAddress(guestNetworkId, elbVm.getId()),elbVm.getPrivateIpAddress(), null);
+                _nicDao.getIpAddress(guestNetworkId, elbVm.getId()),elbVm.getPrivateIpAddress(), null, null);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP,
                 elbVm.getPrivateIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME,

@@ -29,20 +29,23 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
     public String lbStatsAuth = "admin1:AdMiN123";
     public String lbStatsUri = "/admin?stats";  
     NicTO nic;
+    Long vpcId;
     
     protected LoadBalancerConfigCommand() {
     }
     
-    public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers) {
+    public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers, Long vpcId) {
     	this.loadBalancers = loadBalancers;
+    	this.vpcId = vpcId;
     }
 
-    public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers,String PublicIp,String GuestIp,String PrivateIp, NicTO nic) {
+    public LoadBalancerConfigCommand(LoadBalancerTO[] loadBalancers,String PublicIp,String GuestIp,String PrivateIp, NicTO nic, Long vpcId) {
     	this.loadBalancers = loadBalancers;
     	this.lbStatsPublicIP = PublicIp;
     	this.lbStatsPrivateIP = PrivateIp;
     	this.lbStatsGuestIP = GuestIp;
     	this.nic = nic;
+    	this.vpcId = vpcId;
     }
     
     public NicTO getNic() {
@@ -51,5 +54,9 @@ public class LoadBalancerConfigCommand extends NetworkElementCommand {
    
 	public LoadBalancerTO[] getLoadBalancers() {
         return loadBalancers;
+    }
+
+    public Long getVpcId() {
+        return vpcId;
     }
 }
