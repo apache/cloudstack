@@ -7535,7 +7535,8 @@
                           //$('li[input_group="nfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=path]').css('display', 'inline-block');
                           //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
-                          $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:");
+						              var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                          $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
 
                           //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=iqn]').hide();
@@ -7557,7 +7558,8 @@
                           //$('li[input_group="nfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=path]').css('display', 'inline-block');
                           //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
-                          $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:");
+						              var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                          $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
 
                           //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=iqn]').hide();
@@ -7578,8 +7580,9 @@
 
                           //$('li[input_group="nfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=path]').css('display', 'inline-block');
-                          //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.SR.name"]+":");
-                          $form.find('.form-item[rel=path]').find(".name").find("label").text("SR Name-Label:");
+                          //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.SR.name"]+":");                          
+						              var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                          $form.find('.form-item[rel=path]').find(".name").find("label").text("SR Name-Label:").prepend($required);
 
                           //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=iqn]').hide();
@@ -7660,7 +7663,8 @@
 
                           //$('li[input_group="nfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=path]').css('display', 'inline-block');
-                          $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:");
+						              var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                          $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
 
                           //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=iqn]').hide();
