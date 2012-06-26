@@ -21,7 +21,7 @@ import com.google.gson.annotations.SerializedName;
  * @author Alena Prokharchyk
  */
 @SuppressWarnings("unused")
-public class StaticRouteResponse extends BaseResponse{
+public class StaticRouteResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the ID of static route")
     private IdentityProxy id = new IdentityProxy("static_routes");
     
@@ -36,6 +36,24 @@ public class StaticRouteResponse extends BaseResponse{
     
     @SerializedName(ApiConstants.CIDR) @Param(description="static route CIDR")
     private String cidr;
+    
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account associated with the static route")
+    private String accountName;
+    
+    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the static route")
+    private IdentityProxy projectId = new IdentityProxy("projects");
+    
+    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the static route")
+    private String projectName;
+
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the ID of the domain associated with the static route")
+    private IdentityProxy domainId = new IdentityProxy("domain");
+
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain associated with the static route")
+    private String domainName;
 
     public void setId(Long id) {
         this.id.setValue(id);
@@ -55,5 +73,30 @@ public class StaticRouteResponse extends BaseResponse{
 
     public void setCidr(String cidr) {
         this.cidr = cidr;
+    }
+    
+    @Override
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    @Override
+    public void setDomainId(Long domainId) {
+        this.domainId.setValue(domainId);
+    }
+    
+    @Override
+    public void setDomainName(String domainName) {
+        this.domainName = domainName;
+    }
+    
+    @Override
+    public void setProjectId(Long projectId) {
+        this.projectId.setValue(projectId);
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 }

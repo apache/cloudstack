@@ -35,6 +35,7 @@ import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
+import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
@@ -72,6 +73,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.rules.NetworkACL;
 import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.Dao.VpcDao;
 import com.cloud.network.vpc.Dao.VpcOfferingDao;
@@ -183,7 +185,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         long dcId = dest.getDataCenter().getId();
         
         DeploymentPlan plan = new DataCenterDeployment(dcId);
-        List<DomainRouterVO> routers = _routerDao.listRoutersByVpcId(vpcId);
+        List<DomainRouterVO> routers = _routerDao.listByVpcId(vpcId);
         
         return new Pair<DeploymentPlan, List<DomainRouterVO>>(plan, routers);
     }
@@ -668,7 +670,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     
-    protected boolean sendNetworkACLs(VirtualRouter router, List<NetworkACL> rules, long guestNetworkId) throws ResourceUnavailableException {
+    protected boolean sendNetworkACLs(VirtualRouter router, List<NetworkACL> rules, long guestNetworkId) 
+            throws ResourceUnavailableException {
         Commands cmds = new Commands(OnError.Continue);
         createNetworkACLsCommands(rules, router, cmds, guestNetworkId);
         return sendCommandsToRouter(router, cmds);
@@ -935,5 +938,38 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 createVpcAssociateIPCommands(router, publicIps, cmds);
             }
         }
+    }
+
+    @Override
+    public boolean applyStaticRoutes(List<StaticRouteProfile> staticRoutes, List<DomainRouterVO> routers) throws ResourceUnavailableException {
+        if (staticRoutes == null || staticRoutes.isEmpty()) {
+            s_logger.debug("No static routes to apply");
+            return true;
+        }
+        
+        //send commands to only one router as there is only one in the VPC
+        return sendStaticRoutes(staticRoutes, routers.get(0));     
+         
+    }
+    
+    protected boolean sendStaticRoutes(List<StaticRouteProfile> staticRoutes, DomainRouterVO router) 
+            throws ResourceUnavailableException {
+        Commands cmds = new Commands(OnError.Continue);
+        createStaticRouteCommands(staticRoutes, router, cmds);
+        return sendCommandsToRouter(router, cmds);
+    }
+
+    /**
+     * @param staticRoutes
+     * @param router
+     * @param cmds
+     */
+    private void createStaticRouteCommands(List<StaticRouteProfile> staticRoutes, DomainRouterVO router, Commands cmds) {
+        SetStaticRouteCommand cmd = new SetStaticRouteCommand(staticRoutes);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+        cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+        cmds.addCommand(cmd);
     }
 }

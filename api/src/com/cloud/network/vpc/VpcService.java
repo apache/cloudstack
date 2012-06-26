@@ -189,14 +189,16 @@ public interface VpcService {
     /**
      * @param vpcId
      * @return
+     * @throws ResourceUnavailableException 
      */
-    public boolean applyStaticRoutes(long vpcId);
+    public boolean applyStaticRoutes(long vpcId) throws ResourceUnavailableException;
 
     /**
      * @param routeId
      * @return TODO
+     * @throws ResourceUnavailableException 
      */
-    public boolean revokeStaticRoute(long routeId);
+    public boolean revokeStaticRoute(long routeId) throws ResourceUnavailableException;
 
     /**
      * @param gatewayId

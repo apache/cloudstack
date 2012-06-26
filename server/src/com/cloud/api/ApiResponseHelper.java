@@ -3563,6 +3563,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             stateToSet = "Deleting";
         }
         response.setState(stateToSet);
+        populateAccount(response, result.getAccountId());
+        populateDomain(response, result.getDomainId());
         response.setObjectName("staticroute");
         
         return response;

@@ -72,13 +72,17 @@ public class StaticRouteVO implements Identity, StaticRoute{
      * @param vpcGatewayId
      * @param cidr
      * @param vpcId
+     * @param accountId TODO
+     * @param domainId TODO
      */
-    public StaticRouteVO(long vpcGatewayId, String cidr, Long vpcId) {
+    public StaticRouteVO(long vpcGatewayId, String cidr, Long vpcId, long accountId, long domainId) {
         super();
         this.vpcGatewayId = vpcGatewayId;
         this.cidr = cidr;
         this.state = State.Staged;
         this.vpcId = vpcId;
+        this.accountId = accountId;
+        this.domainId = domainId;
         this.uuid = UUID.randomUUID().toString();
     }
     
@@ -120,5 +124,16 @@ public class StaticRouteVO implements Identity, StaticRoute{
     @Override
     public long getDomainId() {
         return domainId;
+    }
+
+    public void setState(State state) {
+        this.state = state;
+    }
+    
+    @Override
+    public String toString() {
+        StringBuilder buf = new StringBuilder("StaticRoute[");
+        buf.append(uuid).append("|").append(cidr).append("|").append(vpcGatewayId).append("]");
+        return buf.toString();
     }
 }

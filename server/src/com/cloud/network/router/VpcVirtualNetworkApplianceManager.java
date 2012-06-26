@@ -22,6 +22,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.rules.NetworkACL;
+import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.user.Account;
@@ -74,5 +75,13 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      * @throws ConcurrentOperationException 
      */
     boolean destroyPrivateGateway(PrivateGateway gateway, VirtualRouter router) throws ConcurrentOperationException, ResourceUnavailableException;
+
+    /**
+     * @param routes
+     * @param routers
+     * @return
+     * @throws ResourceUnavailableException 
+     */
+    boolean applyStaticRoutes(List<StaticRouteProfile> routes, List<DomainRouterVO> routers) throws ResourceUnavailableException;
 
 }

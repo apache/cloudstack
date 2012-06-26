@@ -77,6 +77,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.ReservationContext;
@@ -611,7 +612,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("restartRequired", sb.entity().isRestartRequired(), SearchCriteria.Op.EQ);
 
-
         // now set the SC criteria...
         SearchCriteria<VpcVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);  
@@ -796,7 +796,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
         
         try {
-          //1) CIDR is required
+            //1) CIDR is required
             if (cidr == null) {
                 throw new InvalidParameterValueException("Gateway/netmask are required when create network for VPC");
             }
@@ -930,7 +930,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     
     @Override
     public List<DomainRouterVO> getVpcRouters(long vpcId) {
-        return _routerDao.listRoutersByVpcId(vpcId);
+        return _routerDao.listByVpcId(vpcId);
     }
 
     @Override
@@ -1110,26 +1110,193 @@ public class VpcManagerImpl implements VpcManager, Manager{
     }
 
     @Override
-    public boolean applyStaticRoutes(long vpcId) {
-        // TODO Auto-generated method stub
-        return false;
+    public boolean applyStaticRoutes(long vpcId) throws ResourceUnavailableException {
+        Account caller = UserContext.current().getCaller();
+        List<? extends StaticRoute> routes = _staticRouteDao.listByVpcId(vpcId);
+        return applyStaticRoutes(routes, caller);
+    }
+
+    protected boolean applyStaticRoutes(List<? extends StaticRoute> routes, Account caller) throws ResourceUnavailableException {
+        boolean success = true;
+        List<StaticRouteProfile> staticRouteProfiles = new ArrayList<StaticRouteProfile>(routes.size());
+        Map<Long, PrivateGateway> gatewayMap = new HashMap<Long, PrivateGateway>();
+        for (StaticRoute route : routes) {
+            PrivateGateway gateway = gatewayMap.get(route.getVpcGatewayId());
+            if (gateway == null) {
+                gateway = getVpcPrivateGateway(route.getVpcGatewayId());
+                gatewayMap.put(gateway.getId(), gateway);
+            }
+            staticRouteProfiles.add(new StaticRouteProfile(route, gateway));
+        }
+        if (!applyStaticRoutes(staticRouteProfiles)) {
+            s_logger.warn("Routes are not completely applied");
+            return false;
+        } else {
+            for (StaticRoute route : routes) {
+                if (route.getState() == StaticRoute.State.Revoke) {
+                    _staticRouteDao.remove(route.getId());
+                } else if (route.getState() == StaticRoute.State.Add) {
+                    StaticRouteVO ruleVO = _staticRouteDao.findById(route.getId());
+                    ruleVO.setState(StaticRoute.State.Active);
+                    _staticRouteDao.update(ruleVO.getId(), ruleVO);
+                }
+            } 
+        }
+
+        return success;
+    }   
+    
+    protected boolean applyStaticRoutes(List<StaticRouteProfile> routes) throws ResourceUnavailableException{
+        if (routes.isEmpty()) {
+            s_logger.debug("No static routes to apply");
+            return true;
+        }
+        Vpc vpc = getVpc(routes.get(0).getVpcId());
+        
+        s_logger.debug("Applying static routes for vpc " + vpc);
+        if (getVpcElement().applyStaticRoutes(vpc, routes)) {
+            s_logger.debug("Applied static routes for vpc " + vpc);
+        } else {
+            s_logger.warn("Failed to apply static routes for vpc " + vpc);
+            return false;
+        }
+        
+        return true;
     }
 
     @Override
-    public boolean revokeStaticRoute(long routeId) {
-        // TODO Auto-generated method stub
-        return false;
+    public boolean revokeStaticRoute(long routeId) throws ResourceUnavailableException {
+        Account caller = UserContext.current().getCaller();
+        
+        StaticRouteVO route = _staticRouteDao.findById(routeId);
+        if (route == null) {
+            throw new InvalidParameterValueException("Unable to find static route by id");
+        }
+
+        _accountMgr.checkAccess(caller, null, false, route);
+
+        revokeStaticRoute(route, caller);
+
+        return applyStaticRoutes(route.getVpcId());
+        
     }
 
     @Override
+    @DB
     public StaticRoute createStaticRoute(long gatewayId, String cidr) throws NetworkRuleConflictException {
-        // TODO Auto-generated method stub
-        return null;
+        Account caller = UserContext.current().getCaller();
+        
+        //parameters validation
+        PrivateGateway gateway = getVpcPrivateGateway(gatewayId);
+        if (gateway == null) {
+            throw new InvalidParameterValueException("Invalid gateway id is given");
+        }
+        
+        Vpc vpc = getVpc(gateway.getVpcId());  
+        _accountMgr.checkAccess(caller, null, false, vpc);
+        
+        if (!NetUtils.isValidCIDR(cidr)){
+            throw new InvalidParameterValueException("Invalid format for cidr " + cidr);
+        }
+        
+        //TODO - check cidr for the conflicts
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        
+        StaticRouteVO newRoute = new StaticRouteVO(gateway.getId(), cidr, vpc.getId(), vpc.getAccountId(), vpc.getDomainId());
+        s_logger.debug("Adding static route " + newRoute);
+        newRoute = _staticRouteDao.persist(newRoute);
+        
+        detectRoutesConflict(newRoute);
+
+        if (!_staticRouteDao.setStateToAdd(newRoute)) {
+            throw new CloudRuntimeException("Unable to update the state to add for " + newRoute);
+        }
+        UserContext.current().setEventDetails("Static route Id: " + newRoute.getId());
+        
+        txn.commit();
+
+        return newRoute;
     }
 
     @Override
     public List<? extends StaticRoute> listStaticRoutes(ListStaticRoutesCmd cmd) {
-        // TODO Auto-generated method stub
-        return null;
+        Long id = cmd.getId();
+        Long gatewayId = cmd.getGatewayId();
+        Long vpcId = cmd.getVpcId();
+        Long domainId = cmd.getDomainId();
+        Boolean isRecursive = cmd.isRecursive();
+        Boolean listAll = cmd.listAll();
+        String accountName = cmd.getAccountName();
+
+        Account caller = UserContext.current().getCaller();
+        List<Long> permittedAccounts = new ArrayList<Long>();
+        
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, 
+                ListProjectResourcesCriteria>(domainId, isRecursive, null);
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject,
+                listAll, false);
+        domainId = domainIdRecursiveListProject.first();
+        isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        Filter searchFilter = new Filter(StaticRouteVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        SearchBuilder<StaticRouteVO> sb = _staticRouteDao.createSearchBuilder();
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
+        sb.and("vpcGatewayId", sb.entity().getVpcGatewayId(), SearchCriteria.Op.EQ);
+        
+        SearchCriteria<StaticRouteVO> sc = sb.create();
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);  
+        
+        if (id != null) {
+            sc.addAnd("id", Op.EQ, id);
+        }
+        
+        if (vpcId != null) {
+            sc.addAnd("vpcId", Op.EQ, vpcId);
+        }
+        
+        if (gatewayId != null) {
+            sc.addAnd("vpcGatewayId", Op.EQ, vpcId);
+        }
+        
+        return _staticRouteDao.search(sc, searchFilter);
+    }
+    
+    protected void detectRoutesConflict(StaticRoute newRoute) throws NetworkRuleConflictException {
+        List<? extends StaticRoute> routes = _staticRouteDao.listByGatewayIdAndNotRevoked(newRoute.getVpcGatewayId());
+        assert (routes.size() >= 1) : "For static routes, we now always first persist the route and then check for " +
+                "network conflicts so we should at least have one rule at this point.";
+        
+        for (StaticRoute route : routes) {
+            if (route.getId() == newRoute.getId()) {
+                continue; // Skips my own route.
+            }
+            
+            if (NetUtils.isNetworksOverlap(route.getCidr(), newRoute.getCidr())) {
+                throw new NetworkRuleConflictException("New static route cidr conflicts with existing route " + route);
+            }
+        }
+    }
+    
+    protected void revokeStaticRoute(StaticRouteVO route, Account caller) {
+        s_logger.debug("Revoking static route " + route);
+        if (caller != null) {
+            _accountMgr.checkAccess(caller, null, false, route);
+        }
+
+        if (route.getState() == StaticRoute.State.Staged) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Found a static route that is still in stage state so just removing it: " + route);
+            }
+            _staticRouteDao.remove(route.getId());
+        } else if (route.getState() == StaticRoute.State.Add || route.getState() == StaticRoute.State.Active) {
+            route.setState(StaticRoute.State.Revoke);
+            _staticRouteDao.update(route.getId(), route);
+        }
+
     }
 }

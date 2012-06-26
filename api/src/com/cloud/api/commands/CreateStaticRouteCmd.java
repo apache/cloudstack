@@ -28,6 +28,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.user.UserContext;
@@ -91,7 +92,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
     }
 
     @Override
-    public void execute() {
+    public void execute() throws ResourceUnavailableException {
         boolean success = false;
         StaticRoute route = _entityMgr.findById(StaticRoute.class, getEntityId());
         try {

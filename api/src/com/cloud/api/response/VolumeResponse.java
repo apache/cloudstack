@@ -292,5 +292,5 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
-    }   
+    }
 }
