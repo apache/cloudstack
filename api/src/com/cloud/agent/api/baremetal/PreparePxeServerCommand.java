@@ -36,6 +36,9 @@ public class PreparePxeServerCommand extends Command {
 		return true;
 	}
 	
+    public PreparePxeServerCommand() {
+    }
+
 	public PreparePxeServerCommand(String ip, String mac, String netMask, String gateway, String dns, String template, String vmName, String hostName) {
 		this.ip = ip;
 		this.mac = mac;
