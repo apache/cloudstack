@@ -118,6 +118,7 @@ fw_entry() {
 
 #Hot reconfigure HA Proxy in the routing domain
 reconfig_lb() {
+  echo "$cfgContent" > /etc/haproxy/haproxy.cfg.new
   /root/reconfigLB.sh
   return $?
 }
@@ -155,7 +156,7 @@ do
 		removedIps="$OPTARG"
 		;;
   f)	fflag=1
-		cfgfile="$OPTARG"
+		cfgContent="$OPTARG"
 		;;
   s)	sflag=1
 		statsIp="$OPTARG"
@@ -177,7 +178,7 @@ then
 fi
 
 # hot reconfigure haproxy
-reconfig_lb $cfgfile
+reconfig_lb
 
 if [ $? -gt 0 ]
 then

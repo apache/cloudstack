@@ -1490,7 +1490,34 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new SetPortForwardingRulesAnswer(cmd, results, endResult);
     }
 
+    protected SetStaticNatRulesAnswer SetVPCStaticNatRules(SetStaticNatRulesCommand cmd) {
+        Connection conn = getConnection();
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        //String args = routerIp;
+        String[] results = new String[cmd.getRules().length];
+        int i = 0;
+        boolean endResult = true;
+        for (StaticNatRuleTO rule : cmd.getRules()) {
+            String args = "vpc_staticnat.sh " + routerIp;
+            args += rule.revoked() ? " -D" : " -A";
+            args += " -l " + rule.getSrcIp();
+            args += " -r " + rule.getDstIp();
+            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args.toString());
+
+            if (result == null || result.isEmpty()) {
+                results[i++] = "Failed";
+                endResult = false;
+            } else {
+                results[i++] = null;
+            }
+        }
+        return new SetStaticNatRulesAnswer(cmd, results, endResult);
+    }
+
     protected SetStaticNatRulesAnswer execute(SetStaticNatRulesCommand cmd) {
+        if ( cmd.getVpcId() != null ) {
+            return SetVPCStaticNatRules(cmd);
+        }
         Connection conn = getConnection();
 
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
@@ -1526,7 +1553,69 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new SetStaticNatRulesAnswer(cmd, results, endResult);
     }
 
+    protected Answer VPCLoadBalancerConfig(final LoadBalancerConfigCommand cmd) {
+        Connection conn = getConnection();
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+
+        if (routerIp == null) {
+            return new Answer(cmd);
+        }
+
+        LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
+        String[] config = cfgtr.generateConfiguration(cmd);
+        String tmpCfgFileContents = "";
+        for (int i = 0; i < config.length; i++) {
+            tmpCfgFileContents += config[i];
+            tmpCfgFileContents += "\n";
+        }
+        String[][] rules = cfgtr.generateFwRules(cmd);
+
+        String[] addRules = rules[LoadBalancerConfigurator.ADD];
+        String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
+        String[] statRules = rules[LoadBalancerConfigurator.STATS];
+
+        String args = "vpc_loadbalancer.sh " + routerIp;
+        args += " -f " + tmpCfgFileContents;
+
+        StringBuilder sb = new StringBuilder();
+        if (addRules.length > 0) {
+            for (int i = 0; i < addRules.length; i++) {
+                sb.append(addRules[i]).append(',');
+            }
+
+            args += " -a " + sb.toString();
+        }
+
+        sb = new StringBuilder();
+        if (removeRules.length > 0) {
+            for (int i = 0; i < removeRules.length; i++) {
+                sb.append(removeRules[i]).append(',');
+            }
+
+            args += " -d " + sb.toString();
+        }
+
+        sb = new StringBuilder();
+        if (statRules.length > 0) {
+            for (int i = 0; i < statRules.length; i++) {
+                sb.append(statRules[i]).append(',');
+            }
+
+            args += " -s " + sb.toString();
+        }
+
+        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+
+        if (result == null || result.isEmpty()) {
+            return new Answer(cmd, false, "LoadBalancerConfigCommand failed");
+        }
+        return new Answer(cmd);
+    }
+
     protected Answer execute(final LoadBalancerConfigCommand cmd) {
+        if ( cmd.getVpcId() != null ) {
+            return VPCLoadBalancerConfig(cmd);
+        }
         Connection conn = getConnection();
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
