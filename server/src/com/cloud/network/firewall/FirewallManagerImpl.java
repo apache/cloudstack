@@ -277,16 +277,16 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             if (!oneOfRulesIsFirewall) {
                 if (rule.getPurpose() == Purpose.StaticNat && newRule.getPurpose() != Purpose.StaticNat) {
                     throw new NetworkRuleConflictException("There is 1 to 1 Nat rule specified for the ip address id=" 
-                + newRule.getSourceIpAddressId());
+                            + newRule.getSourceIpAddressId());
                 } else if (rule.getPurpose() != Purpose.StaticNat && newRule.getPurpose() == Purpose.StaticNat) {
                     throw new NetworkRuleConflictException("There is already firewall rule specified for the ip address id="
-                + newRule.getSourceIpAddressId());
+                            + newRule.getSourceIpAddressId());
                 }
             }
 
             if (rule.getNetworkId() != newRule.getNetworkId() && rule.getState() != State.Revoke) {
                 throw new NetworkRuleConflictException("New rule is for a different network than what's specified in rule "
-            + rule.getXid());
+                        + rule.getXid());
             }
 
             if (newRule.getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO) && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol())) {
@@ -302,14 +302,20 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             if (!notNullPorts) {
                 continue;
             } else if (!oneOfRulesIsFirewall && !(bothRulesFirewall && !duplicatedCidrs)
-                    && ((rule.getSourcePortStart().intValue() <= newRule.getSourcePortStart().intValue() && rule.getSourcePortEnd().intValue() >= newRule.getSourcePortStart().intValue())
-                            || (rule.getSourcePortStart().intValue() <= newRule.getSourcePortEnd().intValue() && rule.getSourcePortEnd().intValue() >= newRule.getSourcePortEnd().intValue())
-                            || (newRule.getSourcePortStart().intValue() <= rule.getSourcePortStart().intValue() && newRule.getSourcePortEnd().intValue() >= rule.getSourcePortStart().intValue())
-                            || (newRule.getSourcePortStart().intValue() <= rule.getSourcePortEnd().intValue() && newRule.getSourcePortEnd().intValue() >= rule.getSourcePortEnd().intValue()))) {
+                    && ((rule.getSourcePortStart().intValue() <= newRule.getSourcePortStart().intValue() 
+                    && rule.getSourcePortEnd().intValue() >= newRule.getSourcePortStart().intValue())
+                            || (rule.getSourcePortStart().intValue() <= newRule.getSourcePortEnd().intValue() 
+                            && rule.getSourcePortEnd().intValue() >= newRule.getSourcePortEnd().intValue())
+                            || (newRule.getSourcePortStart().intValue() <= rule.getSourcePortStart().intValue() 
+                            && newRule.getSourcePortEnd().intValue() >= rule.getSourcePortStart().intValue())
+                            || (newRule.getSourcePortStart().intValue() <= rule.getSourcePortEnd().intValue() 
+                            && newRule.getSourcePortEnd().intValue() >= rule.getSourcePortEnd().intValue()))) {
 
                 // we allow port forwarding rules with the same parameters but different protocols
-                boolean allowPf = (rule.getPurpose() == Purpose.PortForwarding && newRule.getPurpose() == Purpose.PortForwarding && !newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()));
-                boolean allowStaticNat = (rule.getPurpose() == Purpose.StaticNat && newRule.getPurpose() == Purpose.StaticNat && !newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()));
+                boolean allowPf = (rule.getPurpose() == Purpose.PortForwarding && newRule.getPurpose() == Purpose.PortForwarding
+                        && !newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()));
+                boolean allowStaticNat = (rule.getPurpose() == Purpose.StaticNat && newRule.getPurpose() == Purpose.StaticNat
+                        && !newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()));
 
                 if (!(allowPf || allowStaticNat || oneOfRulesIsFirewall)) {
                     throw new NetworkRuleConflictException("The range specified, " + newRule.getSourcePortStart() + "-" + newRule.getSourcePortEnd() + ", conflicts with rule " + rule.getId()

@@ -32,19 +32,19 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.NetworkService;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.NetworkACL;
-import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcManager;
-import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -119,7 +119,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     
     @Override
     public boolean shutdownVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException {
-        List<DomainRouterVO> routers = _routerDao.listRoutersByVpcId(vpc.getId());
+        List<DomainRouterVO> routers = _routerDao.listByVpcId(vpc.getId());
         if (routers == null || routers.isEmpty()) {
             return true;
         }
@@ -228,7 +228,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return success;
         }
         
-        List<? extends VirtualRouter> routers = _routerDao.listRoutersByVpcId(vpcId);
+        List<? extends VirtualRouter> routers = _routerDao.listByVpcId(vpcId);
         for (VirtualRouter router : routers) {
             //1) Check if router is already a part of the network
             if (!_ntwkService.isVmPartOfNetwork(router.getId(), network.getId())) {
@@ -256,7 +256,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return success;
         }
         
-        List<? extends VirtualRouter> routers = _routerDao.listRoutersByVpcId(vpcId);
+        List<? extends VirtualRouter> routers = _routerDao.listByVpcId(vpcId);
         for (VirtualRouter router : routers) {
             //1) Check if router is already a part of the network
             if (!_ntwkService.isVmPartOfNetwork(router.getId(), config.getId())) {
@@ -403,12 +403,20 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         return VirtualRouterProviderType.VPCVirtualRouter;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.element.VpcProvider#applyStaticRoutes(com.cloud.network.vpc.Vpc, java.util.List)
-     */
     @Override
-    public boolean applyStaticRoutes(Vpc vpc, List<? extends StaticRoute> routes) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
+    public boolean applyStaticRoutes(Vpc vpc, List<StaticRouteProfile> routes) throws ResourceUnavailableException {
+        List<DomainRouterVO> routers = _routerDao.listByVpcId(vpc.getId());
+        if (routers == null || routers.isEmpty()) {
+            s_logger.debug("Virtual router elemnt doesn't need to static routes on the backend; virtual " +
+                    "router doesn't exist in the vpc " + vpc);
+            return true;
+        }
+
+        if (!_vpcRouterMgr.applyStaticRoutes(routes, routers)) {
+            throw new CloudRuntimeException("Failed to apply static routes in vpc " + vpc);
+        } else {
+            s_logger.debug("Applied static routes on vpc " + vpc);
+            return true;
+        }
     }
 }

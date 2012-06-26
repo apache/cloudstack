@@ -305,7 +305,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
     
     @Override
-    public List<DomainRouterVO> listRoutersByVpcId(long vpcId) {
+    public List<DomainRouterVO> listByVpcId(long vpcId) {
         SearchCriteria<DomainRouterVO> sc = VpcSearch.create();
         sc.setParameters("vpcId", vpcId);
         sc.setParameters("role", Role.VIRTUAL_ROUTER);

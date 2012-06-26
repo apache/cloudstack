@@ -157,6 +157,8 @@ import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.SetStaticRouteAnswer;
+import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
@@ -539,11 +541,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((SetNetworkACLCommand) cmd);
         } else if (clazz == SetPortForwardingRulesVpcCommand.class) {
             return execute((SetPortForwardingRulesVpcCommand) cmd);
+        } else if (clazz == SetStaticRouteCommand.class) {
+            return execute((SetStaticRouteCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
-
 
     protected XsLocalNetwork getNativeNetworkForTraffic(Connection conn, TrafficType type, String name) throws XenAPIException, XmlRpcException {
         if (name != null) {
@@ -7352,5 +7355,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         }
         return new SetPortForwardingRulesAnswer(cmd, results, endResult);
+    }
+    
+    
+    private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }
