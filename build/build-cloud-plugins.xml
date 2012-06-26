@@ -198,13 +198,19 @@
 
   <!-- ===================== Hypervisors ========================= -->
 
-  <target name="compile-hypervisors" depends="compile-ovm" description="Compile all hypervisors"/>
-  <target name="build-hypervisors" depends="build-ovm" description="Builds all hypervisors"/>
+  <target name="compile-hypervisors" depends="compile-ovm, compile-xen" description="Compile all hypervisors"/>
+  <target name="build-hypervisors" depends="build-ovm, build-xen" description="Builds all hypervisors"/>
 
   <target name="compile-ovm" depends="-init, compile-server" description="Compile OVM">
   	<ant antfile="${base.dir}/plugins/hypervisors/ovm/build.xml" target="build"/>
   </target>
   <target name="build-ovm" depends="compile-ovm" />
+
+
+  <target name="compile-xen" depends="-init, compile-server" description="Compiles Xen ">
+  	<ant antfile="${base.dir}/plugins/hypervisors/xen/build.xml" target="build"/>
+  </target>
+  <target name="build-xen" depends="compile-xen" />
 
 
   <!-- ===================== Deployment Planners ================= -->
