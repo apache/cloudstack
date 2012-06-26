@@ -236,14 +236,18 @@
 
   <!-- ===================== User Authenticators ================== -->
 
-  <target name="compile-user-authenticators" depends="compile-user-authenticator-ldap" description="Compile all user authenicators"/>
-  <target name="build-user-authenticators" depends="build-user-authenticator-ldap" description="builds all user authenticators"/>
+  <target name="compile-user-authenticators" depends="compile-user-authenticator-ldap, compile-user-authenticator-md5" description="Compile all user authenicators"/>
+  <target name="build-user-authenticators" depends="build-user-authenticator-ldap, build-user-authenticator-md5" description="builds all user authenticators"/>
 
   <target name="compile-user-authenticator-ldap" depends="-init, compile-server" description="Compile ">
   	<ant antfile="${base.dir}/plugins/user-authenticators/ldap/build.xml" target="build"/>
   </target>
   <target name="build-user-authenticator-ldap" depends="compile-user-authenticator-ldap" />
 
+  <target name="compile-user-authenticator-md5" depends="-init, compile-server" description="Compile ">
+  	<ant antfile="${base.dir}/plugins/user-authenticators/md5/build.xml" target="build"/>
+  </target>
+  <target name="build-user-authenticator-md5" depends="compile-user-authenticator-md5" />
 
   <!-- ===================== Network Elements ===================== -->
 
