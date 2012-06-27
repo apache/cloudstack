@@ -706,16 +706,16 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         }
 
         Long ipAddrId = lb.getSourceIpAddressId();
-        IPAddressVO ipAddressVo = null;
+        IPAddressVO ipAddressVO = null;
         if (ipAddrId != null) {
-            ipAddressVo = _ipAddressDao.findById(ipAddrId);
+            ipAddressVO = _ipAddressDao.findById(ipAddrId);
 
             // Validate ip address
-            if (ipAddressVo == null) {
+            if (ipAddressVO == null) {
                 throw new InvalidParameterValueException("Unable to create load balance rule; ip id=" + ipAddrId + "" +
                 		" doesn't exist in the system");
-            } else if (ipAddressVo.isOneToOneNat()) {
-                throw new NetworkRuleConflictException("Can't do load balance on ip address: " + ipAddressVo.getAddress());
+            } else if (ipAddressVO.isOneToOneNat()) {
+                throw new NetworkRuleConflictException("Can't do load balance on ip address: " + ipAddressVO.getAddress());
             }
         }
 
@@ -724,18 +724,23 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             IpAddress ip = null;
             Network guestNetwork = _networkMgr.getNetwork(lb.getNetworkId());
             NetworkOffering off = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
-            if (off.getElasticLb() && ipAddressVo == null) {
+            if (off.getElasticLb() && ipAddressVO == null) {
                 ip = _networkMgr.assignSystemIp(lb.getNetworkId(), lbOwner, true, false);
                 lb.setSourceIpAddressId(ip.getId());
             }
              
             try {
-                if (ip.getAssociatedWithNetworkId() == null) {
-                    s_logger.debug("The ip is not associated with the network id="+ lb.getNetworkId() + " so assigning");
-                    ip = _networkMgr.associateIPToGuestNetwork(ipAddrId, lb.getNetworkId());
+                if (ipAddressVO != null) {
+                    if (ipAddressVO.getAssociatedWithNetworkId() == null) {
+                        s_logger.debug("The ip is not associated with the network id="+ lb.getNetworkId() + " so assigning");
+                        ipAddressVO = _networkMgr.associateIPToGuestNetwork(ipAddrId, lb.getNetworkId());
+                    }
+                    _networkMgr.checkIpForService(ipAddressVO, Service.Lb);
+                }   
+               
+                if (lb.getSourceIpAddressId() == null) {
+                    throw new CloudRuntimeException("No ip address is defined to assign the LB to");
                 }
-                ipAddressVo = _ipAddressDao.findById(ipAddrId);
-                _networkMgr.checkIpForService(ipAddressVo, Service.Lb);
                 result = createLoadBalancer(lb, openFirewall);
             } catch (Exception ex) {
                 s_logger.warn("Failed to create load balancer due to ", ex);

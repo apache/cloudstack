@@ -70,8 +70,8 @@ import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.rules.NetworkACL;
+import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteProfile;
@@ -104,15 +104,15 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     private static final Logger s_logger = Logger.getLogger(VpcVirtualNetworkApplianceManagerImpl.class);
 
     @Inject
-    VpcDao _vpcDao = null;
+    VpcDao _vpcDao;
     @Inject
-    VpcOfferingDao _vpcOffDao = null;
+    VpcOfferingDao _vpcOffDao;
     @Inject
-    PhysicalNetworkDao _pNtwkDao = null;
+    PhysicalNetworkDao _pNtwkDao;
     @Inject
-    NetworkService _ntwkService = null;
+    NetworkService _ntwkService;
     @Inject
-    NetworkACLService _networkACLService = null;
+    NetworkACLManager _networkACLMgr;
     @Inject
     VMInstanceDao _vmDao;
     @Inject
@@ -854,7 +854,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         super.finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
         
         if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, Provider.VPCVirtualRouter)) {
-            List<? extends NetworkACL> networkACLs = _networkACLService.listNetworkACLs(guestNetworkId);
+            List<? extends NetworkACL> networkACLs = _networkACLMgr.listNetworkACLs(guestNetworkId);
             s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + router 
                     + " start for guest network id=" + guestNetworkId);
             if (!networkACLs.isEmpty()) {

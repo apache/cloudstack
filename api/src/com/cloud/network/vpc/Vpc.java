@@ -22,7 +22,7 @@ import com.cloud.network.Network;
 public interface Vpc extends ControlledEntity{
     public enum State {
         Enabled,
-        Disabled
+        Inactive
     }
     
    public static final String _supportedProviders = Network.Provider.VPCVirtualRouter.getName();

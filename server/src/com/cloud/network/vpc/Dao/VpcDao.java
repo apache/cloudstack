@@ -32,5 +32,7 @@ public interface VpcDao extends GenericDao<VpcVO, Long>{
     Vpc getActiveVpcById(long vpcId);
     
     List<? extends Vpc> listByAccountId(long accountId);
+    
+    List<VpcVO> listInactiveVpcs();
 
 }
