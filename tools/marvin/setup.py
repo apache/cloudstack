@@ -20,7 +20,7 @@ setup(name="Marvin",
       long_description="Marvin is the cloudstack testclient written around the python unittest framework",
       platforms=("Any",),
       url="http://jenkins.cloudstack.org:8080/job/marvin",
-      packages=["marvin", "marvin.cloudstackAPI", "marvin.sandbox", "marvin.pymysql", "marvin.pymysql.constants", "marvin.pymysql.tests"],
+      packages=["marvin", "marvin.cloudstackAPI", "marvin.sandbox", "marvin.sandbox.advanced", "marvin.sandbox.basic", "marvin.pymysql", "marvin.pymysql.constants", "marvin.pymysql.tests"],
       license="LICENSE.txt",
       install_requires=[
           "paramiko",
