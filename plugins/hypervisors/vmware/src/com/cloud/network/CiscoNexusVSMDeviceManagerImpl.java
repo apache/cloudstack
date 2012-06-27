@@ -21,6 +21,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.api.ApiConstants;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.ClusterVSMMapVO;
@@ -62,7 +64,8 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     HostDetailsDao _hostDetailDao;
     @Inject
     PortProfileDao _ppDao;
-
+    @Inject
+    ConfigurationDao _configDao;
     
     private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
     
@@ -311,5 +314,95 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
         // TODO Auto-generated method stub
         return null;
+    }
+    
+    @DB
+    public boolean vliadateVsmCluster(String vsmIp, String vsmUser, String vsmPassword, long clusterId, String clusterName) throws ResourceInUseException {
+        // Check if we're associating a Cisco Nexus VSM with a vmware cluster.
+        if (Boolean.parseBoolean(_configDao.getValue(Config.VmwareUseNexusVSwitch.toString()))) {
+
+            if(vsmIp != null && vsmUser != null && vsmPassword != null) {
+                NetconfHelper netconfClient;
+                try {
+                    netconfClient = new NetconfHelper(vsmIp, vsmUser, vsmPassword);
+                    netconfClient.disconnect();
+                } catch (CloudRuntimeException e) {
+                    String msg = "Invalid credentials supplied for user " + vsmUser + " for Cisco Nexus 1000v VSM at " + vsmIp;
+                    s_logger.error(msg);
+                    _clusterDao.remove(clusterId);
+                    throw new CloudRuntimeException(msg);
+                }
+
+                Transaction txn;
+
+                // If VSM already exists and is mapped to a cluster, fail this operation.
+                CiscoNexusVSMDeviceVO vsm = _ciscoNexusVSMDeviceDao.getVSMbyIpaddress(vsmIp);
+                if(vsm != null) {
+                    List<ClusterVSMMapVO> clusterList = _clusterVSMDao.listByVSMId(vsm.getId());
+                    if (clusterList != null && !clusterList.isEmpty()) {
+                        s_logger.error("Failed to add cluster: specified Nexus VSM is already associated with another cluster");
+                        _clusterDao.remove(clusterId);
+                        ResourceInUseException ex = new ResourceInUseException("Failed to add cluster: specified Nexus VSM is already associated with another cluster with specified Id");
+                        ex.addProxyObject("cluster", clusterList.get(0).getClusterId(), "clusterId");
+                        throw ex;
+                    }
+                }
+                // persist credentials to database if the VSM entry is not already in the db.
+                if (_ciscoNexusVSMDeviceDao.getVSMbyIpaddress(vsmIp) == null) {
+                    vsm = new CiscoNexusVSMDeviceVO(vsmIp, vsmUser, vsmPassword);
+                    txn = Transaction.currentTxn();
+                    try {
+                        txn.start();
+                        vsm = _ciscoNexusVSMDeviceDao.persist(vsm);
+                        txn.commit();
+                    } catch (Exception e) {
+                        txn.rollback();
+                        s_logger.error("Failed to persist Cisco Nexus 1000v VSM details to database. Exception: " + e.getMessage());
+                        // Removing the cluster record which was added already because the persistence of Nexus VSM credentials has failed.
+                        _clusterDao.remove(clusterId);
+                        throw new CloudRuntimeException(e.getMessage());
+                    }
+                }
+                // Create a mapping between the cluster and the vsm.
+                vsm = _ciscoNexusVSMDeviceDao.getVSMbyIpaddress(vsmIp);
+                if (vsm != null) {
+                    ClusterVSMMapVO connectorObj = new ClusterVSMMapVO(clusterId, vsm.getId());
+                    txn = Transaction.currentTxn();
+                    try {
+                        txn.start();
+                        _clusterVSMDao.persist(connectorObj);
+                        txn.commit();
+                    } catch (Exception e) {
+                        txn.rollback();
+                        s_logger.error("Failed to associate Cisco Nexus 1000v VSM with cluster: " + clusterName + ". Exception: " + e.getMessage());
+                        _clusterDao.remove(clusterId);
+                        throw new CloudRuntimeException(e.getMessage());
+                    }
+                }
+            } else {
+                String msg;
+                msg = "The global parameter " + Config.VmwareUseNexusVSwitch.toString() +
+                        " is set to \"true\". Following mandatory parameters are not specified. ";
+                if(vsmIp == null) {
+                    msg += "vsmipaddress: Management IP address of Cisco Nexus 1000v dvSwitch. ";
+                }
+                if(vsmUser == null) {
+                    msg += "vsmusername: Name of a user account with admin privileges over Cisco Nexus 1000v dvSwitch. ";
+                }
+                if(vsmPassword == null) {
+                    if(vsmUser != null) {
+                        msg += "vsmpassword: Password of user account " + vsmUser + ". ";
+                    } else {
+                        msg += "vsmpassword: Password of user account with admin privileges over Cisco Nexus 1000v dvSwitch. ";
+                    }
+                }
+                s_logger.error(msg);
+                // Cleaning up the cluster record as addCluster operation failed because Nexus dvSwitch credentials are supplied.
+                _clusterDao.remove(clusterId);
+                throw new CloudRuntimeException(msg);
+            }
+            return true;
+        }
+		return false;
     }
 }

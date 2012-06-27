@@ -23,7 +23,6 @@ import com.cloud.baremetal.PxeServerManager.PxeServerType;
 import com.cloud.baremetal.PxeServerManagerImpl;
 import com.cloud.baremetal.PxeServerService;
 import com.cloud.ha.HighAvailabilityManagerExtImpl;
-import com.cloud.hypervisor.vmware.VmwareManagerImpl;
 import com.cloud.netapp.NetappManagerImpl;
 import com.cloud.netapp.dao.LunDaoImpl;
 import com.cloud.netapp.dao.PoolDaoImpl;
@@ -60,7 +59,6 @@ public class PremiumComponentLibrary extends DefaultComponentLibrary {
         addManager("secondary storage vm manager", PremiumSecondaryStorageManagerImpl.class);
 	
         addManager("HA Manager", HighAvailabilityManagerExtImpl.class);
-        addManager("VMWareManager", VmwareManagerImpl.class);
         addManager("ExternalNetworkManager", ExternalNetworkDeviceManagerImpl.class);
         addManager("BareMetalVmManager", BareMetalVmManagerImpl.class);
         addManager("ExternalDhcpManager", ExternalDhcpManagerImpl.class);

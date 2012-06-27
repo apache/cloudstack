@@ -157,11 +157,14 @@
         <adapters key="com.cloud.agent.StartupCommandProcessor">
             <adapter name="BasicAgentAuthorizer" class="com.cloud.agent.manager.authn.impl.BasicAgentAuthManager"/>
         </adapters>
+        <manager name="VmwareManager" key="com.cloud.hypervisor.vmware.manager.VmwareManager" class="com.cloud.hypervisor.vmware.manager.VmwareManagerImpl"/>
         <pluggableservice name="VirtualRouterElementService" key="com.cloud.network.element.VirtualRouterElementService" class="com.cloud.network.element.VirtualRouterElement"/>
         <pluggableservice name="NetscalerExternalLoadBalancerElementService" key="com.cloud.network.element.NetscalerLoadBalancerElementService" class="com.cloud.network.element.NetscalerElement"/>
         <pluggableservice name="F5ExternalLoadBalancerElementService" key="com.cloud.network.element.F5ExternalLoadBalancerElementService" class="com.cloud.network.element.F5ExternalLoadBalancerElement"/>
         <pluggableservice name="JuniperSRXFirewallElementService" key="com.cloud.network.element.JuniperSRXFirewallElementService" class="com.cloud.network.element.JuniperSRXExternalFirewallElement"/>
+        <pluggableservice name="CiscoNexusVSMElementService" key="com.coud.network.element.CiscoNexusVSMElementService" class="com.cloud.network.element.CiscoNexusVSMElement"/>
         <dao name="NetScalerPodDao" class="com.cloud.network.dao.NetScalerPodDaoImpl" singleton="false"/>
+        <dao name="CiscoNexusVSMDeviceDao" class="com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl" singleton="false"/>
     </management-server>
 
     <configuration-server class="com.cloud.server.ConfigurationServerImpl">

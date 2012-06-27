@@ -71,7 +71,6 @@ import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.ExternalLoadBalancerUsageManagerImpl;
 import com.cloud.network.NetworkManagerImpl;
 import com.cloud.network.StorageNetworkManagerImpl;
-import com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl;
 import com.cloud.network.dao.ExternalFirewallDeviceDaoImpl;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceDaoImpl;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
@@ -94,8 +93,6 @@ import com.cloud.network.dao.PortProfileDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VirtualRouterProviderDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
-import com.cloud.network.element.CiscoNexusVSMElement;
-import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.network.firewall.FirewallManagerImpl;
@@ -316,7 +313,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("ExternalFirewallDeviceDao", ExternalFirewallDeviceDaoImpl.class);
         addDao("NetworkExternalLoadBalancerDao", NetworkExternalLoadBalancerDaoImpl.class);
         addDao("NetworkExternalFirewallDao", NetworkExternalFirewallDaoImpl.class);
-        addDao("CiscoNexusVSMDeviceDao", CiscoNexusVSMDeviceDaoImpl.class);
         addDao("ClusterVSMMapDao", ClusterVSMMapDaoImpl.class);
         addDao("PortProfileDao", PortProfileDaoImpl.class);
         addDao("PhysicalNetworkTrafficTypeDao", PhysicalNetworkTrafficTypeDaoImpl.class);
@@ -412,7 +408,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
 
     protected void populateServices() {
         addService("VirtualRouterElementService", VirtualRouterElementService.class, VirtualRouterElement.class);
-        addService("CiscoNexusVSMElementService", CiscoNexusVSMElementService.class, CiscoNexusVSMElement.class);
     }
 
     @Override
