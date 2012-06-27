@@ -65,7 +65,7 @@ add_an_ip () {
     sudo arping -c 3 -I $ethDev -A -U -s $pubIp $pubIp
   fi
   local tableNo=${ethDev:3} 
-  sudo iptables-save -t mangle | grep  "PREROUTING -i $ethDev -m state --state NEW -j CONNMARK --set-mark" 2>/dev/null
+  sudo iptables-save -t mangle | grep  "PREROUTING -i $ethDev -m state --state NEW -j CONNMARK --set-xmark" 2>/dev/null
   if [ $? -gt 0 ]
   then
     sudo iptables -t mangle -A PREROUTING -i $ethDev -m state --state NEW -j CONNMARK --set-mark $tableNo 2>/dev/null

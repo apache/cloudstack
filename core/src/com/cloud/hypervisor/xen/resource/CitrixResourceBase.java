@@ -7449,6 +7449,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     
     private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
         // TODO Auto-generated method stub
-        return null;
+        return new SetStaticRouteAnswer(cmd, true, null);
     }
 }

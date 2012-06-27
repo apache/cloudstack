@@ -14,7 +14,7 @@
 # @VERSION@
 
 source /root/func.sh
-
+source /opt/cloud/bin/vpc_func.sh
 lock="biglock"
 locked=$(getLockFile $lock)
 if [ "$locked" != "1" ]
@@ -51,7 +51,7 @@ static_nat() {
   # add mark to force the package go out through the eth the public IP is on
   (sudo iptables -t mangle $op PREROUTING -s $instIp -j MARK \
            --set-mark $tableNo &> $OUTFILE ||  [ "$op" == "-D" ]) &&
-  (sudo iptables -t nat $op2 POSTROUTING -i $ethDev -s $instIp -j SNAT \
+  (sudo iptables -t nat $op2 POSTROUTING -o $ethDev -s $instIp -j SNAT \
            --to-source $publicIp &>> $OUTFILE )
   result=$?
   logger -t cloud "$(basename $0): done static nat entry public ip=$publicIp op=$op result=$result"
@@ -68,7 +68,7 @@ rflag=
 lflag=
 dflag=
 op=""
-while getopts 'ADr:l:d:' OPTION
+while getopts 'ADr:l:' OPTION
 
 do
   case $OPTION in
@@ -82,15 +82,18 @@ do
   l)    lflag=1
         publicIp="$OPTARG"
         ;;
-  d)    dflag=1
-        ethDev="$OPTARG"
-        ;;
   ?)    usage
         unlock_exit 2 $lock $locked
         ;;
   esac
 done
 
+ethDev=$(getEthByIp $publicIp)
+result=$?
+if [ $result -gt 0 ]
+then
+  unlock_exit $result $lock $locked
+fi
 OUTFILE=$(mktemp)
 
 static_nat $op $publicIp $instanceIp
