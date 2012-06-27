@@ -814,7 +814,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         
         s_logger.debug("Found " + staticRouteProfiles.size() + " static routes to apply as a part of vpc route " 
                 + router + " start");
-        createStaticRouteCommands(staticRouteProfiles, router, cmds);
+        if (!staticRouteProfiles.isEmpty()) {   
+            createStaticRouteCommands(staticRouteProfiles, router, cmds);
+        }
         
         //4) REPROGRAM GUEST NETWORK
         boolean reprogramGuestNtwks = true;
