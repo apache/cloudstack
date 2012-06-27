@@ -1427,6 +1427,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             internalDns1 = zone.getInternalDns1();
         }
 
+        if (internalDns2 == null) {
+        	internalDns2 = zone.getInternalDns2();
+        }
+        
         if (guestCidr == null) {
             guestCidr = zone.getGuestNetworkCidr();
         }
