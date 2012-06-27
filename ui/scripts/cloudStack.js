@@ -62,14 +62,31 @@
       dataType: 'json',
       cache: false,
       error: function(data) {
-        cloudStack.dialog.notice({ message: parseXMLHttpResponse(data) });
+				var clickAction = false;
+				if (isValidJsonString(data.responseText)) {
+					var json = JSON.parse(data.responseText);
+					if (json != null) {
+						var property;
+						for(property in json) {}
+						var errorObj = json[property];
+						if(errorObj.errorcode == 401 && errorObj.errortext == "unable to verify user credentials and/or request signature") {
+							clickAction = function() {
+								$('#user-options a').eq(0).trigger('click');
+							};
+						}
+					}
+				}
+				cloudStack.dialog.notice({ message: parseXMLHttpResponse(data), clickAction: clickAction });
       },
-			beforeSend: function(XMLHttpRequest) {		
+			beforeSend: function(XMLHttpRequest) {
 				if (g_mySession == $.cookie("JSESSIONID")) {
 					return true;
 				} 
 				else {
-					cloudStack.dialog.notice({ message: _l('label.session.expired') });
+					var clickAction = function() {
+						$('#user-options a').eq(0).trigger('click');
+					};
+					cloudStack.dialog.notice({ message: _l('label.session.expired'), clickAction: clickAction });
 					return false;
 				}
 			}	

@@ -79,7 +79,8 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, 
-        description="The network of the vm the Port Forwarding rule will be created for")
+        description="The network of the vm the Port Forwarding rule will be created for. " +
+        		"Required when public Ip address is not associated with any Guest network yet (VPC case)")
     private Long networkId;
 
     // ///////////////////////////////////////////////////

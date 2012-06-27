@@ -80,7 +80,7 @@ public class StaticRouteDaoImpl extends GenericDaoBase<StaticRouteVO, Long> impl
     }
 
     @Override
-    public List<? extends StaticRoute> listByVpcId(long vpcId) {
+    public List<StaticRouteVO> listByVpcId(long vpcId) {
         SearchCriteria<StaticRouteVO> sc = AllFieldsSearch.create();
         sc.setParameters("vpcId", vpcId);
         return listBy(sc);
