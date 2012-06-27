@@ -50,7 +50,8 @@ public class EnableStaticNatCmd extends BaseCmd{
 
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, 
-        description="The network of the vm the static nat will be enabled for.")
+        description="The network of the vm the static nat will be enabled for." +
+        		" Required when public Ip address is not associated with any Guest network yet (VPC case)")
     private Long networkId;
 
     /////////////////////////////////////////////////////
