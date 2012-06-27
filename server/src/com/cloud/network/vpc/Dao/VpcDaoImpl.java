@@ -16,7 +16,6 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import com.cloud.domain.Domain.State;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.utils.db.DB;
@@ -66,7 +65,7 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
     public Vpc getActiveVpcById(long vpcId) {
         SearchCriteria<VpcVO> sc = AllFieldsSearch.create();
         sc.setParameters("id", vpcId);
-        sc.setParameters("state", State.Active);
+        sc.setParameters("state", Vpc.State.Enabled);
         return findOneBy(sc);
     }
     
@@ -74,6 +73,13 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
     public List<? extends Vpc> listByAccountId(long accountId) {
         SearchCriteria<VpcVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
+        return listBy(sc, null);
+    }
+    
+    @Override
+    public List<VpcVO> listInactiveVpcs() {
+        SearchCriteria<VpcVO> sc = AllFieldsSearch.create();
+        sc.setParameters("state", Vpc.State.Inactive);
         return listBy(sc, null);
     }
 }

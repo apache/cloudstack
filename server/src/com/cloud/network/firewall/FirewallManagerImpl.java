@@ -606,7 +606,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
 
         for (FirewallRuleVO rule : fwRules) {
             // Mark all Firewall rules as Revoke, but don't revoke them yet - we have to revoke all rules for ip, no
-// need to send them one by one
+            // need to send them one by one
             revokeFirewallRule(rule.getId(), false, caller, Account.ACCOUNT_ID_SYSTEM);
         }
 

@@ -1262,6 +1262,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         ip.setVpcId(vpcId);
         ip.setSourceNat(isSourceNat);
         _ipAddressDao.update(ipId, ip);
+        
+        //mark ip as allocated
+        markPublicIpAsAllocated(ip);
         txn.commit();
                 
         s_logger.debug("Successfully assigned ip " + ipToAssoc + " to vpc " + vpc);
@@ -2603,7 +2606,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (vpcId != null) {
             Vpc vpc = _vpcMgr.getActiveVpc(vpcId);
             if (vpc == null) {
-                throw new InvalidParameterValueException("Unable to find enabled vpc by id "  + vpcId);
+                InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find Enabled VPC ");
+                ex.addProxyObject("vpc", vpcId, "VPC");
+                throw ex;
             }
             _accountMgr.checkAccess(caller, null, false, vpc);
         }
@@ -5877,7 +5882,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         boolean success = true;
         Network network = getNetwork(networkId);
 
-        // remove all PF/Static Nat rules for the network
+        //remove all PF/Static Nat rules for the network
         try {
             if (_rulesMgr.revokeAllPFStaticNatRulesForNetwork(networkId, callerUserId, caller)) {
                 s_logger.debug("Successfully cleaned up portForwarding/staticNat rules for network id=" + networkId);
@@ -5891,7 +5896,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.warn("Failed to release portForwarding/StaticNat rules as a part of network id=" + networkId + " cleanup due to resourceUnavailable ", ex);
         }
 
-        // remove all LB rules for the network
+        //remove all LB rules for the network
         if (_lbMgr.removeAllLoadBalanacersForNetwork(networkId, caller, callerUserId)) {
             s_logger.debug("Successfully cleaned up load balancing rules for network id=" + networkId);
         } else {
@@ -5900,7 +5905,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.warn("Failed to cleanup LB rules as a part of network id=" + networkId + " cleanup");
         }
 
-        // revoke all firewall rules for the network
+        //revoke all firewall rules for the network
         try {
             if (_firewallMgr.revokeAllFirewallRulesForNetwork(networkId, callerUserId, caller)) {
                 s_logger.debug("Successfully cleaned up firewallRules rules for network id=" + networkId);
@@ -5914,7 +5919,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.warn("Failed to cleanup Firewall rules as a part of network id=" + networkId + " cleanup due to resourceUnavailable ", ex);
         }
 
-        // release all ip addresses
+        //release all ip addresses
         List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId, null);
         for (IPAddressVO ipToRelease : ipsToRelease) {
             if (ipToRelease.getVpcId() != null) {

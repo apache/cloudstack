@@ -18,6 +18,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -26,6 +29,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.commands.ListPrivateGatewaysCmd;
 import com.cloud.api.commands.ListStaticRoutesCmd;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
@@ -67,11 +71,15 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -83,6 +91,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.dao.DomainRouterDao;
+
 
 /**
  * @author Alena Prokharchyk
@@ -118,9 +127,12 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @Inject
     StaticRouteDao _staticRouteDao;
     
+    private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
+    
     private VpcProvider vpcElement = null;
     
     String _name;
+    int _cleanupInterval;
 
     @Override
     @DB
@@ -146,11 +158,18 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 
         txn.commit();
         
+        ComponentLocator locator = ComponentLocator.getCurrentLocator();
+        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
+        Map<String, String> configs = configDao.getConfiguration(params);
+        String value = configs.get(Config.VpcCleanupInterval.key());
+        _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60); // 1 hour
+        
         return true;
     }
 
     @Override
     public boolean start() {
+        _executor.scheduleAtFixedRate(new VpcCleanupTask(), _cleanupInterval, _cleanupInterval, TimeUnit.SECONDS);
         return true;
     }
 
@@ -256,7 +275,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     
     @Override
     public Vpc getActiveVpc(long vpcId) {
-        return _vpcDao.findById(vpcId);
+        return _vpcDao.getActiveVpcById(vpcId);
     }
 
     @Override
@@ -528,9 +547,9 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
         
         //mark VPC as disabled
-        s_logger.debug("Updating VPC " + vpc + " with state " + Vpc.State.Disabled + " as a part of vpc delete");
+        s_logger.debug("Updating VPC " + vpc + " with state " + Vpc.State.Inactive + " as a part of vpc delete");
         VpcVO vpcVO = _vpcDao.findById(vpc.getId());
-        vpcVO.setState(Vpc.State.Disabled);
+        vpcVO.setState(Vpc.State.Inactive);
         _vpcDao.update(vpc.getId(), vpcVO);
 
         //shutdown VPC
@@ -545,7 +564,9 @@ public class VpcManagerImpl implements VpcManager, Manager{
             return false;
         }
 
+        //update the instance with removed flag only when the cleanup is executed successfully
         if (_vpcDao.remove(vpc.getId())) {
+            s_logger.debug("Vpc " + vpc + " is removed succesfully");
             return true;
         } else {
             return false;
@@ -712,7 +733,9 @@ public class VpcManagerImpl implements VpcManager, Manager{
         //check if vpc exists
         Vpc vpc = getActiveVpc(vpcId);
         if (vpc == null) {
-            throw new InvalidParameterValueException("Unable to find Enabled vpc by id " + vpcId);
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find Enabled VPC by id specified");
+            ex.addProxyObject("vpc", vpcId, "VPC");
+            throw ex;
         }
         
         //permission check
@@ -872,16 +895,43 @@ public class VpcManagerImpl implements VpcManager, Manager{
         return _vpcDao.listByAccountId(accountId);
     }
     
-    public boolean cleanupVpcResources(long vpcId, Account caller, long callerUserId) {
+    public boolean cleanupVpcResources(long vpcId, Account caller, long callerUserId) 
+            throws ResourceUnavailableException, ConcurrentOperationException {
         s_logger.debug("Cleaning up resources for vpc id=" + vpcId);
         boolean success = true;
-        // release all ip addresses
+        
+        //1) release all ip addresses
         List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedVpc(vpcId, null);
         s_logger.debug("Releasing ips for vpc id=" + vpcId + " as a part of vpc cleanup");
         for (IPAddressVO ipToRelease : ipsToRelease) {
             success = success && _ntwkMgr.disassociatePublicIpAddress(ipToRelease.getId(), callerUserId, caller);
             if (!success) {
                 s_logger.warn("Failed to cleanup ip " + ipToRelease + " as a part of vpc id=" + vpcId + " cleanup");
+            }
+        } 
+        
+        if (success) {
+            s_logger.debug("Released ip addresses for vpc id=" + vpcId + " as a part of cleanup vpc process");
+        } else {
+            s_logger.warn("Failed to release ip addresses for vpc id=" + vpcId + " as a part of cleanup vpc process");
+            //although it failed, proceed to the next cleanup step as it doesn't depend on the public ip release
+        }
+        
+        //2) Delete all static route rules
+        if (!revokeStaticRoutesForVpc(vpcId, caller)) {
+            s_logger.warn("Failed to revoke static routes for vpc " + vpcId + " as a part of cleanup vpc process");
+            return false;
+        }
+        
+        //3) Delete private gateway
+        PrivateGateway gateway = getVpcPrivateGateway(vpcId);
+        if (gateway != null) {
+            s_logger.debug("Deleting private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+            if (!deleteVpcPrivateGateway(gateway.getId())) {
+                success = false;
+                s_logger.debug("Failed to delete private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+            } else {
+                s_logger.debug("Deleted private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
             }
         }
         
@@ -896,9 +946,11 @@ public class VpcManagerImpl implements VpcManager, Manager{
         Account caller = UserContext.current().getCaller();
 
         // Verify input parameters
-        VpcVO vpc = _vpcDao.findById(vpcId);
+        Vpc vpc = getActiveVpc(vpcId);
         if (vpc == null) {
-            throw new InvalidParameterValueException("Unable to find vpc offering " + vpcId);
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find Enabled VPC by id specified");
+            ex.addProxyObject("vpc", vpcId, "VPC");
+            throw ex;
         }
         
         _accountMgr.checkAccess(caller, null, false, vpc);
@@ -906,7 +958,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         s_logger.debug("Restarting VPC " + vpc);
         boolean restartRequired = false;
         try {
-            s_logger.debug("Shuttign down VPC " + vpc + " as a part of VPC restart process");
+            s_logger.debug("Shutting down VPC " + vpc + " as a part of VPC restart process");
             if (!shutdownVpc(vpcId)) {
                 s_logger.warn("Failed to shutdown vpc as a part of VPC " + vpc + " restart process");
                 restartRequired = true;
@@ -923,8 +975,9 @@ public class VpcManagerImpl implements VpcManager, Manager{
             return true;
         } finally {
             s_logger.debug("Updating VPC " + vpc + " with restartRequired=" + restartRequired);
-            vpc.setRestartRequired(restartRequired);
-            _vpcDao.update(vpc.getId(), vpc);
+            VpcVO vo = _vpcDao.findById(vpcId);
+            vo.setRestartRequired(restartRequired);
+            _vpcDao.update(vpc.getId(), vo);
         }  
     }
     
@@ -958,9 +1011,11 @@ public class VpcManagerImpl implements VpcManager, Manager{
             ConcurrentOperationException, InsufficientCapacityException {
         
         //Validate parameters
-        Vpc vpc = getVpc(vpcId);
+        Vpc vpc = getActiveVpc(vpcId);
         if (vpc == null) {
-            throw new InvalidParameterValueException("Unable to find VPC by id given");
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find Enabled VPC by id specified");
+            ex.addProxyObject("vpc", vpcId, "VPC");
+            throw ex;
         }
         
         //allow only one private gateway per vpc
@@ -1018,8 +1073,15 @@ public class VpcManagerImpl implements VpcManager, Manager{
         if (gatewayVO == null || gatewayVO.getType() != VpcGateway.Type.Private) {
             throw new InvalidParameterValueException("Can't find private gateway by id specified");
         }
+        
+        //don't allow to remove gateway when there are static routes associated with it
+        long routeCount = _staticRouteDao.countRoutesByGateway(gatewayVO.getId());
+        if (routeCount > 0) {
+            throw new CloudRuntimeException("Can't delete private gateway " + gatewayVO + " as it has " + routeCount +
+                    " static routes applied. Remove the routes first");
+        }
                 
-        //1) delete the gateaway on the backend
+        //1) delete the gateway on the backend
         PrivateGateway gateway = getVpcPrivateGateway(gatewayId);
         if (getVpcElement().deletePrivateGateway(gateway)) {
             s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
@@ -1028,21 +1090,14 @@ public class VpcManagerImpl implements VpcManager, Manager{
             return false;
         }
         
-        //2) Delete private gateway
-        return deletePrivateGateway(gateway);
+        //2) Delete private gateway from the DB
+        return deletePrivateGatewayFromTheDB(gateway);
     }
     
     @DB
-    public boolean deletePrivateGateway(PrivateGateway gateway) {
+    protected boolean deletePrivateGatewayFromTheDB(PrivateGateway gateway) {
         //check if there are ips allocted in the network
         long networkId = gateway.getNetworkId();
-        
-        //don't allow to remove gateway when there are static routes associated with it
-        long routeCount = _staticRouteDao.countRoutesByGateway(gateway.getId());
-        if (routeCount > 0) {
-            throw new CloudRuntimeException("Can't delete private gateway " + gateway + " as it has " + routeCount +
-                    " static routes applied. Remove the routes first");
-        }
         
         boolean deleteNetwork = true;
         List<PrivateIpVO> privateIps = _privateIpDao.listByNetworkId(networkId);
@@ -1123,10 +1178,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
     public boolean applyStaticRoutes(long vpcId) throws ResourceUnavailableException {
         Account caller = UserContext.current().getCaller();
         List<? extends StaticRoute> routes = _staticRouteDao.listByVpcId(vpcId);
-        return applyStaticRoutes(routes, caller);
+        return applyStaticRoutes(routes, caller, true);
     }
 
-    protected boolean applyStaticRoutes(List<? extends StaticRoute> routes, Account caller) throws ResourceUnavailableException {
+    protected boolean applyStaticRoutes(List<? extends StaticRoute> routes, Account caller, boolean updateRoutesInDB) throws ResourceUnavailableException {
         boolean success = true;
         List<StaticRouteProfile> staticRouteProfiles = new ArrayList<StaticRouteProfile>(routes.size());
         Map<Long, PrivateGateway> gatewayMap = new HashMap<Long, PrivateGateway>();
@@ -1142,15 +1197,19 @@ public class VpcManagerImpl implements VpcManager, Manager{
             s_logger.warn("Routes are not completely applied");
             return false;
         } else {
-            for (StaticRoute route : routes) {
-                if (route.getState() == StaticRoute.State.Revoke) {
-                    _staticRouteDao.remove(route.getId());
-                } else if (route.getState() == StaticRoute.State.Add) {
-                    StaticRouteVO ruleVO = _staticRouteDao.findById(route.getId());
-                    ruleVO.setState(StaticRoute.State.Active);
-                    _staticRouteDao.update(ruleVO.getId(), ruleVO);
+            if (updateRoutesInDB) {
+                for (StaticRoute route : routes) {
+                    if (route.getState() == StaticRoute.State.Revoke) {
+                        _staticRouteDao.remove(route.getId());
+                        s_logger.debug("Removed route " + route + " from the DB");
+                    } else if (route.getState() == StaticRoute.State.Add) {
+                        StaticRouteVO ruleVO = _staticRouteDao.findById(route.getId());
+                        ruleVO.setState(StaticRoute.State.Active);
+                        _staticRouteDao.update(ruleVO.getId(), ruleVO);
+                        s_logger.debug("Marked route " + route + " with state " + StaticRoute.State.Active);
+                    }
                 }
-            } 
+            }            
         }
 
         return success;
@@ -1186,10 +1245,28 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
         _accountMgr.checkAccess(caller, null, false, route);
 
-        revokeStaticRoute(route, caller);
+        markStaticRouteForRevoke(route, caller);
 
         return applyStaticRoutes(route.getVpcId());
+    }
+    
+    @DB
+    protected boolean revokeStaticRoutesForVpc(long vpcId, Account caller) throws ResourceUnavailableException {
+        //get all static routes for the vpc
+        List<StaticRouteVO> routes = _staticRouteDao.listByVpcId(vpcId);
+        s_logger.debug("Found " + routes.size() + " to revoke for the vpc " + vpcId);
+        if (!routes.isEmpty()) {
+            //mark all of them as revoke
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            for (StaticRouteVO route : routes) {
+                markStaticRouteForRevoke(route, caller);
+            }
+            txn.commit();
+            return applyStaticRoutes(vpcId);
+        }
         
+        return true;
     }
 
     @Override
@@ -1204,7 +1281,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
             throw new InvalidParameterValueException("Invalid gateway id is given");
         }
         
-        Vpc vpc = getVpc(gateway.getVpcId());  
+        Vpc vpc = getActiveVpc(gateway.getVpcId());
+        if (vpc == null) {
+            throw new InvalidParameterValueException("Can't add static route to VPC that is being deleted");
+        }
         _accountMgr.checkAccess(caller, null, false, vpc);
         
         if (!NetUtils.isValidCIDR(cidr)){
@@ -1294,7 +1374,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
     }
     
-    protected void revokeStaticRoute(StaticRouteVO route, Account caller) {
+    protected void markStaticRouteForRevoke(StaticRouteVO route, Account caller) {
         s_logger.debug("Revoking static route " + route);
         if (caller != null) {
             _accountMgr.checkAccess(caller, null, false, route);
@@ -1308,7 +1388,47 @@ public class VpcManagerImpl implements VpcManager, Manager{
         } else if (route.getState() == StaticRoute.State.Add || route.getState() == StaticRoute.State.Active) {
             route.setState(StaticRoute.State.Revoke);
             _staticRouteDao.update(route.getId(), route);
+            s_logger.debug("Marked static route " + route + " with state " + StaticRoute.State.Revoke);
         }
+    }
+    
+    protected class VpcCleanupTask implements Runnable {
+        @Override
+        public void run() {
+            try {
+                GlobalLock lock = GlobalLock.getInternLock("VpcCleanup");
+                if (lock == null) {
+                    s_logger.debug("Couldn't get the global lock");
+                    return;
+                }
 
+                if (!lock.lock(30)) {
+                    s_logger.debug("Couldn't lock the db");
+                    return;
+                }
+
+                Transaction txn = null;
+                try {
+                    txn = Transaction.open(Transaction.CLOUD_DB);
+
+                    // Cleanup inactive VPCs
+                    List<VpcVO> inactiveVpcs = _vpcDao.listInactiveVpcs();
+                    s_logger.info("Found " + inactiveVpcs.size() + " removed VPCs to cleanup");
+                    for (VpcVO vpc : inactiveVpcs) {
+                        s_logger.debug("Cleaning up " + vpc);
+                        destroyVpc(vpc); 
+                    }
+                } catch (Exception e) {
+                    s_logger.error("Exception ", e);
+                } finally {
+                    if (txn != null) {
+                        txn.close();
+                    }
+                    lock.unlock();
+                }
+            } catch (Exception e) {
+                s_logger.error("Exception ", e);
+            }
+        }
     }
 }

@@ -63,8 +63,8 @@ import com.cloud.utils.net.NetUtils;
  * @author Alena Prokharchyk
  */
 
-@Local(value = { NetworkACLService.class})
-public class NetworkACLManagerImpl implements Manager,NetworkACLService{
+@Local(value = { NetworkACLService.class, NetworkACLManager.class})
+public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
     String _name;
     private static final Logger s_logger = Logger.getLogger(NetworkACLManagerImpl.class);
 
@@ -289,7 +289,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLService{
         if (rule == null || rule.getPurpose() != Purpose.NetworkACL) {
             throw new InvalidParameterValueException("Unable to find " + ruleId + " having purpose " + Purpose.NetworkACL);
         }
-
+        
         _accountMgr.checkAccess(caller, null, true, rule);
 
         _firewallMgr.revokeRule(rule, caller, userId, false);
@@ -298,7 +298,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLService{
 
         if (apply) {
             List<FirewallRuleVO> rules = _firewallDao.listByNetworkAndPurpose(rule.getNetworkId(), Purpose.NetworkACL);
-            return _firewallMgr.applyFirewallRules(rules, false, caller);
+            success = _firewallMgr.applyFirewallRules(rules, false, caller);
         } else {
             success = true;
         }
@@ -365,6 +365,32 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLService{
     @Override
     public List<? extends NetworkACL> listNetworkACLs(long guestNtwkId) {
         return _firewallDao.listByNetworkAndPurpose(guestNtwkId, Purpose.NetworkACL);
+    }
+    
+    @Override
+    public boolean revokeAllNetworkACLsForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException {
+
+        List<FirewallRuleVO> ACLs = _firewallDao.listByNetworkAndPurposeAndNotRevoked(networkId, Purpose.NetworkACL);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Releasing " + ACLs.size() + " Network ACLs for network id=" + networkId);
+        }
+
+        for (FirewallRuleVO ACL : ACLs) {
+            // Mark all Firewall rules as Revoke, but don't revoke them yet - we have to revoke all rules for ip, no
+            // need to send them one by one
+            revokeNetworkACL(ACL.getId(), false, caller, Account.ACCOUNT_ID_SYSTEM);
+        }
+
+        // now send everything to the backend
+        boolean success = _firewallMgr.applyFirewallRules(ACLs, false, caller);
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Successfully released Network ACLs for network id=" + networkId + " and # of rules now = " + ACLs.size());
+        }
+
+        // Now we check again in case more rules have been inserted.
+        ACLs.addAll(_firewallDao.listByNetworkAndPurposeAndNotRevoked(networkId, Purpose.Firewall));
+        return success && ACLs.size() == 0;
     }
     
 }

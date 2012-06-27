@@ -233,7 +233,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         Map<String, String> configs = configDao.getConfiguration(params);
 
         String value = configs.get(Config.AccountCleanupInterval.key());
-        _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 hour.
+        _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
 
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
