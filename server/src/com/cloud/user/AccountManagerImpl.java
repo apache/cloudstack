@@ -599,8 +599,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 for (IpAddress ip : ipsToRelease) {
                     s_logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
                     if (!_networkMgr.disassociatePublicIpAddress(ip.getId(), callerUserId, caller)) {
-                        s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
-                        accountCleanupNeeded = true;
+                    s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
+                    accountCleanupNeeded = true;
                     }
                 }
             }
