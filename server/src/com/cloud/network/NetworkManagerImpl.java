@@ -135,7 +135,6 @@ import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VpcVirtualRouterElement;
-import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
@@ -152,6 +151,7 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StaticNatRuleImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.PrivateIpVO;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
@@ -310,7 +310,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject
     PrivateIpDao _privateIpDao;
     @Inject
-    NetworkACLService _networkACLMgr;
+    NetworkACLManager _networkACLMgr;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
     private static Long _privateOfferingId = null;
@@ -5917,6 +5917,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             success = false;
             // shouldn't even come here as network is being cleaned up after all network elements are shutdown
             s_logger.warn("Failed to cleanup Firewall rules as a part of network id=" + networkId + " cleanup due to resourceUnavailable ", ex);
+        }
+        
+        //revoke all network ACLs for network
+        try {
+            if (_networkACLMgr.revokeAllNetworkACLsForNetwork(networkId, callerUserId, caller)) {
+                s_logger.debug("Successfully cleaned up NetworkACLs for network id=" + networkId);
+            } else {
+                success = false;
+                s_logger.warn("Failed to cleanup NetworkACLs as a part of network id=" + networkId + " cleanup");
+            }
+        } catch (ResourceUnavailableException ex) {
+            success = false;
+            s_logger.warn("Failed to cleanup Network ACLs as a part of network id=" + networkId +
+                    " cleanup due to resourceUnavailable ", ex);
         }
 
         //release all ip addresses
