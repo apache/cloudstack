@@ -370,7 +370,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
     @Override
     public boolean revokeAllNetworkACLsForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException {
 
-        List<FirewallRuleVO> ACLs = _firewallDao.listByNetworkAndPurposeAndNotRevoked(networkId, Purpose.NetworkACL);
+        List<FirewallRuleVO> ACLs = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.NetworkACL);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Releasing " + ACLs.size() + " Network ACLs for network id=" + networkId);
         }
@@ -388,9 +388,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
             s_logger.debug("Successfully released Network ACLs for network id=" + networkId + " and # of rules now = " + ACLs.size());
         }
 
-        // Now we check again in case more rules have been inserted.
-        ACLs.addAll(_firewallDao.listByNetworkAndPurposeAndNotRevoked(networkId, Purpose.Firewall));
-        return success && ACLs.size() == 0;
+        return success;
     }
     
 }
