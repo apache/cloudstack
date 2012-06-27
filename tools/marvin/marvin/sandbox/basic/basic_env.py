@@ -44,8 +44,7 @@ def describeResources(config):
     v.startip = config.get('cloudstack', 'public.vlan.startip')
     v.endip = config.get('cloudstack', 'public.vlan.endip') 
     v.netmask = config.get('cloudstack', 'public.netmask')
-    v.vlan = config.get('cloudstack', 'public.vlan')
-    z.ipranges.append(v)
+    p.guestIpRanges.append(v)
 
     c = cluster()
     c.clustername = 'C0'
