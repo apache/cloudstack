@@ -47,7 +47,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.ExternalLoadBalancerUsageManager;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
@@ -67,7 +66,7 @@ import com.cloud.network.dao.LBStickinessPolicyDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.element.NetworkElement;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.rules.FirewallManager;
@@ -99,7 +98,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.AnnotationHelper;
 import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine.State;
@@ -719,8 +717,6 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             } else if (ipAddressVo.isOneToOneNat()) {
                 throw new NetworkRuleConflictException("Can't do load balance on ip address: " + ipAddressVo.getAddress());
             }
-
-            _networkMgr.checkIpForService(ipAddressVo, Service.Lb);
         }
 
         LoadBalancer result = _elbMgr.handleCreateLoadBalancerRule(lb, lbOwner, lb.getNetworkId());
@@ -738,6 +734,8 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                     s_logger.debug("The ip is not associated with the network id="+ lb.getNetworkId() + " so assigning");
                     ip = _networkMgr.associateIPToGuestNetwork(ipAddrId, lb.getNetworkId());
                 }
+                ipAddressVo = _ipAddressDao.findById(ipAddrId);
+                _networkMgr.checkIpForService(ipAddressVo, Service.Lb);
                 result = createLoadBalancer(lb, openFirewall);
             } catch (Exception ex) {
                 s_logger.warn("Failed to create load balancer due to ", ex);
