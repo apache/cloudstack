@@ -486,7 +486,7 @@ return;
                   return item;
                 },
                 getActionFilter: function() {
-                  return vmActionfilter;
+                  return cloudStack.actionFilter.vmActionFilter;
                 },
                 getUpdatedItemWhenAsyncJobFails: function() {
                   var item;
