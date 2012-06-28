@@ -17,7 +17,7 @@ package com.cloud.network.vpc;
  */
 public class StaticRouteProfile implements StaticRoute{
     private long id;
-    private String cidr;
+    private String targetCidr;
     private long accountId;
     private long domainId;
     private long gatewayId;
@@ -29,9 +29,9 @@ public class StaticRouteProfile implements StaticRoute{
     String ipAddress;
     
 
-    public StaticRouteProfile(StaticRoute staticRoute, PrivateGateway gateway) {
+    public StaticRouteProfile(StaticRoute staticRoute, VpcGateway gateway) {
         this.id = staticRoute.getId();
-        this.cidr = staticRoute.getCidr();
+        this.targetCidr = staticRoute.getCidr();
         this.accountId = staticRoute.getAccountId();
         this.domainId = staticRoute.getDomainId();
         this.gatewayId = staticRoute.getVpcGatewayId();
@@ -60,7 +60,7 @@ public class StaticRouteProfile implements StaticRoute{
 
     @Override
     public String getCidr() {
-        return cidr;
+        return targetCidr;
     }
 
     @Override

@@ -17,24 +17,15 @@ package com.cloud.network.vpc;
  */
 public class PrivateGatewayProfile implements PrivateGateway{
     VpcGateway vpcGateway;
-    String vlanTag;
-    String gateway;
-    String netmask;
     long physicalNetworkId;
     
     /**
      * @param vpcGateway
-     * @param vlanTag
-     * @param gateway
-     * @param netmask
      * @param physicalNetworkId TODO
      */
-    public PrivateGatewayProfile(VpcGateway vpcGateway, String vlanTag, String gateway, String netmask, long physicalNetworkId) {
+    public PrivateGatewayProfile(VpcGateway vpcGateway, long physicalNetworkId) {
         super();
         this.vpcGateway = vpcGateway;
-        this.vlanTag = vlanTag;
-        this.gateway = gateway;
-        this.netmask = netmask;
         this.physicalNetworkId = physicalNetworkId;
     }
 
@@ -75,17 +66,17 @@ public class PrivateGatewayProfile implements PrivateGateway{
 
     @Override
     public String getVlanTag() {
-        return vlanTag;
+        return vpcGateway.getVlanTag();
     }
 
     @Override
     public String getGateway() {
-        return gateway;
+        return vpcGateway.getGateway();
     }
 
     @Override
     public String getNetmask() {
-        return netmask;
+        return vpcGateway.getNetmask();
     }
 
     @Override

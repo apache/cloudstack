@@ -42,6 +42,15 @@ public class VpcGatewayVO implements VpcGateway{
     @Column(name = "ip4_address")
     String ip4Address;
     
+    @Column(name="gateway") 
+    String gateway;
+    
+    @Column(name="netmask") 
+    String netmask;
+    
+    @Column(name="vlan_tag") 
+    String vlanTag;
+    
     @Column(name = "type")
     @Enumerated(value = EnumType.STRING)
     VpcGateway.Type type;
@@ -74,15 +83,20 @@ public class VpcGatewayVO implements VpcGateway{
      * @param vpcId
      * @param zoneId
      * @param networkId
+     * @param vlanTag TODO
+     * @param gateway TODO
+     * @param netmask TODO
      * @param account_id
      */
-    public VpcGatewayVO(String ip4Address, Type type, Long vpcId, long zoneId, Long networkId) {
-        super();
+    public VpcGatewayVO(String ip4Address, Type type, Long vpcId, long zoneId, Long networkId, String vlanTag, String gateway, String netmask) {
         this.ip4Address = ip4Address;
         this.type = type;
         this.vpcId = vpcId;
         this.zoneId = zoneId;
         this.networkId = networkId;
+        this.vlanTag = vlanTag;
+        this.gateway = gateway;
+        this.netmask = netmask;
         this.uuid = UUID.randomUUID().toString();
     }
 
@@ -126,5 +140,20 @@ public class VpcGatewayVO implements VpcGateway{
         StringBuilder buf = new StringBuilder("VpcGateway[");
         buf.append(id).append("|").append(ip4Address.toString()).append("|").append(vpcId).append("]");
         return buf.toString();
+    }
+
+    @Override
+    public String getGateway() {
+        return gateway;
+    }
+
+    @Override
+    public String getNetmask() {
+        return netmask;
+    }
+
+    @Override
+    public String getVlanTag() {
+        return vlanTag;
     }
 }

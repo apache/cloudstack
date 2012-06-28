@@ -83,6 +83,7 @@ import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.Dao.StaticRouteDao;
 import com.cloud.network.vpc.Dao.VpcDao;
@@ -819,11 +820,11 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         //3) RE-APPLY ALL STATIC ROUTE RULES
         List<? extends StaticRoute> routes = _staticRouteDao.listByVpcId(router.getVpcId());
         List<StaticRouteProfile> staticRouteProfiles = new ArrayList<StaticRouteProfile>(routes.size());
-        Map<Long, PrivateGateway> gatewayMap = new HashMap<Long, PrivateGateway>();
+        Map<Long, VpcGateway> gatewayMap = new HashMap<Long, VpcGateway>();
         for (StaticRoute route : routes) {
-            PrivateGateway gateway = gatewayMap.get(route.getVpcGatewayId());
+            VpcGateway gateway = gatewayMap.get(route.getVpcGatewayId());
             if (gateway == null) {
-                gateway = _vpcMgr.getVpcPrivateGateway(route.getVpcGatewayId());
+                gateway = _vpcMgr.getVpcGateway(route.getVpcGatewayId());
                 gatewayMap.put(gateway.getId(), gateway);
             }
             staticRouteProfiles.add(new StaticRouteProfile(route, gateway));
