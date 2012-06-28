@@ -37,7 +37,7 @@ public class ListVpnConnectionsCmd extends BaseListProjectAndAccountResourcesCmd
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="s2s_vpn_connection")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of the vpn connection")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="id of the vpn connection")
     private Long id;
 
     /////////////////////////////////////////////////////
