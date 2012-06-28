@@ -68,6 +68,9 @@
       </fileset>
     </scp>
 
+    <scp trust="yes" port="${port}" file="build.xml" todir="root:password@${host}:/opt/incubator-cloudstack/">   
+    </scp>
+
     <echo message="copying deps folder to remote"/>
     <scp trust="yes" port="${port}" todir="root:password@${host}:/opt/incubator-cloudstack/deps">   
       <fileset dir="deps">
