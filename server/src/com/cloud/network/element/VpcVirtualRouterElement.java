@@ -28,6 +28,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
@@ -35,6 +36,12 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkService;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
+import com.cloud.network.dao.Site2SiteVpnConnectionDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
@@ -59,7 +66,7 @@ import com.cloud.vm.VirtualMachineProfile;
  * @author Alena Prokharchyk
  */
 @Local(value = NetworkElement.class)
-public class VpcVirtualRouterElement extends VirtualRouterElement implements VpcProvider, NetworkACLServiceProvider{
+public class VpcVirtualRouterElement extends VirtualRouterElement implements VpcProvider, Site2SiteVpnServiceProvider, NetworkACLServiceProvider{
     private static final Logger s_logger = Logger.getLogger(VpcVirtualRouterElement.class);
     @Inject 
     NetworkService _ntwkService;
@@ -67,6 +74,14 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     VpcManager _vpcMgr;
     @Inject
     VpcVirtualNetworkApplianceManager _vpcRouterMgr;
+    @Inject
+    Site2SiteCustomerGatewayDao _customerGatewayDao;
+    @Inject
+    Site2SiteVpnGatewayDao _vpnGatewayDao;
+    @Inject
+    Site2SiteVpnConnectionDao _vpnConnectionDao;
+    @Inject
+    IPAddressDao _ipAddressDao;
     
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -418,5 +433,62 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             s_logger.debug("Applied static routes on vpc " + vpc);
             return true;
         }
+    }
+
+    public boolean startSite2SiteVpn(Site2SiteVpnConnection conn) throws ResourceUnavailableException {
+        Site2SiteVpnGateway vpnGw = _vpnGatewayDao.findById(conn.getVpnGatewayId());
+        IpAddress ip = _ipAddressDao.findById(vpnGw.getAddrId());
+
+        /*
+        if (!canHandle(network, Service.Vpn)) {
+            return false;
+        }
+        */
+
+        Map<Capability, String> vpnCapabilities = capabilities.get(Service.Vpn);
+        if (!vpnCapabilities.get(Capability.VpnTypes).contains("s2svpn")) {
+            return false;
+        }
+
+        List<DomainRouterVO> routers = _vpcMgr.getVpcRouters(ip.getVpcId());
+        if (routers == null || routers.size() != 1) {
+            s_logger.debug("Cannot enable site-to-site VPN on the backend; virtual router doesn't exist in the vpc " + ip.getVpcId());
+            return true;
+        }
+
+        if (!_vpcRouterMgr.startSite2SiteVpn(conn, routers.get(0))) {
+            throw new CloudRuntimeException("Failed to apply site-to-site VPN in VPC " + ip.getVpcId());
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean stopSite2SiteVpn(Site2SiteVpnConnection conn) throws ResourceUnavailableException {
+        Site2SiteVpnGateway vpnGw = _vpnGatewayDao.findById(conn.getVpnGatewayId());
+        IpAddress ip = _ipAddressDao.findById(vpnGw.getAddrId());
+
+        /*
+        if (!canHandle(network, Service.Vpn)) {
+            return false;
+        }
+        */
+
+        Map<Capability, String> vpnCapabilities = capabilities.get(Service.Vpn);
+        if (!vpnCapabilities.get(Capability.VpnTypes).contains("s2svpn")) {
+            return false;
+        }
+
+        List<DomainRouterVO> routers = _vpcMgr.getVpcRouters(ip.getVpcId());
+        if (routers == null || routers.size() != 1) {
+            s_logger.debug("Cannot disable site-to-site VPN on the backend; virtual router doesn't exist in the vpc " + ip.getVpcId());
+            return true;
+        }
+
+        if (!_vpcRouterMgr.stopSite2SiteVpn(conn, routers.get(0))) {
+            throw new CloudRuntimeException("Failed to apply site-to-site VPN in VPC " + ip.getVpcId());
+        }
+
+        return true;
     }
 }

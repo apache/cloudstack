@@ -3210,37 +3210,4 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
     }
     
-
-    @Override
-    public boolean startSite2SiteVpn(Network network, final Site2SiteVpnConnection conn, List<DomainRouterVO> routers) throws ResourceUnavailableException {
-        return applyRules(network, routers, "site2site vpn", false, null, false, new RuleApplier() {
-            @Override
-            public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
-                return applySite2SiteVpn(router, conn);
-            }
-        });
-    }
-
-    protected boolean applySite2SiteVpn(VirtualRouter router, Site2SiteVpnConnection conn) throws ResourceUnavailableException {
-        Commands cmds = new Commands(OnError.Continue);
-        createApplySite2SiteVpnCommands(conn, router, cmds);
-        return sendCommandsToRouter(router, cmds);
-    }
-
-    private void createApplySite2SiteVpnCommands(Site2SiteVpnConnection conn, VirtualRouter router, Commands cmds) {
-        Site2SiteCustomerGatewayVO gw = _s2sCustomerGatewayDao.findById(conn.getCustomerGatewayId());
-        String gatewayIp = gw.getGatewayIp();
-        String guestIp = gw.getGuestIp();
-        String guestCidr = gw.getGuestCidr();
-        String ipsecPsk = gw.getIpsecPsk();
-        
-        Site2SiteVpnCfgCommand startS2SVpnCmd = new Site2SiteVpnCfgCommand(true, gatewayIp, guestIp, guestCidr, ipsecPsk);
-        startS2SVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
-        startS2SVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
-        startS2SVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
-        startS2SVpnCmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-
-        cmds.addCommand("startS2SVpn", startS2SVpnCmd);
-    }
 }

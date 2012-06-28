@@ -40,8 +40,8 @@ public interface Site2SiteVpnService {
     Site2SiteVpnConnection createVpnConnection(CreateVpnConnectionCmd cmd) throws NetworkRuleConflictException;
     Site2SiteCustomerGateway deleteCustomerGateway(DeleteVpnCustomerGatewayCmd deleteVpnCustomerGatewayCmd);
     Site2SiteVpnGateway deleteVpnGateway(DeleteVpnGatewayCmd deleteVpnGatewayCmd);
-    Site2SiteVpnConnection deleteVpnConnection(DeleteVpnConnectionCmd deleteVpnConnectionCmd);
-    Site2SiteVpnConnection resetVpnConnection(ResetVpnConnectionCmd resetVpnConnectionCmd);
+    Site2SiteVpnConnection deleteVpnConnection(DeleteVpnConnectionCmd deleteVpnConnectionCmd) throws ResourceUnavailableException;
+    Site2SiteVpnConnection resetVpnConnection(ResetVpnConnectionCmd resetVpnConnectionCmd) throws ResourceUnavailableException;
     List<Site2SiteCustomerGateway> searchForCustomerGateways(ListVpnCustomerGatewaysCmd listVpnCustomerGatewaysCmd);
     List<Site2SiteVpnGateway> searchForVpnGateways(ListVpnGatewaysCmd listVpnGatewaysCmd);
     List<Site2SiteVpnConnection> searchForVpnConnections(ListVpnConnectionsCmd listVpnConnectionsCmd);
