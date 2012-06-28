@@ -350,7 +350,9 @@
     var actions = args.actions;
     var vmListView = args.vmListView;
     var actionPreFilter = args.actionPreFilter;
+    var context = args.context;
     var tier = $.extend(args.tier, {
+      context: context,
       vmListView: vmListView,
       actions: actions,
       actionPreFilter: actionPreFilter,
@@ -396,6 +398,9 @@
                 function(args) {
                   $loading.remove();
                   addNewTier({
+                    context: $.extend(true, {}, context, {
+                      tiers: [tier]
+                    }),
                     tier: tier,
                     $tiers: $tiers,
                     actions: actions,

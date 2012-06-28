@@ -390,7 +390,8 @@
               args.response.success({
                 data: {
                   name: args.data.name,
-                  cidr: args.data.cidr
+                  cidr: args.data.cidr,
+                  state: 'Stopped'
                 }
               });
             }, 500);
@@ -480,7 +481,7 @@
         setTimeout(function() {
           args.response.success({
             data: {
-              tiers: tiers
+              tiers: []
             }
           });
         }, 1000);
