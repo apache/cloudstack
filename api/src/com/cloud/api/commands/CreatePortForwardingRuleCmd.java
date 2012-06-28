@@ -74,7 +74,8 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, 
             description = "if true, firewall rule for source/end pubic port is automatically created; " +
-            		"if false - firewall rule has to be created explicitely. Has value true by default")
+            		"if false - firewall rule has to be created explicitely. If not specified 1) defaulted to false when PF" +
+            		" rule is being created for VPC guest network 2) in all other cases defaulted to true")
     private Boolean openFirewall;
     
     @IdentityMapper(entityTableName="networks")
@@ -114,11 +115,30 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     }
 
     public Boolean getOpenFirewall() {
+        boolean isVpc = getVpcId() == null ? false : true;
         if (openFirewall != null) {
+            if (isVpc && openFirewall) {
+                throw new InvalidParameterValueException("Can't have openFirewall=true when IP address belongs to VPC");
+            }
             return openFirewall;
         } else {
+            if (isVpc) {
+                return false;
+            }
             return true;
         }
+    }
+    
+    private Long getVpcId() {
+        if (ipAddressId != null) {
+            IpAddress ipAddr = _networkService.getIp(ipAddressId);
+            if (ipAddr == null || !ipAddr.readyToUse()) {
+                throw new InvalidParameterValueException("Unable to create PF rule, invalid IP address id " + ipAddr.getId());
+            } else {
+                return ipAddr.getVpcId();
+            }
+        }
+        return null;
     }
 
     // ///////////////////////////////////////////////////
