@@ -25,25 +25,22 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
-import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteCustomerGatewayVO;
 import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.network.Network.GuestType;
 import com.cloud.network.Site2SiteVpnConnection.State;
 import com.cloud.network.Site2SiteVpnConnectionVO;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.Site2SiteVpnGatewayVO;
-import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnConnectionDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.element.Site2SiteVpnServiceProvider;
+import com.cloud.network.vpc.Dao.VpcDao;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
-import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
 
 @Local(value = Site2SiteVpnService.class)
@@ -54,7 +51,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
     @Inject Site2SiteVpnGatewayDao _vpnGatewayDao;
     @Inject Site2SiteVpnConnectionDao _vpnConnectionDao;
     @Inject NetworkManager _networkMgr;
-    @Inject NetworkDao _networkDao;
+    @Inject VpcDao _vpcDao;
+    @Inject IPAddressDao _ipAddressDao;
     
     String _name;
     
@@ -83,9 +81,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
     public Site2SiteVpnGateway createVpnGateway(CreateVpnGatewayCmd cmd) {
         Long ipId = cmd.getPublicIpId();
 	    IpAddress ip = _networkMgr.getIp(ipId);
-	    Network network = _networkDao.findById(ip.getAssociatedWithNetworkId());
-	    if (network.getGuestType() != GuestType.Isolated) {
-            throw new InvalidParameterValueException("The VPN gateway cannot create with non-isolated network " + ip.getAssociatedWithNetworkId());
+	    if (ip.getVpcId() == null) {
+            throw new InvalidParameterValueException("The VPN gateway cannot create with ip not belong to VPC");
 	    }
         Long domainId = ip.getDomainId();
         Long accountId = ip.getAccountId();
@@ -151,6 +148,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
                     + vpnGatewayId + " already existed!");
         }
         Site2SiteVpnConnectionVO conn = new Site2SiteVpnConnectionVO(vpnGatewayId, customerGatewayId);
+        conn.setState(State.Pending);
         _vpnConnectionDao.persist(conn);
         return conn;
     }
@@ -162,12 +160,10 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
             throw new InvalidParameterValueException("Site to site VPN connection " + id + " not in correct state(pending or disconnected) to process!");
         }
 
-        Site2SiteVpnGatewayVO vpnGateway = _vpnGatewayDao.findById(conn.getVpnGatewayId());
-        Network network = _networkDao.findById(vpnGateway.getNetworkId());
         List <? extends Site2SiteVpnServiceProvider> elements = _networkMgr.getSite2SiteVpnElements();
         boolean result = true;
         for (Site2SiteVpnServiceProvider element : elements) {
-            result = result & element.startSite2SiteVpn(network, conn);
+            result = result & element.startSite2SiteVpn(conn);
         }
 
         if (result) {
@@ -175,6 +171,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
             _vpnConnectionDao.persist(conn);
             return conn;
         }
+        conn.setState(State.Error);
+        _vpnConnectionDao.persist(conn);
         return null;
     }
 
@@ -255,20 +253,51 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
     }
 
     @Override
-    public Site2SiteVpnConnection deleteVpnConnection(DeleteVpnConnectionCmd cmd) {
+    public Site2SiteVpnConnection deleteVpnConnection(DeleteVpnConnectionCmd cmd) throws ResourceUnavailableException {
         Long id = cmd.getId();
         Site2SiteVpnConnectionVO conn = _vpnConnectionDao.findById(id);
-        if (conn.getState() == State.Connected) {
-            //TODO disconnect it first
+        if (conn == null) {
+            throw new InvalidParameterValueException("Fail to find site to site VPN connection " + id + " to delete!");
         }
-        return null;
+        if (conn.getState() == State.Connected) {
+            stopVpnConnection(id);
+        }
+        _vpnConnectionDao.remove(id);
+        return conn;
+    }
+
+    private void stopVpnConnection(Long id) throws ResourceUnavailableException {
+        Site2SiteVpnConnectionVO conn = _vpnConnectionDao.findById(id);
+        if (conn.getState() != State.Connected) {
+            throw new InvalidParameterValueException("Site to site VPN connection " + id + " not in correct state(connected) to process disconnect!");
+        }
+
+        List <? extends Site2SiteVpnServiceProvider> elements = _networkMgr.getSite2SiteVpnElements();
+        boolean result = true;
+        conn.setState(State.Disconnecting);
+        for (Site2SiteVpnServiceProvider element : elements) {
+            result = result & element.stopSite2SiteVpn(conn);
+        }
+
+        if (result) {
+            conn.setState(State.Disconnected);
+            _vpnConnectionDao.persist(conn);
+        }
+        conn.setState(State.Error);
     }
 
     @Override
-    public Site2SiteVpnConnection resetVpnConnection(ResetVpnConnectionCmd cmd) {
+    public Site2SiteVpnConnection resetVpnConnection(ResetVpnConnectionCmd cmd) throws ResourceUnavailableException {
         Long id = cmd.getId();
         Site2SiteVpnConnectionVO conn = _vpnConnectionDao.findById(id);
-        return null;
+        if (conn == null) {
+            throw new InvalidParameterValueException("Fail to find site to site VPN connection " + id + " to reset!");
+        }
+        if (conn.getState() == State.Connected) {
+            stopVpnConnection(id);
+        }
+        startVpnConnection(id);
+        return conn;
     }
 
     @Override

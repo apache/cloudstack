@@ -20,6 +20,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.rules.NetworkACL;
 import com.cloud.network.vpc.StaticRouteProfile;
@@ -84,4 +85,19 @@ public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplian
      */
     boolean applyStaticRoutes(List<StaticRouteProfile> routes, List<DomainRouterVO> routers) throws ResourceUnavailableException;
 
+    /**
+     * @param conn
+     * @param routers
+     * @return
+     * @throws ResourceUnavailableException
+     */
+    boolean startSite2SiteVpn(Site2SiteVpnConnection conn, VirtualRouter router) throws ResourceUnavailableException;
+
+    /**
+     * @param conn
+     * @param routers
+     * @return
+     * @throws ResourceUnavailableException
+     */
+    boolean stopSite2SiteVpn(Site2SiteVpnConnection conn, VirtualRouter router) throws ResourceUnavailableException;
 }

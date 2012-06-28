@@ -36,6 +36,7 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticRouteCommand;
+import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
@@ -59,17 +60,23 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkService;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.Site2SiteCustomerGatewayVO;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.Site2SiteVpnConnectionDao;
+import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.rules.NetworkACL;
 import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.PrivateGateway;
@@ -81,6 +88,7 @@ import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.Dao.StaticRouteDao;
 import com.cloud.network.vpc.Dao.VpcDao;
 import com.cloud.network.vpc.Dao.VpcOfferingDao;
+import com.cloud.network.vpn.Site2SiteVpnService;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
@@ -92,6 +100,7 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -823,7 +832,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             createStaticRouteCommands(staticRouteProfiles, router, cmds);
         }
         
-        //4) REPROGRAM GUEST NETWORK
+        //4) REISSUE VPN CONNECTION
+        
+        //5) REPROGRAM GUEST NETWORK
         boolean reprogramGuestNtwks = true;
         if (profile.getParameter(Param.ReProgramGuestNetworks) != null 
                 && (Boolean) profile.getParameter(Param.ReProgramGuestNetworks) == false) {
@@ -1006,5 +1017,46 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         cmds.addCommand(cmd);
+    }
+
+    @Override
+    public boolean startSite2SiteVpn(Site2SiteVpnConnection conn, VirtualRouter router) throws ResourceUnavailableException {
+        return applySite2SiteVpn(true, router, conn);
+    }
+
+    @Override
+    public boolean stopSite2SiteVpn(Site2SiteVpnConnection conn, VirtualRouter router) throws ResourceUnavailableException {
+        return applySite2SiteVpn(false, router, conn);
+    }
+
+    protected boolean applySite2SiteVpn(boolean isCreate, VirtualRouter router, Site2SiteVpnConnection conn) throws ResourceUnavailableException {
+        Commands cmds = new Commands(OnError.Continue);
+        createApplySite2SiteVpnCommands(conn, isCreate, router, cmds);
+        return sendCommandsToRouter(router, cmds);
+    }
+
+    private void createApplySite2SiteVpnCommands(Site2SiteVpnConnection conn, boolean isCreate, VirtualRouter router, Commands cmds) {
+        Site2SiteCustomerGatewayVO gw = _s2sCustomerGatewayDao.findById(conn.getCustomerGatewayId());
+        Site2SiteVpnGatewayVO vpnGw = _s2sVpnGatewayDao.findById(conn.getVpnGatewayId());
+        IpAddress ip = _ipAddressDao.findById(vpnGw.getAddrId());
+        Vpc vpc = _vpcDao.findById(ip.getVpcId());
+        String localPublicIp = ip.getAddress().toString();
+        String localGuestCidr = vpc.getCidr();
+        String localPublicGateway = _vlanDao.findById(ip.getVlanId()).getVlanGateway();
+        String peerGatewayIp = gw.getGatewayIp();
+        String peerGuestCidrList = gw.getGuestCidrList();
+        String ipsecPsk = gw.getIpsecPsk();
+        String ikePolicy = gw.getIkePolicy();
+        String espPolicy = gw.getEspPolicy();
+        Long lifetime = gw.getLifetime();
+
+        Site2SiteVpnCfgCommand cmd = new Site2SiteVpnCfgCommand(isCreate, localPublicIp, localPublicGateway, localGuestCidr,
+                peerGatewayIp, peerGuestCidrList, ikePolicy, espPolicy, lifetime, ipsecPsk);
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
+        cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+        cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+        cmds.addCommand("applyS2SVpn", cmd);
     }
 }

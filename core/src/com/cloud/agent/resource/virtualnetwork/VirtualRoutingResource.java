@@ -57,6 +57,7 @@ import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.IpAddressTO;
@@ -132,6 +133,8 @@ public class VirtualRoutingResource implements Manager {
                 return execute((VpnUsersCfgCommand)cmd);
             } else if (cmd instanceof GetDomRVersionCmd) {
                 return execute((GetDomRVersionCmd)cmd);
+            } else if (cmd instanceof Site2SiteVpnCfgCommand) {
+                return execute((Site2SiteVpnCfgCommand)cmd);
             }
             else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -539,6 +542,42 @@ public class VirtualRoutingResource implements Manager {
 
     protected Answer execute(final WatchConsoleProxyLoadCommand cmd) {
         return executeProxyLoadScan(cmd, cmd.getProxyVmId(), cmd.getProxyVmName(), cmd.getProxyManagementIp(), cmd.getProxyCmdPort());
+    }
+    
+    protected Answer execute(Site2SiteVpnCfgCommand cmd) {
+        String args;
+        if (cmd.isCreate()) {
+            args = "-A";
+            args += " -l ";
+	        args += cmd.getLocalPublicIp();
+            args += " -n ";
+	        args += cmd.getLocalGuestCidr();
+            args += " -g ";
+	        args += cmd.getLocalPublicGateway();
+            args += " -r ";
+	        args += cmd.getPeerGatewayIp();
+            args += " -N ";
+	        args += cmd.getPeerGuestCidrList();
+            args += " -e ";
+	        args += cmd.getEspPolicy();
+            args += " -i ";
+	        args += cmd.getIkePolicy();
+            args += " -t ";
+	        args += Long.toString(cmd.getLifetime());
+            args += " -s ";
+	        args += cmd.getIpsecPsk();
+        } else {
+            args = "-D";
+            args += " -r ";
+            args += cmd.getPeerGatewayIp();
+            args += " -N ";
+            args += cmd.getPeerGuestCidrList();
+        }
+        String result = routerProxy("ipsectunnel", cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP), args);
+        if (result != null) {
+            return new Answer(cmd, false, "Configure site to site VPN failed due to " + result);
+        }
+        return new Answer(cmd);
     }
 
     private Answer executeProxyLoadScan(final Command cmd, final long proxyVmId, final String proxyVmName, final String proxyManagementIp, final int cmdPort) {

@@ -158,6 +158,7 @@ import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.SetStaticRouteAnswer;
 import com.cloud.agent.api.routing.SetStaticRouteCommand;
+import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
@@ -546,6 +547,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((SetPortForwardingRulesVpcCommand) cmd);
         } else if (clazz == SetStaticRouteCommand.class) {
             return execute((SetStaticRouteCommand) cmd);
+        } else if (clazz == Site2SiteVpnCfgCommand.class) {
+            return execute((Site2SiteVpnCfgCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -7161,7 +7164,43 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return null;
     }
 
-    
+    protected Answer execute(Site2SiteVpnCfgCommand cmd) {
+        Connection conn = getConnection();
+        String args = "ipsectunnel.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        if (cmd.isCreate()) {
+            args += " -A";
+            args += " -l ";
+	        args += cmd.getLocalPublicIp();
+            args += " -n ";
+	        args += cmd.getLocalGuestCidr();
+            args += " -g ";
+	        args += cmd.getLocalPublicGateway();
+            args += " -r ";
+	        args += cmd.getPeerGatewayIp();
+            args += " -N ";
+	        args += cmd.getPeerGuestCidrList();
+            args += " -e ";
+	        args += cmd.getEspPolicy();
+            args += " -i ";
+	        args += cmd.getIkePolicy();
+            args += " -t ";
+	        args += Long.toString(cmd.getLifetime());
+            args += " -s ";
+	        args += cmd.getIpsecPsk();
+        } else {
+            args += " -D";
+            args += " -r ";
+            args += cmd.getPeerGatewayIp();
+            args += " -N ";
+            args += cmd.getPeerGuestCidrList();
+        }
+        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        if (result == null || result.isEmpty()) {
+            return new Answer(cmd, false, "Configure site to site VPN failed! ");
+        }
+        return new Answer(cmd);
+    }
+
     protected SetSourceNatAnswer execute(SetSourceNatCommand cmd) {
         //FIXME - add implementation here
         return null;
