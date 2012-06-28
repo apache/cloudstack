@@ -173,7 +173,7 @@
           }
         });
 
-        var sectionsToShow = ['networks', 'vpc'];
+        var sectionsToShow = ['networks', 'vpc', 'siteToSiteVpn'];
         if(havingSecurityGroupNetwork == true)
           sectionsToShow.push('securityGroups');
 
@@ -3186,7 +3186,196 @@
             }
           }
         }
+      },
+			
+			//site-to-site VPN (begin)
+			siteToSiteVpn: {
+        type: 'select',
+        title: 'site-to-site VPN',
+        listView: {
+          id: 'siteToSiteVpn',
+          label: 'site-to-site VPN',
+          fields: {
+            type: { label: 'label.type' },
+            description: { label: 'label.description' },
+            username: { label: 'label.initiated.by' },
+            created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
+          },
+          dataProvider: function(args) {					  
+						var array1 = [];  
+						if(args.filterBy != null) {          
+							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+								switch(args.filterBy.search.by) {
+								case "name":
+									if(args.filterBy.search.value.length > 0)
+										array1.push("&keyword=" + args.filterBy.search.value);
+									break;
+								}
+							}
+						}						
+            $.ajax({
+              url: createURL("listVpnConnections&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              dataType: "json",
+              async: true,
+              success: function(json) {							
+                var items = json.listvpnconnectionsresponse.vpnconnection;
+                args.response.success({data:items});
+              }
+            });
+          },
+					
+					actions: {
+            add: {
+              label: 'add site-to-site VPN',
+              messages: {                
+                notification: function(args) {
+                  return 'add site-to-site VPN';
+                }
+              },
+              createForm: {
+                title: 'add site-to-site VPN',
+                fields: {
+								  publicipid: {
+									  label: 'label.ip.address',
+										select: function(args) {										  
+											$.ajax({
+												url: createURL('listPublicIpAddresses'),												
+												dataType: 'json',
+												async: true,
+												success: function(json) {				
+                          var items = [];												
+													var objs = json.listpublicipaddressesresponse.publicipaddress;
+													if(objs != null && objs.length > 0) {
+													  for(var i = 0; i < objs.length; i++) {
+														  items.push({id: objs[i].id, description: objs[i].ipaddress});
+														}
+													}													
+													args.response.success({data: items});													
+												}
+											});											
+										},
+										validation: { required: true }
+									},
+									gateway: { 
+									  label: 'label.gateway',
+										validation: { required: true }
+									}, 
+									cidrlist: { 
+									  label: 'guest cidr list',
+										validation: { required: true }
+									},
+									ipsecpsk: { 
+									  label: 'IPsec Preshared-Key',
+										validation: { required: true }
+									},
+								  ikepolicy: { 
+									  label: 'IKE policy',
+										select: function(args) {
+										  var items = [];
+                      items.push({id: '3des-md5', description: '3des-md5'});
+                      items.push({id: 'aes-md5', description: 'aes-md5'});
+											items.push({id: 'aes128-md5', description: 'aes128-md5'});
+											items.push({id: 'des-md5', description: 'des-md5'});											
+											items.push({id: '3des-sha1', description: '3des-sha1'});
+											items.push({id: 'aes-sha1', description: 'aes-sha1'});
+											items.push({id: 'aes128-sha1', description: 'aes128-sha1'});
+											items.push({id: 'des-sha1', description: 'des-sha1'});
+                      args.response.success({data: items});
+										}
+									},
+								  esppolicy: { 
+									  label: 'ESP policy',
+										select: function(args) {
+										  var items = [];
+                      items.push({id: '3des-md5', description: '3des-md5'});
+                      items.push({id: 'aes-md5', description: 'aes-md5'});
+											items.push({id: 'aes128-md5', description: 'aes128-md5'});
+											items.push({id: 'des-md5', description: 'des-md5'});											
+											items.push({id: '3des-sha1', description: '3des-sha1'});
+											items.push({id: 'aes-sha1', description: 'aes-sha1'});
+											items.push({id: 'aes128-sha1', description: 'aes128-sha1'});
+											items.push({id: 'des-sha1', description: 'des-sha1'});
+                      args.response.success({data: items});
+										}
+									},
+								  lifetime: { 
+									  label: 'Lifetime of vpn connection (second)',
+                    defaultValue: '86400',
+										validation: { required: false, number: true }
+									}		
+                }
+              },
+              action: function(args) {
+							  var s2svpngatewayid;							 
+								$.ajax({
+								  url: createURL('createVpnGateway'),
+									data: {
+									  publicipid: args.data.publicipid
+									},
+									dataType: 'json',									
+									success: function(json) {
+										var jid = json.createvpngatewayresponse.jobid;                          
+										var createvpngatewayIntervalID = setInterval(function() { 																
+											$.ajax({
+												url: createURL("queryAsyncJobResult&jobid=" + jid),
+												dataType: "json",
+												success: function(json) {													
+													var result = json.queryasyncjobresultresponse;
+													if (result.jobstatus == 0) {
+														return; //Job has not completed
+													}
+													else {                                      
+														clearInterval(createvpngatewayIntervalID); 														
+														if (result.jobstatus == 1) {															
+															var obj = result.jobresult.vpngateway;
+															s2svpngatewayid = obj.id;															
+														}
+														else if (result.jobstatus == 2) {
+															alert("Failed to create VPN gateway. Error: " + _s(result.jobresult.errortext));
+														}
+													}
+												},
+												error: function(XMLHttpResponse) {
+													var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+													alert("Failed to create VPN gateway. Error: " + errorMsg);
+												}
+											});                              
+										}, 3000); 																
+									}
+								});							  	
+              }              
+            }
+          },
+					
+					detailView: {
+            name: 'label.details',
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {
+                    type: { label: 'label.type' },
+                    description: { label: 'label.description' },
+                    created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
+                  }
+                ],
+                dataProvider: function(args) {								  
+									$.ajax({
+										url: createURL("listVpnConnections&id=" + args.context.siteToSiteVpn[0].id),
+										dataType: "json",
+										async: true,
+										success: function(json) {							
+											var item = json.listvpnconnectionsresponse.vpnconnection[0];
+											args.response.success({data: item});
+										}
+									});									
+								}
+              }
+            }
+          }
+        }
       }
+			//site-to-site VPN (end)
     }
   };
 		
