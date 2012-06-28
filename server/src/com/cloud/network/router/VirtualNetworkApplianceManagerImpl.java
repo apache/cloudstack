@@ -63,6 +63,7 @@ import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.FirewallRuleTO;
@@ -128,6 +129,9 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.Site2SiteCustomerGatewayVO;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.SshKeysDistriMonitor;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VirtualRouterProvider;
@@ -142,6 +146,9 @@ import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
+import com.cloud.network.dao.Site2SiteVpnConnectionDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.lb.LoadBalancingRule;
@@ -305,6 +312,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     VirtualRouterProviderDao _vrProviderDao;
     @Inject
     ManagementServerHostDao _msHostDao;
+    @Inject
+    Site2SiteCustomerGatewayDao _s2sCustomerGatewayDao;
+    @Inject
+    Site2SiteVpnGatewayDao _s2sVpnGatewayDao;
+    @Inject
+    Site2SiteVpnConnectionDao _s2sVpnConnectionDao;
     
     int _routerRamSize;
     int _routerCpuMHz;
@@ -3197,4 +3210,37 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
     }
     
+
+    @Override
+    public boolean startSite2SiteVpn(Network network, final Site2SiteVpnConnection conn, List<DomainRouterVO> routers) throws ResourceUnavailableException {
+        return applyRules(network, routers, "site2site vpn", false, null, false, new RuleApplier() {
+            @Override
+            public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
+                return applySite2SiteVpn(router, conn);
+            }
+        });
+    }
+
+    protected boolean applySite2SiteVpn(VirtualRouter router, Site2SiteVpnConnection conn) throws ResourceUnavailableException {
+        Commands cmds = new Commands(OnError.Continue);
+        createApplySite2SiteVpnCommands(conn, router, cmds);
+        return sendCommandsToRouter(router, cmds);
+    }
+
+    private void createApplySite2SiteVpnCommands(Site2SiteVpnConnection conn, VirtualRouter router, Commands cmds) {
+        Site2SiteCustomerGatewayVO gw = _s2sCustomerGatewayDao.findById(conn.getCustomerGatewayId());
+        String gatewayIp = gw.getGatewayIp();
+        String guestIp = gw.getGuestIp();
+        String guestCidr = gw.getGuestCidr();
+        String ipsecPsk = gw.getIpsecPsk();
+        
+        Site2SiteVpnCfgCommand startS2SVpnCmd = new Site2SiteVpnCfgCommand(true, gatewayIp, guestIp, guestCidr, ipsecPsk);
+        startS2SVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
+        startS2SVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, router.getGuestIpAddress());
+        startS2SVpnCmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+        DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
+        startS2SVpnCmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+
+        cmds.addCommand("startS2SVpn", startS2SVpnCmd);
+    }
 }

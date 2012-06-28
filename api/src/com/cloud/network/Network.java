@@ -162,7 +162,6 @@ public interface Network extends ControlledEntity {
         public static final Capability ElasticLb = new Capability("ElasticLb");
         public static final Capability FirewallType = new Capability("FirewallType");
 
-
         private String name;
 
         public Capability(String name) {

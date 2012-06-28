@@ -22,6 +22,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VpnUser;
 import com.cloud.network.rules.FirewallRule;
@@ -94,4 +95,7 @@ public interface VirtualNetworkApplianceManager extends Manager, VirtualNetworkA
 	boolean applyUserData(Network config, NicProfile nic, VirtualMachineProfile<UserVm> vm, DeployDestination dest, 
 	        List<DomainRouterVO> routers) throws ResourceUnavailableException;
 
+    boolean startSite2SiteVpn(Network network, Site2SiteVpnConnection conn, List<DomainRouterVO> routers) throws ResourceUnavailableException;
+
+    boolean stopSite2SiteVpn(Network network, Site2SiteVpnConnection conn, List<DomainRouterVO> routers) throws ResourceUnavailableException;
 }

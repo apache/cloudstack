@@ -130,6 +130,7 @@ import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.PortForwardingServiceProvider;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
+import com.cloud.network.element.Site2SiteVpnServiceProvider;
 import com.cloud.network.element.SourceNatServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
@@ -737,9 +738,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     }
                     purposes.add(Purpose.StaticNat);
                 }
+                //TODO Need to check site 2 site vpn ip assignment
                 if (purposes == null || purposes.isEmpty()) {
                     // since no active rules are there check if any rules are applied on the public IP but are in
 // revoking state
+                    
                     purposes = getPublicIpPurposeInRules(ip, true, includingFirewall);
                     if (ip.isOneToOneNat()) {
                         if (purposes == null) {
@@ -2444,6 +2447,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         for (NetworkElement element : _networkElements) {
             if (element instanceof RemoteAccessVPNServiceProvider) {
                 RemoteAccessVPNServiceProvider e = (RemoteAccessVPNServiceProvider) element;
+                elements.add(e);
+            }
+        }
+
+        return elements;
+    }
+
+    @Override
+    public List<? extends Site2SiteVpnServiceProvider> getSite2SiteVpnElements() {
+        List<Site2SiteVpnServiceProvider> elements = new ArrayList<Site2SiteVpnServiceProvider>();
+        for (NetworkElement element : _networkElements) {
+            if (element instanceof Site2SiteVpnServiceProvider) {
+                Site2SiteVpnServiceProvider e = (Site2SiteVpnServiceProvider) element;
                 elements.add(e);
             }
         }

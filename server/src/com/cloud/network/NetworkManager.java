@@ -39,6 +39,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
+import com.cloud.network.element.Site2SiteVpnServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
@@ -136,6 +137,8 @@ public interface NetworkManager extends NetworkService {
     public boolean validateRule(FirewallRule rule);
 
     List<? extends RemoteAccessVPNServiceProvider> getRemoteAccessVpnElements();
+    
+    List<? extends Site2SiteVpnServiceProvider> getSite2SiteVpnElements();
 
     PublicIpAddress getPublicIpAddress(long ipAddressId);
 

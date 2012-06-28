@@ -44,6 +44,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.VpnUser;
@@ -87,7 +88,7 @@ import com.google.gson.Gson;
 @Local(value = NetworkElement.class)
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, 
     UserDataServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
-        LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer {
+        LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, Site2SiteVpnServiceProvider, IpDeployer {
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
 
     protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -585,6 +586,9 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         capabilities.put(Service.StaticNat, null);
         capabilities.put(Service.PortForwarding, null);
 
+        Map<Capability, String> s2sVpnCapabilities = new HashMap<Capability, String>();
+        s2sVpnCapabilities.put(Capability.SupportedSite2SiteVpnTypes, "ipsec");
+        
         return capabilities;
     }
 
@@ -879,5 +883,43 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     
     protected VirtualRouterProviderType getVirtualRouterProvider() {
         return VirtualRouterProviderType.VirtualRouter;
+    }
+
+    @Override
+    public boolean startSite2SiteVpn(Network network, Site2SiteVpnConnection conn) throws ResourceUnavailableException {
+        if (!canHandle(network, Service.Site2SiteVpn)) {
+            return false;
+        }
+
+        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
+        if (routers == null || routers.isEmpty()) {
+            s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network " + network.getId());
+            return true;
+        }
+
+        if (!_routerMgr.startSite2SiteVpn(network, conn, routers)) {
+            throw new CloudRuntimeException("Failed to apply firewall rules in network " + network.getId());
+        }
+
+        return true;
+    }
+
+    @Override
+    public boolean stopSite2SiteVpn(Network network, Site2SiteVpnConnection conn) throws ResourceUnavailableException {
+        if (!canHandle(network, Service.Site2SiteVpn)) {
+            return false;
+        }
+
+        List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
+        if (routers == null || routers.isEmpty()) {
+            s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual router doesn't exist in the network " + network.getId());
+            return true;
+        }
+
+        if (!_routerMgr.stopSite2SiteVpn(network, conn, routers)) {
+            throw new CloudRuntimeException("Failed to apply firewall rules in network " + network.getId());
+        }
+
+        return true;
     }
 }

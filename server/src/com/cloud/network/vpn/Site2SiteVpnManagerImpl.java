@@ -1,5 +1,6 @@
 package com.cloud.network.vpn;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +27,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
+import com.cloud.network.NetworkVO;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteCustomerGatewayVO;
 import com.cloud.network.Site2SiteVpnConnection;
@@ -38,8 +40,10 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnConnectionDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
+import com.cloud.network.element.Site2SiteVpnServiceProvider;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
 
 @Local(value = Site2SiteVpnService.class)
@@ -133,8 +137,14 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
     public Site2SiteVpnConnection createVpnConnection(CreateVpnConnectionCmd cmd) throws NetworkRuleConflictException {
         Long customerGatewayId = cmd.getCustomerGatewayId();
         Site2SiteCustomerGateway customerGateway = _customerGatewayDao.findById(customerGatewayId);
+        if (customerGateway == null) {
+            throw new InvalidParameterValueException("Unable to found specified Site to Site VPN customer gateway " + customerGatewayId + " !");
+        }
         Long vpnGatewayId = cmd.getVpnGatewayId();
         Site2SiteVpnGateway vpnGateway = _vpnGatewayDao.findById(vpnGatewayId);
+        if (vpnGateway == null) {
+            throw new InvalidParameterValueException("Unable to found specified Site to Site VPN gateway " + vpnGatewayId + " !");
+        }
         if (_vpnConnectionDao.findByCustomerGatewayId(customerGatewayId) != null ||
                 _vpnConnectionDao.findByVpnGatewayId(vpnGatewayId) != null) {
             throw new InvalidParameterValueException("The vpn connection with customer gateway id " + customerGatewayId + " or vpn gateway id " 
@@ -150,6 +160,20 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
         Site2SiteVpnConnectionVO conn = _vpnConnectionDao.findById(id);
         if (conn.getState() != State.Pending && conn.getState() != State.Disconnected) {
             throw new InvalidParameterValueException("Site to site VPN connection " + id + " not in correct state(pending or disconnected) to process!");
+        }
+
+        Site2SiteVpnGatewayVO vpnGateway = _vpnGatewayDao.findById(conn.getVpnGatewayId());
+        Network network = _networkDao.findById(vpnGateway.getNetworkId());
+        List <? extends Site2SiteVpnServiceProvider> elements = _networkMgr.getSite2SiteVpnElements();
+        boolean result = true;
+        for (Site2SiteVpnServiceProvider element : elements) {
+            result = result & element.startSite2SiteVpn(network, conn);
+        }
+
+        if (result) {
+            conn.setState(State.Connected);
+            _vpnConnectionDao.persist(conn);
+            return conn;
         }
         return null;
     }
@@ -249,19 +273,31 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
 
     @Override
     public List<Site2SiteCustomerGateway> searchForCustomerGateways(ListVpnCustomerGatewaysCmd cmd) {
-        // TODO Auto-generated method stub
-        return null;
+        Long id = cmd.getId();
+        List<Site2SiteCustomerGateway> results = new ArrayList<Site2SiteCustomerGateway>();
+        if (id != null) {
+            results.add(_customerGatewayDao.findById(cmd.getId()));
+        }
+        return results;
     }
 
     @Override
     public List<Site2SiteVpnGateway> searchForVpnGateways(ListVpnGatewaysCmd cmd) {
-        // TODO Auto-generated method stub
-        return null;
+        Long id = cmd.getId();
+        List<Site2SiteVpnGateway> results = new ArrayList<Site2SiteVpnGateway>();
+        if (id != null) {
+            results.add(_vpnGatewayDao.findById(cmd.getId()));
+        }
+        return results;
     }
 
     @Override
     public List<Site2SiteVpnConnection> searchForVpnConnections(ListVpnConnectionsCmd cmd) {
-        // TODO Auto-generated method stub
-        return null;
+        Long id = cmd.getId();
+        List<Site2SiteVpnConnection> results = new ArrayList<Site2SiteVpnConnection>();
+        if (id != null) {
+            results.add(_vpnConnectionDao.findById(cmd.getId()));
+        }
+        return results;
     }
 }
