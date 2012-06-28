@@ -52,4 +52,17 @@ public class NetUtilsTest extends TestCase {
         ip = NetUtils.getRandomIpFromCidr(cidr, 30, avoid);
         assertEquals("This should be -1 because we ran out of ip addresses: " + ip, ip, -1);
     }
+
+    public void testVpnPolicy() {
+        assertTrue(NetUtils.isValidS2SVpnPolicy("aes-sha1"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("des-md5;modp768"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("des-md5;modp768,aes-sha1;modp2048"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("3des-sha1,aes-sha1;modp2048"));
+        assertTrue(NetUtils.isValidS2SVpnPolicy("3des-sha1,aes-sha1"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("abc-123,ase-sha1"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy("de-sh,aes-sha1"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy(""));
+        assertFalse(NetUtils.isValidS2SVpnPolicy(";modp2048"));
+        assertFalse(NetUtils.isValidS2SVpnPolicy(",aes;modp2048,,,"));
+    }
 }

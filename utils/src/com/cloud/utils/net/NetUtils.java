@@ -1062,4 +1062,43 @@ public class NetUtils {
         return ((cidrALong[0] >> shift) == (cidrBLong[0] >> shift));
     }
 
+    public static boolean isValidS2SVpnPolicy(String policys) {
+        if (policys == null || policys.isEmpty()) {
+            return false;
+        }
+        for (String policy : policys.split(",")) {
+            if (policy.isEmpty()) {
+                return false;
+            }
+            String cipherHash = policy.split(";")[0];
+            if (cipherHash.isEmpty()) {
+                return false;
+            }
+            String pfsGroup = null;
+            if (!policy.equals(cipherHash)) {
+                pfsGroup = policy.split(";")[1];
+            }
+            String cipher = cipherHash.split("-")[0];
+            String hash = cipherHash.split("-")[1];
+            if (!cipher.matches("des|3des|aes|aes128|aes256")) {
+                return false;
+            }
+            if (!hash.matches("md5|sha1")) {
+                return false;
+            }
+            if (pfsGroup != null && !pfsGroup.matches("modp768|modp1024|modp2048")) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean validateGuestCidrList(String guestCidrList) {
+        for (String guestCidr : guestCidrList.split(";")) {
+            if (!validateGuestCidr(guestCidr)) {
+                return false;
+            }
+        }
+        return true;
+    }
 }

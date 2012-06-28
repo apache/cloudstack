@@ -371,3 +371,16 @@ listStaticRoutes=com.cloud.api.commands.ListStaticRoutesCmd;15
 createTags=com.cloud.api.commands.CreateTagsCmd;15
 deleteTags=com.cloud.api.commands.DeleteTagsCmd;15
 listTags=com.cloud.api.commands.ListTagsCmd;15
+
+### Site-to-site VPN commands
+createVpnCustomerGateway=com.cloud.api.commands.CreateVpnCustomerGatewayCmd;1
+createVpnGateway=com.cloud.api.commands.CreateVpnGatewayCmd;1
+createVpnConnection=com.cloud.api.commands.CreateVpnConnectionCmd;1
+deleteVpnCustomerGateway=com.cloud.api.commands.DeleteVpnCustomerGatewayCmd;1
+deleteVpnGateway=com.cloud.api.commands.DeleteVpnGatewayCmd;1
+deleteVpnConnection=com.cloud.api.commands.DeleteVpnConnectionCmd;1
+updateVpnCustomerGateway=com.cloud.api.commands.UpdateVpnCustomerGatewayCmd;1
+resetVpnConnection=com.cloud.api.commands.ResetVpnConnectionCmd;1
+listVpnCustomerGateway=com.cloud.api.commands.ListVpnCustomerGatewayCmd;1
+listVpnGateway=com.cloud.api.commands.ListVpnGatewayCmd;1
+listVpnConnection=com.cloud.api.commands.ListVpnConnectionCmd;1

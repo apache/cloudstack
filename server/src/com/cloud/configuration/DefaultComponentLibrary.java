@@ -91,6 +91,9 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDaoImpl;
 import com.cloud.network.dao.PortProfileDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
+import com.cloud.network.dao.Site2SiteCustomerGatewayDaoImpl;
+import com.cloud.network.dao.Site2SiteVpnConnectionDaoImpl;
+import com.cloud.network.dao.Site2SiteVpnGatewayDaoImpl;
 import com.cloud.network.dao.VirtualRouterProviderDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
 import com.cloud.network.element.VirtualRouterElement;
@@ -119,6 +122,7 @@ import com.cloud.network.vpc.Dao.VpcGatewayDaoImpl;
 import com.cloud.network.vpc.Dao.VpcOfferingDaoImpl;
 import com.cloud.network.vpc.Dao.VpcOfferingServiceMapDaoImpl;
 import com.cloud.network.vpn.RemoteAccessVpnManagerImpl;
+import com.cloud.network.vpn.Site2SiteVpnManagerImpl;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl;
 import com.cloud.projects.ProjectManagerImpl;
@@ -330,6 +334,9 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("VpcGatewayDao", VpcGatewayDaoImpl.class);
         addDao("StaticRouteDao", StaticRouteDaoImpl.class);
         addDao("TagsDao", ResourceTagsDaoImpl.class);
+        addDao("Site2SiteVpnGatewayDao", Site2SiteVpnGatewayDaoImpl.class);
+        addDao("Site2SiteCustomerGatewayDao", Site2SiteCustomerGatewayDaoImpl.class);
+        addDao("Site2SiteVpnConnnectionDao", Site2SiteVpnConnectionDaoImpl.class);
     }
 
     @Override
@@ -389,6 +396,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("VpcVirtualRouterManager", VpcVirtualNetworkApplianceManagerImpl.class);
         addManager("NetworkACLManager", NetworkACLManagerImpl.class);
         addManager("TaggedResourcesManager", TaggedResourceManagerImpl.class);
+        addManager("Site2SiteVpnManager", Site2SiteVpnManagerImpl.class);
     }
 
     @Override
