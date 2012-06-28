@@ -79,6 +79,9 @@ import com.cloud.api.response.SecurityGroupRuleResponse;
 import com.cloud.api.response.SecurityGroupRuleResultObject;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.ServiceResponse;
+import com.cloud.api.response.Site2SiteCustomerGatewayResponse;
+import com.cloud.api.response.Site2SiteVpnConnectionResponse;
+import com.cloud.api.response.Site2SiteVpnGatewayResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.api.response.StaticRouteResponse;
@@ -136,6 +139,9 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.Site2SiteCustomerGateway;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
@@ -3485,7 +3491,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
     
-    
     @Override
     public VpcOfferingResponse createVpcOfferingResponse(VpcOffering offering) {
         VpcOfferingResponse response = new VpcOfferingResponse();
@@ -3588,7 +3593,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
     
-    
     @Override
     public StaticRouteResponse createStaticRouteResponse(StaticRoute result) {
         StaticRouteResponse response = new StaticRouteResponse();
@@ -3609,4 +3613,40 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
     
+    @Override
+    public PrivateGatewayResponse createPrivateGatewayResponseResponse(PrivateGateway result) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+    
+    @Override
+    public Site2SiteVpnGatewayResponse createSite2SiteVpnGatewayResponse(Site2SiteVpnGateway result) {
+        Site2SiteVpnGatewayResponse response = new Site2SiteVpnGatewayResponse();
+        response.setId(result.getId());
+        response.setIp(ApiDBUtils.findIpAddressById(result.getAddrId()).getAddress().toString());
+        response.setRemoved(result.getRemoved());
+        return response;
+    }
+
+    @Override
+    public Site2SiteCustomerGatewayResponse createSite2SiteCustomerGatewayResponse(Site2SiteCustomerGateway result) {
+        Site2SiteCustomerGatewayResponse response = new Site2SiteCustomerGatewayResponse();
+        response.setId(result.getId());
+        response.setGatewayIp(result.getGatewayIp());
+        response.setGuestCidrList(result.getGuestCidrList());
+        response.setIpsecPsk(result.getIpsecPsk());
+        response.setRemoved(result.getRemoved());
+        return response;
+    }
+
+    @Override
+    public Site2SiteVpnConnectionResponse createSite2SiteVpnConnectionResponse(Site2SiteVpnConnection result) {
+        Site2SiteVpnConnectionResponse response = new Site2SiteVpnConnectionResponse();
+        response.setId(result.getId());
+        response.setVpnGatewayId(result.getVpnGatewayId());
+        response.setCustomerGatewayId(result.getCustomerGatewayId());
+        response.setCreated(result.getCreated());
+        response.setRemoved(result.getRemoved());
+        return response;
+    }
 }

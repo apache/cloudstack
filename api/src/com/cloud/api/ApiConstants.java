@@ -363,6 +363,15 @@ public class ApiConstants {
     public static final String GATEWAY_ID = "gatewayid";
 
     
+    public static final String S2S_VPN_GATEWAY_ID = "s2svpngatewayid";
+    public static final String S2S_CUSTOMER_GATEWAY_ID = "s2scustomergatewayid";
+    public static final String IPSEC_PSK = "ipsecpsk";
+    public static final String GUEST_IP = "guestip";
+    public static final String REMOVED = "removed";
+    public static final String IKE_POLICY = "ikepolicy";
+    public static final String ESP_POLICY = "esppolicy";
+    public static final String LIFETIME = "lifetime";
+    
     public enum HostDetails {
         all, capacity, events, stats, min;
     }

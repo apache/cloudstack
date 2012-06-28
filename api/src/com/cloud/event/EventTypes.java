@@ -196,6 +196,14 @@ public class EventTypes {
     public static final String EVENT_REMOTE_ACCESS_VPN_DESTROY = "VPN.REMOTE.ACCESS.DESTROY";
     public static final String EVENT_VPN_USER_ADD = "VPN.USER.ADD";
     public static final String EVENT_VPN_USER_REMOVE = "VPN.USER.REMOVE";
+    public static final String EVENT_S2S_VPN_GATEWAY_CREATE = "VPN.S2S.VPN.GATEWAY.CREATE";
+    public static final String EVENT_S2S_VPN_GATEWAY_DELETE = "VPN.S2S.VPN.GATEWAY.DELETE";
+    public static final String EVENT_S2S_CUSTOMER_GATEWAY_CREATE = "VPN.S2S.CUSTOMER.GATEWAY.CREATE";
+    public static final String EVENT_S2S_CUSTOMER_GATEWAY_DELETE = "VPN.S2S.CUSTOMER.GATEWAY.DELETE";
+    public static final String EVENT_S2S_CUSTOMER_GATEWAY_UPDATE = "VPN.S2S.CUSTOMER.GATEWAY.UPDATE";
+    public static final String EVENT_S2S_CONNECTION_CREATE = "VPN.S2S.CONNECTION.CREATE";
+    public static final String EVENT_S2S_CONNECTION_DELETE = "VPN.S2S.CONNECTION.DELETE";
+    public static final String EVENT_S2S_CONNECTION_RESET = "VPN.S2S.CONNECTION.RESET";
 
     // Network
     public static final String EVENT_NETWORK_RESTART = "NETWORK.RESTART";

@@ -58,6 +58,9 @@ import com.cloud.api.response.ResourceTagResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.ServiceResponse;
+import com.cloud.api.response.Site2SiteCustomerGatewayResponse;
+import com.cloud.api.response.Site2SiteVpnConnectionResponse;
+import com.cloud.api.response.Site2SiteVpnGatewayResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.api.response.StaticRouteResponse;
@@ -98,6 +101,9 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.Site2SiteCustomerGateway;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
@@ -281,7 +287,7 @@ public interface ResponseGenerator {
     LDAPConfigResponse createLDAPConfigResponse(String hostname, Integer port, Boolean useSSL, String queryFilter, String baseSearch, String dn);
 
     StorageNetworkIpRangeResponse createStorageNetworkIpRangeResponse(StorageNetworkIpRange result);
-
+    
     /**
      * @param tableName TODO
      * @param token
@@ -295,6 +301,7 @@ public interface ResponseGenerator {
      */
     ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag);
 
+    Site2SiteVpnGatewayResponse createSite2SiteVpnGatewayResponse(Site2SiteVpnGateway result);
 
     /**
      * @param offering
@@ -325,4 +332,10 @@ public interface ResponseGenerator {
      * @return
      */
     StaticRouteResponse createStaticRouteResponse(StaticRoute result);
+
+    PrivateGatewayResponse createPrivateGatewayResponseResponse(PrivateGateway result);
+
+    Site2SiteCustomerGatewayResponse createSite2SiteCustomerGatewayResponse(Site2SiteCustomerGateway result);
+
+    Site2SiteVpnConnectionResponse createSite2SiteVpnConnectionResponse(Site2SiteVpnConnection result);
 }

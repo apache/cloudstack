@@ -183,5 +183,8 @@
         <dao name="NetworkOfferingServiceDao" class="com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl" singleton="false"/>
         <dao name="VirtualRouterProviderDao" class="com.cloud.network.dao.VirtualRouterProviderDaoImpl" singleton="false"/>
         <dao name="IdentityDao" class="com.cloud.uuididentity.dao.IdentityDaoImpl" singleton="false"/>
+        <dao name="Site2SiteCustomerGatewayDao" class="com.cloud.network.dao.Site2SiteCustomerGatewayDaoImpl" singleton="false"/>
+        <dao name="Site2SiteVpnGatewayDao" class="com.cloud.network.dao.Site2SiteVpnGatewayDaoImpl" singleton="false"/>
+        <dao name="Site2SiteVpnConnectionDao" class="com.cloud.network.dao.Site2SiteVpnConnectionDaoImpl" singleton="false"/>
     </configuration-server>
 </components.xml>

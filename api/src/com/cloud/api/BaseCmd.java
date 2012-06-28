@@ -43,6 +43,7 @@ import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
 import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpn.RemoteAccessVpnService;
+import com.cloud.network.vpn.Site2SiteVpnService;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceService;
@@ -129,6 +130,7 @@ public abstract class BaseCmd {
     public static TaggedResourceService _taggedResourceService;
     public static VpcService _vpcService;
     public static NetworkACLService _networkACLService;
+    public static Site2SiteVpnService _s2sVpnService;
 
     static void setComponents(ResponseGenerator generator) {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
@@ -159,6 +161,7 @@ public abstract class BaseCmd {
         _taggedResourceService = locator.getManager(TaggedResourceService.class);
         _vpcService = locator.getManager(VpcService.class);
         _networkACLService = locator.getManager(NetworkACLService.class);
+        _s2sVpnService = locator.getManager(Site2SiteVpnService.class);
     }
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
