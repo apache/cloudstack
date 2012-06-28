@@ -1255,7 +1255,7 @@
     }
   };
 
-  var vmActionfilter = function(args) {
+  var vmActionfilter = cloudStack.actionFilter.vmActionFilter = function(args) {
     var jsonObj = args.context.item;
     var allowedActions = [];
 
