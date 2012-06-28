@@ -26,16 +26,12 @@
       var cidr = args.cidr;
       var context = args.context;
       var vmListView = args.vmListView;
-      var disabledActions = args.actionPreFilter ? args.actionPreFilter({
-        context: context
-      }) : true;
+      var actionPreFilter = args.actionPreFilter;
       var actions = $.map(
         args.actions ? args.actions : {}, function(value, key) {
           return {
             id: key,
-            action: value,
-            isDisabled: $.isArray(disabledActions) &&
-              $.inArray(key, disabledActions) != -1
+            action: value
           };
         }
       );
@@ -92,7 +88,6 @@
           var $action = $('<div>').addClass('action');
           var shortLabel = action.action.shortLabel;
           var label = action.action.label;
-          var isDisabled = action.isDisabled;
 
           $action.addClass(action.id);
 
@@ -101,14 +96,14 @@
           } else {
             $action.append($('<span>').addClass('icon').html('&nbsp;'));
           }
+
           $actions.append($action);
           $action.attr('title', label);
-
-          if (isDisabled) $action.addClass('disabled');
+          $action.data('vpc-tier-action-id', action.id);
 
           // Action event
           $action.click(function() {
-            if (isDisabled) {
+            if ($action.hasClass('disabled')) {
               return false;
             }
                 
@@ -131,6 +126,13 @@
 
       // Append horizontal chart line
       $tier.append($('<div>').addClass('connect-line'));
+
+      // Handle action filter
+      filterActions({
+        $actions: $actions,
+        actionPreFilter: actionPreFilter,
+        context: context
+      });
 
       return $tier;
     },
@@ -192,6 +194,29 @@
 
       return $chart;
     }
+  };
+
+  var filterActions = function(args) {
+    var $actions = args.$actions;
+    var actionPreFilter = args.actionPreFilter;
+    var context = args.context;
+    var disabledActions, allowedActions;
+
+    disabledActions = actionPreFilter ? actionPreFilter({
+      context: context
+    }) : [];  
+
+    // Visual appearance for disabled actions
+    $actions.find('.action').map(function(index, action) {
+      var $action = $(action);
+      var actionID = $action.data('vpc-tier-action-id');
+
+      if ($.inArray(actionID, disabledActions) > -1) {
+        $action.addClass('disabled');
+      } else {
+        $action.removeClass('disabled');
+      }
+    });
   };
 
   // Handles tier action, including UI effects
