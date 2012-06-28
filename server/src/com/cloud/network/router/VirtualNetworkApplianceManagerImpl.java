@@ -729,7 +729,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (dcVo.getNetworkType() == NetworkType.Basic) {
             cmd.addVmData("metadata", "public-ipv4", guestIpAddress);
             cmd.addVmData("metadata", "public-hostname",  StringUtils.unicodeEscape(vmName));
-        }else
+        } else
         {
         	if (router.getPublicIpAddress() == null) {
         		 cmd.addVmData("metadata", "public-ipv4", guestIpAddress);
