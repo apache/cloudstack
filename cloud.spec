@@ -432,8 +432,9 @@ if [ "$1" == "1" ] ; then
     root=/usr/share/cloud/bridge
     target=/usr/share/cloud/management/
 
-    if [ ! -e $target/webapps/awsapi ]; then
-        ln -s $root/webapps/awsapi $target/webapps/awsapi
+    mkdir -p $target/webapps7080
+    if [ ! -e $target/webapps7080/awsapi ]; then
+        ln -s $root/webapps/awsapi $target/webapps7080/awsapi
     fi
 
     jars=`ls $root/lib`
