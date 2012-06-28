@@ -112,11 +112,13 @@
             if ($action.hasClass('disabled')) {
               return false;
             }
-                
+
             tierAction({
               action: action,
+              actionPreFilter: actionPreFilter,
               context: context,
-              $tier: $tier
+              $tier: $tier,
+              $actions: $actions
             });
 
             return true;
@@ -158,7 +160,7 @@
         if ($(this).find('.loading-overlay').size()) {
           return false;
         }
-        
+
         addTierDialog({
           $tiers: $tiers,
           context: context,
@@ -210,7 +212,7 @@
 
     disabledActions = actionPreFilter ? actionPreFilter({
       context: context
-    }) : [];  
+    }) : [];
 
     // Visual appearance for disabled actions
     $actions.find('.action').map(function(index, action) {
@@ -229,12 +231,14 @@
   var tierAction = function(args) {
     var $tier = args.$tier;
     var $loading = $('<div>').addClass('loading-overlay');
+    var $actions = args.$actions;
     var actionArgs = args.action.action;
     var action = actionArgs.action;
     var actionID = args.action.id;
     var notification = actionArgs.notification;
     var label = actionArgs.label;
     var context = args.context;
+    var actionPreFilter = args.actionPreFilter;
 
     var success = function(args) {
       var remove = args ? args.remove : false;
@@ -250,6 +254,13 @@
 
         // Success
         function(args) {
+          var newData = args.data ? args.data : {};
+          var newTier = $.extend(true, {}, context.tiers[0], newData);
+          var newContext = $.extend(true, {}, context);
+
+          // Update data
+          newContext.tiers = [newTier];
+
           if (remove) {
             $tier.remove();
           } else {
@@ -264,6 +275,12 @@
 
             $total.html(newTotal);
           }
+
+          filterActions({
+            $actions: $actions,
+            actionPreFilter: actionPreFilter,
+            context: newContext
+          });
         },
 
         {},
@@ -367,7 +384,7 @@
           response: {
             success: function(args) {
               var tier = args.data;
-              
+
               cloudStack.ui.notifications.add(
                 // Notification
                 {
