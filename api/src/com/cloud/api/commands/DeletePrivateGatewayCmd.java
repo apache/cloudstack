@@ -93,7 +93,7 @@ public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
     
     @Override
     public String getSyncObjType() {
-        return BaseAsyncCmd.networkSyncObject;
+        return BaseAsyncCmd.vpcSyncObject;
     }
 
     @Override

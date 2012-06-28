@@ -995,12 +995,15 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
         return getPrivateGatewayProfile(gateway);
     }
+    
+    @Override
+    public VpcGateway getVpcGateway(long id) {
+        return _vpcGatewayDao.findById(id);
+    }
 
     protected PrivateGateway getPrivateGatewayProfile(VpcGateway gateway) {
         Network network = _ntwkMgr.getNetwork(gateway.getNetworkId());
-        String vlanTag = network.getBroadcastUri().getHost();
-        String netmask = NetUtils.getCidrNetmask(network.getCidr());
-        return new PrivateGatewayProfile(gateway, vlanTag, network.getGateway(),netmask, network.getPhysicalNetworkId());
+        return new PrivateGatewayProfile(gateway, network.getPhysicalNetworkId());
     }
 
     @Override
@@ -1043,7 +1046,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         
         //2) create gateway entry
         gatewayVO = new VpcGatewayVO(ipAddress, VpcGateway.Type.Private, vpcId, privateNtwk.getDataCenterId(),
-                privateNtwk.getId());
+                privateNtwk.getId(), vlan, gateway, netmask);
         _vpcGatewayDao.persist(gatewayVO);
         
         s_logger.debug("Created vpc gateway entry " + gatewayVO);
@@ -1055,7 +1058,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
 
     @Override
-    public PrivateGateway applyVpcGateway(Long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException {
+    public PrivateGateway applyVpcPrivateGateway(Long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException {
         PrivateGateway gateway = getVpcPrivateGateway(gatewayId);
         if (getVpcElement().createPrivateGateway(gateway)) {
             s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
@@ -1184,11 +1187,11 @@ public class VpcManagerImpl implements VpcManager, Manager{
     protected boolean applyStaticRoutes(List<? extends StaticRoute> routes, Account caller, boolean updateRoutesInDB) throws ResourceUnavailableException {
         boolean success = true;
         List<StaticRouteProfile> staticRouteProfiles = new ArrayList<StaticRouteProfile>(routes.size());
-        Map<Long, PrivateGateway> gatewayMap = new HashMap<Long, PrivateGateway>();
+        Map<Long, VpcGateway> gatewayMap = new HashMap<Long, VpcGateway>();
         for (StaticRoute route : routes) {
-            PrivateGateway gateway = gatewayMap.get(route.getVpcGatewayId());
+            VpcGateway gateway = gatewayMap.get(route.getVpcGatewayId());
             if (gateway == null) {
-                gateway = getVpcPrivateGateway(route.getVpcGatewayId());
+                gateway = _vpcGatewayDao.findById(route.getVpcGatewayId());
                 gatewayMap.put(gateway.getId(), gateway);
             }
             staticRouteProfiles.add(new StaticRouteProfile(route, gateway));
@@ -1276,7 +1279,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         Account caller = UserContext.current().getCaller();
         
         //parameters validation
-        PrivateGateway gateway = getVpcPrivateGateway(gatewayId);
+        VpcGateway gateway = _vpcGatewayDao.findById(gatewayId);
         if (gateway == null) {
             throw new InvalidParameterValueException("Invalid gateway id is given");
         }

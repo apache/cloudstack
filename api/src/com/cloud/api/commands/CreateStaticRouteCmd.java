@@ -31,6 +31,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.VpcGateway;
 import com.cloud.user.UserContext;
 
 /**
@@ -122,7 +123,7 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
 
     @Override
     public long getEntityOwnerId() {
-         PrivateGateway gateway =  _vpcService.getVpcPrivateGateway(gatewayId);
+         VpcGateway gateway =  _vpcService.getVpcGateway(gatewayId);
          if (gateway == null) {
              throw new InvalidParameterValueException("Invalid gateway id is specified");
          }
@@ -136,11 +137,11 @@ public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
 
     @Override
     public Long getSyncObjId() {
-        PrivateGateway privateGateway =  _vpcService.getVpcPrivateGateway(gatewayId);
-        if (privateGateway == null) {
+        VpcGateway gateway =  _vpcService.getVpcGateway(gatewayId);
+        if (gateway == null) {
             throw new InvalidParameterValueException("Invalid id is specified for the gateway");
         }
-        return privateGateway.getVpcId();
+        return gateway.getVpcId();
     }
     
     @Override

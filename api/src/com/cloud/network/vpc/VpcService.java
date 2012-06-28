@@ -164,7 +164,7 @@ public interface VpcService {
      * @throws ResourceUnavailableException 
      * @throws ConcurrentOperationException 
      */
-    public PrivateGateway applyVpcGateway(Long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException;
+    public PrivateGateway applyVpcPrivateGateway(Long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException;
     
     /**
      * @param id
@@ -212,5 +212,11 @@ public interface VpcService {
      * @return
      */
     public List<? extends StaticRoute> listStaticRoutes(ListStaticRoutesCmd cmd);
+
+    /**
+     * @param id
+     * @return
+     */
+    VpcGateway getVpcGateway(long id);
 
 }

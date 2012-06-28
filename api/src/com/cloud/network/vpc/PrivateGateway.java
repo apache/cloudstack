@@ -16,8 +16,5 @@ package com.cloud.network.vpc;
  * @author Alena Prokharchyk
  */
 public interface PrivateGateway extends VpcGateway{
-    String getVlanTag();
-    String getGateway();
-    String getNetmask();
     long getPhysicalNetworkId();
 }

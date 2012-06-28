@@ -50,4 +50,19 @@ public interface VpcGateway extends Identity {
      * @return
      */
     Long getNetworkId();
+
+    /**
+     * @return
+     */
+    String getGateway();
+
+    /**
+     * @return
+     */
+    String getNetmask();
+
+    /**
+     * @return
+     */
+    String getVlanTag();
 }

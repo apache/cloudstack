@@ -129,7 +129,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException, 
                                 ResourceAllocationException, ResourceUnavailableException {
-        PrivateGateway result = _vpcService.applyVpcGateway(getEntityId());
+        PrivateGateway result = _vpcService.applyVpcPrivateGateway(getEntityId());
         if (result != null) {
             PrivateGatewayResponse response = _responseGenerator.createPrivateGatewayResponse(result);
             response.setResponseName(getCommandName());
