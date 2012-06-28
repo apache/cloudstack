@@ -561,7 +561,7 @@ div.list-view div.toolbar div.section-switcher div.section-select label {
 .install-wizard .button.advanced-installation,
 .install-wizard .button.go-back {
   background: #E0DEDE;
-  color: #7D7D7D;
+  color: #3B3B3B;
   border: 1px solid #C7C2C2;
   /*+text-shadow:0px 0px #FFFFFF;*/
   -moz-text-shadow: 0px 0px #FFFFFF;
