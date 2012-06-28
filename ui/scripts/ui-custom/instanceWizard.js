@@ -18,7 +18,7 @@
   /**
    * Instance wizard
    */
-  cloudStack.instanceWizard = function(args) {
+  cloudStack.uiCustom.instanceWizard = function(args) {
     return function(listViewArgs) {
       var context = listViewArgs.context;
 
