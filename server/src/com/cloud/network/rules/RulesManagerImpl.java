@@ -178,9 +178,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             try {
                 ipAddress = _networkMgr.associateIPToGuestNetwork(ipAddrId, networkId);
             } catch (Exception ex) {
-                s_logger.warn("Failed to associate ip id=" + ipAddrId + " to network id=" + networkId + " as " +
+                throw new CloudRuntimeException("Failed to associate ip to network as " +
                         "a part of port forwarding rule creation");
-                return null;
             }
         }
         
