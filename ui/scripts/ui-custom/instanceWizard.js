@@ -16,6 +16,8 @@
    */
   cloudStack.uiCustom.instanceWizard = function(args) {
     return function(listViewArgs) {
+      var context = listViewArgs.context;
+
       var instanceWizard = function(data) {
         var $wizard = $('#template').find('div.instance-wizard').clone();
         var $progress = $wizard.find('div.progress ul li');
