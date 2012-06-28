@@ -32,7 +32,7 @@ usage() {
 fw_remove_backup() {
   sudo iptables -F back_load_balancer 2> /dev/null
   sudo iptables -D INPUT -p tcp  -j back_load_balancer 2> /dev/null
-  sudo iptables -X back_load_balancer_$vif 2> /dev/null
+  sudo iptables -X back_load_balancer 2> /dev/null
   sudo iptables -F back_lb_stats 2> /dev/null
   sudo iptables -D INPUT -p tcp  -j back_lb_stats 2> /dev/null
   sudo iptables -X back_lb_stats 2> /dev/null
@@ -41,7 +41,7 @@ fw_remove_backup() {
 fw_remove() {
   sudo iptables -F load_balancer 2> /dev/null
   sudo iptables -D INPUT -p tcp  -j load_balancer 2> /dev/null
-  sudo iptables -X load_balancer_$vif 2> /dev/null
+  sudo iptables -X load_balancer 2> /dev/null
   sudo iptables -F lb_stats 2> /dev/null
   sudo iptables -D INPUT -p tcp  -j lb_stats 2> /dev/null
   sudo iptables -X lb_stats 2> /dev/null
@@ -83,7 +83,7 @@ fw_entry() {
   local a=$(echo $added | cut -d, -f1- --output-delimiter=" ")
   local r=$(echo $removed | cut -d, -f1- --output-delimiter=" ")
   fw_chain_create
-  success = 0
+  success=0
   while [ 1 ]
   do
     for i in $a
@@ -91,7 +91,7 @@ fw_entry() {
       local pubIp=$(echo $i | cut -d: -f1)
       local dport=$(echo $i | cut -d: -f2)    
       sudo iptables -A load_balancer -p tcp -d $pubIp --dport $dport -j ACCEPT 2>/dev/null
-      success = $?
+      success=$?
       if [ $success -gt 0 ]
       then
         break
@@ -102,12 +102,12 @@ fw_entry() {
       local pubIp=$(echo $stats | cut -d: -f1)
       local dport=$(echo $stats | cut -d: -f2)    
       local cidrs=$(echo $stats | cut -d: -f3 | sed 's/-/,/')
-      sudo iptables -A lb_stats -s $cidrs -p tcp -m state --state NEW -d $pubIp --dport $dport -j ACCEPT 2>/dev/null
-      success = $?
+      sudo iptables -A lb_stats -s $cidrs -p tcp -d $pubIp --dport $dport -j ACCEPT 2>/dev/null
+      success=$?
     fi
     break
   done
-  if [ $success -ge 0 ]
+  if [ $success -gt 0 ]
   then
     fw_restore
   else
@@ -118,7 +118,6 @@ fw_entry() {
 
 #Hot reconfigure HA Proxy in the routing domain
 reconfig_lb() {
-  echo "$cfgContent" > /etc/haproxy/haproxy.cfg.new
   /root/reconfigLB.sh
   return $?
 }
@@ -143,7 +142,7 @@ dflag=
 fflag=
 sflag=
 
-while getopts 'i:a:d:f:s:' OPTION
+while getopts 'i:a:d:s:' OPTION
 do
   case $OPTION in
   i)	iflag=1
@@ -154,9 +153,6 @@ do
 		;;
   d)	dflag=1
 		removedIps="$OPTARG"
-		;;
-  f)	fflag=1
-		cfgContent="$OPTARG"
 		;;
   s)	sflag=1
 		statsIp="$OPTARG"

@@ -1571,6 +1571,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             tmpCfgFileContents += config[i];
             tmpCfgFileContents += "\n";
         }
+        String tmpCfgFilePath = "/etc/haproxy/haproxy.cfg.new";
+        String result = callHostPlugin(conn, "vmops", "createFileInDomr", "domrip", routerIp, "filepath", tmpCfgFilePath, "filecontents", tmpCfgFileContents);
+
+        if (result == null || result.isEmpty()) {
+            return new Answer(cmd, false, "LoadBalancerConfigCommand failed to create HA proxy cfg file.");
+        }
+
         String[][] rules = cfgtr.generateFwRules(cmd);
 
         String[] addRules = rules[LoadBalancerConfigurator.ADD];
@@ -1578,7 +1585,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String[] statRules = rules[LoadBalancerConfigurator.STATS];
 
         String args = "vpc_loadbalancer.sh " + routerIp;
-        args += " -f " + tmpCfgFileContents;
 
         StringBuilder sb = new StringBuilder();
         if (addRules.length > 0) {
@@ -1607,7 +1613,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -s " + sb.toString();
         }
 
-        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
 
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "LoadBalancerConfigCommand failed");

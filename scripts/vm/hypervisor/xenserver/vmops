@@ -343,6 +343,28 @@ def createFile(session, args):
 
     return txt
 
+
+@echo
+def createFileInDomr(session, args):
+    file_path = args['filepath']
+    file_contents = args['filecontents']
+    domrip = args['domrip']
+    try:
+        tmpfile = util.pread2(['mktemp']).strip()
+        f = open(tmpfile, "w")
+        f.write(file_contents)
+        f.close()
+        target = "root@" + domrip + ":" + file_path
+        util.pread2(['scp','-P','3922','-q','-o','StrictHostKeyChecking=no','-i','/root/.ssh/id_rsa.cloud',tmpfile, target])
+        util.pread2(['rm',tmpfile])
+        txt = 'success'
+    except:
+        util.SMlog(" failed to create HA proxy cfg file ")
+        txt = ''
+
+    return txt
+
+
 @echo
 def deleteFile(session, args):
     file_path = args["filepath"]
@@ -1425,5 +1447,6 @@ if __name__ == "__main__":
                             "get_rule_logs_for_vms":get_rule_logs_for_vms, 
                             "setLinkLocalIP":setLinkLocalIP,
                             "cleanup_rules":cleanup_rules,
+			    "createFileInDomr":createFileInDomr,
                             "bumpUpPriority":bumpUpPriority,
                             "kill_copy_process":kill_copy_process})
