@@ -370,7 +370,10 @@
     },
     tiers: {
       actionPreFilter: function(args) {
-        return ['start'];
+        var tier = args.context.tiers[0];
+        var state = tier.state;
+
+        return state == 'Running' ? ['start'] : ['stop'];
       },
       actions: {
         // Add new tier
@@ -407,7 +410,7 @@
             args.response.success();
           },
           notification: {
-            poll: function(args) { args.complete(); }
+            poll: function(args) { args.complete({ data: { state: 'Running' } }); }
           }
         },
         stop: {
@@ -417,7 +420,7 @@
             args.response.success();
           },
           notification: {
-            poll: function(args) { args.complete(); }
+            poll: function(args) { args.complete({ data: { state: 'Stopped' } }); }
           }
         },
         addVM: {
@@ -453,6 +456,7 @@
             id: 1,
             name: 'web',
             cidr: '192.168.0.0/24',
+            state: 'Running',
             virtualMachines: [
               { name: 'i-2-VM' },
               { name: 'i-3-VM' }
@@ -461,6 +465,7 @@
           {
             id: 2,
             name: 'app',
+            state: 'Stopped',
             cidr: '10.0.0.0/24',
             virtualMachines: []
           }
