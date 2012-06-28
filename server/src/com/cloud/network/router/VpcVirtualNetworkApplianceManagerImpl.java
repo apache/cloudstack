@@ -309,7 +309,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 }
             } else {
                 result = false;
-                s_logger.warn("Failed to plug nic for " + ipAddress + " to VPC router " + router);
+                s_logger.warn("Failed to add public ip " + ipAddress + " to VPC router " + router);
             }
         } catch (Exception ex) {
             s_logger.warn("Failed to add ip address " + ipAddress + " from the public network " + publicNetwork + 
@@ -748,7 +748,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         
         try {
             //add VPC router to public networks
-            List<PublicIp> publicIps = new ArrayList<PublicIp>(1);
+            List<PublicIp> sourceNat = new ArrayList<PublicIp>(1);
             for (Nic publicNic : publicNics.keySet()) {
                 Network publicNtwk = publicNics.get(publicNic);
                 IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(publicNtwk.getId(), 
@@ -757,7 +757,15 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 if (userIp.isSourceNat()) {
                     PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
                             NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
-                    publicIps.add(publicIp);
+                    sourceNat.add(publicIp);
+                    
+                    if (router.getPublicIpAddress() == null) {
+                        DomainRouterVO routerVO = _routerDao.findById(router.getId());
+                        routerVO.setPublicIpAddress(publicNic.getIp4Address());
+                        routerVO.setPublicNetmask(publicNic.getNetmask());
+                        routerVO.setPublicMacAddress(publicNic.getMacAddress());
+                        _routerDao.update(routerVO.getId(), routerVO);
+                    }
                 }
                 
                 PlugNicCommand plugNicCmd = new PlugNicCommand(_itMgr.toVmTO(profile), getNicTO(router, publicNic.getNetworkId()));
@@ -765,8 +773,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             }
             
             // create ip assoc for source nat
-            if (!publicIps.isEmpty()) {
-                createVpcAssociateIPCommands(router, publicIps, cmds);
+            if (!sourceNat.isEmpty()) {
+                createVpcAssociateIPCommands(router, sourceNat, cmds);
             }
             
             for (Nic guestNic : guestNics.keySet()) {
