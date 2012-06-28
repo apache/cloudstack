@@ -304,7 +304,7 @@
       <classpath refid="test.classpath"/>
       <jvmarg value="${debug.jvmarg}"/>
       <batchtest todir="${unittest.dir}">
-        <formatter type="plain"/>
+        <formatter type="xml"/>
         <fileset dir="${utils.test.dir}">
           <include name="**/*Test.java"/>
         </fileset>
