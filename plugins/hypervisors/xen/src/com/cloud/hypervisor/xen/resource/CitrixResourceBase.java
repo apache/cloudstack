@@ -286,7 +286,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected List<VIF> _tmpDom0Vif = new ArrayList<VIF>();
 
     public enum SRType {
-        NFS, LVM, ISCSI, ISO, LVMOISCSI, LVMOHBA, EXT;
+        NFS, LVM, ISCSI, ISO, LVMOISCSI, LVMOHBA, EXT, FILE;
 
         String _str;
 
@@ -1066,7 +1066,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected VBD createPatchVbd(Connection conn, String vmName, VM vm) throws XmlRpcException, XenAPIException {
-
+    	
         if(  _host.systemvmisouuid == null ) {
             Set<SR> srs = SR.getByNameLabel(conn, "XenServer Tools");
             if( srs.size() != 1 ) {
@@ -1100,8 +1100,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         cdromVBDR.type = Types.VbdType.CD;
         VBD cdromVBD = VBD.create(conn, cdromVBDR);
         cdromVBD.insert(conn, VDI.getByUuid(conn, _host.systemvmisouuid));
-
-        return cdromVBD;
+	
+    	return cdromVBD;
     }
 
     protected void destroyPatchVbd(Connection conn, String vmName) throws XmlRpcException, XenAPIException {
@@ -3870,7 +3870,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             Map<SR, SR.Record> map = SR.getAllRecords(conn);
             for (Map.Entry<SR, SR.Record> entry : map.entrySet()) {
                 SR.Record srRec = entry.getValue();
-                if (SRType.EXT.equals(srRec.type)) {
+                if (SRType.FILE.equals(srRec.type) || SRType.EXT.equals(srRec.type)) {
                     Set<PBD> pbds = srRec.PBDs;
                     if (pbds == null) {
                         continue;
@@ -3902,6 +3902,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         SR lvmsr = getLocalLVMSR(conn);
         if (lvmsr != null) {
             try {
+            	_host.localSRuuid = lvmsr.getUuid(conn);
+            	
                 String lvmuuid = lvmsr.getUuid(conn);
                 long cap = lvmsr.getPhysicalSize(conn);
                 if (cap > 0) {
@@ -3932,6 +3934,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (extsr != null) {
             try {
                 String extuuid = extsr.getUuid(conn);
+                _host.localSRuuid = extuuid;
                 long cap = extsr.getPhysicalSize(conn);
                 if (cap > 0) {
                     long avail = cap - extsr.getPhysicalUtilisation(conn);
@@ -3956,6 +3959,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 s_logger.warn(msg);
             }
         }
+        
         return null;
     }
 
@@ -4033,7 +4037,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 break;
             }
             Host.Record hr = myself.getRecord(conn);
-            _host.product_version = hr.softwareVersion.get("product_version").trim();
+            
+            _host.product_version = hr.softwareVersion.get("product_version");
+            if (_host.product_version == null) {
+            	_host.product_version = hr.softwareVersion.get("platform_version");
+            } else {
+            	_host.product_version = _host.product_version.trim();
+            }
 
             XsLocalNetwork privateNic = getManagementNetwork(conn);
             _privateNetworkName = privateNic.getNetworkRecord(conn).nameLabel;
@@ -4493,8 +4503,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             } finally {
                 sshConnection.close();
             }
+            
             hr.tags.add("vmops-version-" + version);
             host.setTags(conn, hr.tags);
+            
             return true;
         } catch (XenAPIException e) {
             String msg = "Xen setup failed due to " + e.toString();
@@ -5106,13 +5118,19 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (details == null) {
                 details = new HashMap<String, String>();
             }
-            details.put("product_brand", hr.softwareVersion.get("product_brand"));
-            details.put("product_version", hr.softwareVersion.get("product_version"));
+
+            String productBrand = hr.softwareVersion.get("product_brand");
+            if (productBrand == null) {
+            	productBrand = hr.softwareVersion.get("platform_name");
+            }
+            details.put("product_brand", productBrand);
+            details.put("product_version", _host.product_version);
+
             if( hr.softwareVersion.get("product_version_text_short") != null ) {
                 details.put("product_version_text_short", hr.softwareVersion.get("product_version_text_short"));
                 cmd.setHypervisorVersion(hr.softwareVersion.get("product_version_text_short"));                
             }else{
-                cmd.setHypervisorVersion(hr.softwareVersion.get("product_version"));
+            	cmd.setHypervisorVersion(_host.product_version);
             }
             if (_privateNetworkName != null) {
                 details.put("private.network.device", _privateNetworkName);
@@ -5165,9 +5183,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 cmd.setPrivateMacAddress(pifr.MAC);
                 cmd.setPrivateNetmask(pifr.netmask);
             } else {
-                String msg = "Private network " + _privateNetworkName + " doesn't have IP address, please check the host network configuration";
-                s_logger.error(msg);
-                throw new CloudRuntimeException(msg);
+            	 cmd.setPrivateIpAddress(_host.ip);
+                 cmd.setPrivateMacAddress(pifr.MAC);
+                 cmd.setPrivateNetmask("255.255.255.0");
             }
 
             pif = PIF.getByUuid(conn, _host.storagePif1);
@@ -5330,7 +5348,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 vdir.virtualSize = dskch.getSize();
                 vdi = VDI.create(conn, vdir);
             }
-
             VDI.Record vdir;
             vdir = vdi.getRecord(conn);
             s_logger.debug("Succesfully created VDI for " + cmd + ".  Uuid = " + vdir.uuid);
@@ -6764,6 +6781,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         public int speed;
         public int cpus;
         public String product_version;
+        public String localSRuuid;
 
         @Override
         public String toString() {

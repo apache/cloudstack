@@ -1,0 +1,49 @@
+# This file specifies the files that need
+# to be transferred over to the XenServer.
+# The format of this file is as follows:
+# [Name of file]=[source path],[file permission],[destination path]
+# [destination path] is required.
+# If [file permission] is missing, 755 is assumed.
+# If [source path] is missing, it looks in the same
+# directory as the patch file.
+# If [source path] starts with '/', then it is absolute path.
+# If [source path] starts with '~', then it is path relative to management server home directory.
+# If [source path] does not start with '/' or '~', then it is relative path to the location of the patch file. 
+NFSSR.py=/usr/lib/xcp/sm
+vmops=.,0755,/usr/lib/xcp/plugins
+ovsgre=..,0755,/usr/lib/xcp/plugins
+ovstunnel=..,0755,/usr/lib/xcp/plugins
+vmopsSnapshot=.,0755,/usr/lib/xcp/plugins
+hostvmstats.py=..,0755,/usr/lib/xcp/sm
+systemvm.iso=../../../../../vms,0644,/usr/share/xcp/packages/iso/
+id_rsa.cloud=../../../systemvm,0600,/root/.ssh
+network_info.sh=..,0755,/usr/lib/xcp/bin
+setupxenserver.sh=..,0755,/usr/lib/xcp/bin
+make_migratable.sh=..,0755,/usr/lib/xcp/bin
+setup_iscsi.sh=..,0755,/usr/lib/xcp/bin
+pingtest.sh=../../..,0755,/usr/lib/xcp/bin
+dhcp_entry.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
+ipassoc.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
+vm_data.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
+save_password_to_domr.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
+networkUsage.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
+call_firewall.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
+call_loadbalancer.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
+l2tp_vpn.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
+cloud-setup-bonding.sh=..,0755,/usr/lib/xcp/bin
+copy_vhd_to_secondarystorage.sh=.,0755,/usr/lib/xcp/bin
+copy_vhd_from_secondarystorage.sh=.,0755,/usr/lib/xcp/bin
+setup_heartbeat_sr.sh=..,0755,/usr/lib/xcp/bin
+setup_heartbeat_file.sh=..,0755,/usr/lib/xcp/bin
+check_heartbeat.sh=..,0755,/usr/lib/xcp/bin
+xenheartbeat.sh=..,0755,/usr/lib/xcp/bin
+launch_hb.sh=..,0755,/usr/lib/xcp/bin
+vhd-util=..,0755,/usr/lib/xcp/bin
+vmopspremium=.,0755,/usr/lib/xcp/plugins
+create_privatetemplate_from_snapshot.sh=.,0755,/usr/lib/xcp/bin
+upgrade_snapshot.sh=..,0755,/usr/lib/xcp/bin
+cloud-clean-vlan.sh=..,0755,/usr/lib/xcp/bin
+cloud-prepare-upgrade.sh=..,0755,/usr/lib/xcp/bin
+getRouterStatus.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
+bumpUpPriority.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
+getDomRVersion.sh=../../../../network/domr/,0755,/usr/lib/xcp/bin
