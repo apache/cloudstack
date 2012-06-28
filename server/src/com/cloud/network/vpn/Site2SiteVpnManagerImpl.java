@@ -306,6 +306,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
         List<Site2SiteCustomerGateway> results = new ArrayList<Site2SiteCustomerGateway>();
         if (id != null) {
             results.add(_customerGatewayDao.findById(cmd.getId()));
+        } else {
+            results.addAll(_customerGatewayDao.listAll());
         }
         return results;
     }
@@ -316,6 +318,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
         List<Site2SiteVpnGateway> results = new ArrayList<Site2SiteVpnGateway>();
         if (id != null) {
             results.add(_vpnGatewayDao.findById(cmd.getId()));
+        } else {
+            results.addAll(_vpnGatewayDao.listAll());
         }
         return results;
     }
@@ -326,6 +330,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
         List<Site2SiteVpnConnection> results = new ArrayList<Site2SiteVpnConnection>();
         if (id != null) {
             results.add(_vpnConnectionDao.findById(cmd.getId()));
+        } else {
+            results.addAll(_vpnConnectionDao.listAll());
         }
         return results;
     }

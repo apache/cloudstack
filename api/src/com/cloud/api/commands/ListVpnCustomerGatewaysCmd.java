@@ -37,7 +37,7 @@ public class ListVpnCustomerGatewaysCmd extends BaseListProjectAndAccountResourc
     /////////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="s2s_customer_gateway")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of the customer gateway")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="id of the customer gateway")
     private Long id;
 
     /////////////////////////////////////////////////////
