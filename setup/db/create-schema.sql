@@ -137,6 +137,9 @@ DROP TABLE IF EXISTS `cloud`.`op_dc_storage_network_ip_address`;
 DROP TABLE IF EXISTS `cloud`.`cluster_vsm_map`;
 DROP TABLE IF EXISTS `cloud`.`virtual_supervisor_module`;
 DROP TABLE IF EXISTS `cloud`.`port_profile`;
+DROP TABLE IF EXISTS `cloud`.`s2s_customer_gateway`;
+DROP TABLE IF EXISTS `cloud`.`s2s_vpn_gateway`;
+DROP TABLE IF EXISTS `cloud`.`s2s_vpn_connection`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -2130,6 +2133,43 @@ CREATE TABLE `cloud`.`port_profile` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `cloud`.`s2s_vpn_gateway` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40),
+  `addr_id` bigint unsigned UNIQUE NOT NULL,
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_s2s_vpn_gateway__addr_id` FOREIGN KEY (`addr_id`) REFERENCES `user_ip_address` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_s2s_vpn_gateway__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`s2s_customer_gateway` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40),
+  `gateway_ip` char(40) UNIQUE NOT NULL,
+  `guest_cidr_list` varchar(200) NOT NULL,
+  `ipsec_psk` varchar(256),
+  `ike_policy` varchar(30) NOT NULL,
+  `esp_policy` varchar(30) NOT NULL,
+  `lifetime` int,
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `uc_s2s_customer_gateway__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`s2s_vpn_connection` (
+  `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
+  `uuid` varchar(40),
+  `vpn_gateway_id` bigint unsigned NULL,
+  `customer_gateway_id` bigint unsigned NULL,
+  `state` varchar(32) NOT NULL,
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_s2s_vpn_connection__vpn_gateway_id` FOREIGN KEY (`vpn_gateway_id`) REFERENCES `s2s_vpn_gateway` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_s2s_vpn_connection__customer_gateway_id` FOREIGN KEY (`customer_gateway_id`) REFERENCES `s2s_customer_gateway` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_s2s_vpn_connection__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 CREATE TABLE `cloud`.`resource_tags` (
