@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
@@ -87,6 +88,8 @@ import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PlugNicAnswer;
+import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PoolEjectCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
@@ -95,8 +98,11 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.SetSourceNatAnswer;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
+import com.cloud.agent.api.SetupGuestNetworkAnswer;
+import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -105,6 +111,8 @@ import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.agent.api.UnPlugNicAnswer;
+import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.ValidateSnapshotAnswer;
 import com.cloud.agent.api.ValidateSnapshotCommand;
@@ -114,14 +122,19 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetNetworkACLAnswer;
+import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
+import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
@@ -230,6 +243,9 @@ import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachinePowerState;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualSCSISharing;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.VIF;
+import com.xensource.xenapi.VM;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
@@ -409,6 +425,20 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((GetDomRVersionCmd)cmd);
             } else if (cmd instanceof CheckNetworkCommand) {
                 answer = execute((CheckNetworkCommand) cmd);
+            } else if (cmd instanceof SetupGuestNetworkCommand) {
+                return execute((SetupGuestNetworkCommand) cmd);
+            } else if (cmd instanceof PlugNicCommand) {
+                return execute((PlugNicCommand) cmd);
+            } else if (cmd instanceof UnPlugNicCommand) {
+                return execute((UnPlugNicCommand) cmd);
+            } else if (cmd instanceof IpAssocVpcCommand) {
+                return execute((IpAssocVpcCommand) cmd);
+            } else if (cmd instanceof SetSourceNatCommand) {
+                return execute((SetSourceNatCommand) cmd);
+            } else if (cmd instanceof SetNetworkACLCommand) {
+                return execute((SetNetworkACLCommand) cmd);
+            } else if (cmd instanceof SetPortForwardingRulesVpcCommand) {
+                return execute((SetPortForwardingRulesVpcCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -705,9 +735,268 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             return new Answer(cmd, false, "LoadBalancerConfigCommand failed due to " + VmwareHelper.getExceptionMessage(e));
         }
     }
+    
+    private int allocRouterEthDeviceIndex(String domrName, String routerIp, NicTO nic) {
+        // TODO need to figure out which device number to use for the NIC
+        return 1;
+    }
+
+    private int findRouterEthDeviceIndex(String domrName, String routerIp, NicTO nic) {
+        // TODO
+        return 1;
+    }
+    
+    private int findRouterEthDeviceIndex(String domrName, String routerIp, IpAddressTO ip) {
+        
+        // TODO need to find the dev index inside router based on IP address
+        return 1;
+    }
+    
+    private SetupGuestNetworkAnswer execute(SetupGuestNetworkCommand cmd) {
+        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+        
+        NicTO nic = cmd.getNic();
+        String routerIp = getRouterSshControlIp(cmd);
+        String domrGIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
+        String domrName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String gw = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
+        String cidr = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));;
+        String domainName = cmd.getNetworkDomain();
+        String dns = cmd.getDefaultDns1();
+        if (dns == null || dns.isEmpty()) {
+            dns = cmd.getDefaultDns2();
+        } else {
+            String dns2= cmd.getDefaultDns2();
+            if ( dns2 != null && !dns2.isEmpty()) {
+                dns += "," + dns2;
+            }
+        }
+        
+        try {
+            int ethDeviceNum = allocRouterEthDeviceIndex(domrName, routerIp, nic);
+
+            String args = "-C ";
+            String dev = "eth" + ethDeviceNum;
+            args += " -d " + dev;
+            args += " -i " + domrGIP;
+            args += " -g " + gw;
+            args += " -m " + cidr;
+            args += " -n " + NetUtils.getSubNet(domrGIP, nic.getNetmask());
+            if ( dns != null && !dns.isEmpty() ) {
+                args += " -s " + dns;
+            }
+            if ( domainName != null && !domainName.isEmpty() ) {
+                args += " -e " + domainName;
+            }
+            
+            Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, 
+                "/opt/cloud/bin/vpc_guestnw.sh " + args);
+
+            if (!result.first()) {
+                String msg = "SetupGuestNetworkCommand on domain router " + routerIp + " failed. message: " + result.second();
+                s_logger.error(msg);
+
+                return new SetupGuestNetworkAnswer(cmd, false, msg);
+            }
+
+            if (s_logger.isInfoEnabled()) {
+                s_logger.info("SetupGuestNetworkCommand on domain router " + routerIp + " completed");
+            }
+            
+            return new SetupGuestNetworkAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = " UnPlug Nic failed due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new SetupGuestNetworkAnswer(cmd, false, msg);
+        }
+    }
+
+    protected IpAssocAnswer execute(IpAssocVpcCommand cmd) {
+        String[] results = new String[cmd.getIpAddresses().length];
+        int i = 0;
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = getRouterSshControlIp(cmd);
+        
+        try {
+            IpAddressTO[] ips = cmd.getIpAddresses();
+            for (IpAddressTO ip : ips) {
+
+                assignVPCPublicIpAddress(routerName, routerIp, ip);
+                results[i++] = ip.getPublicIp() + " - success";
+            }
+        } catch (Exception e) {
+            s_logger.error("Ip Assoc failure on applying one ip due to exception:  ", e);
+            results[i++] = IpAssocAnswer.errorResult;
+        }
+
+        return new IpAssocAnswer(cmd, results);
+    }
+
+    protected SetSourceNatAnswer execute(SetSourceNatCommand cmd) {
+        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+        
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = getRouterSshControlIp(cmd);
+        IpAddressTO pubIp = cmd.getIpAddress();
+        try {
+            int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp, pubIp);
+            String args = "";
+            args += " -A ";
+            args += " -l ";
+            args += pubIp.getPublicIp();
+
+            args += " -c ";
+            args += "eth" + ethDeviceNum;
+
+            Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, 
+                    "/opt/cloud/bin/vpc_snat.sh " + args);
+
+            if (!result.first()) {
+                String msg = "SetupGuestNetworkCommand on domain router " + routerIp + " failed. message: " + result.second();
+                s_logger.error(msg);
+
+                return new SetSourceNatAnswer(cmd, false, msg);
+            }
+            
+            return new SetSourceNatAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = "Ip SNAT failure due to " + e.toString();
+            s_logger.error(msg, e);
+            return new SetSourceNatAnswer(cmd, false, msg);
+        }
+    }
+
+    private SetNetworkACLAnswer execute(SetNetworkACLCommand cmd) {
+
+        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = getRouterSshControlIp(cmd);
+        
+        String[] results = new String[cmd.getRules().length];
+        try {
+            String [][] rules = cmd.generateFwRules();
+            StringBuilder sb = new StringBuilder();
+            String[] aclRules = rules[0];
+            if (aclRules.length == 0) {
+                return new SetNetworkACLAnswer(cmd, true, results);
+            }
+            
+            for (int i = 0; i < aclRules.length; i++) {
+                sb.append(aclRules[i]).append(',');
+            }
+            
+            NicTO nic = cmd.getNic();
+            int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp, nic);
+            String args = "";
+            args += " -d " + "eth" + ethDeviceNum;
+            args += " -i " + nic.getIp();
+            args += " -m " + Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
+            args += " -a " + sb.toString();
+            
+            Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, 
+                    "/opt/cloud/bin/vpc_acl.sh " + args);
+
+            if (!result.first()) {
+                String msg = "SetNetworkACLAnswer on domain router " + routerIp + " failed. message: " + result.second();
+                s_logger.error(msg);
+
+                return new SetNetworkACLAnswer(cmd, false, results);
+            }
+            
+            return new SetNetworkACLAnswer(cmd, true, results);
+        } catch (Exception e) {
+            String msg = "SetNetworkACL failed due to " + e.toString();
+            s_logger.error(msg, e);
+            return new SetNetworkACLAnswer(cmd, false, results);
+        }
+    }
+
+    protected SetPortForwardingRulesAnswer execute(SetPortForwardingRulesVpcCommand cmd) {
+        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+
+        String routerIp = getRouterSshControlIp(cmd);
+
+        String[] results = new String[cmd.getRules().length];
+        int i = 0;
+
+        boolean endResult = true;
+        for (PortForwardingRuleTO rule : cmd.getRules()) {
+            String args ="";
+            args += rule.revoked() ? " -D" : " -A";
+            args += " -P " + rule.getProtocol().toLowerCase();
+            args += " -l " + rule.getSrcIp();
+            args += " -p " + rule.getStringSrcPortRange().replace(":", "-");
+            args += " -r " + rule.getDstIp();
+            args += " -d " + rule.getStringDstPortRange().replace(":", "-");
+
+            try {
+                Pair<Boolean, String> sshResult = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, 
+                        "/opt/cloud/bin/vpc_portforwarding " + args);
+    
+                if (!sshResult.first()) {
+                    results[i++] = "Failed";
+                    endResult = false;
+                } else {
+                    results[i++] = null;
+                }
+            } catch(Exception e) {
+                results[i++] = "Failed";
+                endResult = false;
+            }
+        }
+        return new SetPortForwardingRulesAnswer(cmd, results, endResult);
+    }
+    
+    private UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
+        // TODO
+        return new UnPlugNicAnswer(cmd, false, "Unsupported yet");
+    }
+
+    private PlugNicAnswer execute(PlugNicCommand cmd) {
+        // TODO
+        return new PlugNicAnswer(cmd, false, "Unsupported yet");
+    }
+    
+    protected void assignVPCPublicIpAddress(String domrName, String routerIp, IpAddressTO ip) throws Exception {
+        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+
+        int ethDeviceNum = this.findRouterEthDeviceIndex(domrName, routerIp, ip);
+        if (ethDeviceNum < 0) {
+            throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
+        }           
+       
+        String args = "";    
+        if (ip.isAdd()) {
+            args += " -A ";
+        } else {
+            args += " -D ";
+        }
+
+        args += " -l ";
+        args += ip.getPublicIp();
+
+        args += " -c ";
+        args += "eth" + ethDeviceNum;
+        
+        args += " -g ";
+        args += ip.getVlanGateway();
+        
+        args += " -m ";
+        args += Long.toString(NetUtils.getCidrSize(ip.getVlanNetmask()));
+        
+        args += " -n ";
+        args += NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
+
+        Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, 
+                "/opt/cloud/bin/vpc_ipassoc.sh " + args);
+        
+        if (!result.first()) {
+            throw new InternalErrorException("Unable to assign public IP address");
+        }
+    }
 
     protected void assignPublicIpAddress(VirtualMachineMO vmMo, final String vmName, final String privateIpAddress, final String publicIpAddress, final boolean add, final boolean firstIP,
-            final boolean sourceNat, final String vlanId, final String vlanGateway, final String vlanNetmask, final String vifMacAddress, String guestIp) throws Exception {
+        final boolean sourceNat, final String vlanId, final String vlanGateway, final String vlanNetmask, final String vifMacAddress, String guestIp) throws Exception {
 
         String publicNeworkName = HypervisorHostHelper.getPublicNetworkNamePrefix(vlanId);
         Pair<Integer, VirtualDevice> publicNicInfo = vmMo.getNicDeviceIndex(publicNeworkName);
