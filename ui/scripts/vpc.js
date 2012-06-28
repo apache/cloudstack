@@ -433,7 +433,7 @@
             cloudStack.instanceWizard
           ),
           notification: {
-            poll: function(args) { args.complete(); }
+            poll: pollAsyncJobResult
           }
         },
         acl: {

@@ -213,12 +213,14 @@
 
     var success = function(args) {
       var remove = args ? args.remove : false;
+      var _custom = args ? args._custom : {};
 
       cloudStack.ui.notifications.add(
         // Notification
         {
           desc: label,
-          poll: notification.poll
+          poll: notification.poll,
+          _custom: _custom
         },
 
         // Success
