@@ -128,6 +128,7 @@
   <target name="clean-tomcat" depends="stop-tomcat,clean-awsapi-tomcat">
     <delete dir="${tomcat.home}/webapps/client"/>
     <delete dir="${tomcat.home}/webapps/awsapi" />
+	<delete dir="${tomcat.home}/webapps7080/awsapi" />
     <delete dir="${tomcat.home}/work/Catalina"/>
     <delete dir="${tomcat.home}/temp" />
     <delete dir="${tomcat.home}/logs" />
