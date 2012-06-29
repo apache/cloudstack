@@ -3494,14 +3494,14 @@
 
                     fields: [
                       {
-                        name: { label: 'label.zone', isEditable: true }
+                        name: { label: 'label.zone', isEditable: true, validation: { required: true } }
                       },
                       {
                         id: { label: 'label.id' },
                         allocationstate: { label: 'label.allocation.state' },
-                        dns1: { label: 'label.dns.1', isEditable: true },
+                        dns1: { label: 'label.dns.1', isEditable: true, validation: { required: true } },
                         dns2: { label: 'label.dns.2', isEditable: true },
-                        internaldns1: { label: 'label.internal.dns.1', isEditable: true },
+                        internaldns1: { label: 'label.internal.dns.1', isEditable: true, validation: { required: true } },
                         internaldns2: { label: 'label.internal.dns.2', isEditable: true },
                         domainname: { label: 'label.domain' },
                         networktype: { label: 'label.network.type' },
@@ -5922,14 +5922,14 @@
                 title: 'label.details',
                 fields: [
                   {
-                    name: { label: 'label.name', isEditable: true }
+                    name: { label: 'label.name', isEditable: true, validation: { required: true } }
                   },
                   {
                     id: { label: 'label.id' },
-                    netmask: { label: 'label.netmask', isEditable: true },
-                    startip: { label: 'label.start.IP', isEditable: true },
+                    netmask: { label: 'label.netmask', isEditable: true, validation: { required: true } },
+                    startip: { label: 'label.start.IP', isEditable: true, validation: { required: true } },
                     endip: { label: 'label.end.IP', isEditable: true },
-                    gateway: { label: 'label.gateway', isEditable: true },
+                    gateway: { label: 'label.gateway', isEditable: true, validation: { required: true } },
                     allocationstate: {
                       converter: function(str) {
                         // For localization
