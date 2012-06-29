@@ -30,12 +30,15 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.DateFormat;
 import java.text.MessageFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -154,6 +157,7 @@ import com.cloud.agent.resource.computing.KVMHABase.NfsStoragePool;
 import com.cloud.agent.resource.computing.LibvirtVMDef.ConsoleDef;
 import com.cloud.agent.resource.computing.LibvirtVMDef.DevicesDef;
 import com.cloud.agent.resource.computing.LibvirtVMDef.DiskDef;
+import com.cloud.agent.resource.computing.LibvirtVMDef.DiskDef.diskProtocol;
 import com.cloud.agent.resource.computing.LibvirtVMDef.FeaturesDef;
 import com.cloud.agent.resource.computing.LibvirtVMDef.GraphicDef;
 import com.cloud.agent.resource.computing.LibvirtVMDef.GuestDef;
@@ -1298,6 +1302,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
             KVMStoragePool primaryPool = _storagePoolMgr.getStoragePool(cmd
                     .getPool().getUuid());
+
+            if (primaryPool.getType() == StoragePoolType.RBD) {
+                s_logger.debug("Snapshots are not supported on RBD volumes");
+                return new ManageSnapshotAnswer(cmd, false,
+                    "Snapshots are not supported on RBD volumes");
+            }
+
             KVMPhysicalDisk disk = primaryPool.getPhysicalDisk(cmd
                     .getVolumePath());
             if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING
@@ -1644,16 +1655,43 @@ public class LibvirtComputingResource extends ServerResourceBase implements
                     + templateInstallFolder;
             _storage.mkdirs(tmpltPath);
 
-            Script command = new Script(_createTmplPath, _cmdsTimeout, s_logger);
-            command.add("-f", disk.getPath());
-            command.add("-t", tmpltPath);
-            command.add("-n", cmd.getUniqueName() + ".qcow2");
+            if (primary.getType() != StoragePoolType.RBD) {
+                Script command = new Script(_createTmplPath, _cmdsTimeout, s_logger);
+                command.add("-f", disk.getPath());
+                command.add("-t", tmpltPath);
+                command.add("-n", cmd.getUniqueName() + ".qcow2");
 
-            String result = command.execute();
+                String result = command.execute();
 
-            if (result != null) {
-                s_logger.debug("failed to create template: " + result);
-                return new CreatePrivateTemplateAnswer(cmd, false, result);
+                if (result != null) {
+                    s_logger.debug("failed to create template: " + result);
+                    return new CreatePrivateTemplateAnswer(cmd, false, result);
+                }
+            } else {
+                s_logger.debug("Converting RBD disk " + disk.getPath() + " into template " + cmd.getUniqueName());
+                Script.runSimpleBashScript("qemu-img convert"
+                                + " -f raw -O qcow2 "
+                                + KVMPhysicalDisk.RBDStringBuilder(primary.getSourceHost(),
+                                                primary.getSourcePort(),
+                                                primary.getAuthUserName(),
+                                                primary.getAuthSecret(),
+                                                disk.getPath())
+                                + " " + tmpltPath + "/" + cmd.getUniqueName() + ".qcow2");
+                File templateProp = new File(tmpltPath + "/template.properties");
+                if (!templateProp.exists()) {
+                    templateProp.createNewFile();
+                }
+
+                String templateContent = "filename=" + cmd.getUniqueName() + ".qcow2" + System.getProperty("line.separator");
+
+                DateFormat dateFormat = new SimpleDateFormat("MM_dd_yyyy");
+                Date date = new Date();
+                templateContent += "snapshot.name=" + dateFormat.format(date) + System.getProperty("line.separator");
+
+                FileOutputStream templFo = new FileOutputStream(templateProp);
+                templFo.write(templateContent.getBytes());
+                templFo.flush();
+                templFo.close();
             }
 
             Map<String, Object> params = new HashMap<String, Object>();
@@ -1756,8 +1794,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
     protected Answer execute(ModifyStoragePoolCommand cmd) {
         KVMStoragePool storagepool = _storagePoolMgr.createStoragePool(cmd
-                .getPool().getUuid(), cmd.getPool().getHost(), cmd.getPool()
-                .getPath(), cmd.getPool().getType());
+                .getPool().getUuid(), cmd.getPool().getHost(), cmd.getPool().getPort(),
+                cmd.getPool().getPath(), cmd.getPool().getUserInfo(), cmd.getPool().getType());
         if (storagepool == null) {
             return new Answer(cmd, false, " Failed to create storage pool");
         }
@@ -2624,10 +2662,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements
             } else {
                 int devId = (int) volume.getDeviceId();
 
-                if (volume.getType() == Volume.Type.DATADISK) {
-                    disk.defFileBasedDisk(physicalDisk.getPath(), devId,
-                            DiskDef.diskBus.VIRTIO,
-                            DiskDef.diskFmtType.QCOW2);
+                if (pool.getType() == StoragePoolType.RBD) {
+                                        /*
+                                                For RBD pools we use the secret mechanism in libvirt.
+                                                We store the secret under the UUID of the pool, that's why
+                                                we pass the pool's UUID as the authSecret
+                                        */
+                                        disk.defNetworkBasedDisk(physicalDisk.getPath().replace("rbd:", ""), pool.getSourceHost(), pool.getSourcePort(),
+                                                                 pool.getAuthUserName(), pool.getUuid(),
+                                                                 devId, diskBusType, diskProtocol.RBD);
+                                } else if (volume.getType() == Volume.Type.DATADISK) {
+                                        disk.defFileBasedDisk(physicalDisk.getPath(), devId,
+                                                        DiskDef.diskBus.VIRTIO,
+                                                        DiskDef.diskFmtType.QCOW2);
                 } else {
                     disk.defFileBasedDisk(physicalDisk.getPath(), devId,
                             diskBusType, DiskDef.diskFmtType.QCOW2);
@@ -2982,8 +3029,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         try {
 
             KVMStoragePool localStoragePool = _storagePoolMgr
-                    .createStoragePool(_localStorageUUID, "localhost",
-                            _localStoragePath, StoragePoolType.Filesystem);
+                    .createStoragePool(_localStorageUUID, "localhost", -1,
+                            _localStoragePath, "", StoragePoolType.Filesystem);
             com.cloud.agent.api.StoragePoolInfo pi = new com.cloud.agent.api.StoragePoolInfo(
                     localStoragePool.getUuid(), cmd.getPrivateIpAddress(),
                     _localStoragePath, _localStoragePath,
@@ -4083,5 +4130,4 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
         return new Answer(cmd, success, "");
     }
-
 }

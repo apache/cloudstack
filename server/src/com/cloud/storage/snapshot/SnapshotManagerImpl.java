@@ -79,6 +79,7 @@ import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
@@ -298,6 +299,13 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             }
         }
         StoragePoolVO srcPool = _storagePoolDao.findById(volume.getPoolId());
+
+        // RBD volumes do not support snapshotting in the way CloudStack does it.
+        // For now we leave the snapshot feature disabled for RBD volumes
+        if (srcPool.getPoolType() == StoragePoolType.RBD) {
+            throw new CloudRuntimeException("RBD volumes do not support snapshotting");
+        }
+
         ManageSnapshotCommand cmd = new ManageSnapshotCommand(snapshotId, volume.getPath(), srcPool, preSnapshotPath, snapshot.getName(), vmName);
       
         ManageSnapshotAnswer answer = (ManageSnapshotAnswer) sendToPool(volume, cmd);

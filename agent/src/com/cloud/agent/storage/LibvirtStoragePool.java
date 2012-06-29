@@ -34,6 +34,11 @@ public class LibvirtStoragePool implements KVMStoragePool {
     protected StoragePoolType type;
     protected StorageAdaptor _storageAdaptor;
     protected StoragePool _pool;
+    protected String authUsername;
+    protected String authSecret;
+    protected String sourceHost;
+    protected int sourcePort;
+    protected String sourceDir;
 
     public LibvirtStoragePool(String uuid, String name, StoragePoolType type,
             StorageAdaptor adaptor, StoragePool pool) {
@@ -135,6 +140,51 @@ public class LibvirtStoragePool implements KVMStoragePool {
 
     public void setLocalPath(String localPath) {
         this.localPath = localPath;
+    }
+
+    @Override
+    public String getAuthUserName() {
+        return this.authUsername;
+    }
+
+    public void setAuthUsername(String authUsername) {
+        this.authUsername = authUsername;
+    }
+
+    @Override
+    public String getAuthSecret() {
+        return this.authSecret;
+    }
+
+    public void setAuthSecret(String authSecret) {
+        this.authSecret = authSecret;
+    }
+
+    @Override
+    public String getSourceHost() {
+        return this.sourceHost;
+    }
+
+    public void setSourceHost(String host) {
+        this.sourceHost = host;
+    }
+
+    @Override
+    public int getSourcePort() {
+        return this.sourcePort;
+    }
+
+    public void setSourcePort(int port) {
+        this.sourcePort = port;
+    }
+
+    @Override
+    public String getSourceDir() {
+        return this.sourceDir;
+    }
+
+    public void setSourceDir(String dir) {
+        this.sourceDir = dir;
     }
 
     @Override

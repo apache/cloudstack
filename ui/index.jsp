@@ -2046,6 +2046,7 @@ dictionary = {
 'label.SR.name ': '<fmt:message key="label.SR.name " />',
 'label.SharedMountPoint': '<fmt:message key="label.SharedMountPoint" />',
 'label.clvm': '<fmt:message key="label.clvm" />',
+'label.rbd': '<fmt:message key="label.rbd" />',
 'label.volgroup': '<fmt:message key="label.volgroup" />',
 'label.VMFS.datastore': '<fmt:message key="label.VMFS.datastore" />',
 'label.network.device': '<fmt:message key="label.network.device" />',

@@ -7494,6 +7494,7 @@
                         var items = [];
                         items.push({id: "nfs", description: "nfs"});
                         items.push({id: "SharedMountPoint", description: "SharedMountPoint"});
+                        items.push({id: "rbd", description: "RBD"});
                         args.response.success({data: items});
                       }
                       else if(selectedClusterObj.hypervisortype == "XenServer") {
@@ -7677,6 +7678,27 @@
                           $form.find('.form-item[rel=vCenterDataCenter]').hide();
                           $form.find('.form-item[rel=vCenterDataStore]').hide();
                         }
+                        else if(protocol == "rbd") {
+                          $form.find('.form-item[rel=rbdmonitor]').css('display', 'inline-block');
+                          $form.find('.form-item[rel=rbdmonitor]').find(".name").find("label").text("RADOS Monitor:");
+
+                          $form.find('.form-item[rel=rbdpool]').css('display', 'inline-block');
+                          $form.find('.form-item[rel=rbdpool]').find(".name").find("label").text("RADOS Pool:");
+
+                          $form.find('.form-item[rel=rbdid]').css('display', 'inline-block');
+                          $form.find('.form-item[rel=rbdid]').find(".name").find("label").text("RADOS User:");
+
+                          $form.find('.form-item[rel=rbdsecret]').css('display', 'inline-block');
+                          $form.find('.form-item[rel=rbdsecret]').find(".name").find("label").text("RADOS Secret:");
+
+                          $form.find('.form-item[rel=server]').hide();
+                          $form.find('.form-item[rel=iqn]').hide();
+                          $form.find('.form-item[rel=lun]').hide();
+                          $form.find('.form-item[rel=volumegroup]').hide();
+                          $form.find('.form-item[rel=path]').hide();
+                          $form.find('.form-item[rel=vCenterDataCenter]').hide();
+                          $form.find('.form-item[rel=vCenterDataStore]').hide();
+                        }
                         else {
                           //$dialogAddPool.find("#add_pool_server_container").show();
                           $form.find('.form-item[rel=server]').css('display', 'inline-block');
@@ -7744,6 +7766,28 @@
                     validation: { required: true },
                     isHidden: true
                   },
+ 
+                  // RBD
+                  rbdmonitor: {
+                    label: 'label.rbd.monitor',
+                    validation: { required: true },
+                    isHidden: true
+                  },
+                  rbdpool: {
+                    label: 'label.rbd.pool',
+                    validation: { required: true },
+                    isHidden: true
+                  },
+                   rbdid: {
+                    label: 'label.rbd.id',
+                    validation: { required: false },
+                    isHidden: true
+                  },
+                   rbdsecret: {
+                    label: 'label.rbd.secret',
+                    validation: { required: false },
+                    isHidden: true
+                  },
 
                   //always appear (begin)
                   storageTags: {
@@ -7803,6 +7847,14 @@
                     vg = "/" + vg;
 									url = clvmURL(vg);
 								}
+                else if (args.data.protocol == "rbd") {
+                  var rbdmonitor = args.data.rbdmonitor;
+                  var rbdpool = args.data.rbdpool;
+                  var rbdid = args.data.rbdid;
+                  var rbdsecret = args.data.rbdsecret;
+
+                  url = rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret);
+                }
                 else if (args.data.protocol == "vmfs") {
                   //var path = trim($thisDialog.find("#add_pool_vmfs_dc").val());
                   var path = args.data.vCenterDataCenter;

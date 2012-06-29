@@ -52,10 +52,10 @@ public class KVMStoragePoolManager {
         return this._storageAdaptor.getStoragePoolByUri(uri);
     }
 
-    public KVMStoragePool createStoragePool(String name, String host,
-            String path, StoragePoolType type) {
+    public KVMStoragePool createStoragePool(String name, String host, int port, String path,
+                                            String userInfo, StoragePoolType type) {
         KVMStoragePool pool = this._storageAdaptor.createStoragePool(name,
-                host, path, type);
+                                host, port, path, userInfo, type);
         if (type == StoragePoolType.NetworkFilesystem) {
             KVMHABase.NfsStoragePool nfspool = new KVMHABase.NfsStoragePool(
                     pool.getUuid(), host, path, pool.getLocalPath(),
@@ -73,11 +73,16 @@ public class KVMStoragePoolManager {
         return true;
     }
 
-    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template,
-            String name, KVMStoragePool destPool) {
-        return this._storageAdaptor.createDiskFromTemplate(template, name,
-                KVMPhysicalDisk.PhysicalDiskFormat.QCOW2,
-                template.getSize(), destPool);
+    public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name,
+                                                    KVMStoragePool destPool) {
+        if (destPool.getType() == StoragePoolType.RBD) {
+            return this._storageAdaptor.createDiskFromTemplate(template, name,
+                    KVMPhysicalDisk.PhysicalDiskFormat.RAW, template.getSize(), destPool);
+        } else {
+            return this._storageAdaptor.createDiskFromTemplate(template, name,
+                    KVMPhysicalDisk.PhysicalDiskFormat.QCOW2,
+            template.getSize(), destPool);
+        }
     }
 
     public KVMPhysicalDisk createTemplateFromDisk(KVMPhysicalDisk disk,

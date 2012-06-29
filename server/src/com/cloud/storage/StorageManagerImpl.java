@@ -1277,10 +1277,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                 if (uriPath == null) {
                     throw new InvalidParameterValueException("host or path is null, should be sharedmountpoint://localhost/path");
                 }
-            } else if (uri.getScheme().equalsIgnoreCase("clvm")) {
+            }  else if (uri.getScheme().equalsIgnoreCase("rbd")) {
                 String uriPath = uri.getPath();
                 if (uriPath == null) {
-                    throw new InvalidParameterValueException("host or path is null, should be clvm://localhost/path");
+                    throw new InvalidParameterValueException("host or path is null, should be rbd://hostname/pool");
                 }
             }
         } catch (URISyntaxException e) {
@@ -1303,6 +1303,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         String scheme = uri.getScheme();
         String storageHost = uri.getHost();
         String hostPath = uri.getPath();
+        String userInfo = uri.getUserInfo();
         int port = uri.getPort();
         StoragePoolVO pool = null;
         if (s_logger.isDebugEnabled()) {
@@ -1323,6 +1324,11 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             pool = new StoragePoolVO(StoragePoolType.Filesystem, "localhost", 0, hostPath);
         } else if (scheme.equalsIgnoreCase("sharedMountPoint")) {
             pool = new StoragePoolVO(StoragePoolType.SharedMountPoint, storageHost, 0, hostPath);
+        } else if (scheme.equalsIgnoreCase("rbd")) {
+            if (port == -1) {
+                port = 6789;
+            }
+            pool = new StoragePoolVO(StoragePoolType.RBD, storageHost, port, hostPath.replaceFirst("/", ""), userInfo);
         } else if (scheme.equalsIgnoreCase("PreSetup")) {
             pool = new StoragePoolVO(StoragePoolType.PreSetup, storageHost, 0, hostPath);
         } else if (scheme.equalsIgnoreCase("iscsi")) {
@@ -1621,7 +1627,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         s_logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
         if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem && pool.getPoolType() != StoragePoolType.IscsiLUN
                 && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS && pool.getPoolType() != StoragePoolType.SharedMountPoint
-                && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.OCFS2) {
+                && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.OCFS2 && pool.getPoolType() != StoragePoolType.RBD) {
             s_logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
             return false;
         }
