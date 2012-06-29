@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "Runbook.ent">
+%BOOK_ENTITIES;
+]>
+<chapter id="chap-Runbook-KVM">
+  <title>KVM Setup and installation</title>
+  <para>
+    KVM is the hypervisor we'll be using - we will recover the initial setup
+    which has already been done on the hypervisor host and cover installation
+    of the agent software, you can use the same steps to add additional KVM 
+    nodes to your CloudStack environment. 
+  </para>
+  <section id="sect-Runbook-KVM-Prerequisites">
+    <title>Prerequisites</title>
+    <para>
+      We explicitly are using the management server as a compute node as well, 
+      which means that we have already performed many of the prerequisite steps
+      when setting up the management server, but we will list them here for
+      clarity. Those steps are:
+      <orderedlist>
+        <listitem>
+          <para>
+            <xref linkend="sect-Runbook-Environment-operatingsys-network" />
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <xref linkend="sect-Runbook-Environment-operatingsys-hostname" />
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <xref linkend="sect-Runbook-Environment-operatingsys-selinux" />
+          </para>
+        </listitem>
+        <listitem>
+          <para>
+            <xref linkend="sect-Runbook-Environment-operatingsys-ntp" />
+          </para>
+        </listitem>
+      </orderedlist>
+    </para>
+    <para>
+      You shouldn't need to do that for the management server, of course, but
+      any additional hosts will need for you to complete the above steps. 
+    </para>
+  </section>
+	
+  <section id="sect-Runbook-KVM-Installation">
+    <title>Installation</title>
+    <para>
+      You'll need to ensure that you are in the directory that was created when 
+      we extracted the the tarball. 
+      <xref linkend="sect-Runbook-Management-extraction" />
+    </para>
+    <para>
+      You'll be running <filename>./install.sh</filename> again and this time
+      choosing <option>A</option> which will install the software necessary for
+      managing a KVM node. 
+    </para>
+  </section>
+  <section id="sect-Runbook-KVM-Configuration">
+    <title>KVM Configuration</title>
+    <para>
+      KVM configuration is relatively simple at only a single item. We need to 
+      edit the QEMU VNC configuration. This is done by editing 
+      <filename>/etc/libvirt/qemu.conf</filename> and ensuring the following 
+      line is present and uncommented.
+      <screen>vnc_listen=0.0.0.0</screen>
+    </para>
+    <para>
+      You can now just restart the libvirt daemon by issuing the following command:
+      <screen><prompt># </prompt><userinput><command>service</command> libvirt restart</userinput></screen>
+    </para>
+    <para>
+      That concludes our installation and configuration of KVM, and we'll now move to using the CloudStack UI
+      for the actual configuration of our cloud. 
+    </para>
+  </section>
+
+</chapter>
+

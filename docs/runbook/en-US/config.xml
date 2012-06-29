@@ -1,0 +1,159 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "Runbook.ent">
+%BOOK_ENTITIES;
+]>
+<chapter id="chap-Runbook-Config">
+  <title>Configuration</title>
+  <para>
+    As we noted before we will be using security groups to provide isolation
+    and by default that implies that we'll be using a flat layer-2 network. 
+    It also means that the simplicity of our setup means that we can use the 
+    quick installer. 
+  </para>
+  <section id="sect-Runbook-Config-UI_Access">
+    <title>UI Access</title>
+      <para>
+        To get access to CloudStack's web interface, merely point your 
+        browser to http://<replaceable>172.16.10.</replaceable>2:8080/client
+        The default username is 'admin', and the default password is 'password'.
+        You should see a splash screen that allows you to choose several options
+        for setting up CloudStack. You should choose the 
+        <option>Continue with Basic Setup</option> option. 
+      </para>
+      <para>
+        You should now see a prompt requiring you to change the password for
+        the admin user. Please do so. 
+      </para>
+  </section>
+  <section id="sect-Runbook-Config-Zone">
+    <title>Setting up a Zone</title>
+    <para>
+      A zone is the largest organization entity in CloudStack - and we'll be creating one, this 
+      should be the screen that you see in front of you now. And for us there are 5 pieces of
+      information that we need.
+      <orderedlist>
+        <listitem>
+          <para>Name - we will set this to the ever-descriptive 'Zone1' for our cloud.</para>
+        </listitem>
+        <listitem>
+          <para>Public DNS 1 - we will set this to '8.8.8.8' for our cloud.</para>
+        </listitem>
+        <listitem>
+          <para>Public DNS 2 - we will set this to '8.8.4.4' for our cloud.</para>
+        </listitem>
+        <listitem>
+          <para>Internal DNS1 - we will also set this to '8.8.8.8' for our cloud.</para>
+        </listitem>
+        <listitem>
+          <para>Internal DNS2 - we will also set this to '8.8.8.4' for our cloud.</para>
+        </listitem>
+     </orderedlist>  
+    </para>
+    <note>
+      <title>Notes about DNS settings</title>
+      <para>
+        CloudStack distinguishes between internal and public DNS. Internal 
+        DNS is assumed to be capable of resolving internal-only 
+        hostnames, such as your NFS server’s DNS name. Public DNS is 
+        provided to the guest VMs to resolve public IP addresses. You can 
+        enter the same DNS server for both types, but if you do so, you 
+        must make sure that both internal and public IP addresses can 
+        route to the DNS server. In our specific case we will not use any
+        names for resources internally, and we have indeed them set to look
+        to the same external resource so as to not add a namerserver setup
+        to our list of requirements. 
+      </para>
+    </note>
+    </section>
+    <section id="sect-Runbook-Config-Pod">
+      <title>Pod Configuration</title>
+      <para>Now that we've added a Zone, the next step that comes up is a prompt
+        for information regading a pod. Which is looking for 4 items. 
+        <orderedlist>
+          <listitem>
+             <para>Name - We'll use Pod1 for our cloud.</para>
+          </listitem>
+          <listitem>
+             <para>Gateway - We'll use <replaceable>172.16.10</replaceable>.1 as our gateway</para>
+          </listitem>
+          <listitem>
+             <para>Netmask - We'll use 255.255.255.0</para>
+          </listitem>
+          <listitem>
+             <para>Start/end reserved system IPs - we will use 172.16.10.10-172.16.10.20 </para>
+          </listitem>
+          <listitem>
+             <para>Guest gateway - We'll use <replaceable>172.16.10</replaceable>.1</para>
+          </listitem>
+          <listitem>
+             <para>Guest netmask - We'll use 255.255.255.0</para>
+          </listitem>
+          <listitem>
+             <para>Guest start/end IP - We'll use <replaceable>172.16.10.</replaceable>30-<replaceable>172.16.10.</replaceable>200</para>
+          </listitem>
+        </orderedlist>
+      </para>
+    </section>
+    <section id="Runbook-config-cluster">
+      <title>Cluster</title>
+      <para> Now that we've added a Zone, we need only add a few more items for configuring the cluster. 
+        <orderedlist>
+          <listitem>
+            <para>Name - We'll use Cluster1</para>
+          </listitem>
+          <listitem>
+            <para>Hypervisor - If this is the first cluster, you may have already been prompted for which hypervisor you were going to use, in which case this will 
+                  be a read-only field. Otherwise choose KVM
+            </para>
+          </listitem>
+        </orderedlist>
+      </para>
+      <para> You should be prompted to add the first host to your cluster at this point. Only a few bits of information are needed. 
+        <orderedlist>
+          <listitem>
+             <para>Hostname - we'll use the IP address <replaceable>172.16.10.</replaceable>2 since we didn't set up a DNS server.</para>
+          </listitem>
+          <listitem>
+             <para>Username - we'll use 'root' </para>
+          </listitem>
+          <listitem>
+             <para>Password - enter the operating system password for the root user</para>
+          </listitem>
+          <listitem>
+             <para>Host tags - This is an optional field and we will leave it blank</para>
+          </listitem>
+        </orderedlist>
+      </para>
+      <section id="Runbook-config-cluster-pristorage">
+        <title>Primary Storage</title> 
+      <para>With you cluster now setup - you should be prompted for primary storage information. Choose NFS as the storage type and then enter the following values in the fields:
+        <orderedlist>
+          <listitem>
+             <para>Server - We'll be using the IP address <replaceable>172.16.10.</replaceable>2</para>
+          </listitem>
+          <listitem>
+            <para>Path - Well define /primary as the path we are using </para>
+          </listitem>
+        </orderedlist>
+      </para>
+      </section>
+      <section id="Runbook-config-cluster-secstorage">
+        <title>Secondary Storage</title>
+      <para> If this is a new zone, you'll be prompted for secondary storage information - populate it as follows:
+        <orderedlist>
+          <listitem>
+            <para>NFS server - We'll use the IP address <replaceable>172.16.10.</replaceable>2</para>
+          </listitem>
+          <listitem>
+            <para>Path - We'll use /secondary</para>
+          </listitem>
+        </orderedlist>
+      </para>
+      <para> Now, click Launch and your cloud should begin setup - it may take several minutes depending on your internet connection speed for setup to finalize.</para>
+    </section>
+    </section>
+  
+
+</chapter>
+
