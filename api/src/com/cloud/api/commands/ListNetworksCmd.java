@@ -63,10 +63,11 @@ public class ListNetworksCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="list networks by physical network id")
     private Long physicalNetworkId;
     
-    @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING, description="list network offerings supporting certain services")
+    @Parameter(name=ApiConstants.SUPPORTED_SERVICES, type=CommandType.LIST, collectionType=CommandType.STRING, description="list networks supporting certain services")
     private List<String> supportedServices;
     
     @Parameter(name=ApiConstants.RESTART_REQUIRED, type=CommandType.BOOLEAN, description="list networks by restartRequired")
+    
     private Boolean restartRequired;
     
     @Parameter(name=ApiConstants.SPECIFY_IP_RANGES, type=CommandType.BOOLEAN, description="true if need to list only networks which support specifying ip ranges")
@@ -75,6 +76,9 @@ public class ListNetworksCmd extends BaseListProjectAndAccountResourcesCmd {
     @IdentityMapper(entityTableName="vpc")
     @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="List networks by VPC")
     private Long vpcId;
+
+    @Parameter(name=ApiConstants.CAN_USE_FOR_DEPLOY, type=CommandType.BOOLEAN, description="list networks available for vm deployment")
+    private Boolean canUseForDeploy;
    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -122,6 +126,10 @@ public class ListNetworksCmd extends BaseListProjectAndAccountResourcesCmd {
 
 	public Long getVpcId() {
         return vpcId;
+	}
+	
+	public Boolean canUseForDeploy() {
+        return canUseForDeploy;
     }
 
     /////////////////////////////////////////////////////

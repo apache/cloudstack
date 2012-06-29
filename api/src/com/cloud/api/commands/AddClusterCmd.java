@@ -31,8 +31,10 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.ClusterResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.exception.DiscoveryException;
+import com.cloud.exception.ResourceInUseException;
 import com.cloud.org.Cluster;
 import com.cloud.user.Account;
+import com.cloud.utils.IdentityProxy;
 
 @Implementation(description="Adds a new cluster", responseObject=ClusterResponse.class)
 public class AddClusterCmd extends BaseCmd {
@@ -167,6 +169,13 @@ public class AddClusterCmd extends BaseCmd {
         } catch (DiscoveryException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+        } catch (ResourceInUseException ex) {
+            s_logger.warn("Exception: ", ex);
+            ServerApiException e = new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
+            for (IdentityProxy proxyObj : ex.getIdProxyList()) {
+                e.addProxyObject(proxyObj.getTableName(), proxyObj.getValue(), proxyObj.getidFieldName());
+            }
+            throw e;
         }
     }
 }

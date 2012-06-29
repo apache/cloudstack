@@ -2483,7 +2483,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		ConsoleDef console = new ConsoleDef("pty", null, null, (short) 0);
 		devices.addDevice(console);
 
-		GraphicDef grap = new GraphicDef("vnc", (short) 0, true, null, null,
+        GraphicDef grap = new GraphicDef("vnc", (short) 0, true, vmTO.getVncAddr(), null,
 				null);
 		devices.addDevice(grap);
 
@@ -2509,6 +2509,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
 	protected synchronized StartAnswer execute(StartCommand cmd) {
 		VirtualMachineTO vmSpec = cmd.getVirtualMachine();
+        vmSpec.setVncAddr(cmd.getHostIp());
 		String vmName = vmSpec.getName();
 		LibvirtVMDef vm = null;
 
@@ -3952,24 +3953,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		if (!_can_bridge_firewall) {
 			return false;
 		}
-		List<InterfaceDef> intfs = getInterfaces(conn, vmName);
-		if (intfs.size() < 1) {
-			return false;
-		}
-		/* FIX ME: */
-		String brname = null;
-		if (vmName.startsWith("r-")) {
-			InterfaceDef intf = intfs.get(0);
-			brname = intf.getBrName();
-		} else {
-			InterfaceDef intf = intfs.get(intfs.size() - 1);
-			brname = intf.getBrName();
-		}
 
 		Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
 		cmd.add("default_network_rules_systemvm");
 		cmd.add("--vmname", vmName);
-		cmd.add("--brname", brname);
+        cmd.add("--localbrname", _linkLocalBridgeName);
 		String result = cmd.execute();
 		if (result != null) {
 			return false;

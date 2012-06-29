@@ -579,7 +579,7 @@
 											var accountObj = json.listaccountsresponse.account[0];
 
 											$.ajax({
-												url: createURL("listResourceLimits&domainid=" + accountObj.domainid + "&account=" + accountObj.name),
+												url: createURL("listResourceLimits&domainid=" + accountObj.domainid + "&account=" + todb(accountObj.name)),
 												dataType: "json",												
 												success: function(json) {
 													var limits = json.listresourcelimitsresponse.resourcelimit;													
@@ -648,7 +648,7 @@
             var accountObj = args.context.accounts[0];
 						if(isAdmin() || isDomainAdmin()) {
 							$.ajax({
-								url: createURL("listUsers&domainid=" + accountObj.domainid + "&account=" + accountObj.name + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+								url: createURL("listUsers&domainid=" + accountObj.domainid + "&account=" + todb(accountObj.name) + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
 								dataType: "json",
 								success: function(json) {
 									args.response.success({
@@ -748,7 +748,7 @@
                   array1.push("&timezone=" + todb(args.data.timezone));
 
                 array1.push("&domainid=" + accountObj.domainid);
-                array1.push("&account=" + accountObj.name);
+                array1.push("&account=" + todb(accountObj.name));
                 array1.push("&accounttype=" + accountObj.accounttype);
 
                 $.ajax({

@@ -58,6 +58,7 @@ import com.cloud.api.response.ProviderResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceCountResponse;
 import com.cloud.api.response.ResourceLimitResponse;
+import com.cloud.api.response.ResourceTagResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.ServiceResponse;
@@ -124,6 +125,7 @@ import com.cloud.org.Cluster;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
+import com.cloud.server.ResourceTag;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Swift;
@@ -292,6 +294,7 @@ public interface ResponseGenerator {
     Long getIdentiyId(String tableName, String token);
 
     /**
+<<<<<<< HEAD
      * @param offering
      * @return
      */
@@ -320,4 +323,6 @@ public interface ResponseGenerator {
      * @return
      */
     StaticRouteResponse createStaticRouteResponse(StaticRoute result);
+
+    ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag);
 }

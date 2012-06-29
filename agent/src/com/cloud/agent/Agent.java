@@ -245,9 +245,9 @@ public class Agent implements HandlerFactory, IAgentControl {
    
         _connection.start();
        while (!_connection.isStartup()) {
-    	   _shell.getBackoffAlgorithm().waitBeforeRetry();
-    	   _connection = new NioClient("Agent", _shell.getHost(), _shell.getPort(), _shell.getWorkers(), this);
-    	   _connection.start();
+           _shell.getBackoffAlgorithm().waitBeforeRetry();
+           _connection = new NioClient("Agent", _shell.getHost(), _shell.getPort(), _shell.getWorkers(), this);
+           _connection.start();
        }
     }
 
@@ -495,7 +495,7 @@ public class Agent implements HandlerFactory, IAgentControl {
                         _reconnectAllowed = false;
                         answer = new Answer(cmd, true, null);
                     } else if (cmd instanceof MaintainCommand) {
-                    	  s_logger.debug("Received maintainCommand" );
+                          s_logger.debug("Received maintainCommand" );
                           cancelTasks();
                           _reconnectAllowed = false;
                           answer = new MaintainAnswer((MaintainCommand)cmd);
@@ -820,17 +820,17 @@ public class Agent implements HandlerFactory, IAgentControl {
     }
     
     public class AgentRequestHandler extends Task {
-    	  public AgentRequestHandler(Task.Type type, Link link, Request req) {
+          public AgentRequestHandler(Task.Type type, Link link, Request req) {
               super(type, link, req);
           }
 
-		@Override
-		protected void doTask(Task task) throws Exception {
-			Request req = (Request)this.get();
-			if (!(req instanceof Response)) {
-				processRequest(req, task.getLink());
-			}
-		}
+        @Override
+        protected void doTask(Task task) throws Exception {
+            Request req = (Request)this.get();
+            if (!(req instanceof Response)) {
+                processRequest(req, task.getLink());
+            }
+        }
     }
 
     public class ServerHandler extends Task {
@@ -853,12 +853,12 @@ public class Agent implements HandlerFactory, IAgentControl {
                 try {
                     request = Request.parse(task.getData());
                     if (request instanceof Response) {
-                    	//It's for pinganswer etc, should be processed immediately.
+                        //It's for pinganswer etc, should be processed immediately.
                         processResponse((Response) request, task.getLink());
                     } else {
-                    	//put the requests from mgt server into another thread pool, as the request may take a longer time to finish. Don't block the NIO main thread pool
+                        //put the requests from mgt server into another thread pool, as the request may take a longer time to finish. Don't block the NIO main thread pool
                         //processRequest(request, task.getLink());
-                    	_executor.execute(new AgentRequestHandler(this.getType(), this.getLink(), request));
+                        _executor.execute(new AgentRequestHandler(this.getType(), this.getLink(), request));
                     }
                 } catch (final ClassNotFoundException e) {
                     s_logger.error("Unable to find this request ");

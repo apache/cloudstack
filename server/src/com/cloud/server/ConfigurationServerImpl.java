@@ -576,31 +576,25 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     public void updateKeyPairs() {
         // Grab the SSH key pair and insert it into the database, if it is not present
 
-        String userid = System.getProperty("user.name");
+        String username = System.getProperty("user.name");
         Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
-        if (!userid.startsWith("cloud") && !devel) {
+        if (!username.equalsIgnoreCase("cloud") && !devel) {
             return;
         }
         String already = _configDao.getValue("ssh.privatekey");
         String homeDir = null;
-        if (devel) {
-        	homeDir = Script.runSimpleBashScript("echo ~");
+        homeDir = Script.runSimpleBashScript("echo ~" + username);
         	if (homeDir == null) {
-        		throw new CloudRuntimeException("Cannot get home directory for account: cloud");
-        	}
-        } else {
-        	homeDir = Script.runSimpleBashScript("echo ~cloud");
-        	if (homeDir == null) {
-        		throw new CloudRuntimeException("Cannot get home directory for account: cloud");
-        	}
+            throw new CloudRuntimeException("Cannot get home directory for account: " + username);
         }
         
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Processing updateKeyPairs");
         }
-        if (homeDir != null && homeDir.equalsIgnoreCase("~")) {
-            s_logger.error("No home directory was detected.  Set the HOME environment variable to point to your user profile or home directory.");
-            throw new CloudRuntimeException("No home directory was detected.  Set the HOME environment variable to point to your user profile or home directory.");
+
+        if (homeDir != null && homeDir.startsWith("~")) {
+            s_logger.error("No home directory was detected for the user '" + username + "'. Please check the profile of this user.");
+            throw new CloudRuntimeException("No home directory was detected for the user '" + username + "'. Please check the profile of this user.");
         }
 
         File privkeyfile = new File(homeDir + "/.ssh/id_rsa");
@@ -611,7 +605,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 s_logger.info("Systemvm keypairs not found in database. Need to store them in the database");
             }
             // FIXME: take a global database lock here for safety.
-            Script.runSimpleBashScript("if [ -f ~/.ssh/id_rsa ] ; then rm -f ~/.ssh/id_rsa ; fi; ssh-keygen -t rsa -N '' -f ~/.ssh/id_rsa -q");
+            Script.runSimpleBashScript("if [ -f " + privkeyfile + " ]; then rm -f " + privkeyfile + "; fi; ssh-keygen -t rsa -N '' -f " + privkeyfile + " -q");
 
             byte[] arr1 = new byte[4094]; // configuration table column value size
             try {
@@ -662,7 +656,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         } else {
             s_logger.info("Keypairs already in database");
-            if (userid.startsWith("cloud")) {
+            if (username.equalsIgnoreCase("cloud")) {
                 s_logger.info("Keypairs already in database, updating local copy");
                 updateKeyPairsOnDisk(homeDir);
             } else {
@@ -680,7 +674,6 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     }
 
     private void writeKeyToDisk(String key, String keyPath) {
-        Script.runSimpleBashScript("mkdir -p ~/.ssh");
         File keyfile = new File(keyPath);
         if (!keyfile.exists()) {
             try {
@@ -708,7 +701,11 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     }
 
     private void updateKeyPairsOnDisk(String homeDir) {
-
+        File keyDir = new File(homeDir + "/.ssh");
+        if (!keyDir.isDirectory()) {
+            s_logger.warn("Failed to create " + homeDir + "/.ssh for storing the SSH keypars");
+            keyDir.mkdir();
+        }
         String pubKey = _configDao.getValue("ssh.publickey");
         String prvKey = _configDao.getValue("ssh.privatekey");
         writeKeyToDisk(prvKey, homeDir + "/.ssh/id_rsa");

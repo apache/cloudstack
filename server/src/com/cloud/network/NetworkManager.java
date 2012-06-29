@@ -154,8 +154,10 @@ public interface NetworkManager extends NetworkService {
 
     boolean destroyNetwork(long networkId, ReservationContext context);
 
-    Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork physicalNetwork,
-            long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
+    Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr,
+            String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork physicalNetwork,
+            long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId) 
+                    throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     /**
      * @throws ResourceAllocationException TODO

@@ -285,7 +285,6 @@
     </copy>
   </target>
 
-  <target name="build-ovm" depends="compile-ovm" />
 
   <target name="build-server" depends="compile-server">
     <mkdir dir="${server.dist.dir}" />
@@ -480,7 +479,7 @@
 
   <target name="build-servers" depends="-init, build-server" />
 
-  <target name="build-opensource" depends="-init, build-server, build-agent, build-scripts, build-ui, build-ovm, package-oss-systemvm-iso">
+  <target name="build-opensource" depends="-init, build-server, build-agent, build-scripts, build-ui, build-console-proxy, build-ovm, package-oss-systemvm-iso, build-netscaler, build-f5, build-srx, build-dp-user-dispersing, build-dp-user-concentrated-pod, build-host-allocator-random, build-user-authenticator-ldap">
     <copy overwrite="true" todir="${dist.dir}">
       <fileset dir="${base.dir}/build/deploy/">
         <include name="deploy-agent.sh" />
@@ -586,24 +585,59 @@
     <delete dir="${dist.dir}" />
     <delete dir="${unittest.dir}"/>
   </target>
-  
-  <!-- ===================== Ovm.Jar ===================== -->
-  <property name="ovm.jar" value="cloud-ovm.jar" />
-  <property name="ovm.dir" location="${base.dir}/ovm" />
-  <property name="ovm-scripts.dir" location="${ovm.dir}/scripts" />
-  <path id="ovm.classpath" >
-    <path refid="deps.classpath" />
-    <path refid="dist.classpath" />
-  </path>
-  <target name="compile-ovm" depends="-init, compile-server" description="Compile OVM">
-    <compile-java jar.name="${ovm.jar}" top.dir="${ovm.dir}" classpath="ovm.classpath" />
-  </target>
 
-  <target name="compile-all" description="Compile all of the jars" depends="compile-utils, compile-api, compile-core, compile-server, compile-ovm"/>
+  <target name="compile-all" description="Compile all of the jars" depends="compile-utils, compile-api, compile-core, compile-server, compile-ovm, compile-netscaler, compile-f5, compile-srx, compile-dp-user-dispersing, compile-dp-user-concentrated-pod, compile-host-allocator-random, compile-host-allocator-random"/>
 
   <target name="clean-all" depends="clean, clean-awsapi" description="Clean all of the generated files, including dependency cache and javadoc">
     <delete dir="${target.dir}" />
   </target>
+
+  <!-- ===================== Ovm.Jar ===================== -->
+  <target name="compile-ovm" depends="-init, compile-server" description="Compile OVM">
+  	<ant antfile="${base.dir}/plugins/hypervisors/ovm/build.xml" target="build"/>
+  </target>
+  <target name="build-ovm" depends="compile-ovm" />
+
+  <!-- =====================cloud-dp-user-dispersing.Jar ===================== -->
+  <target name="compile-dp-user-dispersing" depends="-init, compile-server" description="Compile dp-user-dispersing">
+  	<ant antfile="${base.dir}/plugins/deployment-planners/user-dispersing/build.xml" target="build"/>
+  </target>
+  <target name="build-dp-user-dispersing" depends="compile-dp-user-dispersing" />
+
+  <!-- =====================cloud-dp-user-concentrated-pod.Jar ===================== -->
+  <target name="compile-dp-user-concentrated-pod" depends="-init, compile-server" description="Compile ">
+  	<ant antfile="${base.dir}/plugins/deployment-planners/user-concentrated-pod/build.xml" target="build"/>
+  </target>
+  <target name="build-dp-user-concentrated-pod" depends="compile-dp-user-concentrated-pod" />
+ 
+  <!-- =====================cloud-host-allocator-random.jar ===================== -->
+  <target name="compile-host-allocator-random" depends="-init, compile-server" description="Compile ">
+  	<ant antfile="${base.dir}/plugins/host-allocators/random/build.xml" target="build"/>
+  </target>
+  <target name="build-host-allocator-random" depends="compile-host-allocator-random" />
+
+  <!-- =====================cloud-user-authenticator-ldap.jar ===================== -->
+  <target name="compile-user-authenticator-ldap" depends="-init, compile-server" description="Compile ">
+  	<ant antfile="${base.dir}/plugins/user-authenticators/ldap/build.xml" target="build"/>
+  </target>
+  <target name="build-user-authenticator-ldap" depends="compile-user-authenticator-ldap" />
+
+ <!-- ===================== Cloud-Plugin-Netscaler.Jar ===================== -->
+  <target name="compile-netscaler" depends="-init, compile-server" description="Compile NetScaler plugin">
+  	<ant antfile="${base.dir}/plugins/network-elements/netscaler/build.xml" target="build"/>
+  </target>
+  <target name="build-netscaler" depends="compile-netscaler"/>
+
+  <!-- ===================== Cloud-Plugin-F5.Jar ===================== -->
+  <target name="compile-f5" depends="-init, compile-server" description="Compile F5 plugin">
+  	<ant antfile="${base.dir}/plugins/network-elements/f5/build.xml" target="build"/>
+  </target>
+  <target name="build-f5" depends="compile-f5"/>
+
+  <!-- ===================== Cloud-Plugin-Srx.Jar ===================== -->
+  <target name="compile-srx" depends="-init, compile-server" description="Compile SRX plugin">
+  	<ant antfile="${base.dir}/plugins/network-elements/juniper-srx/build.xml" target="build"/>
+  </target>
+  <target name="build-srx" depends="compile-srx"/>
+
 </project>
-
-

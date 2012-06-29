@@ -1638,7 +1638,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public UserAccount authenticateUser(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
+    public UserAccount authenticateUser(String username, String password, Long domainId, String loginIpAddress, Map<String, Object[]> requestParameters) {
         UserAccount user = null;
         if (password != null) {
             user = getUserAccount(username, password, domainId, requestParameters);
@@ -1740,7 +1740,13 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }
-            EventUtils.saveEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN, "user has logged in");
+            if (NetUtils.isValidIp(loginIpAddress)) {
+                EventUtils.saveEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN,
+                        "user has logged in from IP Address " + loginIpAddress);
+            } else {
+                EventUtils.saveEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN,
+                        "user has logged in. The IP Address cannot be determined");
+            }
             return user;
         } else {
             if (s_logger.isDebugEnabled()) {

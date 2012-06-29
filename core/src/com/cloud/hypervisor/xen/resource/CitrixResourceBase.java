@@ -1133,6 +1133,27 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return cdromVBD;
     }
 
+    protected void destroyPatchVbd(Connection conn, String vmName) throws XmlRpcException, XenAPIException {
+        try {
+            if( !vmName.startsWith("r-") && !vmName.startsWith("s-") && !vmName.startsWith("v-") ) {
+                return;
+            }
+            Set<VM> vms = VM.getByNameLabel(conn, vmName);
+            for ( VM vm : vms ) {
+                Set<VBD> vbds = vm.getVBDs(conn);
+                for( VBD vbd : vbds ) {
+                   if (vbd.getType(conn) == Types.VbdType.CD ) {
+                       vbd.eject(conn);
+                       vbd.destroy(conn);
+                       break;
+                   }
+                }
+            }
+        } catch (Exception e) {
+            s_logger.debug("Cannot destory CD-ROM device for VM " + vmName + " due to " + e.toString(), e);
+        }
+    }
+
     protected CheckSshAnswer execute(CheckSshCommand cmd) {
         Connection conn = getConnection();
         String vmName = cmd.getName();
@@ -1148,6 +1169,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (result != null) {
                 return new CheckSshAnswer(cmd, "Can not ping System vm " + vmName + "due to:" + result);
             }
+            destroyPatchVbd(conn, vmName);
         } catch (Exception e) {
             return new CheckSshAnswer(cmd, e);
         }
@@ -2712,7 +2734,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         callHostPlugin(conn, "vmopsSnapshot", "unmountSnapshotsDir", "dcId", dcId.toString());
 
         setupLinkLocalNetwork(conn);
-
+        // try to destroy CD-ROM device for all system VMs on this host
+        try {
+            Host host = Host.getByUuid(conn, _host.uuid);
+            Set<VM> vms = host.getResidentVMs(conn);
+            for ( VM vm : vms ) {
+                destroyPatchVbd(conn, vm.getNameLabel(conn));
+            }
+        } catch (Exception e) {
+        }
         try {
             boolean result = cleanupHaltedVms(conn);
             if (!result) {

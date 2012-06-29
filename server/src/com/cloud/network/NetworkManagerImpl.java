@@ -2745,9 +2745,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Cannot specify CIDR when using network offering with external devices!");
         }
 
-        if (cidr != null) {
-            checkVirtualNetworkCidrOverlap(zoneId, cidr);
-        }
         // Vlan is created in 2 cases - works in Advance zone only:
         // 1) GuestType is Shared
         // 2) GuestType is Isolated, but SourceNat service is disabled
@@ -2932,16 +2929,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
-        // Don't allow to create network with vlan that already exists in the system
         if (vlanId != null) {
             String uri = "vlan://" + vlanId;
-            List<NetworkVO> networks = _networksDao.listBy(zoneId, uri);
-            if ((networks != null && !networks.isEmpty())) {
-            	// TBD: If zoneId and vlanId are being passed in as params, how to get the VO object or class? Hard code
-            	// the tablename in a call to addProxyObject().
+            // For Isolated networks, don't allow to create network with vlan that already exists in the zone
+            if (ntwkOff.getGuestType() == GuestType.Isolated) {
+                if (_networksDao.countByZoneAndUri(zoneId, uri) > 0) {
                 throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists in zone " + zoneId);
             }
+            } else {
+                //don't allow to create Shared network with Vlan that already exists in the zone for Isolated networks
+                if (_networksDao.countByZoneUriAndGuestType(zoneId, uri, GuestType.Isolated) > 0) {
+                    throw new InvalidParameterValueException("Isolated network with vlan " + vlanId + " already exists " +
+                    		"in zone " + zoneId);
+                }
         }
+        }
+        
         // If networkDomain is not specified, take it from the global configuration
         if (areServicesSupportedByNetworkOffering(networkOfferingId, Service.Dns)) {
             Map<Network.Capability, String> dnsCapabilities = getNetworkOfferingServiceCapabilities
@@ -3081,6 +3084,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         boolean isRecursive = cmd.isRecursive();
         Boolean specifyIpRanges = cmd.getSpecifyIpRanges();
         Long vpcId = cmd.getVpcId();
+        Boolean canUseForDeploy = cmd.canUseForDeploy();
 
         // 1) default is system to false if not specified
         // 2) reset parameter to false if it's specified by the regular user
@@ -3226,10 +3230,36 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
             }
 
-            return supportedNetworks;
-        } else {
+            networksToReturn=supportedNetworks;
+        }
+        
+        if (canUseForDeploy != null) {
+            List<NetworkVO> networksForDeploy = new ArrayList<NetworkVO>();
+            for (NetworkVO network : networksToReturn) {
+                if (canUseForDeploy(network) == canUseForDeploy) {
+                    networksForDeploy.add(network);
+                }
+            }
+            
+            networksToReturn=networksForDeploy;
+        }
+        
             return networksToReturn;
         }
+
+    @Override
+    public boolean canUseForDeploy(Network network) {
+        if (network.getTrafficType() != TrafficType.Guest) {
+            return false;
+        }
+        boolean hasFreeIps = true;
+        if (network.getGuestType() == GuestType.Shared) {
+            hasFreeIps = _ipAddressDao.countFreeIPsInNetwork(network.getId()) > 0;
+        } else {
+            hasFreeIps = (getAvailableIps(network, null)).size() > 0;
+        }
+       
+        return hasFreeIps;
     }
 
     private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, 
@@ -4759,35 +4789,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     public String acquireGuestIpAddress(Network network, String requestedIp) {
-        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
-        String[] cidr = network.getCidr().split("/");
-        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]));
-        Set<Long> usedIps = new TreeSet<Long>();
-
         if (requestedIp != null && requestedIp.equals(network.getGateway())) {
             s_logger.warn("Requested ip address " + requestedIp + " is used as a gateway address in network " + network);
             return null;
         }
 
-        for (String ip : ips) {
-            if (requestedIp != null && requestedIp.equals(ip)) {
-                s_logger.warn("Requested ip address " + requestedIp + " is already in use in network " + network);
-                return null;
-            }
+        Set<Long> availableIps = getAvailableIps(network, requestedIp);
 
-            usedIps.add(NetUtils.ip2Long(ip));
-        }
-        if (usedIps.size() != 0) {
-            allPossibleIps.removeAll(usedIps);
-        }
-        if (allPossibleIps.isEmpty()) {
+        if (availableIps.isEmpty()) {
             return null;
         }
 
-        Long[] array = allPossibleIps.toArray(new Long[allPossibleIps.size()]);
+        Long[] array = availableIps.toArray(new Long[availableIps.size()]);
 
         if (requestedIp != null) {
             // check that requested ip has the same cidr
+            String[] cidr = network.getCidr().split("/");
             boolean isSameCidr = NetUtils.sameSubnetCIDR(requestedIp, NetUtils.long2Ip(array[0]), Integer.parseInt(cidr[1]));
             if (!isSameCidr) {
                 s_logger.warn("Requested ip address " + requestedIp + " doesn't belong to the network " + network + " cidr");
@@ -4803,6 +4820,27 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } while (result.split("\\.")[3].equals("1"));
         return result;
     }
+
+    protected Set<Long> getAvailableIps(Network network, String requestedIp) {
+        String[] cidr = network.getCidr().split("/");
+        List<String> ips = _nicDao.listIpAddressInNetwork(network.getId());
+        Set<Long> allPossibleIps = NetUtils.getAllIpsFromCidr(cidr[0], Integer.parseInt(cidr[1]));
+        Set<Long> usedIps = new TreeSet<Long>(); 
+        
+        for (String ip : ips) {
+            if (requestedIp != null && requestedIp.equals(ip)) {
+                s_logger.warn("Requested ip address " + requestedIp + " is already in use in network" + network);
+                return null;
+            }
+
+            usedIps.add(NetUtils.ip2Long(ip));
+        }
+        if (usedIps.size() != 0) {
+            allPossibleIps.removeAll(usedIps);
+        }
+        return allPossibleIps;
+    }
+    
 
     private String getZoneNetworkDomain(long zoneId) {
         return _dcDao.findById(zoneId).getDomain();

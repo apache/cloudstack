@@ -77,7 +77,7 @@ def build_jars ():
 			"cloud-servlet-api.jar", "cloud-commons-logging-1.1.1.jar",
 			"cloud-ws-commons-util-1.0.2.jar",
 			"cloud-commons-collections-3.2.1.jar", "vmware*.jar", "cloud-secstorage-extras.jar",
-			"cloud-agent-simulator.jar", "cloud-awsapi.jar", "cloud-test.jar", "cloud-wsdl4j.jar"]
+			"cloud-agent-simulator.jar", "cloud-awsapi.jar", "cloud-test.jar", "cloud-wsdl4j.jar", "cloud-console-proxy.jar"]
 
 	for a in jars_str:
 		if _basename (a).startswith ("cloud-") \
@@ -356,7 +356,7 @@ def build_xml_api_description ():
 	bld.install_as("${PYTHONDIR}/cloudapis.py", 'cloud-cli/cloudapis/cloud.py')
 
 def build_ovm():
-	start_path = bld.path.find_dir("ovm/scripts")
+	start_path = bld.path.find_dir("plugins/hypervisors/ovm/scripts")
 	bld.substitute('**',"${AGENTLIBDIR}/scripts",chmod=0755, cwd=start_path)
 
 def build_test():

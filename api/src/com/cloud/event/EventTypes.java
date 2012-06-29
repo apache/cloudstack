@@ -278,4 +278,9 @@ public class EventTypes {
     // Static routes
     public static final String EVENT_STATIC_ROUTE_CREATE = "STATIC.ROUTE.CREATE";
     public static final String EVENT_STATIC_ROUTE_DELETE = "STATIC.ROUTE.DELETE";
+    
+    // tag related events
+    public static final String EVENT_TAGS_CREATE = "CREATE_TAGS";
+    public static final String EVENT_TAGS_DELETE = "DELETE_TAGS";
+
 }

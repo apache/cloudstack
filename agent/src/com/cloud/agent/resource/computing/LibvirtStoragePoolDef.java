@@ -17,74 +17,74 @@
 package com.cloud.agent.resource.computing;
 
 public class LibvirtStoragePoolDef {
-	public enum poolType {
-		ISCSI("iscsi"), NETFS("netfs"), LOGICAL("logical"), DIR("dir");
-		String _poolType;
+    public enum poolType {
+        ISCSI("iscsi"), NETFS("netfs"), LOGICAL("logical"), DIR("dir");
+        String _poolType;
 
-		poolType(String poolType) {
-			_poolType = poolType;
-		}
+        poolType(String poolType) {
+            _poolType = poolType;
+        }
 
-		@Override
-		public String toString() {
-			return _poolType;
-		}
-	}
+        @Override
+        public String toString() {
+            return _poolType;
+        }
+    }
 
-	private poolType _poolType;
-	private String _poolName;
-	private String _uuid;
-	private String _sourceHost;
-	private String _sourceDir;
-	private String _targetPath;
+    private poolType _poolType;
+    private String _poolName;
+    private String _uuid;
+    private String _sourceHost;
+    private String _sourceDir;
+    private String _targetPath;
 
-	public LibvirtStoragePoolDef(poolType type, String poolName, String uuid,
-			String host, String dir, String targetPath) {
-		_poolType = type;
-		_poolName = poolName;
-		_uuid = uuid;
-		_sourceHost = host;
-		_sourceDir = dir;
-		_targetPath = targetPath;
-	}
+    public LibvirtStoragePoolDef(poolType type, String poolName, String uuid,
+            String host, String dir, String targetPath) {
+        _poolType = type;
+        _poolName = poolName;
+        _uuid = uuid;
+        _sourceHost = host;
+        _sourceDir = dir;
+        _targetPath = targetPath;
+    }
 
-	public String getPoolName() {
-		return _poolName;
-	}
+    public String getPoolName() {
+        return _poolName;
+    }
 
-	public poolType getPoolType() {
-		return _poolType;
-	}
+    public poolType getPoolType() {
+        return _poolType;
+    }
 
-	public String getSourceHost() {
-		return _sourceHost;
-	}
+    public String getSourceHost() {
+        return _sourceHost;
+    }
 
-	public String getSourceDir() {
-		return _sourceDir;
-	}
+    public String getSourceDir() {
+        return _sourceDir;
+    }
 
-	public String getTargetPath() {
-		return _targetPath;
-	}
+    public String getTargetPath() {
+        return _targetPath;
+    }
 
-	@Override
-	public String toString() {
-		StringBuilder storagePoolBuilder = new StringBuilder();
-		storagePoolBuilder.append("<pool type='" + _poolType + "'>\n");
-		storagePoolBuilder.append("<name>" + _poolName + "</name>\n");
-		if (_uuid != null)
-			storagePoolBuilder.append("<uuid>" + _uuid + "</uuid>\n");
-		if (_poolType == poolType.NETFS) {
-			storagePoolBuilder.append("<source>\n");
-			storagePoolBuilder.append("<host name='" + _sourceHost + "'/>\n");
-			storagePoolBuilder.append("<dir path='" + _sourceDir + "'/>\n");
-			storagePoolBuilder.append("</source>\n");
-		}
-		storagePoolBuilder.append("<target>\n");
-		storagePoolBuilder.append("<path>" + _targetPath + "</path>\n");
-		storagePoolBuilder.append("</target>\n");
-		storagePoolBuilder.append("</pool>\n");
-		return storagePoolBuilder.toString();
-	}
+    @Override
+    public String toString() {
+        StringBuilder storagePoolBuilder = new StringBuilder();
+        storagePoolBuilder.append("<pool type='" + _poolType + "'>\n");
+        storagePoolBuilder.append("<name>" + _poolName + "</name>\n");
+        if (_uuid != null)
+            storagePoolBuilder.append("<uuid>" + _uuid + "</uuid>\n");
+        if (_poolType == poolType.NETFS) {
+            storagePoolBuilder.append("<source>\n");
+            storagePoolBuilder.append("<host name='" + _sourceHost + "'/>\n");
+            storagePoolBuilder.append("<dir path='" + _sourceDir + "'/>\n");
+            storagePoolBuilder.append("</source>\n");
+        }
+        storagePoolBuilder.append("<target>\n");
+        storagePoolBuilder.append("<path>" + _targetPath + "</path>\n");
+        storagePoolBuilder.append("</target>\n");
+        storagePoolBuilder.append("</pool>\n");
+        return storagePoolBuilder.toString();
+    }
 }

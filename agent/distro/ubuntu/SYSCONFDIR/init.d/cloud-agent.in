@@ -50,7 +50,9 @@ wait_for_network() {
     i=1
     while [ $i -lt 10 ]
     do
-        if ip addr show cloudbr0 |grep -w inet > /dev/null 2>&1; then
+        # Under Ubuntu and Debian libvirt by default creates a bridge called virbr0.
+        # That's why we want more then 3 lines back from brctl, so that there is a manually created bridge
+        if [ "$(brctl show|wc -l)" -gt 2 ]; then
             break
         else
             sleep 1
@@ -74,9 +76,8 @@ start() {
 		log_end_msg 1
 		exit 1
 	fi
- 
-    #FIXME: wait for network
-    wait_for_network
+
+        wait_for_network
 
 	if start-stop-daemon --start --quiet \
 		--pidfile "$PIDFILE" \

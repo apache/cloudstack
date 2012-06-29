@@ -168,5 +168,9 @@ public interface NetworkService {
     Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan,
             String startIp, String endIP, String gateway, String netmask, long networkOwnerId) 
                     throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
-
+    /**
+     * @param network
+     * @return
+     */
+    boolean canUseForDeploy(Network network);
 }

@@ -54,7 +54,9 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
 
     List<NetworkVO> listBy(long accountId, long networkId);
 
-    List<NetworkVO> listBy(long zoneId, String broadcastUri);
+    long countByZoneAndUri(long zoneId, String broadcastUri);
+    
+    long countByZoneUriAndGuestType(long zoneId, String broadcastUri, GuestType guestType);
 
     List<NetworkVO> listByZone(long zoneId);
 

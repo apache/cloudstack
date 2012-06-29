@@ -78,7 +78,9 @@ import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
+import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.server.StatsCollector;
+import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -191,6 +193,7 @@ public class ApiDBUtils {
     private static NetworkDomainDao _networkDomainDao;
     private static HighAvailabilityManager _haMgr;
     private static VpcManager _vpcMgr;
+    private static TaggedResourceService _taggedResourceService;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -245,6 +248,7 @@ public class ApiDBUtils {
         _networkDomainDao = locator.getDao(NetworkDomainDao.class);
         _haMgr = locator.getManager(HighAvailabilityManager.class);
         _vpcMgr = locator.getManager(VpcManager.class);
+        _taggedResourceService = locator.getManager(TaggedResourceService.class);
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is returned
         _statsCollector = StatsCollector.getInstance();
@@ -737,7 +741,7 @@ public class ApiDBUtils {
     }
     
     public static long countFreePublicIps() {
-    	return _ipAddressDao.countFreeIPs();
+    	return _ipAddressDao.countFreePublicIPs();
     }
     
     public static long findDefaultRouterServiceOffering() {
@@ -760,4 +764,13 @@ public class ApiDBUtils {
     public static List<? extends Network> listVpcNetworks(long vpcId) {
         return _networkMgr.listNetworksByVpc(vpcId);
     }
+    
+    public static boolean canUseForDeploy(Network network) {
+        return _networkMgr.canUseForDeploy(network);
+    }
+    
+    public static String getUuid(String resourceId, TaggedResourceType resourceType) {
+        return _taggedResourceService.getUuid(resourceId, resourceType);
+    }
+
 }

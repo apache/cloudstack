@@ -23,49 +23,49 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.vm.VirtualMachine.State;
 
 public interface VmMgr {
-	public Set<String> getCurrentVMs();
+    public Set<String> getCurrentVMs();
 
-	public String startVM(String vmName, String vnetId, String gateway,
-			String dns, String privateIP, String privateMac,
-			String privateMask, String publicIP, String publicMac,
-			String publicMask, int cpuCount, int cpuUtilization, long ramSize,
-			String localPath, String vncPassword);
+    public String startVM(String vmName, String vnetId, String gateway,
+            String dns, String privateIP, String privateMac,
+            String privateMask, String publicIP, String publicMac,
+            String publicMask, int cpuCount, int cpuUtilization, long ramSize,
+            String localPath, String vncPassword);
 
-	public String stopVM(String vmName, boolean force);
+    public String stopVM(String vmName, boolean force);
 
-	public String rebootVM(String vmName);
+    public String rebootVM(String vmName);
 
-	public void cleanupVM(String vmName, String local, String vnet);
+    public void cleanupVM(String vmName, String local, String vnet);
 
-	public boolean migrate(String vmName, String params);
+    public boolean migrate(String vmName, String params);
 
-	public MockVm getVm(String vmName);
+    public MockVm getVm(String vmName);
 
-	public State checkVmState(String vmName);
+    public State checkVmState(String vmName);
 
-	public Map<String, State> getVmStates();
+    public Map<String, State> getVmStates();
 
-	public Integer getVncPort(String name);
+    public Integer getVncPort(String name);
 
-	public String cleanupVnet(String vnetId);
+    public String cleanupVnet(String vnetId);
 
-	public double getHostCpuUtilization();
+    public double getHostCpuUtilization();
 
-	public int getHostCpuCount();
+    public int getHostCpuCount();
 
-	public long getHostCpuSpeed();
+    public long getHostCpuSpeed();
 
-	public long getHostTotalMemory();
+    public long getHostTotalMemory();
 
-	public long getHostFreeMemory();
+    public long getHostFreeMemory();
 
-	public long getHostDom0Memory();
+    public long getHostDom0Memory();
 
-	public MockVm createVmFromSpec(VirtualMachineTO vmSpec);
+    public MockVm createVmFromSpec(VirtualMachineTO vmSpec);
 
-	public void createVbd(VirtualMachineTO vmSpec, String vmName, MockVm vm);
+    public void createVbd(VirtualMachineTO vmSpec, String vmName, MockVm vm);
 
-	public void createVif(VirtualMachineTO vmSpec, String vmName, MockVm vm);
+    public void createVif(VirtualMachineTO vmSpec, String vmName, MockVm vm);
 
-	public void configure(Map<String, Object> params);
+    public void configure(Map<String, Object> params);
 }

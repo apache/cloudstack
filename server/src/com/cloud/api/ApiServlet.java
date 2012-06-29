@@ -203,7 +203,7 @@ public class ApiServlet extends HttpServlet {
                     if (username != null) {
                         String pwd = ((password == null) ? null : password[0]);
                         try {
-                            _apiServer.loginUser(session, username[0], pwd, domainId, domain, params);
+                            _apiServer.loginUser(session, username[0], pwd, domainId, domain, req.getRemoteAddr(), params);
                             auditTrailSb.insert(0,
                                     "(userId=" + session.getAttribute("userid") + " accountId=" + ((Account) session.getAttribute("accountobj")).getId() + " sessionId=" + session.getId() + ")");
                             String loginResponse = getLoginSuccessResponse(session, responseType);
@@ -401,7 +401,8 @@ public class ApiServlet extends HttpServlet {
             }
             sb.append(" } }");
         } else {
-            sb.append("<loginresponse>");
+            sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
+            sb.append("<loginresponse cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
             sb.append("<timeout>" + inactiveInterval + "</timeout>");
             Enumeration attrNames = session.getAttributeNames();
             if (attrNames != null) {
@@ -430,7 +431,10 @@ public class ApiServlet extends HttpServlet {
         if (BaseCmd.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
             sb.append("{ \"logoutresponse\" : { \"description\" : \"success\" } }");
         } else {
-            sb.append("<logoutresponse><description>success</description></logoutresponse>");
+            sb.append("<?xml version=\"1.0\" encoding=\"ISO-8859-1\"?>");
+            sb.append("<logoutresponse cloud-stack-version=\"" + ApiDBUtils.getVersion() + "\">");
+            sb.append("<description>success</description>");
+            sb.append("</logoutresponse>");
         }
         return sb.toString();
     }

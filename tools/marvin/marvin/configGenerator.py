@@ -198,8 +198,8 @@ def describe_setup_in_basic_mode():
                     h.password = "password"
                     memory = 8*1024*1024*1024
                     localstorage=1*1024*1024*1024*1024
-                    #h.url = "http://Sim/%d%d%d%d/cpucore=1&cpuspeed=8000&memory=%d&localstorage=%d"%(l,i,j,k,memory,localstorage)
-                    h.url = "http://Sim/%d%d%d%d"%(l,i,j,k)
+                    #h.url = "http://sim/%d%d%d%d/cpucore=1&cpuspeed=8000&memory=%d&localstorage=%d"%(l,i,j,k,memory,localstorage)
+                    h.url = "http://sim/%d%d%d%d"%(l,i,j,k)
                     c.hosts.append(h)
                 
                 '''add 2 primary storages'''
@@ -297,8 +297,8 @@ def describe_setup_in_advanced_mode():
                     h.password = "password"
                     memory = 8*1024*1024*1024
                     localstorage=1*1024*1024*1024*1024
-                    #h.url = "http://Sim/%d%d%d%d/cpucore=1&cpuspeed=8000&memory=%d&localstorage=%d"%(l,i,j,k,memory,localstorage)
-                    h.url = "http://Sim/%d%d%d%d"%(l,i,j,k)
+                    #h.url = "http://sim/%d%d%d%d/cpucore=1&cpuspeed=8000&memory=%d&localstorage=%d"%(l,i,j,k,memory,localstorage)
+                    h.url = "http://sim/%d%d%d%d"%(l,i,j,k)
                     c.hosts.append(h)
                 
                 '''add 2 primary storages'''
@@ -389,8 +389,14 @@ def get_setup_config(file):
 if __name__ == "__main__":
     parser = OptionParser()
   
+    parser.add_option("-a", "--advanced", action="store_true", default=False, dest="advanced", help="use advanced networking")
     parser.add_option("-o", "--output", action="store", default="./datacenterCfg", dest="output", help="the path where the json config file generated, by default is ./datacenterCfg")
     
     (options, args) = parser.parse_args()
-    config = describe_setup_in_basic_mode()
+    
+    if options.advanced:
+        config = describe_setup_in_advanced_mode()
+    else:
+        config = describe_setup_in_basic_mode()
+        
     generate_setup_config(config, options.output)

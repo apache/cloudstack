@@ -72,6 +72,7 @@ import com.cloud.api.response.ProviderResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceCountResponse;
 import com.cloud.api.response.ResourceLimitResponse;
+import com.cloud.api.response.ResourceTagResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.SecurityGroupResultObject;
 import com.cloud.api.response.SecurityGroupRuleResponse;
@@ -161,6 +162,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.server.Criteria;
+import com.cloud.server.ResourceTag;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
@@ -2318,10 +2320,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         boolean savedValue = SerializationContext.current().getUuidTranslation();
         SerializationContext.current().setUuidTranslation(false);
-        jobResponse.setJobResult((ResponseObject) ApiSerializerHelper.fromSerializedString(job.getResult()));
-        SerializationContext.current().setUuidTranslation(savedValue);
 
         Object resultObject = ApiSerializerHelper.fromSerializedString(job.getResult());
+        jobResponse.setJobResult((ResponseObject) resultObject);
+        SerializationContext.current().setUuidTranslation(savedValue);
+        
         if (resultObject != null) {
             Class<?> clz = resultObject.getClass();
             if (clz.isPrimitive() || clz.getSuperclass() == Number.class || clz == String.class || clz == Date.class) {
@@ -2898,6 +2901,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setSpecifyIpRanges(network.getSpecifyIpRanges());
         response.setVpcId(network.getVpcId());
+        response.setCanUseForDeploy(ApiDBUtils.canUseForDeploy(network));
 
         response.setObjectName("network");
         return response;
@@ -3570,4 +3574,37 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
     
+    @Override
+    public ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag) {
+        ResourceTagResponse response = new ResourceTagResponse();
+        response.setKey(resourceTag.getKey());
+        response.setValue(resourceTag.getValue());
+        response.setResourceType(resourceTag.getResourceType().toString());        
+        response.setId(ApiDBUtils.getUuid(String.valueOf(resourceTag.getResourceId()),resourceTag.getResourceType()));
+        Long accountId = resourceTag.getAccountId();
+        Long domainId = resourceTag.getDomainId();
+        if (accountId != null) {
+            Account account = ApiDBUtils.findAccountByIdIncludingRemoved(resourceTag.getAccountId());
+
+            if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                // find the project
+                Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+                response.setProjectId(project.getId());
+                response.setProjectName(project.getName());
+            } else {
+                response.setAccountName(account.getAccountName());
+            }
+        }
+        
+        if (domainId != null) {
+            response.setDomainId(domainId);
+            response.setDomainName(ApiDBUtils.findDomainById(domainId).getName());
+        }
+        
+        response.setCustomer(resourceTag.getCustomer());
+        
+        response.setObjectName("tag");
+  
+        return response;
+    }    
 }

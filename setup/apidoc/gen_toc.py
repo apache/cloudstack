@@ -119,6 +119,7 @@ known_categories = {
     'VPC': 'VPC', 
     'PrivateGateway': 'VPC',
     'StaticRoute': 'VPC',
+    'Tags': 'Resource tags',
     }
 
 

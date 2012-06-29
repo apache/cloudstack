@@ -51,6 +51,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
+import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.snapshot.SnapshotService;
 import com.cloud.template.TemplateService;
@@ -131,6 +132,7 @@ public abstract class BaseCmd {
     public static StorageNetworkService _storageNetworkService;
     public static VpcService _vpcService;
     public static NetworkACLService _networkACLService;
+    public static TaggedResourceService _taggedResourceService;
 
     static void setComponents(ResponseGenerator generator) {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
@@ -160,6 +162,7 @@ public abstract class BaseCmd {
         _storageNetworkService = locator.getManager(StorageNetworkService.class);
         _vpcService = locator.getManager(VpcService.class);
         _networkACLService = locator.getManager(NetworkACLService.class);
+        _taggedResourceService = locator.getManager(TaggedResourceService.class);
     }
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;

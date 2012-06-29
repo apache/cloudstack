@@ -759,7 +759,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
 
                     cmds = new Commands(OnError.Stop);
-                    cmds.addCommand(new StartCommand(vmTO));
+                    cmds.addCommand(new StartCommand(vmTO, dest.getHost()));
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
 

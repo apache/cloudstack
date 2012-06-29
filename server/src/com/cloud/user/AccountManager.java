@@ -71,7 +71,7 @@ public interface AccountManager extends AccountService {
      *            made, and the signature itself in the single sign-on case
      * @return a user object, null if the user failed to authenticate
      */
-    UserAccount authenticateUser(String username, String password, Long domainId, Map<String, Object[]> requestParameters);
+    UserAccount authenticateUser(String username, String password, Long domainId, String loginIpAddress, Map<String, Object[]> requestParameters);
     
     /**
      * Locate a user by their apiKey

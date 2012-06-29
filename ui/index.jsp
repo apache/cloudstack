@@ -1158,6 +1158,7 @@
               <div class="content">
                 <span class="title" data-list-item="name">Alert 1</span>
                 <p data-list-item="description">Alert 1</p>
+				        <p data-list-item="sent">Alert 1</p>
               </div>
             </li>
           </ul>
@@ -1583,7 +1584,6 @@
     <script src="lib/jquery-ui/js/jquery-ui.js" type="text/javascript"></script>		
     <script src="lib/date.js" type="text/javascript"></script>
     <script src="lib/jquery.cookies.js" type="text/javascript"></script>
-    <script src="lib/jquery.timers.js" type="text/javascript"></script>
     <script src="lib/jquery.md5.js" type="text/javascript" ></script>
 		
     <script src="lib/excanvas.js"></script>

@@ -228,22 +228,24 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
             long ownerId = domain.getAccountId();
             if ((cleanup != null) && cleanup.booleanValue()) {
                 if (!cleanupDomain(domain.getId(), ownerId)) {
-                    s_logger.error("Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() + " (id: " + domain.getId() + ").");
-                    return false;
+                    CloudRuntimeException e = new CloudRuntimeException("Failed to clean up domain resources and sub domains, delete failed on domain " + domain.getName() + " (id: " + domain.getId() + ").");
+                    e.addProxyObject(domain, domain.getId(), "domainId");
+                    throw e;
                 }
             } else {
                 List<AccountVO> accountsForCleanup = _accountDao.findCleanupsForRemovedAccounts(domain.getId());
                 if (accountsForCleanup.isEmpty()) {
                     if (!_domainDao.remove(domain.getId())) {
-                        s_logger.error("Delete failed on domain " + domain.getName() + " (id: " + domain.getId()
-                                + "); please make sure all users and sub domains have been removed from the domain before deleting");
                         rollBackState = true;
-                        return false;
+                        CloudRuntimeException e = new CloudRuntimeException("Delete failed on domain " + domain.getName() + " (id: " + domain.getId() + "); Please make sure all users and sub domains have been removed from the domain before deleting");
+                        e.addProxyObject(domain, domain.getId(), "domainId");
+                        throw e;
                     }
                 } else {
-                    s_logger.warn("Can't delete the domain yet because it has " + accountsForCleanup.size() + "accounts that need a cleanup");
                     rollBackState = true;
-                    return false;
+                    CloudRuntimeException e = new CloudRuntimeException("Can't delete the domain yet because it has " + accountsForCleanup.size() + "accounts that need a cleanup");
+                    e.addProxyObject(domain, domain.getId(), "domainId");
+                    throw e;
                 }
             }
 
@@ -251,7 +253,10 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
             return true;
         } catch (Exception ex) {
             s_logger.error("Exception deleting domain with id " + domain.getId(), ex);
-            return false;
+            if (ex instanceof CloudRuntimeException)
+                throw (CloudRuntimeException)ex;
+            else
+                return false;
         } finally {
             //when success is false
             if (rollBackState) {
