@@ -36,8 +36,8 @@
       <title>What exactly are we building?</title>
       <para>
 	  This runbook will focus on building a CloudStack cloud using KVM with 
-	  CentOS 6.2 with NFS storage utilizing Layer-3 for network isolation 
-	  (aka Security Groups).  
+	  CentOS 6.2 with NFS storage on a flat layer-2 network utilizing 
+          layer-3 network isolation (aka Security Groups).  
       </para>
       <para> 
         KVM, or Kernel-based Virtual Machine is a virtualization technology
