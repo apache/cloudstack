@@ -16,6 +16,7 @@
 # @VERSION@
 
 source /root/func.sh
+source /opt/cloud/bin/vpc_func.sh
 
 lock="biglock"
 locked=$(getLockFile $lock)
@@ -67,6 +68,13 @@ desetup_dnsmasq() {
   sleep 1
 }
 
+setup_usage() {
+  sudo iptables -t mangle -N NETWORK_STATS_$dev
+  sudo iptables -t mangle -A POSTROUTING -o $dev -j NETWORK_STATS_$dev
+  sudo iptables -t mangle -A POSTROUTING -i $dev -j NETWORK_STATS_$dev
+  sudo iptables -t mangle -A NETWORK_STATS_$dev -o $dev ! -s $vpccidr
+  sudo iptables -t mangle -A NETWORK_STATS_$dev -i $dev ! -d $vpccidr
+}
 
 create_guest_network() {
   logger -t cloud " $(basename $0): Create network on interface $dev,  gateway $gw, network $ip/$mask "
@@ -143,6 +151,7 @@ do
   esac
 done
 
+vpccidr=getVPCcidr
 
 if [ "$Cflag$Dflag$dflag" != "11" ]
 then

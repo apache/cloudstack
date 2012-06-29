@@ -16,6 +16,11 @@ unplug_nic() {
   sudo ip route flush table $tableName
   sudo sed -i /"$tableNo $tableName"/d /etc/iproute2/rt_tables 2>/dev/null
   sudo ip route flush cache
+  # remove usage
+  sudo iptables -t mangle -F NETWORK_STATS_$dev 2>/dev/null
+  sudo iptables -t mangle -D POSTROUTING -o $dev -j NETWORK_STATS_$dev 2>/dev/null
+  sudo iptables -t mangle -D POSTROUTING -i $dev -j NETWORK_STATS_$dev 2>/dev/null
+  sudo iptables -t mangle -X NETWORK_STATS_$dev 2>/dev/null
 }
 
 action=$1

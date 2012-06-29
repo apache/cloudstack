@@ -40,7 +40,7 @@ create_usage_rules () {
 }
 
 get_usage () {
-  iptables -L NETWORK_STATS_$gGateway -n -v -x | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
+  iptables -L NETWORK_STATS_$ethDev -n -v -x | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
   if [ $? -gt 0 ]
   then
      printf $?
@@ -49,7 +49,7 @@ get_usage () {
 }
 
 reset_usage () {
-  iptables -Z NETWORK_STATS_$gGateway > /dev/null
+  iptables -Z NETWORK_STATS_$ethDev > /dev/null
   if [ $? -gt 0  -a $? -ne 2 ]
   then
      return 1
@@ -93,8 +93,7 @@ done
 
 if [ "$cflag" == "1" ] 
 then
-  create_usage_rules  
-  unlock_exit $? $lock $locked
+  unlock_exit 0 $lock $locked
 fi
 
 if [ "$gflag" == "1" ] 

@@ -28,3 +28,18 @@ getEthByIp (){
   return 1
 }    
 
+getVPCcidr () {
+  CMDLINE=$(cat /var/cache/cloud/cmdline)
+  for i in $CMDLINE
+  do
+    # search for foo=bar pattern and cut out foo
+    KEY=$(echo $i | cut -d= -f1)
+    VALUE=$(echo $i | cut -d= -f2)
+    if [ "$KEY" == "vpccidr" ]
+    then
+      echo "$VALUE"
+      return 0
+    fi
+  done
+  return 1
+}
