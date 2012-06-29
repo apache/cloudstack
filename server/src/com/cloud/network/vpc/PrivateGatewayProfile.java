@@ -83,4 +83,14 @@ public class PrivateGatewayProfile implements PrivateGateway{
     public long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
+
+    @Override
+    public long getAccountId() {
+        return vpcGateway.getAccountId();
+    }
+
+    @Override
+    public long getDomainId() {
+        return vpcGateway.getDomainId();
+    }
 }

@@ -1057,7 +1057,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         
         //2) create gateway entry
         gatewayVO = new VpcGatewayVO(ipAddress, VpcGateway.Type.Private, vpcId, privateNtwk.getDataCenterId(),
-                privateNtwk.getId(), vlan, gateway, netmask);
+                privateNtwk.getId(), vlan, gateway, netmask, vpc.getAccountId(), vpc.getDomainId());
         _vpcGatewayDao.persist(gatewayVO);
         
         s_logger.debug("Created vpc gateway entry " + gatewayVO);
@@ -1149,9 +1149,25 @@ public class VpcManagerImpl implements VpcManager, Manager{
         String ipAddress = cmd.getIpAddress();
         String vlan = cmd.getVlan();
         Long vpcId = cmd.getVpcId();
+        Long id = cmd.getId();
+        Boolean isRecursive = cmd.isRecursive();
+        Boolean listAll = cmd.listAll();
+        Long domainId = cmd.getDomainId();
+        String accountName = cmd.getAccountName();
+        Account caller = UserContext.current().getCaller();
+        List<Long> permittedAccounts = new ArrayList<Long>();
         
         Filter searchFilter = new Filter(VpcGatewayVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, 
+                ListProjectResourcesCriteria>(domainId, isRecursive, null);
+        _accountMgr.buildACLSearchParameters(caller, null, accountName, null, permittedAccounts, domainIdRecursiveListProject,
+                listAll, false);
+        domainId = domainIdRecursiveListProject.first();
+        isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+
         SearchBuilder<VpcGatewayVO> sb = _vpcGatewayDao.createSearchBuilder();
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         
         if (vlan != null) {
             SearchBuilder<NetworkVO> ntwkSearch = _ntwkDao.createSearchBuilder();
@@ -1159,8 +1175,12 @@ public class VpcManagerImpl implements VpcManager, Manager{
             sb.join("networkSearch", ntwkSearch, sb.entity().getNetworkId(), ntwkSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
         
-        
         SearchCriteria<VpcGatewayVO> sc = sb.create();
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);  
+        
+        if (id != null) {
+            sc.addAnd("id", Op.EQ, id);
+        }
         
         if (ipAddress != null) {
             sc.addAnd("ip4Address", Op.EQ, ipAddress);
@@ -1334,7 +1354,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
         Boolean isRecursive = cmd.isRecursive();
         Boolean listAll = cmd.listAll();
         String accountName = cmd.getAccountName();
-
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
         

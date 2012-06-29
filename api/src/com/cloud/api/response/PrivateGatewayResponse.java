@@ -21,7 +21,7 @@ import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
-public class PrivateGatewayResponse extends BaseResponse{
+public class PrivateGatewayResponse extends BaseResponse implements ControlledEntityResponse{
     
     @SerializedName(ApiConstants.ID) @Param(description="the id of the private gateway")
     private IdentityProxy id = new IdentityProxy("vpc_gateways");
@@ -49,6 +49,24 @@ public class PrivateGatewayResponse extends BaseResponse{
     
     @SerializedName(ApiConstants.PHYSICAL_NETWORK_ID) @Param(description="the physical network id")
     private IdentityProxy physicalNetworkId = new IdentityProxy("physical_network");
+    
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "the account associated with the private gateway")
+    private String accountName;
+    
+    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id of the private gateway")
+    private IdentityProxy projectId = new IdentityProxy("projects");
+    
+    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name of the private gateway")
+    private String projectName;
+
+    @SerializedName(ApiConstants.DOMAIN_ID)
+    @Param(description = "the ID of the domain associated with the private gateway")
+    private IdentityProxy domainId = new IdentityProxy("domain");
+
+    @SerializedName(ApiConstants.DOMAIN)
+    @Param(description = "the domain associated with the private gateway")
+    private String domainName;
     
     
     public void setId(Long id) {
@@ -85,6 +103,31 @@ public class PrivateGatewayResponse extends BaseResponse{
 
     public void setPhysicalNetworkId(Long physicalNetworkId) {
         this.physicalNetworkId.setValue(physicalNetworkId);
+    }
+    
+    @Override
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    @Override
+    public void setDomainId(Long domainId) {
+        this.domainId.setValue(domainId);
+    }
+    
+    @Override
+    public void setDomainName(String domainName) {
+        this.domainName = domainName;
+    }
+    
+    @Override
+    public void setProjectId(Long projectId) {
+        this.projectId.setValue(projectId);
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
     }
 }
 

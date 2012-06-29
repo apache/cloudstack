@@ -3587,6 +3587,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setZoneName(zone.getName());
         response.setAddress(result.getIp4Address());
         response.setPhysicalNetworkId(result.getPhysicalNetworkId());
+        
+        populateAccount(response, result.getAccountId());
+        populateDomain(response, result.getDomainId());
+        
         response.setObjectName("privategateway");
         
         return response;

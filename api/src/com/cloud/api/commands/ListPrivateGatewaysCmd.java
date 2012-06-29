@@ -18,7 +18,8 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListCmd;
+import com.cloud.api.BaseCmd.CommandType;
+import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -30,7 +31,7 @@ import com.cloud.network.vpc.PrivateGateway;
  * @author Alena Prokharchyk
  */
 @Implementation(description="List private gateways", responseObject=PrivateGatewayResponse.class)
-public class ListPrivateGatewaysCmd extends BaseListCmd{
+public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCmd{
     public static final Logger s_logger = Logger.getLogger(ListPrivateGatewaysCmd.class.getName());
 
     private static final String s_name = "listprivategatewaysresponse";
@@ -38,6 +39,9 @@ public class ListPrivateGatewaysCmd extends BaseListCmd{
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+    @IdentityMapper(entityTableName="static_routes")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list private gateway by id")
+    private Long id;
     
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="list gateways by ip address")
     private String ipAddress;
@@ -64,6 +68,10 @@ public class ListPrivateGatewaysCmd extends BaseListCmd{
     
     public Long getVpcId() {
         return vpcId;
+    }
+    
+    public Long getId() {
+        return id;
     }
 
     /////////////////////////////////////////////////////

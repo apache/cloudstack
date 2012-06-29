@@ -354,7 +354,7 @@ listVPCOfferings=com.cloud.api.commands.ListVPCOfferingsCmd;15
 
 #### Private gateway commands
 createPrivateGateway=com.cloud.api.commands.CreatePrivateGatewayCmd;1
-listPrivateGateways=com.cloud.api.commands.ListPrivateGatewaysCmd;1
+listPrivateGateways=com.cloud.api.commands.ListPrivateGatewaysCmd;15
 deletePrivateGateway=com.cloud.api.commands.DeletePrivateGatewayCmd;1
 
 #### Network ACL commands
