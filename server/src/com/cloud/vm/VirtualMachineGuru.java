@@ -74,4 +74,11 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      * @return id if the handler works for this vm and can parse id.  null if not.
      */
     Long convertToId(String vmName);
+    
+    /**
+     * Prepare Vm for Stop
+     * @param profile
+     * @return
+     */
+    void prepareStop(VirtualMachineProfile<T> profile);
 }

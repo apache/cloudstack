@@ -201,7 +201,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineName;
 import com.trilead.ssh2.SCPClient;
 import com.xensource.xenapi.Bond;
 import com.xensource.xenapi.Connection;
@@ -2823,10 +2822,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 vms = VM.getByNameLabel(conn, cmd.getVmName());
             } catch (XenAPIException e0) {
                 s_logger.debug("getByNameLabel failed " + e0.toString());
-                return new RebootAnswer(cmd, "getByNameLabel failed " + e0.toString());
+                return new RebootAnswer(cmd, "getByNameLabel failed " + e0.toString(), false);
             } catch (Exception e0) {
                 s_logger.debug("getByNameLabel failed " + e0.getMessage());
-                return new RebootAnswer(cmd, "getByNameLabel failed");
+                return new RebootAnswer(cmd, "getByNameLabel failed", false);
             }
             for (VM vm : vms) {
                 try {
@@ -2834,10 +2833,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } catch (Exception e) {
                     String msg = e.toString();
                     s_logger.warn(msg, e);
-                    return new RebootAnswer(cmd, msg);
+                    return new RebootAnswer(cmd, msg, false);
                 }
             }
-            return new RebootAnswer(cmd, "reboot succeeded", null, null);
+            return new RebootAnswer(cmd, "reboot succeeded", true);
         } finally {
         	synchronized (_cluster.intern()) {
 	            s_vms.put(_cluster, _name, cmd.getVmName(), State.Running);
@@ -2848,16 +2847,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected Answer execute(RebootRouterCommand cmd) {
         Connection conn = getConnection();
-        Long bytesSent = 0L;
-        Long bytesRcvd = 0L;
-        if (VirtualMachineName.isValidRouterName(cmd.getVmName())) {
-            long[] stats = getNetworkStats(conn, cmd.getPrivateIpAddress());
-            bytesSent = stats[0];
-            bytesRcvd = stats[1];
-        }
         RebootAnswer answer = execute((RebootCommand) cmd);
-        answer.setBytesSent(bytesSent);
-        answer.setBytesReceived(bytesRcvd);
         if (answer.getResult()) {
             String cnct = connect(conn, cmd.getVmName(), cmd.getPrivateIpAddress());
             networkUsage(conn, cmd.getPrivateIpAddress(), "create", null);
@@ -3320,23 +3310,21 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 	                s_logger.info("VM does not exist on XenServer" + _host.uuid);
 	                s_vms.remove(_cluster, _name, vmName);
             	}
-                return new StopAnswer(cmd, "VM does not exist", 0 , 0L, 0L);
+                return new StopAnswer(cmd, "VM does not exist", 0 , true);
             }
-            Long bytesSent = 0L;
-            Long bytesRcvd = 0L;
             for (VM vm : vms) {
                 VM.Record vmr = vm.getRecord(conn);
 
                 if (vmr.isControlDomain) {
                     String msg = "Tring to Shutdown control domain";
                     s_logger.warn(msg);
-                    return new StopAnswer(cmd, msg);
+                    return new StopAnswer(cmd, msg, false);
                 }
 
                 if (vmr.powerState == VmPowerState.RUNNING && !isRefNull(vmr.residentOn) && !vmr.residentOn.getUuid(conn).equals(_host.uuid)) {
                     String msg = "Stop Vm " + vmName + " failed due to this vm is not running on this host: " + _host.uuid + " but host:" + vmr.residentOn.getUuid(conn);
                     s_logger.warn(msg);
-                    return new StopAnswer(cmd, msg);
+                    return new StopAnswer(cmd, msg, false);
                 }
 
                 State state = s_vms.getState(_cluster, vmName);
@@ -3350,13 +3338,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     if (vmr.powerState == VmPowerState.RUNNING) {
                         /* when stop a vm, set affinity to current xenserver */
                         vm.setAffinity(conn, vm.getResidentOn(conn));
-                        if (VirtualMachineName.isValidRouterName(vmName)) {
-                            if (cmd.getPrivateRouterIpAddress() != null) {
-                                long[] stats = getNetworkStats(conn, cmd.getPrivateRouterIpAddress());
-                                bytesSent = stats[0];
-                                bytesRcvd = stats[1];
-                            }
-                        }
+
                         if (_canBridgeFirewall) {
                             String result = callHostPlugin(conn, "vmops", "destroy_network_rules_for_vm", "vmName", cmd
                                     .getVmName());
@@ -3371,7 +3353,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } catch (Exception e) {
                     String msg = "Catch exception " + e.getClass().getName() + " when stop VM:" + cmd.getVmName() + " due to " + e.toString();
                     s_logger.debug(msg);
-                    return new StopAnswer(cmd, msg);
+                    return new StopAnswer(cmd, msg, false);
                 } finally {
 
                     try {
@@ -3396,7 +3378,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                                     disableVlanNetwork(conn, network);
                                 }
                             }
-                            return new StopAnswer(cmd, "Stop VM " + vmName + " Succeed", 0, bytesSent, bytesRcvd);
+                            return new StopAnswer(cmd, "Stop VM " + vmName + " Succeed", 0, true);
                         }
                     } catch (XenAPIException e) {
                         String msg = "VM destroy failed in Stop " + vmName + " Command due to " + e.toString();
@@ -3416,16 +3398,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } catch (XenAPIException e) {
             String msg = "Stop Vm " + vmName + " fail due to " + e.toString();
             s_logger.warn(msg, e);
-            return new StopAnswer(cmd, msg);
+            return new StopAnswer(cmd, msg, false);
         } catch (XmlRpcException e) {
             String msg = "Stop Vm " + vmName + " fail due to " + e.getMessage();
             s_logger.warn(msg, e);
-            return new StopAnswer(cmd, msg);
+            return new StopAnswer(cmd, msg, false);
         } catch (Exception e) {
             s_logger.warn("Unable to stop " + vmName + " due to ",  e);
             return new StopAnswer(cmd, e);
         }
-        return new StopAnswer(cmd, "Stop VM failed");
+        return new StopAnswer(cmd, "Stop VM failed", false);
     }
 
     private List<VDI> getVdis(Connection conn, VM vm) {

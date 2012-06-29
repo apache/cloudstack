@@ -1457,5 +1457,10 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 			Commands cmds, ReservationContext context) {
 		// TODO Auto-generated method stub
 		return false;
+    }
+
+	@Override
+	public void prepareStop(VirtualMachineProfile<SecondaryStorageVmVO> profile) {
+		
 	}
 }

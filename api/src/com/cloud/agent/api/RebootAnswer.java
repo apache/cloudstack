@@ -17,52 +17,25 @@
 package com.cloud.agent.api;
 
 public class RebootAnswer extends Answer {
-    Long bytesSent;
-    Long bytesReceived;
     Integer vncPort;
     
     protected RebootAnswer() {
     }
     
-    public RebootAnswer(RebootCommand cmd, String details, Long bytesSent, Long bytesReceived, Integer vncport) {
+    public RebootAnswer(RebootCommand cmd, String details, Integer vncport) {
         super(cmd, true, details);
-        this.bytesReceived = bytesReceived;
-        this.bytesSent = bytesSent;
         this.vncPort = vncport;
     }
     
-    public RebootAnswer(RebootCommand cmd, String details, Long bytesSent, Long bytesReceived) {
-        super(cmd, true, details);
-        this.bytesReceived = bytesReceived;
-        this.bytesSent = bytesSent;
+    public RebootAnswer(RebootCommand cmd, String details, boolean success) {
+        super(cmd, success, details);
         this.vncPort = null;
-    }
-    
-    public RebootAnswer(RebootCommand cmd, String details) {
-        super(cmd, false, details);
-        bytesSent = null;
-        bytesReceived = null;
     }
     
     public RebootAnswer(RebootCommand cmd, Exception e) {
         super(cmd, e);
     }
     
-    public void setBytesReceived(Long bytesReceived) {
-        this.bytesReceived = bytesReceived;
-    }
-    
-    public Long getBytesReceived() {
-        return bytesReceived;
-    }
-    
-    public void setBytesSent(Long bytesSent) {
-        this.bytesSent = bytesSent;
-    }
-    
-    public Long getBytesSent() {
-        return bytesSent;
-    }
     public Integer getVncPort() {
     	return vncPort;
     }
