@@ -73,6 +73,12 @@ public class VpcGatewayVO implements VpcGateway{
     @Column(name="uuid")
     private String uuid;
     
+    @Column(name = "account_id")
+    long accountId;
+
+    @Column(name = "domain_id")
+    long domainId;
+    
     protected VpcGatewayVO(){
         this.uuid = UUID.randomUUID().toString();
     }
@@ -86,9 +92,12 @@ public class VpcGatewayVO implements VpcGateway{
      * @param vlanTag TODO
      * @param gateway TODO
      * @param netmask TODO
+     * @param accountId TODO
+     * @param domainId TODO
      * @param account_id
      */
-    public VpcGatewayVO(String ip4Address, Type type, Long vpcId, long zoneId, Long networkId, String vlanTag, String gateway, String netmask) {
+    public VpcGatewayVO(String ip4Address, Type type, Long vpcId, long zoneId, Long networkId, String vlanTag, 
+            String gateway, String netmask, long accountId, long domainId) {
         this.ip4Address = ip4Address;
         this.type = type;
         this.vpcId = vpcId;
@@ -98,6 +107,8 @@ public class VpcGatewayVO implements VpcGateway{
         this.gateway = gateway;
         this.netmask = netmask;
         this.uuid = UUID.randomUUID().toString();
+        this.accountId = accountId;
+        this.domainId = domainId;
     }
 
     @Override
@@ -155,5 +166,15 @@ public class VpcGatewayVO implements VpcGateway{
     @Override
     public String getVlanTag() {
         return vlanTag;
+    }
+    
+    @Override
+    public long getAccountId() {
+        return accountId;
+    }
+
+    @Override
+    public long getDomainId() {
+        return domainId;
     }
 }

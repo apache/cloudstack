@@ -2263,11 +2263,15 @@ CREATE TABLE `cloud`.`vpc_gateways` (
   `vpc_id` bigint unsigned NOT NULL COMMENT 'id of the vpc the gateway belongs to',
   `zone_id` bigint unsigned NOT NULL COMMENT 'id of the zone the gateway belongs to',
   `created` datetime COMMENT 'date created',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner id',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain id',
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_vpc_gateways__network_id` FOREIGN KEY `fk_vpc_gateways__network_id`(`network_id`) REFERENCES `networks`(`id`),
   CONSTRAINT `fk_vpc_gateways__vpc_id` FOREIGN KEY `fk_vpc_gateways__vpc_id`(`vpc_id`) REFERENCES `vpc`(`id`),
   CONSTRAINT `fk_vpc_gateways__zone_id` FOREIGN KEY `fk_vpc_gateways__zone_id`(`zone_id`) REFERENCES `data_center`(`id`),
+  CONSTRAINT `fk_vpc_gateways__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_vpc_gateways__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
   CONSTRAINT `uc_vpc_gateways__uuid` UNIQUE (`uuid`),
   INDEX `i_vpc_gateways__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

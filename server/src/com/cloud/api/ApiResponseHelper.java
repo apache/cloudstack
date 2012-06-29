@@ -3588,6 +3588,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setZoneName(zone.getName());
         response.setAddress(result.getIp4Address());
         response.setPhysicalNetworkId(result.getPhysicalNetworkId());
+        
+        populateAccount(response, result.getAccountId());
+        populateDomain(response, result.getDomainId());
+        
         response.setObjectName("privategateway");
         
         return response;
@@ -3612,13 +3616,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         
         return response;
     }
-    
-    @Override
-    public PrivateGatewayResponse createPrivateGatewayResponseResponse(PrivateGateway result) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-    
+  
     @Override
     public Site2SiteVpnGatewayResponse createSite2SiteVpnGatewayResponse(Site2SiteVpnGateway result) {
         Site2SiteVpnGatewayResponse response = new Site2SiteVpnGatewayResponse();
