@@ -47,6 +47,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
+import com.cloud.network.element.Site2SiteVpnServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
@@ -1065,5 +1066,14 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     public boolean isPrivateGateway(Nic guestNic) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#getSite2SiteVpnElements()
+     */
+    @Override
+    public List<? extends Site2SiteVpnServiceProvider> getSite2SiteVpnElements() {
+        // TODO Auto-generated method stub
+        return null;
     }
 }
