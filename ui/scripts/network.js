@@ -3328,7 +3328,7 @@
 														if (result.jobstatus == 1) {															
 															var obj = result.jobresult.vpngateway;
 															var vpngatewayid = obj.id;	
-                              //???
+                            
 															$.ajax({
 																url: createURL('createVpnCustomerGateway'),
 																data: {
@@ -3348,7 +3348,6 @@
 																			dataType: "json",
 																			success: function(json) {													
 																				var result = json.queryasyncjobresultresponse;	
-																				debugger;													
 																				if (result.jobstatus == 0) {
 																					return; //Job has not completed
 																				}
@@ -3356,7 +3355,8 @@
 																					clearInterval(createvpncustomergatewayIntervalID); 														
 																					if (result.jobstatus == 1) {															
 																						var obj = result.jobresult.vpncustomergateway;
-																						var vpncustomergatewayid = obj.id;															
+																						var vpncustomergatewayid = obj.id;	
+                                            //???																					
 																					}
 																					else if (result.jobstatus == 2) {
 																						alert("Failed to create VPN customer gateway. Error: " + _s(result.jobresult.errortext));
@@ -3370,8 +3370,7 @@
 																		});                              
 																	}, 3000); 																
 																}
-															});							  	
-															//???															
+															});									
 														}
 														else if (result.jobstatus == 2) {
 															alert("Failed to create VPN gateway. Error: " + _s(result.jobresult.errortext));

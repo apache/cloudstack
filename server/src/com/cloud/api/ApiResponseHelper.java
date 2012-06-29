@@ -3637,6 +3637,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setGuestCidrList(result.getGuestCidrList());
         response.setIpsecPsk(result.getIpsecPsk());
         response.setRemoved(result.getRemoved());
+        response.setObjectName("vpncustomergateway");
         return response;
     }
 
