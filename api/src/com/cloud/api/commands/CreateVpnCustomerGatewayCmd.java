@@ -32,7 +32,7 @@ import com.cloud.user.UserContext;
 public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVpnCustomerGatewayCmd.class.getName());
 
-    private static final String s_name = "createcustomergatewayresponse";
+    private static final String s_name = "createvpncustomergatewayresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -52,7 +52,7 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ESP_POLICY, type=CommandType.STRING, required=true, description="ESP policy of the customer gateway")
     private String espPolicy;
 
-    @Parameter(name=ApiConstants.LIFETIME, type=CommandType.STRING, required=false, description="Lifetime of vpn connection to the customer gateway, in seconds")
+    @Parameter(name=ApiConstants.LIFETIME, type=CommandType.LONG, required=false, description="Lifetime of vpn connection to the customer gateway, in seconds")
     private Long lifetime;
 
     /////////////////////////////////////////////////////
