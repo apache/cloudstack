@@ -154,7 +154,9 @@
       var $tiers = $('<ul>').addClass('tiers');
       var $router = elems.router();
       var $chart = $('<div>').addClass('vpc-chart');
-      var $title = $('<div>').addClass('vpc-title').html(vpcName);
+      var $title = $('<div>').addClass('vpc-title').html(vpcName).append(
+        $('<span>').addClass('icon').html('&nbsp')
+      );
 
       var showAddTierDialog = function() {
         if ($(this).find('.loading-overlay').size()) {

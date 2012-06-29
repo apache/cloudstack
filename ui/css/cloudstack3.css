@@ -8856,6 +8856,13 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   color: #5F768A;
 }
 
+.vpc-chart .vpc-title .icon {
+  padding: 7px 15px;
+  background: url(../images/sprites.png) no-repeat -145px -195px;
+	margin-left: 10px;
+  cursor: pointer;
+}
+
 .vpc-chart ul.tiers {
   padding: 0 0 0 26px;
   margin: 79px 0 0 232px;
