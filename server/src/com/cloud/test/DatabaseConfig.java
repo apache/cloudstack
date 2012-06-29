@@ -330,6 +330,8 @@ public class DatabaseConfig {
         s_defaultConfigurationValues.put("system.vm.use.local.storage", "false");
         s_defaultConfigurationValues.put("use.local.storage", "false");
         s_defaultConfigurationValues.put("init", "false");
+        s_defaultConfigurationValues.put("cpu.overprovisioning.factor", "1");
+        s_defaultConfigurationValues.put("mem.overprovisioning.factor", "1");
     }
     
     protected DatabaseConfig() {

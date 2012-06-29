@@ -36,7 +36,6 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.xen.resource.XenServerConnectionPool;
 import com.cloud.resource.ResourceManager;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
@@ -81,6 +80,9 @@ public class Db21to22MigrationUtil {
     
     /* add guid in cluster table */
     private void setupClusterGuid() {
+    	
+   //FIXME moving out XenServer code out of server. This upgrade step need to be taken care of 
+  /*
         XenServerConnectionPool _connPool = XenServerConnectionPool.getInstance();
         List<ClusterVO> clusters = _clusterDao.listByHyTypeWithoutGuid(HypervisorType.XenServer.toString());
         for (ClusterVO cluster : clusters) {
@@ -114,8 +116,10 @@ public class Db21to22MigrationUtil {
                 break;
             }
         }
+    */
     }      
     
+
     /**
      * This method migrates the zones based on bug: 7204
      * based on the param direct.attach.untagged.vlan.enabled, we update zone to basic or advanced for 2.2

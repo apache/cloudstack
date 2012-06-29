@@ -574,8 +574,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         final Map<String, String> configs = _configDao.getConfiguration("AgentManager", params);
 
         _mgmt_host = configs.get("host");
-        _routerRamSize = NumbersUtil.parseInt(configs.get("router.ram.size"), DEFAULT_ROUTER_VM_RAMSIZE);
-        _routerCpuMHz = NumbersUtil.parseInt(configs.get("router.cpu.mhz"), DEFAULT_ROUTER_CPU_MHZ);
+        _routerRamSize = NumbersUtil.parseInt(_configDao.getValue("router.ram.size"), DEFAULT_ROUTER_VM_RAMSIZE);
+        _routerCpuMHz = NumbersUtil.parseInt(_configDao.getValue("router.cpu.mhz"), DEFAULT_ROUTER_CPU_MHZ);
 
         _routerExtraPublicNics = NumbersUtil.parseInt(_configDao.getValue(Config.RouterExtraPublicNics.key()), 2);
 

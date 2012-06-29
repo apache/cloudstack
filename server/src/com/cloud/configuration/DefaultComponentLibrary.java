@@ -71,7 +71,6 @@ import com.cloud.maint.dao.AgentUpgradeDaoImpl;
 import com.cloud.network.ExternalLoadBalancerUsageManagerImpl;
 import com.cloud.network.NetworkManagerImpl;
 import com.cloud.network.StorageNetworkManagerImpl;
-import com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl;
 import com.cloud.network.dao.ExternalFirewallDeviceDaoImpl;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceDaoImpl;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
@@ -94,17 +93,12 @@ import com.cloud.network.dao.PortProfileDaoImpl;
 import com.cloud.network.dao.RemoteAccessVpnDaoImpl;
 import com.cloud.network.dao.VirtualRouterProviderDaoImpl;
 import com.cloud.network.dao.VpnUserDaoImpl;
-import com.cloud.network.element.CiscoNexusVSMElement;
-import com.cloud.network.element.CiscoNexusVSMElementService;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.network.firewall.FirewallManagerImpl;
 import com.cloud.network.lb.ElasticLoadBalancerManagerImpl;
 import com.cloud.network.lb.LoadBalancingRulesManagerImpl;
 import com.cloud.network.lb.dao.ElasticLbVmMapDaoImpl;
-import com.cloud.network.ovs.OvsTunnelManagerImpl;
-import com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl;
-import com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl;
 import com.cloud.network.router.VirtualNetworkApplianceManagerImpl;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl;
 import com.cloud.network.rules.RulesManagerImpl;
@@ -298,8 +292,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("UsageEventDao", UsageEventDaoImpl.class);
         addDao("ClusterDetailsDao", ClusterDetailsDaoImpl.class);
         addDao("UserVmDetailsDao", UserVmDetailsDaoImpl.class);
-        addDao("OvsTunnelInterfaceDao", OvsTunnelInterfaceDaoImpl.class);
-        addDao("OvsTunnelAccountDao", OvsTunnelNetworkDaoImpl.class);
         addDao("StoragePoolWorkDao", StoragePoolWorkDaoImpl.class);
         addDao("HostTagsDao", HostTagsDaoImpl.class);
         addDao("NetworkDomainDao", NetworkDomainDaoImpl.class);
@@ -325,7 +317,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("ExternalFirewallDeviceDao", ExternalFirewallDeviceDaoImpl.class);
         addDao("NetworkExternalLoadBalancerDao", NetworkExternalLoadBalancerDaoImpl.class);
         addDao("NetworkExternalFirewallDao", NetworkExternalFirewallDaoImpl.class);
-        addDao("CiscoNexusVSMDeviceDao", CiscoNexusVSMDeviceDaoImpl.class);
         addDao("ClusterVSMMapDao", ClusterVSMMapDaoImpl.class);
         addDao("PortProfileDao", PortProfileDaoImpl.class);
         addDao("PhysicalNetworkTrafficTypeDao", PhysicalNetworkTrafficTypeDaoImpl.class);
@@ -379,7 +370,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("LoadBalancingRulesManager", LoadBalancingRulesManagerImpl.class);
         addManager("RulesManager", RulesManagerImpl.class);
         addManager("RemoteAccessVpnManager", RemoteAccessVpnManagerImpl.class);
-        addManager("OvsTunnelManager", OvsTunnelManagerImpl.class);
         addManager("Capacity Manager", CapacityManagerImpl.class);
         addManager("VirtualMachineManager", ClusteredVirtualMachineManagerImpl.class);
         addManager("HypervisorGuruManager", HypervisorGuruManagerImpl.class);
@@ -430,7 +420,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
 
     protected void populateServices() {
         addService("VirtualRouterElementService", VirtualRouterElementService.class, VirtualRouterElement.class);
-        addService("CiscoNexusVSMElementService", CiscoNexusVSMElementService.class, CiscoNexusVSMElement.class);
     }
 
     @Override

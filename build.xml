@@ -21,11 +21,13 @@
     <property name="target.dir" location="${base.dir}/target"/>
 
     <import file="${base.dir}/build/build-cloud.xml" optional="false"/>
+    <import file="${base.dir}/build/build-cloud-plugins.xml" optional="false"/>
     <import file="${base.dir}/build/build-docs.xml" optional="true"/>
     <import file="${base.dir}/build/build-tests.xml" optional="true"/>
     <import file="${base.dir}/build/build-marvin.xml" optional="true"/>
     <import file="${base.dir}/build/package.xml" optional="true"/>
     <import file="${base.dir}/build/developer.xml" optional="true"/>
+    <import file="${base.dir}/build/build-clouddev.xml" optional="true"/>
     <import file="${base.dir}/build/build-usage.xml" optional="false"/>
     <import file="${base.dir}/build/build-aws-api.xml" optional="false"/>
 </project>
