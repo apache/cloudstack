@@ -1,0 +1,19 @@
+Welcome. 
+
+This file will talk about hacking on the Runbook document. 
+
+The document itself is written using DocBook XML with a publishing tool
+called Publican. You can find more about publican at:
+http://fedorahosted.org/publican
+
+In addition to needing publican - you will also need the CloudStack brand
+for publican. This package contains all of the standard legal disclaimers,
+logos, etc, to 'brand' the document as part of Apache CloudStack project. 
+
+In CloudStack's source repo that is located at docs/publican-cloudstack.
+
+Patches are encouraged and welcome; as are forks! If you want to take this Runbook
+as a base and extend it to a different hypervisor, or a different networking model
+or something else entirely, please do so. 
+
+--David
