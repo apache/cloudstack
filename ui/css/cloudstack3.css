@@ -2837,7 +2837,7 @@ Dialogs*/
   -webkit-box-shadow: 0px -4px 15px #4C4A4A;
   -o-box-shadow: 0px -4px 15px #4C4A4A;
   box-shadow: 0px -4px 15px #4C4A4A;
-  position:absolute;
+  position: absolute;
 }
 
 .ui-dialog .ui-widget-content {
@@ -8840,27 +8840,93 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 /*VPC / vApps*/
 .vpc-chart {
   width: 100%;
-  height: 93%;
+  height: 94%;
   overflow: auto;
   position: relative;
   margin: 30px 0 0;
+  background: #FFFFFF 0px 24px;
 }
 
 .vpc-chart .vpc-title {
-  font-size: 24px;
-  /*+placement:shift 50px 40px;*/
+  width: 210px;
+  font-size: 22px;
+  /*+placement:shift 11px 41px;*/
   position: relative;
-  left: 50px;
-  top: 40px;
+  left: 11px;
+  top: 41px;
   position: absolute;
   color: #5F768A;
+}
+
+.vpc-chart .vpc-title > span {
+  max-width: 160px;
+  display: block;
+  float: left;
+  overflow-y: hidden;
+  overflow-x: auto;
 }
 
 .vpc-chart .vpc-title .icon {
   padding: 7px 15px;
   background: url(../images/sprites.png) no-repeat -145px -195px;
-	margin-left: 10px;
+  margin-left: 10px;
   cursor: pointer;
+  /*+placement:shift 6px -8px;*/
+  position: relative;
+  left: 6px;
+  top: -8px;
+  float: left;
+}
+
+.vpc-chart .vpc-title .vpc-configure-tooltip {
+  width: 129px;
+  padding: 35px 10px 10px;
+  font-size: 14px;
+  display: none;
+  position: absolute;
+}
+
+.vpc-chart .vpc-title .vpc-configure-tooltip .arrow {
+  width: 30px;
+  height: 20px;
+  background: #FFFFFF url(../images/sprites.png) no-repeat -589px -997px;
+  /*+placement:shift 13px 26px;*/
+  position: relative;
+  left: 13px;
+  top: 26px;
+  position: absolute;
+  z-index: 1;
+}
+
+.vpc-chart .vpc-title .vpc-configure-tooltip ul {
+  border: 1px solid #C2C2C2;
+  background: #FFFFFF;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  /*+placement:shift 0px -6px;*/
+  position: relative;
+  left: 0px;
+  top: -6px;
+  margin: 10px 0;
+  padding: 9px;
+  /*+box-shadow:0px 1px 8px #CBCBCB;*/
+  -moz-box-shadow: 0px 1px 8px #CBCBCB;
+  -webkit-box-shadow: 0px 1px 8px #CBCBCB;
+  -o-box-shadow: 0px 1px 8px #CBCBCB;
+  box-shadow: 0px 1px 8px #CBCBCB;
+}
+
+.vpc-chart .vpc-title .vpc-configure-tooltip li {
+  padding: 3px 0 5px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.vpc-chart .vpc-title .vpc-configure-tooltip li:hover {
+  font-weight: bold;
 }
 
 .vpc-chart ul.tiers {
