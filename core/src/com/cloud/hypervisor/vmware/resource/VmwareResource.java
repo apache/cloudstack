@@ -2314,17 +2314,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_NIC_MASK, "0");
                 	
                     if (getVmState(vmMo) != State.Stopped) {
-                        Long bytesSent = 0L;
-                        Long bytesRcvd = 0L;
-
-                        if (VirtualMachineName.isValidRouterName(cmd.getVmName())) {
-                        	//Private IP is 0.0.0.0 for Direct Network virtual router and network usage is not metered for Direct network from Virtual Router
-                            if (cmd.getPrivateRouterIpAddress() != null && !"0.0.0.0".equals(cmd.getPrivateRouterIpAddress())) {
-                                long[] stats = getNetworkStats(cmd.getPrivateRouterIpAddress());
-                                bytesSent = stats[0];
-                                bytesRcvd = stats[1];
-                            }
-                        }
                         
                         // before we stop VM, remove all possible snapshots on the VM to let
                         // disk chain be collapsed
@@ -2332,11 +2321,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         vmMo.removeAllSnapshots();
                         if (vmMo.safePowerOff(_shutdown_waitMs)) {
                             state = State.Stopped;
-                            return new StopAnswer(cmd, "Stop VM " + cmd.getVmName() + " Succeed", 0, bytesSent, bytesRcvd);
+                            return new StopAnswer(cmd, "Stop VM " + cmd.getVmName() + " Succeed", 0, true);
                         } else {
                         	String msg = "Have problem in powering off VM " + cmd.getVmName() + ", let the process continue";
                         	s_logger.warn(msg);
-                            return new StopAnswer(cmd, msg, 0, 0L, 0L);
+                            return new StopAnswer(cmd, msg, 0, true);
                         }
                     } else {
                         state = State.Stopped;
@@ -2344,7 +2333,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                     String msg = "VM " + cmd.getVmName() + " is already in stopped state";
                     s_logger.info(msg);
-                    return new StopAnswer(cmd, msg, 0, 0L, 0L);
+                    return new StopAnswer(cmd, msg, 0, true);
                 } finally {
                     synchronized (_vms) {
                         _vms.put(cmd.getVmName(), state);
@@ -2357,7 +2346,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                 String msg = "VM " + cmd.getVmName() + " is no longer in vSphere";
                 s_logger.info(msg);
-                return new StopAnswer(cmd, msg, 0, 0L, 0L);
+                return new StopAnswer(cmd, msg, 0, true);
             }
         } catch (Exception e) {
             if (e instanceof RemoteException) {
@@ -2367,7 +2356,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             String msg = "StopCommand failed due to " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg);
-            return new StopAnswer(cmd, msg);
+            return new StopAnswer(cmd, msg, false);
         }
     }
 
@@ -2376,17 +2365,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.info("Executing resource RebootRouterCommand: " + _gson.toJson(cmd));
         }
 
-        Long bytesSent = 0L;
-        Long bytesRcvd = 0L;
-        if (VirtualMachineName.isValidRouterName(cmd.getVmName())) {
-            long[] stats = getNetworkStats(cmd.getPrivateIpAddress());
-            bytesSent = stats[0];
-            bytesRcvd = stats[1];
-        }
-
         RebootAnswer answer = (RebootAnswer) execute((RebootCommand) cmd);
-        answer.setBytesSent(bytesSent);
-        answer.setBytesReceived(bytesRcvd);
 
         if (answer.getResult()) {
             String connectResult = connect(cmd.getVmName(), cmd.getPrivateIpAddress());
@@ -2412,7 +2391,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (vmMo != null) {
                 try {
                     vmMo.rebootGuest();
-                    return new RebootAnswer(cmd, "reboot succeeded", null, null);
+                    return new RebootAnswer(cmd, "reboot succeeded", true);
                 } catch(ToolsUnavailable e) {
                     s_logger.warn("VMware tools is not installed at guest OS, we will perform hard reset for reboot");
                 } catch(Exception e) {
@@ -2421,16 +2400,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                 // continue to try with hard-reset
                 if (vmMo.reset()) {
-                    return new RebootAnswer(cmd, "reboot succeeded", null, null);
+                    return new RebootAnswer(cmd, "reboot succeeded", true);
                 }
 
                 String msg = "Reboot failed in vSphere. vm: " + cmd.getVmName();
                 s_logger.warn(msg);
-                return new RebootAnswer(cmd, msg);
+                return new RebootAnswer(cmd, msg, false);
             } else {
                 String msg = "Unable to find the VM in vSphere to reboot. vm: " + cmd.getVmName();
                 s_logger.warn(msg);
-                return new RebootAnswer(cmd, msg);
+                return new RebootAnswer(cmd, msg, false);
             }
         } catch (Exception e) {
             if (e instanceof RemoteException) {
@@ -2440,7 +2419,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             String msg = "RebootCommand failed due to " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg);
-            return new RebootAnswer(cmd, msg);
+            return new RebootAnswer(cmd, msg, false);
         }
     }
 

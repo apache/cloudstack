@@ -104,4 +104,11 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
      */
     boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm, 
             ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException;
+    
+    /**
+     * Prepare Vm for Stop
+     * @param profile
+     * @return
+     */
+    void prepareStop(VirtualMachineProfile<T> profile);
 }
