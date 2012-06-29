@@ -271,6 +271,7 @@
       var $panel = args.panel;
       var $container = this.element;
       var $toHide = $panel.siblings(':not(.always-maximized)');
+      var $shadow = $toHide.find('div.shadow');
 
       if (args.panel.hasClass('maximized')) {
         _breadcrumb.filter($panel).removeClass('maximized');
@@ -279,6 +280,7 @@
         _breadcrumb.filter($panel.siblings()).find('span').animate({ opacity: 1 });
         $toHide.animate({ left: _panel.position($container, {}) },
                         { duration: 500 });
+        $shadow.show();
       } else {
         _breadcrumb.filter($panel).addClass('maximized');
         $panel.removeClass('reduced');
@@ -286,6 +288,7 @@
         _breadcrumb.filter($panel.siblings()).find('span').animate({ opacity: 0.5 });
         $toHide.animate(_panel.initialState($container),
                         { duration: 500 });
+        $shadow.hide();
       }
     },
 
