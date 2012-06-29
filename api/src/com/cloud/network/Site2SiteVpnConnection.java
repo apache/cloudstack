@@ -6,7 +6,6 @@ public interface Site2SiteVpnConnection {
     enum State {
         Pending,
         Connected,
-        Disconnecting,
         Disconnected,
         Error,
     }

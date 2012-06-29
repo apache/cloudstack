@@ -28,6 +28,14 @@ usage() {
 
 #set -x
 
+start_ipsec() {
+    service ipsec status > /dev/null
+    if [ $? -ne 0 ]
+    then
+        service ipsec start > /dev/null
+    fi
+}
+
 enable_iptable() {
   sudo iptables -A INPUT -i $outIf -p udp -m udp --dport 500 -j ACCEPT
   for net in $rightnets
@@ -46,17 +54,22 @@ disable_iptable() {
 
 ipsec_tunnel_del() {
   disable_iptable
+  sudo ipsec auto --down vpn-$rightpeer
+  sudo ipsec auto --delete vpn-$rightpeer
   outIp=$leftpeer
   local vpnconffile=$vpnconfdir/ipsec.vpn-$rightpeer.conf
   local vpnsecretsfile=$vpnconfdir/ipsec.vpn-$rightpeer.secrets
   logger -t cloud "$(basename $0): removing configuration for ipsec tunnel to $rightpeer"
   sudo rm -f $vpnconffile
   sudo rm -f $vpnsecretsfile
+  sudo ipsec auto --rereadall
 }
 
 ipsec_tunnel_add() {
-  outIp=$leftpeer
+  #need to unify with remote access VPN
+  start_ipsec
 
+  outIp=$leftpeer
   sudo mkdir -p $vpnconfdir
   local vpnconffile=$vpnconfdir/ipsec.vpn-$rightpeer.conf
   local vpnsecretsfile=$vpnconfdir/ipsec.vpn-$rightpeer.secrets
@@ -84,21 +97,43 @@ ipsec_tunnel_add() {
     sudo echo "  dpddelay=30" >> $vpnconffile &&
     sudo echo "  dpdtimeout=120" >> $vpnconffile &&
     sudo echo "  dpdaction=restart" >> $vpnconffile &&
-    sudo echo "  auto=start" >> $vpnconffile &&
+    sudo echo "  auto=add" >> $vpnconffile &&
     sudo echo "$leftpeer $rightpeer: PSK \"$secret\"" > $vpnsecretsfile &&
 
     sudo chmod 0400 $vpnsecretsfile
 
     enable_iptable
 
-    sudo service ipsec restart
+    sudo ipsec auto --rereadall
+    sudo ipsec auto --add vpn-$rightpeer
+    sudo ipsec auto --up vpn-$rightpeer
     # Prevent NAT on "marked" VPN traffic
     sudo iptables -D POSTROUTING -t nat -o $outIf -j SNAT --to-source $outIp
     sudo iptables -D POSTROUTING -t nat -o $outIf -m mark ! --mark $vpnoutmark -j SNAT --to-source $outIp
     sudo iptables -A POSTROUTING -t nat -o $outIf -m mark ! --mark $vpnoutmark -j SNAT --to-source $outIp
 
-  result=$?
   logger -t cloud "$(basename $0): done ipsec tunnel entry for right peer=$rightpeer right networks=$rightnets"
+
+  #20 seconds for checking if it's ready
+  for i in {1..4}
+  do
+    logger -t cloud "$(basename $0): checking connection status..."
+    ./checks2svpn.sh $rightpeer
+    result=$?
+    if [ $result -eq 0 ]
+    then
+        break
+    fi
+    sleep 5
+  done
+  if [ $result -eq 0 ]
+  then
+    logger -t cloud "$(basename $0): connect to remote successful"
+  else
+    logger -t cloud "$(basename $0): fail to connect to remote, status code: $result"
+    logger -t cloud "$(basename $0): would stop site-to-site VPN connection"
+    ipsec_tunnel_del
+  fi
   return $result
 }
 
@@ -168,16 +203,19 @@ done < /tmp/iflist
 
 rightnets=${rightnets//,/ }
 
+ret=0
 #Firewall ports for one-to-one/static NAT
 if [ "$opflag" == "1" ]
 then
     ipsec_tunnel_add
+    ret=$?
 elif [ "$opflag" == "2" ]
 then
     ipsec_tunnel_del
+    ret=$?
 else
     printf "Invalid action specified, must choose -A or -D to add/del tunnels\n" >&2
     unlock_exit 5 $lock $locked
 fi
 
-unlock_exit 0 $lock $locked
+unlock_exit $ret $lock $locked
