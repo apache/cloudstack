@@ -475,7 +475,7 @@
         setTimeout(function() {
           args.response.success({
             data: {
-              tiers: []
+              tiers: tiers
             }
           });
         }, 1000);
