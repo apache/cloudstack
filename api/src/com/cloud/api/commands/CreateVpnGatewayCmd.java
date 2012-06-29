@@ -97,12 +97,12 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
     
     @Override
     public String getSyncObjType() {
-        return BaseAsyncCmd.networkSyncObject;
+        return BaseAsyncCmd.vpcSyncObject;
     }
 
     @Override
     public Long getSyncObjId() {
-        return getIp().getAssociatedWithNetworkId();
+        return getIp().getVpcId();
     }
 
     private IpAddress getIp() {

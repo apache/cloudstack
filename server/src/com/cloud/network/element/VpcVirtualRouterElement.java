@@ -456,11 +456,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return true;
         }
 
-        if (!_vpcRouterMgr.startSite2SiteVpn(conn, routers.get(0))) {
-            throw new CloudRuntimeException("Failed to apply site-to-site VPN in VPC " + ip.getVpcId());
-        }
-
-        return true;
+        return _vpcRouterMgr.startSite2SiteVpn(conn, routers.get(0));
     }
 
     @Override
@@ -485,10 +481,6 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
             return true;
         }
 
-        if (!_vpcRouterMgr.stopSite2SiteVpn(conn, routers.get(0))) {
-            throw new CloudRuntimeException("Failed to apply site-to-site VPN in VPC " + ip.getVpcId());
-        }
-
-        return true;
+        return _vpcRouterMgr.stopSite2SiteVpn(conn, routers.get(0));
     }
 }
