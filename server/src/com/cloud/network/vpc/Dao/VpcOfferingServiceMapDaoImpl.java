@@ -18,11 +18,12 @@ import javax.ejb.Local;
 
 import com.cloud.network.Network.Service;
 import com.cloud.network.vpc.VpcOfferingServiceMapVO;
-import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
 
 /**
  * @author Alena Prokharchyk
@@ -32,6 +33,7 @@ import com.cloud.utils.db.SearchCriteria;
 public class VpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServiceMapVO, Long> implements VpcOfferingServiceMapDao{
     final SearchBuilder<VpcOfferingServiceMapVO> AllFieldsSearch;
     final SearchBuilder<VpcOfferingServiceMapVO> MultipleServicesSearch;
+    final GenericSearchBuilder<VpcOfferingServiceMapVO, String> ServicesSearch;
 
     
     protected VpcOfferingServiceMapDaoImpl() {
@@ -48,6 +50,11 @@ public class VpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServ
         MultipleServicesSearch.and("service", MultipleServicesSearch.entity().getService(), SearchCriteria.Op.IN);
         MultipleServicesSearch.and("provider", MultipleServicesSearch.entity().getProvider(), SearchCriteria.Op.EQ);
         MultipleServicesSearch.done();
+        
+        ServicesSearch = createSearchBuilder(String.class);
+        ServicesSearch.and("offeringId", ServicesSearch.entity().getVpcOfferingId(), SearchCriteria.Op.EQ);
+        ServicesSearch.select(null, Func.DISTINCT, ServicesSearch.entity().getService());
+        ServicesSearch.done();
     }
     
     @Override
@@ -86,5 +93,12 @@ public class VpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServ
         }
         
         return false;
+    }
+
+    @Override
+    public List<String> listServicesForVpcOffering(long offId) {
+        SearchCriteria<String> sc = ServicesSearch.create();;
+        sc.setParameters("offeringId", offId);
+        return customSearch(sc, null);
     }
 }
