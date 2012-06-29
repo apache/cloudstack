@@ -310,6 +310,15 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             NicProfile publicNic = _itMgr.addVmToNetwork(router, publicNetwork, defaultNic);
             //setup public network
             if (publicNic != null) {
+                if (ipAddress.isSourceNat()) {
+                    if (router.getPublicIpAddress() == null) {
+                        DomainRouterVO routerVO = _routerDao.findById(router.getId());
+                        routerVO.setPublicIpAddress(ipAddress.getAddress().toString());
+                        routerVO.setPublicNetmask(ipAddress.getNetmask());
+                        routerVO.setPublicMacAddress(ipAddress.getMacAddress());
+                        _routerDao.update(routerVO.getId(), routerVO);
+                    }
+                }
                 publicNic.setDefaultNic(true);
                 if (ipAddress != null) {
                     IPAddressVO ipVO = _ipAddressDao.findById(ipAddress.getId());

@@ -76,4 +76,9 @@ public interface FirewallManager extends FirewallService {
 
     boolean addSystemFirewallRules(IPAddressVO ip, Account acct);
 
+    /**
+     * @param rule
+     */
+    void removeRule(FirewallRule rule);
+
 }

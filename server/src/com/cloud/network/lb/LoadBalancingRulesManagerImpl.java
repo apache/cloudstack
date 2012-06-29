@@ -675,7 +675,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             s_logger.warn("Unable to remove firewall rule id=" + lb.getId() + " as it has related firewall rule id=" + relatedRule.getId() + "; leaving it in Revoke state");
             success = false;
         } else {
-            _firewallDao.remove(lb.getId());
+            _firewallMgr.removeRule(lb);
         }
 
         _elbMgr.handleDeleteLoadBalancerRule(lb, callerUserId, caller);
@@ -720,6 +720,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         }
 
         LoadBalancer result = _elbMgr.handleCreateLoadBalancerRule(lb, lbOwner, lb.getNetworkId());
+        boolean performedIpAssoc = false;
         if (result == null) {
             IpAddress ip = null;
             Network guestNetwork = _networkMgr.getNetwork(lb.getNetworkId());
@@ -732,8 +733,13 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             try {
                 if (ipAddressVO != null) {
                     if (ipAddressVO.getAssociatedWithNetworkId() == null) {
+                      //set networkId just for verification purposes
+                        ipAddressVO.setAssociatedWithNetworkId(lb.getNetworkId());
+                        _networkMgr.checkIpForService(ipAddressVO, Service.Lb);
+                        
                         s_logger.debug("The ip is not associated with the network id="+ lb.getNetworkId() + " so assigning");
                         ipAddressVO = _networkMgr.associateIPToGuestNetwork(ipAddrId, lb.getNetworkId());
+                        boolean perfomedIpAssoc = true;
                     }
                     _networkMgr.checkIpForService(ipAddressVO, Service.Lb);
                 }   
@@ -751,6 +757,15 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 if (result == null && ip != null) {
                     s_logger.debug("Releasing system IP address " + ip + " as corresponding lb rule failed to create");
                     _networkMgr.handleSystemIpRelease(ip);
+                }
+                // release ip address if ipassoc was perfored
+                if (performedIpAssoc) {
+                    //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
+                    ip = _ipAddressDao.findById(ip.getId());
+                    if (ip != null && ip.getVpcId() != null && _firewallDao.listByIp(ip.getId()).isEmpty()) {
+                        s_logger.debug("Releasing VPC ip address " + ip + " as LB rule failed to create");
+                        _networkMgr.unassignIPFromVpcNetwork(ip.getId());
+                    }
                 }
             }
         }
@@ -771,7 +786,6 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         long sourceIpId = lb.getSourceIpAddressId();
 
         IPAddressVO ipAddr = _ipAddressDao.findById(sourceIpId);
-        Long networkId = ipAddr.getSourceNetworkId();
         // make sure ip address exists
         if (ipAddr == null || !ipAddr.readyToUse()) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id specified");
@@ -786,7 +800,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPortStart, srcPortEnd, lb.getProtocol(), 
                 Purpose.LoadBalancing, FirewallRuleType.User);
 
-        networkId = ipAddr.getAssociatedWithNetworkId();
+        Long networkId = ipAddr.getAssociatedWithNetworkId();
         if (networkId == null) {
         	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule ; specified sourceip id is not associated with any network");
         	ex.addProxyObject(ipAddr, sourceIpId, "sourceIpId");            
@@ -842,7 +856,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
 
                 txn.start();
                 _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
-                _lbDao.remove(newRule.getId());
+                removeLBRule(newRule);
 
                 txn.commit();
             }
@@ -897,7 +911,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 boolean checkForReleaseElasticIp = false;
                 txn.start();
                 if (lb.getState() == FirewallRule.State.Revoke) {
-                    _lbDao.remove(lb.getId());
+                    removeLBRule(lb);
                     s_logger.debug("LB " + lb.getId() + " is successfully removed");
                     checkForReleaseElasticIp = true;
                 } else if (lb.getState() == FirewallRule.State.Add) {
@@ -1290,4 +1304,17 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         return _lbDao.findById(lbId);
     }
 
+    @DB
+    protected void removeLBRule(LoadBalancerVO rule) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        _lbDao.remove(rule.getId());
+        //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
+        IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
+        if (ip != null && ip.getVpcId() != null && _firewallDao.listByIp(ip.getId()).isEmpty()) {
+            _networkMgr.unassignIPFromVpcNetwork(ip.getId());
+        }
+        
+        txn.commit();
+    }
 }
