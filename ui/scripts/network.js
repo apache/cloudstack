@@ -3356,7 +3356,46 @@
 																					if (result.jobstatus == 1) {															
 																						var obj = result.jobresult.vpncustomergateway;
 																						var vpncustomergatewayid = obj.id;	
-                                            //???																					
+                                            //???				
+                                            $.ajax({
+																							url: createURL('createVpnConnection'),
+																							data: {
+																								s2svpngatewayid: vpngatewayid,
+																								s2scustomergatewayid: vpncustomergatewayid
+																							},
+																							dataType: 'json',									
+																							success: function(json) {
+																								var jid = json.createvpnconnectionresponse.jobid;                          
+																								var createvpnconnectionIntervalID = setInterval(function() { 																
+																									$.ajax({
+																										url: createURL("queryAsyncJobResult&jobid=" + jid),
+																										dataType: "json",
+																										success: function(json) {													
+																											var result = json.queryasyncjobresultresponse;	
+																											if (result.jobstatus == 0) {
+																												return; //Job has not completed
+																											}
+																											else {                                      
+																												clearInterval(createvpnconnectionIntervalID); 														
+																												if (result.jobstatus == 1) {							
+																													debugger;																					
+																													var obj = result.jobresult.vpnconnection;
+																																																
+																												}
+																												else if (result.jobstatus == 2) {
+																													alert("Failed to create VPN connection. Error: " + _s(result.jobresult.errortext));
+																												}
+																											}
+																										},
+																										error: function(XMLHttpResponse) {
+																											var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																											alert("Failed to create VPN connection. Error: " + errorMsg);
+																										}
+																									});                              
+																								}, 3000); 																
+																							}
+															});							
+                                            //???																						
 																					}
 																					else if (result.jobstatus == 2) {
 																						alert("Failed to create VPN customer gateway. Error: " + _s(result.jobresult.errortext));
