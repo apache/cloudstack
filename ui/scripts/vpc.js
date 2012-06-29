@@ -374,6 +374,11 @@
         }
       }
     },
+    siteToSiteVPN: {
+      listView: function() { 
+        return cloudStack.sections.network.sections.siteToSiteVpn;
+      }
+    },
     tiers: {
       actionPreFilter: function(args) {
         var tier = args.context.tiers[0];
