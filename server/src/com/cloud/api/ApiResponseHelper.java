@@ -3625,6 +3625,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setId(result.getId());
         response.setIp(ApiDBUtils.findIpAddressById(result.getAddrId()).getAddress().toString());
         response.setRemoved(result.getRemoved());
+        response.setObjectName("vpngateway");
         return response;
     }
 

@@ -65,7 +65,9 @@ public class ListVpnGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
         List<Site2SiteVpnGatewayResponse> gwResponses = new ArrayList<Site2SiteVpnGatewayResponse>();
         if (gws != null && !gws.isEmpty()) {
             for (Site2SiteVpnGateway gw : gws) {
-                gwResponses.add(_responseGenerator.createSite2SiteVpnGatewayResponse(gw));
+            	Site2SiteVpnGatewayResponse site2SiteVpnGatewayRes = _responseGenerator.createSite2SiteVpnGatewayResponse(gw);
+            	site2SiteVpnGatewayRes.setObjectName("vpngateway");
+                gwResponses.add(site2SiteVpnGatewayRes);
             }
         }
         response.setResponses(gwResponses);

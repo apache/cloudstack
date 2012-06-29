@@ -3261,7 +3261,7 @@
 										validation: { required: true }
 									}, 
 									cidrlist: { 
-									  label: 'guest cidr list',
+									  label: 'CIDR list',
 										validation: { required: true }
 									},
 									ipsecpsk: { 
@@ -3320,7 +3320,7 @@
 												url: createURL("queryAsyncJobResult&jobid=" + jid),
 												dataType: "json",
 												success: function(json) {													
-													var result = json.queryasyncjobresultresponse;
+													var result = json.queryasyncjobresultresponse;												
 													if (result.jobstatus == 0) {
 														return; //Job has not completed
 													}
