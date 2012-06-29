@@ -10,6 +10,64 @@
 // limitations under the License.
 (function($, cloudStack) {
   var elems = {
+    vpcConfigureTooltip: function(args) {
+      var links = {
+        'ip-addresses': 'IP Addresses',
+        'gateways': 'Gateways',
+        'site-to-site-vpn': 'Site-to-site VPN'
+      };
+      var $links = $('<ul>').addClass('links');
+      var $tooltip = $('<div>').addClass('vpc-configure-tooltip').append(
+        $('<div>').addClass('arrow')
+      );
+
+      // Make links
+      $.map(links, function(label, id) {
+        var $link = $('<li>').addClass('link').addClass(id);
+        var $label = $('<span>').html(label);
+
+        $link.append($label);
+        $link.appendTo($links);
+      });
+
+      $tooltip.append($links);
+
+      // Tooltip hover event
+      $tooltip.hover(
+        function() {
+          $tooltip.addClass('active');
+        },
+        function() {
+          $tooltip.removeClass('active');
+
+          setTimeout(function() {
+            if (!$tooltip.hasClass('active')) {
+              $tooltip.remove();
+            }
+          }, 500);
+        }
+      );
+
+      return $tooltip;
+    },
+    vpcConfigureArea: function(args) {
+      var $config = $('<div>').addClass('config-area');
+      var $configIcon = $('<span>').addClass('icon').html('&nbsp');
+
+      $config.append($configIcon);
+
+      // Tooltip event
+      $configIcon.mouseover(function() {
+        var $tooltip = elems.vpcConfigureTooltip();
+
+        // Make sure tooltip is center aligned with icon
+        $tooltip.css({ left: $configIcon.position().left });
+        $tooltip.appendTo($config).hide();
+        $tooltip.stop().fadeIn('fast');
+      });
+
+      return $config;
+    },
     router: function() {
       var $router = $('<li>').addClass('tier virtual-router');
       var $title = $('<span>').addClass('title').html('Virtual Router');
@@ -148,9 +206,13 @@
       var $tiers = $('<ul>').addClass('tiers');
       var $router = elems.router();
       var $chart = $('<div>').addClass('vpc-chart');
-      var $title = $('<div>').addClass('vpc-title').html(vpcName).append(
-        $('<span>').addClass('icon').html('&nbsp')
-      );
+      var $title = $('<div>').addClass('vpc-title')
+            .append(
+              $('<span>').html(vpcName)
+            )
+            .append(
+              elems.vpcConfigureArea({})
+            );
 
       var showAddTierDialog = function() {
         if ($(this).find('.loading-overlay').size()) {
