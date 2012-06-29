@@ -3196,9 +3196,9 @@
           id: 'siteToSiteVpn',
           label: 'site-to-site VPN',
           fields: {
-            type: { label: 'label.type' },
-            description: { label: 'label.description' },
-            username: { label: 'label.initiated.by' },
+            id: { label: 'label.id' },
+            s2svpngatewayid: { label: 's2svpngatewayid' },
+						s2scustomergatewayid: { label: 's2scustomergatewayid' },                    
             created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
           },
           dataProvider: function(args) {					  
@@ -3356,7 +3356,7 @@
 																					if (result.jobstatus == 1) {															
 																						var obj = result.jobresult.vpncustomergateway;
 																						var vpncustomergatewayid = obj.id;	
-                                            //???				
+                                            		
                                             $.ajax({
 																							url: createURL('createVpnConnection'),
 																							data: {
@@ -3377,10 +3377,8 @@
 																											}
 																											else {                                      
 																												clearInterval(createvpnconnectionIntervalID); 														
-																												if (result.jobstatus == 1) {							
-																													debugger;																					
-																													var obj = result.jobresult.vpnconnection;
-																																																
+																												if (result.jobstatus == 1) {								
+																													var obj = result.jobresult.vpnconnection;																																																
 																												}
 																												else if (result.jobstatus == 2) {
 																													alert("Failed to create VPN connection. Error: " + _s(result.jobresult.errortext));
@@ -3394,8 +3392,7 @@
 																									});                              
 																								}, 3000); 																
 																							}
-															});							
-                                            //???																						
+															              });																		
 																					}
 																					else if (result.jobstatus == 2) {
 																						alert("Failed to create VPN customer gateway. Error: " + _s(result.jobresult.errortext));
@@ -3435,8 +3432,9 @@
                 title: 'label.details',
                 fields: [
                   {
-                    type: { label: 'label.type' },
-                    description: { label: 'label.description' },
+                    id: { label: 'label.id' },
+                    s2svpngatewayid: { label: 's2svpngatewayid' },
+										s2scustomergatewayid: { label: 's2scustomergatewayid' },
                     created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
