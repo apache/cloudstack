@@ -675,8 +675,13 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     it.remove();
                 }
             }
+            
+            //add vpc cidr to the boot load args
+            StringBuilder buf = profile.getBootArgsBuilder();
+            Vpc vpc = _vpcMgr.getVpc(profile.getVirtualMachine().getVpcId());
+            buf.append(" vpccidr=" + vpc.getCidr());
         }
-        
+
         return super.finalizeVirtualMachineProfile(profile, dest, context);
     }
     
