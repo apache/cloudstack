@@ -3630,5 +3630,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         return vm;
     }
     
+	@Override
+	public void prepareStop(VirtualMachineProfile<UserVmVO> profile) {
+	}
     
 }

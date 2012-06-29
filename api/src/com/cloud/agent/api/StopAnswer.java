@@ -22,13 +22,13 @@ public class StopAnswer extends RebootAnswer {
     protected StopAnswer() {
     }
     
-    public StopAnswer(StopCommand cmd, String details, Integer vncPort, Long bytesSent, Long bytesReceived) {
-        super(cmd,  details, bytesSent, bytesReceived);
+    public StopAnswer(StopCommand cmd, String details, Integer vncPort, boolean success) {
+        super(cmd,  details, success);
         this.vncPort = vncPort;
     }
     
-    public StopAnswer(StopCommand cmd, String details) {
-        super(cmd, details);
+    public StopAnswer(StopCommand cmd, String details, boolean success) {
+        super(cmd, details, success);
         vncPort = null;
 
     }

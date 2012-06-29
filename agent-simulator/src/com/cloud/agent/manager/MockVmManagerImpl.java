@@ -352,12 +352,12 @@ public class MockVmManagerImpl implements MockVmManager {
             _mockAgentMgr.handleSystemVMStop(vm.getId());
         }
 
-        return new StopAnswer(cmd, null, new Integer(0), new Long(100), new Long(200));
+        return new StopAnswer(cmd, null, new Integer(0), true);
     }
 
     @Override
     public Answer rebootVM(RebootCommand cmd) {
-        return new RebootAnswer(cmd, "Rebooted "+cmd.getVmName());
+        return new RebootAnswer(cmd, "Rebooted "+cmd.getVmName(), false);
     }
 
     @Override

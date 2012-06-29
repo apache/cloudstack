@@ -443,8 +443,6 @@ public class FakeComputingResource extends ServerResourceBase implements
         String vmName = cmd.getVmName();
 
         Integer port = vmMgr.getVncPort(vmName);
-        Long bytesReceived = null;
-        Long bytesSent = null;
 
         State state = null;
         synchronized (_vms) {
@@ -462,17 +460,16 @@ public class FakeComputingResource extends ServerResourceBase implements
                 s_logger.warn("Couldn't stop " + vmName);
 
                 if (result != null) {
-                    return new StopAnswer(cmd, result);
+                    return new StopAnswer(cmd, result, false);
                 }
             }
 
-            answer = new StopAnswer(cmd, null, port, bytesSent, bytesReceived);
+            answer = new StopAnswer(cmd, null, port, true);
 
             String result2 = vmMgr.cleanupVnet(cmd.getVnet());
             if (result2 != null) {
                 result = result2 + (result != null ? ("\n" + result) : "");
-                answer = new StopAnswer(cmd, result, port, bytesSent,
-                        bytesReceived);
+                answer = new StopAnswer(cmd, result, port, true);
             }
 
             _dhcpSnooper.cleanup(vmName, null);
@@ -498,7 +495,7 @@ public class FakeComputingResource extends ServerResourceBase implements
     protected Answer execute(RebootCommand cmd) {
         VmMgr vmMgr = getVmManager();
         vmMgr.rebootVM(cmd.getVmName());
-        return new RebootAnswer(cmd, "success", 0L, 0L);
+        return new RebootAnswer(cmd, "success", true);
     }
 
     private Answer execute(PingTestCommand cmd) {

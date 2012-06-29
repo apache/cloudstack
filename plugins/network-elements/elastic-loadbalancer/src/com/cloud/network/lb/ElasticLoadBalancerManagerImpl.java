@@ -996,4 +996,9 @@ public class ElasticLoadBalancerManagerImpl implements
 		// TODO Auto-generated method stub
 		return false;
 	}
+
+    @Override
+    public void prepareStop(VirtualMachineProfile<DomainRouterVO> profile) {
+    } 
+
 }
