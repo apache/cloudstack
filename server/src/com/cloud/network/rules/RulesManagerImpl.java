@@ -173,92 +173,113 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         Long networkId = rule.getNetworkId();
         //associate ip address to network (if needed)
+        boolean performedIpAssoc = false;
         if (ipAddress.getAssociatedWithNetworkId() == null) {
+            //set networkId just for verification purposes
+            ipAddress.setAssociatedWithNetworkId(networkId);
+            _networkMgr.checkIpForService(ipAddress, Service.PortForwarding);
+            
             s_logger.debug("The ip is not associated with the network id="+ networkId + " so assigning");
             try {
                 ipAddress = _networkMgr.associateIPToGuestNetwork(ipAddrId, networkId);
+                performedIpAssoc = true;
             } catch (Exception ex) {
                 throw new CloudRuntimeException("Failed to associate ip to network as " +
                         "a part of port forwarding rule creation");
             }
+        } else {
+            _networkMgr.checkIpForService(ipAddress, Service.PortForwarding);
         }
         
-        _networkMgr.checkIpForService(ipAddress, Service.PortForwarding);
-
-        _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), 
-                rule.getProtocol(), Purpose.PortForwarding, FirewallRuleType.User);
-
-        Long accountId = ipAddress.getAllocatedToAccountId();
-        Long domainId = ipAddress.getAllocatedInDomainId();
-
-        // start port can't be bigger than end port
-        if (rule.getDestinationPortStart() > rule.getDestinationPortEnd()) {
-            throw new InvalidParameterValueException("Start port can't be bigger than end port");
-        }
-
-        // check that the port ranges are of equal size
-        if ((rule.getDestinationPortEnd() - rule.getDestinationPortStart()) != (rule.getSourcePortEnd() - rule.getSourcePortStart())) {
-            throw new InvalidParameterValueException("Source port and destination port ranges should be of equal sizes.");
-        }
-
-        // validate user VM exists
-        UserVm vm = _vmDao.findById(vmId);
-        if (vm == null) {
-            throw new InvalidParameterValueException("Unable to create port forwarding rule on address " + ipAddress + 
-                    ", invalid virtual machine id specified (" + vmId + ").");
-        } else {
-            checkRuleAndUserVm(rule, vm, caller);
-        }
-
-
-        // Verify that vm has nic in the network
-        Ip dstIp = rule.getDestinationIpAddress();
-        Nic guestNic = _networkMgr.getNicInNetwork(vmId, networkId);
-        if (guestNic == null || guestNic.getIp4Address() == null) {
-            throw new InvalidParameterValueException("Vm doesn't belong to network associated with ipAddress");
-        } else {
-            dstIp = new Ip(guestNic.getIp4Address());
-        }
-
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-
-        PortForwardingRuleVO newRule = new PortForwardingRuleVO(rule.getXid(), rule.getSourceIpAddressId(), 
-                rule.getSourcePortStart(), rule.getSourcePortEnd(), dstIp, rule.getDestinationPortStart(),
-                rule.getDestinationPortEnd(), rule.getProtocol().toLowerCase(), networkId, accountId, domainId, vmId);
-        newRule = _portForwardingDao.persist(newRule);
-
-        // create firewallRule for 0.0.0.0/0 cidr
-        if (openFirewall) {
-            _firewallMgr.createRuleForAllCidrs(ipAddrId, caller, rule.getSourcePortStart(), rule.getSourcePortEnd(),
-                    rule.getProtocol(), null, null, newRule.getId(), networkId);
-        }
-
         try {
-            _firewallMgr.detectRulesConflict(newRule);
-            if (!_firewallDao.setStateToAdd(newRule)) {
-                throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
-            }
-            UserContext.current().setEventDetails("Rule Id: " + newRule.getId());
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), 
-                    ipAddress.getDataCenterId(), newRule.getId(), null);
-            _usageEventDao.persist(usageEvent);
-            txn.commit();
-            return newRule;
-        } catch (Exception e) {
-            if (newRule != null) {
-                txn.start();
-                // no need to apply the rule as it wasn't programmed on the backend yet
-                _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
-                _portForwardingDao.remove(newRule.getId());
-                txn.commit();
+            _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), 
+                    rule.getProtocol(), Purpose.PortForwarding, FirewallRuleType.User);
+
+            Long accountId = ipAddress.getAllocatedToAccountId();
+            Long domainId = ipAddress.getAllocatedInDomainId();
+
+            // start port can't be bigger than end port
+            if (rule.getDestinationPortStart() > rule.getDestinationPortEnd()) {
+                throw new InvalidParameterValueException("Start port can't be bigger than end port");
             }
 
-            if (e instanceof NetworkRuleConflictException) {
-                throw (NetworkRuleConflictException) e;
+            // check that the port ranges are of equal size
+            if ((rule.getDestinationPortEnd() - rule.getDestinationPortStart()) != (rule.getSourcePortEnd() - rule.getSourcePortStart())) {
+                throw new InvalidParameterValueException("Source port and destination port ranges should be of equal sizes.");
             }
-            throw new CloudRuntimeException("Unable to add rule for the ip id=" + ipAddrId, e);
+
+            // validate user VM exists
+            UserVm vm = _vmDao.findById(vmId);
+            if (vm == null) {
+                throw new InvalidParameterValueException("Unable to create port forwarding rule on address " + ipAddress + 
+                        ", invalid virtual machine id specified (" + vmId + ").");
+            } else {
+                checkRuleAndUserVm(rule, vm, caller);
+            }
+
+
+            // Verify that vm has nic in the network
+            Ip dstIp = rule.getDestinationIpAddress();
+            Nic guestNic = _networkMgr.getNicInNetwork(vmId, networkId);
+            if (guestNic == null || guestNic.getIp4Address() == null) {
+                throw new InvalidParameterValueException("Vm doesn't belong to network associated with ipAddress");
+            } else {
+                dstIp = new Ip(guestNic.getIp4Address());
+            }
+
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+
+            PortForwardingRuleVO newRule = new PortForwardingRuleVO(rule.getXid(), rule.getSourceIpAddressId(), 
+                    rule.getSourcePortStart(), rule.getSourcePortEnd(), dstIp, rule.getDestinationPortStart(),
+                    rule.getDestinationPortEnd(), rule.getProtocol().toLowerCase(), networkId, accountId, domainId, vmId);
+            newRule = _portForwardingDao.persist(newRule);
+
+            // create firewallRule for 0.0.0.0/0 cidr
+            if (openFirewall) {
+                _firewallMgr.createRuleForAllCidrs(ipAddrId, caller, rule.getSourcePortStart(), rule.getSourcePortEnd(),
+                        rule.getProtocol(), null, null, newRule.getId(), networkId);
+            }
+
+            try {
+                _firewallMgr.detectRulesConflict(newRule);
+                if (!_firewallDao.setStateToAdd(newRule)) {
+                    throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
+                }
+                UserContext.current().setEventDetails("Rule Id: " + newRule.getId());
+                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_ADD, newRule.getAccountId(), 
+                        ipAddress.getDataCenterId(), newRule.getId(), null);
+                _usageEventDao.persist(usageEvent);
+                txn.commit();
+                return newRule;
+            } catch (Exception e) {
+                if (newRule != null) {
+                    txn.start();
+                    // no need to apply the rule as it wasn't programmed on the backend yet
+                    _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
+                    removePFRule(newRule);
+                    txn.commit();
+                }
+
+                if (e instanceof NetworkRuleConflictException) {
+                    throw (NetworkRuleConflictException) e;
+                }
+                
+                throw new CloudRuntimeException("Unable to add rule for the ip id=" + ipAddrId, e);
+            }
+        } finally {
+            // release ip address if ipassoc was perfored
+            if (performedIpAssoc) {
+                //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
+                IpAddress ip = _ipAddressDao.findById(ipAddress.getId());
+                if (ip != null && ip.getVpcId() != null && _firewallDao.listByIp(ip.getId()).isEmpty()) {
+                    s_logger.debug("Releasing VPC ip address " + ip + " as PF rule failed to create");
+                    _networkMgr.unassignIPFromVpcNetwork(ip.getId());
+                }
+            }
         }
+        
+        
     }
 
     @Override
@@ -326,7 +347,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 txn.start();
                 // no need to apply the rule as it wasn't programmed on the backend yet
                 _firewallMgr.revokeRelatedFirewallRule(newRule.getId(), false);
-                _portForwardingDao.remove(newRule.getId());
+                _firewallMgr.removeRule(newRule);
                 txn.commit();
             }
 
@@ -1019,7 +1040,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 txn.start();
 
                 for (FirewallRuleVO newRule : rules) {
-                    _portForwardingDao.remove(newRule.getId());
+                    _firewallMgr.removeRule(newRule);
                 }
                 txn.commit();
             }
@@ -1272,5 +1293,19 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 }
             }
         }
+    }
+    
+    @DB
+    protected void removePFRule(PortForwardingRuleVO rule) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        _portForwardingDao.remove(rule.getId());
+        //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
+        IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
+        if (ip != null && ip.getVpcId() != null && _firewallDao.listByIp(ip.getId()).isEmpty()) {
+            _networkMgr.unassignIPFromVpcNetwork(ip.getId());
+        }
+        
+        txn.commit();
     }
 }

@@ -425,7 +425,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     }
 
     @DB
-    protected void removeRule(FirewallRule rule) {
+    @Override
+    public void removeRule(FirewallRule rule) {
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -527,7 +528,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Found a rule that is still in stage state so just removing it: " + rule);
             }
-            _firewallDao.remove(rule.getId());
+            removeRule(rule);
             generateUsageEvent = true;
         } else if (rule.getState() == State.Add || rule.getState() == State.Active) {
             rule.setState(State.Revoke);

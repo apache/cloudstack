@@ -60,7 +60,6 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkService;
-import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
@@ -75,8 +74,6 @@ import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.Site2SiteVpnConnectionDao;
-import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.rules.NetworkACL;
 import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.PrivateGateway;
@@ -88,7 +85,6 @@ import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.Dao.StaticRouteDao;
 import com.cloud.network.vpc.Dao.VpcDao;
 import com.cloud.network.vpc.Dao.VpcOfferingDao;
-import com.cloud.network.vpn.Site2SiteVpnService;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
@@ -100,7 +96,6 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -310,6 +305,15 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             NicProfile publicNic = _itMgr.addVmToNetwork(router, publicNetwork, defaultNic);
             //setup public network
             if (publicNic != null) {
+                if (ipAddress.isSourceNat()) {
+                    if (router.getPublicIpAddress() == null) {
+                        DomainRouterVO routerVO = _routerDao.findById(router.getId());
+                        routerVO.setPublicIpAddress(ipAddress.getAddress().toString());
+                        routerVO.setPublicNetmask(ipAddress.getNetmask());
+                        routerVO.setPublicMacAddress(ipAddress.getMacAddress());
+                        _routerDao.update(routerVO.getId(), routerVO);
+                    }
+                }
                 publicNic.setDefaultNic(true);
                 if (ipAddress != null) {
                     IPAddressVO ipVO = _ipAddressDao.findById(ipAddress.getId());
