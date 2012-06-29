@@ -168,6 +168,10 @@
         <dao name="CiscoNexusVSMDeviceDao" class="com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl" singleton="false"/>
         <dao name="OvsTunnelInterfaceDao" class="com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl" singleton="false"/>
         <dao name="OvsTunnelAccountDao" class="com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl" singleton="false"/>
+        <dao name="NetappPool" class="com.cloud.netapp.dao.PoolDaoImpl" singleton="false"/>
+        <dao name="NetappVolume" class="com.cloud.netapp.dao.VolumeDaoImpl" singleton="false"/>
+        <dao name="NetappLun" class="com.cloud.netapp.dao.LunDaoImpl" singleton="false"/>
+        <manager name="NetappManager" key="com.cloud.netapp.NetappManager" class="com.cloud.netapp.NetappManagerImpl"/>
     </management-server>
 
     <configuration-server class="com.cloud.server.ConfigurationServerImpl">

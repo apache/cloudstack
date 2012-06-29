@@ -184,9 +184,9 @@
   </path>
 
 
-  <target name="compile-plugins" description="Compile all of the jars corresponding to plugins" depends="compile-utils, compile-api, compile-core, compile-server, compile-hypervisors, compile-deployment-planners, compile-host-allocators, compile-network-elements, compile-user-authenticators, compile-storage-allocators "/>
+  <target name="compile-plugins" description="Compile all of the jars corresponding to plugins" depends="compile-utils, compile-api, compile-core, compile-server, compile-hypervisors, compile-deployment-planners, compile-host-allocators, compile-network-elements, compile-user-authenticators, compile-storage-allocators, compile-file-systems "/>
 
-  <target name="build-plugins" depends="build-hypervisors, build-network-elements, build-deployment-planners, build-host-allocators, build-storage-allocators, build-user-authenticators" description="Builds all jar's for the plug-in's"/>
+  <target name="build-plugins" depends="build-hypervisors, build-network-elements, build-deployment-planners, build-host-allocators, build-storage-allocators, build-user-authenticators, build-file-systems" description="Builds all jar's for the plug-in's"/>
 
   <target name="clean-plugins" description="Clean all of the generated files by the plugins">
       <delete file="${build.log}" />
@@ -301,5 +301,17 @@
   	<ant antfile="${base.dir}/plugins/network-elements/ovs/build.xml" target="build"/>
   </target>
   <target name="build-ovs" depends="compile-ovs"/>
+
+
+  <!-- ===================== File Systems ===================== -->
+
+  <target name="compile-file-systems" depends="compile-netapp" description="Compils all supported file systems"/>
+  <target name="build-file-systems" depends="build-netapp" description="Builds all supported file systems"/>
+ 
+  <target name="compile-netapp" depends="-init, compile-server" description="Compile NetApp plugin">
+  	<ant antfile="${base.dir}/plugins/file-systems/netapp/build.xml" target="build"/>
+  </target>
+  <target name="build-netapp" depends="compile-netapp"/>
+
 
 </project>
