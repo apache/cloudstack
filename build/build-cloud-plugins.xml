@@ -207,7 +207,7 @@
   <target name="build-ovm" depends="compile-ovm" />
 
 
-  <target name="compile-xen" depends="-init, compile-server" description="Compiles Xen ">
+  <target name="compile-xen" depends="-init, compile-server, compile-ovs" description="Compiles Xen ">
   	<ant antfile="${base.dir}/plugins/hypervisors/xen/build.xml" target="build"/>
   </target>
   <target name="build-xen" depends="compile-xen" />
@@ -279,8 +279,8 @@
 
   <!-- ===================== Network Elements ===================== -->
 
-  <target name="compile-network-elements" depends="compile-netscaler, compile-f5, compile-srx" description="Compile all network elements"/>
-  <target name="build-network-elements" depends="build-netscaler, build-f5, build-srx" description="build all network elements"/>
+  <target name="compile-network-elements" depends="compile-netscaler, compile-f5, compile-srx, compile-ovs" description="Compile all network elements"/>
+  <target name="build-network-elements" depends="build-netscaler, build-f5, build-srx, build-ovs" description="build all network elements"/>
  
   <target name="compile-netscaler" depends="-init, compile-server" description="Compile NetScaler plugin">
   	<ant antfile="${base.dir}/plugins/network-elements/netscaler/build.xml" target="build"/>
@@ -296,5 +296,10 @@
   	<ant antfile="${base.dir}/plugins/network-elements/juniper-srx/build.xml" target="build"/>
   </target>
   <target name="build-srx" depends="compile-srx"/>
+
+  <target name="compile-ovs" depends="-init, compile-server" description="Compile Ovs plugin">
+  	<ant antfile="${base.dir}/plugins/network-elements/ovs/build.xml" target="build"/>
+  </target>
+  <target name="build-ovs" depends="compile-ovs"/>
 
 </project>

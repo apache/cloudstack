@@ -99,9 +99,6 @@ import com.cloud.network.firewall.FirewallManagerImpl;
 import com.cloud.network.lb.ElasticLoadBalancerManagerImpl;
 import com.cloud.network.lb.LoadBalancingRulesManagerImpl;
 import com.cloud.network.lb.dao.ElasticLbVmMapDaoImpl;
-import com.cloud.network.ovs.OvsTunnelManagerImpl;
-import com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl;
-import com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl;
 import com.cloud.network.router.VirtualNetworkApplianceManagerImpl;
 import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
@@ -286,8 +283,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("UsageEventDao", UsageEventDaoImpl.class);
         addDao("ClusterDetailsDao", ClusterDetailsDaoImpl.class);
         addDao("UserVmDetailsDao", UserVmDetailsDaoImpl.class);
-        addDao("OvsTunnelInterfaceDao", OvsTunnelInterfaceDaoImpl.class);
-        addDao("OvsTunnelAccountDao", OvsTunnelNetworkDaoImpl.class);
         addDao("StoragePoolWorkDao", StoragePoolWorkDaoImpl.class);
         addDao("HostTagsDao", HostTagsDaoImpl.class);
         addDao("NetworkDomainDao", NetworkDomainDaoImpl.class);
@@ -360,7 +355,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("LoadBalancingRulesManager", LoadBalancingRulesManagerImpl.class);
         addManager("RulesManager", RulesManagerImpl.class);
         addManager("RemoteAccessVpnManager", RemoteAccessVpnManagerImpl.class);
-        addManager("OvsTunnelManager", OvsTunnelManagerImpl.class);
         addManager("Capacity Manager", CapacityManagerImpl.class);
         addManager("VirtualMachineManager", ClusteredVirtualMachineManagerImpl.class);
         addManager("HypervisorGuruManager", HypervisorGuruManagerImpl.class);
