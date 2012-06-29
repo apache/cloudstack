@@ -65,6 +65,7 @@ import com.cloud.network.vpc.Dao.VpcGatewayDao;
 import com.cloud.network.vpc.Dao.VpcOfferingDao;
 import com.cloud.network.vpc.Dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.user.Account;
@@ -126,6 +127,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
     PrivateIpDao _privateIpDao;
     @Inject
     StaticRouteDao _staticRouteDao;
+    @Inject
+    NetworkOfferingServiceMapDao _ntwkOffServiceDao ;
     
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     
@@ -872,6 +875,14 @@ public class VpcManagerImpl implements VpcManager, Manager{
             //8) Conserve mode should be off
             if (guestNtwkOff.isConserveMode()) {
                 throw new InvalidParameterValueException("Only networks with conserve mode Off can belong to VPC");
+            }
+            
+            //9) list supported services should be within VPC supported services
+            List<String> ntwkOffServices = _ntwkOffServiceDao.listServicesForNetworkOffering(guestNtwkOff.getId());
+            List<String> vpcOffServices = _vpcOffSvcMapDao.listServicesForVpcOffering(vpc.getVpcOfferingId());
+            
+            if (!vpcOffServices.containsAll(ntwkOffServices)) {
+                throw new InvalidParameterValueException("VPC doesn't support some of the services specified in the network offering");
             }
             
         } finally {

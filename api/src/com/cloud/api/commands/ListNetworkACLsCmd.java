@@ -45,7 +45,7 @@ public class ListNetworkACLsCmd extends BaseListProjectAndAccountResourcesCmd {
     private Long id;
     
     @IdentityMapper(entityTableName="networks")
-    @Parameter(name=ApiConstants.NETWORK, type=CommandType.LONG, description="list network ACLs by network Id")
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="list network ACLs by network Id")
     private Long networkId;
     
     @Parameter(name=ApiConstants.TRAFFIC_TYPE, type=CommandType.STRING, description="list network ACLs by traffic type - Ingress or Egress")

@@ -35,7 +35,7 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     @SerializedName(ApiConstants.DISPLAY_TEXT) @Param(description="an alternate display text of the VPC.")
     private String displayText;
     
-    @SerializedName(ApiConstants.STATE) @Param(description="state of the VPC. Can be Disabled/Enabled")
+    @SerializedName(ApiConstants.STATE) @Param(description="state of the VPC. Can be Inactive/Enabled")
     private String state;
     
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone id of the vpc")
