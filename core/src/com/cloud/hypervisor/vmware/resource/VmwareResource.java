@@ -736,20 +736,75 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
     
-    private int allocRouterEthDeviceIndex(String domrName, String routerIp, NicTO nic) {
-        // TODO need to figure out which device number to use for the NIC
-        return 1;
+    //
+    // list available ethx devices
+    // ls /proc/sys/net/ipv4/conf
+    //
+    private int allocRouterEthDeviceIndex(String domrName, String routerIp) throws Exception {
+        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+        
+        Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, 
+                "ls /proc/sys/net/ipv4/conf");
+        
+        if(result.first()) {
+            String[] tokens = result.second().split(" ");
+            HashMap<String, String> deviceNames = new HashMap<String, String>();
+            for(String token: tokens)
+                deviceNames.put(token, token);
+            
+            for(int i = 1; ; i++) {
+                if(!deviceNames.containsKey("eth" + i))
+                    return i;
+            }
+        }
+        
+        return -1;
     }
 
-    private int findRouterEthDeviceIndex(String domrName, String routerIp, NicTO nic) {
-        // TODO
-        return 1;
+    //
+    // find mac address of a specified ethx device
+    //    ip address show ethx | grep link/ether | sed -e 's/^[ \t]*//' | cut -d' ' -f2
+    //
+    // list IP with eth devices
+    //  ifconfig ethx |grep -B1 "inet addr" | awk '{ if ( $1 == "inet" ) { print $2 } else if ( $2 == "Link" ) { printf "%s:" ,$1 } }' 
+    //     | awk -F: '{ print $1 ": " $3 }'
+    //
+    // returns
+    //      eth0:xx.xx.xx.xx
+    //
+    //
+    private int findRouterEthDeviceIndex(String domrName, String routerIp, String mac) throws Exception {
+        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+
+        // TODO : this is a temporary very inefficient solution, will refactor it later
+        Pair<Boolean, String> result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, 
+        "ls /proc/sys/net/ipv4/conf");
+
+        if(result.first()) {
+            String[] tokens = result.second().split(" ");
+            for(String token : tokens) {
+                Pair<Boolean, String> result2 = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, 
+                        // TODO need to find the dev index inside router based on IP address
+                        String.format("ip address show %s | grep link/ether | sed -e 's/^[ \t]*//' | cut -d' ' -f2", token));
+                
+                if(result2.first() && result2.second().equalsIgnoreCase(mac))
+                    return Integer.parseInt(token.substring(3));
+            }
+        }
+        
+        return -1;
     }
     
-    private int findRouterEthDeviceIndex(String domrName, String routerIp, IpAddressTO ip) {
+    private VirtualDevice findVirtualNicDevice(VirtualMachineMO vmMo, String mac) throws Exception {
         
-        // TODO need to find the dev index inside router based on IP address
-        return 1;
+        VirtualDevice[] nics = vmMo.getNicDevices();
+        for(VirtualDevice nic : nics) {
+            if(nic instanceof VirtualEthernetCard) {
+                if(((VirtualEthernetCard)nic).getMacAddress().equals(mac))
+                    return nic;
+            }
+        }
+        return null;
     }
     
     private SetupGuestNetworkAnswer execute(SetupGuestNetworkCommand cmd) {
@@ -773,7 +828,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
         
         try {
-            int ethDeviceNum = allocRouterEthDeviceIndex(domrName, routerIp, nic);
+            int ethDeviceNum = allocRouterEthDeviceIndex(domrName, routerIp);
 
             String args = "-C ";
             String dev = "eth" + ethDeviceNum;
@@ -839,7 +894,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String routerIp = getRouterSshControlIp(cmd);
         IpAddressTO pubIp = cmd.getIpAddress();
         try {
-            int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp, pubIp);
+            int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp, pubIp.getVifMacAddress());
             String args = "";
             args += " -A ";
             args += " -l ";
@@ -886,7 +941,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
             
             NicTO nic = cmd.getNic();
-            int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp, nic);
+            int ethDeviceNum = findRouterEthDeviceIndex(routerName, routerIp, nic.getMac());
             String args = "";
             args += " -d " + "eth" + ethDeviceNum;
             args += " -i " + nic.getIp();
@@ -947,20 +1002,125 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new SetPortForwardingRulesAnswer(cmd, results, endResult);
     }
     
-    private UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
-        // TODO
-        return new UnPlugNicAnswer(cmd, false, "Unsupported yet");
-    }
-
     private PlugNicAnswer execute(PlugNicCommand cmd) {
-        // TODO
-        return new PlugNicAnswer(cmd, false, "Unsupported yet");
+
+        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+        VmwareContext context = getServiceContext();
+        try {
+            VmwareHypervisorHost hyperHost = getHyperHost(context);
+
+            String vmName = cmd.getVirtualMachine().getName();
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
+
+            if(vmMo == null) {
+                if(hyperHost instanceof HostMO) {
+                    ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(),
+                        ((HostMO)hyperHost).getParentMor());
+                    vmMo = clusterMo.findVmOnHyperHost(vmName);
+                }
+            }
+
+            if (vmMo == null) {
+                String msg = "Router " + vmName + " no longer exists to execute PlugNic command";
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            // TODO need a way to specify the control of NIC device type
+            VirtualEthernetCardType nicDeviceType = VirtualEthernetCardType.E1000;
+            
+            // find a usable device number in VMware environment
+            VirtualDevice[] nicDevices = vmMo.getNicDevices();
+            int deviceNumber = -1;
+            for(VirtualDevice device : nicDevices) {
+                if(device.getUnitNumber() > deviceNumber)
+                    deviceNumber = device.getUnitNumber();
+            }
+            deviceNumber++;
+            
+            NicTO nicTo = cmd.getNic();
+            VirtualDevice nic;
+            Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo);
+            if (mgr.getNexusVSwitchGlobalParameter()) {
+                String dvSwitchUuid;
+                ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
+                DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
+                ManagedObjectReference dvsMor = dataCenterMo.getDvSwitchMor(networkInfo.first());
+                dvSwitchUuid = dataCenterMo.getDvSwitchUuid(dvsMor);
+                s_logger.info("Preparing NIC device on dvSwitch : " + dvSwitchUuid);
+                nic = VmwareHelper.prepareDvNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), 
+                    dvSwitchUuid, nicTo.getMac(), deviceNumber, deviceNumber + 1, true, true);
+            } else {
+                s_logger.info("Preparing NIC device on network " + networkInfo.second());
+                nic = VmwareHelper.prepareNicDevice(vmMo, networkInfo.first(), nicDeviceType, networkInfo.second(), nicTo.getMac(), 
+                    deviceNumber, deviceNumber + 1, true, true);
+            }
+            
+            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+            VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
+            deviceConfigSpecArray[0] = new VirtualDeviceConfigSpec();
+            deviceConfigSpecArray[0].setDevice(nic);
+            deviceConfigSpecArray[0].setOperation(VirtualDeviceConfigSpecOperation.add);
+            
+            vmConfigSpec.setDeviceChange(deviceConfigSpecArray);
+            if(!vmMo.configureVm(vmConfigSpec)) {
+                throw new Exception("Failed to configure devices when running PlugNicCommand");
+            }
+            
+            return new PlugNicAnswer(cmd, true, "success");
+        } catch(Exception e) {
+            s_logger.error("Unexpected exception: ", e);
+            return new PlugNicAnswer(cmd, false, "Unable to execute PlugNicCommand due to " + e.toString());
+        }
+    }
+    
+    private UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
+        
+        VmwareContext context = getServiceContext();
+        try {
+            VmwareHypervisorHost hyperHost = getHyperHost(context);
+
+            String vmName = cmd.getVirtualMachine().getName();
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
+
+            if(vmMo == null) {
+                if(hyperHost instanceof HostMO) {
+                    ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(),
+                        ((HostMO)hyperHost).getParentMor());
+                    vmMo = clusterMo.findVmOnHyperHost(vmName);
+                }
+            }
+
+            if (vmMo == null) {
+                String msg = "VM " + vmName + " no longer exists to execute UnPlugNic command";
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            VirtualDevice nic = findVirtualNicDevice(vmMo, cmd.getNic().getMac());
+            
+            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+            VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
+            deviceConfigSpecArray[0] = new VirtualDeviceConfigSpec();
+            deviceConfigSpecArray[0].setDevice(nic);
+            deviceConfigSpecArray[0].setOperation(VirtualDeviceConfigSpecOperation.remove);
+            
+            vmConfigSpec.setDeviceChange(deviceConfigSpecArray);
+            if(!vmMo.configureVm(vmConfigSpec)) {
+                throw new Exception("Failed to configure devices when running unplugNicCommand");
+            }
+            
+            return new UnPlugNicAnswer(cmd, true, "success");
+        } catch(Exception e) {
+            s_logger.error("Unexpected exception: ", e);
+            return new UnPlugNicAnswer(cmd, false, "Unable to execute unPlugNicCommand due to " + e.toString());
+        }
     }
     
     protected void assignVPCPublicIpAddress(String domrName, String routerIp, IpAddressTO ip) throws Exception {
         VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
-        int ethDeviceNum = this.findRouterEthDeviceIndex(domrName, routerIp, ip);
+        int ethDeviceNum = this.findRouterEthDeviceIndex(domrName, routerIp, ip.getVifMacAddress());
         if (ethDeviceNum < 0) {
             throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
         }           
