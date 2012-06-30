@@ -70,10 +70,10 @@ desetup_dnsmasq() {
 
 setup_usage() {
   sudo iptables -t mangle -N NETWORK_STATS_$dev
-  sudo iptables -t mangle -A POSTROUTING -o $dev -j NETWORK_STATS_$dev
-  sudo iptables -t mangle -A POSTROUTING -s $subnet/$mask -j NETWORK_STATS_$dev
-  sudo iptables -t mangle -A NETWORK_STATS_$dev -o $dev ! -s $vpccidr
   sudo iptables -t mangle -A NETWORK_STATS_$dev -s $subnet/$mask ! -d $vpccidr
+  sudo iptables -t mangle -A NETWORK_STATS_$dev -o $dev ! -s $vpccidr
+  sudo iptables -t mangle -A POSTROUTING -s $subnet/$mask -j NETWORK_STATS_$dev
+  sudo iptables -t mangle -A POSTROUTING -o $dev -j NETWORK_STATS_$dev
 }
 
 create_guest_network() {
