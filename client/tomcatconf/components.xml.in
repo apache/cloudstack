@@ -166,8 +166,8 @@
         <pluggableservice name="CiscoNexusVSMElementService" key="com.coud.network.element.CiscoNexusVSMElementService" class="com.cloud.network.element.CiscoNexusVSMElement"/>
         <dao name="NetScalerPodDao" class="com.cloud.network.dao.NetScalerPodDaoImpl" singleton="false"/>
         <dao name="CiscoNexusVSMDeviceDao" class="com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl" singleton="false"/>
-        <dao name="OvsTunnelInterfaceDao" class="com.cloud.network.dao.OvsTunnelInterfaceDaoImpl" singleton="false"/>
-        <dao name="OvsTunnelAccountDao" class="com.cloud.network.dao.OvsTunnelNetworkDaoImpl" singleton="false"/>
+        <dao name="OvsTunnelInterfaceDao" class="com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl" singleton="false"/>
+        <dao name="OvsTunnelAccountDao" class="com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl" singleton="false"/>
     </management-server>
 
     <configuration-server class="com.cloud.server.ConfigurationServerImpl">

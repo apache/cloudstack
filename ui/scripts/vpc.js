@@ -374,6 +374,11 @@
         }
       }
     },
+    siteToSiteVPN: {
+      listView: function() { 
+        return cloudStack.sections.network.sections.siteToSiteVpn;
+      }
+    },
     tiers: {
       actionPreFilter: function(args) {
         var tier = args.context.tiers[0];
@@ -481,7 +486,7 @@
         setTimeout(function() {
           args.response.success({
             data: {
-              tiers: []
+              tiers: tiers
             }
           });
         }, 1000);
