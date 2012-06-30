@@ -33,6 +33,7 @@ public class NetworkUsageCommand extends Command {
         this.domRName = domRName;
         this.forVpc = forVpc;
         this.guestNic = guestNic;
+        this.option = "get";
     }
 
     public NetworkUsageCommand(String privateIP, String domRName, String option, boolean forVpc)
