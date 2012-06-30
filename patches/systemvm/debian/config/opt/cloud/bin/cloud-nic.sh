@@ -18,13 +18,11 @@ unplug_nic() {
   sudo ip route flush cache
   # remove usage
   sudo iptables -t mangle -F NETWORK_STATS_$dev 2>/dev/null
-  sudo iptables -t mangle -D POSTROUTING -o $dev -j NETWORK_STATS_$dev 2>/dev/null
-  rule=$(iptables-save | grep NETWORK_STATS_$dev | grep "\-A")
-  if [ $? -eq 0 ]
-  then
+  iptables-save | grep NETWORK_STATS_$dev | grep "\-A"  | while read rule
+  do
     rule=$(echo $rule | sed 's/\-A/\-D/')
-    sudo iptables $rule
-  fi
+    sudo iptables -t mangle $rule
+  done
   sudo iptables -t mangle -X NETWORK_STATS_$dev 2>/dev/null
 }
 
