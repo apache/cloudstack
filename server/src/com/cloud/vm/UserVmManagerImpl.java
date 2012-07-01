@@ -574,7 +574,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         VolumeVO rootVolumeOfVm = null;
         List<VolumeVO> rootVolumesOfVm = _volsDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
         if (rootVolumesOfVm.size() != 1) {
-            throw new CloudRuntimeException("The VM " + vm.getHostName() + " has more than one ROOT volume and is in an invalid state. Please contact Cloud Support.");
+            throw new CloudRuntimeException("The VM " + vm.getHostName() + " has more than one ROOT volume and is in an invalid state.");
         } else {
             rootVolumeOfVm = rootVolumesOfVm.get(0);
         }
