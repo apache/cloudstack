@@ -3195,11 +3195,13 @@
         listView: {
           id: 'siteToSiteVpn',
           label: 'site-to-site VPN',
-          fields: {
-            id: { label: 'label.id' },
-            s2svpngatewayid: { label: 's2svpngatewayid' },
-						s2scustomergatewayid: { label: 's2scustomergatewayid' },                    
-            created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
+          fields: {			
+            publicip: { label: 'label.ip.address' },				
+					  gateway: { label: 'label.gateway' },
+						cidrlist: { label: 'CIDR list' },
+						ipsecpsk: { label: 'IPsec Preshared-Key' },
+						ikepolicy: { label: 'IKE policy' },
+						esppolicy: { label: 'ESP policy' }								
           },
           dataProvider: function(args) {					  
 						var array1 = [];  
@@ -3299,7 +3301,7 @@
 										}
 									},
 								  lifetime: { 
-									  label: 'Lifetime of vpn connection (second)',
+									  label: 'Lifetime (second)',
                     defaultValue: '86400',
 										validation: { required: false, number: true }
 									}		
@@ -3431,11 +3433,21 @@
               details: {
                 title: 'label.details',
                 fields: [
-                  {
-                    id: { label: 'label.id' },
-                    s2svpngatewayid: { label: 's2svpngatewayid' },
-										s2scustomergatewayid: { label: 's2scustomergatewayid' },
-                    created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
+                  {                   
+										id: { label: 'label.id' },
+										
+										//s2svpngatewayid: { label: 'VPN gateway ID' },
+										publicip: { label: 'label.ip.address' },
+										
+										//s2scustomergatewayid: { label: 'Customer gateway ID' }, 
+										gateway: { label: 'label.gateway' },
+										cidrlist: { label: 'CIDR list' },
+										ipsecpsk: { label: 'IPsec Preshared-Key' },
+										ikepolicy: { label: 'IKE policy' },
+										esppolicy: { label: 'ESP policy' },
+										lifetime: { label: 'Lifetime (second)' },
+																			 
+										created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }										
                   }
                 ],
                 dataProvider: function(args) {								  
