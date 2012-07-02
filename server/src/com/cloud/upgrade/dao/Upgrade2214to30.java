@@ -150,6 +150,15 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                 String networkType = rs.getString(3);
                 String vnet = rs.getString(4);
                 String zoneName = rs.getString(5);
+                
+                //set uuid for the zone
+                String uuid = UUID.randomUUID().toString();
+                String updateUuid = "UPDATE `cloud`.`data_center` SET uuid = ? WHERE id = ?";
+                pstmtUpdate = conn.prepareStatement(updateUuid);
+                pstmtUpdate.setString(1, uuid);
+                pstmtUpdate.setLong(2, zoneId);
+                pstmtUpdate.executeUpdate();
+                pstmtUpdate.close();
 
                 //check if there are multiple guest networks configured using network_tags
                 
