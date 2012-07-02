@@ -235,7 +235,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 	private String _createTmplPath;
 	private String _heartBeatPath;
 	private String _securityGroupPath;
-	private String _networkUsagePath;
+	private String _routerProxyPath;
 	private String _host;
 	private String _dcId;
 	private String _pod;
@@ -539,11 +539,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 					"Unable to find the security_group.py");
 		}
 
-		_networkUsagePath = Script.findScript("scripts/network/domr/",
-				"networkUsage.sh");
-		if (_networkUsagePath == null) {
+		_routerProxyPath = Script.findScript("scripts/network/domr/",
+				"routerProxy.sh");
+		if (_routerProxyPath == null) {
 			throw new ConfigurationException(
-					"Unable to find the networkUsage.sh");
+					"Unable to find the routerProxy.sh");
 		}
 
 		String value = (String) params.get("developer");
@@ -2168,7 +2168,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
 	protected String networkUsage(final String privateIpAddress,
 			final String option, final String vif) {
-		Script getUsage = new Script(_networkUsagePath, s_logger);
+		Script getUsage = new Script(_routerProxyPath, s_logger);
+		getUsage.add("netusage.sh");
+	    getUsage.add(privateIpAddress);
 		if (option.equals("get")) {
 			getUsage.add("-g");
 		} else if (option.equals("create")) {
@@ -2181,7 +2183,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 			getUsage.add("-d", vif);
 		}
 
-		getUsage.add("-i", privateIpAddress);
+
 		final OutputInterpreter.OneLineParser usageParser = new OutputInterpreter.OneLineParser();
 		String result = getUsage.execute(usageParser);
 		if (result != null) {
@@ -2219,8 +2221,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 	}
 
 	private Answer execute(RebootCommand cmd) {
-		Long bytesReceived = null;
-		Long bytesSent = null;
 
 		synchronized (_vms) {
 			_vms.put(cmd.getVmName(), State.Starting);
@@ -2237,13 +2237,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
 				}
 				get_rule_logs_for_vms();
-				return new RebootAnswer(cmd, null, bytesSent, bytesReceived,
-						vncPort);
+				return new RebootAnswer(cmd, null, vncPort);
 			} else {
-				return new RebootAnswer(cmd, result);
+				return new RebootAnswer(cmd, result, false);
 			}
 		} catch (LibvirtException e) {
-			return new RebootAnswer(cmd, e.getMessage());
+			return new RebootAnswer(cmd, e.getMessage(), false);
 		} finally {
 			synchronized (_vms) {
 				_vms.put(cmd.getVmName(), State.Running);
@@ -2252,16 +2251,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 	}
 
 	protected Answer execute(RebootRouterCommand cmd) {
-		Long bytesSent = 0L;
-		Long bytesRcvd = 0L;
-		if (VirtualMachineName.isValidRouterName(cmd.getVmName())) {
-			long[] stats = getNetworkStats(cmd.getPrivateIpAddress());
-			bytesSent = stats[0];
-			bytesRcvd = stats[1];
-		}
 		RebootAnswer answer = (RebootAnswer) execute((RebootCommand) cmd);
-		answer.setBytesSent(bytesSent);
-		answer.setBytesReceived(bytesRcvd);
 		String result = _virtRouterResource.connect(cmd.getPrivateIpAddress());
 		if (result == null) {
 			networkUsage(cmd.getPrivateIpAddress(), "create", null);
@@ -2294,9 +2284,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 	protected Answer execute(StopCommand cmd) {
 		final String vmName = cmd.getVmName();
 
-		Long bytesReceived = new Long(0);
-		Long bytesSent = new Long(0);
-
 		State state = null;
 		synchronized (_vms) {
 			state = _vms.get(vmName);
@@ -2322,9 +2309,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 				result = result2 + result;
 			}
 			state = State.Stopped;
-			return new StopAnswer(cmd, result, 0, bytesSent, bytesReceived);
+			return new StopAnswer(cmd, result, 0, true);
 		} catch (LibvirtException e) {
-			return new StopAnswer(cmd, e.getMessage());
+			return new StopAnswer(cmd, e.getMessage(), false);
 		} finally {
 			synchronized (_vms) {
 				if (state != null) {

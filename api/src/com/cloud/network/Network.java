@@ -37,12 +37,15 @@ public interface Network extends ControlledEntity {
     public static class Service {
         private static List<Service> supportedServices = new ArrayList<Service>();
 
-        public static final Service Vpn = new Service("Vpn", Capability.SupportedVpnTypes);
+        public static final Service Vpn = new Service("Vpn", Capability.SupportedVpnProtocols, Capability.VpnTypes);
         public static final Service Dhcp = new Service("Dhcp");
         public static final Service Dns = new Service("Dns", Capability.AllowDnsSuffixModification);
         public static final Service Gateway = new Service("Gateway");
-        public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols, Capability.MultipleIps, Capability.TrafficStatistics);
-        public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedLBIsolation, Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps, Capability.SupportedStickinessMethods, Capability.ElasticLb);
+        public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols, 
+                Capability.MultipleIps, Capability.TrafficStatistics, Capability.FirewallType);
+        public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedLBIsolation,
+                Capability.SupportedProtocols, Capability.TrafficStatistics, Capability.LoadBalancingSupportedIps, 
+                Capability.SupportedStickinessMethods, Capability.ElasticLb);
         public static final Service UserData = new Service("UserData");
         public static final Service SourceNat = new Service("SourceNat", Capability.SupportedSourceNatTypes, Capability.RedundantRouter);
         public static final Service StaticNat = new Service("StaticNat", Capability.ElasticIp);
@@ -109,6 +112,7 @@ public interface Network extends ControlledEntity {
         public static final Provider ExternalGateWay = new Provider("ExternalGateWay", true);
         public static final Provider ElasticLoadBalancerVm = new Provider("ElasticLoadBalancerVm", false);
         public static final Provider SecurityGroupProvider = new Provider("SecurityGroupProvider", false);
+        public static final Provider VPCVirtualRouter = new Provider("VpcVirtualRouter", false);
         public static final Provider None = new Provider("None", false);
 
         private String name;
@@ -148,13 +152,15 @@ public interface Network extends ControlledEntity {
         public static final Capability SupportedStickinessMethods = new Capability("SupportedStickinessMethods");
         public static final Capability MultipleIps = new Capability("MultipleIps");
         public static final Capability SupportedSourceNatTypes = new Capability("SupportedSourceNatTypes");
-        public static final Capability SupportedVpnTypes = new Capability("SupportedVpnTypes");
+        public static final Capability SupportedVpnProtocols = new Capability("SupportedVpnTypes");
+        public static final Capability VpnTypes = new Capability("VpnTypes");
         public static final Capability TrafficStatistics = new Capability("TrafficStatistics");
         public static final Capability LoadBalancingSupportedIps = new Capability("LoadBalancingSupportedIps");
         public static final Capability AllowDnsSuffixModification = new Capability("AllowDnsSuffixModification");
         public static final Capability RedundantRouter = new Capability("RedundantRouter");
         public static final Capability ElasticIp = new Capability("ElasticIp");
         public static final Capability ElasticLb = new Capability("ElasticLb");
+        public static final Capability FirewallType = new Capability("FirewallType");
 
         private String name;
 
@@ -279,4 +285,9 @@ public interface Network extends ControlledEntity {
 	boolean isRestartRequired();
 
 	boolean getSpecifyIpRanges();
+
+    /**
+     * @return
+     */
+    Long getVpcId();
 }

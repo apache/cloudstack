@@ -77,6 +77,8 @@ import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -199,6 +201,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private ProjectAccountDao _projectAccountDao;
     @Inject
     private IPAddressDao _ipAddressDao;
+    @Inject
+    private VpcManager _vpcMgr;
 
     private Adapters<UserAuthenticator> _userAuthenticators;
 
@@ -229,7 +233,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         Map<String, String> configs = configDao.getConfiguration(params);
 
         String value = configs.get(Config.AccountCleanupInterval.key());
-        _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 hour.
+        _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
 
         _userAuthenticators = locator.getAdapters(UserAuthenticator.class);
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
@@ -574,19 +578,35 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 }
             }
 
-            // release ip addresses belonging to the account
-            List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
-            for (IpAddress ip : ipsToRelease) {
-                s_logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
-                if (!_networkMgr.releasePublicIpAddress(ip.getId(), callerUserId, caller)) {
-                    s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
+            //Delete all VPCs
+            boolean vpcsDeleted = true;
+            s_logger.debug("Deleting vpcs for account " + account.getId());
+            List<? extends Vpc> vpcs = _vpcMgr.getVpcsForAccount(account.getId());
+            for (Vpc vpc : vpcs) {
+
+                if (!_vpcMgr.destroyVpc(vpc)) {
+                    s_logger.warn("Unable to destroy VPC " + vpc + " as a part of account id=" + accountId + " cleanup.");
                     accountCleanupNeeded = true;
+                    vpcsDeleted = false;
+                } else {
+                    s_logger.debug("VPC " + vpc.getId() + " successfully deleted as a part of account id=" + accountId + " cleanup.");
+                }
+            }
+
+            if (vpcsDeleted) {
+                // release ip addresses belonging to the account
+                List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
+                for (IpAddress ip : ipsToRelease) {
+                    s_logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
+                        if (!_networkMgr.disassociatePublicIpAddress(ip.getId(), callerUserId, caller)) {
+                        s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
+                        accountCleanupNeeded = true;
+                    }
                 }
             }
 
             // delete account specific Virtual vlans (belong to system Public Network) - only when networks are cleaned
-            // up
-            // successfully
+            // up successfully
             if (networksDeleted) {
                 if (!_configMgr.deleteAccountSpecificVirtualRanges(accountId)) {
                     accountCleanupNeeded = true;
@@ -1618,7 +1638,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public UserAccount authenticateUser(String username, String password, Long domainId, Map<String, Object[]> requestParameters) {
+    public UserAccount authenticateUser(String username, String password, Long domainId, String loginIpAddress, Map<String, Object[]> requestParameters) {
         UserAccount user = null;
         if (password != null) {
             user = getUserAccount(username, password, domainId, requestParameters);
@@ -1720,7 +1740,13 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }
-            EventUtils.saveEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN, "user has logged in");
+            if (NetUtils.isValidIp(loginIpAddress)) {
+                EventUtils.saveEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN,
+                        "user has logged in from IP Address " + loginIpAddress);
+            } else {
+                EventUtils.saveEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN,
+                        "user has logged in. The IP Address cannot be determined");
+            }
             return user;
         } else {
             if (s_logger.isDebugEnabled()) {

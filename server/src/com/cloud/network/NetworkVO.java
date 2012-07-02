@@ -75,6 +75,9 @@ public class NetworkVO implements Network, Identity {
 
     @Column(name="network_offering_id")
     long networkOfferingId;
+    
+    @Column(name="vpc_id")
+    Long vpcId;
 
     @Column(name="physical_network_id")
     Long physicalNetworkId;
@@ -157,7 +160,8 @@ public class NetworkVO implements Network, Identity {
      * @param dataCenterId
      * @param physicalNetworkId TODO
      */
-    public NetworkVO(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, State state, long dataCenterId, Long physicalNetworkId) {
+    public NetworkVO(TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId,
+            State state, long dataCenterId, Long physicalNetworkId) {
         this.trafficType = trafficType;
         this.mode = mode;
         this.broadcastDomainType = broadcastDomainType;
@@ -173,8 +177,11 @@ public class NetworkVO implements Network, Identity {
     	this.uuid = UUID.randomUUID().toString();
     }
 
-    public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, long related, String name, String displayText, String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges) {
-        this(id, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, domainId, accountId, related, name, displayText, networkDomain, guestType, dcId, physicalNetworkId, aclType, specifyIpRanges);
+    public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, 
+            long related, String name, String displayText, String networkDomain, GuestType guestType, long dcId, 
+            Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges, Long vpcId) {
+        this(id, that.getTrafficType(), that.getMode(), that.getBroadcastDomainType(), offeringId, domainId, accountId,
+                related, name, displayText, networkDomain, guestType, dcId, physicalNetworkId, aclType, specifyIpRanges, vpcId);
         this.gateway = that.getGateway();
         this.cidr = that.getCidr();
         this.broadcastUri = that.getBroadcastUri();
@@ -201,9 +208,12 @@ public class NetworkVO implements Network, Identity {
      * @param guestType TODO
      * @param aclType TODO
      * @param specifyIpRanges TODO
+     * @param vpcId TODO
      * @param dataCenterId
      */
-    public NetworkVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, long networkOfferingId, long domainId, long accountId, long related, String name, String displayText, String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges) {
+    public NetworkVO(long id, TrafficType trafficType, Mode mode, BroadcastDomainType broadcastDomainType, 
+            long networkOfferingId, long domainId, long accountId, long related, String name, String displayText, 
+            String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges, Long vpcId) {
         this(trafficType, mode, broadcastDomainType, networkOfferingId, State.Allocated, dcId, physicalNetworkId);
         this.domainId = domainId;
         this.accountId = accountId;
@@ -216,6 +226,7 @@ public class NetworkVO implements Network, Identity {
     	this.uuid = UUID.randomUUID().toString();
         this.guestType = guestType;
         this.specifyIpRanges = specifyIpRanges;
+        this.vpcId = vpcId;
     }
 
     @Override
@@ -447,7 +458,6 @@ public class NetworkVO implements Network, Identity {
         return buf.toString();
     }
 
-
     public String getUuid() {
     	return this.uuid;
     }
@@ -472,5 +482,10 @@ public class NetworkVO implements Network, Identity {
     @Override
     public boolean getSpecifyIpRanges() {
     	return specifyIpRanges;
+    }
+
+    @Override
+    public Long getVpcId() {
+        return vpcId;
     }
 }

@@ -215,9 +215,6 @@ public class CloudZonesComputingResource extends LibvirtComputingResource {
 	protected Answer execute(StopCommand cmd) {
 		final String vmName = cmd.getVmName();
 
-		Long bytesReceived = new Long(0);
-		Long bytesSent = new Long(0);
-
 		State state = null;
 		synchronized (_vms) {
 			state = _vms.get(vmName);
@@ -231,7 +228,7 @@ public class CloudZonesComputingResource extends LibvirtComputingResource {
 						.nameUUIDFromBytes(vmName.getBytes()));
 			} catch (LibvirtException e) {
 				state = State.Stopped;
-				return new StopAnswer(cmd, null, 0, bytesSent, bytesReceived);
+				return new StopAnswer(cmd, null, 0, true);
 			}
 
 			String macAddress = null;
@@ -254,9 +251,9 @@ public class CloudZonesComputingResource extends LibvirtComputingResource {
 			}
 
 			state = State.Stopped;
-			return new StopAnswer(cmd, result, 0, bytesSent, bytesReceived);
+			return new StopAnswer(cmd, result, 0, true);
 		} catch (LibvirtException e) {
-			return new StopAnswer(cmd, e.getMessage());
+			return new StopAnswer(cmd, e.getMessage(), false);
 		} finally {
 			synchronized (_vms) {
 				if (state != null) {

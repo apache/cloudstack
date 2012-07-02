@@ -712,7 +712,7 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         		vm = OvmVm.getDetails(_conn, vmName);   
         	} catch (XmlRpcException e) {
         		s_logger.debug("Unable to get details of vm: " + vmName + ", treating it as stopped", e);
-        		return new StopAnswer(cmd, "success", 0, 0L, 0L);
+        		return new StopAnswer(cmd, "success", 0, true);
         	}
         	
         	deleteAllNetworkRulesForVm(vmName);    
@@ -720,10 +720,10 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
         	cleanup(vm);
         	
         	state = State.Stopped;
-        	return new StopAnswer(cmd, "success", 0, 0L, 0L);
+        	return new StopAnswer(cmd, "success", 0, true);
         } catch (Exception e) {
         	s_logger.debug("Stop " + vmName + "failed", e);
-        	return new StopAnswer(cmd, e.getMessage());
+        	return new StopAnswer(cmd, e.getMessage(), false);
         } finally {
         	synchronized(_vms) {
                 if (state != null) {
@@ -745,10 +745,10 @@ public class OvmResourceBase implements ServerResource, HypervisorResource {
 		try {
 			Map<String, String> res = OvmVm.reboot(_conn, vmName);
 			Integer vncPort = Integer.parseInt(res.get("vncPort"));
-			return new RebootAnswer(cmd, null, null, null, vncPort);
+			return new RebootAnswer(cmd, null, vncPort);
 		} catch (Exception e) {
 			s_logger.debug("Reboot " + vmName + " failed", e);
-			return new RebootAnswer(cmd, e.getMessage());
+			return new RebootAnswer(cmd, e.getMessage(), false);
 		} finally {
     		synchronized(_vms) {
     			_vms.put(cmd.getVmName(), State.Running);

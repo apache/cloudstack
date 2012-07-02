@@ -100,9 +100,12 @@ import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkRulesSystemVmCommand;
 import com.cloud.agent.api.PingCommand;
+import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.PingRoutingWithOvsCommand;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PlugNicAnswer;
+import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PoolEjectCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
@@ -113,8 +116,11 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.SecurityGroupRuleAnswer;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
+import com.cloud.agent.api.SetSourceNatAnswer;
 import com.cloud.agent.api.SetupAnswer;
 import com.cloud.agent.api.SetupCommand;
+import com.cloud.agent.api.SetupGuestNetworkAnswer;
+import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -123,6 +129,8 @@ import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.agent.api.UnPlugNicAnswer;
+import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VmStatsEntry;
@@ -134,16 +142,24 @@ import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.RemoteAccessVpnCfgCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
 import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
+import com.cloud.agent.api.routing.SetNetworkACLAnswer;
+import com.cloud.agent.api.routing.SetNetworkACLCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
+import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.SetStaticRouteAnswer;
+import com.cloud.agent.api.routing.SetStaticRouteCommand;
+import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
@@ -201,7 +217,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineName;
 import com.trilead.ssh2.SCPClient;
 import com.xensource.xenapi.Bond;
 import com.xensource.xenapi.Connection;
@@ -512,11 +527,28 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((GetDomRVersionCmd)cmd);
         } else if (clazz == CheckNetworkCommand.class) {
             return execute((CheckNetworkCommand) cmd);
+        } else if (clazz == SetupGuestNetworkCommand.class) {
+            return execute((SetupGuestNetworkCommand) cmd);
+        } else if (clazz == PlugNicCommand.class) {
+            return execute((PlugNicCommand) cmd);
+        } else if (clazz == UnPlugNicCommand.class) {
+            return execute((UnPlugNicCommand) cmd);
+        } else if (clazz == IpAssocVpcCommand.class) {
+            return execute((IpAssocVpcCommand) cmd);
+        } else if (clazz == SetSourceNatCommand.class) {
+            return execute((SetSourceNatCommand) cmd);
+        } else if (clazz == SetNetworkACLCommand.class) {
+            return execute((SetNetworkACLCommand) cmd);
+        } else if (clazz == SetPortForwardingRulesVpcCommand.class) {
+            return execute((SetPortForwardingRulesVpcCommand) cmd);
+        } else if (clazz == SetStaticRouteCommand.class) {
+            return execute((SetStaticRouteCommand) cmd);
+        } else if (clazz == Site2SiteVpnCfgCommand.class) {
+            return execute((Site2SiteVpnCfgCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
-
 
     protected XsLocalNetwork getNativeNetworkForTraffic(Connection conn, TrafficType type, String name) throws XenAPIException, XmlRpcException {
         if (name != null) {
@@ -756,7 +788,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating VIF for " + vmName + " on nic " + nic);
         }
-
         VIF.Record vifr = new VIF.Record();
         vifr.VM = vm;
         vifr.device = Integer.toString(nic.getDeviceId());
@@ -937,7 +968,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         if (speed != null) {
 
             int cpuWeight = _maxWeight; //cpu_weight
-            int utilization = 0; // max CPU cap, default is unlimited
+            long utilization = 0; // max CPU cap, default is unlimited
 
             // weight based allocation
             cpuWeight = (int)((speed*0.99) / _host.speed * _maxWeight);
@@ -946,12 +977,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
 
             if (vmSpec.getLimitCpuUse()) {
-                utilization = (int)((speed*0.99) / _host.speed * 100);
+            	utilization = (((long)speed * vmSpec.getCpus() * 100 ) / _host.speed);
             }
 
             vcpuParams.put("weight", Integer.toString(cpuWeight));
-            vcpuParams.put("cap", Integer.toString(utilization));
-
+            vcpuParams.put("cap", Long.toString(utilization));
         }
 
         if (vcpuParams.size() > 0) {
@@ -1100,6 +1130,27 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return cdromVBD;
     }
 
+    protected void destroyPatchVbd(Connection conn, String vmName) throws XmlRpcException, XenAPIException {
+        try {
+            if( !vmName.startsWith("r-") && !vmName.startsWith("s-") && !vmName.startsWith("v-") ) {
+                return;
+            }
+            Set<VM> vms = VM.getByNameLabel(conn, vmName);
+            for ( VM vm : vms ) {
+                Set<VBD> vbds = vm.getVBDs(conn);
+                for( VBD vbd : vbds ) {
+                   if (vbd.getType(conn) == Types.VbdType.CD ) {
+                       vbd.eject(conn);
+                       vbd.destroy(conn);
+                       break;
+                   }
+                }
+            }
+        } catch (Exception e) {
+            s_logger.debug("Cannot destory CD-ROM device for VM " + vmName + " due to " + e.toString(), e);
+        }
+    }
+
     protected CheckSshAnswer execute(CheckSshCommand cmd) {
         Connection conn = getConnection();
         String vmName = cmd.getName();
@@ -1115,6 +1166,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (result != null) {
                 return new CheckSshAnswer(cmd, "Can not ping System vm " + vmName + "due to:" + result);
             }
+            destroyPatchVbd(conn, vmName);
         } catch (Exception e) {
             return new CheckSshAnswer(cmd, e);
         }
@@ -1334,8 +1386,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private CheckRouterAnswer execute(CheckRouterCommand cmd) {
         Connection conn = getConnection();
-        String args = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String result = callHostPlugin(conn, "vmops", "checkRouter", "args", args);
+        String args = "checkrouter.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
         if (result == null || result.isEmpty()) {
             return new CheckRouterAnswer(cmd, "CheckRouterCommand failed");
         }
@@ -1344,8 +1396,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private GetDomRVersionAnswer execute(GetDomRVersionCmd cmd) {
         Connection conn = getConnection();
-        String args = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-        String result = callHostPlugin(conn, "vmops", "getDomRVersion", "args", args);
+        String args = "get_template_version.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
         if (result == null || result.isEmpty()) {
             return new GetDomRVersionAnswer(cmd, "getDomRVersionCmd failed");
         }
@@ -1440,7 +1492,34 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new SetPortForwardingRulesAnswer(cmd, results, endResult);
     }
 
+    protected SetStaticNatRulesAnswer SetVPCStaticNatRules(SetStaticNatRulesCommand cmd) {
+        Connection conn = getConnection();
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        //String args = routerIp;
+        String[] results = new String[cmd.getRules().length];
+        int i = 0;
+        boolean endResult = true;
+        for (StaticNatRuleTO rule : cmd.getRules()) {
+            String args = "vpc_staticnat.sh " + routerIp;
+            args += rule.revoked() ? " -D" : " -A";
+            args += " -l " + rule.getSrcIp();
+            args += " -r " + rule.getDstIp();
+            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args.toString());
+
+            if (result == null || result.isEmpty()) {
+                results[i++] = "Failed";
+                endResult = false;
+            } else {
+                results[i++] = null;
+            }
+        }
+        return new SetStaticNatRulesAnswer(cmd, results, endResult);
+    }
+
     protected SetStaticNatRulesAnswer execute(SetStaticNatRulesCommand cmd) {
+        if ( cmd.getVpcId() != null ) {
+            return SetVPCStaticNatRules(cmd);
+        }
         Connection conn = getConnection();
 
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
@@ -1476,7 +1555,75 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new SetStaticNatRulesAnswer(cmd, results, endResult);
     }
 
+    protected Answer VPCLoadBalancerConfig(final LoadBalancerConfigCommand cmd) {
+        Connection conn = getConnection();
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+
+        if (routerIp == null) {
+            return new Answer(cmd);
+        }
+
+        LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
+        String[] config = cfgtr.generateConfiguration(cmd);
+        String tmpCfgFileContents = "";
+        for (int i = 0; i < config.length; i++) {
+            tmpCfgFileContents += config[i];
+            tmpCfgFileContents += "\n";
+        }
+        String tmpCfgFilePath = "/etc/haproxy/haproxy.cfg.new";
+        String result = callHostPlugin(conn, "vmops", "createFileInDomr", "domrip", routerIp, "filepath", tmpCfgFilePath, "filecontents", tmpCfgFileContents);
+
+        if (result == null || result.isEmpty()) {
+            return new Answer(cmd, false, "LoadBalancerConfigCommand failed to create HA proxy cfg file.");
+        }
+
+        String[][] rules = cfgtr.generateFwRules(cmd);
+
+        String[] addRules = rules[LoadBalancerConfigurator.ADD];
+        String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
+        String[] statRules = rules[LoadBalancerConfigurator.STATS];
+
+        String args = "vpc_loadbalancer.sh " + routerIp;
+
+        StringBuilder sb = new StringBuilder();
+        if (addRules.length > 0) {
+            for (int i = 0; i < addRules.length; i++) {
+                sb.append(addRules[i]).append(',');
+            }
+
+            args += " -a " + sb.toString();
+        }
+
+        sb = new StringBuilder();
+        if (removeRules.length > 0) {
+            for (int i = 0; i < removeRules.length; i++) {
+                sb.append(removeRules[i]).append(',');
+            }
+
+            args += " -d " + sb.toString();
+        }
+
+        sb = new StringBuilder();
+        if (statRules.length > 0) {
+            for (int i = 0; i < statRules.length; i++) {
+                sb.append(statRules[i]).append(',');
+            }
+
+            args += " -s " + sb.toString();
+        }
+
+        result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+
+        if (result == null || result.isEmpty()) {
+            return new Answer(cmd, false, "LoadBalancerConfigCommand failed");
+        }
+        return new Answer(cmd);
+    }
+
     protected Answer execute(final LoadBalancerConfigCommand cmd) {
+        if ( cmd.getVpcId() != null ) {
+            return VPCLoadBalancerConfig(cmd);
+        }
         Connection conn = getConnection();
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
 
@@ -1573,7 +1720,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected synchronized Answer execute(final RemoteAccessVpnCfgCommand cmd) {
         Connection conn = getConnection();
-        String args = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String args = "vpn_l2tp.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         if (cmd.isCreate()) {
             args += " -r " + cmd.getIpRange();
             args += " -p " + cmd.getPresharedKey();
@@ -1585,7 +1732,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -d ";
             args += " -s " + cmd.getVpnServerIp();
         }
-        String result = callHostPlugin(conn, "vmops", "lt2p_vpn", "args", args);
+        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
         if (result == null || result.isEmpty()) {
             return new Answer(cmd, false, "Configure VPN failed");
         }
@@ -1662,6 +1809,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new Answer(cmd);
     }
 
+
     protected void assignPublicIpAddress(Connection conn, String vmName, String privateIpAddress, String publicIpAddress, boolean add, boolean firstIP,
             boolean sourceNat, String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, String guestIp, Integer networkRate, TrafficType trafficType, String name) throws InternalErrorException {
 
@@ -1717,7 +1865,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
             }
 
-            String args = privateIpAddress;
+            String args = "ipassoc.sh " + privateIpAddress;
 
             if (add) {
                 args += " -A ";
@@ -1743,7 +1891,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += vlanGateway;
             
 
-            String result = callHostPlugin(conn, "vmops", "ipassoc", "args", args);
+            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
             if (result == null || result.isEmpty()) {
                 throw new InternalErrorException("Xen plugin \"ipassoc\" failed.");
             }
@@ -1773,6 +1921,51 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
+    protected void assignVPCPublicIpAddress(Connection conn, String vmName, String routerIp, IpAddressTO ip) throws Exception {
+
+        try {
+            VM router = getVM(conn, vmName);
+            
+            VIF correctVif = getCorrectVif(conn, router, ip);
+            if (correctVif == null) {
+                throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
+            }           
+           
+            String args = "vpc_ipassoc.sh " + routerIp;
+
+            if (ip.isAdd()) {
+                args += " -A ";
+            } else {
+                args += " -D ";
+            }
+
+            args += " -l ";
+            args += ip.getPublicIp();
+
+            args += " -c ";
+            args += "eth" + correctVif.getDevice(conn);
+            
+            args += " -g ";
+            args += ip.getVlanGateway();
+            
+            args += " -m ";
+            args += Long.toString(NetUtils.getCidrSize(ip.getVlanNetmask()));
+            
+            
+            args += " -n ";
+            args += NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
+
+            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            if (result == null || result.isEmpty()) {
+                throw new InternalErrorException("Xen plugin \"vpc_ipassoc\" failed.");
+            }
+        } catch (Exception e) {
+            String msg = "Unable to assign public IP address due to " + e.toString();
+            s_logger.warn(msg, e);
+            throw new Exception(msg);
+        }
+    }
+    
     protected String networkUsage(Connection conn, final String privateIpAddress, final String option, final String vif) {
 
         if (option.equals("get")) {
@@ -2679,7 +2872,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         callHostPlugin(conn, "vmopsSnapshot", "unmountSnapshotsDir", "dcId", dcId.toString());
 
         setupLinkLocalNetwork(conn);
-
+        // try to destroy CD-ROM device for all system VMs on this host
+        try {
+            Host host = Host.getByUuid(conn, _host.uuid);
+            Set<VM> vms = host.getResidentVMs(conn);
+            for ( VM vm : vms ) {
+                destroyPatchVbd(conn, vm.getNameLabel(conn));
+            }
+        } catch (Exception e) {
+        }
         try {
             boolean result = cleanupHaltedVms(conn);
             if (!result) {
@@ -2779,10 +2980,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 vms = VM.getByNameLabel(conn, cmd.getVmName());
             } catch (XenAPIException e0) {
                 s_logger.debug("getByNameLabel failed " + e0.toString());
-                return new RebootAnswer(cmd, "getByNameLabel failed " + e0.toString());
+                return new RebootAnswer(cmd, "getByNameLabel failed " + e0.toString(), false);
             } catch (Exception e0) {
                 s_logger.debug("getByNameLabel failed " + e0.getMessage());
-                return new RebootAnswer(cmd, "getByNameLabel failed");
+                return new RebootAnswer(cmd, "getByNameLabel failed", false);
             }
             for (VM vm : vms) {
                 try {
@@ -2790,10 +2991,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } catch (Exception e) {
                     String msg = e.toString();
                     s_logger.warn(msg, e);
-                    return new RebootAnswer(cmd, msg);
+                    return new RebootAnswer(cmd, msg, false);
                 }
             }
-            return new RebootAnswer(cmd, "reboot succeeded", null, null);
+            return new RebootAnswer(cmd, "reboot succeeded", true);
         } finally {
         	synchronized (_cluster.intern()) {
 	            s_vms.put(_cluster, _name, cmd.getVmName(), State.Running);
@@ -2804,16 +3005,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     protected Answer execute(RebootRouterCommand cmd) {
         Connection conn = getConnection();
-        Long bytesSent = 0L;
-        Long bytesRcvd = 0L;
-        if (VirtualMachineName.isValidRouterName(cmd.getVmName())) {
-            long[] stats = getNetworkStats(conn, cmd.getPrivateIpAddress());
-            bytesSent = stats[0];
-            bytesRcvd = stats[1];
-        }
         RebootAnswer answer = execute((RebootCommand) cmd);
-        answer.setBytesSent(bytesSent);
-        answer.setBytesReceived(bytesRcvd);
         if (answer.getResult()) {
             String cnct = connect(conn, cmd.getVmName(), cmd.getPrivateIpAddress());
             networkUsage(conn, cmd.getPrivateIpAddress(), "create", null);
@@ -3276,23 +3468,21 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 	                s_logger.info("VM does not exist on XenServer" + _host.uuid);
 	                s_vms.remove(_cluster, _name, vmName);
             	}
-                return new StopAnswer(cmd, "VM does not exist", 0 , 0L, 0L);
+                return new StopAnswer(cmd, "VM does not exist", 0 , true);
             }
-            Long bytesSent = 0L;
-            Long bytesRcvd = 0L;
             for (VM vm : vms) {
                 VM.Record vmr = vm.getRecord(conn);
 
                 if (vmr.isControlDomain) {
                     String msg = "Tring to Shutdown control domain";
                     s_logger.warn(msg);
-                    return new StopAnswer(cmd, msg);
+                    return new StopAnswer(cmd, msg, false);
                 }
 
                 if (vmr.powerState == VmPowerState.RUNNING && !isRefNull(vmr.residentOn) && !vmr.residentOn.getUuid(conn).equals(_host.uuid)) {
                     String msg = "Stop Vm " + vmName + " failed due to this vm is not running on this host: " + _host.uuid + " but host:" + vmr.residentOn.getUuid(conn);
                     s_logger.warn(msg);
-                    return new StopAnswer(cmd, msg);
+                    return new StopAnswer(cmd, msg, false);
                 }
 
                 State state = s_vms.getState(_cluster, vmName);
@@ -3306,13 +3496,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                     if (vmr.powerState == VmPowerState.RUNNING) {
                         /* when stop a vm, set affinity to current xenserver */
                         vm.setAffinity(conn, vm.getResidentOn(conn));
-                        if (VirtualMachineName.isValidRouterName(vmName)) {
-                            if (cmd.getPrivateRouterIpAddress() != null) {
-                                long[] stats = getNetworkStats(conn, cmd.getPrivateRouterIpAddress());
-                                bytesSent = stats[0];
-                                bytesRcvd = stats[1];
-                            }
-                        }
+
                         if (_canBridgeFirewall) {
                             String result = callHostPlugin(conn, "vmops", "destroy_network_rules_for_vm", "vmName", cmd
                                     .getVmName());
@@ -3327,7 +3511,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 } catch (Exception e) {
                     String msg = "Catch exception " + e.getClass().getName() + " when stop VM:" + cmd.getVmName() + " due to " + e.toString();
                     s_logger.debug(msg);
-                    return new StopAnswer(cmd, msg);
+                    return new StopAnswer(cmd, msg, false);
                 } finally {
 
                     try {
@@ -3352,7 +3536,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                                     disableVlanNetwork(conn, network);
                                 }
                             }
-                            return new StopAnswer(cmd, "Stop VM " + vmName + " Succeed", 0, bytesSent, bytesRcvd);
+                            return new StopAnswer(cmd, "Stop VM " + vmName + " Succeed", 0, true);
                         }
                     } catch (XenAPIException e) {
                         String msg = "VM destroy failed in Stop " + vmName + " Command due to " + e.toString();
@@ -3372,16 +3556,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         } catch (XenAPIException e) {
             String msg = "Stop Vm " + vmName + " fail due to " + e.toString();
             s_logger.warn(msg, e);
-            return new StopAnswer(cmd, msg);
+            return new StopAnswer(cmd, msg, false);
         } catch (XmlRpcException e) {
             String msg = "Stop Vm " + vmName + " fail due to " + e.getMessage();
             s_logger.warn(msg, e);
-            return new StopAnswer(cmd, msg);
+            return new StopAnswer(cmd, msg, false);
         } catch (Exception e) {
             s_logger.warn("Unable to stop " + vmName + " due to ",  e);
             return new StopAnswer(cmd, e);
         }
-        return new StopAnswer(cmd, "Stop VM failed");
+        return new StopAnswer(cmd, "Stop VM failed", false);
     }
 
     private List<VDI> getVdis(Connection conn, VM vm) {
@@ -3473,6 +3657,22 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             s_logger.warn(msg, e);
         }
         throw new CloudRuntimeException("Could not find an available slot in VM with name to attach a new disk.");
+    }
+
+
+    protected String getUnusedVIFNum(Connection conn, VM vm) {
+        String vmName = "";
+        try {
+            vmName = vm.getNameLabel(conn);
+            Set<String> allowedVIFDevices = vm.getAllowedVIFDevices(conn);
+            if (allowedVIFDevices.size() > 0) {
+                return allowedVIFDevices.iterator().next();
+            }
+        } catch (Exception e) {
+            String msg = "getUnusedVIFNum failed due to " + e.toString();
+            s_logger.warn(msg, e);
+        }
+        throw new CloudRuntimeException("Could not find available VIF slot in VM with name: " + vmName + " to plug a VIF");
     }
 
     protected String callHostPlugin(Connection conn, String plugin, String cmd, String... params) {
@@ -3567,6 +3767,41 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
         }
 
+        return null;
+    }
+    
+    protected VIF getCorrectVif(Connection conn, VM router, IpAddressTO ip) throws XmlRpcException, XenAPIException {
+        NicTO nic = new NicTO();
+        nic.setType(ip.getTrafficType());
+        nic.setName(ip.getNetworkName());
+        if (ip.getVlanId() == null) {
+            nic.setBroadcastType(BroadcastDomainType.Native);
+        } else {
+            nic.setBroadcastType(BroadcastDomainType.Vlan);
+            nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanId()));
+        }
+        Network network = getNetwork(conn, nic);
+        // Determine the correct VIF on DomR to associate/disassociate the
+        // IP address with
+        Set<VIF> routerVIFs = router.getVIFs(conn);
+        for (VIF vif : routerVIFs) {
+            Network vifNetwork = vif.getNetwork(conn);
+            if (vifNetwork.getUuid(conn).equals(network.getUuid(conn))) {
+                return vif;
+            }
+        }
+        return null;
+    }
+    
+    protected VIF getVifByMac(Connection conn, VM router, String mac) throws XmlRpcException, XenAPIException {
+        Set<VIF> routerVIFs = router.getVIFs(conn);
+        mac = mac.trim();
+        for (VIF vif : routerVIFs) {
+            String lmac = vif.getMAC(conn);
+            if (lmac.trim().equals(mac)) {
+                return vif;
+            }
+        }
         return null;
     }
 
@@ -3936,10 +4171,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 }
             }
             Connection conn = getConnection();
-            /**if (!_canBridgeFirewall && !_isOvs) {
+            if (!_canBridgeFirewall && !_isOvs) {
             	return new PingRoutingCommand(getType(), id, null);
-            } else**/ 
-            if (_isOvs) {
+            } else if (_isOvs) {
                 List<Pair<String, Long>>ovsStates = ovsFullSyncStates();
                 return new PingRoutingWithOvsCommand(getType(), id, null, ovsStates);
             }else {
@@ -6954,7 +7188,294 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return changes;
     }
 
+    /**
+     * @param cmd
+     * @return
+     */
+    private UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
+        Connection conn = getConnection();
+        VirtualMachineTO vmto = cmd.getVirtualMachine();
+        String vmName = vmto.getName();
+        try {
+            Set<VM> vms = VM.getByNameLabel(conn, vmName);
+            if ( vms == null || vms.isEmpty() ) {
+                return new UnPlugNicAnswer(cmd, false, "Can not find VM " + vmName);
+            }
+            VM vm = vms.iterator().next();
+            NicTO nic = cmd.getNic();
+            String mac = nic.getMac();
+            for ( VIF vif : vm.getVIFs(conn)) {
+                String lmac = vif.getMAC(conn);
+                if ( lmac.equals(mac) ) {
+                    vif.unplug(conn);
+                    vif.destroy(conn);
+                    break;
+                }
+            }
+            return new UnPlugNicAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = " UnPlug Nic failed due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new UnPlugNicAnswer(cmd, false, msg);
+        }
+    }
 
+    /**
+     * @param cmd
+     * @return
+     */
+    private PlugNicAnswer execute(PlugNicCommand cmd) {
+        Connection conn = getConnection();
+        VirtualMachineTO vmto = cmd.getVirtualMachine();
+        String vmName = vmto.getName();
+        try {
+            Set<VM> vms = VM.getByNameLabel(conn, vmName);
+            if ( vms == null || vms.isEmpty() ) {
+                return new PlugNicAnswer(cmd, false, "Can not find VM " + vmName);
+            }
+            VM vm = vms.iterator().next();
+            NicTO nic = cmd.getNic();
+            String deviceId = getUnusedVIFNum(conn, vm);
+            nic.setDeviceId(Integer.parseInt(deviceId));
+            VIF vif = createVif(conn, vmName, vm, nic);
+            vif.plug(conn);
+            return new PlugNicAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = " Plug Nic failed due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new PlugNicAnswer(cmd, false, msg);
+        }
+    }
 
+    /**
+     * @param cmd
+     * @return
+     */
+    private SetupGuestNetworkAnswer execute(SetupGuestNetworkCommand cmd) {
+        Connection conn = getConnection();
+        NicTO nic = cmd.getNic();
+        String domrIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String domrGIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
+        String domrName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String gw = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
+        String cidr = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));;
+        String domainName = cmd.getNetworkDomain();
+        String dns = cmd.getDefaultDns1();
+        if (dns == null || dns.isEmpty()) {
+            dns = cmd.getDefaultDns2();
+        } else {
+            String dns2= cmd.getDefaultDns2();
+            if ( dns2 != null && !dns2.isEmpty()) {
+                dns += "," + dns2;
+            }
+        }
+        try {
+            Set<VM> vms = VM.getByNameLabel(conn, domrName);
+            if ( vms == null || vms.isEmpty() ) {
+                return new SetupGuestNetworkAnswer(cmd, false, "Can not find VM " + domrName);
+            }
+            VM vm = vms.iterator().next();
+            String mac = nic.getMac();
+            VIF domrVif = null;
+            for ( VIF vif : vm.getVIFs(conn)) {
+                String lmac = vif.getMAC(conn);
+                if ( lmac.equals(mac) ) {
+                    domrVif = vif;
+                    break;
+                }
+            }
+            if ( domrVif == null ) {
+                return new SetupGuestNetworkAnswer(cmd, false, "Can not find vif with mac " + mac + " for VM " + domrName);
+            }
 
+            String args = "vpc_guestnw.sh " + domrIP + " -C";
+            String dev = "eth" + domrVif.getDevice(conn);
+            args += " -d " + dev;
+            args += " -i " + domrGIP;
+            args += " -g " + gw;
+            args += " -m " + cidr;
+            args += " -n " + NetUtils.getSubNet(domrGIP, nic.getNetmask());
+            if ( dns != null && !dns.isEmpty() ) {
+                args += " -s " + dns;
+            }
+            if ( domainName != null && !domainName.isEmpty() ) {
+                args += " -e " + domainName;
+            }
+            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            if (result == null || result.isEmpty()) {
+                return new SetupGuestNetworkAnswer(cmd, false, "creating guest network failed due to " + ((result == null)? "null":result));
+            }
+            return new SetupGuestNetworkAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = " UnPlug Nic failed due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new SetupGuestNetworkAnswer(cmd, false, msg);
+        }
+    }
+
+    protected IpAssocAnswer execute(IpAssocVpcCommand cmd) {
+        Connection conn = getConnection();
+        String[] results = new String[cmd.getIpAddresses().length];
+        int i = 0;
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        try {
+            IpAddressTO[] ips = cmd.getIpAddresses();
+            for (IpAddressTO ip : ips) {
+
+                assignVPCPublicIpAddress(conn, routerName, routerIp, ip);
+                results[i++] = ip.getPublicIp() + " - success";
+            }
+        } catch (Exception e) {
+            s_logger.error("Ip Assoc failure on applying one ip due to exception:  ", e);
+            results[i++] = IpAssocAnswer.errorResult;
+        }
+
+        return new IpAssocAnswer(cmd, results);
+    }
+
+    protected Answer execute(Site2SiteVpnCfgCommand cmd) {
+        Connection conn = getConnection();
+        String args = "ipsectunnel.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        if (cmd.isCreate()) {
+            args += " -A";
+            args += " -l ";
+	        args += cmd.getLocalPublicIp();
+            args += " -n ";
+	        args += cmd.getLocalGuestCidr();
+            args += " -g ";
+	        args += cmd.getLocalPublicGateway();
+            args += " -r ";
+	        args += cmd.getPeerGatewayIp();
+            args += " -N ";
+	        args += cmd.getPeerGuestCidrList();
+            args += " -e ";
+	        args += cmd.getEspPolicy();
+            args += " -i ";
+	        args += cmd.getIkePolicy();
+            args += " -t ";
+	        args += Long.toString(cmd.getLifetime());
+            args += " -s ";
+	        args += cmd.getIpsecPsk();
+        } else {
+            args += " -D";
+            args += " -r ";
+            args += cmd.getPeerGatewayIp();
+            args += " -N ";
+            args += cmd.getPeerGuestCidrList();
+        }
+        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        if (result == null || result.isEmpty()) {
+            return new Answer(cmd, false, "Configure site to site VPN failed! ");
+        }
+        return new Answer(cmd);
+    }
+
+    protected SetSourceNatAnswer execute(SetSourceNatCommand cmd) {
+        Connection conn = getConnection();
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        IpAddressTO pubIp = cmd.getIpAddress();
+        try {
+            VM router = getVM(conn, routerName);
+
+            VIF correctVif = getCorrectVif(conn, router, pubIp);
+            
+            String args = "vpc_snat.sh " + routerIp;
+
+            args += " -A ";
+            args += " -l ";
+            args += pubIp.getPublicIp();
+
+            args += " -c ";
+            args += "eth" + correctVif.getDevice(conn);
+            
+            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            if (result == null || result.isEmpty()) {
+                throw new InternalErrorException("Xen plugin \"vpc_snat\" failed.");
+            }
+            return new SetSourceNatAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = "Ip SNAT failure due to " + e.toString();
+            s_logger.error(msg, e);
+            return new SetSourceNatAnswer(cmd, false, msg);
+        }
+    }
+
+    private SetNetworkACLAnswer execute(SetNetworkACLCommand cmd) {
+        String[] results = new String[cmd.getRules().length];
+        String callResult;
+        Connection conn = getConnection();
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        try {
+            VM router = getVM(conn, routerName);
+            String [][] rules = cmd.generateFwRules();
+            StringBuilder sb = new StringBuilder();
+            String[] aclRules = rules[0];
+            if (aclRules.length == 0) {
+                return new SetNetworkACLAnswer(cmd, true, results);
+            }
+            
+            for (int i = 0; i < aclRules.length; i++) {
+                sb.append(aclRules[i]).append(',');
+            }
+            
+            NicTO nic = cmd.getNic();
+            VIF vif = getVifByMac(conn, router, nic.getMac());
+            String args = "vpc_acl.sh " + routerIp;
+            args += " -d " + "eth" + vif.getDevice(conn);
+            args += " -i " + nic.getIp();
+            args += " -m " + Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
+            args += " -a " + sb.toString();
+            callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            if (callResult == null || callResult.isEmpty()) {
+                //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
+                for (int i=0; i < results.length; i++) {
+                    results[i] = "Failed";
+                }
+                return new SetNetworkACLAnswer(cmd, false, results);
+            }
+            return new SetNetworkACLAnswer(cmd, true, results);
+        } catch (Exception e) {
+            String msg = "SetNetworkACL failed due to " + e.toString();
+            s_logger.error(msg, e);
+            return new SetNetworkACLAnswer(cmd, false, results);
+        }
+    }
+
+    protected SetPortForwardingRulesAnswer execute(SetPortForwardingRulesVpcCommand cmd) {
+        Connection conn = getConnection();
+
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String[] results = new String[cmd.getRules().length];
+        int i = 0;
+
+        boolean endResult = true;
+        for (PortForwardingRuleTO rule : cmd.getRules()) {
+            String args ="vpc_portforwarding.sh " + routerIp;
+            args += rule.revoked() ? " -D" : " -A";
+            args += " -P " + rule.getProtocol().toLowerCase();
+            args += " -l " + rule.getSrcIp();
+            args += " -p " + rule.getStringSrcPortRange();
+            args += " -r " + rule.getDstIp();
+            args += " -d " + rule.getStringDstPortRange().replace(":", "-");
+
+            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args.toString());
+
+            if (result == null || result.isEmpty()) {
+                results[i++] = "Failed";
+                endResult = false;
+            } else {
+                results[i++] = null;
+            }
+        }
+        return new SetPortForwardingRulesAnswer(cmd, results, endResult);
+    }
+    
+    
+    private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
+        // TODO Auto-generated method stub
+        return new SetStaticRouteAnswer(cmd, true, null);
+    }
 }

@@ -203,7 +203,8 @@ public class NicProfile {
         return strategy;
     }
 
-    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate, boolean isSecurityGroupEnabled, String name) {
+    public NicProfile(Nic nic, Network network, URI broadcastUri, URI isolationUri, Integer networkRate, 
+            boolean isSecurityGroupEnabled, String name) {
         this.id = nic.getId();
         this.networkId = network.getId();
         this.gateway = nic.getGateway();
@@ -228,13 +229,6 @@ public class NicProfile {
         if (networkRate != null) {
             this.networkRate = networkRate;
         }
-    }
-
-    public NicProfile(long id, BroadcastDomainType type, Mode mode, long vmId) {
-        this.id = id;
-        this.broadcastType = type;
-        this.mode = mode;
-        this.vmId = vmId;
     }
 
     public NicProfile(ReservationStrategy strategy, String ip4Address, String macAddress, String gateway, String netmask) {

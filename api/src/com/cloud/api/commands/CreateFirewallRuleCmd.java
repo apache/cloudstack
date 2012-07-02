@@ -150,7 +150,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     }
 
     @Override
-    public long getSourceIpAddressId() {
+    public Long getSourceIpAddressId() {
         return ipAddressId;
     }
 
@@ -187,7 +187,18 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
 
     @Override
     public long getNetworkId() {
-        throw new UnsupportedOperationException("Not yet implemented");
+        IpAddress ip = _entityMgr.findById(IpAddress.class, getIpAddressId());
+        Long ntwkId = null;
+        
+        if (ip.getAssociatedWithNetworkId() != null) {
+            ntwkId = ip.getAssociatedWithNetworkId();
+        }
+        
+        if (ntwkId == null) {
+            throw new InvalidParameterValueException("Unable to create firewall rule for the ipAddress id=" + ipAddressId + 
+                    " as ip is not associated with any network and no networkId is passed in");
+        }
+        return ntwkId;
     }
 
     @Override

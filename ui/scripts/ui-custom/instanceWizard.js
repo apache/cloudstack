@@ -14,8 +14,10 @@
   /**
    * Instance wizard
    */
-  cloudStack.instanceWizard = function(args) {
+  cloudStack.uiCustom.instanceWizard = function(args) {
     return function(listViewArgs) {
+      var context = listViewArgs.context;
+
       var instanceWizard = function(data) {
         var $wizard = $('#template').find('div.instance-wizard').clone();
         var $progress = $wizard.find('div.progress ul li');
@@ -38,27 +40,32 @@
 
           args.action({
             // Populate data
+            context: context,
             data: data,
             response: {
               success: function(args) {
-                var $loading = $('.list-view').listView('prependItem', {
-                  data: [
-                    {
-                      name: data.displayname ? data.displayname : _l('label.new.vm'),
-                      zonename: $wizard.find('select[name=zoneid] option').filter(function() {
-                        return $(this).val() == data.zoneid;
-                      }).html(),
-                      state: 'Creating'
-                    }
-                  ],
-                  actionFilter: function(args) { return []; }
-                });
+                var $listView = $('.list-view.instances');
+
+                if ($listView.size()) {
+                  var $loading = $('.list-view.instances').listView('prependItem', {
+                    data: [
+                      {
+                        name: data.displayname ? data.displayname : _l('label.new.vm'),
+                        zonename: $wizard.find('select[name=zoneid] option').filter(function() {
+                          return $(this).val() == data.zoneid;
+                        }).html(),
+                        state: 'Creating'
+                      }
+                    ],
+                    actionFilter: function(args) { return []; }
+                  });
+                }
 
                 listViewArgs.complete({
                   _custom: args._custom,
                   messageArgs: cloudStack.serializeForm($form),
-                  $item: $loading
-                });
+                  $item: $listView.size()? $loading : $('<div>')
+                }); 
 
                 close();
               },

@@ -13,6 +13,7 @@
 package com.cloud.uuididentity.dao;
 
 import com.cloud.api.IdentityMapper;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
 public interface IdentityDao extends GenericDao<IdentityVO, Long> {
@@ -20,4 +21,10 @@ public interface IdentityDao extends GenericDao<IdentityVO, Long> {
     Long getIdentityId(String tableName, String identityString);
 	String getIdentityUuid(String tableName, String identityString);
 	void initializeDefaultUuid(String tableName);
+    /**
+     * @param tableName
+     * @param identityId
+     * @return
+     */
+    Pair<Long, Long> getAccountDomainInfo(String tableName, Long identityId);
 }

@@ -835,6 +835,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
     }
 
     @DB(txn=false)
+    @Override
     public Class<T> getEntityBeanType() {
         return _entityBeanType;
     }

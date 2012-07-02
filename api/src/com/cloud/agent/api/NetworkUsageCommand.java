@@ -13,28 +13,35 @@
 package com.cloud.agent.api;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
+import com.cloud.agent.api.to.NicTO;
 
 @LogLevel(Log4jLevel.Trace)
 public class NetworkUsageCommand extends Command {
     private String privateIP;
     private String domRName;
     private String option;
+    boolean forVpc = false;
+    NicTO guestNic;
 
     protected NetworkUsageCommand() {
 
     }
 
-    public NetworkUsageCommand(String privateIP, String domRName)
+    public NetworkUsageCommand(String privateIP, String domRName, boolean forVpc, NicTO guestNic)
     {
         this.privateIP = privateIP;
         this.domRName = domRName;
+        this.forVpc = forVpc;
+        this.guestNic = guestNic;
+        this.option = "get";
     }
 
-    public NetworkUsageCommand(String privateIP, String domRName, String option)
+    public NetworkUsageCommand(String privateIP, String domRName, String option, boolean forVpc)
     {
         this.privateIP = privateIP;
         this.domRName = domRName;
         this.option = option;
+        this.forVpc = forVpc;
     }
 
     public String getPrivateIP() {
@@ -47,6 +54,14 @@ public class NetworkUsageCommand extends Command {
 
     public String getOption() {
         return option;
+    }
+
+    public boolean isForVpc() {
+        return forVpc;
+    }
+
+    public NicTO getGuestNic() {
+        return guestNic;
     }
 
     @Override

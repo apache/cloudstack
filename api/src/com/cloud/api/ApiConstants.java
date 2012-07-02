@@ -353,6 +353,24 @@ public class ApiConstants {
     public static final String VSM_DEVICE_STATE = "vsmdevicestate";
     public static final String INCL_ZONES = "includezones";
     public static final String EXCL_ZONES = "excludezones";
+    public static final String RESOURCE_IDS = "resourceids";
+    public static final String RESOURCE_ID = "resourceid";
+    public static final String CUSTOMER = "customer";
+    public static final String VPC_OFF_ID = "vpcofferingid";
+    public static final String NETWORK = "network";
+    public static final String VPC_ID = "vpcid";
+    public static final String CAN_USE_FOR_DEPLOY = "canusefordeploy";
+    public static final String GATEWAY_ID = "gatewayid";
+
+    
+    public static final String S2S_VPN_GATEWAY_ID = "s2svpngatewayid";
+    public static final String S2S_CUSTOMER_GATEWAY_ID = "s2scustomergatewayid";
+    public static final String IPSEC_PSK = "ipsecpsk";
+    public static final String GUEST_IP = "guestip";
+    public static final String REMOVED = "removed";
+    public static final String IKE_POLICY = "ikepolicy";
+    public static final String ESP_POLICY = "esppolicy";
+    public static final String LIFETIME = "lifetime";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

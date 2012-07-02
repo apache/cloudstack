@@ -171,7 +171,8 @@ class VirtualMachine:
     @classmethod
     def create(cls, apiclient, services, templateid=None, accountid=None,
                     domainid=None, networkids=None, serviceofferingid=None,
-                    securitygroupids=None, projectid=None, mode='basic'):
+                    securitygroupids=None, projectid=None, startvm=None,
+                    diskofferingid=None, mode='basic'):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -204,7 +205,9 @@ class VirtualMachine:
         elif "template" in services:
             cmd.templateid = services["template"]
 
-        if "diskoffering" in services:
+        if diskofferingid:
+            cmd.diskofferingid = diskofferingid
+        elif "diskoffering" in services:
             cmd.diskofferingid = services["diskoffering"]
 
         if securitygroupids:
@@ -216,7 +219,15 @@ class VirtualMachine:
         if projectid:
             cmd.projectid = projectid
 
+        if startvm is not None:
+            cmd.startvm = startvm
+
         virtual_machine = apiclient.deployVirtualMachine(cmd)
+
+        if startvm == False:
+            virtual_machine.ssh_ip = virtual_machine.nic[0].ipaddress
+            virtual_machine.public_ip = virtual_machine.nic[0].ipaddress
+            return VirtualMachine(virtual_machine.__dict__, services)
 
         # VM should be in Running state after deploy
         timeout = 10
@@ -315,6 +326,14 @@ class VirtualMachine:
         cmd.id = self.id
         apiclient.destroyVirtualMachine(cmd)
 
+    def migrate(self, apiclient, hostid=None):
+        """migrate an Instance"""
+        cmd = migrateVirtualMachine.migrateVirtualMachineCmd()
+        cmd.virtualmachineid = self.id
+        if hostid:
+            cmd.hostid = hostid
+        apiclient.migrateVirtualMachine(cmd)
+
     def attach_volume(self, apiclient, volume):
         """Attach volume to instance"""
         cmd = attachVolume.attachVolumeCmd()
@@ -327,6 +346,26 @@ class VirtualMachine:
         cmd = detachVolume.detachVolumeCmd()
         cmd.id = volume.id
         return apiclient.detachVolume(cmd)
+
+    def attach_iso(self, apiclient, iso):
+        """Attach ISO to instance"""
+        cmd = attachIso.attachIsoCmd()
+        cmd.id = iso.id
+        cmd.virtualmachineid = self.id
+        return apiclient.attachIso(cmd)
+
+    def detach_iso(self, apiclient):
+        """Detach ISO to instance"""
+        cmd = detachIso.detachIsoCmd()
+        cmd.id = self.id
+        return apiclient.detachIso(cmd)
+
+    def change_service_offering(self, apiclient, serviceOfferingId):
+        """Change service offering of the instance"""
+        cmd = changeServiceForVirtualMachine.changeServiceForVirtualMachineCmd()
+        cmd.id = self.id
+        cmd.serviceofferingid = serviceOfferingId
+        return apiclient.changeServiceForVirtualMachine(cmd)
 
     @classmethod
     def list(cls, apiclient, **kwargs):
@@ -343,10 +382,8 @@ class VirtualMachine:
         cmd.id = self.id
         try:
             response = apiclient.resetPasswordForVirtualMachine(cmd)
-            print response
         except Exception as e:
             raise Exception("Reset Password failed! - %s" % e)
-        print type(response)
         if isinstance(response, list):
             return response[0].password
 
@@ -443,6 +480,57 @@ class Volume:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listVolumes(cmd))
 
+    @classmethod
+    def upload(cls, apiclient, services, zoneid=None, account=None, domainid=None):
+        """Uploads the volume to specified account"""
+
+        cmd = uploadVolume.uploadVolumeCmd()
+        if zoneid:
+            cmd.zoneid = zoneid
+        if account:
+            cmd.account = account
+        if domainid:
+            cmd.domainid = domainid
+        cmd.format = services["format"]
+        cmd.name = services["diskname"]
+        cmd.url = services["url"]
+        return Volume(apiclient.uploadVolume(cmd).__dict__)
+
+    def wait_for_upload(self, apiclient, timeout=5, interval=60):
+        """Wait for upload"""
+        #Sleep to ensure template is in proper state before download
+        time.sleep(interval)
+
+        while True:
+            volume_response = Volume.list(
+                                    apiclient,
+                                    id=self.id,
+                                    zoneid=self.zoneid,
+                                    templatefilter='self'
+                                    )
+            if isinstance(volume_response, list):
+
+                volume = volume_response[0]
+                # If volume is ready,
+                # volume.state = Allocated
+                if volue.state == 'Allocated':
+                    break
+
+                elif 'Uploading' in volume.state:
+                    time.sleep(interval)
+
+                elif 'Installing' not in volume.state:
+                    raise Exception(
+                        "Error in uploading volume: status - %s" %
+                                                            volume.state)
+
+            elif timeout == 0:
+                break
+
+            else:
+                time.sleep(interval)
+                timeout = timeout - 1
+        return
 
 class Snapshot:
     """Manage Snapshot Lifecycle
@@ -498,7 +586,6 @@ class Template:
         cmd.isfeatured = services["isfeatured"] if "isfeatured" in services else False
         cmd.ispublic = services["ispublic"] if "ispublic" in services else False
         cmd.isextractable = services["isextractable"] if "isextractable" in services else False
-        cmd.passwordenabled = services["passwordenabled"] if "passwordenabled" in services else False
         cmd.passwordenabled = services["passwordenabled"] if "passwordenabled" in services else False
 
         if volumeid:
@@ -685,7 +772,6 @@ class Iso:
                 response = iso_response[0]
                 # Again initialize timeout to avoid listISO failure
                 timeout = 5
-                print response.status
                 # Check whether download is in progress(for Ex:10% Downloaded)
                 # or ISO is 'Successfully Installed'
                 if response.status == 'Successfully Installed':
@@ -1006,10 +1092,10 @@ class NetworkOffering:
                                             'provider': provider
                                            })
         if "servicecapabilitylist" in services:
-            cmd.servicecapabilitylist = []
+            cmd.serviceCapabilityList = []
             for service, capability in services["servicecapabilitylist"].items():
                 for ctype, value in capability.items():
-                    cmd.servicecapabilitylist.append({
+                    cmd.serviceCapabilityList.append({
                                             'service': service,
                                             'capabilitytype': ctype,
                                             'capabilityvalue': value
@@ -1018,6 +1104,7 @@ class NetworkOffering:
             cmd.specifyVlan = services["specifyVlan"]
         if "specifyIpRanges" in services:
             cmd.specifyIpRanges = services["specifyIpRanges"]
+	cmd.availability = 'Optional'
 
         [setattr(cmd, k, v) for k, v in kwargs.items()]
 
@@ -1172,19 +1259,19 @@ class LoadBalancerRule:
             for name, value in param.items():
                 cmd.param.append({'name': name, 'value': value})
         return apiclient.createLBStickinessPolicy(cmd)
-    
+
     def deleteSticky(self, apiclient, id):
         """Deletes stickyness policy"""
-        
+
         cmd = deleteLBStickinessPolicy.deleteLBStickinessPolicyCmd()
         cmd.id = id
         return apiclient.deleteLBStickinessPolicy(cmd)
-    
+
     @classmethod
     def listStickyPolicies(cls, apiclient, lbruleid, **kwargs):
         """Lists stickiness policies for load balancing rule"""
-        
-        cmd= listLBStickinessPolicies.listLBStickinessPoliciesCmd()
+
+        cmd = listLBStickinessPolicies.listLBStickinessPoliciesCmd()
         cmd.lbruleid = lbruleid
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return apiclient.listLBStickinessPolicies(cmd)
@@ -1443,7 +1530,7 @@ class Network:
         cmd = restartNetwork.restartNetworkCmd()
         cmd.id = self.id
         if cleanup:
-            cmd.cleanup = cleanup 
+            cmd.cleanup = cleanup
         return(apiclient.restartNetwork(cmd))
 
     @classmethod
@@ -2090,3 +2177,55 @@ class NetworkServiceProvider:
         cmd = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listNetworkServiceProviders(cmd))
+
+class Router:
+    """Manage router life cycle"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def start(cls, apiclient, id):
+        """Starts the router"""
+        cmd = startRouter.startRouterCmd()
+        cmd.id = id
+        return apiclient.startRouter(cmd)
+
+    @classmethod
+    def stop(cls, apiclient, id, forced=None):
+        """Stops the router"""
+        cmd = stopRouter.stopRouterCmd()
+        cmd.id = id
+        if forced:
+            cmd.forced = forced
+        return apiclient.stopRouter(cmd)
+
+    @classmethod
+    def reboot(cls, apiclient, id):
+        """Reboots the router"""
+        cmd = rebootRouter.rebootRouterCmd()
+        cmd.id = id
+        return apiclient.rebootRouter(cmd)
+
+    @classmethod
+    def destroy(cls, apiclient, id):
+        """Destroy the router"""
+        cmd = destroyRouter.destroyRouterCmd()
+        cmd.id = id
+        return apiclient.destroyRouter(cmd)
+
+    @classmethod
+    def change_service_offering(cls, apiclient, id, serviceofferingid):
+        """Change service offering of the router"""
+        cmd = changeServiceForRouter.changeServiceForRouterCmd()
+        cmd.id = id
+        cmd.serviceofferingid = serviceofferingid
+        return apiclient.changeServiceForRouter(cmd)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """List routers"""
+
+        cmd = listRouters.listRoutersCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listRouters(cmd))

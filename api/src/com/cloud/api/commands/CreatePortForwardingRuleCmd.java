@@ -47,27 +47,42 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     // ///////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName = "user_ip_address")
-    @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.LONG, required = true, description = "the IP address id of the port forwarding rule")
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.LONG, required = true, 
+    description = "the IP address id of the port forwarding rule")
     private Long ipAddressId;
 
-    @Parameter(name = ApiConstants.PRIVATE_START_PORT, type = CommandType.INTEGER, required = true, description = "the starting port of port forwarding rule's private port range")
+    @Parameter(name = ApiConstants.PRIVATE_START_PORT, type = CommandType.INTEGER, required = true, 
+            description = "the starting port of port forwarding rule's private port range")
     private Integer privateStartPort;
 
-    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "the protocol for the port fowarding rule. Valid values are TCP or UDP.")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, 
+            description = "the protocol for the port fowarding rule. Valid values are TCP or UDP.")
     private String protocol;
 
-    @Parameter(name = ApiConstants.PUBLIC_START_PORT, type = CommandType.INTEGER, required = true, description = "the starting port of port forwarding rule's public port range")
+    @Parameter(name = ApiConstants.PUBLIC_START_PORT, type = CommandType.INTEGER, required = true, 
+            description = "the starting port of port forwarding rule's public port range")
     private Integer publicStartPort;
 
     @IdentityMapper(entityTableName = "vm_instance")
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.LONG, required = true, description = "the ID of the virtual machine for the port forwarding rule")
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.LONG, required = true, 
+                description = "the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
+    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING,
+            description = "the cidr list to forward traffic from")
     private List<String> cidrlist;
 
-    @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. Has value true by default")
+    @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, 
+            description = "if true, firewall rule for source/end pubic port is automatically created; " +
+            		"if false - firewall rule has to be created explicitely. If not specified 1) defaulted to false when PF" +
+            		" rule is being created for VPC guest network 2) in all other cases defaulted to true")
     private Boolean openFirewall;
+    
+    @IdentityMapper(entityTableName="networks")
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, 
+        description="The network of the vm the Port Forwarding rule will be created for. " +
+        		"Required when public Ip address is not associated with any Guest network yet (VPC case)")
+    private Long networkId;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -93,17 +108,37 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     public List<String> getSourceCidrList() {
         if (cidrlist != null) {
-            throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
+            throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall " +
+            		"rule for the specific cidr, please refer to createFirewallRule command");
         }
         return null;
     }
 
     public Boolean getOpenFirewall() {
+        boolean isVpc = getVpcId() == null ? false : true;
         if (openFirewall != null) {
+            if (isVpc && openFirewall) {
+                throw new InvalidParameterValueException("Can't have openFirewall=true when IP address belongs to VPC");
+            }
             return openFirewall;
         } else {
+            if (isVpc) {
+                return false;
+            }
             return true;
         }
+    }
+    
+    private Long getVpcId() {
+        if (ipAddressId != null) {
+            IpAddress ipAddr = _networkService.getIp(ipAddressId);
+            if (ipAddr == null || !ipAddr.readyToUse()) {
+                throw new InvalidParameterValueException("Unable to create PF rule, invalid IP address id " + ipAddr.getId());
+            } else {
+                return ipAddr.getVpcId();
+            }
+        }
+        return null;
     }
 
     // ///////////////////////////////////////////////////
@@ -163,7 +198,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     }
 
     @Override
-    public long getSourceIpAddressId() {
+    public Long getSourceIpAddressId() {
         return ipAddressId;
     }
 
@@ -189,7 +224,19 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     @Override
     public long getNetworkId() {
-        throw new UnsupportedOperationException("Not yet implemented");
+        IpAddress ip = _entityMgr.findById(IpAddress.class, getIpAddressId());
+        Long ntwkId = null;
+        
+        if (ip.getAssociatedWithNetworkId() != null) {
+            ntwkId = ip.getAssociatedWithNetworkId();
+        } else {
+            ntwkId = networkId;
+        }
+        if (ntwkId == null) {
+            throw new InvalidParameterValueException("Unable to create port forwarding rule for the ipAddress id=" + ipAddressId + 
+                    " as ip is not associated with any network and no networkId is passed in");
+        }
+        return ntwkId;
     }
 
     @Override
@@ -201,7 +248,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are
-// tracked
+        // tracked
     }
 
     @Override
@@ -232,7 +279,6 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     @Override
     public void create() {
-
         // cidr list parameter is deprecated
         if (cidrlist != null) {
             throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");

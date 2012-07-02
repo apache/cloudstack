@@ -76,4 +76,14 @@ public interface IpAddress extends ControlledEntity {
 
     boolean getSystem();
 
+    /**
+     * @return
+     */
+    Long getVpcId();
+
+    /**
+     * @param vpcId
+     */
+    void setVpcId(Long vpcId);
+
 }

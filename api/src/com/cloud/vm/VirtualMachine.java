@@ -286,4 +286,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, S
     HypervisorType getHypervisorType();
 
     public Map<String, String> getDetails();
+    
+    boolean canPlugNics();
 }

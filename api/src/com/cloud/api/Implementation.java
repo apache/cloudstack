@@ -18,10 +18,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import com.cloud.api.response.BaseResponse;
+
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ TYPE })
 public @interface Implementation {
-    Class<?> responseObject();
+    Class<? extends BaseResponse> responseObject();
 
     String description() default "";
 

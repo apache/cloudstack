@@ -5818,8 +5818,11 @@
                         actionFilter: podActionfilter,
                         data:item
                       });
-                    }
-                  });
+                     },
+                      error: function(data) {
+                          args.response.error(parseXMLHttpResponse(data));
+                          }
+                   });
                 }
               },
 
@@ -6180,17 +6183,17 @@
                     validation: { required: true }
                   },
                   vsmipaddress: {
-                    label: 'Nexus dvSwitch IP Address',
+                    label: 'Nexus 1000v IP Address',
                     validation: { required: true },
                     isHidden: false
                   },
                   vsmusername: {
-                    label: 'Nexus dvSwitch Username',
+                    label: 'Nexus 1000v Username',
                     validation: { required: true },
                     isHidden: false
                   },
                   vsmpassword: {
-                    label: 'Nexus dvSwitch Password',
+                    label: 'Nexus 1000v Password',
                     validation: { required: true },
                     isPassword: true,
                     isHidden: false
@@ -7348,7 +7351,8 @@
           fields: {
             name: { label: 'label.name' },
             ipaddress: { label: 'label.server' },
-						path: { label: 'label.path' }
+						path: { label: 'label.path' },
+						clustername: { label: 'label.cluster'}
           },
 
           dataProvider: function(args) {
@@ -7527,7 +7531,8 @@
                           //$('li[input_group="nfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=path]').css('display', 'inline-block');
                           //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
-                          $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:");
+						              var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                          $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
 
                           //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=iqn]').hide();
@@ -7549,7 +7554,8 @@
                           //$('li[input_group="nfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=path]').css('display', 'inline-block');
                           //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.path"]+":");
-                          $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:");
+						              var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                          $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
 
                           //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=iqn]').hide();
@@ -7570,8 +7576,9 @@
 
                           //$('li[input_group="nfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=path]').css('display', 'inline-block');
-                          //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.SR.name"]+":");
-                          $form.find('.form-item[rel=path]').find(".name").find("label").text("SR Name-Label:");
+                          //$dialogAddPool.find("#add_pool_path_container").find("label").text(g_dictionary["label.SR.name"]+":");                          
+						              var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                          $form.find('.form-item[rel=path]').find(".name").find("label").text("SR Name-Label:").prepend($required);
 
                           //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=iqn]').hide();
@@ -7652,7 +7659,8 @@
 
                           //$('li[input_group="nfs"]', $dialogAddPool).show();
                           $form.find('.form-item[rel=path]').css('display', 'inline-block');
-                          $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:");
+						              var $required = $form.find('.form-item[rel=path]').find(".name").find("label span");
+                          $form.find('.form-item[rel=path]').find(".name").find("label").text("Path:").prepend($required);
 
                           //$('li[input_group="iscsi"]', $dialogAddPool).hide();
                           $form.find('.form-item[rel=iqn]').hide();
@@ -9157,6 +9165,8 @@
 			dataType: "json",
 			async: false,
 			success: function(json) {
+			  nspMap = {}; //reset 
+			
 				var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;	        
         if(items != null) {				
 					for(var i = 0; i < items.length; i++) {

@@ -17,6 +17,7 @@
 	var selectedNetworkOfferingHavingNetscaler = false;
   var returnedPublicVlanIpRanges = []; //public VlanIpRanges returned by API
   var configurationUseLocalStorage = false;
+	var skipGuestTrafficStep = false;
 
   // Makes URL string for traffic label
   var trafficLabelParam = function(trafficTypeID, data, physicalNetworkID) {
@@ -241,15 +242,35 @@
         if (args.data['network-model'] == 'Basic') {
           $('.setup-guest-traffic').addClass('basic');
           $('.setup-guest-traffic').removeClass('advanced');
-        } else {
+					skipGuestTrafficStep = false; //set value
+        } 
+				else {
           $('.setup-guest-traffic').removeClass('basic');
           $('.setup-guest-traffic').addClass('advanced');
+					
+					//skip the step if OVS tunnel manager is enabled	
+          skipGuestTrafficStep = false; //reset it before ajax call
+					$.ajax({
+						url: createURL('listConfigurations'),
+						data: {
+							name: 'sdn.ovs.controller'
+						},
+						dataType: "json",
+						async: false,
+						success: function(json) {					 
+							var items = json.listconfigurationsresponse.configuration; //2 entries returned: 'sdn.ovs.controller', 'sdn.ovs.controller.default.label'
+							$(items).each(function(){						  
+								if(this.name == 'sdn.ovs.controller') {
+									if(this.value == 'true' || this.value == true) {
+										skipGuestTrafficStep = true;
+									}
+									return false; //break each loop
+								}
+							});						
+						}
+					});	
         }
-
-        return args.data['network-model'] == 'Basic' ||
-          $.grep(args.groupedData.physicalNetworks, function(network) {
-            return $.inArray('guest', network.trafficTypes) > -1;
-          }).length;
+				return !skipGuestTrafficStep;
       },
 
       configureStorageTraffic: function(args) {
@@ -729,17 +750,17 @@
             validation: { required: true }
           },
           vsmipaddress: {
-            label: 'Nexus dvSwitch IP Address',
+            label: 'Nexus 1000v IP Address',
             validation: { required: true },
             isHidden: true
           },
           vsmusername: {
-            label: 'Nexus dvSwitch Username',
+            label: 'Nexus 1000v Username',
             validation: { required: true },
             isHidden: true
           },
           vsmpassword: {
-            label: 'Nexus dvSwitch Password',
+            label: 'Nexus 1000v Password',
             validation: { required: true },
             isPassword: true,
             isHidden: true
@@ -1271,7 +1292,7 @@
 
           var returnedPhysicalNetworks = [];
 
-          if(args.data.zone.networkType == "Basic") {
+          if(args.data.zone.networkType == "Basic") { //Basic zone ***
             var requestedTrafficTypeCount = 2; //request guest traffic type, management traffic type
             if(selectedNetworkOfferingHavingSG == true && selectedNetworkOfferingHavingEIP == true && selectedNetworkOfferingHavingELB == true)
               requestedTrafficTypeCount++; //request public traffic type
@@ -1279,9 +1300,7 @@
 						//Basic zone has only one physical network
 						var array1 = [];	            
 						if("physicalNetworks" in args.data) {	//from add-zone-wizard		
-							array1.push("&name=" + todb(args.data.physicalNetworks[0].name));
-							if(args.data.physicalNetworks[0].isolationMethod != null && args.data.physicalNetworks[0].isolationMethod.length > 0)
-								array1.push("&isolationmethods=" + todb(args.data.physicalNetworks[0].isolationMethod));	
+							array1.push("&name=" + todb(args.data.physicalNetworks[0].name));							
 						}
 						else { //from quick-install-wizard
 						  array1.push("&name=PhysicalNetworkInBasicZone");
@@ -2423,7 +2442,14 @@
           return true;
         },
 
-        configureGuestTraffic: function(args) {
+        configureGuestTraffic: function(args) {		
+					if(skipGuestTrafficStep == true) {
+					  stepFns.addCluster({
+							data: args.data
+						});		
+            return;			
+					}					
+									
           message(dictionary['message.configuring.guest.traffic']);  
 
           if(args.data.returnedZone.networktype == "Basic") {		//create an VlanIpRange for guest network in basic zone

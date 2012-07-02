@@ -103,11 +103,8 @@ UPDATE `cloud`.`configuration` set component='NetworkManager' where name='router
 UPDATE `cloud`.`configuration` set component='NetworkManager' where name='router.ram.size';
 UPDATE `cloud`.`configuration` set component='NetworkManager' where name='router.stats.interval';
 UPDATE `cloud`.`configuration` set component='NetworkManager' where name='router.template.id';
-UPDATE `cloud`.`configuration` set category='Advanced ' where name='capacity.skipcounting.hours';
-UPDATE `cloud`.`configuration` set category='Advanced ' where name='use.local.storage';
-UPDATE `cloud`.`configuration` set category='Hidden ' where name='router.ram.size';
-UPDATE `cloud`.`configuration` set category='Hidden ' where name='secondary.storage.vm';
-UPDATE `cloud`.`configuration` set category='Hidden ' where name='security.hash.key';
+UPDATE `cloud`.`configuration` set category='Advanced' where name='capacity.skipcounting.hours';
+UPDATE `cloud`.`configuration` set category='Advanced' where name='use.local.storage';
 UPDATE `cloud`.`configuration` set description = 'Percentage (as a value between 0 and 1) of local storage utilization above which alerts will be sent about low local storage available.' where name = 'cluster.localStorage.capacity.notificationthreshold';
 
 DELETE FROM `cloud`.`configuration` WHERE name='direct.agent.pool.size';
@@ -123,6 +120,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'vmware.use.nexus.vswitch', 'false', 'Enable/Disable Cisco Nexus 1000v vSwitch in VMware environment');
 ALTER TABLE `cloud`.`account` ADD COLUMN `default_zone_id` bigint unsigned;
 ALTER TABLE `cloud`.`account` ADD CONSTRAINT `fk_account__default_zone_id` FOREIGN KEY `fk_account__default_zone_id`(`default_zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
+ALTER TABLE `cloud_usage`.`account` ADD COLUMN `default_zone_id` bigint unsigned;
 
 DROP TABLE IF EXISTS `cloud`.`cluster_vsm_map`;
 DROP TABLE IF EXISTS `cloud`.`virtual_supervisor_module`;

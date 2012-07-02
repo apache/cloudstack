@@ -74,7 +74,7 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
     }
     
     @Override
-    public long getSourceIpAddressId() {
+    public Long getSourceIpAddressId() {
         return lb.getSourceIpAddressId();
     }
     

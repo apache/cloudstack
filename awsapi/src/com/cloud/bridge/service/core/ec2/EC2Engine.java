@@ -1120,10 +1120,16 @@ public class EC2Engine {
 	 */
 	public EC2DescribeAvailabilityZonesResponse handleRequest(EC2DescribeAvailabilityZones request) {	
 		try {
-		    CloudStackAccount caller = getCurrentAccount();
-		    
-			return listZones(request.getZoneSet(), null);
-
+		    EC2DescribeAvailabilityZonesResponse availableZones = listZones(request.getZoneSet(), null);
+            EC2AvailabilityZonesFilterSet azfs = request.getFilterSet();
+            if ( null == azfs )
+                return availableZones;
+            else {
+                List<String> matchedAvailableZones = azfs.evaluate(availableZones);
+                if (matchedAvailableZones.isEmpty())
+                    return new EC2DescribeAvailabilityZonesResponse();
+                return listZones(matchedAvailableZones.toArray(new String[0]), null);
+            }
 		} catch( EC2ServiceException error ) {
 			logger.error( "EC2 DescribeAvailabilityZones - ", error);
 			throw error;

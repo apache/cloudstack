@@ -425,10 +425,10 @@ public class BareMetalResourceBase implements ServerResource {
 	
 	protected RebootAnswer execute(final RebootCommand cmd) {
 		if (!doScript(_rebootCommand)) {
-			return new RebootAnswer(cmd, "IPMI reboot failed");
+			return new RebootAnswer(cmd, "IPMI reboot failed", false);
 		}
 		
-		return new RebootAnswer(cmd, "reboot succeeded", null, null);
+		return new RebootAnswer(cmd, "reboot succeeded", true);
 	}
 	
 	protected StopAnswer execute(final StopCommand cmd) {
@@ -463,7 +463,7 @@ public class BareMetalResourceBase implements ServerResource {
             count++;
         }
         		
-		return success ? new StopAnswer(cmd, "Success", null, Long.valueOf(0), Long.valueOf(0)) : new StopAnswer(cmd, "IPMI power off failed");
+		return success ? new StopAnswer(cmd, "Success", null, true) : new StopAnswer(cmd, "IPMI power off failed", false);
 	}
 
 	protected StartAnswer execute(StartCommand cmd) {

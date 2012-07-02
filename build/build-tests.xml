@@ -33,6 +33,9 @@
   <property name="agent-simulator.jar" value="cloud-agent-simulator.jar" />
   <property name="testclient.jar" value="cloud-test.jar" />
 
+  <property name="simulator.setup.dir" value="${base.dir}/setup/db/" />
+  <property name="simulator.tests.dir" value="${base.dir}/test/" />
+
 
   <!-- =================== Agent Simulator ==================== -->
   <path id="agent-simulator.classpath">
@@ -88,6 +91,28 @@
   </target>
   <!-- =================== Agent Simulator ==================== -->
 
+  <!-- Run Simulator Tests  -->
+  <target name="setup-simulator-tests"  depends="clean-all, install-marvin">
+      <mkdir dir="${simulator.setup.dir}/override">
+      </mkdir>
+      <copy overwrite="true" file="${simulator.setup.dir}/templates.simulator.sql" tofile="${simulator.setup.dir}/override/templates.sql" />
+
+      <mkdir dir="${build.dir}/override">
+      </mkdir>
+      <copy overwrite="true" file="${build.dir}/replace.properties" tofile="${build.dir}/override/replace.properties" />
+      <!-- Replace the COMPONENT-SPEC for components-simulator.xml -->
+      <copy overwrite="true" file="${simulator.tests.dir}/integration/smoke-simulator/simulator.properties" tofile="${build.dir}/override/replace.properties" />
+  </target>
+
+  <target name="run-simulator" depends="setup-simulator-tests, build-all-with-simulator, deploy-server, deploydb-simulator, debug">
+  </target>
+
+  <target name="run-simulator-tests">
+      <exec dir="test/" executable="bash">
+          <arg line="setup.sh -t integration/smoke-simulator/ -c integration/smoke-simulator/simulator-smoke.cfg -d localhost -m localhost" />
+      </exec>
+  </target>
+  <!--   -->
 
   <!-- =================== QA Testing Client ==================== -->
   <target name="-init-test" depends="-init">

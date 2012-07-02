@@ -21,6 +21,8 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.commands.AssignVMCmd;
 import com.cloud.api.commands.AttachVolumeCmd;
@@ -49,6 +51,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.Criteria;
@@ -405,6 +408,25 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     public Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>> startVirtualMachine(long vmId, Long hostId, Map<VirtualMachineProfile.Param, Object> additionalParams) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.vm.VirtualMachineGuru#plugNic(com.cloud.network.Network, com.cloud.agent.api.to.NicTO, com.cloud.agent.api.to.VirtualMachineTO, com.cloud.vm.ReservationContext, com.cloud.deploy.DeployDestination)
+     */
+    @Override
+    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm, ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.vm.VirtualMachineGuru#unplugNic(com.cloud.network.Network, com.cloud.agent.api.to.NicTO, com.cloud.agent.api.to.VirtualMachineTO, com.cloud.vm.ReservationContext, com.cloud.deploy.DeployDestination)
+     */
+    @Override
+    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm, ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
+        // TODO Auto-generated method stub
+        return false;
     }
 
 }

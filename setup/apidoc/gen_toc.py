@@ -81,6 +81,7 @@ known_categories = {
     'Pod': 'Pod',
     'Zone': 'Zone',
     'NetworkOffering': 'Network Offering',
+    'NetworkACL': 'Network ACL',
     'Network': 'Network',
     'CiscoNexus': 'Network',
     'Vpn': 'VPN',
@@ -115,6 +116,10 @@ known_categories = {
     'Project': 'Project',
     'Lun': 'Storage',
     'Pool': 'Pool',
+    'Tags': 'Resource Tags',
+    'VPC': 'VPC', 
+    'PrivateGateway': 'VPC',
+    'StaticRoute': 'VPC',
     }
 
 

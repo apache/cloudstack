@@ -78,6 +78,7 @@
             <adapter name="DirectNetworkGuru" class="com.cloud.network.guru.DirectNetworkGuru"/>
             <adapter name="DirectPodBasedNetworkGuru" class="com.cloud.network.guru.DirectPodBasedNetworkGuru"/>
             <adapter name="OvsGuestNetworkGuru" class="com.cloud.network.guru.OvsGuestNetworkGuru"/>
+            <adapter name="PrivateNetworkGuru" class="com.cloud.network.guru.PrivateNetworkGuru"/>
         </adapters>
         <adapters key="com.cloud.cluster.ClusterServiceAdapter">
             <adapter name="ClusterService" class="com.cloud.cluster.ClusterServiceServletAdapter"/>
@@ -142,6 +143,7 @@
             <adapter name="BareMetal" class="com.cloud.network.element.BareMetalElement"/>
             <adapter name="SecurityGroupProvider" class="com.cloud.network.element.SecurityGroupElement"/>
             <adapter name="CiscoNexus1000vVSM" class="com.cloud.network.element.CiscoNexusVSMElement"/>
+            <adapter name="VpcVirtualRouter" class="com.cloud.network.element.VpcVirtualRouterElement"/>
         </adapters>
         <adapters key="com.cloud.cluster.agentlb.AgentLoadBalancerPlanner">
             <adapter name="ClusterBasedAgentLbPlanner" class="com.cloud.cluster.agentlb.ClusterBasedAgentLoadBalancerPlanner"/>
@@ -181,5 +183,8 @@
         <dao name="NetworkOfferingServiceDao" class="com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl" singleton="false"/>
         <dao name="VirtualRouterProviderDao" class="com.cloud.network.dao.VirtualRouterProviderDaoImpl" singleton="false"/>
         <dao name="IdentityDao" class="com.cloud.uuididentity.dao.IdentityDaoImpl" singleton="false"/>
+        <dao name="Site2SiteCustomerGatewayDao" class="com.cloud.network.dao.Site2SiteCustomerGatewayDaoImpl" singleton="false"/>
+        <dao name="Site2SiteVpnGatewayDao" class="com.cloud.network.dao.Site2SiteVpnGatewayDaoImpl" singleton="false"/>
+        <dao name="Site2SiteVpnConnectionDao" class="com.cloud.network.dao.Site2SiteVpnConnectionDaoImpl" singleton="false"/>
     </configuration-server>
 </components.xml>

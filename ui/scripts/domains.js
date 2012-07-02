@@ -168,6 +168,10 @@
                 success: function(json) {
                   var item = json.createdomainresponse.domain;
                   args.response.success({data: item});
+                },
+                error: function(XMLHttpResponse) {
+                  var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                  args.response.error(errorMsg);
                 }
               });
             },

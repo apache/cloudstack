@@ -58,11 +58,13 @@ import com.cloud.api.response.LBStickinessResponse;
 import com.cloud.api.response.LDAPConfigResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
+import com.cloud.api.response.NetworkACLResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.NicResponse;
 import com.cloud.api.response.PhysicalNetworkResponse;
 import com.cloud.api.response.PodResponse;
+import com.cloud.api.response.PrivateGatewayResponse;
 import com.cloud.api.response.ProjectAccountResponse;
 import com.cloud.api.response.ProjectInvitationResponse;
 import com.cloud.api.response.ProjectResponse;
@@ -70,14 +72,19 @@ import com.cloud.api.response.ProviderResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceCountResponse;
 import com.cloud.api.response.ResourceLimitResponse;
+import com.cloud.api.response.ResourceTagResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.SecurityGroupResultObject;
 import com.cloud.api.response.SecurityGroupRuleResponse;
 import com.cloud.api.response.SecurityGroupRuleResultObject;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.ServiceResponse;
+import com.cloud.api.response.Site2SiteCustomerGatewayResponse;
+import com.cloud.api.response.Site2SiteVpnConnectionResponse;
+import com.cloud.api.response.Site2SiteVpnGatewayResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.api.response.SnapshotResponse;
+import com.cloud.api.response.StaticRouteResponse;
 import com.cloud.api.response.StorageNetworkIpRangeResponse;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.api.response.SwiftResponse;
@@ -91,6 +98,8 @@ import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.response.VirtualRouterProviderResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.api.response.VolumeResponse;
+import com.cloud.api.response.VpcOfferingResponse;
+import com.cloud.api.response.VpcResponse;
 import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
@@ -130,11 +139,15 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.Site2SiteCustomerGateway;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.NetworkACL;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StickinessPolicy;
@@ -143,6 +156,10 @@ import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.SecurityRule;
 import com.cloud.network.security.SecurityRule.SecurityRuleType;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -151,6 +168,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.server.Criteria;
+import com.cloud.server.ResourceTag;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
@@ -727,30 +745,30 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public IPAddressResponse createIPAddressResponse(IpAddress ipAddress) {
-        VlanVO vlan = ApiDBUtils.findVlanById(ipAddress.getVlanId());
+    public IPAddressResponse createIPAddressResponse(IpAddress ipAddr) {
+        VlanVO vlan = ApiDBUtils.findVlanById(ipAddr.getVlanId());
         boolean forVirtualNetworks = vlan.getVlanType().equals(VlanType.VirtualNetwork);
-        long zoneId = ipAddress.getDataCenterId();
+        long zoneId = ipAddr.getDataCenterId();
 
         IPAddressResponse ipResponse = new IPAddressResponse();
-        ipResponse.setId(ipAddress.getId());
-        ipResponse.setIpAddress(ipAddress.getAddress().toString());
-        if (ipAddress.getAllocatedTime() != null) {
-            ipResponse.setAllocated(ipAddress.getAllocatedTime());
+        ipResponse.setId(ipAddr.getId());
+        ipResponse.setIpAddress(ipAddr.getAddress().toString());
+        if (ipAddr.getAllocatedTime() != null) {
+            ipResponse.setAllocated(ipAddr.getAllocatedTime());
         }
         ipResponse.setZoneId(zoneId);
-        ipResponse.setZoneName(ApiDBUtils.findZoneById(ipAddress.getDataCenterId()).getName());
-        ipResponse.setSourceNat(ipAddress.isSourceNat());
-        ipResponse.setIsSystem(ipAddress.getSystem());
+        ipResponse.setZoneName(ApiDBUtils.findZoneById(ipAddr.getDataCenterId()).getName());
+        ipResponse.setSourceNat(ipAddr.isSourceNat());
+        ipResponse.setIsSystem(ipAddr.getSystem());
 
         // get account information
-        populateOwner(ipResponse, ipAddress);
+        populateOwner(ipResponse, ipAddr);
 
         ipResponse.setForVirtualNetwork(forVirtualNetworks);
-        ipResponse.setStaticNat(ipAddress.isOneToOneNat());
+        ipResponse.setStaticNat(ipAddr.isOneToOneNat());
 
-        if (ipAddress.getAssociatedWithVmId() != null) {
-            UserVm vm = ApiDBUtils.findUserVmById(ipAddress.getAssociatedWithVmId());
+        if (ipAddr.getAssociatedWithVmId() != null) {
+            UserVm vm = ApiDBUtils.findUserVmById(ipAddr.getAssociatedWithVmId());
             ipResponse.setVirtualMachineId(vm.getId());
             ipResponse.setVirtualMachineName(vm.getHostName());
             if (vm.getDisplayName() != null) {
@@ -760,11 +778,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        ipResponse.setAssociatedNetworkId(ipAddress.getAssociatedWithNetworkId());
+        ipResponse.setAssociatedNetworkId(ipAddr.getAssociatedWithNetworkId());
+        ipResponse.setVpcId(ipAddr.getVpcId());
 
         // Network id the ip is associated withif associated networkId is null, try to get this information from vlan
-        Long associatedNetworkId = ipAddress.getAssociatedWithNetworkId();
-        Long vlanNetworkId = ApiDBUtils.getVlanNetworkId(ipAddress.getVlanId());
+        Long associatedNetworkId = ipAddr.getAssociatedWithNetworkId();
+        Long vlanNetworkId = ApiDBUtils.getVlanNetworkId(ipAddr.getVlanId());
         if (associatedNetworkId == null) {
             associatedNetworkId = vlanNetworkId;
         }
@@ -780,18 +799,18 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         ipResponse.setNetworkId(networkId);
-        ipResponse.setState(ipAddress.getState().toString());
-        ipResponse.setPhysicalNetworkId(ipAddress.getPhysicalNetworkId());
+        ipResponse.setState(ipAddr.getState().toString());
+        ipResponse.setPhysicalNetworkId(ipAddr.getPhysicalNetworkId());
 
         // show this info to admin only
         Account account = UserContext.current().getCaller();
         if ((account == null) || account.getType() == Account.ACCOUNT_TYPE_ADMIN) {
-            ipResponse.setVlanId(ipAddress.getVlanId());
-            ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddress.getVlanId()).getVlanTag());
+            ipResponse.setVlanId(ipAddr.getVlanId());
+            ipResponse.setVlanName(ApiDBUtils.findVlanById(ipAddr.getVlanId()).getVlanTag());
         }
         
-        if (ipAddress.getSystem()) {
-            if (ipAddress.isOneToOneNat()) {
+        if (ipAddr.getSystem()) {
+            if (ipAddr.isOneToOneNat()) {
                 ipResponse.setPurpose(IpAddress.Purpose.StaticNat.toString());
             } else {
                 ipResponse.setPurpose(IpAddress.Purpose.Lb.toString());
@@ -1022,7 +1041,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         volResponse.setCreated(volume.getCreated());
         volResponse.setState(volume.getState().toString());
         if(volume.getState() == Volume.State.UploadOp){
-        	com.cloud.storage.VolumeHostVO volumeHostRef = ApiDBUtils.findVolumeHostRef(volume.getId(), volume.getDataCenterId());
+            com.cloud.storage.VolumeHostVO volumeHostRef = ApiDBUtils.findVolumeHostRef(volume.getId(), volume.getDataCenterId());
             volResponse.setSize(volumeHostRef.getSize());
             volResponse.setCreated(volumeHostRef.getCreated());
             Account caller = UserContext.current().getCaller();
@@ -1040,17 +1059,17 @@ public class ApiResponseHelper implements ResponseGenerator {
                 } else {
                     volumeStatus = volumeHostRef.getErrorString();
                     if(volumeHostRef.getDownloadState() == VMTemplateHostVO.Status.NOT_DOWNLOADED){
-                    	volResponse.setState("UploadNotStarted");
+                        volResponse.setState("UploadNotStarted");
                     }else {
-                    	volResponse.setState("UploadError");
+                        volResponse.setState("UploadError");
                     }
                 }
                 volResponse.setStatus(volumeStatus);
             } else if (volumeHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
-            	volResponse.setStatus("Upload Complete");
-            	volResponse.setState("Uploaded");
+                volResponse.setStatus("Upload Complete");
+                volResponse.setState("Uploaded");
             } else {
-            	volResponse.setStatus("Successfully Installed");
+                volResponse.setStatus("Successfully Installed");
             }            
         }
         
@@ -1100,7 +1119,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         // return hypervisor for ROOT and Resource domain only
         Account caller = UserContext.current().getCaller();
         if ((caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) && volume.getState() != Volume.State.UploadOp) {            
-        	volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());            
+            volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());            
         }
 
         volResponse.setAttached(volume.getAttached());
@@ -1656,6 +1675,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             routerResponse.setDns1(zone.getDns1());
             routerResponse.setDns2(zone.getDns2());
         }
+
+        routerResponse.setVpcId(router.getVpcId());
 
         routerResponse.setObjectName("domainrouter");
         return routerResponse;
@@ -2306,10 +2327,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         boolean savedValue = SerializationContext.current().getUuidTranslation();
         SerializationContext.current().setUuidTranslation(false);
-        jobResponse.setJobResult((ResponseObject) ApiSerializerHelper.fromSerializedString(job.getResult()));
-        SerializationContext.current().setUuidTranslation(savedValue);
-
+        
         Object resultObject = ApiSerializerHelper.fromSerializedString(job.getResult());
+        jobResponse.setJobResult((ResponseObject) resultObject);
+        SerializationContext.current().setUuidTranslation(savedValue);
+        
         if (resultObject != null) {
             Class<?> clz = resultObject.getClass();
             if (clz.isPrimitive() || clz.getSuperclass() == Number.class || clz == String.class || clz == Date.class) {
@@ -2805,7 +2827,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setBroadcastUri(broadcastUri);
             String vlan="N/A";
             if (broadcastUri.startsWith("vlan")) {
-            	vlan = broadcastUri.substring("vlan://".length(), broadcastUri.length());
+                vlan = broadcastUri.substring("vlan://".length(), broadcastUri.length());
             }
             response.setVlan(vlan);
         }
@@ -2885,6 +2907,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         response.setSpecifyIpRanges(network.getSpecifyIpRanges());
+        response.setCanUseForDeploy(ApiDBUtils.canUseForDeploy(network));
+        response.setVpcId(network.getVpcId());
 
         response.setObjectName("network");
         return response;
@@ -2950,6 +2974,39 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setState(stateToSet);
         response.setObjectName("firewallrule");
+        return response;
+    }
+    
+    @Override
+    public NetworkACLResponse createNetworkACLResponse(NetworkACL networkACL) {
+        NetworkACLResponse response = new NetworkACLResponse();
+
+        response.setId(networkACL.getId());
+        response.setProtocol(networkACL.getProtocol());
+        if (networkACL.getSourcePortStart() != null) {
+            response.setStartPort(Integer.toString(networkACL.getSourcePortStart()));
+        }
+
+        if (networkACL.getSourcePortEnd() != null) {
+            response.setEndPort(Integer.toString(networkACL.getSourcePortEnd()));
+        }
+
+        List<String> cidrs = ApiDBUtils.findFirewallSourceCidrs(networkACL.getId());
+        response.setCidrList(StringUtils.join(cidrs, ","));
+
+        response.setTrafficType(networkACL.getTrafficType().toString());
+
+        FirewallRule.State state = networkACL.getState();
+        String stateToSet = state.toString();
+        if (state.equals(FirewallRule.State.Revoke)) {
+            stateToSet = "Deleting";
+        }
+
+        response.setIcmpCode(networkACL.getIcmpCode());
+        response.setIcmpType(networkACL.getIcmpType());
+
+        response.setState(stateToSet);
+        response.setObjectName("networkacl");
         return response;
     }
 
@@ -3399,5 +3456,198 @@ public class ApiResponseHelper implements ResponseGenerator {
     public Long getIdentiyId(String tableName, String token) {
         return ApiDispatcher.getIdentiyId(tableName, token);
     }
+    
+    @Override
+    public ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag) {
+        ResourceTagResponse response = new ResourceTagResponse();
+        response.setKey(resourceTag.getKey());
+        response.setValue(resourceTag.getValue());
+        response.setResourceType(resourceTag.getResourceType().toString());        
+        response.setId(ApiDBUtils.getUuid(String.valueOf(resourceTag.getResourceId()),resourceTag.getResourceType()));
+        Long accountId = resourceTag.getAccountId();
+        Long domainId = resourceTag.getDomainId();
+        if (accountId != null) {
+            Account account = ApiDBUtils.findAccountByIdIncludingRemoved(resourceTag.getAccountId());
 
+            if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+                // find the project
+                Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+                response.setProjectId(project.getId());
+                response.setProjectName(project.getName());
+            } else {
+                response.setAccountName(account.getAccountName());
+            }
+        }
+        
+        if (domainId != null) {
+            response.setDomainId(domainId);
+            response.setDomainName(ApiDBUtils.findDomainById(domainId).getName());
+        }
+        
+        response.setCustomer(resourceTag.getCustomer());
+        
+        response.setObjectName("tag");
+  
+        return response;
+    }
+    
+    @Override
+    public VpcOfferingResponse createVpcOfferingResponse(VpcOffering offering) {
+        VpcOfferingResponse response = new VpcOfferingResponse();
+        response.setId(offering.getId());
+        response.setName(offering.getName());
+        response.setDisplayText(offering.getDisplayText());
+        response.setIsDefault(offering.isDefault());
+        response.setState(offering.getState().name());
+
+        Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(offering.getId());
+        List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
+        for (Service service : serviceProviderMap.keySet()) {
+            ServiceResponse svcRsp = new ServiceResponse();
+            // skip gateway service
+            if (service == Service.Gateway) {
+                continue;
+            }
+            svcRsp.setName(service.getName());
+            List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
+            for (Provider provider : serviceProviderMap.get(service)) {
+                if (provider != null) {
+                    ProviderResponse providerRsp = new ProviderResponse();
+                    providerRsp.setName(provider.getName());
+                    providers.add(providerRsp);
+                }
+            }
+            svcRsp.setProviders(providers);
+
+            serviceResponses.add(svcRsp);
+        }
+        response.setServices(serviceResponses);
+        response.setObjectName("vpcoffering");
+        return response;
+    }
+    
+    
+    @Override
+    public VpcResponse createVpcResponse(Vpc vpc) {
+        VpcResponse response = new VpcResponse();
+        response.setId(vpc.getId());
+        response.setName(vpc.getName());
+        response.setDisplayText(vpc.getDisplayText());
+        response.setState(vpc.getState().name());
+        response.setVpcOfferingId(vpc.getVpcOfferingId());
+        response.setCidr(vpc.getCidr());
+        response.setZoneId(vpc.getZoneId());
+        response.setRestartRequired(vpc.isRestartRequired());
+        response.setNetworkDomain(vpc.getNetworkDomain());
+
+        Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listVpcOffServices(vpc.getVpcOfferingId());
+        List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
+        for (Service service : serviceProviderMap.keySet()) {
+            ServiceResponse svcRsp = new ServiceResponse();
+            // skip gateway service
+            if (service == Service.Gateway) {
+                continue;
+            }
+            svcRsp.setName(service.getName());
+            List<ProviderResponse> providers = new ArrayList<ProviderResponse>();
+            for (Provider provider : serviceProviderMap.get(service)) {
+                if (provider != null) {
+                    ProviderResponse providerRsp = new ProviderResponse();
+                    providerRsp.setName(provider.getName());
+                    providers.add(providerRsp);
+                }
+            }
+            svcRsp.setProviders(providers);
+
+            serviceResponses.add(svcRsp);
+        }
+        
+        List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
+        List<? extends Network> networks = ApiDBUtils.listVpcNetworks(vpc.getId());
+        for (Network network : networks) {
+            NetworkResponse ntwkRsp = createNetworkResponse(network);
+            networkResponses.add(ntwkRsp);
+        }
+        
+        response.setNetworks(networkResponses);
+        response.setServices(serviceResponses);
+        response.setObjectName("vpcoffering");
+        return response;
+    }
+
+    @Override
+    public PrivateGatewayResponse createPrivateGatewayResponse(PrivateGateway result) {
+        PrivateGatewayResponse response = new PrivateGatewayResponse();
+        response.setId(result.getId());
+        response.setVlan(result.getVlanTag());
+        response.setGateway(result.getGateway());
+        response.setNetmask(result.getNetmask());
+        response.setVpcId(result.getVpcId());
+        response.setZoneId(result.getZoneId());
+        DataCenter zone = ApiDBUtils.findZoneById(result.getZoneId());
+        response.setZoneName(zone.getName());
+        response.setAddress(result.getIp4Address());
+        response.setPhysicalNetworkId(result.getPhysicalNetworkId());
+        
+        populateAccount(response, result.getAccountId());
+        populateDomain(response, result.getDomainId());
+        
+        response.setObjectName("privategateway");
+        
+        return response;
+    }
+    
+    @Override
+    public StaticRouteResponse createStaticRouteResponse(StaticRoute result) {
+        StaticRouteResponse response = new StaticRouteResponse();
+        response.setId(result.getId());
+        response.setVpcId(result.getVpcId());
+        response.setCidr(result.getCidr());
+        
+        StaticRoute.State state = result.getState();
+        String stateToSet = state.toString();
+        if (state.equals(FirewallRule.State.Revoke)) {
+            stateToSet = "Deleting";
+        }
+        response.setState(stateToSet);
+        populateAccount(response, result.getAccountId());
+        populateDomain(response, result.getDomainId());
+        response.setObjectName("staticroute");
+        
+        return response;
+    }
+  
+    @Override
+    public Site2SiteVpnGatewayResponse createSite2SiteVpnGatewayResponse(Site2SiteVpnGateway result) {
+        Site2SiteVpnGatewayResponse response = new Site2SiteVpnGatewayResponse();
+        response.setId(result.getId());
+        response.setIp(ApiDBUtils.findIpAddressById(result.getAddrId()).getAddress().toString());
+        response.setRemoved(result.getRemoved());
+        response.setObjectName("vpngateway");
+        return response;
+    }
+
+    @Override
+    public Site2SiteCustomerGatewayResponse createSite2SiteCustomerGatewayResponse(Site2SiteCustomerGateway result) {
+        Site2SiteCustomerGatewayResponse response = new Site2SiteCustomerGatewayResponse();
+        response.setId(result.getId());
+        response.setGatewayIp(result.getGatewayIp());
+        response.setGuestCidrList(result.getGuestCidrList());
+        response.setIpsecPsk(result.getIpsecPsk());
+        response.setRemoved(result.getRemoved());
+        response.setObjectName("vpncustomergateway");
+        return response;
+    }
+
+    @Override
+    public Site2SiteVpnConnectionResponse createSite2SiteVpnConnectionResponse(Site2SiteVpnConnection result) {
+        Site2SiteVpnConnectionResponse response = new Site2SiteVpnConnectionResponse();
+        response.setId(result.getId());
+        response.setVpnGatewayId(result.getVpnGatewayId());
+        response.setCustomerGatewayId(result.getCustomerGatewayId());
+        response.setCreated(result.getCreated());
+        response.setRemoved(result.getRemoved());
+        response.setObjectName("vpnconnection");
+        return response;
+    }
 }

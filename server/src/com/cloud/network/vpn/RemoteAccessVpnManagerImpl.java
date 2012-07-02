@@ -102,7 +102,8 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     SearchBuilder<RemoteAccessVpnVO> VpnSearch;
 
     @Override
-    public RemoteAccessVpn createRemoteAccessVpn(long publicIpId, String ipRange, boolean openFirewall) throws NetworkRuleConflictException {
+    public RemoteAccessVpn createRemoteAccessVpn(long publicIpId, String ipRange, boolean openFirewall, long networkId) 
+            throws NetworkRuleConflictException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
 
@@ -114,7 +115,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         
         _accountMgr.checkAccess(caller, null, true, ipAddr);
 
-        if (!ipAddr.readyToUse() || ipAddr.getAssociatedWithNetworkId() == null) {
+        if (!ipAddr.readyToUse()) {
             throw new InvalidParameterValueException("The Ip address is not ready to be used yet: " + ipAddr.getAddress());
         }
         
@@ -132,7 +133,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         }
 
         // TODO: assumes one virtual network / domr per account per zone
-        vpnVO = _remoteAccessVpnDao.findByAccountAndNetwork(ipAddr.getAccountId(), ipAddr.getAssociatedWithNetworkId());
+        vpnVO = _remoteAccessVpnDao.findByAccountAndNetwork(ipAddr.getAccountId(), networkId);
         if (vpnVO != null) {
             //if vpn is in Added state, return it to the api
             if (vpnVO.getState() == RemoteAccessVpn.State.Added) {
@@ -142,7 +143,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         }
         
         //Verify that vpn service is enabled for the network
-        Network network = _networkMgr.getNetwork(ipAddr.getAssociatedWithNetworkId());
+        Network network = _networkMgr.getNetwork(networkId);
         if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.Vpn)) {
             throw new InvalidParameterValueException("Vpn service is not supported in network id=" + ipAddr.getAssociatedWithNetworkId());
         }

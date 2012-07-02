@@ -550,6 +550,79 @@ setup_router() {
   cp /etc/iptables/iptables-router /etc/iptables/rules
 }
 
+
+
+setup_vpcrouter() {
+  log_it "Setting up VPC virtual router system vm"
+
+  if [ "$hyp" == "vmware" ]; then
+    setup_vmware_extra_nics
+  fi
+
+    cat > /etc/network/interfaces << EOF
+auto lo $1
+iface lo inet loopback
+EOF
+  setup_interface "0" $ETH0_IP $ETH0_MASK $GW
+   
+  echo $NAME > /etc/hostname
+  echo 'AVAHI_DAEMON_DETECT_LOCAL=0' > /etc/default/avahi-daemon
+  hostname $NAME
+  
+  #Nameserver
+  sed -i -e "/^nameserver.*$/d" /etc/resolv.conf # remove previous entries
+  sed -i -e "/^nameserver.*$/d" /etc/dnsmasq-resolv.conf # remove previous entries
+  if [ -n "$internalNS1" ]
+  then
+    echo "nameserver $internalNS1" > /etc/dnsmasq-resolv.conf
+    echo "nameserver $internalNS1" > /etc/resolv.conf
+  fi
+  
+  if [ -n "$internalNS2" ]
+  then
+    echo "nameserver $internalNS2" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $internalNS2" >> /etc/resolv.conf
+  fi
+  if [ -n "$NS1" ]
+  then
+    echo "nameserver $NS1" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $NS1" >> /etc/resolv.conf
+  fi
+  
+  if [ -n "$NS2" ]
+  then
+    echo "nameserver $NS2" >> /etc/dnsmasq-resolv.conf
+    echo "nameserver $NS2" >> /etc/resolv.conf
+  fi
+  if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
+  then
+    ip route add $MGMTNET via $LOCAL_GW dev eth1
+  fi
+
+  ip route delete default
+
+
+  sed -i  /gateway/d /etc/hosts
+
+  echo "$ETH0_IP $NAME" >> /etc/hosts
+  setup_sshd $ETH0_IP
+
+  enable_svc dnsmasq 1
+  enable_svc haproxy 1
+  enable_svc cloud-passwd-srvr 1
+  enable_svc cloud 0
+  disable_rpfilter_domR
+  enable_fwding 1
+  chkconfig nfs-common off
+  cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules
+  cp /etc/vpcdnsmasq.conf /etc/dnsmasq.conf
+  cp /etc/cloud-nic.rules /etc/udev/rules.d/cloud-nic.rules
+  echo "" > /etc/dnsmasq.d/dhcphosts.txt
+  echo "dhcp-hostsfile=/etc/dhcphosts.txt" > /etc/dnsmasq.d/cloud.conf
+}
+
+
+
 setup_dhcpsrvr() {
   log_it "Setting up dhcp server system vm"
   setup_common eth0 eth1
@@ -720,6 +793,10 @@ start() {
      router)
          [ "$NAME" == "" ] && NAME=router
          setup_router
+	  ;;
+     vpcrouter)
+         [ "$NAME" == "" ] && NAME=vpcrouter
+         setup_vpcrouter
 	  ;;
      dhcpsrvr)
          [ "$NAME" == "" ] && NAME=dhcpsrvr

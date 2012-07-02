@@ -21,6 +21,7 @@ var g_timezoneoffset = null;
 var g_timezone = null;
 var g_supportELB = null;
 var g_userPublicTemplateEnabled = "true";
+var g_cloudstackversion = null;
 
 //keyboard keycode
 var keycode_Enter = 13;
@@ -81,7 +82,14 @@ var pollAsyncJobResult = function(args) {
         }
         else if (result.jobstatus == 2) { // Failed          
           var msg = (result.jobresult.errortext == null)? "": result.jobresult.errortext;
-          args.error({message: msg});
+					if (args._custom.getUpdatedItemWhenAsyncJobFails != null && args._custom.getActionFilter != null) {
+					  args.error({message: msg, updatedData: args._custom.getUpdatedItemWhenAsyncJobFails(), actionFilter: args._custom.getActionFilter()});
+					} else if (args._custom.getUpdatedItemWhenAsyncJobFails != null && args._custom.getActionFilter == null) {
+					  args.error({message: msg, updatedData: args._custom.getUpdatedItemWhenAsyncJobFails()});
+					}
+					else {
+					  args.error({message: msg});
+					}
         }
       }
     },

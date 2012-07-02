@@ -27,6 +27,7 @@ import com.cloud.bridge.service.core.ec2.EC2Address;
 import com.cloud.bridge.service.core.ec2.EC2AddressFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2AssociateAddress;
 import com.cloud.bridge.service.core.ec2.EC2AuthorizeRevokeSecurityGroup;
+import com.cloud.bridge.service.core.ec2.EC2AvailabilityZonesFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2CreateImage;
 import com.cloud.bridge.service.core.ec2.EC2CreateImageResponse;
 import com.cloud.bridge.service.core.ec2.EC2CreateKeyPair;
@@ -232,6 +233,12 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		if (null != items) {  // -> can be empty
 			for( int i=0; i < items.length; i++ ) request.addZone( items[i].getZoneName());
 		}
+
+        FilterSetType fst = dazt.getFilterSet();
+        if (fst != null) {
+            request.setFilterSet( toAvailabiltyZonesFilterSet(fst));
+        }
+
 		return toDescribeAvailabilityZonesResponse( engine.handleRequest( request ));
 	}
 
@@ -1065,6 +1072,29 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		return ifs;
 	}
 
+
+    private EC2AvailabilityZonesFilterSet toAvailabiltyZonesFilterSet( FilterSetType fst )	{
+        EC2AvailabilityZonesFilterSet azfs = new EC2AvailabilityZonesFilterSet();
+
+        FilterType[] items = fst.getItem();
+        if (items != null) {
+            for (FilterType item : items) {
+                EC2Filter oneFilter = new EC2Filter();
+                String filterName = item.getName();
+                oneFilter.setName( filterName );
+
+                ValueSetType vft = item.getValueSet();
+                ValueType[] valueItems = vft.getItem();
+                for (ValueType valueItem : valueItems) {
+                    oneFilter.addValueEncoded( valueItem.getValue());
+                }
+                azfs.addFilter( oneFilter );
+            }
+        }
+        return azfs;
+    }
+	
+	
 	// toMethods
 	public static DescribeVolumesResponse toDescribeVolumesResponse( EC2DescribeVolumesResponse engineResponse ) 
 	{
@@ -1100,7 +1130,12 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        	String devicePath = engine.cloudDeviceIdToDevicePath( vol.getHypervisor(), vol.getDeviceId());
 	        	param5.setDevice( devicePath );
 	        	param5.setStatus( toVolumeAttachmentState( vol.getInstanceId(), vol.getVMState()));
-	        	param5.setAttachTime( cal );  
+                if (vol.getAttached() == null) {
+                    param5.setAttachTime( cal );
+                } else {
+                    Calendar attachTime = EC2RestAuth.parseDateString(vol.getAttached());
+                    param5.setAttachTime( attachTime );
+                }
 	        	param5.setDeleteOnTermination( false );
                 param4.addItem( param5 );
             }

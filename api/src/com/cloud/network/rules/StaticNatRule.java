@@ -36,7 +36,7 @@ public interface StaticNatRule extends ControlledEntity, FirewallRule {
 
     long getNetworkId();
 
-    long getSourceIpAddressId();
+    Long getSourceIpAddressId();
 
     String getDestIpAddress();
 }

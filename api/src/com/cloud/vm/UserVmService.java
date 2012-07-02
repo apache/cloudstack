@@ -50,7 +50,6 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.ExecutionException;
-import com.cloud.vm.VirtualMachineProfile.Param;
 
 public interface UserVmService {
     /**

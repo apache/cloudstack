@@ -37,14 +37,18 @@ import com.cloud.network.NetworkService;
 import com.cloud.network.StorageNetworkService;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.firewall.FirewallService;
+import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.lb.LoadBalancingRulesService;
 import com.cloud.network.rules.RulesService;
 import com.cloud.network.security.SecurityGroupService;
+import com.cloud.network.vpc.VpcService;
 import com.cloud.network.vpn.RemoteAccessVpnService;
+import com.cloud.network.vpn.Site2SiteVpnService;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
+import com.cloud.server.TaggedResourceService;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.snapshot.SnapshotService;
 import com.cloud.template.TemplateService;
@@ -123,6 +127,10 @@ public abstract class BaseCmd {
     public static ResourceLimitService _resourceLimitService;
     public static IdentityService _identityService;
     public static StorageNetworkService _storageNetworkService;
+    public static TaggedResourceService _taggedResourceService;
+    public static VpcService _vpcService;
+    public static NetworkACLService _networkACLService;
+    public static Site2SiteVpnService _s2sVpnService;
 
     static void setComponents(ResponseGenerator generator) {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
@@ -150,6 +158,10 @@ public abstract class BaseCmd {
         _resourceLimitService = locator.getManager(ResourceLimitService.class);
         _identityService = locator.getManager(IdentityService.class);
         _storageNetworkService = locator.getManager(StorageNetworkService.class);
+        _taggedResourceService = locator.getManager(TaggedResourceService.class);
+        _vpcService = locator.getManager(VpcService.class);
+        _networkACLService = locator.getManager(NetworkACLService.class);
+        _s2sVpnService = locator.getManager(Site2SiteVpnService.class);
     }
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
@@ -483,7 +495,7 @@ public abstract class BaseCmd {
                 if (!enabledOnly || account.getState() == Account.State.enabled) {
                     return account.getId();
                 } else {
-                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");
+                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");                    
                 }
             } else {
                 throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain id=" + domainId);
@@ -496,10 +508,14 @@ public abstract class BaseCmd {
                 if (!enabledOnly || project.getState() == Project.State.Active) {
                     return project.getProjectAccountId();
                 } else {
-                    throw new PermissionDeniedException("Can't add resources to the project id=" + projectId + " in state=" + project.getState() + " as it's no longer active");
+                	PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() + " as it's no longer active");
+                	ex.addProxyObject(project, projectId, "projectId");                    
+                    throw ex;
                 }
             } else {
-                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified projectId");
+            	ex.addProxyObject(project, projectId, "projectId");                
+                throw ex;
             }
         }
         return null;

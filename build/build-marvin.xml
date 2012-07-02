@@ -42,4 +42,17 @@ file except in compliance with the License. Citrix Systems, Inc. -->
         </exec>
         <echo message="distributable tarball at: ${marvin.dist.dir}/Marvin-*.tar.gz"/>
     </target>
+
+    <target name="install-marvin" depends="package-marvin" description="installs marvin on the local machine">
+        <echo message="Uninstalling Marvin" />
+        <exec dir="${marvin.dist.dir}" executable="sudo">
+            <arg line="pip uninstall -y marvin"/>
+        </exec>
+        <echo message="Installing Marvin" />
+        <exec dir="${marvin.dist.dir}" executable="sudo">
+            <arg value="pip" />
+            <arg value="install" />
+            <arg value="Marvin-0.1.0.tar.gz" />
+        </exec>
+    </target>
 </project>

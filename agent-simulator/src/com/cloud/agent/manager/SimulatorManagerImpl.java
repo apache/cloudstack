@@ -64,6 +64,7 @@ import com.cloud.agent.api.routing.DhcpEntryCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.SavePasswordCommand;
+import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
@@ -200,6 +201,8 @@ public class SimulatorManagerImpl implements SimulatorManager {
                 return _mockVmMgr.checkSshCommand((CheckSshCommand)cmd);
             } else if (cmd instanceof SetStaticNatRulesCommand) {
                 return _mockVmMgr.SetStaticNatRules((SetStaticNatRulesCommand)cmd);
+            } else if (cmd instanceof SetFirewallRulesCommand) {
+            	return _mockVmMgr.SetFirewallRules((SetFirewallRulesCommand)cmd); 
             } else if (cmd instanceof SetPortForwardingRulesCommand) {
                 return _mockVmMgr.SetPortForwardingRules((SetPortForwardingRulesCommand)cmd);
             } else if (cmd instanceof NetworkUsageCommand) {

@@ -1571,7 +1571,6 @@ class TestMultipleLbRules(cloudstackTestCase):
         return
 
 
-
 class TestMultipleLbRulesSameIp(cloudstackTestCase):
 
     @classmethod

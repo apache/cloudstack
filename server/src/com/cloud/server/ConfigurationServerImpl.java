@@ -61,6 +61,7 @@ import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
@@ -94,7 +95,6 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -421,10 +421,11 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
     protected void updateCloudIdentifier() {
         // Creates and saves a UUID as the cloud identifier
-        String currentCloudIdentifier = _configDao.getValue("cloud.identifier");
+    	ConfigurationVO cloudIdentifier = _configDao.findByName("cloud.identifier");
+        String currentCloudIdentifier = cloudIdentifier.getValue();
         if (currentCloudIdentifier == null || currentCloudIdentifier.isEmpty()) {
             String uuid = UUID.randomUUID().toString();
-            _configDao.update(Config.CloudIdentifier.key(), Config.CloudIdentifier.getCategory(), uuid);
+            _configDao.update(Config.CloudIdentifier.key(), cloudIdentifier.getCategory(), uuid);
         }
     }
 
@@ -874,16 +875,22 @@ public class ConfigurationServerImpl implements ConfigurationServer {
     @DB
     protected void createDefaultNetworkOfferings() {
 
-        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, TrafficType.Public, true);
+        NetworkOfferingVO publicNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPublicNetwork, 
+                TrafficType.Public, true);
         publicNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(publicNetworkOffering);
-        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemManagementNetwork, TrafficType.Management, false);
+        NetworkOfferingVO managementNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemManagementNetwork, 
+                TrafficType.Management, false);
         managementNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(managementNetworkOffering);
-        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemControlNetwork, TrafficType.Control, false);
+        NetworkOfferingVO controlNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemControlNetwork, 
+                TrafficType.Control, false);
         controlNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(controlNetworkOffering);
-        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, TrafficType.Storage, true);
+        NetworkOfferingVO storageNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemStorageNetwork, 
+                TrafficType.Storage, true);
         storageNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(storageNetworkOffering);
+        NetworkOfferingVO privateGatewayNetworkOffering = new NetworkOfferingVO(NetworkOfferingVO.SystemPrivateGatewayNetworkOffering, GuestType.Isolated);
+        privateGatewayNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(privateGatewayNetworkOffering);
 
-        // populate providers
+        //populate providers
         Map<Network.Service, Network.Provider> defaultSharedNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
         defaultSharedNetworkOfferingProviders.put(Service.Dhcp, Provider.VirtualRouter);
         defaultSharedNetworkOfferingProviders.put(Service.Dns, Provider.VirtualRouter);
@@ -968,7 +975,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         defaultIsolatedSourceNatEnabledNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultIsolatedSourceNatEnabledNetworkOffering);
 
         for (Service service : defaultIsolatedSourceNatEnabledNetworkOfferingProviders.keySet()) {
-            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultIsolatedSourceNatEnabledNetworkOffering.getId(), service, defaultIsolatedSourceNatEnabledNetworkOfferingProviders.get(service));
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
+                    (defaultIsolatedSourceNatEnabledNetworkOffering.getId(), service, defaultIsolatedSourceNatEnabledNetworkOfferingProviders.get(service));
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
@@ -1003,6 +1011,36 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         for (Service service : netscalerServiceProviders.keySet()) {
             NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(defaultNetscalerNetworkOffering.getId(), service, netscalerServiceProviders.get(service));
+            _ntwkOfferingServiceMapDao.persist(offService);
+            s_logger.trace("Added service for the network offering: " + offService);
+        }
+        
+        // Offering #6
+        NetworkOfferingVO defaultNetworkOfferingForVpcNetworks = new NetworkOfferingVO(
+                NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
+                "Offering for Isolated Vpc networks with Source Nat service enabled",
+                TrafficType.Guest,
+                false, false, null, null, true, Availability.Required,
+                null, Network.GuestType.Isolated, false, false);
+
+        defaultNetworkOfferingForVpcNetworks.setState(NetworkOffering.State.Enabled);
+        defaultNetworkOfferingForVpcNetworks = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetworkOfferingForVpcNetworks);
+        
+        Map<Network.Service, Network.Provider> defaultVpcNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
+        defaultVpcNetworkOfferingProviders.put(Service.Dhcp, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.Dns, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.UserData, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.Firewall, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.Gateway, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.Lb, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.SourceNat, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.StaticNat, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.PortForwarding, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.Vpn, Provider.VPCVirtualRouter);
+        
+        for (Service service : defaultVpcNetworkOfferingProviders.keySet()) {
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
+                    (defaultNetworkOfferingForVpcNetworks.getId(), service, defaultVpcNetworkOfferingProviders.get(service));
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
@@ -1061,8 +1099,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                     }
 
                     if (broadcastDomainType != null) {
-                        NetworkVO network = new NetworkVO(id, trafficType, mode, broadcastDomainType, networkOfferingId, domainId, accountId, related, null, null, networkDomain, Network.GuestType.Shared, zoneId, null,
-                                null, specifyIpRanges);
+                        NetworkVO network = new NetworkVO(id, trafficType, mode, broadcastDomainType, networkOfferingId,
+                                domainId, accountId, related, null, null, networkDomain, Network.GuestType.Shared, zoneId, null,
+                                null, specifyIpRanges, null);
                         network.setGuruName(guruNames.get(network.getTrafficType()));
                         network.setDns1(zone.getDns1());
                         network.setDns2(zone.getDns2());

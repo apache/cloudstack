@@ -26,6 +26,8 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 import com.cloud.user.UserContext;
+import com.cloud.utils.AnnotationHelper;
+
 
 @Implementation(description="Adds acoount to a project", responseObject=SuccessResponse.class, since="3.0.0")
 public class AddAccountToProjectCmd extends BaseAsyncCmd {
@@ -95,7 +97,9 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
         Project project= _projectService.getProject(projectId);
         //verify input parameters
         if (project == null) {
-            throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id");
+        	ex.addProxyObject(project, projectId, "projectId");            
+            throw ex;
         } 
         
         return _projectService.getProjectOwner(projectId).getId(); 

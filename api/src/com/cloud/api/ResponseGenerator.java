@@ -41,10 +41,12 @@ import com.cloud.api.response.LBStickinessResponse;
 import com.cloud.api.response.LDAPConfigResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
+import com.cloud.api.response.NetworkACLResponse;
 import com.cloud.api.response.NetworkOfferingResponse;
 import com.cloud.api.response.NetworkResponse;
 import com.cloud.api.response.PhysicalNetworkResponse;
 import com.cloud.api.response.PodResponse;
+import com.cloud.api.response.PrivateGatewayResponse;
 import com.cloud.api.response.ProjectAccountResponse;
 import com.cloud.api.response.ProjectInvitationResponse;
 import com.cloud.api.response.ProjectResponse;
@@ -52,11 +54,16 @@ import com.cloud.api.response.ProviderResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceCountResponse;
 import com.cloud.api.response.ResourceLimitResponse;
+import com.cloud.api.response.ResourceTagResponse;
 import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.api.response.ServiceOfferingResponse;
 import com.cloud.api.response.ServiceResponse;
+import com.cloud.api.response.Site2SiteCustomerGatewayResponse;
+import com.cloud.api.response.Site2SiteVpnConnectionResponse;
+import com.cloud.api.response.Site2SiteVpnGatewayResponse;
 import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.api.response.SnapshotResponse;
+import com.cloud.api.response.StaticRouteResponse;
 import com.cloud.api.response.StorageNetworkIpRangeResponse;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.api.response.SwiftResponse;
@@ -70,6 +77,8 @@ import com.cloud.api.response.UserVmResponse;
 import com.cloud.api.response.VirtualRouterProviderResponse;
 import com.cloud.api.response.VlanIpRangeResponse;
 import com.cloud.api.response.VolumeResponse;
+import com.cloud.api.response.VpcOfferingResponse;
+import com.cloud.api.response.VpcResponse;
 import com.cloud.api.response.VpnUsersResponse;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.async.AsyncJob;
@@ -92,17 +101,25 @@ import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.Site2SiteCustomerGateway;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.NetworkACL;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.network.security.SecurityRule;
+import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
@@ -110,6 +127,7 @@ import com.cloud.org.Cluster;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
+import com.cloud.server.ResourceTag;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Swift;
@@ -269,11 +287,53 @@ public interface ResponseGenerator {
     LDAPConfigResponse createLDAPConfigResponse(String hostname, Integer port, Boolean useSSL, String queryFilter, String baseSearch, String dn);
 
     StorageNetworkIpRangeResponse createStorageNetworkIpRangeResponse(StorageNetworkIpRange result);
-
+    
     /**
      * @param tableName TODO
      * @param token
      * @return
      */
     Long getIdentiyId(String tableName, String token);
+
+    /**
+     * @param resourceTag
+     * @return
+     */
+    ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag);
+
+    Site2SiteVpnGatewayResponse createSite2SiteVpnGatewayResponse(Site2SiteVpnGateway result);
+
+    /**
+     * @param offering
+     * @return
+     */
+    VpcOfferingResponse createVpcOfferingResponse(VpcOffering offering);
+
+    /**
+     * @param vpc
+     * @return
+     */
+    VpcResponse createVpcResponse(Vpc vpc);
+
+    /**
+     * @param networkACL
+     * @return
+     */
+    NetworkACLResponse createNetworkACLResponse(NetworkACL networkACL);
+
+    /**
+     * @param result
+     * @return
+     */
+    PrivateGatewayResponse createPrivateGatewayResponse(PrivateGateway result);
+
+    /**
+     * @param result
+     * @return
+     */
+    StaticRouteResponse createStaticRouteResponse(StaticRoute result);
+
+    Site2SiteCustomerGatewayResponse createSite2SiteCustomerGatewayResponse(Site2SiteCustomerGateway result);
+
+    Site2SiteVpnConnectionResponse createSite2SiteVpnConnectionResponse(Site2SiteVpnConnection result);
 }

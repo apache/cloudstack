@@ -73,7 +73,9 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     @Parameter(name=ApiConstants.PUBLIC_PORT, type=CommandType.INTEGER, required=true, description="the public port from where the network traffic will be load balanced from")
     private Integer publicPort;
 
-    @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. Has value true by default")
+    @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for" +
+    		" source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. If not specified 1) defaulted to false when LB" +
+                    " rule is being created for VPC guest network 2) in all other cases defaulted to true")
     private Boolean openFirewall;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the load balancer. Must be used with the domainId parameter.")
@@ -87,7 +89,8 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     private List<String> cidrlist;
     
     @IdentityMapper(entityTableName="networks")
-    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="The guest network this rule will be created for")
+    @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="The guest network this " +
+    		"rule will be created for. Required when public Ip address is not associated with any Guest network yet (VPC case)")
     private Long networkId;
     
     /////////////////////////////////////////////////////
@@ -128,6 +131,19 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     	return publicIpId;
     }
     
+    private Long getVpcId() {
+        if (publicIpId != null) {
+            IpAddress ipAddr = _networkService.getIp(publicIpId);
+            if (ipAddr == null || !ipAddr.readyToUse()) {
+                throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id " + ipAddr.getId());
+            } else {
+                return ipAddr.getVpcId();
+            }
+        }
+        return null;
+    }
+    
+    
     public Long getNetworkId() {
         if (networkId != null) {
             return networkId;
@@ -167,9 +183,12 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
             }
         } else {
         	IpAddress ipAddr = _networkService.getIp(publicIpId);
-        	return ipAddr.getAssociatedWithNetworkId();
+        	if (ipAddr.getAssociatedWithNetworkId() != null) {
+                return ipAddr.getAssociatedWithNetworkId();
+        	} else {
+        	    throw new InvalidParameterValueException("Ip address id=" + publicIpId + " is not associated with any network");
+        	}
         }
-        
     }
 
     public Integer getPublicPort() {
@@ -181,9 +200,16 @@ public class CreateLoadBalancerRuleCmd extends BaseAsyncCreateCmd  /*implements 
     }
     
     public Boolean getOpenFirewall() {
+        boolean isVpc = getVpcId() == null ? false : true;
         if (openFirewall != null) {
+            if (isVpc && openFirewall) {
+                throw new InvalidParameterValueException("Can't have openFirewall=true when IP address belongs to VPC");
+            }
             return openFirewall;
         } else {
+            if (isVpc) {
+                return false;
+            }
             return true;
         }
     }

@@ -18,7 +18,6 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
@@ -30,7 +29,6 @@ import com.cloud.network.rules.FirewallRule;
 @Implementation(description="Lists all firewall rules for an IP address.", responseObject=FirewallResponse.class)
 public class ListFirewallRulesCmd extends BaseListProjectAndAccountResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListFirewallRulesCmd.class.getName());
-
     private static final String s_name = "listfirewallrulesresponse";
 
     /////////////////////////////////////////////////////

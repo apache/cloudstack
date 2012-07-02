@@ -54,7 +54,9 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
 
     List<NetworkVO> listBy(long accountId, long networkId);
 
-    List<NetworkVO> listBy(long zoneId, String broadcastUri);
+    long countByZoneAndUri(long zoneId, String broadcastUri);
+    
+    long countByZoneUriAndGuestType(long zoneId, String broadcastUri, GuestType guestType);
 
     List<NetworkVO> listByZone(long zoneId);
 
@@ -69,8 +71,6 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     List<NetworkVO> listByZoneSecurityGroup(Long zoneId);
 
     void addDomainToNetwork(long networkId, long domainId, Boolean subdomainAccess);
-
-    Long getNetworkCountByOfferingId(long offeringId);
 
     List<NetworkVO> listByPhysicalNetwork(long physicalNetworkId);
 
@@ -95,5 +95,11 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     long countNetworksUserCanCreate(long ownerId);
 
     List<NetworkVO> listSourceNATEnabledNetworks(long accountId, long dataCenterId, GuestType type);
+    
+    int getNetworkCountByVpcId(long vpcId);
+    
+    List<NetworkVO> listByVpc(long vpcId);
+    
+    NetworkVO getPrivateNetwork(String broadcastUri, String cidr, long accountId, long zoneId);
 
 }

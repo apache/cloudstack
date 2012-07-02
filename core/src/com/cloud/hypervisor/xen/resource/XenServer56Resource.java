@@ -142,27 +142,70 @@ public class XenServer56Resource extends CitrixResourceBase {
 
     @Override
     protected String networkUsage(Connection conn, final String privateIpAddress, final String option, final String vif) {
-        String args = null;
+        String args = "netusage.sh " + privateIpAddress + " ";
         if (option.equals("get")) {
-            args = "-g";
+            args += "-g";
         } else if (option.equals("create")) {
-            args = "-c";
+            args += "-c";
         } else if (option.equals("reset")) {
-            args = "-r";
+            args += "-r";
         } else if (option.equals("addVif")) {
-            args = "-a";
+            args += "-a ";
             args += vif;
         } else if (option.equals("deleteVif")) {
-            args = "-d";
+            args += "-d ";
             args += vif;
         }
 
-        args += " -i ";
-        args += privateIpAddress;
-        return callHostPlugin(conn, "vmops", "networkUsage", "args", args);
+        return callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+    }
+
+    protected NetworkUsageAnswer VPCNetworkUsage(NetworkUsageCommand cmd) {
+        try {
+            Connection conn = getConnection();
+            String option = cmd.getOption();
+            String guestIp = cmd.getGuestNic().getIp();
+
+            String args = "vpc_netusage.sh " + cmd.getPrivateIP() + " ";
+            if (option.equals("get")) {
+                args += "-g";
+                args += " -l " + guestIp;
+            } else if (option.equals("create")) {
+                args += "-c";
+            } else if (option.equals("reset")) {
+                args += "-r";
+                args += " -l " + guestIp;
+            } else {
+                return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
+            }
+
+            String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            if (option.equals("get")) {
+                long[] stats = new long[2];
+                if (result != null) {
+                    String[] splitResult = result.split(":");
+                    int i = 0;
+                    while (i < splitResult.length - 1) {
+                        stats[0] += (new Long(splitResult[i++])).longValue();
+                        stats[1] += (new Long(splitResult[i++])).longValue();
+                    }
+                    return new NetworkUsageAnswer(cmd, "success", stats[0], stats[1]);
+                }
+            }
+            if (result == null || result.isEmpty()) {
+                throw new Exception(" vpc network usage plugin call failed ");
+            }
+            return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
+        } catch (Exception ex) {
+            s_logger.warn("Failed to get network usage stats due to ", ex);
+            return new NetworkUsageAnswer(cmd, ex);
+        }
     }
 
     protected NetworkUsageAnswer execute(NetworkUsageCommand cmd) {
+        if ( cmd.isForVpc() ) {
+            return VPCNetworkUsage(cmd);
+        }
         try {
             Connection conn = getConnection();
             if(cmd.getOption()!=null && cmd.getOption().equals("create") ){

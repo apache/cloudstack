@@ -92,7 +92,6 @@ public class ProjectVO implements Project, Identity {
         return domainId;
     }
 
-
     @Override
     public long getId() {
         return id;

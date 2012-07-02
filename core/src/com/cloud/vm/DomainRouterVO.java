@@ -41,12 +41,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     
     @Column(name="public_netmask")
     private String publicNetmask;
-    
-    @Column(name="guest_ip_address")
-    private String guestIpAddress;
-    
-    @Column(name="network_id")
-    long networkId;
 
     @Column(name="is_redundant_router")
     boolean isRedundantRouter;
@@ -74,6 +68,9 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     @Column(name="scripts_version")
     private String scriptsVersion;
     
+    @Column(name="vpc_id")
+    private Long vpcId;
+    
     public DomainRouterVO(long id,
             long serviceOfferingId,
             long elementId,
@@ -83,20 +80,20 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
             long guestOSId,
             long domainId,
             long accountId,
-            long networkId,
             boolean isRedundantRouter,
             int priority,
             boolean isPriorityBumpUp,
             RedundantState redundantState,
-            boolean haEnabled, boolean stopPending) {
+            boolean haEnabled,
+            boolean stopPending, Long vpcId) {
         super(id, serviceOfferingId, name, name, Type.DomainRouter, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.elementId = elementId;
-        this.networkId = networkId;
         this.isRedundantRouter = isRedundantRouter;
         this.priority = priority;
         this.redundantState = redundantState;
         this.isPriorityBumpUp = isPriorityBumpUp;
         this.stopPending = stopPending;
+        this.vpcId = vpcId;
     }
     
     public DomainRouterVO(long id,
@@ -108,21 +105,21 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
             long guestOSId,
             long domainId,
             long accountId,
-            long networkId,
             boolean isRedundantRouter,
             int priority,
             boolean isPriorityBumpUp,
             RedundantState redundantState,
             boolean haEnabled,
-            boolean stopPending, VirtualMachine.Type vmType) {
+            boolean stopPending,
+            VirtualMachine.Type vmType, Long vpcId) {
         super(id, serviceOfferingId, name, name, vmType, templateId, hypervisorType, guestOSId, domainId, accountId, haEnabled);
         this.elementId = elementId;
-        this.networkId = networkId;
         this.isRedundantRouter = isRedundantRouter;
         this.priority = priority;
         this.redundantState = redundantState;
         this.isPriorityBumpUp = isPriorityBumpUp;
         this.stopPending = stopPending;
+        this.vpcId = vpcId;
     }
 
     public long getElementId() {
@@ -141,14 +138,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
         this.publicNetmask = publicNetmask;
     }
 
-    public long getNetworkId() {
-        return networkId;
-    }
-    
-    public void setGuestIpAddress(String routerIpAddress) {
-        this.guestIpAddress = routerIpAddress;
-    }
-
     @Override
     public long getDataCenterIdToDeployIn() {
         return dataCenterIdToDeployIn;
@@ -160,11 +149,6 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     
     public String getPublicMacAddress() {
         return publicMacAddress;
-    }
-    
-    @Override
-    public String getGuestIpAddress() {
-        return guestIpAddress;
     }
     
     protected DomainRouterVO() {
@@ -248,5 +232,15 @@ public class DomainRouterVO extends VMInstanceVO implements VirtualRouter {
     
     public void setScriptsVersion(String scriptsVersion) {
         this.scriptsVersion = scriptsVersion;
+    }
+
+    @Override
+    public Long getVpcId() {
+        return vpcId;
+    }
+    
+    @Override
+    public boolean canPlugNics() {
+        return true;
     }
 }

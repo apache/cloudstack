@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.IdentityMapper;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.Transaction;
@@ -51,6 +52,13 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
 		try {
 	        try {
+	            try {
+	                pstmt = txn.prepareAutoCloseStatement(String.format("SELECT uuid FROM `%s`", tableName));
+	                pstmt.executeQuery();
+	            } catch (SQLException e) {
+	                throw new InvalidParameterValueException("uuid field doesn't exist in table " + tableName);
+	            }
+	            
 	            pstmt = txn.prepareAutoCloseStatement(
 	        		String.format("SELECT id FROM `%s` WHERE id=? OR uuid=?", tableName)
 	        		
@@ -86,8 +94,46 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
 		}
 		return null;
     }
+    
+    @DB
+    @Override
+    public Pair<Long, Long> getAccountDomainInfo(String tableName, Long identityId) {
+        assert(tableName != null);
+        
+        PreparedStatement pstmt = null;
+        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        try {
+            Long domainId = null;
+            Long accountId = null;
+            //get domainId
+            try {
+                pstmt = txn.prepareAutoCloseStatement(String.format("SELECT domain_id FROM `%s` WHERE id=?", tableName));
+                pstmt.setLong(1, identityId);
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    domainId = rs.getLong(1);
+                }
+            } catch (SQLException e) {
+            }
+            
+            //get accountId
+            try {
+                pstmt = txn.prepareAutoCloseStatement(String.format("SELECT account_id FROM `%s` WHERE id=?", tableName));
+                pstmt.setLong(1, identityId);
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()) {
+                    accountId = rs.getLong(1);
+                }
+            } catch (SQLException e) {
+            }
+            return new Pair<Long, Long>(accountId, domainId);  
+        } finally {
+            txn.close();
+        }
+    }
 	
     @DB
+    @Override
 	public String getIdentityUuid(String tableName, String identityString) {
 		assert(tableName != null);
 		assert(identityString != null);

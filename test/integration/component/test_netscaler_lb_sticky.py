@@ -58,7 +58,7 @@ class Services:
                                     "protocol": 'TCP',
                                 },
                          "netscaler": {
-                                "ipaddress": '10.147.40.100',
+                                "ipaddress": '192.168.100.213',
                                 "username": 'nsroot',
                                 "password": 'nsroot',
                                 "networkdevicetype": 'NetscalerVPXLoadBalancer',
@@ -100,7 +100,7 @@ class Services:
                                     "publicport": 22,
                                     "openfirewall": False,
                          },
-                         "ostypeid": '2b58909b-7d9e-45d9-80d8-e58d0bbcbf07',
+                         "ostypeid": '946b031b-0e10-4f4a-a3fc-d212ae2ea07f',
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 10,

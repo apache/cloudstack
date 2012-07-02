@@ -39,6 +39,8 @@ import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.commands.CreateLoadBalancerRuleCmd;
 import com.cloud.configuration.Config;
@@ -128,6 +130,7 @@ import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.NicDao;
 
 @Local(value = { ElasticLoadBalancerManager.class })
 public class ElasticLoadBalancerManagerImpl implements
@@ -185,6 +188,8 @@ public class ElasticLoadBalancerManagerImpl implements
     PhysicalNetworkServiceProviderDao _physicalProviderDao;
     @Inject
     VirtualRouterProviderDao _vrProviderDao;
+    @Inject
+    NicDao _nicDao;
 
 
     String _name;
@@ -224,7 +229,7 @@ public class ElasticLoadBalancerManagerImpl implements
         Pod pod = podId == null?null:_podDao.findById(podId);
         Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(
                 1);
-        params.put(VirtualMachineProfile.Param.ReProgramNetwork, true);
+        params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
         Account owner = _accountService.getActiveAccountByName("system", new Long(1));
         DeployDestination dest = new DeployDestination(dc, pod, null, null);
         s_logger.debug("About to deploy ELB vm ");
@@ -274,7 +279,7 @@ public class ElasticLoadBalancerManagerImpl implements
     }
 
     private void createApplyLoadBalancingRulesCommands(
-            List<LoadBalancingRule> rules, DomainRouterVO elbVm, Commands cmds) {
+            List<LoadBalancingRule> rules, DomainRouterVO elbVm, Commands cmds, long guestNetworkId) {
 
 
         LoadBalancerTO[] lbs = new LoadBalancerTO[rules.size()];
@@ -293,7 +298,8 @@ public class ElasticLoadBalancerManagerImpl implements
             lbs[i++] = lb; 
         }
 
-        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs,elbVm.getPublicIpAddress(),elbVm.getGuestIpAddress(),elbVm.getPrivateIpAddress());
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs,elbVm.getPublicIpAddress(),
+                _nicDao.getIpAddress(guestNetworkId, elbVm.getId()),elbVm.getPrivateIpAddress(), null, null);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP,
                 elbVm.getPrivateIpAddress());
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME,
@@ -310,9 +316,9 @@ public class ElasticLoadBalancerManagerImpl implements
     }
 
     protected boolean applyLBRules(DomainRouterVO elbVm,
-            List<LoadBalancingRule> rules) throws ResourceUnavailableException {
+            List<LoadBalancingRule> rules, long guestNetworkId) throws ResourceUnavailableException {
         Commands cmds = new Commands(OnError.Continue);
-        createApplyLoadBalancingRulesCommands(rules, elbVm, cmds);
+        createApplyLoadBalancingRulesCommands(rules, elbVm, cmds, guestNetworkId);
         // Send commands to elbVm
         return sendCommandsToRouter(elbVm, cmds);
     }
@@ -357,7 +363,7 @@ public class ElasticLoadBalancerManagerImpl implements
                         lb, dstList, policyList);
                 lbRules.add(loadBalancing); 
             }
-            return applyLBRules(elbVm, lbRules);
+            return applyLBRules(elbVm, lbRules, network.getId());
         } else if (elbVm.getState() == State.Stopped
                 || elbVm.getState() == State.Stopping) {
             s_logger.debug("ELB VM is in "
@@ -496,8 +502,9 @@ public class ElasticLoadBalancerManagerImpl implements
                 List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(2);
                 NicProfile guestNic = new NicProfile();
                 guestNic.setDefaultNic(true);
-                networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, guestNic));
                 networks.add(new Pair<NetworkVO, NicProfile>(controlConfig, null));
+                networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, guestNic));
+
                 
                 VMTemplateVO template = _templateDao.findSystemVMTemplate(dcId);
 
@@ -512,8 +519,10 @@ public class ElasticLoadBalancerManagerImpl implements
                     throw new CloudRuntimeException("Cannot find virtual router provider " + typeString + " as service provider " + provider.getId());
                 }
                
-                elbVm = new DomainRouterVO(id, _elasticLbVmOffering.getId(), vrProvider.getId(), VirtualMachineName.getSystemVmName(id, _instance, _elbVmNamePrefix), template.getId(), template.getHypervisorType(),
-                        template.getGuestOSId(), owner.getDomainId(), owner.getId(), guestNetwork.getId(), false, 0, false, RedundantState.UNKNOWN, _elasticLbVmOffering.getOfferHA(), false, VirtualMachine.Type.ElasticLoadBalancerVm);
+                elbVm = new DomainRouterVO(id, _elasticLbVmOffering.getId(), vrProvider.getId(), 
+                        VirtualMachineName.getSystemVmName(id, _instance, _elbVmNamePrefix), template.getId(), template.getHypervisorType(),
+                        template.getGuestOSId(), owner.getDomainId(), owner.getId(), false, 0, false, RedundantState.UNKNOWN,
+                        _elasticLbVmOffering.getOfferHA(), false, VirtualMachine.Type.ElasticLoadBalancerVm, null);
                 elbVm.setRole(Role.LB);
                 elbVm = _itMgr.allocate(elbVm, template, _elasticLbVmOffering, networks, plan, null, owner);
                 //TODO: create usage stats
@@ -607,7 +616,7 @@ public class ElasticLoadBalancerManagerImpl implements
         IPAddressVO ipvo = _ipAddressDao.findById(ipId);
         ipvo.setAssociatedWithNetworkId(null); 
         _ipAddressDao.update(ipvo.getId(), ipvo);
-       _networkMgr.releasePublicIpAddress(ipId, userId, caller);
+       _networkMgr.disassociatePublicIpAddress(ipId, userId, caller);
        _ipAddressDao.unassignIpAddress(ipId);
     }
 
@@ -801,7 +810,17 @@ public class ElasticLoadBalancerManagerImpl implements
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile<DomainRouterVO> profile, DeployDestination dest, ReservationContext context) {
         DomainRouterVO elbVm = profile.getVirtualMachine();
-        NetworkVO network = _networkDao.findById(elbVm.getNetworkId());
+        
+        List<NicProfile> elbNics = profile.getNics();
+        Long guestNtwkId = null;
+        for (NicProfile routerNic : elbNics) {
+            if (routerNic.getTrafficType() == TrafficType.Guest) {
+                guestNtwkId = routerNic.getNetworkId();
+                break;
+            }
+        }
+        
+        NetworkVO guestNetwork = _networkDao.findById(guestNtwkId);
 
         DataCenter dc = dest.getDataCenter();
 
@@ -842,12 +861,13 @@ public class ElasticLoadBalancerManagerImpl implements
                         // ask elb vm to setup SSH on guest network
                         buf.append(" sshonguest=true");
                     }
+
                 }
 
                 controlNic = nic;
             }
         }
-        String domain = network.getNetworkDomain();
+        String domain = guestNetwork.getNetworkDomain();
         if (domain != null) {
             buf.append(" domain=" + domain);
         }  
@@ -879,8 +899,6 @@ public class ElasticLoadBalancerManagerImpl implements
                 elbVm.setPublicIpAddress(nic.getIp4Address());
                 elbVm.setPublicNetmask(nic.getNetmask());
                 elbVm.setPublicMacAddress(nic.getMacAddress());
-            } else if (nic.getTrafficType() == TrafficType.Guest) {
-                elbVm.setGuestIpAddress(nic.getIp4Address());
             } else if (nic.getTrafficType() == TrafficType.Control) {
                 elbVm.setPrivateIpAddress(nic.getIp4Address());
                 elbVm.setPrivateMacAddress(nic.getMacAddress());
@@ -911,6 +929,7 @@ public class ElasticLoadBalancerManagerImpl implements
         DataCenterVO dcVo = _dcDao.findById(elbVm.getDataCenterIdToDeployIn());
 
         NicProfile controlNic = null;
+        Long guestNetworkId = null;
         
         if(profile.getHypervisorType() == HypervisorType.VMware && dcVo.getNetworkType() == NetworkType.Basic) {
             // TODO this is a ugly to test hypervisor type here
@@ -918,12 +937,15 @@ public class ElasticLoadBalancerManagerImpl implements
             for (NicProfile nic : profile.getNics()) {
                 if (nic.getTrafficType() == TrafficType.Guest && nic.getIp4Address() != null) {
                     controlNic = nic;
+                    guestNetworkId = nic.getNetworkId();
                 }
             }
         } else {
             for (NicProfile nic : profile.getNics()) {
                 if (nic.getTrafficType() == TrafficType.Control && nic.getIp4Address() != null) {
                     controlNic = nic;
+                } else if (nic.getTrafficType() == TrafficType.Guest) {
+                    guestNetworkId = nic.getNetworkId();
                 }
             }
         }
@@ -947,7 +969,7 @@ public class ElasticLoadBalancerManagerImpl implements
 
         s_logger.debug("Found " + lbRules.size() + " load balancing rule(s) to apply as a part of ELB vm " + elbVm + " start.");
         if (!lbRules.isEmpty()) {
-            createApplyLoadBalancingRulesCommands(lbRules, elbVm, cmds);
+            createApplyLoadBalancingRulesCommands(lbRules, elbVm, cmds, guestNetworkId);
         }
 
         return true;
@@ -974,7 +996,6 @@ public class ElasticLoadBalancerManagerImpl implements
         
     }
 
-
     @Override
     public Long convertToId(String vmName) {
         if (!VirtualMachineName.isValidSystemVmName(vmName, _instance, _elbVmNamePrefix)) {
@@ -983,4 +1004,26 @@ public class ElasticLoadBalancerManagerImpl implements
 
         return VirtualMachineName.getSystemVmId(vmName);
     }
+    
+    @Override
+    public boolean plugNic(Network network, NicTO nic, VirtualMachineTO vm,
+            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException,
+            InsufficientCapacityException {
+        //not supported
+        throw new UnsupportedOperationException("Plug nic is not supported for vm of type " + vm.getType());
+    }
+
+
+    @Override
+    public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm,
+            ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
+        //not supported
+        throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
+    }
+
+
+	@Override
+	public void prepareStop(VirtualMachineProfile<DomainRouterVO> profile) {
+		
+	}
 }

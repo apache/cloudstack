@@ -53,6 +53,14 @@ class remoteSSHClient(object):
     
         return results
             
+    def scp(self, srcFile, destPath):
+        transport = paramiko.Transport((self.host, int(self.port)))
+        transport.connect(username = self.user, password=self.passwd)
+        sftp = paramiko.SFTPClient.from_transport(transport)
+        try:
+            sftp.put(srcFile, destPath)
+        except IOError, e:
+            raise e
             
 if __name__ == "__main__":
     ssh = remoteSSHClient("192.168.137.2", 22, "root", "password")

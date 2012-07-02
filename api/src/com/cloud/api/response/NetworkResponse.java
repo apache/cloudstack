@@ -15,8 +15,8 @@ package com.cloud.api.response;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
+import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
@@ -126,6 +126,12 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     
     @SerializedName(ApiConstants.SPECIFY_IP_RANGES) @Param(description="true if network supports specifying ip ranges, false otherwise")
     private Boolean specifyIpRanges;
+    
+    @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the network belongs to")
+    private IdentityProxy vpcId = new IdentityProxy("vpc");
+
+    @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY) @Param(description="list networks available for vm deployment")
+    private Boolean canUseForDeploy;
     
     public void setId(Long id) {
         this.id.setValue(id);
@@ -268,4 +274,12 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 	public void setSpecifyIpRanges(Boolean specifyIpRanges) {
 		this.specifyIpRanges = specifyIpRanges;
 	}
+	
+    public void setVpcId(Long vpcId) {
+        this.vpcId.setValue(vpcId);
+    }
+
+    public void setCanUseForDeploy(Boolean canUseForDeploy) {
+        this.canUseForDeploy = canUseForDeploy;
+    }
 }

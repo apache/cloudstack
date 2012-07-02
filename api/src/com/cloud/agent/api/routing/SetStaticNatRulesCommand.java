@@ -19,20 +19,25 @@ import com.cloud.agent.api.to.StaticNatRuleTO;
 public class SetStaticNatRulesCommand extends NetworkElementCommand{
     
     StaticNatRuleTO[] rules;
+    Long vpcId;
 
     protected SetStaticNatRulesCommand() {
     }
     
-    public SetStaticNatRulesCommand(List<? extends StaticNatRuleTO> staticNatRules) {
+    public SetStaticNatRulesCommand(List<? extends StaticNatRuleTO> staticNatRules, Long vpcId) {
         rules = new StaticNatRuleTO[staticNatRules.size()];
         int i = 0;
         for (StaticNatRuleTO rule : staticNatRules) {
             rules[i++] = rule;
         }
+        this.vpcId = vpcId;
     }
     
     public StaticNatRuleTO[] getRules() {
         return rules;
     }
 
+    public Long getVpcId() {
+        return vpcId;
+    }
 }
