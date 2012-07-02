@@ -337,7 +337,7 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
         List<ResourceLimitVO> limits = new ArrayList<ResourceLimitVO>();
         boolean isAccount = true;
 
-        if (!_accountMgr.isRootAdmin(caller.getType())) {
+        if (!_accountMgr.isAdmin(caller.getType())) {
             accountId = caller.getId();
             domainId = null;
         } else {
