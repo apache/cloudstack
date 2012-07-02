@@ -142,7 +142,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
             String vmwarePrivateLabel = getNetworkLabelFromConfig(conn, "vmware.private.vswitch");
             String vmwareGuestLabel = getNetworkLabelFromConfig(conn, "vmware.guest.vswitch");
 
-            pstmt = conn.prepareStatement("SELECT id, domain_id, networktype, vnet, name FROM `cloud`.`data_center`");
+            pstmt = conn.prepareStatement("SELECT id, domain_id, networktype, vnet, name FROM `cloud`.`data_center` WHERE removed IS NULL");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long zoneId = rs.getLong(1);
@@ -153,7 +153,8 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
 
                 //check if there are multiple guest networks configured using network_tags
                 
-                PreparedStatement pstmt2 = conn.prepareStatement("SELECT distinct tag FROM `cloud`.`network_tags` t JOIN `cloud`.`networks` n where t.network_id = n.id and n.data_center_id = "+zoneId);
+                PreparedStatement pstmt2 = conn.prepareStatement("SELECT distinct tag FROM `cloud`.`network_tags` t JOIN `cloud`.`networks` n where t.network_id = n.id and n.data_center_id = ? and n.removed IS NULL");
+                pstmt2.setLong(1, zoneId);
                 ResultSet rsTags = pstmt2.executeQuery();
                 if(rsTags.next()){
                     boolean isFirstPhysicalNtwk = true;
@@ -169,7 +170,8 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                             addTrafficType(conn, physicalNetworkId, "Storage", xenStorageLabel, null, null);
                         }
                         addTrafficType(conn, physicalNetworkId, "Guest", guestNetworkTag, kvmGuestLabel, vmwareGuestLabel);
-                        addDefaultServiceProviders(conn, physicalNetworkId, zoneId);
+                        addDefaultVRProvider(conn, physicalNetworkId, zoneId);
+                        addDefaultSGProvider(conn, physicalNetworkId, zoneId, networkType, false);
                         //for all networks with this tag, add physical_network_id
                         
                         PreparedStatement pstmt3 = conn.prepareStatement("SELECT network_id FROM `cloud`.`network_tags` where tag = '" + guestNetworkTag + "'");
@@ -213,7 +215,9 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                     addTrafficType(conn, physicalNetworkId, "Management", xenPrivateLabel, kvmPrivateLabel, vmwarePrivateLabel);
                     addTrafficType(conn, physicalNetworkId, "Storage", xenStorageLabel, null, null);
                     addTrafficType(conn, physicalNetworkId, "Guest", xenGuestLabel, kvmGuestLabel, vmwareGuestLabel);
-                    addDefaultServiceProviders(conn, physicalNetworkId, zoneId);
+                    addDefaultVRProvider(conn, physicalNetworkId, zoneId);
+                    addDefaultSGProvider(conn, physicalNetworkId, zoneId, networkType, false);
+                    
                     
                     // add physicalNetworkId to op_dc_vnet_alloc for this zone
                     s_logger.debug("Adding PhysicalNetwork to op_dc_vnet_alloc");
