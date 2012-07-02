@@ -1388,6 +1388,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.StaticNat, defaultProviders);
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.PortForwarding, defaultProviders);
         defaultIsolatedSourceNatEnabledNetworkOfferingProviders.put(Service.Vpn, defaultProviders);
+        
+        
+        Map<Network.Service, Set<Network.Provider>> defaultVPCOffProviders = 
+                new HashMap<Network.Service, Set<Network.Provider>>();
+        defaultProviders.clear();
+        defaultProviders.add(Network.Provider.VirtualRouter);
+        defaultVPCOffProviders.put(Service.Dhcp, defaultProviders);
+        defaultVPCOffProviders.put(Service.Dns, defaultProviders);
+        defaultVPCOffProviders.put(Service.UserData, defaultProviders);
+        defaultVPCOffProviders.put(Service.NetworkACL, defaultProviders);
+        defaultVPCOffProviders.put(Service.Gateway, defaultProviders);
+        defaultVPCOffProviders.put(Service.Lb, defaultProviders);
+        defaultVPCOffProviders.put(Service.SourceNat, defaultProviders);
+        defaultVPCOffProviders.put(Service.StaticNat, defaultProviders);
+        defaultVPCOffProviders.put(Service.PortForwarding, defaultProviders);
+        defaultVPCOffProviders.put(Service.Vpn, defaultProviders);
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -1434,7 +1450,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks) == null) {
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
                     "Offering for Isolated VPC networks with Source Nat service enabled", TrafficType.Guest,
-                    null, false, Availability.Required, null, defaultIsolatedSourceNatEnabledNetworkOfferingProviders,
+                    null, false, Availability.Required, null, defaultVPCOffProviders,
                     true, Network.GuestType.Isolated, false, null, false, null, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
@@ -2828,12 +2844,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
         
         Vpc vpc = _vpcMgr.getActiveVpc(vpcId);
-        //1) Validate if network can be created for VPC
-        _vpcMgr.validateGuestNtkwForVpc(_configMgr.getNetworkOffering(ntwkOffId), cidr, networkDomain, owner, vpc);
-        
         if (networkDomain == null) {
             networkDomain = vpc.getNetworkDomain();
         }
+        //1) Validate if network can be created for VPC
+        _vpcMgr.validateGuestNtkwForVpc(_configMgr.getNetworkOffering(ntwkOffId), cidr, networkDomain, owner, vpc, null);
         
         //2) Create network
         Network guestNetwork = createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, 
@@ -4560,7 +4575,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = true)
-    public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr) {
+    public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, 
+            User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr) {
         boolean restartNetwork = false;
 
         // verify input parameters
@@ -4587,7 +4603,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (network.getTrafficType() != Networks.TrafficType.Guest) {
             throw new InvalidParameterValueException("Can't allow networks which traffic type is not " + TrafficType.Guest);
         }
-
+        
         _accountMgr.checkAccess(callerAccount, null, true, network);
 
         if (name != null) {
@@ -4614,12 +4630,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             	ex.addProxyObject(networkOffering, networkOfferingId, "networkOfferingId");                
                 throw ex;
             }
-
+            
             // network offering should be in Enabled state
             if (networkOffering.getState() != NetworkOffering.State.Enabled) {
             	InvalidParameterValueException ex = new InvalidParameterValueException("Network offering with specified id is not in " + NetworkOffering.State.Enabled + " state, can't upgrade to it");
             	ex.addProxyObject(networkOffering, networkOfferingId, "networkOfferingId");                
                 throw ex;
+            }
+            
+            //perform below validation if the network is vpc network
+            if (network.getVpcId() != null) {
+                Vpc vpc = _vpcMgr.getVpc(network.getVpcId());
+                _vpcMgr.validateGuestNtkwForVpc(networkOffering, null, null, null,vpc, networkId);
             }
 
             if (networkOfferingId != oldNetworkOfferingId) {

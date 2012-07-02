@@ -117,7 +117,8 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException{
         User callerUser = _accountService.getActiveUser(UserContext.current().getCallerUserId());
         Account callerAccount = _accountService.getActiveAccountById(callerUser.getAccountId());      
-        Network result = _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount, callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr());
+        Network result = _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount,
+                callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr());
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);
             response.setResponseName(getCommandName());

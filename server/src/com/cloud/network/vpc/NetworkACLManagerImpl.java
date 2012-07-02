@@ -138,8 +138,8 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         _accountMgr.checkAccess(caller, AccessType.UseNetwork, false, network);
 
         
-        if (!_networkMgr.areServicesSupportedInNetwork(networkId, Service.Firewall)) {
-            throw new InvalidParameterValueException("Service " + Service.Firewall + " is not supported in network " + network);
+        if (!_networkMgr.areServicesSupportedInNetwork(networkId, Service.NetworkACL)) {
+            throw new InvalidParameterValueException("Service " + Service.NetworkACL + " is not supported in network " + network);
         }
         
         // icmp code and icmp type can't be passed in for any other protocol rather than icmp
@@ -152,7 +152,6 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         } 
 
         validateNetworkACL(caller, network, portStart, portEnd, protocol);
-
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -198,18 +197,13 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         }
 
         // Verify that the network guru supports the protocol specified
-        Map<Network.Capability, String> caps = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.Firewall);
+        Map<Network.Capability, String> caps = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.NetworkACL);
         
 
         if (caps != null) {
             String supportedProtocols = caps.get(Capability.SupportedProtocols).toLowerCase();
             if (!supportedProtocols.contains(proto.toLowerCase())) {
                 throw new InvalidParameterValueException("Protocol " + proto + " is not supported by the network " + network);
-            }
-            
-            String firewallType = caps.get(Capability.FirewallType);
-            if (!firewallType.equalsIgnoreCase("networkacl")) {
-                throw new UnsupportedOperationException("Network ACLS are not supported in network " + network);
             }
         } else {
             throw new InvalidParameterValueException("No capabilities are found for network " + network);

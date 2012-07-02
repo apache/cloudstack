@@ -65,6 +65,7 @@ import com.cloud.network.vpc.Dao.VpcGatewayDao;
 import com.cloud.network.vpc.Dao.VpcOfferingDao;
 import com.cloud.network.vpc.Dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -129,6 +130,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
     StaticRouteDao _staticRouteDao;
     @Inject
     NetworkOfferingServiceMapDao _ntwkOffServiceDao ;
+    @Inject
+    VpcOfferingServiceMapDao _vpcOffServiceDao;
     
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     
@@ -150,10 +153,17 @@ public class VpcManagerImpl implements VpcManager, Manager{
             s_logger.debug("Creating default VPC offering " + VpcOffering.defaultVPCOfferingName);
             
             Map<Service, Set<Provider>> svcProviderMap = new HashMap<Service, Set<Provider>>();
-            Set<Provider> provider = new HashSet<Provider>();
-            provider.add(Provider.VPCVirtualRouter);
+            Set<Provider> defaultProviders = new HashSet<Provider>();
+            defaultProviders.add(Provider.VPCVirtualRouter);
             for (Service svc : getSupportedServices()) {
-                svcProviderMap.put(svc, provider);
+                if (svc == Service.Lb) {
+                    Set<Provider> lbProviders = new HashSet<Provider>();
+                    lbProviders.add(Provider.VPCVirtualRouter);
+                    lbProviders.add(Provider.Netscaler);
+                    svcProviderMap.put(svc, lbProviders);
+                } else {
+                    svcProviderMap.put(svc, defaultProviders);
+                }
             }
             createVpcOffering(VpcOffering.defaultVPCOfferingName, VpcOffering.defaultVPCOfferingName, svcProviderMap, 
                     true, State.Enabled);
@@ -218,6 +228,13 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 throw new UnsupportedServiceException("Service " + Service.SecurityGroup.getName() + " is not supported by VPC");
             }
             svcProviderMap.put(service, defaultProviders);
+            if (service == Service.NetworkACL) {
+                firewallSvs = true;
+            }
+            
+            if (service == Service.SourceNat) {
+                sourceNatSvc = true;
+            }
         }
         
         if (!sourceNatSvc) {
@@ -226,8 +243,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
         
         if (!firewallSvs) {
-            s_logger.debug("Automatically adding firewall service to the list of VPC services");
-            svcProviderMap.put(Service.Firewall, defaultProviders);
+            s_logger.debug("Automatically adding network ACL service to the list of VPC services");
+            svcProviderMap.put(Service.NetworkACL, defaultProviders);
         }
         
         svcProviderMap.put(Service.Gateway, defaultProviders);
@@ -716,7 +733,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
        services.add(Network.Service.Dhcp);
        services.add(Network.Service.Dns);
        services.add(Network.Service.UserData);
-       services.add(Network.Service.Firewall);
+       services.add(Network.Service.NetworkACL);
        services.add(Network.Service.PortForwarding);
        services.add(Network.Service.Lb);
        services.add(Network.Service.SourceNat);
@@ -814,11 +831,66 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @Override
     @DB
     public void validateGuestNtkwForVpc(NetworkOffering guestNtwkOff, String cidr, String networkDomain, 
-            Account networkOwner, Vpc vpc) throws ConcurrentOperationException {
+            Account networkOwner, Vpc vpc, Long networkId) {
         
+        if (networkId == null) {
+            //1) Validate attributes that has to be passed in when create new guest network
+            validateNewVpcGuestNetwork(cidr, networkOwner, vpc, networkDomain); 
+        }
+        
+        //2) Only Isolated networks with Source nat service enabled can be added to vpc
+        if (!(guestNtwkOff.getGuestType() == GuestType.Isolated 
+                && _ntwkMgr.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.SourceNat))) {
+            
+            throw new InvalidParameterValueException("Only networks of type " + GuestType.Isolated + " with service "
+            + Service.SourceNat + 
+                    " can be added as a part of VPC");
+        }
+        
+        //3) No redundant router support
+        if (guestNtwkOff.getRedundantRouter()) {
+            throw new InvalidParameterValueException("No redunant router support when network belnogs to VPC");
+        }
+        
+        //4) Conserve mode should be off
+        if (guestNtwkOff.isConserveMode()) {
+            throw new InvalidParameterValueException("Only networks with conserve mode Off can belong to VPC");
+        }
+        
+        //5) Check services/providers against VPC providers
+        List<NetworkOfferingServiceMapVO> networkProviders = _ntwkOffServiceDao.listByNetworkOfferingId(guestNtwkOff.getId());
+        
+        for (NetworkOfferingServiceMapVO nSvcVO : networkProviders) {
+            String pr = nSvcVO.getProvider();
+            String service = nSvcVO.getService();
+            if (_vpcOffServiceDao.findByServiceProviderAndOfferingId(service, pr, vpc.getVpcOfferingId()) == null) {
+                throw new InvalidParameterValueException("Service/provider combination " + service + "/" + 
+                        pr + " is not supported by VPC " + vpc);
+            }
+        }
+        
+        //6) Only one network in the VPC can support LB
+        if (_ntwkMgr.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb)) {
+            List<? extends Network> networks = getVpcNetworks(vpc.getId());
+            for (Network network : networks) {
+                if (networkId != null && network.getId() == networkId.longValue()) {
+                    //skip my own network
+                    continue;
+                } else {
+                    if (_ntwkMgr.areServicesSupportedInNetwork(network.getId(), Service.Lb)) {
+                        throw new InvalidParameterValueException("LB service is already supported " +
+                        		"by network " + network + " in VPC " + vpc);
+                    }
+                }
+            }
+        }
+        
+    }
+
+    protected void validateNewVpcGuestNetwork(String cidr, Account networkOwner, Vpc vpc, String networkDomain) {
         Vpc locked = _vpcDao.acquireInLockTable(vpc.getId());
         if (locked == null) {
-            throw new ConcurrentOperationException("Unable to acquire lock on " + vpc);
+            throw new CloudRuntimeException("Unable to acquire lock on " + vpc);
         }
         
         try {
@@ -847,45 +919,14 @@ public class VpcManagerImpl implements VpcManager, Manager{
             //4) vpc and network should belong to the same owner
             if (vpc.getAccountId() != networkOwner.getId()) {
                 throw new InvalidParameterValueException("Vpc " + vpc + " owner is different from the network owner "
-            + networkOwner);
+                        + networkOwner);
             }
             
-            //5) Only Isolated networks with Source nat service enabled can be added to vpc
-            if (!(guestNtwkOff.getGuestType() == GuestType.Isolated 
-                    && _ntwkMgr.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.SourceNat))) {
-                
-                throw new InvalidParameterValueException("Only networks of type " + GuestType.Isolated + " with service "
-                + Service.SourceNat + 
-                        " can be added as a part of VPC");
+            //5) network domain should be the same as VPC's
+            if (!networkDomain.equalsIgnoreCase(vpc.getNetworkDomain())) {
+                throw new InvalidParameterValueException("Network domain of the new network should match network" +
+                		" domain of vpc " + vpc);
             }
-            
-            //6) Only VPC VR can be a provider for the network offering
-            List<Provider> ntwkOffProviders = _ntwkMgr.getNtwkOffDistinctProviders(guestNtwkOff.getId());
-            for (Provider provider : ntwkOffProviders) {
-                if (provider != Provider.VPCVirtualRouter) {
-                    throw new InvalidParameterValueException("Only VPCVirtualRouter provider is supported in VPC network;" +
-                    		" while network offering " + guestNtwkOff + " has " + provider.getName() + " enabled.");
-                }
-            }
-            
-            //7) No redundant router support
-            if (guestNtwkOff.getRedundantRouter()) {
-                throw new InvalidParameterValueException("No redunant router support when network belnogs to VPC");
-            }
-            
-            //8) Conserve mode should be off
-            if (guestNtwkOff.isConserveMode()) {
-                throw new InvalidParameterValueException("Only networks with conserve mode Off can belong to VPC");
-            }
-            
-            //9) list supported services should be within VPC supported services
-            List<String> ntwkOffServices = _ntwkOffServiceDao.listServicesForNetworkOffering(guestNtwkOff.getId());
-            List<String> vpcOffServices = _vpcOffSvcMapDao.listServicesForVpcOffering(vpc.getVpcOfferingId());
-            
-            if (!vpcOffServices.containsAll(ntwkOffServices)) {
-                throw new InvalidParameterValueException("VPC doesn't support some of the services specified in the network offering");
-            }
-            
         } finally {
             s_logger.debug("Releasing lock for " + locked);
             _vpcDao.releaseFromLockTable(locked.getId());
