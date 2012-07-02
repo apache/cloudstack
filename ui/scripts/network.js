@@ -3462,7 +3462,142 @@
 									});									
 								}
               }
-            }
+            },
+            actions: {
+              //???
+							remove: {
+								label: 'delete site-to-site VPN',
+								messages: {
+									confirm: function(args) {
+										return 'Please confirm that you want to delete this site-to-site VPN';
+									},
+									notification: function(args) {
+										return 'delete site-to-site VPN';
+									}
+								},
+								action: function(args) {
+									debugger;
+									$.ajax({
+										url: createURL("deleteVpnConnection"),
+										dataType: "json",
+										data: {
+											id: args.context.siteToSiteVpn[0].id
+										},
+										async: true,
+										success: function(json) {										
+											debugger;
+											var jid = json.deletevpnconnectionresponse.jobid;										
+											var deleteVpnConnectionIntervalID = setInterval(function() { 	
+												$.ajax({
+													url: createURL("queryAsyncJobResult&jobId=" + jid),
+													dataType: "json",
+													success: function(json) {
+														var result = json.queryasyncjobresultresponse;
+														if (result.jobstatus == 0) {
+															return; //Job has not completed
+														}
+														else {
+															clearInterval(deleteVpnConnectionIntervalID); 
+															if (result.jobstatus == 1) {	
+                                //var updatedObj = result.jobresult.vpnconnection;
+															
+																$.ajax({
+																	url: createURL("deleteVpnGateway"),
+																	dataType: "json",
+																	data: {
+																		id: args.context.siteToSiteVpn[0].s2svpngatewayid
+																	},
+																	async: true,
+																	success: function(json) {		
+																		var jid = json.deletevpngatewayresponse.jobid;							
+																		var deleteVpnGatewayIntervalID = setInterval(function() { 	
+																			$.ajax({
+																				url: createURL("queryAsyncJobResult&jobId=" + jid),
+																				dataType: "json",
+																				success: function(json) {
+																					var result = json.queryasyncjobresultresponse;
+																					if (result.jobstatus == 0) {
+																						return; //Job has not completed
+																					}
+																					else {
+																						clearInterval(deleteVpnGatewayIntervalID); 
+																						if (result.jobstatus == 1) {		
+                                              //debugger;																						
+																							$.ajax({
+																								url: createURL("deleteVpnCustomerGateway"),
+																								dataType: "json",
+																								data: {
+																									id: args.context.siteToSiteVpn[0].s2scustomergatewayid
+																								},
+																								async: true,
+																								success: function(json) {										
+																									debugger;
+																									var jid = json.deletecustomergatewayresponse.jobid;			
+																									var deleteVpnCustomerGatewayIntervalID = setInterval(function() { 	
+																										$.ajax({
+																											url: createURL("queryAsyncJobResult&jobId=" + jid),
+																											dataType: "json",
+																											success: function(json) {
+																												var result = json.queryasyncjobresultresponse;
+																												if (result.jobstatus == 0) {
+																													return; //Job has not completed
+																												}
+																												else {
+																													clearInterval(deleteVpnCustomerGatewayIntervalID); 
+																													if (result.jobstatus == 1) {	
+																														//debugger;																										  
+																														args.complete({ data: {} }); //show notification 
+																													}
+																													else if (result.jobstatus == 2) {
+																														alert("deleteVpnCustomerGateway failed. Error: " + _s(result.jobresult.errortext));
+																													}
+																												}
+																											},
+																											error: function(XMLHttpResponse) {
+																												var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																												alert("deleteVpnCustomerGateway failed. Error: " + errorMsg);
+																											}
+																										});
+																									}, 3000);		
+																								}
+																							});																																									
+																						}
+																						else if (result.jobstatus == 2) {
+																							alert("deleteVpnGateway failed. Error: " + _s(result.jobresult.errortext));
+																						}
+																					}
+																				},
+																				error: function(XMLHttpResponse) {
+																					var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+																					alert("deleteVpnGateway failed. Error: " + errorMsg);
+																				}
+																			});
+																		}, 3000);		
+																	}
+																});																												
+															}
+															else if (result.jobstatus == 2) {
+																alert("deleteVpnConnection failed. Error: " + _s(result.jobresult.errortext));
+															}
+														}
+													},
+													error: function(XMLHttpResponse) {
+														var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+														alert("deleteVpnConnection failed. Error: " + errorMsg);
+													}
+												});
+											}, 3000);		
+										}
+									});
+									
+									
+								},
+								notification: {
+									poll: pollAsyncJobResult
+								}
+							}
+							//???			
+            }							
           }
         }
       }
