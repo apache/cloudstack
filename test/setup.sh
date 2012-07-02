@@ -19,7 +19,7 @@ TESTDIR="/root/cloudstack-oss/test/integration/smoke-simulator/"
 CONFIG="/root/cloudstack-oss/test/integration/smoke-simulator/simulator-smoke.cfg"
 DB_SVR="localhost"
 
-while getopts 't:d:m:' OPTION
+while getopts 't:d:m:c:' OPTION
 do
   case $OPTION in
   d)    dflag=1
@@ -30,6 +30,9 @@ do
 		;;
   m)    mflag=1
 		MGMT_SVR="$OPTARG"
+		;;
+  c)    cflag=1
+		CONFIG="$OPTARG"
 		;;
   ?)	usage
 		failed 2
