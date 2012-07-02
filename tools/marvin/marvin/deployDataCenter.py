@@ -83,7 +83,7 @@ class deployDataCenters():
             primarycmd.clusterid = clusterId
             self.apiClient.createStoragePool(primarycmd)
 
-    def createpods(self, pods, zone, zoneId, networkId):
+    def createpods(self, pods, zone, zoneId, networkId=None):
         if pods is None:
             return
         for pod in pods:
