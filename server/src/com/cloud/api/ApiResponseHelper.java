@@ -146,6 +146,7 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
@@ -3790,7 +3791,17 @@ public class ApiResponseHelper implements ResponseGenerator {
     public Site2SiteVpnConnectionResponse createSite2SiteVpnConnectionResponse(Site2SiteVpnConnection result) {
         Site2SiteVpnConnectionResponse response = new Site2SiteVpnConnectionResponse();
         response.setId(result.getId());
-        response.setVpnGatewayId(result.getVpnGatewayId());
+        
+        response.setVpnGatewayId(result.getVpnGatewayId()); 
+        Long vpnGatewayId = result.getVpnGatewayId();
+        if(vpnGatewayId != null) {
+        	Site2SiteVpnGatewayVO vpnGateway = ApiDBUtils.findVpnGatewayById(vpnGatewayId);//???
+        	
+        	long ipId = vpnGateway.getAddrId();
+        	IPAddressVO ipObj = ApiDBUtils.findIpAddressById(ipId);
+        	response.setIp(ipObj.getAddress().addr());  
+        }
+        
         response.setCustomerGatewayId(result.getCustomerGatewayId());
         response.setCreated(result.getCreated());
         response.setRemoved(result.getRemoved());
