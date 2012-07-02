@@ -59,6 +59,7 @@ import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Site2SiteVpnGatewayVO;
+import com.cloud.network.Site2SiteCustomerGatewayVO;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -67,6 +68,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
+import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
@@ -180,6 +182,7 @@ public class ApiDBUtils {
     private static VlanDao _vlanDao;
     private static VolumeDao _volumeDao;
     private static Site2SiteVpnGatewayDao _site2SiteVpnGatewayDao;
+    private static Site2SiteCustomerGatewayDao _site2SiteCustomerGatewayDao;
     private static VolumeHostDao _volumeHostDao;
     private static DataCenterDao _zoneDao;
     private static NetworkOfferingDao _networkOfferingDao;
@@ -236,6 +239,7 @@ public class ApiDBUtils {
         _vlanDao = locator.getDao(VlanDao.class);
         _volumeDao = locator.getDao(VolumeDao.class);
         _site2SiteVpnGatewayDao = locator.getDao(Site2SiteVpnGatewayDao.class);
+        _site2SiteCustomerGatewayDao = locator.getDao(Site2SiteCustomerGatewayDao.class);
         _volumeHostDao = locator.getDao(VolumeHostDao.class);
         _zoneDao = locator.getDao(DataCenterDao.class);
         _securityGroupDao = locator.getDao(SecurityGroupDao.class);
@@ -555,6 +559,10 @@ public class ApiDBUtils {
 
     public static Site2SiteVpnGatewayVO findVpnGatewayById(Long vpnGatewayId) {
         return _site2SiteVpnGatewayDao.findById(vpnGatewayId);
+    }
+    
+    public static Site2SiteCustomerGatewayVO findCustomerGatewayById(Long customerGatewayId) {    	
+    	return _site2SiteCustomerGatewayDao.findById(customerGatewayId);
     }
     
     public static List<UserVO> listUsersByAccount(long accountId) {
