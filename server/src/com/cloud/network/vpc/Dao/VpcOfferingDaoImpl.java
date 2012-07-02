@@ -30,7 +30,6 @@ import com.cloud.utils.db.Transaction;
 public class VpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> implements VpcOfferingDao{
     final SearchBuilder<VpcOfferingVO> AllFieldsSearch;
 
-    
     protected VpcOfferingDaoImpl() {
         super();
         

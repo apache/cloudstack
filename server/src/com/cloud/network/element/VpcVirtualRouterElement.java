@@ -306,10 +306,14 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         vpnCapabilities.put(Capability.VpnTypes, "s2svpn");
         capabilities.put(Service.Vpn, vpnCapabilities);
         
-        Map<Capability, String> firewallCapabilities = capabilities.get(Service.Firewall);
-        firewallCapabilities.put(Capability.FirewallType, "networkacl");
-        capabilities.put(Service.Firewall, firewallCapabilities);
-
+        //remove firewall capability
+        capabilities.remove(Service.Firewall);
+   
+        //add network ACL capability
+        Map<Capability, String> networkACLCapabilities = new HashMap<Capability, String>();
+        networkACLCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
+        capabilities.put(Service.NetworkACL, networkACLCapabilities);
+        
         return capabilities;
     }
     

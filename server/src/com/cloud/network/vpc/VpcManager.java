@@ -70,11 +70,11 @@ public interface VpcManager extends VpcService{
      * @param networkDomain
      * @param networkOwner
      * @param vpc TODO
+     * @param networkId TODO
      * @return
-     * @throws ConcurrentOperationException 
      */
     void validateGuestNtkwForVpc(NetworkOffering guestNtwkOff, String cidr, String networkDomain, Account networkOwner, 
-            Vpc vpc) throws ConcurrentOperationException;
+            Vpc vpc, Long networkId);
 
     /**
      * @return
