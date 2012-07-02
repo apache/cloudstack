@@ -49,7 +49,7 @@ systemjars = {
 	(
 		"tomcat6-servlet-2.5-api.jar",
 		"tomcat6-jsp-2.1-api-6.0.24.jar",
-		"tomcat6-el-1.0-api-6.0.24.jar",
+		"tomcat6-el-2.1-api-6.0.24.jar",
 		#"tomcat6/catalina.jar", # all supported distros put the file there
 	),
 	'Ubuntu':
