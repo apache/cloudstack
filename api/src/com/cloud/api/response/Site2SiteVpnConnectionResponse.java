@@ -31,12 +31,30 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse {
     @SerializedName(ApiConstants.S2S_VPN_GATEWAY_ID) @Param(description="the vpn gateway ID")
     private IdentityProxy vpnGatewayId= new IdentityProxy("s2s_vpn_gateway");
     
-    @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public IP address")
+    @SerializedName(ApiConstants.PUBLIC_IP) @Param(description="the public IP address") //from VpnGateway
     private String ip;
 
     @SerializedName(ApiConstants.S2S_CUSTOMER_GATEWAY_ID) @Param(description="the customer gateway ID")
     private IdentityProxy customerGatewayId = new IdentityProxy("s2s_customer_gateway");
+        
+    @SerializedName(ApiConstants.GATEWAY) @Param(description="public ip address id of the customer gateway") //from CustomerGateway
+    private String gatewayIp;
 
+    @SerializedName(ApiConstants.CIDR_LIST) @Param(description="guest cidr list of the customer gateway") //from CustomerGateway
+    private String guestCidrList;
+
+    @SerializedName(ApiConstants.IPSEC_PSK) @Param(description="IPsec Preshared-Key of the customer gateway") //from CustomerGateway
+    private String ipsecPsk;
+
+    @SerializedName(ApiConstants.IKE_POLICY) @Param(description="IKE policy of the customer gateway") //from CustomerGateway
+    private String ikePolicy;
+
+    @SerializedName(ApiConstants.ESP_POLICY) @Param(description="ESP policy of the customer gateway") //from CustomerGateway
+    private String espPolicy;
+
+    @SerializedName(ApiConstants.LIFETIME) @Param(description="Lifetime of vpn connection to the customer gateway, in seconds") //from CustomerGateway
+    private Long lifetime;
+    
     @SerializedName(ApiConstants.CREATED) @Param(description="the date and time the host was created")
     private Date created;
 
@@ -58,7 +76,31 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse {
     public void setCustomerGatewayId(Long customerGatewayId) {
         this.customerGatewayId.setValue(customerGatewayId);
     }
-
+    
+    public void setGatewayIp(String gatewayIp) {
+    	this.gatewayIp = gatewayIp;
+    }
+    
+    public void setGuestCidrList(String guestCidrList) {
+    	this.guestCidrList = guestCidrList;
+    }
+    
+    public void setIpsecPsk(String ipsecPsk) {
+    	this.ipsecPsk = ipsecPsk;
+    }
+    
+    public void setIkePolicy(String ikePolicy) {
+    	this.ikePolicy = ikePolicy;
+    }
+    
+    public void setEspPolicy(String espPolicy) {
+    	this.espPolicy = espPolicy;
+    }
+    
+    public void setLifetime(Long lifetime) {
+    	this.lifetime = lifetime;
+    }     
+    
     public void setCreated(Date created) {
         this.created = created;
     }
