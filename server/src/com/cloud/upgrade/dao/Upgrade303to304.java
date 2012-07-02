@@ -69,15 +69,27 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
             //add ntwk service map entries
             //update all guest networks of 1 physical network having this offering id to this new offering id
             
-            pstmtZone = conn.prepareStatement("SELECT id, domain_id, networktype, name FROM `cloud`.`data_center`");
+            pstmtZone = conn.prepareStatement("SELECT id, domain_id, networktype, name, uuid FROM `cloud`.`data_center`");
             rsZone = pstmtZone.executeQuery();
             while (rsZone.next()) {
                 long zoneId = rsZone.getLong(1);
                 Long domainId = rsZone.getLong(2);
                 String networkType = rsZone.getString(3);
                 String zoneName = rsZone.getString(4);
-            
+                String uuid = rsZone.getString(5);
+                
                 PreparedStatement pstmtUpdate = null;
+                if(uuid == null){
+                    uuid = UUID.randomUUID().toString();
+                    String updateUuid = "UPDATE `cloud`.`data_center` SET uuid = ? WHERE id = ?";
+                    pstmtUpdate = conn.prepareStatement(updateUuid);
+                    pstmtUpdate.setString(1, uuid);
+                    pstmtUpdate.setLong(2, zoneId);
+                    pstmtUpdate.executeUpdate();
+                    pstmtUpdate.close();
+                }
+
+                
                 boolean multiplePhysicalNetworks = false;
                 
                 pstmt = conn.prepareStatement("SELECT count(*) FROM `cloud`.`physical_network_traffic_types` pntt JOIN `cloud`.`physical_network` pn ON pntt.physical_network_id = pn.id WHERE pntt.traffic_type ='Guest' and pn.data_center_id = ?");
