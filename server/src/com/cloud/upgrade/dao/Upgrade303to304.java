@@ -112,7 +112,8 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                             //Create a physical network with guest traffic type and this tag
                             long physicalNetworkId = addPhysicalNetworkToZone(conn, zoneId, zoneName, networkType, null, domainId);
                             addTrafficType(conn, physicalNetworkId, "Guest", xenGuestLabel, null, null);
-                            addDefaultServiceProviders(conn, physicalNetworkId, zoneId);
+                            addDefaultVRProvider(conn, physicalNetworkId, zoneId);
+                            addDefaultSGProvider(conn, physicalNetworkId, zoneId, networkType, true);
                             
                             PreparedStatement pstmt3 = conn.prepareStatement("SELECT n.id FROM networks n WHERE n.physical_network_id IS NULL AND n.traffic_type = 'Guest' and n.data_center_id = ? and n.removed is null");
                             pstmt3.setLong(1, zoneId);

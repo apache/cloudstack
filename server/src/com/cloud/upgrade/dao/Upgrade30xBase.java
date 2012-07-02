@@ -155,7 +155,66 @@ public abstract class Upgrade30xBase implements DbUpgrade{
     }
     
     
-    protected void addDefaultServiceProviders(Connection conn, long physicalNetworkId, long zoneId){
+    protected void addDefaultSGProvider(Connection conn, long physicalNetworkId, long zoneId, String networkType, boolean is304){
+        PreparedStatement pstmtUpdate = null, pstmt2 = null;
+        try{
+            //add security group service provider (if security group service is enabled for at least one guest network)
+            boolean isSGServiceEnabled = false;
+            String selectSG = "";
+
+            if(is304){
+                 selectSG = "SELECT nm.* FROM `cloud`.`ntwk_service_map` nm JOIN `cloud`.`networks` n ON nm.network_id = n.id where n.data_center_id = ? and nm.service='SecurityGroup'";
+            }else{
+                 selectSG = "SELECT * from `cloud`.`networks` where is_security_group_enabled=1 and data_center_id=?";
+            }
+
+            pstmt2 = conn.prepareStatement(selectSG);
+            pstmt2.setLong(1, zoneId);
+            ResultSet sgDcSet = pstmt2.executeQuery(); 
+            if (sgDcSet.next()) {
+                isSGServiceEnabled = true;
+            }
+            sgDcSet.close();
+            pstmt2.close();
+            
+            if(isSGServiceEnabled){
+                s_logger.debug("Adding PhysicalNetworkServiceProvider SecurityGroupProvider to the physical network id=" + physicalNetworkId);
+                String insertPNSP = "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ," +
+                        "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`," +
+                        "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`," +
+                        "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,0,0,0,0,0,0,0,1)";
+                pstmtUpdate = conn.prepareStatement(insertPNSP);
+                pstmtUpdate.setString(1, UUID.randomUUID().toString());
+                pstmtUpdate.setLong(2, physicalNetworkId);
+                pstmtUpdate.setString(3, "SecurityGroupProvider");
+                if ("Advanced".equals(networkType)) {
+                    pstmtUpdate.setString(4, "Disabled");
+                }else{
+                    pstmtUpdate.setString(4, "Enabled");
+                }
+                pstmtUpdate.executeUpdate();
+                pstmtUpdate.close();
+            }
+
+        }catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while adding default Security Group Provider", e);
+        } finally {
+            if (pstmtUpdate != null) {
+                try {
+                    pstmtUpdate.close();
+                } catch (SQLException e) {
+                }
+            }
+            if (pstmt2 != null) {
+                try {
+                    pstmt2.close();
+                } catch (SQLException e) {
+                }
+            }
+        }
+    }
+    
+    protected void addDefaultVRProvider(Connection conn, long physicalNetworkId, long zoneId){
         PreparedStatement pstmtUpdate = null, pstmt2 = null;
         try{
             // add physical network service provider - VirtualRouter
@@ -173,27 +232,6 @@ public abstract class Upgrade30xBase implements DbUpgrade{
             pstmtUpdate.executeUpdate();
             pstmtUpdate.close();
             
-            //add security group service provider (if security group service is enabled for at least one guest network)
-            String selectSG = "SELECT * from `cloud`.`networks` where is_security_group_enabled=1 and data_center_id=?";
-            pstmt2 = conn.prepareStatement(selectSG);
-            pstmt2.setLong(1, zoneId);
-            ResultSet sgDcSet = pstmt2.executeQuery();
-            while (sgDcSet.next()) {
-                s_logger.debug("Adding PhysicalNetworkServiceProvider SecurityGroupProvider to the physical network id=" + physicalNetworkId);
-                insertPNSP = "INSERT INTO `cloud`.`physical_network_service_providers` (`uuid`, `physical_network_id` , `provider_name`, `state` ," +
-                        "`destination_physical_network_id`, `vpn_service_provided`, `dhcp_service_provided`, `dns_service_provided`, `gateway_service_provided`," +
-                        "`firewall_service_provided`, `source_nat_service_provided`, `load_balance_service_provided`, `static_nat_service_provided`," +
-                        "`port_forwarding_service_provided`, `user_data_service_provided`, `security_group_service_provided`) VALUES (?,?,?,?,0,0,0,0,0,0,0,0,0,0,0,1)";
-                pstmtUpdate = conn.prepareStatement(insertPNSP);
-                pstmtUpdate.setString(1, UUID.randomUUID().toString());
-                pstmtUpdate.setLong(2, physicalNetworkId);
-                pstmtUpdate.setString(3, "SecurityGroupProvider");
-                pstmtUpdate.setString(4, "Enabled");
-                pstmtUpdate.executeUpdate();
-                pstmtUpdate.close();
-            }
-            pstmt2.close();
-
             // add virtual_router_element
             String fetchNSPid = "SELECT id from `cloud`.`physical_network_service_providers` where physical_network_id=" + physicalNetworkId;
             pstmt2 = conn.prepareStatement(fetchNSPid);
@@ -228,7 +266,6 @@ public abstract class Upgrade30xBase implements DbUpgrade{
             }
         }
     }
-    
     
     protected void addPhysicalNtwk_To_Ntwk_IP_Vlan(Connection conn, long physicalNetworkId, long networkId){
         PreparedStatement pstmtUpdate = null; 
