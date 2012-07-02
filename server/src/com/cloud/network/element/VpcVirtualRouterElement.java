@@ -112,9 +112,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() 
                         + " in the network " + network);
                 return false;
-            } else if (service == Service.Firewall) {
-                //todo - get capability here
-            }
+            } 
         }
 
         return true;
@@ -399,7 +397,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     
     @Override
     public boolean applyNetworkACLs(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-        if (canHandle(config, Service.Firewall)) {
+        if (canHandle(config, Service.NetworkACL)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " +
