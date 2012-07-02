@@ -3751,7 +3751,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     handled = ((FirewallServiceProvider) ne).applyFWRules(network, rules);
                     break;
                 case NetworkACL:
-                    boolean isNetworkACLProvider = isProviderSupportServiceInNetwork(network.getId(), Service.Firewall, provider);
+                    boolean isNetworkACLProvider = isProviderSupportServiceInNetwork(network.getId(), Service.NetworkACL, provider);
                     if (!(ne instanceof NetworkACLServiceProvider && isNetworkACLProvider)) {
                         continue;
                     }
@@ -6134,6 +6134,29 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.warn("Failed to cleanup firewall rules as a part of shutdownNetworkRules due to ", ex);
             success = false;
         }
+        
+        //revoke all Network ACLs for the network w/o applying them in the DB
+        List<FirewallRuleVO> networkACLs = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.NetworkACL);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Releasing " + networkACLs.size() + " Network ACLs for network id=" + networkId +
+                    " as a part of shutdownNetworkRules");
+        }
+
+        for (FirewallRuleVO networkACL : networkACLs) {
+            s_logger.trace("Marking network ACL " + networkACL + " with Revoke state");
+            networkACL.setState(FirewallRule.State.Revoke);
+        }
+
+        try {
+            if (!_firewallMgr.applyRules(networkACLs, true, false)) {
+                s_logger.warn("Failed to cleanup network ACLs as a part of shutdownNetworkRules");
+                success = false;
+            }
+        } catch (ResourceUnavailableException ex) {
+            s_logger.warn("Failed to cleanup network ACLs as a part of shutdownNetworkRules due to ", ex);
+            success = false;
+        }
+        
 
         // Get all ip addresses, mark as releasing and release them on the backend
         Network network = getNetwork(networkId);

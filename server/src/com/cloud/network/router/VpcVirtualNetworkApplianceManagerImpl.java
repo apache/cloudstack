@@ -891,7 +891,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         
         super.finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
         
-        if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, Provider.VPCVirtualRouter)) {
+        if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.NetworkACL, Provider.VPCVirtualRouter)) {
             List<? extends NetworkACL> networkACLs = _networkACLMgr.listNetworkACLs(guestNetworkId);
             s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + router 
                     + " start for guest network id=" + guestNetworkId);
@@ -995,9 +995,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         if (publicIps != null && !publicIps.isEmpty()) {
             s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + router + " start.");
             // Re-apply public ip addresses - should come before PF/LB/VPN
-            if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.Firewall, provider)) {
-                createVpcAssociatePublicIPCommands(router, publicIps, cmds);
-            }
+            createVpcAssociatePublicIPCommands(router, publicIps, cmds);
+            
         }
     }
 
