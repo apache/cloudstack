@@ -159,6 +159,7 @@
         </adapters>
         <manager name="VmwareManager" key="com.cloud.hypervisor.vmware.manager.VmwareManager" class="com.cloud.hypervisor.vmware.manager.VmwareManagerImpl"/>
         <manager name="OvsTunnelManager" key="com.cloud.network.ovs.OvsTunnelManager" class="com.cloud.network.ovs.OvsTunnelManagerImpl"/>
+        <manager name="ElasticLoadBalancerManager" key="com.cloud.network.lb.ElasticLoadBalancerManager" class="com.cloud.network.lb.ElasticLoadBalancerManagerImpl"/>
         <pluggableservice name="VirtualRouterElementService" key="com.cloud.network.element.VirtualRouterElementService" class="com.cloud.network.element.VirtualRouterElement"/>
         <pluggableservice name="NetscalerExternalLoadBalancerElementService" key="com.cloud.network.element.NetscalerLoadBalancerElementService" class="com.cloud.network.element.NetscalerElement"/>
         <pluggableservice name="F5ExternalLoadBalancerElementService" key="com.cloud.network.element.F5ExternalLoadBalancerElementService" class="com.cloud.network.element.F5ExternalLoadBalancerElement"/>
@@ -172,6 +173,7 @@
         <dao name="NetappVolume" class="com.cloud.netapp.dao.VolumeDaoImpl" singleton="false"/>
         <dao name="NetappLun" class="com.cloud.netapp.dao.LunDaoImpl" singleton="false"/>
         <manager name="NetappManager" key="com.cloud.netapp.NetappManager" class="com.cloud.netapp.NetappManagerImpl"/>
+        <dao name="ElasticLbVmMapDao" class="com.cloud.network.lb.dao.ElasticLbVmMapDaoImpl" singleton="false"/>
     </management-server>
 
     <configuration-server class="com.cloud.server.ConfigurationServerImpl">
