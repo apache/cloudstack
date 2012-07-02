@@ -337,10 +337,6 @@ public interface ResponseGenerator {
      */
     StaticRouteResponse createStaticRouteResponse(StaticRoute result);
 
-    ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag);
-
-    PrivateGatewayResponse createPrivateGatewayResponseResponse(PrivateGateway result);
-
     Site2SiteCustomerGatewayResponse createSite2SiteCustomerGatewayResponse(Site2SiteCustomerGateway result);
 
     Site2SiteVpnConnectionResponse createSite2SiteVpnConnectionResponse(Site2SiteVpnConnection result);

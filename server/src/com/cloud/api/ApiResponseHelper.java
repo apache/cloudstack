@@ -3613,45 +3613,6 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     @Override
-    public ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag) {
-        ResourceTagResponse response = new ResourceTagResponse();
-        response.setKey(resourceTag.getKey());
-        response.setValue(resourceTag.getValue());
-        response.setResourceType(resourceTag.getResourceType().toString());        
-        response.setId(ApiDBUtils.getUuid(String.valueOf(resourceTag.getResourceId()),resourceTag.getResourceType()));
-        Long accountId = resourceTag.getAccountId();
-        Long domainId = resourceTag.getDomainId();
-        if (accountId != null) {
-            Account account = ApiDBUtils.findAccountByIdIncludingRemoved(resourceTag.getAccountId());
-
-            if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-                // find the project
-                Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
-                response.setProjectId(project.getId());
-                response.setProjectName(project.getName());
-            } else {
-                response.setAccountName(account.getAccountName());
-            }
-        }
-        
-        if (domainId != null) {
-            response.setDomainId(domainId);
-            response.setDomainName(ApiDBUtils.findDomainById(domainId).getName());
-        }
-        
-        response.setCustomer(resourceTag.getCustomer());
-        
-        response.setObjectName("tag");
-  
-        return response;
-    }    
-
-    public PrivateGatewayResponse createPrivateGatewayResponseResponse(PrivateGateway result) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-    
-    @Override
     public Site2SiteVpnGatewayResponse createSite2SiteVpnGatewayResponse(Site2SiteVpnGateway result) {
         Site2SiteVpnGatewayResponse response = new Site2SiteVpnGatewayResponse();
         response.setId(result.getId());
