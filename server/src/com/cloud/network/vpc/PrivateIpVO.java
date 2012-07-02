@@ -29,7 +29,7 @@ import javax.persistence.TemporalType;
 
 @Entity
 @Table(name="private_ip_address")
-public class PrivateIpVO {
+public class PrivateIpVO{
     
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
@@ -65,7 +65,7 @@ public class PrivateIpVO {
     public String getIpAddress() {
         return ipAddress;
     }
-    
+   
     public long getNetworkId() {
         return networkId;
     }

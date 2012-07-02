@@ -22,12 +22,12 @@ import com.cloud.utils.net.NetUtils;
 
 /**
  */
-public class PublicIp implements PublicIpAddress {
+public class PrivateIp implements PublicIpAddress {
     IPAddressVO _addr;
     VlanVO _vlan;
     String macAddress;
 
-    public PublicIp(IPAddressVO addr, VlanVO vlan, long macAddress) {
+    public PrivateIp(IPAddressVO addr, VlanVO vlan, long macAddress) {
         _addr = addr;
         _vlan = vlan;
         this.macAddress = NetUtils.long2Mac(macAddress);
