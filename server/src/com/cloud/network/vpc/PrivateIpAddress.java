@@ -23,6 +23,7 @@ public class PrivateIpAddress implements PrivateIp{
     String netmask;
     String ipAddress;
     String macAddress;
+    long networkId;
     
     /**
      * @param privateIp
@@ -39,6 +40,7 @@ public class PrivateIpAddress implements PrivateIp{
         this.gateway = gateway;
         this.netmask = netmask;
         this.macAddress = NetUtils.long2Mac(macAddress);
+        this.networkId = privateIp.getNetworkId();
     }
 
     @Override
@@ -64,5 +66,10 @@ public class PrivateIpAddress implements PrivateIp{
     @Override
     public String getMacAddress() {
         return macAddress;
+    }
+    
+    @Override
+    public long getNetworkId() {
+        return networkId;
     }
 }

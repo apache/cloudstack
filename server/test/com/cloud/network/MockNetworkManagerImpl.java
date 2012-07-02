@@ -44,7 +44,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.addr.PublicIp;
+import com.cloud.network.addr.PrivateIp;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.network.element.Site2SiteVpnServiceProvider;
@@ -730,13 +730,13 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked, boolean includingFirewall) {
+    public Map<PrivateIp, Set<Service>> getIpToServices(List<PrivateIp> publicIps, boolean rulesRevoked, boolean includingFirewall) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Map<Provider, ArrayList<PublicIp>> getProviderToIpList(Network network, Map<PublicIp, Set<Service>> ipToServices) {
+    public Map<Provider, ArrayList<PrivateIp>> getProviderToIpList(Network network, Map<PrivateIp, Set<Service>> ipToServices) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -754,7 +754,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
 	@Override
-	public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner,
+	public PrivateIp assignPublicIpAddress(long dcId, Long podId, Account owner,
 			VlanType type, Long networkId, String requestedIp, boolean isSystem)
 			throws InsufficientAddressCapacityException {
 		// TODO Auto-generated method stub
@@ -1027,7 +1027,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      * @see com.cloud.network.NetworkManager#assignSourceNatIpAddressToGuestNetwork(com.cloud.user.Account, com.cloud.network.Network)
      */
     @Override
-    public PublicIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) throws InsufficientAddressCapacityException, ConcurrentOperationException {
+    public PrivateIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) throws InsufficientAddressCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -1036,7 +1036,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      * @see com.cloud.network.NetworkManager#assignSourceNatIpAddressToVpc(com.cloud.user.Account, com.cloud.network.vpc.Vpc)
      */
     @Override
-    public PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException {
+    public PrivateIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }

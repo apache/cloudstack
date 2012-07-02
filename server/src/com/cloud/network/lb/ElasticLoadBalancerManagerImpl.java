@@ -80,7 +80,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
-import com.cloud.network.addr.PublicIp;
+import com.cloud.network.addr.PrivateIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
@@ -596,12 +596,12 @@ public class ElasticLoadBalancerManagerImpl implements
     }
     
     @DB
-    public PublicIp allocDirectIp(Account account, long guestNetworkId) throws InsufficientAddressCapacityException {
+    public PrivateIp allocDirectIp(Account account, long guestNetworkId) throws InsufficientAddressCapacityException {
         Network frontEndNetwork = _networkMgr.getNetwork(guestNetworkId);
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        PublicIp ip = _networkMgr.assignPublicIpAddress(frontEndNetwork.getDataCenterId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null, true);
+        PrivateIp ip = _networkMgr.assignPublicIpAddress(frontEndNetwork.getDataCenterId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null, true);
         IPAddressVO ipvo = _ipAddressDao.findById(ip.getId());
         ipvo.setAssociatedWithNetworkId(frontEndNetwork.getId()); 
         _ipAddressDao.update(ipvo.getId(), ipvo);
@@ -650,7 +650,7 @@ public class ElasticLoadBalancerManagerImpl implements
                         } 
                     } else {
                         s_logger.debug("Could not find any existing frontend ips for this account for this LB rule, acquiring a new frontent IP for ELB");
-                        PublicIp ip = allocDirectIp(account, networkId);
+                        PrivateIp ip = allocDirectIp(account, networkId);
                         ipId = ip.getId();
                         newIp = true;
                     }
