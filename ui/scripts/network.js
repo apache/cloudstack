@@ -3475,7 +3475,45 @@
 								}
               }
             },
-            actions: {              
+            actions: {                 
+							restart: {
+                label: 'Reset VPN connection',
+                messages: {
+                  confirm: function(args) {
+                    return 'Please confirm that you want to reset VPN connection' ;
+                  },
+                  notification: function(args) {
+                    return 'Reset VPN connection';
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("resetVpnConnection"),										
+										data: {
+											id: args.context.siteToSiteVpn[0].id
+										},										
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var jid = json.resetvpnconnectionresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+												    jobId: jid,
+													  getUpdatedItem: function(json) {														  
+														  return json.queryasyncjobresultresponse.jobresult.vpnconnection;
+													  }									 
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+													
 							remove: {
 								label: 'delete site-to-site VPN',
 								messages: {
