@@ -133,6 +133,9 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @SerializedName(ApiConstants.CAN_USE_FOR_DEPLOY) @Param(description="list networks available for vm deployment")
     private Boolean canUseForDeploy;
     
+    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with network", responseObject = ResourceTagResponse.class)
+    private List<ResourceTagResponse> tags;
+    
     public void setId(Long id) {
         this.id.setValue(id);
     }
@@ -281,5 +284,9 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setCanUseForDeploy(Boolean canUseForDeploy) {
         this.canUseForDeploy = canUseForDeploy;
+    }
+    
+    public void setTags(List<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 }

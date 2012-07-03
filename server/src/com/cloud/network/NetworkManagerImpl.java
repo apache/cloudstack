@@ -167,6 +167,9 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -311,6 +314,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     PrivateIpDao _privateIpDao;
     @Inject
     NetworkACLManager _networkACLMgr;
+    @Inject
+    ResourceTagDao _resourceTagDao;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
     private static Long _privateOfferingId = null;
@@ -3099,6 +3104,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Boolean specifyIpRanges = cmd.getSpecifyIpRanges();
         Long vpcId = cmd.getVpcId();
         Boolean canUseForDeploy = cmd.canUseForDeploy();
+        Map<String, String> tags = cmd.getTags();
 
         // 1) default is system to false if not specified
         // 2) reset parameter to false if it's specified by the regular user
@@ -3182,6 +3188,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         zoneSearch.and("networkType", zoneSearch.entity().getNetworkType(), SearchCriteria.Op.EQ);
         sb.join("zoneSearch", zoneSearch, sb.entity().getDataCenterId(), zoneSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         sb.and("removed", sb.entity().getRemoved(), Op.NULL);
+        
+        if (tags != null && !tags.isEmpty()) {
+            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            for (int count=0; count < tags.size(); count++) {
+                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.cp();
+            }
+            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.groupBy(sb.entity().getId());
+            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        }
 
         if (permittedAccounts.isEmpty()) {
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
@@ -3203,24 +3221,24 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 networksToReturn
                         .addAll(listDomainLevelNetworks(
                                 buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType,
-                                        physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId), searchFilter,
+                                        physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter,
                                 domainId));
             }
 
             if (!permittedAccounts.isEmpty()) {
                 networksToReturn.addAll(listAccountSpecificNetworks(
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
-                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId), searchFilter,
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter,
                         permittedAccounts));
             } else if (domainId == null || listAll) {
                 networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
-                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId), searchFilter, path,
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter, path,
                         isRecursive));
             }
         } else {
             networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId,
-                    guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId),
+                    guestIpType, trafficType, physicalNetworkId, null, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags),
                     searchFilter);
         }
 
@@ -3278,7 +3296,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     private SearchCriteria<NetworkVO> buildNetworkSearchCriteria(SearchBuilder<NetworkVO> sb, String keyword, Long id, 
             Boolean isSystem, Long zoneId, String guestIpType, String trafficType, Long physicalNetworkId,
-            String aclType, boolean skipProjectNetworks, Boolean restartRequired, Boolean specifyIpRanges, Long vpcId) {
+            String aclType, boolean skipProjectNetworks, Boolean restartRequired, Boolean specifyIpRanges, Long vpcId, Map<String, String> tags) {
         SearchCriteria<NetworkVO> sc = sb.create();
 
         if (isSystem != null) {
@@ -3329,6 +3347,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         if (vpcId != null) {
             sc.addAnd("vpcId", SearchCriteria.Op.EQ, vpcId);
+        }
+        
+        if (tags != null && !tags.isEmpty()) {
+            int count = 0;
+            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.Network.toString());
+            for (String key : tags.keySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+                count++;
+            }
         }
 
         return sc;

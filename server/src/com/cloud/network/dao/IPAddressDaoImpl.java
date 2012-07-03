@@ -26,6 +26,8 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDaoImpl;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress.State;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -51,6 +53,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
     protected final GenericSearchBuilder<IPAddressVO, Long> AllocatedIpCountForAccount;    
     protected final VlanDaoImpl _vlanDao = ComponentLocator.inject(VlanDaoImpl.class);
     protected GenericSearchBuilder<IPAddressVO, Long> CountFreePublicIps;
+    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
     
     
     // make it public for JUnit test
@@ -322,4 +325,18 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         sc.setParameters("networkId", networkId);
         return customSearch(sc, null).get(0);       
     }
+    
+    @Override
+    @DB
+    public boolean remove(Long id) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        IPAddressVO entry = findById(id);
+        if (entry != null) {
+            _tagsDao.removeBy(id, TaggedResourceType.SecurityGroup);
+        }
+        boolean result = super.remove(id);
+        txn.commit();
+        return result;
+    }   
 }

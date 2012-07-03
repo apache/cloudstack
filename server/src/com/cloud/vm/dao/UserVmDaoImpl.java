@@ -25,6 +25,8 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.Account;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
@@ -65,6 +67,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     
     protected SearchBuilder<UserVmVO> UserVmSearch;
     protected final Attribute _updateTimeAttr;
+    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
+
    
     private static final String LIST_PODS_HAVING_VMS_FOR_ACCOUNT = "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND (state = 'Running' OR state = 'Stopped') " +
     		"GROUP BY pod_id HAVING count(id) > 0 ORDER BY count(id) DESC";
@@ -541,5 +545,14 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         return customSearch(sc, null).get(0);
     }
     
+    @Override
+    public boolean remove(Long id) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        _tagsDao.removeBy(id, TaggedResourceType.UserVm);
+        boolean result = super.remove(id);
+        txn.commit();
+        return result;
+    }
     
 }

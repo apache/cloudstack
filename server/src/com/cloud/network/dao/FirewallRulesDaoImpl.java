@@ -23,6 +23,8 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -46,6 +48,7 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     protected final GenericSearchBuilder<FirewallRuleVO, Long> RulesByIpCount;
 
     protected final FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
+    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
 
     protected FirewallRulesDaoImpl() {
         super();
@@ -281,5 +284,25 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
 
         return listBy(sc);
     }
-
+    
+    @Override
+    @DB
+    public boolean remove(Long id) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        FirewallRuleVO entry = findById(id);
+        if (entry != null) {
+            if (entry.getPurpose() == Purpose.LoadBalancing) {
+                _tagsDao.removeBy(id, TaggedResourceType.LoadBalancer);
+            } else if (entry.getPurpose() == Purpose.PortForwarding) {
+                _tagsDao.removeBy(id, TaggedResourceType.PortForwardingRule);
+            } else if (entry.getPurpose() == Purpose.Firewall) {
+                _tagsDao.removeBy(id, TaggedResourceType.FirewallRule);
+            }
+        }
+        boolean result = super.remove(id);
+        txn.commit();
+        return result;
+    }
+    
 }

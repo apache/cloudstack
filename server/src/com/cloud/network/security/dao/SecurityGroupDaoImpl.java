@@ -17,15 +17,23 @@ import java.util.List;
 import javax.ejb.Local;
 
 import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.storage.VolumeVO;
+import com.cloud.tags.dao.ResourceTagsDaoImpl;
+import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
 
 @Local(value={SecurityGroupDao.class})
 public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> implements SecurityGroupDao {
     private SearchBuilder<SecurityGroupVO> AccountIdSearch;
     private SearchBuilder<SecurityGroupVO> AccountIdNameSearch;
     private SearchBuilder<SecurityGroupVO> AccountIdNamesSearch;
+    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
+
 
     protected SecurityGroupDaoImpl() {
         AccountIdSearch = createSearchBuilder();
@@ -84,8 +92,22 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
 	}
 	@Override
 	public int removeByAccountId(long accountId) {
-	    SearchCriteria sc = AccountIdSearch.create();
+	    SearchCriteria<SecurityGroupVO> sc = AccountIdSearch.create();
 	    sc.setParameters("accountId", accountId);
 	    return expunge(sc);
 	} 
+	
+	@Override
+    @DB
+    public boolean remove(Long id) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        SecurityGroupVO entry = findById(id);
+        if (entry != null) {
+            _tagsDao.removeBy(id, TaggedResourceType.SecurityGroup);
+        }
+        boolean result = super.remove(id);
+        txn.commit();
+        return result;
+    }
 }

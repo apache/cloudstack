@@ -18,7 +18,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
+import com.cloud.api.BaseListTaggedResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -28,7 +28,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.storage.Volume;
 
 @Implementation(description="Lists all volumes.", responseObject=VolumeResponse.class)
-public class ListVolumesCmd extends BaseListProjectAndAccountResourcesCmd {
+public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVolumesCmd.class.getName());
 
     private static final String s_name = "listvolumesresponse";
