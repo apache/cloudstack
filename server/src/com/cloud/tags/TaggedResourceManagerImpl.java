@@ -407,4 +407,10 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
 
         return true;
     }
+
+
+    @Override
+    public List<? extends ResourceTag> listByResourceTypeAndId(TaggedResourceType type, long resourceId) {
+        return _resourceTagDao.listBy(resourceId, type);
+    }
 }

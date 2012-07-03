@@ -13,10 +13,11 @@
 package com.cloud.api.response;
 
 import java.util.Date;
+import java.util.List;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
+import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
@@ -146,6 +147,9 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.STATUS)
     @Param(description="the status of the volume")
     private String status;
+    
+    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with volume", responseObject = ResourceTagResponse.class)
+    private List<ResourceTagResponse> tags;
 
     @Override
     public Long getObjectId() {
@@ -288,5 +292,9 @@ public class VolumeResponse extends BaseResponse implements ControlledEntityResp
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+    
+    public void setTags(List<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 }

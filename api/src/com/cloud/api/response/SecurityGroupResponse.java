@@ -15,8 +15,8 @@ package com.cloud.api.response;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
+import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
@@ -50,6 +50,9 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
 
     @SerializedName("egressrule")  @Param(description="the list of egress rules associated with the security group", responseObject = SecurityGroupRuleResponse.class)
     private List<SecurityGroupRuleResponse> egressRules;
+    
+    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
+    private List<ResourceTagResponse> tags;
     
     public void setId(Long id) {
         this.id.setValue(id);
@@ -125,5 +128,9 @@ public class SecurityGroupResponse extends BaseResponse implements ControlledEnt
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+    
+    public void setTags(List<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 }

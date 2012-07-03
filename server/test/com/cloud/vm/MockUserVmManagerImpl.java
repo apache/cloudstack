@@ -188,7 +188,7 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
     }
 
     @Override
-    public List<UserVmVO> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria) {
+    public List<UserVmVO> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
         // TODO Auto-generated method stub
         return null;
     }

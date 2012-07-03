@@ -58,7 +58,7 @@ public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd{
       ListResponse<ResourceTagResponse> response = new ListResponse<ResourceTagResponse>();
       List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
       for (ResourceTag tag : tags) {
-          ResourceTagResponse tagResponse = _responseGenerator.createResourceTagResponse(tag);
+          ResourceTagResponse tagResponse = _responseGenerator.createResourceTagResponse(tag, false);
           tagResponses.add(tagResponse);
       }
       response.setResponses(tagResponses);

@@ -58,22 +58,23 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkRuleConfigVO;
 import com.cloud.network.NetworkVO;
-import com.cloud.network.Site2SiteVpnGatewayVO;
-import com.cloud.network.Site2SiteCustomerGatewayVO;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.Site2SiteCustomerGatewayVO;
+import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.network.dao.NetworkRuleConfigDao;
-import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -82,6 +83,7 @@ import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
+import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
@@ -308,7 +310,7 @@ public class ApiDBUtils {
     }
 
     public static List<UserVmVO> searchForUserVMs(Criteria c, List<Long> permittedAccounts) {
-        return _userVmMgr.searchForUserVMs(c, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM), null, false, permittedAccounts, false, null);
+        return _userVmMgr.searchForUserVMs(c, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM), null, false, permittedAccounts, false, null, null);
     }
 
     public static List<? extends StoragePoolVO> searchForStoragePools(Criteria c) {
@@ -787,5 +789,14 @@ public class ApiDBUtils {
     
     public static boolean canUseForDeploy(Network network) {
         return _networkMgr.canUseForDeploy(network);
+    }
+    
+    public static List<? extends ResourceTag> listByResourceTypeAndId(TaggedResourceType type, long resourceId) {
+        return _taggedResourceService.listByResourceTypeAndId(type, resourceId);
+    }
+    
+    public static boolean isOfferingForVpc(NetworkOffering offering) {
+        boolean vpcProvider = _configMgr.isOfferingForVpc(offering);
+        return vpcProvider;
     }
 }

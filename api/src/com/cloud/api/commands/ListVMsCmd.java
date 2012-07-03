@@ -20,7 +20,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.ApiConstants.VMDetails;
-import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
+import com.cloud.api.BaseListTaggedResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -31,7 +31,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.uservm.UserVm;
 
 @Implementation(description="List the virtual machines owned by the account.", responseObject=UserVmResponse.class)
-public class ListVMsCmd extends BaseListProjectAndAccountResourcesCmd {
+public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
 
     private static final String s_name = "listvirtualmachinesresponse";

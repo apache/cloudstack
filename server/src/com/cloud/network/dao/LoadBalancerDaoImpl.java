@@ -128,5 +128,5 @@ public class LoadBalancerDaoImpl extends GenericDaoBase<LoadBalancerVO, Long> im
         sc.setParameters("state", State.Add.toString(), State.Revoke.toString());
         return listBy(sc);
     }
-
+    
 }

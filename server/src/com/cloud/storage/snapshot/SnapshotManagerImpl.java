@@ -67,6 +67,7 @@ import com.cloud.org.Grouping;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
+import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Status;
 import com.cloud.storage.Snapshot.Type;
@@ -89,6 +90,8 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
+import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -108,6 +111,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -179,6 +183,9 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     private DomainManager _domainMgr;
     @Inject
     private VolumeDao _volumeDao;
+    @Inject
+    private ResourceTagDao _resourceTagDao;
+    
     String _name;
     private int _totalRetries;
     private int _pauseInterval;
@@ -894,6 +901,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         String keyword = cmd.getKeyword();
         String snapshotTypeStr = cmd.getSnapshotType();
         String intervalTypeStr = cmd.getIntervalType();
+        Map<String, String> tags = cmd.getTags();
         
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -922,12 +930,34 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("snapshotTypeEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.IN);
         sb.and("snapshotTypeNEQ", sb.entity().getsnapshotType(), SearchCriteria.Op.NEQ);
+        
+        if (tags != null && !tags.isEmpty()) {
+        SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+        for (int count=0; count < tags.size(); count++) {
+            tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+            tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+            tagSearch.cp();
+        }
+        tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+        sb.groupBy(sb.entity().getId());
+        sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+    }
 
         SearchCriteria<SnapshotVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (volumeId != null) {
             sc.setParameters("volumeId", volumeId);
+        }
+        
+        if (tags != null && !tags.isEmpty()) {
+            int count = 0;
+            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.Snapshot.toString());
+            for (String key : tags.keySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+                count++;
+            }
         }
 
         if (name != null) {

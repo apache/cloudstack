@@ -18,7 +18,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
+import com.cloud.api.BaseListTaggedResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -27,7 +27,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.network.rules.PortForwardingRule;
 
 @Implementation(description="Lists all port forwarding rules for an IP address.", responseObject=FirewallRuleResponse.class)
-public class ListPortForwardingRulesCmd extends BaseListProjectAndAccountResourcesCmd {
+public class ListPortForwardingRulesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListPortForwardingRulesCmd.class.getName());
 
     private static final String s_name = "listportforwardingrulesresponse";

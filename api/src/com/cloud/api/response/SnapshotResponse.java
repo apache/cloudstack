@@ -13,11 +13,12 @@
 package com.cloud.api.response;
 
 import java.util.Date;
+import java.util.List;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
 import com.cloud.storage.Snapshot;
+import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
@@ -75,6 +76,9 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the snapshot. BackedUp means that snapshot is ready to be used; Creating - the snapshot is being allocated on the primary storage; BackingUp - the snapshot is being backed up on secondary storage")
     private Snapshot.Status state;
+    
+    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with snapshot", responseObject = ResourceTagResponse.class)
+    private List<ResourceTagResponse> tags;
 
     @Override
     public Long getObjectId() {
@@ -149,5 +153,9 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+    
+    public void setTags(List<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 }

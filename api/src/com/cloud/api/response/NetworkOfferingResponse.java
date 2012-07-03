@@ -70,6 +70,9 @@ public class NetworkOfferingResponse extends BaseResponse{
     @SerializedName(ApiConstants.SERVICE) @Param(description="the list of supported services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
     
+    @SerializedName(ApiConstants.FOR_VPC) @Param(description="true if network offering can be used by VPC networks only")
+    private Boolean forVpc;
+    
 
     public void setId(Long id) {
         this.id.setValue(id);
@@ -138,4 +141,8 @@ public class NetworkOfferingResponse extends BaseResponse{
 	public void setSpecifyIpRanges(Boolean specifyIpRanges) {
 		this.specifyIpRanges = specifyIpRanges;
 	}
+
+    public void setForVpc(Boolean forVpc) {
+        this.forVpc = forVpc;
+    }
 }

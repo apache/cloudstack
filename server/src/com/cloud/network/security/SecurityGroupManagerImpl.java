@@ -73,6 +73,9 @@ import com.cloud.network.security.dao.VmRulesetLogDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
 import com.cloud.server.ManagementServer;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -89,6 +92,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -151,6 +155,8 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     ProjectManager _projectMgr;
     @Inject
     UsageEventDao _usageEventDao;
+    @Inject
+    ResourceTagDao _resourceTagDao;
     
     ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
@@ -1089,6 +1095,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         Long id = cmd.getId();
         Object keyword = cmd.getKeyword();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        Map<String, String> tags = cmd.getTags();
 
         if (instanceId != null) {
             UserVmVO userVM = _userVMDao.findById(instanceId);
@@ -1113,12 +1120,34 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        
+        if (tags != null && !tags.isEmpty()) {
+            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            for (int count=0; count < tags.size(); count++) {
+                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.cp();
+            }
+            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.groupBy(sb.entity().getId());
+            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        }
 
         SearchCriteria<SecurityGroupVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         if (id != null) {
             sc.setParameters("id", id);
+        }
+        
+        if (tags != null && !tags.isEmpty()) {
+            int count = 0;
+            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.SecurityGroup.toString());
+            for (String key : tags.keySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+                count++;
+            }
         }
 
         if (securityGroup != null) {
