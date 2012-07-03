@@ -63,7 +63,6 @@ import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
-import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.FirewallRuleTO;
@@ -129,9 +128,6 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.Site2SiteCustomerGatewayVO;
-import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.SshKeysDistriMonitor;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VirtualRouterProvider;
@@ -1209,7 +1205,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         //1) Get deployment plan and find out the list of routers
         boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || 
                 _networkMgr.areServicesSupportedInNetwork(guestNetwork.getId(), Service.SecurityGroup)) 
-                && guestNetwork.getTrafficType() == TrafficType.Guest;        
+                && guestNetwork.getTrafficType() == TrafficType.Guest;
         Pair<DeploymentPlan, List<DomainRouterVO>> planAndRouters = getDeploymentPlanAndRouters(isPodBased, dest, guestNetwork.getId());
         DeploymentPlan plan = planAndRouters.first();
         List<DomainRouterVO> routers = planAndRouters.second();
@@ -1222,13 +1218,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         /* If it is the single router network, then keep it untouched */
         for (DomainRouterVO router : routers) {
-            if (!router.getIsRedundantRouter()) {
+            if (!router.getIsRedundantRouter() || isPodBased) {
                 routerCount = 1;
+                break;
             }
         }
 
         /* If old network is redundant but new is single router, then routers.size() = 2 but routerCount = 1 */
-        if (routers.size() >= routerCount || (isPodBased)) {
+        if (routers.size() >= routerCount) {
             return routers;
         }
 
@@ -1239,8 +1236,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         Network network = _networkDao.acquireInLockTable(guestNetwork.getId());
         if (network == null) {
             throw new ConcurrentOperationException("Unable to lock network " + guestNetwork.getId());
-        }
-        
+        } 
+
         try {
             //Check if providers are supported in the physical networks
             VirtualRouterProviderType type = VirtualRouterProviderType.VirtualRouter;
