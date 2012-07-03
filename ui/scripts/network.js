@@ -3110,9 +3110,10 @@
           id: 'vpc',
           label: 'VPC',
           fields: {
-            name: { label: 'Name' },
-            zone: { label: 'Zone' },
-            cidr: { label: 'CIDR' }
+            name: { label: 'label.name' },                  
+						displaytext: { label: 'label.description' },										
+						zonename: { label: 'label.zone' },
+						cidr: { label: 'label.cidr' }						
           },
           dataProvider: function(args) {            
 						var array1 = [];  
@@ -3209,9 +3210,8 @@
 									vpcofferingid: defaultvpcofferingid
 								};
 								
-								if(args.data.networkdomain != null)
-								  $.extend(dataObj, { networkdomain: args.data.networkdomain });
-								
+								if(args.data.networkdomain != null && args.data.networkdomain.length > 0)
+								  $.extend(dataObj, { networkdomain: args.data.networkdomain });								
 								
 								$.ajax({
                   url: createURL("createVPC"),
@@ -3242,7 +3242,43 @@
                 custom: cloudStack.uiCustom.vpc(cloudStack.vpc)
               }
             }
-          }
+          },									
+					
+					detailView: {
+            name: 'label.details',
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {				
+                    name: { label: 'label.name' }
+                  },
+                  {	
+										displaytext: { label: 'label.description' },										
+										zonename: { label: 'label.zone' },
+										cidr: { label: 'label.cidr' },
+										networkdomain: { label: 'label.network.domain' },
+										state: { label: 'label.state' },
+                    id: { label: 'label.id' }										
+                  }
+                ],
+                dataProvider: function(args) {		
+									$.ajax({
+										url: createURL("listVPCs"),
+										dataType: "json",
+										data: {
+										  id: args.context.vpc[0].id
+										},
+										async: true,
+										success: function(json) {
+											var item = json.listvpcsresponse.vpc[0];
+											args.response.success({data: item});
+										}
+									});									
+								}
+              }
+            }
+          }								
         }
       },
 			
