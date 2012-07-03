@@ -119,7 +119,7 @@ ipsec_tunnel_add() {
   for i in {1..4}
   do
     logger -t cloud "$(basename $0): checking connection status..."
-    ./checks2svpn.sh $rightpeer
+    /opt/cloud/bin/checks2svpn.sh $rightpeer
     result=$?
     if [ $result -eq 0 ]
     then
