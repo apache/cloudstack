@@ -28,6 +28,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -48,6 +49,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     protected final SearchBuilder<AccountVO> CleanupForRemovedAccountsSearch;
     protected final SearchBuilder<AccountVO> CleanupForDisabledAccountsSearch;
     protected final SearchBuilder<AccountVO> NonProjectAccountSearch;
+    private final long _regionId = 1;
     
     protected AccountDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -256,5 +258,12 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         	    s_logger.warn("Failed to mark account id=" + accountId + " for cleanup");
         	}
 		}
+	}
+	
+	@Override
+	@DB
+	public AccountVO persist(AccountVO account) {
+		account.setRegionId(_regionId);
+		return super.persist(account);
 	}
 }

@@ -332,3 +332,9 @@ updateStorageNetworkIpRange=com.cloud.api.commands.UpdateStorageNetworkIpRangeCm
 addNetworkDevice=com.cloud.api.commands.AddNetworkDeviceCmd;1
 listNetworkDevice=com.cloud.api.commands.ListNetworkDeviceCmd;1
 deleteNetworkDevice=com.cloud.api.commands.DeleteNetworkDeviceCmd;1
+
+#### Region commands
+addRegion=com.cloud.api.commands.AddRegionCmd;1
+updateRegion=com.cloud.api.commands.UpdateRegionCmd;1
+removeRegion=com.cloud.api.commands.RemoveRegionCmd;1
+listRegions=com.cloud.api.commands.ListRegionsCmd;7

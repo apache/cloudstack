@@ -67,6 +67,7 @@ import com.cloud.api.response.ProjectAccountResponse;
 import com.cloud.api.response.ProjectInvitationResponse;
 import com.cloud.api.response.ProjectResponse;
 import com.cloud.api.response.ProviderResponse;
+import com.cloud.api.response.RegionResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceCountResponse;
 import com.cloud.api.response.ResourceLimitResponse;
@@ -150,6 +151,7 @@ import com.cloud.org.Cluster;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
+import com.cloud.region.Region;
 import com.cloud.server.Criteria;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
@@ -3398,5 +3400,15 @@ public class ApiResponseHelper implements ResponseGenerator {
     public Long getIdentiyId(String tableName, String token) {
         return ApiDispatcher.getIdentiyId(tableName, token);
     }
+
+	@Override
+	public RegionResponse createRegionResponse(Region region) {
+		RegionResponse response = new RegionResponse();
+		response.setId(region.getId());
+		response.setName(region.getName());
+		response.setEndPoint(region.getEndPoint());
+		response.setObjectName("region");
+		return response;
+	}
 
 }

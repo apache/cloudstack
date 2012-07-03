@@ -199,7 +199,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private ProjectAccountDao _projectAccountDao;
     @Inject
     private IPAddressDao _ipAddressDao;
-
+    //@Inject
+    //private RegionManager _regionMgr;
+    
     private Adapters<UserAuthenticator> _userAuthenticators;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
@@ -1575,7 +1577,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         // Create default security group
         _networkGroupMgr.createDefaultSecurityGroup(accountId);
-
+        //_regionMgr.propogateAddResource();
         txn.commit();
 
         return account;

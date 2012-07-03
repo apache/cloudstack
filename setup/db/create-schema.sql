@@ -137,6 +137,7 @@ DROP TABLE IF EXISTS `cloud`.`op_dc_storage_network_ip_address`;
 DROP TABLE IF EXISTS `cloud`.`cluster_vsm_map`;
 DROP TABLE IF EXISTS `cloud`.`virtual_supervisor_module`;
 DROP TABLE IF EXISTS `cloud`.`port_profile`;
+DROP TABLE IF EXISTS `cloud`.`region`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -874,6 +875,7 @@ CREATE TABLE  `cloud`.`user` (
   `timezone` varchar(30) default NULL,
   `registration_token` varchar(255) default NULL,
   `is_registered` tinyint NOT NULL DEFAULT 0 COMMENT '1: yes, 0: no',
+  `region_id` bigint unsigned,
   PRIMARY KEY  (`id`),
   INDEX `i_user__removed`(`removed`),
   INDEX `i_user__secret_key_removed`(`secret_key`, `removed`),
@@ -1219,6 +1221,7 @@ CREATE TABLE  `cloud`.`domain` (
   `state` char(32) NOT NULL default 'Active' COMMENT 'state of the domain',
   `network_domain` varchar(255),
   `type` varchar(255) NOT NULL DEFAULT 'Normal' COMMENT 'type of the domain - can be Normal or Project',
+  `region_id` bigint unsigned,  
   PRIMARY KEY  (`id`),
   UNIQUE (parent, name, removed),
   INDEX `i_domain__path`(`path`),
@@ -1237,6 +1240,7 @@ CREATE TABLE  `cloud`.`account` (
   `cleanup_needed` tinyint(1) NOT NULL default '0',
   `network_domain` varchar(255),
   `default_zone_id` bigint unsigned,
+  `region_id` bigint unsigned,  
   PRIMARY KEY  (`id`),
   INDEX i_account__removed(`removed`),
   CONSTRAINT `fk_account__default_zone_id` FOREIGN KEY `fk_account__default_zone_id`(`default_zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE,
@@ -2131,5 +2135,16 @@ CREATE TABLE  `cloud`.`netscaler_pod_ref` (
   CONSTRAINT `fk_ns_pod_ref__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_ns_pod_ref__device_id` FOREIGN KEY (`external_load_balancer_device_id`) REFERENCES `external_load_balancer_devices`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+CREATE TABLE  `cloud`.`region` (
+  `id` bigint unsigned NOT NULL UNIQUE,
+  `name` varchar(255),
+  `end_point` varchar(255),
+  `status` varchar(32) NOT NULL,
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 SET foreign_key_checks = 1;

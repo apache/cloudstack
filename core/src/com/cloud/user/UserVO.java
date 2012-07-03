@@ -89,6 +89,9 @@ public class UserVO implements User, Identity {
     @Column(name="uuid")
     private String uuid;
 
+    @Column(name="region_id")
+    private long regionId;
+    
     public UserVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
@@ -257,4 +260,12 @@ public class UserVO implements User, Identity {
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }
+    
+	public long getRegionId() {
+		return regionId;
+	}
+
+	public void setRegionId(long regionId) {
+		this.regionId = regionId;
+	}
 }

@@ -17,6 +17,7 @@ import java.util.List;
 import javax.ejb.Local;
 
 import com.cloud.user.UserVO;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -35,6 +36,7 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
     protected SearchBuilder<UserVO> AccountIdSearch;
     protected SearchBuilder<UserVO> SecretKeySearch;
     protected SearchBuilder<UserVO> RegistrationTokenSearch;
+    private final long _regionId = 1;
     
     protected UserDaoImpl () {
     	UsernameSearch = createSearchBuilder();
@@ -122,5 +124,12 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
 	    SearchCriteria<UserVO> sc = UsernameSearch.create();
         sc.setParameters("username", username);
         return listBy(sc);
+	}
+	
+	@Override
+	@DB
+	public UserVO persist(UserVO user) {
+		user.setRegionId(_regionId);
+		return super.persist(user);
 	}
 }

@@ -69,6 +69,9 @@ public class DomainVO implements Domain, Identity {
     
     @Column(name="uuid")
     private String uuid;
+
+    @Column(name="region_id")
+    private long regionId;
     
     public DomainVO() {}
     
@@ -200,5 +203,13 @@ public class DomainVO implements Domain, Identity {
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }
+    
+	public long getRegionId() {
+		return regionId;
+	}
+
+	public void setRegionId(long regionId) {
+		this.regionId = regionId;
+	}
 }
 

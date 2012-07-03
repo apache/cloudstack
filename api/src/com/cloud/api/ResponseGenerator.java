@@ -53,6 +53,7 @@ import com.cloud.api.response.ProjectAccountResponse;
 import com.cloud.api.response.ProjectInvitationResponse;
 import com.cloud.api.response.ProjectResponse;
 import com.cloud.api.response.ProviderResponse;
+import com.cloud.api.response.RegionResponse;
 import com.cloud.api.response.RemoteAccessVpnResponse;
 import com.cloud.api.response.ResourceCountResponse;
 import com.cloud.api.response.ResourceLimitResponse;
@@ -83,6 +84,7 @@ import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
+import com.cloud.region.Region;
 import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.dc.Vlan;
 import com.cloud.domain.Domain;
@@ -273,6 +275,8 @@ public interface ResponseGenerator {
     LDAPConfigResponse createLDAPConfigResponse(String hostname, Integer port, Boolean useSSL, String queryFilter, String baseSearch, String dn);
 
     StorageNetworkIpRangeResponse createStorageNetworkIpRangeResponse(StorageNetworkIpRange result);
+    
+    RegionResponse createRegionResponse(Region region);
 
     /**
      * @param tableName TODO

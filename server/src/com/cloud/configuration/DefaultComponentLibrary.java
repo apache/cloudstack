@@ -129,6 +129,8 @@ import com.cloud.projects.ProjectManagerImpl;
 import com.cloud.projects.dao.ProjectAccountDaoImpl;
 import com.cloud.projects.dao.ProjectDaoImpl;
 import com.cloud.projects.dao.ProjectInvitationDaoImpl;
+import com.cloud.region.RegionManagerImpl;
+import com.cloud.region.dao.RegionDaoImpl;
 import com.cloud.resource.ResourceManagerImpl;
 import com.cloud.resourcelimit.ResourceLimitManagerImpl;
 import com.cloud.service.dao.ServiceOfferingDaoImpl;
@@ -329,6 +331,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("NetworkServiceMapDao", NetworkServiceMapDaoImpl.class);
         addDao("StorageNetworkIpAddressDao", StorageNetworkIpAddressDaoImpl.class);
         addDao("StorageNetworkIpRangeDao", StorageNetworkIpRangeDaoImpl.class);
+        addDao("RegionDao", RegionDaoImpl.class);
     }
 
     @Override
@@ -385,6 +388,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("StorageNetworkManager", StorageNetworkManagerImpl.class);
         addManager("ExternalLoadBalancerUsageManager", ExternalLoadBalancerUsageManagerImpl.class);
         addManager("HA Manager", HighAvailabilityManagerImpl.class);
+        addManager("Region Manager", RegionManagerImpl.class);
     }
 
     @Override
