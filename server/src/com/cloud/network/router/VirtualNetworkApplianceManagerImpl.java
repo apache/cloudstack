@@ -1188,7 +1188,14 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         //1) Get deployment plan and find out the list of routers
         boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || 
                 _networkMgr.areServicesSupportedInNetwork(guestNetwork.getId(), Service.SecurityGroup)) 
-                && guestNetwork.getTrafficType() == TrafficType.Guest;        
+                && guestNetwork.getTrafficType() == TrafficType.Guest;
+        Long podId = null;
+        if (isPodBased) {
+            Pod pod = dest.getPod();
+            if (pod != null) {
+                podId = pod.getId();
+            }
+        }
         Pair<DeploymentPlan, List<DomainRouterVO>> planAndRouters = getDeploymentPlanAndRouters(isPodBased, dest, guestNetwork.getId());
         DeploymentPlan plan = planAndRouters.first();
         List<DomainRouterVO> routers = planAndRouters.second();
@@ -1207,7 +1214,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
 
             /* If old network is redundant but new is single router, then routers.size() = 2 but routerCount = 1 */
-        if (routers.size() >= routerCount || (isPodBased)) {
+        if (routers.size() >= routerCount ||  (isPodBased && podId == null)) {
                 return routers;
             }
 
