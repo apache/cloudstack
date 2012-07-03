@@ -3572,7 +3572,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         
         response.setNetworks(networkResponses);
         response.setServices(serviceResponses);
-        response.setObjectName("vpcoffering");
+        response.setObjectName("vpc");
         return response;
     }
 
