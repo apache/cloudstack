@@ -16,9 +16,9 @@ unplug_nic() {
   sudo ip route flush table $tableName
   sudo sed -i /"$tableNo $tableName"/d /etc/iproute2/rt_tables 2>/dev/null
   sudo ip route flush cache
-  # remove usage
+  # remove rules
   sudo iptables -t mangle -F NETWORK_STATS_$dev 2>/dev/null
-  iptables-save | grep NETWORK_STATS_$dev | grep "\-A"  | while read rule
+  iptables-save -t mangle | grep NETWORK_STATS_$dev | grep "\-A"  | while read rule
   do
     rule=$(echo $rule | sed 's/\-A/\-D/')
     sudo iptables -t mangle $rule
