@@ -73,7 +73,7 @@ import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
-import com.cloud.network.addr.PrivateIp;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.rules.NetworkACL;
 import com.cloud.network.vpc.NetworkACLManager;
@@ -185,7 +185,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 }
             }
             
-            PrivateIp sourceNatIp = _networkMgr.assignSourceNatIpAddressToVpc(owner, vpc);
+            PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddressToVpc(owner, vpc);
             
             DomainRouterVO router = deployVpcRouter(owner, dest, plan, params, false, vpcVrProvider, offeringId,
                     vpc.getId(), sourceNatIp);
@@ -285,7 +285,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         return result;
     }
     
-    protected boolean addPublicIpToVpc(VirtualRouter router, Network publicNetwork, PrivateIp ipAddress) 
+    protected boolean addPublicIpToVpc(VirtualRouter router, Network publicNetwork, PublicIp ipAddress) 
             throws ConcurrentOperationException,ResourceUnavailableException, InsufficientCapacityException {
         
         if (publicNetwork.getTrafficType() != TrafficType.Public) {
@@ -323,7 +323,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 publicNic.setDefaultNic(true);
                 if (ipAddress != null) {
                     IPAddressVO ipVO = _ipAddressDao.findById(ipAddress.getId());
-                    PrivateIp publicIp = new PrivateIp(ipVO, _vlanDao.findById(ipVO.getVlanId()), 
+                    PublicIp publicIp = new PublicIp(ipVO, _vlanDao.findById(ipVO.getVlanId()), 
                             NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress()));
                     result = associtePublicIpInVpc(publicNetwork, router, false, publicIp);
                 }
@@ -341,7 +341,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
     
     
-    protected boolean removePublicIpFromVpcRouter(VirtualRouter router, Network publicNetwork, PrivateIp ipAddress) 
+    protected boolean removePublicIpFromVpcRouter(VirtualRouter router, Network publicNetwork, PublicIp ipAddress) 
             throws ConcurrentOperationException, ResourceUnavailableException {
         
         if (publicNetwork.getTrafficType() != TrafficType.Public) {
@@ -352,7 +352,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         boolean result = true;
         IPAddressVO ipVO = _ipAddressDao.findById(ipAddress.getId());
         _networkMgr.markIpAsUnavailable(ipVO.getId());
-        PrivateIp publicIp = new PrivateIp(ipVO, _vlanDao.findById(ipVO.getVlanId()), 
+        PublicIp publicIp = new PublicIp(ipVO, _vlanDao.findById(ipVO.getVlanId()), 
                 NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress()));
         result = associtePublicIpInVpc(publicNetwork, router, false, publicIp);
         
@@ -371,10 +371,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         }
     }
     
-    protected boolean associtePublicIpInVpc(Network network, VirtualRouter router, boolean add, PrivateIp ipAddress) 
+    protected boolean associtePublicIpInVpc(Network network, VirtualRouter router, boolean add, PublicIp ipAddress) 
             throws ConcurrentOperationException, ResourceUnavailableException{
         
-        List<PrivateIp> publicIps = new ArrayList<PrivateIp>(1);
+        List<PublicIp> publicIps = new ArrayList<PublicIp>(1);
         publicIps.add(ipAddress);
         Commands cmds = new Commands(OnError.Stop);
         createVpcAssociatePublicIPCommands(router, publicIps, cmds);
@@ -390,7 +390,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     
     protected DomainRouterVO deployVpcRouter(Account owner, DeployDestination dest, DeploymentPlan plan, Map<Param, Object> params,
             boolean isRedundant, VirtualRouterProvider vrProvider, long svcOffId,
-            Long vpcId, PrivateIp sourceNatIp) throws ConcurrentOperationException, 
+            Long vpcId, PublicIp sourceNatIp) throws ConcurrentOperationException, 
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException, 
             StorageUnavailableException, ResourceUnavailableException {
         
@@ -783,14 +783,14 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         
         try {
             //add VPC router to public networks
-            List<PrivateIp> sourceNat = new ArrayList<PrivateIp>(1);
+            List<PublicIp> sourceNat = new ArrayList<PublicIp>(1);
             for (Nic publicNic : publicNics.keySet()) {
                 Network publicNtwk = publicNics.get(publicNic);
                 IPAddressVO userIp = _ipAddressDao.findByIpAndSourceNetworkId(publicNtwk.getId(), 
                         publicNic.getIp4Address());
                
                 if (userIp.isSourceNat()) {
-                    PrivateIp publicIp = new PrivateIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
+                    PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
                             NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
                     sourceNat.add(publicIp);
                     

@@ -36,7 +36,7 @@ import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.addr.PrivateIp;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.network.element.Site2SiteVpnServiceProvider;
@@ -78,7 +78,7 @@ public interface NetworkManager extends NetworkService {
      * @throws InsufficientAddressCapacityException
      */
 
-    PrivateIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, 
+    PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, 
             boolean isSystem) throws InsufficientAddressCapacityException;
 
 
@@ -262,9 +262,9 @@ public interface NetworkManager extends NetworkService {
 
     boolean areServicesEnabledInZone(long zoneId, NetworkOffering offering, List<Service> services);
 
-    public Map<PrivateIp, Set<Service>> getIpToServices(List<PrivateIp> publicIps, boolean rulesRevoked, boolean includingFirewall);
+    public Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked, boolean includingFirewall);
 
-    public Map<Provider, ArrayList<PrivateIp>> getProviderToIpList(Network network, Map<PrivateIp, Set<Service>> ipToServices);
+    public Map<Provider, ArrayList<PublicIp>> getProviderToIpList(Network network, Map<PublicIp, Set<Service>> ipToServices);
 
     public boolean checkIpForService(IPAddressVO ip, Service service);
 
@@ -310,7 +310,7 @@ public interface NetworkManager extends NetworkService {
      * @throws ConcurrentOperationException 
      * @throws InsufficientAddressCapacityException 
      */
-    PrivateIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) throws InsufficientAddressCapacityException, ConcurrentOperationException;
+    PublicIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) throws InsufficientAddressCapacityException, ConcurrentOperationException;
 
 
     /**
@@ -320,7 +320,7 @@ public interface NetworkManager extends NetworkService {
      * @throws ConcurrentOperationException 
      * @throws InsufficientAddressCapacityException 
      */
-    PrivateIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException;
+    PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException;
 
 
     /**

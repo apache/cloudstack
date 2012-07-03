@@ -110,7 +110,7 @@ import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork.BroadcastDomainRange;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
-import com.cloud.network.addr.PrivateIp;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -363,12 +363,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public PrivateIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException {
+    public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException {
         return fetchNewPublicIp(dcId, podId, null, owner, type, networkId, false, true, requestedIp, isSystem, null);
     }
 
     @DB
-    public PrivateIp fetchNewPublicIp(long dcId, Long podId, Long vlanDbId, Account owner, VlanType vlanUse, 
+    public PublicIp fetchNewPublicIp(long dcId, Long podId, Long vlanDbId, Account owner, VlanType vlanUse, 
             Long guestNetworkId, boolean sourceNat, boolean assign, String requestedIp, boolean isSystem, Long vpcId)
             throws InsufficientAddressCapacityException {
         StringBuilder errorMessage = new StringBuilder("Unable to get ip adress in ");
@@ -455,7 +455,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         long macAddress = NetUtils.createSequenceBasedMacAddress(addr.getMacAddress());
 
-        return new PrivateIp(addr, _vlanDao.findById(addr.getVlanId()), macAddress);
+        return new PublicIp(addr, _vlanDao.findById(addr.getVlanId()), macAddress);
     }
 
     @DB
@@ -493,15 +493,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     
     @Override
-    public PrivateIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException {
+    public PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException {
         long dcId = vpc.getZoneId();
         
         IPAddressVO sourceNatIp = getExistingSourceNat(owner.getId(), null, vpc.getId());
         
-        PrivateIp ipToReturn = null;
+        PublicIp ipToReturn = null;
         
         if (sourceNatIp != null) {
-            ipToReturn = new PrivateIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()), 
+            ipToReturn = new PublicIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()), 
                     NetUtils.createSequenceBasedMacAddress(sourceNatIp.getMacAddress()));
         } else {
             ipToReturn = assignSourceNatIpAddress(owner, null, vpc.getId(), dcId);
@@ -511,7 +511,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     } 
     
     @Override
-    public PrivateIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) 
+    public PublicIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) 
             throws InsufficientAddressCapacityException, ConcurrentOperationException {
         assert (guestNetwork.getTrafficType() != null) : "You're asking for a source nat but your network " +
         		"can't participate in source nat.  What do you have to say for yourself?";
@@ -519,9 +519,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         IPAddressVO sourceNatIp = getExistingSourceNat(owner.getId(), guestNetwork.getId(), guestNetwork.getVpcId());
                 
-        PrivateIp ipToReturn = null;
+        PublicIp ipToReturn = null;
         if (sourceNatIp != null) {
-            ipToReturn = new PrivateIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()), 
+            ipToReturn = new PublicIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()), 
                     NetUtils.createSequenceBasedMacAddress(sourceNatIp.getMacAddress()));
         } else {
             ipToReturn = assignSourceNatIpAddress(owner, guestNetwork.getId(), null, dcId);
@@ -531,7 +531,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @DB
-    public PrivateIp assignSourceNatIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId) 
+    public PublicIp assignSourceNatIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId) 
             throws ConcurrentOperationException, InsufficientAddressCapacityException {
 
         long ownerId = owner.getId();
@@ -544,7 +544,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new AccountLimitException("Maximum number of public IP addresses for account: " + owner.getAccountName() + " has been exceeded.");
         }
 
-        PrivateIp ip = null;
+        PublicIp ip = null;
         Transaction txn = Transaction.currentTxn();
         try {
             txn.start();
@@ -638,10 +638,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public boolean applyIpAssociations(Network network, boolean continueOnError) throws ResourceUnavailableException {
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
-        List<PrivateIp> publicIps = new ArrayList<PrivateIp>();
+        List<PublicIp> publicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
-                PrivateIp publicIp = new PrivateIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
+                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
                         NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
                 publicIps.add(publicIp);
             }
@@ -700,12 +700,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     /* Get a list of IPs, classify them by service */
     @Override
-    public Map<PrivateIp, Set<Service>> getIpToServices(List<PrivateIp> publicIps, boolean rulesRevoked, boolean includingFirewall) {
-        Map<PrivateIp, Set<Service>> ipToServices = new HashMap<PrivateIp, Set<Service>>();
+    public Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked, boolean includingFirewall) {
+        Map<PublicIp, Set<Service>> ipToServices = new HashMap<PublicIp, Set<Service>>();
 
         if (publicIps != null && !publicIps.isEmpty()) {
             Set<Long> networkSNAT = new HashSet<Long>();
-            for (PrivateIp ip : publicIps) {
+            for (PublicIp ip : publicIps) {
                 Set<Service> services = ipToServices.get(ip);
                 if (services == null) {
                     services = new HashSet<Service>();
@@ -792,11 +792,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return ipToServices;
     }
 
-    public boolean canIpUsedForNonConserveService(PrivateIp ip, Service service) {
+    public boolean canIpUsedForNonConserveService(PublicIp ip, Service service) {
         // If it's non-conserve mode, then the new ip should not be used by any other services
-        List<PrivateIp> ipList = new ArrayList<PrivateIp>();
+        List<PublicIp> ipList = new ArrayList<PublicIp>();
         ipList.add(ip);
-        Map<PrivateIp, Set<Service>> ipToServices = getIpToServices(ipList, false, false);
+        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(ipList, false, false);
         Set<Service> services = ipToServices.get(ip);
         // Not used currently, safe
         if (services == null || services.isEmpty()) {
@@ -812,9 +812,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return true;
     }
 
-    protected boolean canIpsUsedForNonConserve(List<PrivateIp> publicIps) {
+    protected boolean canIpsUsedForNonConserve(List<PublicIp> publicIps) {
         boolean result = true;
-        for (PrivateIp ip : publicIps) {
+        for (PublicIp ip : publicIps) {
             result = canIpUsedForNonConserveService(ip, null);
             if (!result) {
                 break;
@@ -823,10 +823,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return result;
     }
 
-    public boolean canIpsUseOffering(List<PrivateIp> publicIps, long offeringId) {
-        Map<PrivateIp, Set<Service>> ipToServices = getIpToServices(publicIps, false, true);
+    public boolean canIpsUseOffering(List<PublicIp> publicIps, long offeringId) {
+        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(publicIps, false, true);
         Map<Service, Set<Provider>> serviceToProviders = getNetworkOfferingServiceProvidersMap(offeringId);
-        for (PrivateIp ip : ipToServices.keySet()) {
+        for (PublicIp ip : ipToServices.keySet()) {
             Set<Service> services = ipToServices.get(ip);
             Provider provider = null;
             for (Service service : services) {
@@ -848,10 +848,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return true;
     }
 
-    public boolean canIpUsedForService(PrivateIp publicIp, Service service) {
-        List<PrivateIp> ipList = new ArrayList<PrivateIp>();
+    public boolean canIpUsedForService(PublicIp publicIp, Service service) {
+        List<PublicIp> ipList = new ArrayList<PublicIp>();
         ipList.add(publicIp);
-        Map<PrivateIp, Set<Service>> ipToServices = getIpToServices(ipList, false, true);
+        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(ipList, false, true);
         Set<Service> services = ipToServices.get(publicIp);
         if (services == null || services.isEmpty()) {
             return true;
@@ -874,22 +874,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     /* Return a mapping between provider in the network and the IP they should applied */
     @Override
-    public Map<Provider, ArrayList<PrivateIp>> getProviderToIpList(Network network, Map<PrivateIp, Set<Service>> ipToServices) {
+    public Map<Provider, ArrayList<PublicIp>> getProviderToIpList(Network network, Map<PublicIp, Set<Service>> ipToServices) {
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         if (!offering.isConserveMode()) {
-            for (PrivateIp ip : ipToServices.keySet()) {
+            for (PublicIp ip : ipToServices.keySet()) {
                 Set<Service> services = ipToServices.get(ip);
                 if (services != null && services.size() > 1) {
                     throw new CloudRuntimeException("Ip " + ip.getAddress() + " is used by multiple services!");
                 }
             }
         }
-        Map<Service, Set<PrivateIp>> serviceToIps = new HashMap<Service, Set<PrivateIp>>();
-        for (PrivateIp ip : ipToServices.keySet()) {
+        Map<Service, Set<PublicIp>> serviceToIps = new HashMap<Service, Set<PublicIp>>();
+        for (PublicIp ip : ipToServices.keySet()) {
             for (Service service : ipToServices.get(ip)) {
-                Set<PrivateIp> ips = serviceToIps.get(service);
+                Set<PublicIp> ips = serviceToIps.get(service);
                 if (ips == null) {
-                    ips = new HashSet<PrivateIp>();
+                    ips = new HashSet<PublicIp>();
                 }
                 ips.add(ip);
                 serviceToIps.put(service, ips);
@@ -897,19 +897,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         // TODO Check different provider for same IP
         Map<Provider, Set<Service>> providerToServices = getProviderServicesMap(network.getId());
-        Map<Provider, ArrayList<PrivateIp>> providerToIpList = new HashMap<Provider, ArrayList<PrivateIp>>();
+        Map<Provider, ArrayList<PublicIp>> providerToIpList = new HashMap<Provider, ArrayList<PublicIp>>();
         for (Provider provider : providerToServices.keySet()) {
             Set<Service> services = providerToServices.get(provider);
-            ArrayList<PrivateIp> ipList = new ArrayList<PrivateIp>();
-            Set<PrivateIp> ipSet = new HashSet<PrivateIp>();
+            ArrayList<PublicIp> ipList = new ArrayList<PublicIp>();
+            Set<PublicIp> ipSet = new HashSet<PublicIp>();
             for (Service service : services) {
-                Set<PrivateIp> serviceIps = serviceToIps.get(service);
+                Set<PublicIp> serviceIps = serviceToIps.get(service);
                 if (serviceIps == null || serviceIps.isEmpty()) {
                     continue;
                 }
                 ipSet.addAll(serviceIps);
             }
-            Set<PrivateIp> sourceNatIps = serviceToIps.get(Service.SourceNat);
+            Set<PublicIp> sourceNatIps = serviceToIps.get(Service.SourceNat);
             if (sourceNatIps != null && !sourceNatIps.isEmpty()) {
                 ipList.addAll(0, sourceNatIps);
                 ipSet.removeAll(sourceNatIps);
@@ -921,15 +921,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     protected boolean applyIpAssociations(Network network, boolean rulesRevoked, boolean continueOnError, 
-            List<PrivateIp> publicIps) throws ResourceUnavailableException {
+            List<PublicIp> publicIps) throws ResourceUnavailableException {
         boolean success = true;
 
-        Map<PrivateIp, Set<Service>> ipToServices = getIpToServices(publicIps, rulesRevoked, false);
-        Map<Provider, ArrayList<PrivateIp>> providerToIpList = getProviderToIpList(network, ipToServices);
+        Map<PublicIp, Set<Service>> ipToServices = getIpToServices(publicIps, rulesRevoked, false);
+        Map<Provider, ArrayList<PublicIp>> providerToIpList = getProviderToIpList(network, ipToServices);
 
         for (Provider provider : providerToIpList.keySet()) {
             try {
-                ArrayList<PrivateIp> ips = providerToIpList.get(provider);
+                ArrayList<PublicIp> ips = providerToIpList.get(provider);
                 if (ips == null || ips.isEmpty()) {
                     continue;
                 }
@@ -956,7 +956,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     applyFirewallRules = true;
                 }
                 Set<Service> services = new HashSet<Service>();
-                for (PrivateIp ip : ips) {
+                for (PublicIp ip : ips) {
                     if (!ipToServices.containsKey(ip)) {
                         continue;
                     }
@@ -982,7 +982,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return success;
     }
 
-    Set<Purpose> getPublicIpPurposeInRules(PrivateIp ip, boolean includeRevoked, boolean includingFirewall) {
+    Set<Purpose> getPublicIpPurposeInRules(PublicIp ip, boolean includeRevoked, boolean includingFirewall) {
         Set<Purpose> result = new HashSet<Purpose>();
         List<FirewallRuleVO> rules = null;
         if (includeRevoked) {
@@ -1046,7 +1046,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw ex;
         }
 
-        PrivateIp ip = null;
+        PublicIp ip = null;
 
         Transaction txn = Transaction.currentTxn();
         Account accountToLock = null;
@@ -3682,10 +3682,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // get the list of public ip's owned by the network
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
-        List<PrivateIp> publicIps = new ArrayList<PrivateIp>();
+        List<PublicIp> publicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
-                PrivateIp publicIp = new PrivateIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
                 publicIps.add(publicIp);
             }
         }
@@ -4121,7 +4121,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return null;
         }
 
-        return new PrivateIp(addr, _vlanDao.findById(addr.getVlanId()), NetUtils.createSequenceBasedMacAddress(addr.getMacAddress()));
+        return new PublicIp(addr, _vlanDao.findById(addr.getVlanId()), NetUtils.createSequenceBasedMacAddress(addr.getMacAddress()));
     }
 
     @Override
@@ -4924,10 +4924,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // get the list of public ip's owned by the network
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
-        List<PrivateIp> publicIps = new ArrayList<PrivateIp>();
+        List<PublicIp> publicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
-                PrivateIp publicIp = new PrivateIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
                 publicIps.add(publicIp);
             }
         }
@@ -4959,13 +4959,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // For revoked static nat IP, set the vm_id to null, indicate it should be revoked
         for (StaticNat staticNat : staticNats) {
             if (staticNat.isForRevoke()) {
-                for (PrivateIp publicIp : publicIps) {
+                for (PublicIp publicIp : publicIps) {
                     if (publicIp.getId() == staticNat.getSourceIpAddressId()) {
                         publicIps.remove(publicIp);
                         IPAddressVO ip = _ipAddressDao.findByIdIncludingRemoved(staticNat.getSourceIpAddressId());
                         // ip can't be null, otherwise something wrong happened
                         ip.setAssociatedWithVmId(null);
-                        publicIp = new PrivateIp(ip, _vlanDao.findById(ip.getVlanId()), NetUtils.createSequenceBasedMacAddress(ip.getMacAddress()));
+                        publicIp = new PublicIp(ip, _vlanDao.findById(ip.getVlanId()), NetUtils.createSequenceBasedMacAddress(ip.getMacAddress()));
                         publicIps.add(publicIp);
                         break;
                     }
@@ -5091,10 +5091,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // Check all ips
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(network.getId(), null);
-        List<PrivateIp> publicIps = new ArrayList<PrivateIp>();
+        List<PublicIp> publicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
-                PrivateIp publicIp = new PrivateIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
                 publicIps.add(publicIp);
             }
         }
@@ -6141,11 +6141,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         // Get all ip addresses, mark as releasing and release them on the backend
         Network network = getNetwork(networkId);
         List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(networkId, null);
-        List<PrivateIp> publicIpsToRelease = new ArrayList<PrivateIp>();
+        List<PublicIp> publicIpsToRelease = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
                 userIp.setState(State.Releasing);
-                PrivateIp publicIp = new PrivateIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+                PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
                 publicIpsToRelease.add(publicIp);
             }
         }
@@ -6905,7 +6905,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (offering.getGuestType() != GuestType.Isolated) {
             return true;
         }
-        PrivateIp publicIp = new PrivateIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
+        PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
         if (!canIpUsedForService(publicIp, service)) {
             return false;
         }
@@ -7035,7 +7035,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     public void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network, String requestedIp) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException {
         if (nic.getIp4Address() == null) {
-            PrivateIp ip = assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.DirectAttached, network.getId(), requestedIp, false);
+            PublicIp ip = assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.DirectAttached, network.getId(), requestedIp, false);
             nic.setIp4Address(ip.getAddress().toString());
             nic.setGateway(ip.getGateway());
             nic.setNetmask(ip.getNetmask());

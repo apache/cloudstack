@@ -138,7 +138,7 @@ import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.VpnUser;
 import com.cloud.network.VpnUserVO;
-import com.cloud.network.addr.PrivateIp;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -1252,7 +1252,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 offeringId = _offering.getId();
                 }
 
-            PrivateIp sourceNatIp = null;
+            PublicIp sourceNatIp = null;
                 if (publicNetwork) {
                 sourceNatIp = _networkMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
                 }
@@ -1268,7 +1268,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             int count = routerCount - routers.size();
             for (int i = 0; i < count; i++) {
                 DomainRouterVO router = deployRouter(owner, dest, plan, params, isRedundant, vrProvider, offeringId,
-                        null, sourceNatIp, publicNetwork, controlNetwork, guestNetwork, new Pair<Boolean, PrivateIp>(publicNetwork, sourceNatIp));
+                        null, sourceNatIp, publicNetwork, controlNetwork, guestNetwork, new Pair<Boolean, PublicIp>(publicNetwork, sourceNatIp));
                 //add router to router network map
                 if (!_routerDao.isRouterPartOfGuestNetwork(router.getId(), network.getId())) {
                     DomainRouterVO routerVO = _routerDao.findById(router.getId());
@@ -1286,8 +1286,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     protected DomainRouterVO deployRouter(Account owner, DeployDestination dest, DeploymentPlan plan, Map<Param, Object> params,
             boolean isRedundant, VirtualRouterProvider vrProvider, long svcOffId,
-            Long vpcId, PrivateIp sourceNatIp, boolean setupPublicNetwork, boolean setupControlNetwork, Network guestNetwork,
-            Pair<Boolean, PrivateIp> publicNetwork) throws ConcurrentOperationException, 
+            Long vpcId, PublicIp sourceNatIp, boolean setupPublicNetwork, boolean setupControlNetwork, Network guestNetwork,
+            Pair<Boolean, PublicIp> publicNetwork) throws ConcurrentOperationException, 
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException, 
             StorageUnavailableException, ResourceUnavailableException {
         
@@ -1390,7 +1390,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     protected List<Pair<NetworkVO, NicProfile>> createRouterNetworks(Account owner, boolean isRedundant, 
-            DeploymentPlan plan, boolean setupControlNetwork, Network guestNetwork, Pair<Boolean, PrivateIp> publicNetwork) throws ConcurrentOperationException,
+            DeploymentPlan plan, boolean setupControlNetwork, Network guestNetwork, Pair<Boolean, PublicIp> publicNetwork) throws ConcurrentOperationException,
             InsufficientAddressCapacityException {
 
         
@@ -1448,7 +1448,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         //3) Public network
         if (setupPublicNetwork) {
-            PrivateIp sourceNatIp = publicNetwork.second();
+            PublicIp sourceNatIp = publicNetwork.second();
             s_logger.debug("Adding nic for Virtual Router in Public network ");
             //if source nat service is supported by the network, get the source nat ip address
             NicProfile defaultNic = new NicProfile();
@@ -2055,10 +2055,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     protected ArrayList<? extends PublicIpAddress> getPublicIpsToApply(VirtualRouter router, Provider provider, Long guestNetworkId) {
         long ownerId = router.getAccountId();
         final List<IPAddressVO> userIps = _networkMgr.listPublicIpsAssignedToGuestNtwk(ownerId, guestNetworkId, null);
-        List<PrivateIp> allPublicIps = new ArrayList<PrivateIp>();
+        List<PublicIp> allPublicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
             for (IPAddressVO userIp : userIps) {
-                    PrivateIp publicIp = new PrivateIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
+                    PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
                             NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
                 allPublicIps.add(publicIp);
             }
@@ -2066,11 +2066,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         
         //Get public Ips that should be handled by router
         Network network = _networkDao.findById(guestNetworkId);
-        Map<PrivateIp, Set<Service>> ipToServices = _networkMgr.getIpToServices(allPublicIps, false, false);
-        Map<Provider, ArrayList<PrivateIp>> providerToIpList = _networkMgr.getProviderToIpList(network, ipToServices);
+        Map<PublicIp, Set<Service>> ipToServices = _networkMgr.getIpToServices(allPublicIps, false, false);
+        Map<Provider, ArrayList<PublicIp>> providerToIpList = _networkMgr.getProviderToIpList(network, ipToServices);
         // Only cover virtual router for now, if ELB use it this need to be modified
       
-        ArrayList<PrivateIp> publicIps = providerToIpList.get(provider);
+        ArrayList<PublicIp> publicIps = providerToIpList.get(provider);
         return publicIps;
     }
 
