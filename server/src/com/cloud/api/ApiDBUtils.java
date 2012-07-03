@@ -74,6 +74,7 @@ import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -792,5 +793,10 @@ public class ApiDBUtils {
     
     public static List<? extends ResourceTag> listByResourceTypeAndId(TaggedResourceType type, long resourceId) {
         return _taggedResourceService.listByResourceTypeAndId(type, resourceId);
+    }
+    
+    public static boolean isOfferingForVpc(NetworkOffering offering) {
+        boolean vpcProvider = _configMgr.isOfferingForVpc(offering);
+        return vpcProvider;
     }
 }

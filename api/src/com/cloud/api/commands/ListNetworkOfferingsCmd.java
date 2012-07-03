@@ -86,6 +86,10 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
     @Parameter(name=ApiConstants.IS_TAGGED, type=CommandType.BOOLEAN, description="true if offering has tags specified")
     private Boolean isTagged;
     
+    @Parameter(name=ApiConstants.FOR_VPC, type=CommandType.BOOLEAN, description="the network offering can be used" +
+    		" only for network creation inside the VPC")
+    private Boolean forVpc;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -152,6 +156,10 @@ public class ListNetworkOfferingsCmd extends BaseListCmd {
 
     public Boolean isTagged() {
         return isTagged;
+    }
+
+    public Boolean getForVpc() {
+        return forVpc;
     }
 
     /////////////////////////////////////////////////////

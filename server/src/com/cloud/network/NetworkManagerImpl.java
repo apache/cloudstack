@@ -2808,9 +2808,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //Create guest network
         Network network = null;
         if (vpcId != null) {
+            if (!_configMgr.isOfferingForVpc(ntwkOff)){
+                throw new InvalidParameterValueException("Network offering can't be used for VPC networks");
+            }
             network = createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, 
                     networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId);
         } else {
+            if (_configMgr.isOfferingForVpc(ntwkOff)){
+                throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
+            }
             network = createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, 
                     networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId);
         }  

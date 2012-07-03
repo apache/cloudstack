@@ -2886,6 +2886,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
             serviceResponses.add(svcRsp);
         }
+        response.setForVpc(ApiDBUtils.isOfferingForVpc(offering));
+        
         response.setServices(serviceResponses);
         response.setObjectName("networkoffering");
         return response;
