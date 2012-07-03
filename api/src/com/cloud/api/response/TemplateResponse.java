@@ -17,6 +17,7 @@
 package com.cloud.api.response;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.api.ApiConstants;
@@ -127,6 +128,9 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     
     @SerializedName(ApiConstants.DETAILS) @Param(description="additional key/value details tied with template")
     private Map details;
+    
+    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with tempate", responseObject = ResourceTagResponse.class)
+    private List<ResourceTagResponse> tags;
     
 
     @Override
@@ -276,5 +280,9 @@ public class TemplateResponse extends BaseResponse implements ControlledEntityRe
     
     public void setDetails(Map details) {
     	this.details = details;
+    }
+    
+    public void setTags(List<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 }
