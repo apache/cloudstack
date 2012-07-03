@@ -365,7 +365,6 @@ public class ApiConstants {
     public static final String RESOURCE_IDS = "resourceids";
     public static final String RESOURCE_ID = "resourceid";
     public static final String CUSTOMER = "customer";
-    
     public static final String S2S_VPN_GATEWAY_ID = "s2svpngatewayid";
     public static final String S2S_CUSTOMER_GATEWAY_ID = "s2scustomergatewayid";
     public static final String IPSEC_PSK = "ipsecpsk";
@@ -374,6 +373,7 @@ public class ApiConstants {
     public static final String IKE_POLICY = "ikepolicy";
     public static final String ESP_POLICY = "esppolicy";
     public static final String LIFETIME = "lifetime";
+    public static final String FOR_VPC = "forvpc";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

@@ -70,6 +70,7 @@ import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -772,5 +773,9 @@ public class ApiDBUtils {
     public static String getUuid(String resourceId, TaggedResourceType resourceType) {
         return _taggedResourceService.getUuid(resourceId, resourceType);
     }
-
+    
+    public static boolean isOfferingForVpc(NetworkOffering offering) {
+        boolean vpcProvider = _configMgr.isOfferingForVpc(offering);
+        return vpcProvider;
+    }
 }

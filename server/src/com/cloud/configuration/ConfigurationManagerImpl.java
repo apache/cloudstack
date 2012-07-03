@@ -3280,6 +3280,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Object specifyIpRanges = cmd.getSpecifyIpRanges();
         String tags = cmd.getTags();
         Boolean isTagged = cmd.isTagged();
+        Boolean forVpc = cmd.getForVpc();
 
         if (zoneId != null) {
             zone = getZone(zoneId);
@@ -3407,7 +3408,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // filter by supported services
         boolean listBySupportedServices = (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !offerings.isEmpty());
         boolean checkIfProvidersAreEnabled = (zoneId != null);
-        boolean parseOfferings = (listBySupportedServices || sourceNatSupported != null || checkIfProvidersAreEnabled);
+        boolean parseOfferings = (listBySupportedServices || sourceNatSupported != null || checkIfProvidersAreEnabled 
+                || forVpc != null);
 
         if (parseOfferings) {
             List<NetworkOfferingVO> supportedOfferings = new ArrayList<NetworkOfferingVO>();
@@ -3454,6 +3456,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 if (sourceNatSupported != null) {
                     addOffering = addOffering && (_networkMgr.areServicesSupportedByNetworkOffering(offering.getId(), Network.Service.SourceNat) == sourceNatSupported);
                 }
+                
+                if (forVpc != null) {
+                    addOffering = addOffering && (isOfferingForVpc(offering) == forVpc.booleanValue());    
+                }
 
                 if (addOffering) {
                     supportedOfferings.add(offering);
@@ -3465,6 +3471,13 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         } else {
             return offerings;
         }
+    }
+
+    @Override
+    public boolean isOfferingForVpc(NetworkOffering offering) {
+        boolean vpcProvider = _ntwkOffServiceMapDao.isProviderForNetworkOffering(offering.getId(),
+                Provider.VPCVirtualRouter);
+        return vpcProvider;
     }
 
     @Override
