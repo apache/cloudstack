@@ -3380,9 +3380,15 @@
 																											else {                                      
 																												clearInterval(createvpnconnectionIntervalID); 
 																																																						
-																												if (result.jobstatus == 1) {	
-																												  //var obj = result.jobresult.vpnconnection;			
-																												  $.removeTableRowInAction();
+																												if (result.jobstatus == 1) {																														
+																												  //remove loading image on table row																													
+																													var $listviewTable = $("div.list-view  div.data-table table.body tbody");														
+																													var $tr1 = $listviewTable.find("tr.loading").removeClass("loading");
+																													$tr1.find("td div.loading").removeClass("loading");
+
+																													var item = result.jobresult.vpnconnection;	                                                         	
+                                                          $tr1.find("td.publicip span").text(item.publicip);																													
+																													
                                                           cloudStack.dialog.notice({ message: "site-to-site VPN is created successfully." });		
 																												}
 																												else if (result.jobstatus == 2) {
@@ -3469,8 +3475,7 @@
 								}
               }
             },
-            actions: {
-              //???
+            actions: {              
 							remove: {
 								label: 'delete site-to-site VPN',
 								messages: {
@@ -3503,8 +3508,6 @@
 														else {
 															clearInterval(deleteVpnConnectionIntervalID); 
 															if (result.jobstatus == 1) {	
-                                //var updatedObj = result.jobresult.vpnconnection;
-															
 																$.ajax({
 																	url: createURL("deleteVpnGateway"),
 																	dataType: "json",
@@ -3547,17 +3550,19 @@
 																												else {
 																													clearInterval(deleteVpnCustomerGatewayIntervalID); 
 																													if (result.jobstatus == 1) {	
-																														//debugger;																										  
-																														args.complete({ data: {} }); //show notification 
+                                                            $("div.detail-view div.loading-overlay").remove();
+                                                            cloudStack.dialog.notice({ message: "site-to-site VPN has been deleted." });																															
+																														$.removeDetailViewAndTableRow();																														
 																													}
 																													else if (result.jobstatus == 2) {
-																														alert("deleteVpnCustomerGateway failed. Error: " + _s(result.jobresult.errortext));
+																													  $("div.detail-view div.loading-overlay").remove();
+                                                            cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });																										
 																													}
 																												}
 																											},
 																											error: function(XMLHttpResponse) {
-																												var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-																												alert("deleteVpnCustomerGateway failed. Error: " + errorMsg);
+																											  $("div.detail-view div.loading-overlay").remove();
+                                                        cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });																												
 																											}
 																										});
 																									}, 3000);		
@@ -3565,13 +3570,14 @@
 																							});																																									
 																						}
 																						else if (result.jobstatus == 2) {
-																							alert("deleteVpnGateway failed. Error: " + _s(result.jobresult.errortext));
+																							$("div.detail-view div.loading-overlay").remove();
+                                              cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });	
 																						}
 																					}
 																				},
 																				error: function(XMLHttpResponse) {
-																					var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-																					alert("deleteVpnGateway failed. Error: " + errorMsg);
+																					$("div.detail-view div.loading-overlay").remove();
+                                          cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });	
 																				}
 																			});
 																		}, 3000);		
@@ -3579,26 +3585,21 @@
 																});																												
 															}
 															else if (result.jobstatus == 2) {
-																alert("deleteVpnConnection failed. Error: " + _s(result.jobresult.errortext));
+																$("div.detail-view div.loading-overlay").remove();
+                                cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });	
 															}
 														}
 													},
 													error: function(XMLHttpResponse) {
-														var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-														alert("deleteVpnConnection failed. Error: " + errorMsg);
+														$("div.detail-view div.loading-overlay").remove();
+                            cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });	
 													}
 												});
 											}, 3000);		
 										}
-									});
-									
-									
-								},
-								notification: {
-									poll: pollAsyncJobResult
-								}
-							}
-							//???			
+									});										
+								}								
+							}									
             }							
           }
         }
