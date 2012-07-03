@@ -3195,11 +3195,13 @@
         listView: {
           id: 'siteToSiteVpn',
           label: 'site-to-site VPN',
-          fields: {
-            id: { label: 'label.id' },
-            s2svpngatewayid: { label: 's2svpngatewayid' },
-						s2scustomergatewayid: { label: 's2scustomergatewayid' },                    
-            created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
+          fields: {			
+            publicip: { label: 'label.ip.address' },				
+					  gateway: { label: 'label.gateway' },
+						cidrlist: { label: 'CIDR list' },
+						ipsecpsk: { label: 'IPsec Preshared-Key' },
+						ikepolicy: { label: 'IKE policy' },
+						esppolicy: { label: 'ESP policy' }								
           },
           dataProvider: function(args) {					  
 						var array1 = [];  
@@ -3299,7 +3301,7 @@
 										}
 									},
 								  lifetime: { 
-									  label: 'Lifetime of vpn connection (second)',
+									  label: 'Lifetime (second)',
                     defaultValue: '86400',
 										validation: { required: false, number: true }
 									}		
@@ -3376,18 +3378,28 @@
 																												return; //Job has not completed
 																											}
 																											else {                                      
-																												clearInterval(createvpnconnectionIntervalID); 														
-																												if (result.jobstatus == 1) {								
-																													var obj = result.jobresult.vpnconnection;																																																
+																												clearInterval(createvpnconnectionIntervalID); 
+																																																						
+																												if (result.jobstatus == 1) {																														
+																												  //remove loading image on table row																													
+																													var $listviewTable = $("div.list-view  div.data-table table.body tbody");														
+																													var $tr1 = $listviewTable.find("tr.loading").removeClass("loading");
+																													$tr1.find("td div.loading").removeClass("loading");
+
+																													var item = result.jobresult.vpnconnection;	                                                         	
+                                                          $tr1.find("td.publicip span").text(item.publicip);																													
+																													
+                                                          cloudStack.dialog.notice({ message: "site-to-site VPN is created successfully." });		
 																												}
 																												else if (result.jobstatus == 2) {
-																													alert("Failed to create VPN connection. Error: " + _s(result.jobresult.errortext));
+																												  $.removeTableRowInAction();
+															                            cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });																														
 																												}
 																											}
 																										},
 																										error: function(XMLHttpResponse) {
-																											var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-																											alert("Failed to create VPN connection. Error: " + errorMsg);
+																											$.removeTableRowInAction();
+													                            cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });	
 																										}
 																									});                              
 																								}, 3000); 																
@@ -3395,27 +3407,29 @@
 															              });																		
 																					}
 																					else if (result.jobstatus == 2) {
-																						alert("Failed to create VPN customer gateway. Error: " + _s(result.jobresult.errortext));
+																					  $.removeTableRowInAction();
+															              cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });																									
 																					}
 																				}
 																			},
 																			error: function(XMLHttpResponse) {
-																				var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-																				alert("Failed to create VPN customer gateway. Error: " + errorMsg);
+																			  $.removeTableRowInAction();
+													              cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });																				
 																			}
 																		});                              
 																	}, 3000); 																
 																}
 															});									
 														}
-														else if (result.jobstatus == 2) {
-															alert("Failed to create VPN gateway. Error: " + _s(result.jobresult.errortext));
+														else if (result.jobstatus == 2) {		
+															$.removeTableRowInAction();
+															cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });																
 														}
 													}
 												},
-												error: function(XMLHttpResponse) {
-													var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-													alert("Failed to create VPN gateway. Error: " + errorMsg);
+												error: function(XMLHttpResponse) {													
+													$.removeTableRowInAction();
+													cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });	
 												}
 											});                              
 										}, 3000); 																
@@ -3431,11 +3445,21 @@
               details: {
                 title: 'label.details',
                 fields: [
-                  {
-                    id: { label: 'label.id' },
-                    s2svpngatewayid: { label: 's2svpngatewayid' },
-										s2scustomergatewayid: { label: 's2scustomergatewayid' },
-                    created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
+                  {                   
+										id: { label: 'label.id' },
+										
+										//s2svpngatewayid: { label: 'VPN gateway ID' },
+										publicip: { label: 'label.ip.address' },
+										
+										//s2scustomergatewayid: { label: 'Customer gateway ID' }, 
+										gateway: { label: 'label.gateway' },
+										cidrlist: { label: 'CIDR list' },
+										ipsecpsk: { label: 'IPsec Preshared-Key' },
+										ikepolicy: { label: 'IKE policy' },
+										esppolicy: { label: 'ESP policy' },
+										lifetime: { label: 'Lifetime (second)' },
+																			 
+										created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }										
                   }
                 ],
                 dataProvider: function(args) {								  
@@ -3450,7 +3474,133 @@
 									});									
 								}
               }
-            }
+            },
+            actions: {              
+							remove: {
+								label: 'delete site-to-site VPN',
+								messages: {
+									confirm: function(args) {
+										return 'Please confirm that you want to delete this site-to-site VPN';
+									},
+									notification: function(args) {
+										return 'delete site-to-site VPN';
+									}
+								},
+								action: function(args) {
+									$.ajax({
+										url: createURL("deleteVpnConnection"),
+										dataType: "json",
+										data: {
+											id: args.context.siteToSiteVpn[0].id
+										},
+										async: true,
+										success: function(json) {		
+											var jid = json.deletevpnconnectionresponse.jobid;										
+											var deleteVpnConnectionIntervalID = setInterval(function() { 	
+												$.ajax({
+													url: createURL("queryAsyncJobResult&jobId=" + jid),
+													dataType: "json",
+													success: function(json) {
+														var result = json.queryasyncjobresultresponse;
+														if (result.jobstatus == 0) {
+															return; //Job has not completed
+														}
+														else {
+															clearInterval(deleteVpnConnectionIntervalID); 
+															if (result.jobstatus == 1) {	
+																$.ajax({
+																	url: createURL("deleteVpnGateway"),
+																	dataType: "json",
+																	data: {
+																		id: args.context.siteToSiteVpn[0].s2svpngatewayid
+																	},
+																	async: true,
+																	success: function(json) {		
+																		var jid = json.deletevpngatewayresponse.jobid;							
+																		var deleteVpnGatewayIntervalID = setInterval(function() { 	
+																			$.ajax({
+																				url: createURL("queryAsyncJobResult&jobId=" + jid),
+																				dataType: "json",
+																				success: function(json) {
+																					var result = json.queryasyncjobresultresponse;
+																					if (result.jobstatus == 0) {
+																						return; //Job has not completed
+																					}
+																					else {
+																						clearInterval(deleteVpnGatewayIntervalID); 
+																						if (result.jobstatus == 1) {					
+																							$.ajax({
+																								url: createURL("deleteVpnCustomerGateway"),
+																								dataType: "json",
+																								data: {
+																									id: args.context.siteToSiteVpn[0].s2scustomergatewayid
+																								},
+																								async: true,
+																								success: function(json) {	
+																									var jid = json.deletecustomergatewayresponse.jobid;			
+																									var deleteVpnCustomerGatewayIntervalID = setInterval(function() { 	
+																										$.ajax({
+																											url: createURL("queryAsyncJobResult&jobId=" + jid),
+																											dataType: "json",
+																											success: function(json) {
+																												var result = json.queryasyncjobresultresponse;
+																												if (result.jobstatus == 0) {
+																													return; //Job has not completed
+																												}
+																												else {
+																													clearInterval(deleteVpnCustomerGatewayIntervalID); 
+																													if (result.jobstatus == 1) {	
+                                                            $("div.detail-view div.loading-overlay").remove();
+                                                            cloudStack.dialog.notice({ message: "site-to-site VPN has been deleted." });																															
+																														$.removeDetailViewAndTableRow();																														
+																													}
+																													else if (result.jobstatus == 2) {
+																													  $("div.detail-view div.loading-overlay").remove();
+                                                            cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });																										
+																													}
+																												}
+																											},
+																											error: function(XMLHttpResponse) {
+																											  $("div.detail-view div.loading-overlay").remove();
+                                                        cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });																												
+																											}
+																										});
+																									}, 3000);		
+																								}
+																							});																																									
+																						}
+																						else if (result.jobstatus == 2) {
+																							$("div.detail-view div.loading-overlay").remove();
+                                              cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });	
+																						}
+																					}
+																				},
+																				error: function(XMLHttpResponse) {
+																					$("div.detail-view div.loading-overlay").remove();
+                                          cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });	
+																				}
+																			});
+																		}, 3000);		
+																	}
+																});																												
+															}
+															else if (result.jobstatus == 2) {
+																$("div.detail-view div.loading-overlay").remove();
+                                cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });	
+															}
+														}
+													},
+													error: function(XMLHttpResponse) {
+														$("div.detail-view div.loading-overlay").remove();
+                            cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });	
+													}
+												});
+											}, 3000);		
+										}
+									});										
+								}								
+							}									
+            }							
           }
         }
       }

@@ -55,6 +55,7 @@ var pollAsyncJobResult = function(args) {
       } 
       else {
         if (result.jobstatus == 1) { // Succeeded
+				  debugger;
           if(args._custom.getUpdatedItem != null && args._custom.getActionFilter != null) {
             args.complete({
               data: args._custom.getUpdatedItem(json),
@@ -273,6 +274,32 @@ cloudStack.actionFilter = {
 		allowedActions.push('remove');
 		
 		return allowedActions;
+	}
+}
+
+$.removeTableRowInAction = function() { //remove table row that has loading image on top of it (i.e. table row that is in action)	(e.g. after add action in listView succeeds)
+	var $listviewTable = $("div.list-view  div.data-table table.body tbody");														
+	var $tr1 = $listviewTable.find("tr.loading").removeClass("loading");
+	$tr1.find("td div.loading").removeClass("loading");
+	$tr1.remove();	
+	if($listviewTable.find("tr").length == 0)
+		$listviewTable.append($("<tr>").addClass("empty even").append($("<td>").text("No data to show")));
+}
+
+$.removeDetailViewAndTableRow = function() { //remove detail view and corresponding table row (e.g. after remove action in detailView succeeds)  
+  var $detailView = $("div.detail-view");																														
+	var $panel = $detailView.closest('.panel');
+	var $browser = $('#browser .container');	
+	if ($detailView.is(':visible')) {
+		$browser.cloudBrowser('selectPanel', {
+			panel: $panel.prev()
+		});
+	}
+	if($detailView.data("list-view-row") != null) {
+		$detailView.data("list-view-row").remove();		
+		var $listviewTable = $("div.list-view  div.data-table table.body tbody");		
+		if($listviewTable.find("tr").length == 0)
+		  $listviewTable.append($("<tr>").addClass("empty even").append($("<td>").text("No data to show")));		
 	}
 }
 

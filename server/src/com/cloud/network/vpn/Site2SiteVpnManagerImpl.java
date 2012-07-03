@@ -145,6 +145,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
                     + vpnGatewayId + " already existed!");
         }
         Site2SiteVpnConnectionVO conn = new Site2SiteVpnConnectionVO(vpnGatewayId, customerGatewayId);
+        conn.setState(State.Pending);
+        _vpnConnectionDao.persist(conn);
         return conn;
     }
 

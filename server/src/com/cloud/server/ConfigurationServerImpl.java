@@ -1030,7 +1030,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         defaultVpcNetworkOfferingProviders.put(Service.Dhcp, Provider.VPCVirtualRouter);
         defaultVpcNetworkOfferingProviders.put(Service.Dns, Provider.VPCVirtualRouter);
         defaultVpcNetworkOfferingProviders.put(Service.UserData, Provider.VPCVirtualRouter);
-        defaultVpcNetworkOfferingProviders.put(Service.Firewall, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProviders.put(Service.NetworkACL, Provider.VPCVirtualRouter);
         defaultVpcNetworkOfferingProviders.put(Service.Gateway, Provider.VPCVirtualRouter);
         defaultVpcNetworkOfferingProviders.put(Service.Lb, Provider.VPCVirtualRouter);
         defaultVpcNetworkOfferingProviders.put(Service.SourceNat, Provider.VPCVirtualRouter);

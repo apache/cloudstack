@@ -30,46 +30,46 @@ usage() {
 #set -x
 #FIXME: eating up the error code during execution of iptables
 acl_remove_backup() {
-  sudo iptables -F _ACL_INBOUND_$ip 2>/dev/null
-  sudo iptables -D FORWARD -o $dev -d $gcidr -j _ACL_INBOUND_$ip  2>/dev/null
-  sudo iptables -X _ACL_INBOUND_$ip 2>/dev/null
-  sudo iptables -F _ACL_OUTBOUND_$ip 2>/dev/null
-  sudo iptables -D FORWARD -i $dev -s $gcidr -j _ACL_OUTBOUND_$ip  2>/dev/null
-  sudo iptables -X _ACL_OUTBOUND_$ip 2>/dev/null
+  sudo iptables -F _ACL_INBOUND_$dev 2>/dev/null
+  sudo iptables -D FORWARD -o $dev -d $gcidr -j _ACL_INBOUND_$dev  2>/dev/null
+  sudo iptables -X _ACL_INBOUND_$dev 2>/dev/null
+  sudo iptables -F _ACL_OUTBOUND_$dev 2>/dev/null
+  sudo iptables -D FORWARD -i $dev -s $gcidr -j _ACL_OUTBOUND_$dev  2>/dev/null
+  sudo iptables -X _ACL_OUTBOUND_$dev 2>/dev/null
 }
 
 acl_remove() {
-  sudo iptables -F ACL_INBOUND_$ip 2>/dev/null
-  sudo iptables -D FORWARD -o $dev -d $gcidr -j ACL_INBOUND_$ip  2>/dev/null
-  sudo iptables -X ACL_INBOUND_$ip 2>/dev/null
-  sudo iptables -F ACL_OUTBOUND_$ip 2>/dev/null
-  sudo iptables -D FORWARD -i $dev -s $gcidr -j ACL_OUTBOUND_$ip  2>/dev/null
-  sudo iptables -X ACL_OUTBOUND_$ip 2>/dev/null
+  sudo iptables -F ACL_INBOUND_$dev 2>/dev/null
+  sudo iptables -D FORWARD -o $dev -d $gcidr -j ACL_INBOUND_$dev  2>/dev/null
+  sudo iptables -X ACL_INBOUND_$dev 2>/dev/null
+  sudo iptables -F ACL_OUTBOUND_$dev 2>/dev/null
+  sudo iptables -D FORWARD -i $dev -s $gcidr -j ACL_OUTBOUND_$dev  2>/dev/null
+  sudo iptables -X ACL_OUTBOUND_$dev 2>/dev/null
 }
 
 acl_restore() {
   acl_remove
-  sudo iptables -E _ACL_INBOUND_$ip ACL_INBOUND_$ip 2>/dev/null
-  sudo iptables -E _ACL_OUTBOUND_$ip ACL_OUTBOUND_$ip 2>/dev/null
+  sudo iptables -E _ACL_INBOUND_$dev ACL_INBOUND_$dev 2>/dev/null
+  sudo iptables -E _ACL_OUTBOUND_$dev ACL_OUTBOUND_$dev 2>/dev/null
 }
 
 acl_save() {
   acl_remove_backup
-  sudo iptables -E ACL_INBOUND_$ip _ACL_INBOUND_$ip 2>/dev/null
-  sudo iptables -E ACL_OUTBOUND_$ip _ACL_OUTBOUND_$ip 2>/dev/null
+  sudo iptables -E ACL_INBOUND_$dev _ACL_INBOUND_$dev 2>/dev/null
+  sudo iptables -E ACL_OUTBOUND_$dev _ACL_OUTBOUND_$dev 2>/dev/null
 }
 
 acl_chain_for_guest_network () {
   acl_save
   # inbound
-  sudo iptables -N ACL_INBOUND_$ip 2>/dev/null
+  sudo iptables -N ACL_INBOUND_$dev 2>/dev/null
   # drop if no rules match (this will be the last rule in the chain)
-  sudo iptables -A ACL_INBOUND_$ip -j DROP 2>/dev/null
-  sudo iptables -A FORWARD -o $dev -d $gcidr -j ACL_INBOUND_$ip  2>/dev/null
+  sudo iptables -A ACL_INBOUND_$dev -j DROP 2>/dev/null
+  sudo iptables -A FORWARD -o $dev -d $gcidr -j ACL_INBOUND_$dev  2>/dev/null
   # outbound
-  sudo iptables -N ACL_OUTBOUND_$ip 2>/dev/null
-  sudo iptables -A ACL_OUTBOUND_$ip -j DROP 2>/dev/null
-  sudo iptables -A FORWARD -i $dev -s $gcidr -j ACL_OUTBOUND_$ip  2>/dev/null
+  sudo iptables -N ACL_OUTBOUND_$dev 2>/dev/null
+  sudo iptables -A ACL_OUTBOUND_$dev -j DROP 2>/dev/null
+  sudo iptables -A FORWARD -i $dev -s $gcidr -j ACL_OUTBOUND_$dev  2>/dev/null
 }
 
 
@@ -102,19 +102,19 @@ acl_entry_for_guest_network() {
       [ "$sport" == "-1" ] && typecode="any"
       if [ "$ttype" == "Ingress" ]
       then
-        sudo iptables -I ACL_INBOUND_$ip -p $prot -s $lcidr  \
+        sudo iptables -I ACL_INBOUND_$dev -p $prot -s $lcidr  \
                     --icmp-type $typecode  -j ACCEPT
       else
-        sudo iptables -I ACL_OUTBOUND_$ip -p $prot -d $lcidr  \
+        sudo iptables -I ACL_OUTBOUND_$dev -p $prot -d $lcidr  \
                     --icmp-type $typecode  -j ACCEPT
       fi
     else
       if [ "$ttype" == "Ingress" ]
       then
-        sudo iptables -I ACL_INBOUND_$ip -p $prot -s $lcidr \
+        sudo iptables -I ACL_INBOUND_$dev -p $prot -s $lcidr \
                     $DPORT -j ACCEPT
       else
-        sudo iptables -I ACL_OUTBOUND_$ip -p $prot -d $lcidr \
+        sudo iptables -I ACL_OUTBOUND_$dev -p $prot -d $lcidr \
                     $DPORT -j ACCEPT
       fi
     fi

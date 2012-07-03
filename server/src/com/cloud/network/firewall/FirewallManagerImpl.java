@@ -370,15 +370,6 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             if (!_elbEnabled) {
                 caps = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.Lb);
             }
-        } else if (purpose == Purpose.Firewall) {
-            caps = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.Firewall);
-            if (caps != null) {
-                String firewallType = caps.get(Capability.FirewallType);
-                //regular firewall rules are not supported in networks supporting network ACLs
-                if (firewallType.equalsIgnoreCase("networkacl")) {
-                    throw new UnsupportedOperationException("Firewall rules are not supported in network " + network);
-                }
-            }
         } else if (purpose == Purpose.PortForwarding) {
             caps = _networkMgr.getNetworkServiceCapabilities(network.getId(), Service.PortForwarding);
         }

@@ -2132,6 +2132,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (network == null) {
                 if (zone.getNetworkType() == DataCenter.NetworkType.Basic) {
                     networkId = _networkMgr.getExclusiveGuestNetwork(zoneId).getId();
+                    network = _networkMgr.getNetwork(networkId);
                 } else {
                     network = _networkMgr.getNetworkWithSecurityGroupEnabled(zoneId);
                     if (network == null) {

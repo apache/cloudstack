@@ -35,9 +35,9 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkService;
 import com.cloud.network.PublicIpAddress;
-import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnConnectionDao;
@@ -112,9 +112,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 s_logger.trace("Element " + getProvider().getName() + " doesn't support service " + service.getName() 
                         + " in the network " + network);
                 return false;
-            } else if (service == Service.Firewall) {
-                //todo - get capability here
-            }
+            } 
         }
 
         return true;
@@ -296,7 +294,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
     
     private static Map<Service, Map<Capability, String>> setCapabilities() {
-        Map<Service, Map<Capability, String>> capabilities = VirtualRouterElement.capabilities;
+        Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
+        capabilities.putAll(VirtualRouterElement.capabilities);
         
         Map<Capability, String> sourceNatCapabilities = capabilities.get(Service.SourceNat);
         sourceNatCapabilities.put(Capability.RedundantRouter, "false");
@@ -306,10 +305,14 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         vpnCapabilities.put(Capability.VpnTypes, "s2svpn");
         capabilities.put(Service.Vpn, vpnCapabilities);
         
-        Map<Capability, String> firewallCapabilities = capabilities.get(Service.Firewall);
-        firewallCapabilities.put(Capability.FirewallType, "networkacl");
-        capabilities.put(Service.Firewall, firewallCapabilities);
-
+        //remove firewall capability
+        capabilities.remove(Service.Firewall);
+   
+        //add network ACL capability
+        Map<Capability, String> networkACLCapabilities = new HashMap<Capability, String>();
+        networkACLCapabilities.put(Capability.SupportedProtocols, "tcp,udp,icmp");
+        capabilities.put(Service.NetworkACL, networkACLCapabilities);
+        
         return capabilities;
     }
     
@@ -395,7 +398,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     
     @Override
     public boolean applyNetworkACLs(Network config, List<? extends FirewallRule> rules) throws ResourceUnavailableException {
-        if (canHandle(config, Service.Firewall)) {
+        if (canHandle(config, Service.NetworkACL)) {
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " +

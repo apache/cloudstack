@@ -7413,9 +7413,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             String [][] rules = cmd.generateFwRules();
             StringBuilder sb = new StringBuilder();
             String[] aclRules = rules[0];
-            if (aclRules.length == 0) {
-                return new SetNetworkACLAnswer(cmd, true, results);
-            }
             
             for (int i = 0; i < aclRules.length; i++) {
                 sb.append(aclRules[i]).append(',');
@@ -7475,7 +7472,32 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     
     
     private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
-        // TODO Auto-generated method stub
-        return new SetStaticRouteAnswer(cmd, true, null);
+        String[] results = new String[cmd.getStaticRoutes().length];
+        String callResult;
+        Connection conn = getConnection();
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        try {
+            String [][] rules = cmd.generateSRouteRules();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < rules.length; i++) {
+                sb.append(rules[i]).append(',');
+            }
+
+            String args = "vpc_staticroute.sh " + routerIp;
+            args += " -a " + sb.toString();
+            callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+            if (callResult == null || callResult.isEmpty()) {
+                //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
+                for (int i=0; i < results.length; i++) {
+                    results[i] = "Failed";
+                }
+                return new SetStaticRouteAnswer(cmd, false, results);
+            }
+            return new SetStaticRouteAnswer(cmd, true, results);
+        } catch (Exception e) {
+            String msg = "SetNetworkACL failed due to " + e.toString();
+            s_logger.error(msg, e);
+            return new SetStaticRouteAnswer(cmd, false, results);
+        }
     }
 }

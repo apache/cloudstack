@@ -140,8 +140,10 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkTrafficType;
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteCustomerGateway;
+import com.cloud.network.Site2SiteCustomerGatewayVO;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
@@ -3643,8 +3645,29 @@ public class ApiResponseHelper implements ResponseGenerator {
     public Site2SiteVpnConnectionResponse createSite2SiteVpnConnectionResponse(Site2SiteVpnConnection result) {
         Site2SiteVpnConnectionResponse response = new Site2SiteVpnConnectionResponse();
         response.setId(result.getId());
-        response.setVpnGatewayId(result.getVpnGatewayId());
-        response.setCustomerGatewayId(result.getCustomerGatewayId());
+        
+        response.setVpnGatewayId(result.getVpnGatewayId()); 
+        Long vpnGatewayId = result.getVpnGatewayId();
+        if(vpnGatewayId != null) {
+        	Site2SiteVpnGatewayVO vpnGateway = ApiDBUtils.findVpnGatewayById(vpnGatewayId);
+        	
+        	long ipId = vpnGateway.getAddrId();
+        	IPAddressVO ipObj = ApiDBUtils.findIpAddressById(ipId);
+        	response.setIp(ipObj.getAddress().addr());  
+        }
+        
+        response.setCustomerGatewayId(result.getCustomerGatewayId()); 
+        Long customerGatewayId = result.getCustomerGatewayId();
+        if(customerGatewayId != null) {
+        	Site2SiteCustomerGatewayVO customerGateway = ApiDBUtils.findCustomerGatewayById(customerGatewayId);
+        	response.setGatewayIp(customerGateway.getGatewayIp());
+        	response.setGuestCidrList(customerGateway.getGuestCidrList());
+        	response.setIpsecPsk(customerGateway.getIpsecPsk());
+        	response.setIkePolicy(customerGateway.getIkePolicy());
+        	response.setEspPolicy(customerGateway.getEspPolicy());
+        	response.setLifetime(customerGateway.getLifetime());
+        }      
+                
         response.setCreated(result.getCreated());
         response.setRemoved(result.getRemoved());
         response.setObjectName("vpnconnection");

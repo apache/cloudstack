@@ -23,56 +23,68 @@ then
 fi
 
 usage() {
-  printf "Usage: %s: (-A|-D)   -c < cidr >   -l <public ip address> -g < gateway>  \n" $(basename $0) >&2
+  printf "Usage: %s:  -a < routes > \n" $(basename $0) >&2
 }
 
 #set -x
 
+flush_table_backup() {
+  flush_table "static_route_back"
+}
+
+flush_table() {
+  local tab=$1
+  sudo ip route flush table $tab
+}
+
+copy_table() {
+  local from=$1
+  local to=$2
+  sudo ip route show table $from | while read route
+  do
+    sudo ip route add table $to $route
+  done
+}
+
+backup_table() {
+  flush_table "static_route_back"
+  copy_table "static_route" "static_route_back"
+  flush table "static_route"
+}
+
+restore_table() {
+  flush_table "static_route"
+  copy_table "static_route_back" "static_route"
+  flush table "static_route_back"
+}
+
 static_route() {
-  local op=$1
-  local publicIp=$2
-  local gateway=$3
-  local cidr=$4
-
+  local rule=$1
+  local ip=$(echo $rule | cut -d: -f1)
+  local gateway=$(echo $rule | cut -d: -f2)
+  local cidr=$(echo $rule | cut -d: -f3)
   logger -t cloud "$(basename $0): static route: public ip=$publicIp \
-  	gateway=$gateway cidr=$cidr op=$op"
-  #if adding, this might be a duplicate, so delete the old one first
-  [ "$op" == "add" ] && static_routet "del" $publicIp $gateway $cidr 
-
-  sudo ip route $op $cidr dev $ethDev via $gateway &>>  $OUTFILE
+  	gateway=$gateway cidr=$cidr"
+  local dev=$(getDevByIp $ip)
+  if [ $? -gt 0 ]
+  then
+    return 1
+  fi
+  sudo ip route table static_route add $cidr dev $dev via $gateway &>>  $OUTFILE
   result=$?
   logger -t cloud "$(basename $0): done static route: public ip=$publicIp \
-  	gateway=$gateway cidr=$cidr op=$op"
-
-  if [ "$op" == "del" ]
-  then
-    return 0
-  fi
+  	gateway=$gateway cidr=$cidr"
   return $result
 }
 
-
-
 gflag=
-lflag=
-cflag=
-op=""
-while getopts 'ADg:l:c:' OPTION
+aflag=
+while getopts 'a:' OPTION
 
 do
   case $OPTION in
-  A)    op="add"
-        ;;
-  D)    op="del"
-        ;;
-  g)    gflag=1
-        gateway="$OPTARG"
-        ;;
-  l)    lflag=1
-        publicIp="$OPTARG"
-        ;;
-  c)    cflag=1
-        cidr="$OPTARG"
+  a)    aflag=1
+        rules="$OPTARG"
         ;;
   ?)    usage
         unlock_exit 2 $lock $locked
@@ -80,14 +92,35 @@ do
   esac
 done
 
-ethDev=$(getEthByIp $publicIp)
-result=$?
-if [ $result -gt 0 ]
+if [ -n "$rules" ]
 then
-  unlock_exit $result $lock $locked
+  rules_list=$(echo $rules | cut -d, --output-delimiter=" ")
 fi
-OUTFILE=$(mktemp)
 
-static_route $op $publicIp $gateway $cidr
-result=$?
-unlock_exit $result $lock $locked
+success=0
+
+backup_table
+
+for r in $rules_list
+do
+  static_route $r
+  success=$?
+  if [ $success -gt 0 ]
+  then
+    logger -t cloud "$(basename $0): failure to apply fw rules for guest network: $gcidr"
+    break
+  else
+    logger -t cloud "$(basename $0): successful in applying fw rules for guest network: $gcidr"
+  fi
+done
+
+if [ $success -gt 0 ]
+then
+  logger -t cloud "$(basename $0): restoring from backup for guest network: $gcidr"
+  restore_table
+else
+  logger -t cloud "$(basename $0): deleting backup for guest network: $gcidr"
+  flush_table_backup
+fi
+unlock_exit $success $lock $locked
+
