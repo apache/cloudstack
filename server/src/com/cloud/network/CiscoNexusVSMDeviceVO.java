@@ -58,7 +58,7 @@ public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity{
     @Column(name = "username")
     private String vsmUserName;
     
-    @Column(name = "password")
+    @Column(name = "password", encryptable=true)
     private String vsmPassword;
 
     @Column(name = "ipaddr")
