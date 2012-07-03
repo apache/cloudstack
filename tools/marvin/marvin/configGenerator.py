@@ -164,6 +164,7 @@ def describe_setup_in_basic_mode():
         z.internaldns2 = "192.168.110.253"
         z.name = "test"+str(l)
         z.networktype = 'Basic'
+        z.securitygroupenabled = 'True'
     
         '''create 10 pods'''
         for i in range(2):

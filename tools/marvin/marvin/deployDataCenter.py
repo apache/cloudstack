@@ -257,8 +257,15 @@ class deployDataCenters():
                 listnetworkoffering = \
                 listNetworkOfferings.listNetworkOfferingsCmd()
 
-                listnetworkoffering.name = \
-                "DefaultSharedNetworkOfferingWithSGService"
+                if zone.securitygroupenabled:
+                    listnetworkoffering.name = \
+                    "DefaultSharedNetworkOfferingWithSGService"
+                else:
+                    # need both name and display text for single result
+                    listnetworkoffering.name = \
+                    "DefaultSharedNetworkOffering"
+                    listnetworkoffering.displaytext = \
+                    "Offering for Shared networks"
 
                 listnetworkofferingresponse = \
                 self.apiClient.listNetworkOfferings(listnetworkoffering)
