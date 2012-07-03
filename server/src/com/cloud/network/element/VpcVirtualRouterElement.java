@@ -35,9 +35,9 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkService;
 import com.cloud.network.PublicIpAddress;
-import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnConnectionDao;
@@ -294,7 +294,8 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     }
     
     private static Map<Service, Map<Capability, String>> setCapabilities() {
-        Map<Service, Map<Capability, String>> capabilities = VirtualRouterElement.capabilities;
+        Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
+        capabilities.putAll(VirtualRouterElement.capabilities);
         
         Map<Capability, String> sourceNatCapabilities = capabilities.get(Service.SourceNat);
         sourceNatCapabilities.put(Capability.RedundantRouter, "false");
