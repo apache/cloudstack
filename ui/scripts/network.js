@@ -3378,18 +3378,22 @@
 																												return; //Job has not completed
 																											}
 																											else {                                      
-																												clearInterval(createvpnconnectionIntervalID); 														
-																												if (result.jobstatus == 1) {								
-																													var obj = result.jobresult.vpnconnection;																																																
+																												clearInterval(createvpnconnectionIntervalID); 
+																																																						
+																												if (result.jobstatus == 1) {	
+																												  //var obj = result.jobresult.vpnconnection;			
+																												  $.removeTableRowInAction();
+                                                          cloudStack.dialog.notice({ message: "site-to-site VPN is created successfully." });		
 																												}
 																												else if (result.jobstatus == 2) {
-																													alert("Failed to create VPN connection. Error: " + _s(result.jobresult.errortext));
+																												  $.removeTableRowInAction();
+															                            cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });																														
 																												}
 																											}
 																										},
 																										error: function(XMLHttpResponse) {
-																											var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-																											alert("Failed to create VPN connection. Error: " + errorMsg);
+																											$.removeTableRowInAction();
+													                            cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });	
 																										}
 																									});                              
 																								}, 3000); 																
@@ -3397,27 +3401,29 @@
 															              });																		
 																					}
 																					else if (result.jobstatus == 2) {
-																						alert("Failed to create VPN customer gateway. Error: " + _s(result.jobresult.errortext));
+																					  $.removeTableRowInAction();
+															              cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });																									
 																					}
 																				}
 																			},
 																			error: function(XMLHttpResponse) {
-																				var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-																				alert("Failed to create VPN customer gateway. Error: " + errorMsg);
+																			  $.removeTableRowInAction();
+													              cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });																				
 																			}
 																		});                              
 																	}, 3000); 																
 																}
 															});									
 														}
-														else if (result.jobstatus == 2) {
-															alert("Failed to create VPN gateway. Error: " + _s(result.jobresult.errortext));
+														else if (result.jobstatus == 2) {		
+															$.removeTableRowInAction();
+															cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });																
 														}
 													}
 												},
-												error: function(XMLHttpResponse) {
-													var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-													alert("Failed to create VPN gateway. Error: " + errorMsg);
+												error: function(XMLHttpResponse) {													
+													$.removeTableRowInAction();
+													cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });	
 												}
 											});                              
 										}, 3000); 																
@@ -3476,7 +3482,6 @@
 									}
 								},
 								action: function(args) {
-									debugger;
 									$.ajax({
 										url: createURL("deleteVpnConnection"),
 										dataType: "json",
@@ -3484,8 +3489,7 @@
 											id: args.context.siteToSiteVpn[0].id
 										},
 										async: true,
-										success: function(json) {										
-											debugger;
+										success: function(json) {		
 											var jid = json.deletevpnconnectionresponse.jobid;										
 											var deleteVpnConnectionIntervalID = setInterval(function() { 	
 												$.ajax({
@@ -3521,8 +3525,7 @@
 																					}
 																					else {
 																						clearInterval(deleteVpnGatewayIntervalID); 
-																						if (result.jobstatus == 1) {		
-                                              //debugger;																						
+																						if (result.jobstatus == 1) {					
 																							$.ajax({
 																								url: createURL("deleteVpnCustomerGateway"),
 																								dataType: "json",
@@ -3530,8 +3533,7 @@
 																									id: args.context.siteToSiteVpn[0].s2scustomergatewayid
 																								},
 																								async: true,
-																								success: function(json) {										
-																									debugger;
+																								success: function(json) {	
 																									var jid = json.deletecustomergatewayresponse.jobid;			
 																									var deleteVpnCustomerGatewayIntervalID = setInterval(function() { 	
 																										$.ajax({
