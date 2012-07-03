@@ -1189,43 +1189,38 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         boolean isPodBased = (dest.getDataCenter().getNetworkType() == NetworkType.Basic || 
                 _networkMgr.areServicesSupportedInNetwork(guestNetwork.getId(), Service.SecurityGroup)) 
                 && guestNetwork.getTrafficType() == TrafficType.Guest;
-        Long podId = null;
-        if (isPodBased) {
-            Pod pod = dest.getPod();
-            if (pod != null) {
-                podId = pod.getId();
-            }
-        }
+
         Pair<DeploymentPlan, List<DomainRouterVO>> planAndRouters = getDeploymentPlanAndRouters(isPodBased, dest, guestNetwork.getId());
         DeploymentPlan plan = planAndRouters.first();
         List<DomainRouterVO> routers = planAndRouters.second();
         
         //2) Figure out required routers count
-            int routerCount = 1;
-            if (isRedundant) {
-                routerCount = 2;
-            }
+        int routerCount = 1;
+        if (isRedundant) {
+            routerCount = 2;
+        }
 
-            /* If it is the single router network, then keep it untouched */
-            for (DomainRouterVO router : routers) {
-                if (!router.getIsRedundantRouter()) {
-                    routerCount = 1;
-                }
+        /* If it is the single router network, then keep it untouched */
+        for (DomainRouterVO router : routers) {
+            if (!router.getIsRedundantRouter() || isPodBased) {
+                routerCount = 1;
+                break;
             }
+        }
 
-            /* If old network is redundant but new is single router, then routers.size() = 2 but routerCount = 1 */
-        if (routers.size() >= routerCount ||  (isPodBased && podId == null)) {
-                return routers;
-            }
+        /* If old network is redundant but new is single router, then routers.size() = 2 but routerCount = 1 */
+        if (routers.size() >= routerCount) {
+            return routers;
+        }
 
-            if (routers.size() >= 5) {
-                s_logger.error("Too much redundant routers!");
-            }
+        if (routers.size() >= 5) {
+            s_logger.error("Too much redundant routers!");
+        }
 
         Network network = _networkDao.acquireInLockTable(guestNetwork.getId());
         if (network == null) {
             throw new ConcurrentOperationException("Unable to lock network " + guestNetwork.getId());
-            } 
+        } 
 
         try {
             //Check if providers are supported in the physical networks
