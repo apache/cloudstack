@@ -44,7 +44,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.addr.PrivateIp;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
@@ -723,13 +723,13 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public Map<PrivateIp, Set<Service>> getIpToServices(List<PrivateIp> publicIps, boolean rulesRevoked, boolean includingFirewall) {
+    public Map<PublicIp, Set<Service>> getIpToServices(List<PublicIp> publicIps, boolean rulesRevoked, boolean includingFirewall) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Map<Provider, ArrayList<PrivateIp>> getProviderToIpList(Network network, Map<PrivateIp, Set<Service>> ipToServices) {
+    public Map<Provider, ArrayList<PublicIp>> getProviderToIpList(Network network, Map<PublicIp, Set<Service>> ipToServices) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -750,14 +750,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return false;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#getAccountNetworkDomain(long, long)
-     */
-    @Override
-    public String getAccountNetworkDomain(long accountId, long zoneId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#getDefaultNetworkDomain()
@@ -1014,15 +1006,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#assignPublicIpAddress(long, java.lang.Long, com.cloud.user.Account, com.cloud.dc.Vlan.VlanType, java.lang.Long, java.lang.String, boolean)
-     */
-    @Override
-    public PrivateIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#checkVirtualNetworkCidrOverlap(java.lang.Long, java.lang.String)
      */
     @Override
@@ -1053,7 +1036,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      * @see com.cloud.network.NetworkManager#assignSourceNatIpAddressToGuestNetwork(com.cloud.user.Account, com.cloud.network.Network)
      */
     @Override
-    public PrivateIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) throws InsufficientAddressCapacityException, ConcurrentOperationException {
+    public PublicIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) throws InsufficientAddressCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -1062,7 +1045,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      * @see com.cloud.network.NetworkManager#assignSourceNatIpAddressToVpc(com.cloud.user.Account, com.cloud.network.vpc.Vpc)
      */
     @Override
-    public PrivateIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException {
+    public PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -1110,5 +1093,23 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     public boolean isPrivateGateway(Nic guestNic) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#assignPublicIpAddress(long, java.lang.Long, com.cloud.user.Account, com.cloud.dc.Vlan.VlanType, java.lang.Long, java.lang.String, boolean)
+     */
+    @Override
+    public PublicIp assignPublicIpAddress(long dcId, Long podId, Account owner, VlanType type, Long networkId, String requestedIp, boolean isSystem) throws InsufficientAddressCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#getAccountNetworkDomain(long, long)
+     */
+    @Override
+    public String getAccountNetworkDomain(long accountId, long zoneId) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

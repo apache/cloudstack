@@ -62,7 +62,7 @@ import com.cloud.network.ExternalLoadBalancerDeviceVO.LBDeviceState;
 import com.cloud.network.ExternalNetworkDeviceManager.NetworkDevice;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.addr.PrivateIp;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.ExternalFirewallDeviceDao;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -477,7 +477,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
                             // acquire a public IP to associate with lb appliance (used as subnet IP to make the
 // appliance part of private network)
-                            PrivateIp publicIp = _networkMgr.assignPublicIpAddress(guestConfig.getDataCenterId(), null, _accountMgr.getSystemAccount(), VlanType.VirtualNetwork, null, null, false);
+                            PublicIp publicIp = _networkMgr.assignPublicIpAddress(guestConfig.getDataCenterId(), null, _accountMgr.getSystemAccount(), VlanType.VirtualNetwork, null, null, false);
                             String publicIPNetmask = publicIp.getVlanNetmask();
                             String publicIPgateway = publicIp.getVlanGateway();
                             String publicIPVlanTag = publicIp.getVlanTag();
