@@ -3114,69 +3114,127 @@
             zone: { label: 'Zone' },
             cidr: { label: 'CIDR' }
           },
-          dataProvider: function(args) {
-            args.response.success({
-              data: [
-                {
-                  name: 'VPC 1',
-                  zone: 'San Jose',
-                  cidr: '0.0.0.0/0',
-                  networkdomain: 'testdomain',
-                  accountdomain: 'testdomain'
-                },
-                {
-                  name: 'VPC 2',
-                  zone: 'San Jose',
-                  cidr: '0.0.0.0/0',
-                  networkdomain: 'testdomain',
-                  accountdomain: 'testdomain'
-                },
-                {
-                  name: 'VPC 3',
-                  zone: 'Cupertino',
-                  cidr: '0.0.0.0/0',
-                  networkdomain: 'testdomain',
-                  accountdomain: 'testdomain'
-                },
-                {
-                  name: 'VPC 4',
-                  zone: 'San Jose',
-                  cidr: '0.0.0.0/0',
-                  networkdomain: 'testdomain',
-                  accountdomain: 'testdomain'
-                }
-              ]
-            });
+          dataProvider: function(args) {            
+						var array1 = [];  
+						if(args.filterBy != null) {          
+							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+								switch(args.filterBy.search.by) {
+								case "name":
+									if(args.filterBy.search.value.length > 0)
+										array1.push("&keyword=" + args.filterBy.search.value);
+									break;
+								}
+							}
+						}
+						
+            $.ajax({
+              url: createURL("listVPCs&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              dataType: "json",
+              async: true,
+              success: function(json) {
+                var items = json.listvpcsresponse.vpc; 
+                args.response.success({data:items});
+              }
+            });						
           },
           actions: {
             add: {
               label: 'Add VPC',
               createForm: {
-                title: 'Add new VPC',
+                title: 'Add VPC',
+								messages: {
+									notification: function(args) { 
+										return 'Add VPC'; 
+									}
+								},
                 fields: {
-                  name: { label: 'Name', validation: { required: true } },
-                  zone: {
+                  name: { 
+									  label: 'label.name', 
+										validation: { required: true } 
+									},   
+                  displaytext: {
+                    label: 'label.description',
+										validation: { required: true } 
+                  },									
+									zoneid: {
                     label: 'Zone',
                     validation: { required: true },
                     select: function(args) {
-                      args.response.success({
-                        data: [
-                          { id: 'zone1', description: 'Zone 1' },
-                          { id: 'zone2', description: 'Zone 2' },
-                          { id: 'zone3', description: 'Zone 3' }
-                        ]
+                      var data = { listAll: true };
+                      $.ajax({
+                        url: createURL('listZones'),
+                        data: data,
+                        success: function(json) {
+                          var zones = json.listzonesresponse.zone;
+                          args.response.success({
+                            data: $.map(zones, function(zone) {
+                              return {
+                                id: zone.id,
+                                description: zone.name
+                              };
+                            })
+                          });
+                        }
                       });
                     }
-                  }
+                  },
+									cidr: { 
+									  label: 'label.cidr',
+										validation: { required: true } 
+									},		
+									networkdomain: { 
+									  label: 'label.network.domain'
+									}		
                 }
+              },              
+              action: function(args) {										
+								var defaultvpcofferingid;
+								$.ajax({
+								  url: createURL("listVPCOfferings"),
+									dataType: "json",
+									data: {
+									  isdefault: true
+									},
+								  async: false,
+									success: function(json) {
+									  defaultvpcofferingid = json.listvpcofferingsresponse.vpcoffering[0].id;
+									}
+								});
+								
+								var dataObj = {
+									name: args.data.name,
+									displaytext: args.data.displaytext,
+									zoneid: args.data.zoneid,
+									cidr: args.data.cidr,
+									vpcofferingid: defaultvpcofferingid
+								};
+								
+								if(args.data.networkdomain != null)
+								  $.extend(dataObj, { networkdomain: args.data.networkdomain });
+								
+								
+								$.ajax({
+                  url: createURL("createVPC"),
+                  dataType: "json",
+									data: dataObj,
+                  async: true,
+                  success: function(json) {
+                    var jid = json.createvpcresponse.jobid;
+                    args.response.success(
+                      {_custom:
+                        {jobId: jid,
+                          getUpdatedItem: function(json) {													  
+                            return json.queryasyncjobresultresponse.jobresult.vpc;
+                          }
+                        }
+                      }
+                    );
+                  }
+                });								
               },
-              messages: {
-                notification: function(args) { return 'Add new VPC'; }
-              },
-              action: function(args) {
-                args.response.success();
-              },
-              notification: { poll: function(args) { args.complete(); } }
+              notification: { 
+							  poll: pollAsyncJobResult
+							}							
             },
             editVpc: {
               label: 'Edit VPC',
