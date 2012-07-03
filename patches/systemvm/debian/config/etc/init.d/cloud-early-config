@@ -602,10 +602,10 @@ EOF
   ip route delete default
   # create route table for static route
 
-  sudo echo "251 static_route_back" >> /etc/iproute2/rt_tables 2>/dev/null
   sudo echo "252 static_route" >> /etc/iproute2/rt_tables 2>/dev/null
-  sudo ip rule add from $VPCCIDR table static_route_back 2>/dev/null
+  sudo echo "251 static_route_back" >> /etc/iproute2/rt_tables 2>/dev/null
   sudo ip rule add from $VPCCIDR table static_route 2>/dev/null
+  sudo ip rule add from $VPCCIDR table static_route_back 2>/dev/null
 
   sed -i  /gateway/d /etc/hosts
 
@@ -777,6 +777,7 @@ setup_default() {
 auto lo
 iface lo inet loopback
 EOF
+  cp -f /etc/iptables/rt_tables_init /etc/iproute2/rt_tables
 }
 
 change_password() {
