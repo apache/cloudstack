@@ -1,0 +1,224 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "Runbook.ent">
+%BOOK_ENTITIES;
+]>
+<chapter id="chap-Runbook-Environment">
+  <title>Environment</title>
+  <para>
+      Before you begin, you need to prepare the environment before you install CloudStack. 
+      We will go over the steps to prepare now.
+  </para>
+  <section id="sect-Runbook-Environment-operatingsys">
+    <title>Operating System</title>
+    <para>
+      Using the CentOS 6.2 x86_64 minimal install ISO, you'll need to install CentOS
+      on your hardware. The defaults will generally be acceptable for this installation.
+    </para>
+    <para>
+      Once this installation is complete, you'll want to connect to your freshly
+      installed machine via SSH as the root user. Note that you should not allow root 
+      logins in a production environment, so be sure to turn off remote logins once you 
+      have finished the installation and configuration.
+    </para>
+    <section id="sect-Runbook-Environment-operatingsys-network">
+      <title>Configuring the network</title>
+      <para>
+        By default the network will not come up on your hardware and you
+        will need to configure it to work in your environment. Since we 
+        specified that there will be no DHCP server in this environment
+        we will be manually configuring your network interface. We will
+        assume, for the purposes of this exercise, that eth0 is the only network
+        interface that will be connected and used. 
+      </para>
+      <para>
+        Connecting via the console you should login as root. Check the 
+        file <filename>/etc/sysconfig/network-scripts/ifcfg-eth0</filename>,
+        it will look like this by default:
+        <screen>
+DEVICE="eth0"
+HWADDR="52:54:00:B9:A6:C0"
+NM_CONTROLLED="yes"
+ONBOOT="no"
+        </screen>
+      </para>
+      <para>
+        Unfortunately, this configuration will not permit you to connect to the network,
+        and is also unsuitable for our purposes with CloudStack. We want to 
+	configure that file so that it specifies the IP address, netmask, etc., as shown
+	in the following example:
+      </para>
+      <screen>
+DEVICE=eth0
+HWADDR=52:54:00:B9:A6:C0
+NM_CONTROLLED=no
+ONBOOT=yes
+BOOTPROTO=none
+IPADDR=172.16.10.2
+NETMASK=255.255.255.0
+GATEWAY=172.16.10.1
+      </screen>
+      <note>
+        <title>IP Addressing</title>
+        <para>Throughout this document we are assuming that you will
+        have a /24 network for your CloudStack implementation. This can be any
+        RFC 1918 network. However, we are assuming that you will match the 
+        machine address that we are using. Thus we may use 
+        <userinput><replaceable>172.16.10</replaceable>.2</userinput> and because
+        you might be using the 192.168.55.0/24 network you would use 
+        <userinput><replaceable>192.168.55</replaceable>.2</userinput>
+        </para>
+      </note>
+      <important>
+        <title>Hardware Addresses</title>
+	<para>You should not use the hardware address (aka MAC address) from our example
+	    for your configuration. It is network interface specific, so you should keep the 
+	    address already provided in the HWADDR directive.
+        </para>
+      </important>
+      <para> Now that we have the configuration files properly set up, we need to run a
+      few commands to start up the network</para>
+      <screen><prompt># </prompt><userinput><command>chkconfig</command> network on</userinput></screen>
+      <screen><prompt># </prompt><userinput><command>service</command> network start</userinput></screen>
+      <para>This should bring the network up successfully, but we now need to enable name resolution.
+      To do that we will edit <filename>/etc/resolv.conf</filename>. These instructions will add
+      one of the nameservers from Google, though you are free to add a local nameserver if you wish. 
+      Your <filename>/etc/resolv.conf</filename> should modified to look like:
+      </para>
+      <screen>
+nameserver 8.8.8.8
+      </screen>
+    
+    </section>
+    <section id="sect-Runbook-Environment-operatingsys-hostname">
+      <title>Hostname</title>
+      <para>
+        Cloudstack requires that the hostname be properly set. If you used the default
+        options in the installation, then your hostname is currently set to 
+        localhost.localdomain. To test this we will run: </para>
+        <screen><prompt># </prompt><userinput>hostname --fqdn</userinput></screen>
+        <para>At this point it will likely return:</para>
+        <screen>localhost</screen>
+        <para>To rectify this situation - we'll set the hostname by editing the
+        <filename>/etc/hosts</filename> file so that it follows a similar format to this example:<screen>
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+172.16.10.2 srvr1.cloud.priv
+</screen>
+        </para>
+        <para>After you've modified that file, go ahead and restart the network using:</para>
+<screen><prompt># </prompt><userinput><command>service</command> network restart</userinput></screen>
+        <para>Now recheck with the <command>hostname --fqdn</command> command and ensure that it returns 
+        a FQDN response</para>
+    </section>
+    <section id="sect-Runbook-Environment-operatingsys-selinux">
+      <title>SELinux</title>
+      <para>At the moment, for CloudStack to work properly SELinux must be 
+      set to permissive. We want to both configure this for future boots and modify it
+      in the current running system.
+      </para>
+      <para>To configure SELinux to be permissive in the running system we need to run 
+      the following command:</para>
+      <screen><prompt># </prompt><userinput><command>setenforce</command> 0</userinput></screen>
+      <para> 
+        To ensure that it remains in that state we need to configure the file 
+        <filename>/etc/selinux/config</filename> to reflect the permissive state, 
+	as shown in this example: </para>
+      <screen>
+
+# This file controls the state of SELinux on the system.
+# SELINUX= can take one of these three values:
+#     enforcing - SELinux security policy is enforced.
+#     permissive - SELinux prints warnings instead of enforcing.
+#     disabled - No SELinux policy is loaded.
+SELINUX=permissive
+# SELINUXTYPE= can take one of these two values:
+#     targeted - Targeted processes are protected,
+#     mls - Multi Level Security protection.
+SELINUXTYPE=targeted
+      </screen>
+
+    </section>
+    <section id="sect-Runbook-Environment-operatingsys-ntp">
+      <title>NTP</title>
+      <para>NTP configuration is a necessity for keeping all of the clocks in your cloud
+      servers in sync. However, NTP is not installed by default. So we'll install and 
+      and configure NTP at this stage. Installation is accomplished as follows:
+      </para>
+      <screen><prompt># </prompt><userinput><command>yum</command> install ntp</userinput></screen>
+      <para>The actual default configuration is fine for our purposes, so we merely need to
+      enable it and set it to start on boot as follows:</para>
+      <screen><prompt># </prompt><userinput><command>chkconfig</command> ntpd on</userinput></screen>
+      <screen><prompt># </prompt><userinput><command>service</command> ntpd start</userinput></screen>
+    </section>
+  </section>
+  <section id="sect-Runbook-Environment-nfs">
+    <title>NFS</title>
+    <para>
+      Our configuration is going to use NFS for both primary and secondary
+      storage. We are going to go ahead and setup two NFS shares for those 
+      purposes. We'll start out by installing
+      <application>nfs-utils</application>.
+    </para>
+    <screen><prompt># </prompt><userinput><command>yum</command> install nfs-utils</userinput></screen>
+    <para>
+      We now need to configure NFS to serve up two different shares. This is handled comparatively easily
+      in the <filename>/etc/exports</filename> file. You should ensure that it has the following content:
+    </para>
+    <screen>
+/secondary *(rw,async,no_root_squash)
+/primary   *(rw,async,no_root_squash)
+    </screen>
+    <para>
+      You will note that we specified two directories that don't exist (yet) on the system. 
+      We'll go ahead and create those directories and set permissions appropriately on them with the following commands:
+    </para>
+    <screen>
+<prompt># </prompt><userinput><command>mkdir</command> /primary</userinput>
+<prompt># </prompt><userinput><command>mkdir</command> /secondary</userinput>
+<prompt># </prompt><userinput><command>chmod</command> 777 /primary</userinput>
+<prompt># </prompt><userinput><command>chmod</command> 777 /secondary</userinput>
+    </screen>
+    <para>CentOS 6.x releases use NFSv4 by default. NFSv4 requires that domain setting matches on all clients. 
+    In our case, the domain is cloud.priv, so ensure that the domain setting in <filename>/etc/idmapd.conf</filename>
+    is uncommented and set as follows:</para>
+    <screen>Domain = cloud.priv</screen>
+    <para>Now you'll need uncomment the configuration values in the file <filename>/etc/sysconfig/nfs</filename></para>
+    <screen>
+LOCKD_TCPPORT=32803
+LOCKD_UDPPORT=32769
+MOUNTD_PORT=892
+RQUOTAD_PORT=875
+STATD_PORT=662
+STATD_OUTGOING_PORT=2020
+    </screen>
+    <para> Now we need to configure the firewall to permit incoming NFS connections. 
+    Edit the file <filename>/etc/sysconfig/nfs</filename>
+    </para>
+    <screen>
+-A INPUT -m state --state NEW -p udp --dport 111 -j ACCEPT
+-A INPUT -m state --state NEW -p tcp --dport 111 -j ACCEPT
+-A INPUT -m state --state NEW -p tcp --dport 2049 -j ACCEPT
+-A INPUT -m state --state NEW -p tcp --dport 32803 -j ACCEPT
+-A INPUT -m state --state NEW -p udp --dport 32769 -j ACCEPT
+-A INPUT -m state --state NEW -p tcp --dport 892 -j ACCEPT
+-A INPUT -m state --state NEW -p udp --dport 892 -j ACCEPT
+-A INPUT -m state --state NEW -p tcp --dport 875 -j ACCEPT
+-A INPUT -m state --state NEW -p udp --dport 875 -j ACCEPT
+-A INPUT -m state --state NEW -p tcp --dport 662 -j ACCEPT
+-A INPUT -m state --state NEW -p udp --dport 662 -j ACCEPT
+    </screen>
+    <para>Now you can restart the iptables service with the following command:
+    </para>
+    <screen><prompt># </prompt><userinput><command>service</command> iptables restart</userinput></screen>
+    <para>We now need to configure nfs service to start on boot and actually start it on the host by
+    executing the following commands:</para>
+    <screen>
+      <prompt># </prompt><userinput><command>service</command> rpcbind start</userinput>
+      <prompt># </prompt><userinput><command>service</command> nfs start</userinput>
+      <prompt># </prompt><userinput><command>chkconfig</command> rpcbind on</userinput>
+      <prompt># </prompt><userinput><command>chkconfig</command> nfs on</userinput>
+    </screen>
+  </section>
+
+
+</chapter>

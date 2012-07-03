@@ -16,6 +16,89 @@
 // under the License. 
 (function($, cloudStack) {
   var elems = {
+    vpcConfigureTooltip: function(args) {
+      var $browser = args.$browser;
+      var siteToSiteVPN = args.siteToSiteVPN;
+      var links = {
+        'ip-addresses': 'IP Addresses',
+        'gateways': 'Gateways',
+        'site-to-site-vpn': 'Site-to-site VPN'
+      };
+      var $links = $('<ul>').addClass('links');
+      var $tooltip = $('<div>').addClass('vpc-configure-tooltip').append(
+        $('<div>').addClass('arrow')
+      );
+
+      // Make links
+      $.map(links, function(label, id) {
+        var $link = $('<li>').addClass('link').addClass(id);
+        var $label = $('<span>').html(label);
+
+        $link.append($label);
+        $link.appendTo($links);
+
+        // Link event
+        $link.click(function() {
+          switch (id) {
+          case 'site-to-site-vpn':
+            $browser.cloudBrowser('addPanel', {
+              title: 'Site-to-site VPNs',
+              maximizeIfSelected: true,
+              complete: function($panel) {
+                $panel.listView(
+                  $.isFunction(siteToSiteVPN.listView) ?
+                    siteToSiteVPN.listView() : siteToSiteVPN.listView
+                );
+              }
+            });
+            break;
+          }
+        });
+      });
+
+      $tooltip.append($links);
+
+      // Tooltip hover event
+      $tooltip.hover(
+        function() {
+          $tooltip.addClass('active');
+        },
+        function() {
+          $tooltip.removeClass('active');
+
+          setTimeout(function() {
+            if (!$tooltip.hasClass('active')) {
+              $tooltip.remove();
+            }
+          }, 500);
+        }
+      );
+
+      return $tooltip;
+    },
+    vpcConfigureArea: function(args) {
+      var $browser = args.$browser;
+      var siteToSiteVPN = args.siteToSiteVPN;
+      var $config = $('<div>').addClass('config-area');
+      var $configIcon = $('<span>').addClass('icon').html('&nbsp');
+
+      $config.append($configIcon);
+
+      // Tooltip event
+      $configIcon.mouseover(function() {
+        var $tooltip = elems.vpcConfigureTooltip({
+          $browser: $browser,
+          siteToSiteVPN: siteToSiteVPN
+        });
+
+        // Make sure tooltip is center aligned with icon
+        $tooltip.css({ left: $configIcon.position().left });
+        $tooltip.appendTo($config).hide();
+        $tooltip.stop().fadeIn('fast');
+      });
+
+      return $config;
+    },
     router: function() {
       var $router = $('<li>').addClass('tier virtual-router');
       var $title = $('<span>').addClass('title').html('Virtual Router');
@@ -145,6 +228,8 @@
       return $tier;
     },
     chart: function(args) {
+      var $browser = args.$browser;
+      var siteToSiteVPN = args.siteToSiteVPN;
       var tiers = args.tiers;
       var vmListView = args.vmListView;
       var actions = args.actions;
@@ -154,7 +239,16 @@
       var $tiers = $('<ul>').addClass('tiers');
       var $router = elems.router();
       var $chart = $('<div>').addClass('vpc-chart');
-      var $title = $('<div>').addClass('vpc-title').html(vpcName);
+      var $title = $('<div>').addClass('vpc-title')
+            .append(
+              $('<span>').html(vpcName)
+            )
+            .append(
+              elems.vpcConfigureArea({
+                $browser: $browser,
+                siteToSiteVPN: siteToSiteVPN
+              })
+            );
 
       var showAddTierDialog = function() {
         if ($(this).find('.loading-overlay').size()) {
@@ -426,6 +520,7 @@
   cloudStack.uiCustom.vpc = function(args) {
     var vmListView = args.vmListView;
     var tierArgs = args.tiers;
+    var siteToSiteVPN = args.siteToSiteVPN;
 
     return function(args) {
       var context = args.context;
@@ -448,6 +543,8 @@
               success: function(args) {
                 var tiers = args.data.tiers;
                 var $chart = elems.chart({
+                  $browser: $browser,
+                  siteToSiteVPN: siteToSiteVPN,
                   vmListView: vmListView,
                   context: context,
                   actions: tierArgs.actions,
