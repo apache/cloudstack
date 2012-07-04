@@ -740,14 +740,14 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             try {
                 if (ipAddressVO != null) {
                     if (ipAddressVO.getAssociatedWithNetworkId() == null) {
-                      //set networkId just for verification purposes
+                        //set networkId just for verification purposes
                         ipAddressVO.setAssociatedWithNetworkId(lb.getNetworkId());
                         _networkMgr.checkIpForService(ipAddressVO, Service.Lb);
                         
                         s_logger.debug("The ip is not associated with the network id="+ lb.getNetworkId() + " so assigning");
                         ipAddressVO = _networkMgr.associateIPToGuestNetwork(ipAddrId, lb.getNetworkId());
                         performedIpAssoc = true;
-                    } else {
+                    } else {                    
                         _networkMgr.checkIpForService(ipAddressVO, Service.Lb);
                     }
                 }   
