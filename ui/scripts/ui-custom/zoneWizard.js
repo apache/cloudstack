@@ -831,6 +831,11 @@
     $form.find('.form-item .name').each(function() {
       $(this).html($(this).find('label'));
     });
+    $form.find('label[for]').each(function() {
+      var forAttr = $(this).attr('for');
+      $form.find('#' + forAttr).attr('id', id + '_' + forAttr);
+      $(this).attr('for', id + '_' + forAttr)
+    });
 
     $form.find('select, input').change(function() {
       cloudStack.evenOdd($form, '.field:visible', {

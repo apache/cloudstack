@@ -171,7 +171,8 @@
                 var $input = $('<input>').attr({
                   type: 'text',
                   name: resource.type,
-                  value: resource.value
+                  value: resource.value,
+                  id: resource.type
                 }).addClass('required');
 
                 $field.append($label, $input);
@@ -305,13 +306,15 @@
             .append($('<label>').attr('for', 'project-name').html(_l('label.project.name')))
             .append($('<input>').addClass('required').attr({
               type: 'text',
-              name: 'project-name'
+              name: 'project-name',
+              id: 'project-name'
             }));
       var $projectDesc = $('<div>').addClass('field desc')
             .append($('<label>').attr('for', 'project-desc').html(_l('label.display.text')))
             .append($('<input>').attr({
               type: 'text',
-              name: 'project-display-text'
+              name: 'project-display-text',
+              id: 'project-desc'
             }));
       var $submit = $('<input>').attr({ type: 'submit' }).val(_l('label.create.project'));
       var $cancel = $('<div>').addClass('button cancel').html(_l('label.cancel'));

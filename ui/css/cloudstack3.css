@@ -9967,3 +9967,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   background-position: -230px -615px;
 }
 
+.label-hovered {
+  cursor: pointer;
+  color: blue !important;
+}
