@@ -40,6 +40,9 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     
     @SerializedName(ApiConstants.ZONE_ID) @Param(description="zone id of the vpc")
     private IdentityProxy zoneId = new IdentityProxy("data_center");
+    
+    @SerializedName(ApiConstants.ZONE_NAME) @Param(description="the name of the zone the VPC belongs to")
+    private String zoneName;
    
     @SerializedName(ApiConstants.SERVICE) @Param(description="the list of supported services", responseObject = ServiceResponse.class)
     private List<ServiceResponse> services;
@@ -152,5 +155,9 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     
     public void setNetworkDomain(String networkDomain) {
         this.networkDomain = networkDomain;
+    }
+    
+    public void setZoneName(String zoneName) {
+        this.zoneName = zoneName;
     }
 }
