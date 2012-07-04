@@ -2189,54 +2189,54 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkGuru guru = _networkGurus.get(network.getGuruName());
         NicVO nic = _nicDao.findById(nicId);
         
-            NicProfile profile = null;
-            if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {
-                nic.setState(Nic.State.Reserving);
-                nic.setReservationId(context.getReservationId());
-                _nicDao.update(nic.getId(), nic);
-                URI broadcastUri = nic.getBroadcastUri();
-                if (broadcastUri == null) {
-                    broadcastUri = network.getBroadcastUri();
-                }
+        NicProfile profile = null;
+        if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {
+            nic.setState(Nic.State.Reserving);
+            nic.setReservationId(context.getReservationId());
+            _nicDao.update(nic.getId(), nic);
+            URI broadcastUri = nic.getBroadcastUri();
+            if (broadcastUri == null) {
+                broadcastUri = network.getBroadcastUri();
+            }
 
-                URI isolationUri = nic.getIsolationUri();
+            URI isolationUri = nic.getIsolationUri();
 
             profile = new NicProfile(nic, network, broadcastUri, isolationUri, 
-                    networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getHypervisorType(), network));
-                guru.reserve(profile, network, vmProfile, dest, context);
-                nic.setIp4Address(profile.getIp4Address());
-                nic.setAddressFormat(profile.getFormat());
-                nic.setIp6Address(profile.getIp6Address());
-                nic.setMacAddress(profile.getMacAddress());
-                nic.setIsolationUri(profile.getIsolationUri());
-                nic.setBroadcastUri(profile.getBroadCastUri());
-                nic.setReserver(guru.getName());
-                nic.setState(Nic.State.Reserved);
-                nic.setNetmask(profile.getNetmask());
-                nic.setGateway(profile.getGateway());
+                networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getHypervisorType(), network));
+            guru.reserve(profile, network, vmProfile, dest, context);
+            nic.setIp4Address(profile.getIp4Address());
+            nic.setAddressFormat(profile.getFormat());
+            nic.setIp6Address(profile.getIp6Address());
+            nic.setMacAddress(profile.getMacAddress());
+            nic.setIsolationUri(profile.getIsolationUri());
+            nic.setBroadcastUri(profile.getBroadCastUri());
+            nic.setReserver(guru.getName());
+            nic.setState(Nic.State.Reserved);
+            nic.setNetmask(profile.getNetmask());
+            nic.setGateway(profile.getGateway());
 
-                if (profile.getStrategy() != null) {
-                    nic.setReservationStrategy(profile.getStrategy());
-                }
+            if (profile.getStrategy() != null) {
+                nic.setReservationStrategy(profile.getStrategy());
+            }
 
-                updateNic(nic, network.getId(), 1);
-            } else {
+            updateNic(nic, network.getId(), 1);
+        } else {
             profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
-                    networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getHypervisorType(), network));
-                guru.updateNicProfile(profile, network);
-                nic.setState(Nic.State.Reserved);
-                updateNic(nic, network.getId(), 1);
-            }
-
-            for (NetworkElement element : _networkElements) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
-                }
-                prepareElement(element, network, profile, vmProfile, dest, context);
-            }
-
-            profile.setSecurityGroupEnabled(isSecurityGroupSupportedInNetwork(network));
+                networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getHypervisorType(), network));
             guru.updateNicProfile(profile, network);
+            nic.setState(Nic.State.Reserved);
+            updateNic(nic, network.getId(), 1);
+        }
+
+        for (NetworkElement element : _networkElements) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
+            }
+            prepareElement(element, network, profile, vmProfile, dest, context);
+        }
+
+        profile.setSecurityGroupEnabled(isSecurityGroupSupportedInNetwork(network));
+        guru.updateNicProfile(profile, network);
         return profile;
     }
 
