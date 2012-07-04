@@ -153,6 +153,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
     def test_01_vm_per_account(self):
         """Test VM limit per account
         """
+        tags = ["advanced","advancedns"]
 
         # Validate the following
         # 1. Set user_vm=1 limit for account 1.
@@ -245,6 +246,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
     def test_02_publicip_per_account(self):
         """Test Public IP limit per account
         """
+        tags = ["advanced","advancedns"]
 
         # Validate the following
         # 1. Set Public_IP= 2 limit for account 1.
@@ -387,6 +389,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
     def test_03_snapshots_per_account(self):
         """Test Snapshot limit per account
         """
+        tags = ["advanced","advancedns"]
 
         # Validate the following
         # 1. Set snapshot= 2 limit for account 1.
@@ -542,6 +545,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
     def test_04_volumes_per_account(self):
         """Test Volumes limit per account
         """
+        tags = ["advanced","advancedns"]
 
         # Validate the following
         # 1. Set volumes=2 limit for account 1.
@@ -683,6 +687,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
     def test_05_templates_per_account(self):
         """Test Templates limit per account
         """
+        tags = ["advanced","advancedns"]
 
         # Validate the following
         # 1. Set templates=1 limit for account 1.
@@ -912,6 +917,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
     def test_01_vm_per_domain(self):
         """Test VM limit per domain
         """
+        tags = ["advanced","advancedns"]
 
         # Validate the following
         # 1. Set max VM per domain to 2
@@ -977,6 +983,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
     def test_01_publicip_per_domain(self):
         """Test Public IP limit per domain
         """
+        tags = ["advanced","advancedns"]
 
         # Validate the following
         # 1. set max no of IPs per domain to 2.
@@ -1046,6 +1053,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
     def test_03_snapshots_per_domain(self):
         """Test Snapshot limit per domain
         """
+        tags = ["advanced","advancedns"]
 
         # Validate the following
         # 1. set max no of snapshots per domain to 1.
@@ -1128,6 +1136,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
     def test_04_volumes_per_domain(self):
         """Test Volumes limit per domain
         """
+        tags = ["advanced","advancedns"]
 
         # Validate the following
         # 1. set max no of volume per domain to 1.
@@ -1180,6 +1189,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
     def test_05_templates_per_domain(self):
         """Test Templates limit per domain
         """
+        tags = ["advanced","advancedns"]
 
         # Validate the following 
         # 1. set max no of templates per domain to 2.
@@ -1325,6 +1335,7 @@ class TestResources(cloudstackTestCase):
 
     def test_01_zones(self):
         """Check the status of zones"""
+        tags = ["advanced","advancedns"]
         
         # Validate the following
         # 1. List zones
@@ -1350,6 +1361,7 @@ class TestResources(cloudstackTestCase):
 
     def test_02_pods(self):
         """Check the status of pods"""
+        tags = ["advanced","advancedns"]
         
         # Validate the following
         # 1. List pods
@@ -1375,6 +1387,7 @@ class TestResources(cloudstackTestCase):
     
     def test_03_clusters(self):
         """Check the status of clusters"""
+        tags = ["advanced","advancedns"]
         
         # Validate the following
         # 1. List clusters
@@ -1400,6 +1413,7 @@ class TestResources(cloudstackTestCase):
     
     def test_04_hosts(self):
         """Check the status of hosts"""
+        tags = ["advanced","advancedns"]
         
         # Validate the following
         # 1. List hosts with type=Routing
@@ -1426,6 +1440,7 @@ class TestResources(cloudstackTestCase):
     
     def test_05_storage_pools(self):
         """Check the status of Storage pools"""
+        tags = ["advanced","advancedns"]
         
         # Validate the following
         # 1. List storage pools for the zone
@@ -1451,6 +1466,7 @@ class TestResources(cloudstackTestCase):
     
     def test_06_secondary_storage(self):
         """Check the status of secondary storage"""
+        tags = ["advanced","advancedns"]
         
         # Validate the following
         # 1. List secondary storage
