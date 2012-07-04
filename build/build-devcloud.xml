@@ -35,12 +35,14 @@
 
   <target name="rdeploydb">
     <echo message="ant rdeploydb"/>
-    <sshexec host="${host}" port="${port}" username="root" password="password" command="echo $CATALINA_HOME; export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32;killall java;cd /opt/cloudstack/incubator-cloudstack;ant deploycddb"/>
+    <sshexec host="${host}" port="${port}" username="root" password="password" command="echo $CATALINA_HOME; export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32;killall java;cd /opt/cloudstack/incubator-cloudstack;ant deploycddb -Drhost=${host}"/>
   </target>
 
   <target name="deploycddb" description="deploy specific db configuration for clouddev" depends="deploydb">
     <exec dir="${db.scripts.dir}" executable="bash">
       <arg value="deploy-db-clouddev.sh" />
+      <arg value="${host}" />
+      <arg value="8443" />
     </exec>
   </target>
 
@@ -51,7 +53,7 @@
   
   <target name="rdebug">
     <echo message="ant debug"/>
-    <sshexec host="${host}" port="${port}" username="root" password="password" command="killall java;sleep 1;echo $CATALINA_HOME; export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32;cd /opt/cloudstack/incubator-cloudstack;ant deploy-server; ant debug"/>
+    <sshexec host="${host}" port="${port}" username="root" password="password" command="killall java;sleep 1;export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32;cd /opt/cloudstack/incubator-cloudstack;ant deploy-server; ant debug "/>
   </target>
 
 
