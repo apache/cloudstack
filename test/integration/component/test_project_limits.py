@@ -154,7 +154,7 @@ class TestProjectLimits(cloudstackTestCase):
     def test_01_project_limits(self):
         """ Test project limits
         """
-
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a Project. Verify once projects are created, they inherit
         #    a default set of resource limits as configured by the Cloud Stack
@@ -169,7 +169,7 @@ class TestProjectLimits(cloudstackTestCase):
         # 4. Create Resource more than its set limit for a project. Verify
         #    resource allocation should fail giving proper message
 
-        # Create project as a domain admin
+        # Create project as a domain admin        
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
@@ -301,7 +301,7 @@ class TestProjectLimits(cloudstackTestCase):
     def test_02_project_limits_normal_user(self):
         """ Test project limits
         """
-
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a Project
         # 2. Reduce the projects limits as a domain admin. Verify resource
@@ -524,7 +524,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
     def test_03_vm_per_project(self):
         """Test VM limit per project
         """
-
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Set max VM per project to 2
         # 2. Create account and start 2 VMs. Verify VM state is Up and Running
@@ -586,7 +586,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
     def test_04_publicip_per_project(self):
         """Test Public IP limit per project
         """
-
+        tags = ["advanced","eip","advancedns"]
         # Validate the following
         # 1. set max no of IPs per project to 2.
         # 2. Create an account in this domain
@@ -671,7 +671,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
     def test_05_snapshots_per_project(self):
         """Test Snapshot limit per project
         """
-
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. set max no of snapshots per project to 1.
         # 2. Create one snapshot in the project. Snapshot should be
@@ -748,7 +748,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
     def test_06_volumes_per_project(self):
         """Test Volumes limit per project
         """
-
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. set max no of volume per project to 1.
         # 2. Create 1 VM in this project
@@ -797,7 +797,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
     def test_07_templates_per_project(self):
         """Test Templates limit per project
         """
-
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following 
         # 1. set max no of templates per project to 1.
         # 2. Create a template in this project. Both template should be in

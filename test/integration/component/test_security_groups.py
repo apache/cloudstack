@@ -165,6 +165,8 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
     def test_01_deployVM_InDefaultSecurityGroup(self):
         """Test deploy VM in default security group
         """
+        
+        tags = ["sg", "eip"]
 
         # Validate the following:
         # 1. deploy Virtual machine using admin user
@@ -242,6 +244,8 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
     def test_02_listSecurityGroups(self):
         """Test list security groups for admin account
         """
+        
+        tags = ["sg", "eip"]
 
         # Validate the following:
         # 1. listSecurityGroups in admin account
@@ -275,6 +279,8 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
     def test_03_accessInDefaultSecurityGroup(self):
         """Test access in default security group
         """
+        
+        tags = ["sg", "eip"]
 
         # Validate the following:
         # 1. deploy Virtual machine using admin user
@@ -430,6 +436,8 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
     def test_01_authorizeIngressRule(self):
         """Test authorize ingress rule
         """
+        
+        tags = ["sg", "eip"]
 
         # Validate the following:
         #1. Create Security group for the account.
@@ -564,6 +572,8 @@ class TestRevokeIngressRule(cloudstackTestCase):
     def test_01_revokeIngressRule(self):
         """Test revoke ingress rule
         """
+        
+        tags = ["sg", "eip"]
 
         # Validate the following:
         #1. Create Security group for the account.
@@ -729,6 +739,9 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
     def test_01_dhcpOnlyRouter(self):
         """Test router services for user account
         """
+        
+        tags = ["sg", "eip", "basic"]
+        
         # Validate the following
         #1. List routers for any user account
         #2. The only service supported by this router should be dhcp
@@ -855,6 +868,8 @@ class TestdeployVMWithUserData(cloudstackTestCase):
     
     def test_01_deployVMWithUserData(self):
         """Test Deploy VM with User data"""
+        
+        tags = ["sg", "eip"]
         
         # Validate the following
         # 1. CreateAccount of type user
@@ -1030,6 +1045,8 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
     def test_01_delete_security_grp_running_vm(self):
         """Test delete security group with running VM"""
         
+        tags = ["sg", "eip"]
+        
         # Validate the following
         # 1. createsecuritygroup (ssh-incoming) for this account
         # 2. authorizeSecurityGroupIngress to allow ssh access to the VM
@@ -1111,6 +1128,8 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
 
     def test_02_delete_security_grp_withoout_running_vm(self):
         """Test delete security group without running VM"""
+        
+        tags = ["sg", "eip"]
         
         # Validate the following
         # 1. createsecuritygroup (ssh-incoming) for this account
@@ -1272,6 +1291,8 @@ class TestIngressRule(cloudstackTestCase):
     def test_01_authorizeIngressRule_AfterDeployVM(self):
         """Test delete security group with running VM"""
         
+        tags = ["sg", "eip"]
+        
         # Validate the following
         # 1. createsecuritygroup (ssh-incoming, 22via22) for this account
         # 2. authorizeSecurityGroupIngress to allow ssh access to the VM
@@ -1381,6 +1402,8 @@ class TestIngressRule(cloudstackTestCase):
 
     def test_02_revokeIngressRule_AfterDeployVM(self):
         """Test Revoke ingress rule after deploy VM"""
+        
+        tags = ["sg", "eip"]
         
         # Validate the following
         # 1. createsecuritygroup (ssh-incoming, 22via22) for this account
@@ -1533,6 +1556,8 @@ class TestIngressRule(cloudstackTestCase):
 
     def test_03_stopStartVM_verifyIngressAccess(self):
         """Test Start/Stop VM and Verify ingress rule"""
+        
+        tags = ["sg", "eip"]
         
         # Validate the following
         # 1. createsecuritygroup (ssh-incoming, 22via22) for this account

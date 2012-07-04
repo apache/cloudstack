@@ -159,7 +159,7 @@ class TestCreateTemplate(cloudstackTestCase):
     def test_01_create_template(self):
         """Test create public & private template
         """
-
+        tags = ["advanced","advancedns"]
         # Validate the following:
         # 1. Upload a templates in raw img format. Create a Vm instances from
         #    raw img template.
@@ -375,6 +375,7 @@ class TestTemplates(cloudstackTestCase):
     def test_01_create_template_volume(self):
         """Test Create template from volume
         """
+        tags = ["advanced","advancedns"]
 
         # Validate the following:
         # 1. Deploy new VM using the template created from Volume
@@ -413,6 +414,7 @@ class TestTemplates(cloudstackTestCase):
 
     def test_02_copy_template(self):
         """Test for copy template from one zone to another"""
+        tags = ["advanced","advancedns"]
 
         # Validate the following
         # 1. copy template should be successful and
@@ -471,6 +473,7 @@ class TestTemplates(cloudstackTestCase):
     def test_03_delete_template(self):
         """Test Delete template
         """
+        tags = ["advanced","advancedns"]
 
         # Validate the following:
         # 1. Create a template and verify it is shown in list templates response
@@ -525,6 +528,7 @@ class TestTemplates(cloudstackTestCase):
     def test_04_template_from_snapshot(self):
         """Create Template from snapshot
         """
+        tags = ["advanced","advancedns"]
 
         # Validate the following
         # 2. Snapshot the Root disk

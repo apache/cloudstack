@@ -191,6 +191,7 @@ class TestLbWithRoundRobin(cloudstackTestCase):
     def test_lb_with_round_robin(self):
         """Test Create LB rule with round robin algorithm
         """
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -403,6 +404,7 @@ class TestLbWithLeastConn(cloudstackTestCase):
     def test_lb_with_least_conn(self):
         """Test Create LB rule with least connection algorithm
         """
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -622,6 +624,7 @@ class TestLbWithSourceIp(cloudstackTestCase):
     def test_lb_with_source_ip(self):
         """Test Create LB rule with source Ip algorithm
         """
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -859,6 +862,7 @@ class TestLbAlgoRrLc(cloudstackTestCase):
     def test_lb_round_robin_to_least_conn(self):
         """Test edit LB rule from round robin to least connection algo
         """
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -1071,6 +1075,7 @@ class TestLbAlgoLcRr(cloudstackTestCase):
     def test_lb_least_conn_to_round_robin(self):
         """Test edit LB rule from least conn to round robin algo
         """
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -1281,6 +1286,7 @@ class TestLbAlgoRrSb(cloudstackTestCase):
     def test_lb_round_robin_to_source(self):
         """Test edit LB rule from round robin to source algo
         """
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -1493,6 +1499,7 @@ class TestLbAlgoSbRr(cloudstackTestCase):
     def test_lb_source_to_round_robin(self):
         """Test edit LB rule from source to round robin algo
         """
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -1708,6 +1715,7 @@ class TestLbAlgoSbLc(cloudstackTestCase):
     def test_lb_source_to_least_conn(self):
         """Test edit LB rule from source to least conn algo
         """
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -1921,6 +1929,7 @@ class TestLbAlgoLcSb(cloudstackTestCase):
     def test_lb_leastconn_to_source(self):
         """Test edit LB rule from round robin to source algo
         """
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created

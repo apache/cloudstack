@@ -170,13 +170,12 @@ class TestUserProjectCreation(cloudstackTestCase):
     def test_01_admin_project_creation(self):
         """Test create project as a domain admin and domain user
         """
-
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"] 
         # Validate the following
         # 1. Check if 'allow.user.create.projects' configuration is true
         # 2. Create a Project as domain admin
         # 3. Create a Project as domain user
         # 4. In both 2 and 3 project creation should be successful
-
         configs = Configurations.list(
                                       self.apiclient,
                                       name='allow.user.create.projects'
@@ -264,13 +263,12 @@ class TestUserProjectCreation(cloudstackTestCase):
     def test_02_user_project_creation(self):
         """Test create project as a domain admin and domain user
         """
-
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Check if 'allow.user.create.projects' configuration is false
         # 2. Create a Project as domain admin. Project creation should be
         #    successful.
         # 3. Create a Project as domain user. Project creation should fail
-
         configs = Configurations.list(
                                       self.apiclient,
                                       name='allow.user.create.projects'
@@ -390,7 +388,7 @@ class TestProjectInviteRequired(cloudstackTestCase):
 
     def test_03_add_user_to_project(self):
         """Add user to project when 'project.invite.required' is false"""
-        
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]       
         # Validate the following:
         # 1. Create a Project
         # 2. Add users to the project. Verify user is added to project
@@ -490,12 +488,12 @@ class TestProjectInviteRequired(cloudstackTestCase):
 
     def test_04_add_user_to_project(self):
         """Add user to project when 'project.invite.required' is true"""
-        
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following:
         # 1. Create a Project
         # 2. Add users to the project. verify user is shown in pending state
 
-        # Verify 'project.invite.required' is set to false
+        # Verify 'project.invite.required' is set to false        
         configs = Configurations.list(
                                       self.apiclient,
                                       name='project.invite.required'
@@ -589,7 +587,7 @@ class TestProjectInviteRequired(cloudstackTestCase):
 
     def test_05_invitation_timeout(self):
         """Test global config project invitation timeout"""
-        
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following:
         # 1. Set configuration to 5 mins
         # 2. Create a Project 
@@ -730,7 +728,7 @@ class TestProjectInviteRequired(cloudstackTestCase):
 
     def test_06_invitation_timeout_after_expiry(self):
         """Test global config project invitation timeout"""
-        
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following:
         # 1. Set configuration to 5 mins
         # 2. Create a Project 
@@ -876,7 +874,7 @@ class TestProjectInviteRequired(cloudstackTestCase):
 
     def test_07_invite_after_expiry(self):
         """Test global config project invitation timeout"""
-        
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following:
         # 1. Set configuration to 5 mins
         # 2. Create a Project 
@@ -1021,7 +1019,7 @@ class TestProjectInviteRequired(cloudstackTestCase):
 
     def test_08_decline_invitation(self):
         """Test decline invitation"""
-        
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following:
         # 1. Set configuration to 5 mins
         # 2. Create a Project 
@@ -1148,7 +1146,7 @@ class TestProjectInviteRequired(cloudstackTestCase):
     @unittest.skip("Requires SMPT configs")
     def test_09_invite_to_project_by_email(self):
         """Test invite user to project by email"""
-        
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following:
         # 1. Set configuration to 5 mins
         # 2. Create a Project 
@@ -1157,7 +1155,7 @@ class TestProjectInviteRequired(cloudstackTestCase):
         # 5. Verify invitation is rejected and user doesn't become regular
         #    user.
 
-        # Verify 'project.invite.required' is set to false
+        # Verify 'project.invite.required' is set to false        
         configs = Configurations.list(
                                       self.apiclient,
                                       name='project.invite.timeout'

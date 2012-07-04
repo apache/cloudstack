@@ -205,7 +205,7 @@ class TestOfferings(cloudstackTestCase):
     def test_01_service_offerings(self):
         """ Test service offerings in a project
         """
-
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a project.
         # 2. List service offerings for the project. All SO available in the
@@ -247,7 +247,7 @@ class TestOfferings(cloudstackTestCase):
     def test_02_project_disk_offerings(self):
         """ Test project disk offerings
         """
-
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a project.
         # 2. List service offerings for the project. All disk offerings
@@ -379,7 +379,7 @@ class TestNetwork(cloudstackTestCase):
     def test_03_network_create(self):
         """ Test create network in project
         """
-
+        tags = ["advanced",  "advancedns"]
         # Validate the following
         # 1. Create a project.
         # 2. Add virtual/direct network resource to the project. User shared
@@ -583,7 +583,7 @@ class TestTemplates(cloudstackTestCase):
     def test_04_public_template_use_in_project(self):
         """Test Templates creation in projects
         """
-
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following 
         # 1. Create a project
         # 2. Verify Public templates can be used without any restriction
@@ -642,7 +642,7 @@ class TestTemplates(cloudstackTestCase):
     def test_05_use_private_template_in_project(self):
         """Test use of private template in a project
         """
-
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following 
         # 1. Create a project
         # 2. Verify that in order to use somebody’s Private template for vm
@@ -808,7 +808,7 @@ class TestSnapshots(cloudstackTestCase):
     def test_06_create_snapshots_in_project(self):
         """Test create snapshots in project
         """
-
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a project
         # 2. Add some snapshots to the project
@@ -961,7 +961,7 @@ class TestPublicIpAddress(cloudstackTestCase):
     def test_07_associate_public_ip(self):
         """Test associate public IP within the project
         """
-
+        tags = ["advanced",  "eip", "advancedns"]
         # Validate the following
         # 1. Create a project
         # 2. Add some public Ips to the project
@@ -1237,7 +1237,7 @@ class TestSecurityGroup(cloudstackTestCase):
     def test_08_security_group(self):
         """Test security groups in project
         """
-
+        tags = ["sg", "eip"]
         # Validate the following:
         # 1. Create a project
         # 2. Assign some security groups to that project
