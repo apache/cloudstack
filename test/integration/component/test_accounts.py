@@ -140,6 +140,8 @@ class TestAccounts(cloudstackTestCase):
     def test_01_create_account(self):
         """Test Create Account and user for that account 
         """
+        
+        tags = ["advanced", "basic", "eip", "advancedns", "sg"]
 
         # Validate the following
         # 1. Create an Account. Verify the account is created.
@@ -273,6 +275,8 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
     def test_01_user_remove_VM_running(self):
         """Test Remove one user from the account 
         """
+        
+        tags = ["advanced", "basic", "eip", "advancedns", "sg"]
 
         # Validate the following
         # 1. Create an account with 2 users.
@@ -372,6 +376,8 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
     def test_02_remove_all_users(self):
         """Test Remove both users from the account 
         """
+        
+        tags = ["advanced", "basic", "eip", "advancedns", "sg"]
 
         # Validate the following
         # 1. Remove both the users from the account.
@@ -528,6 +534,8 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
 
     def test_01_non_root_admin_Privileges(self):
         """Test to verify Non Root admin previleges"""
+        
+        tags = ["advanced", "basic", "eip", "advancedns", "sg"]
 
         # Validate the following
         # 1. Create few accounts/users in ROOT domain
@@ -645,6 +653,8 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
 
     def test_01_service_offering_siblings(self):
         """Test to verify service offerings at same level in hierarchy"""
+        
+        tags = ["advanced", "basic", "eip", "advancedns", "sg"]
 
         # Validate the following
         # 1. Verify service offering is visible for domain_1
@@ -758,6 +768,8 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
 
     def test_01_service_offering_hierarchy(self):
         """Test to verify service offerings at same level in hierarchy"""
+        
+        tags = ["advanced", "basic", "eip", "advancedns", "sg"]
 
         # Validate the following
         # 1. Verify service offering is visible for domain_1
@@ -887,6 +899,8 @@ class TesttemplateHierarchy(cloudstackTestCase):
 
     def test_01_template_hierarchy(self):
         """Test to verify template at same level in hierarchy"""
+        
+        tags = ["advanced", "basic", "eip", "advancedns", "sg"]
 
         # Validate the following
         # 1. Verify template is visible for domain_1
@@ -1046,6 +1060,8 @@ class TestAddVmToSubDomain(cloudstackTestCase):
     def test_01_add_vm_to_subdomain(self):
         """ Test Sub domain allowed to launch VM  when a Domain level zone is
             created"""
+            
+        tags = ["advanced", "basic", "eip", "advancedns", "sg"]
 
         # Validate the following
         # 1. Verify VM created by Account_1 is in Running state
