@@ -224,6 +224,8 @@ class TestLbSourceNat(cloudstackTestCase):
     def test_add_lb_on_source_nat(self):
         """Test Create LB rule for sourceNat IP address
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -431,6 +433,8 @@ class TestLbOnIpWithPf(cloudstackTestCase):
     def test_lb_on_ip_with_pf(self):
         """Test Create LB rule for sourceNat IP address
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -640,6 +644,8 @@ class TestPfOnIpWithLb(cloudstackTestCase):
     def test_pf_on_ip_with_lb(self):
         """Test Create a port forwarding rule  on an Ip address that already has a LB rule.
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -850,6 +856,8 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
     def test_lb_on_non_source_nat(self):
         """Test Create LB rule for non-sourceNat IP address
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -1063,6 +1071,8 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
     def test_add_multiple_vms_lb(self):
         """Test Add multiple Vms to an existing LB rule.
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -1339,6 +1349,8 @@ class TestMultipleLbRules(cloudstackTestCase):
     def test_multiple_lb_publicip(self):
         """Test Create multiple LB rules using different public Ips acquired
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -1653,6 +1665,8 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
     def test_multiple_lb_same_publicip(self):
         """Test Create multiple LB rules using same public Ips on diff ports
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -2008,6 +2022,8 @@ class TestLoadBalancingRule(cloudstackTestCase):
     def test_01_edit_name_lb_rule(self):
         """Test edit name of LB rule
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create an Lb rule for couple of Vms .
@@ -2040,6 +2056,8 @@ class TestLoadBalancingRule(cloudstackTestCase):
     def test_02_edit_lb_ports(self):
         """Test edit public port of LB rule
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create an Lb rule for couple of Vms .
@@ -2060,6 +2078,8 @@ class TestLoadBalancingRule(cloudstackTestCase):
     def test_03_delete_lb_rule(self):
         """Test delete LB rule
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Delete existing load balancing rule
@@ -2224,6 +2244,8 @@ class TestDeleteCreateLBRule(cloudstackTestCase):
 
     def test_01_create_with_same_public_port(self):
         """Test create LB rule with same public port after deleting rule"""
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Delete existing rule and create exactly same rule with different
@@ -2383,6 +2405,8 @@ class TestVmWithLb(cloudstackTestCase):
 
     def test_01_delete_public_ip(self):
         """Test delete one public Ip with LB rules"""
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Associate 2 public Ips and create load balancing rules in it
@@ -2450,6 +2474,8 @@ class TestVmWithLb(cloudstackTestCase):
 
     def test_02_stop_user_vm(self):
         """Test stop user VM with LB"""
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create 2 instances and add these two for load balancing
@@ -2528,6 +2554,8 @@ class TestVmWithLb(cloudstackTestCase):
 
     def test_03_start_user_vm(self):
         """Test start user VM with LB"""
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create 2 instances and add these two for load balancing
@@ -2597,6 +2625,8 @@ class TestVmWithLb(cloudstackTestCase):
 
     def test_04_migrate_user_vm(self):
         """Test migrate user VM with LB"""
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create 2 instances and add these two for load balancing 
@@ -2708,6 +2738,8 @@ class TestVmWithLb(cloudstackTestCase):
 
     def test_05_reboot_user_vm(self):
         """Test reboot user VM with LB"""
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create 2 instances and add these two for load balancing
@@ -2776,6 +2808,8 @@ class TestVmWithLb(cloudstackTestCase):
 
     def test_06_destroy_user_vm(self):
         """Test destroy user VM with LB"""
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create 2 instances and add these two for load balancing
@@ -2857,6 +2891,8 @@ class TestVmWithLb(cloudstackTestCase):
 
     def test_07_delete_all_public_ip(self):
         """Test delete all public Ip with LB rules"""
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Associate 2 public Ips and create load balancing rules in it

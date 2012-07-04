@@ -205,6 +205,8 @@ class TestAddMultipleNetScaler(cloudstackTestCase):
     def test_add_netscaler_device(self):
         """Test add netscaler device
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Add multiple instances of netscaler
@@ -361,6 +363,8 @@ class TestAddMultipleNSDiffZone(cloudstackTestCase):
     def test_add_mul_netscaler_diff_zone(self):
         """Test add netscaler devices in different zones
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Add multiple instances of Netscaler in different zones
@@ -647,6 +651,8 @@ class TestNetScalerSharedMode(cloudstackTestCase):
     def test_01_netscaler_shared_mode(self):
         """Test netscaler device in shared mode
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Add Netscaler device in shared mode with capacity 3
@@ -800,6 +806,8 @@ class TestNetScalerSharedMode(cloudstackTestCase):
     def test_02_multiple_netscaler_capacilty(self):
         """Test multiple netscaler devices with limited capacity
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Add another netscaler device and spawn a new VM again         
@@ -900,6 +908,8 @@ class TestNetScalerSharedMode(cloudstackTestCase):
     def test_03_multiple_netscaler_full_capacilty(self):
         """Test netscaler device with full capacity
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Spawn multiple instances for utilizing full capacity of Netscaler
@@ -983,6 +993,8 @@ class TestNetScalerSharedMode(cloudstackTestCase):
     def test_04_delete_account_after_capacity_full(self):
         """Test delete and add resouces after netscaler device capacity is full
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Delete one of the account. Wait till Network.gc.wait &
@@ -1166,6 +1178,8 @@ class TestNwOffDedicatedNetscaler(cloudstackTestCase):
     def test_nw_off_dedicated_mode(self):
         """Test network offering in dedicated mode device
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Add Netscaler device in shared mode
@@ -1358,6 +1372,8 @@ class TestNwOffNetscaler(cloudstackTestCase):
     def test_ns_shared_nw_dedicated(self):
         """Test netscaler device in shared mode with network offering in dedicated mode
         """
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Add Netscaler device in shared mode
@@ -1666,6 +1682,8 @@ class TestNwOffSToDUpgrade(cloudstackTestCase):
 
     def test_shared_to_dedicated_upgrade(self):
         """Test upgrade from shared LB isolation to dedicated LB isolation"""
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create a dedicated and shared network offering
@@ -2081,6 +2099,8 @@ class TestNwOffDToSUpgrade(cloudstackTestCase):
 
     def test_shared_to_dedicated_upgrade(self):
         """Test upgrade from shared LB isolation to dedicated LB isolation"""
+        
+        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create a dedicated and shared network offering
