@@ -210,12 +210,12 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
     public long findCorrectResourceLimitForAccount(Account account, ResourceType type) {
 
         long max = Resource.RESOURCE_UNLIMITED; // if resource limit is not found, then we treat it as unlimited
-        
-        //no limits for Admin accounts
-        if (_accountMgr.isAdmin(account.getType())) {
+
+        // No limits for Root Admin accounts
+        if (_accountMgr.isRootAdmin(account.getType())) {
             return max;
         }
-        
+
         ResourceLimitVO limit = _resourceLimitDao.findByOwnerIdAndType(account.getId(), ResourceOwnerType.Account, type);
 
         // Check if limit is configured for account
@@ -277,8 +277,8 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
         long numResources = ((count.length == 0) ? 1 : count[0]);
         Project project = null;
 
-        // Don't place any limits on system or admin accounts
-        if (_accountMgr.isAdmin(account.getType())) {
+        // Don't place any limits on system or root admin accounts
+        if (_accountMgr.isRootAdmin(account.getType())) {
             return;
         }
 
@@ -510,10 +510,17 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
             if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
                 throw new InvalidParameterValueException("Can't update system account");
             }
-            
-            //only Unlimited value is accepted if account is Admin
-            if (_accountMgr.isAdmin(account.getType()) && max.shortValue() != ResourceLimit.RESOURCE_UNLIMITED) {
-                throw new InvalidParameterValueException("Only " + ResourceLimit.RESOURCE_UNLIMITED + " limit is supported for Admin accounts");
+
+            //only Unlimited value is accepted if account is  Root Admin
+            if (_accountMgr.isRootAdmin(account.getType()) && max.shortValue() != ResourceLimit.RESOURCE_UNLIMITED) {
+                throw new InvalidParameterValueException("Only " + ResourceLimit.RESOURCE_UNLIMITED + " limit is supported for Root Admin accounts");
+            }
+
+            if ((caller.getAccountId() == accountId.longValue()) &&
+                (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN ||
+                caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)) {
+                // If the admin is trying to update his own account, disallow.
+                throw new PermissionDeniedException("Unable to update resource limit for his own account " + accountId + ", permission denied");
             }
 
             if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {

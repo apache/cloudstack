@@ -151,8 +151,6 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
     @Inject
     FirewallManager _firewallMgr;
     @Inject
-    ElasticLoadBalancerManager _elbMgr;
-    @Inject
     NetworkDao _networkDao;
     @Inject
     FirewallRulesDao _firewallDao;
@@ -684,7 +682,9 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             _firewallDao.remove(lb.getId());
         }
 
-        _elbMgr.handleDeleteLoadBalancerRule(lb, callerUserId, caller);
+        // FIXME: breaking the dependency on ELB manager. This breaks functionality of ELB using virtual router
+        // Bug CS-15411 opened to document this
+        //_elbMgr.handleDeleteLoadBalancerRule(lb, callerUserId, caller);
 
         if (success) {
             s_logger.debug("Load balancer with id " + lb.getId() + " is removed successfully");
@@ -726,7 +726,10 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             _networkMgr.checkIpForService(ipAddressVo, Service.Lb);
         }
 
-        LoadBalancer result = _elbMgr.handleCreateLoadBalancerRule(lb, lbOwner, lb.getNetworkId());
+        // FIXME: breaking the dependency on ELB manager. This breaks functionality of ELB using virtual router
+        // Bug CS-15411 opened to document this
+        //LoadBalancer result = _elbMgr.handleCreateLoadBalancerRule(lb, lbOwner, lb.getNetworkId());
+        LoadBalancer result = null;
         if (result == null) {
             IpAddress ip = null;
             Network guestNetwork = _networkMgr.getNetwork(lb.getNetworkId());
