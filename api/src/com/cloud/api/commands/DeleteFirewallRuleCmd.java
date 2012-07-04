@@ -27,6 +27,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
+import com.cloud.network.rules.NetworkACL;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes a firewall rule", responseObject=SuccessResponse.class)
@@ -75,11 +76,11 @@ public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
     @Override
     public long getEntityOwnerId() {
         if (ownerId == null) {
-            FirewallRule rule = _entityMgr.findById(FirewallRule.class, id);
+            FirewallRule rule = _entityMgr.findById(NetworkACL.class, id);
             if (rule == null) {
                 throw new InvalidParameterValueException("Unable to find firewall rule by id=" + id);
             } else {
-                ownerId = _entityMgr.findById(FirewallRule.class, id).getAccountId();
+                ownerId = _entityMgr.findById(NetworkACL.class, id).getAccountId();
             }
         }
         return ownerId;
