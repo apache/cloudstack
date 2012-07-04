@@ -2193,7 +2193,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             URI isolationUri = nic.getIsolationUri();
 
             profile = new NicProfile(nic, network, broadcastUri, isolationUri, 
-                    networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getHypervisorType(), network));
+
+            networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getHypervisorType(), network));
             guru.reserve(profile, network, vmProfile, dest, context);
             nic.setIp4Address(profile.getIp4Address());
             nic.setAddressFormat(profile.getFormat());
@@ -2213,17 +2214,17 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             updateNic(nic, network.getId(), 1);
         } else {
             profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
-                    networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getHypervisorType(), network));
+                        networkRate, isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getHypervisorType(), network));
             guru.updateNicProfile(profile, network);
             nic.setState(Nic.State.Reserved);
             updateNic(nic, network.getId(), 1);
         }
-        
+
         for (NetworkElement element : _networkElements) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Asking " + element.getName() + " to prepare for " + nic);
             }
-            prepareElement(element, network, profile, vmProfile, dest, context);  
+            prepareElement(element, network, profile, vmProfile, dest, context);
         }
 
         profile.setSecurityGroupEnabled(isSecurityGroupSupportedInNetwork(network));

@@ -399,7 +399,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         
         DomainRouterVO router = 
                 super.deployRouter(owner, dest, plan, params, isRedundant, vrProvider, svcOffId, vpcId, sourceNatIp, 
-                        false, true, null, null);
+                        false, null, null);
         
         //Plug public nic
         if (router != null && sourceNatIp != null) {
