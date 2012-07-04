@@ -49,7 +49,7 @@ systemjars = {
 	(
 		"tomcat6-servlet-2.5-api.jar",
 		"tomcat6-jsp-2.1-api-6.0.24.jar",
-		"tomcat6-el-1.0-api-6.0.24.jar",
+		"tomcat6-el-2.1-api-6.0.24.jar",
 		#"tomcat6/catalina.jar", # all supported distros put the file there
 	),
 	'Ubuntu':
@@ -288,7 +288,7 @@ depsclasspath = [ in_javadir(_basename(x)) for x in _glob(_join(conf.srcdir,"dep
 conf.env.DEPSCLASSPATH = pathsep.join(depsclasspath)
 
 # the MS classpath points to JARs required to run the management server
-msclasspath = [ in_javadir("%s-%s.jar"%(conf.env.PACKAGE,x)) for x in "utils api core server server-extras core-extras vmware-base ovm".split() ]
+msclasspath = [ in_javadir("%s-%s.jar"%(conf.env.PACKAGE,x)) for x in "utils api core server server-extras core-extras vmware-base ovm dp-user-concentrated-pod dp-user-dispersing host-allocator-random plugin-f5 plugin-netscaler plugin-ovs plugin-srx storage-allocator-random user-authenticator-ldap user-authenticator-md5 user-authenticator-plaintext vmware xen".split() ]
 conf.env.MSCLASSPATH = pathsep.join(msclasspath)
 
 # the agent and simulator classpaths point to JARs required to run these two applications

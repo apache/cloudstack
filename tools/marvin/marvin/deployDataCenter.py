@@ -83,7 +83,7 @@ class deployDataCenters():
             primarycmd.clusterid = clusterId
             self.apiClient.createStoragePool(primarycmd)
 
-    def createpods(self, pods, zone, zoneId):
+    def createpods(self, pods, zone, zoneId, networkId=None):
         if pods is None:
             return
         for pod in pods:
@@ -97,9 +97,9 @@ class deployDataCenters():
             createpodResponse = self.apiClient.createPod(createpod)
             podId = createpodResponse.id
 
-            if pod.guestIpRanges is not None:
+            if pod.guestIpRanges is not None and networkId is not None:
                 self.createVlanIpRanges("Basic", pod.guestIpRanges, zoneId,\
-                                        podId)
+                                        podId, networkId)
 
             self.createClusters(pod.clusters, zoneId, podId)
 
@@ -155,8 +155,7 @@ class deployDataCenters():
 
             networkcmdresponse = self.apiClient.createNetwork(networkcmd)
             networkId = networkcmdresponse.id
-
-            self.createVlanIpRanges(mode, ipranges, zoneId, networkId)
+            return networkId
 
     def createPhysicalNetwork(self, name, zoneid, vlan=None):
         phynet = createPhysicalNetwork.createPhysicalNetworkCmd()
@@ -249,18 +248,24 @@ class deployDataCenters():
             phynetwrk = self.createPhysicalNetwork(zone.name + "-pnet", \
                                                    zoneId)
 
-            self.addTrafficTypes(phynetwrk.id, ["Guest", "Public", \
-                                                    "Management"])
-
             self.configureProviders(phynetwrk, zone)
             self.updatePhysicalNetwork(phynetwrk.id, "Enabled", vlan=zone.vlan)
 
             if zone.networktype == "Basic":
+                self.addTrafficTypes(phynetwrk.id, ["Guest", "Management"])
+                
                 listnetworkoffering = \
                 listNetworkOfferings.listNetworkOfferingsCmd()
 
-                listnetworkoffering.name = \
-                "DefaultSharedNetworkOfferingWithSGService"
+                if zone.securitygroupenabled:
+                    listnetworkoffering.name = \
+                    "DefaultSharedNetworkOfferingWithSGService"
+                else:
+                    # need both name and display text for single result
+                    listnetworkoffering.name = \
+                    "DefaultSharedNetworkOffering"
+                    listnetworkoffering.displaytext = \
+                    "Offering for Shared networks"
 
                 listnetworkofferingresponse = \
                 self.apiClient.listNetworkOfferings(listnetworkoffering)
@@ -271,11 +276,13 @@ class deployDataCenters():
                 guestntwrk.zoneid = zoneId
                 guestntwrk.networkofferingid = \
                         listnetworkofferingresponse[0].id
-                self.createnetworks([guestntwrk], zoneId, zone.networktype)
-
-            self.createpods(zone.pods, zone, zoneId)
+                networkid = self.createnetworks([guestntwrk], zoneId, zone.networktype)
+                self.createpods(zone.pods, zone, zoneId, networkid)
 
             if zone.networktype == "Advanced":
+                self.createpods(zone.pods, zone, zoneId)
+                self.addTrafficTypes(phynetwrk.id, ["Guest", "Public", \
+                                                    "Management"])
                 self.createVlanIpRanges(zone.networktype, zone.ipranges, \
                                         zoneId)
 
