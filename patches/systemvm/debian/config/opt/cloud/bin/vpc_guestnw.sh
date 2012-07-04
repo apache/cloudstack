@@ -44,16 +44,15 @@ setup_dnsmasq() {
   fi
   # setup DNS
   sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,6.*$/d" /etc/dnsmasq.d/cloud.conf
-  if [ -n "$DNS" ]
+  if [ -n "$gw" ]
   then
-    echo "dhcp-option=tag:interface-$dev,6,$DNS" >> /etc/dnsmasq.d/cloud.conf
+    echo "dhcp-option=tag:interface-$dev,6,$gw" >> /etc/dnsmasq.d/cloud.conf
   fi
   # setup DOMAIN
+  [ -z $DOMAIN ] && DOMAIN="cloudnine.internal"
+
   sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,15.*$/d" /etc/dnsmasq.d/cloud.conf
-  if [ -n "$DOMAIN" ]
-  then
-    echo "dhcp-option=tag:interface-$dev,15,$DOMAIN" >> /etc/dnsmasq.d/cloud.conf
-  fi
+  echo "dhcp-option=tag:interface-$dev,15,$DOMAIN" >> /etc/dnsmasq.d/cloud.conf
   service dnsmasq restart
   sleep 1
 }

@@ -624,6 +624,12 @@ EOF
   cp /etc/cloud-nic.rules /etc/udev/rules.d/cloud-nic.rules
   echo "" > /etc/dnsmasq.d/dhcphosts.txt
   echo "dhcp-hostsfile=/etc/dhcphosts.txt" > /etc/dnsmasq.d/cloud.conf
+
+  [ -z $DOMAIN ] && DOMAIN="cloudnine.internal"
+  #DNS server will append $DOMAIN to local queries
+  sed -r -i s/^[#]?domain=.*$/domain=$DOMAIN/ /etc/dnsmasq.conf
+  #answer all local domain queries
+  sed  -i -e "s/^[#]*local=.*$/local=\/$DOMAIN\//" /etc/dnsmasq.conf
 }
 
 
