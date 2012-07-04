@@ -62,8 +62,9 @@
             </listitem>
             <listitem>
               <para>
-                The CentOS 6.2 x86_64 minimal installation CD available from here:
+                The 
                 <ulink url="http://mirrors.kernel.org/centos/6.2/isos/x86_64/CentOS-6.2-x86_64-minimal.iso">
+                CentOS 6.2 x86_64 minimal install CD
                 </ulink>
               </para>
             </listitem>
@@ -75,8 +76,9 @@
             </listitem>
             <listitem>
               <para>
-                Copy of CloudStack 3.0.2 for Red Hat Enterprise Linux (RHEL) and CentOS 6.2 available here:
+                Copy of 
                 <ulink url="http://sourceforge.net/projects/cloudstack/files/CloudStack%20Acton/3.0.2/CloudStack-oss-3.0.2-1-rhel6.2.tar.gz/download">
+                  CloudStack 3.0.2 for RHEL and CentOS 6.2
                 </ulink>
               </para>
             </listitem>
