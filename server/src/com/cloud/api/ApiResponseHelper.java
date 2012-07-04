@@ -3537,7 +3537,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(vpc.getState().name());
         response.setVpcOfferingId(vpc.getVpcOfferingId());
         response.setCidr(vpc.getCidr());
-        response.setZoneId(vpc.getZoneId());
         response.setRestartRequired(vpc.isRestartRequired());
         response.setNetworkDomain(vpc.getNetworkDomain());
 
@@ -3569,6 +3568,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             NetworkResponse ntwkRsp = createNetworkResponse(network);
             networkResponses.add(ntwkRsp);
         }
+        
+        DataCenter zone = ApiDBUtils.findZoneById(vpc.getZoneId());
+        response.setZoneId(vpc.getZoneId());
+        response.setZoneName(zone.getName());
         
         response.setNetworks(networkResponses);
         response.setServices(serviceResponses);
