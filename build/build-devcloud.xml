@@ -30,12 +30,12 @@
 
   <target name="deploydbIfSet" if="deploydb.is.set">
     <echo message="ant deploydb"/>
-    <sshexec host="${host}" port="${port}" username="root" password="password" command="echo $CATALINA_HOME; export CATALINA_HOME=/opt/apache-tomcat-6.0.32;killall java;cd /opt/incubator-cloudstack;ant deploycddb"/>
+    <sshexec host="${host}" port="${port}" username="root" password="password" command="echo $CATALINA_HOME; export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32;killall java;cd /opt/cloudstack/incubator-cloudstack;ant deploycddb"/>
   </target>
 
   <target name="rdeploydb">
     <echo message="ant rdeploydb"/>
-    <sshexec host="${host}" port="${port}" username="root" password="password" command="echo $CATALINA_HOME; export CATALINA_HOME=/opt/apache-tomcat-6.0.32;killall java;cd /opt/incubator-cloudstack;ant deploycddb"/>
+    <sshexec host="${host}" port="${port}" username="root" password="password" command="echo $CATALINA_HOME; export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32;killall java;cd /opt/cloudstack/incubator-cloudstack;ant deploycddb"/>
   </target>
 
   <target name="deploycddb" description="deploy specific db configuration for clouddev" depends="deploydb">
@@ -46,12 +46,12 @@
 
   <target name="rdebug-suspend" >
     <echo message="ant debug-suspend"/>
-    <sshexec host="${host}" port="${port}" username="root" password="password" command="killall java;sleep 1;echo $CATALINA_HOME; export CATALINA_HOME=/opt/apache-tomcat-6.0.32;cd /opt/incubator-cloudstack;ant deploy-server;ant debug-suspend"/>
+    <sshexec host="${host}" port="${port}" username="root" password="password" command="killall java;sleep 1;echo $CATALINA_HOME; export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32;cd /opt/cloudstack/incubator-cloudstack;ant deploy-server;ant debug-suspend"/>
   </target>
   
   <target name="rdebug">
     <echo message="ant debug"/>
-    <sshexec host="${host}" port="${port}" username="root" password="password" command="killall java;sleep 1;echo $CATALINA_HOME; export CATALINA_HOME=/opt/apache-tomcat-6.0.32;cd /opt/incubator-cloudstack;ant deploy-server; ant debug"/>
+    <sshexec host="${host}" port="${port}" username="root" password="password" command="killall java;sleep 1;echo $CATALINA_HOME; export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32;cd /opt/cloudstack/incubator-cloudstack;ant deploy-server; ant debug"/>
   </target>
 
 
@@ -63,33 +63,33 @@
 
 
     <echo message="copying build folder to remote"/>
-    <scp trust="yes" port="${port}" todir="root:password@${host}:/opt/incubator-cloudstack/build">   
+    <scp trust="yes" port="${port}" todir="root:password@${host}:/opt/cloudstack/incubator-cloudstack/build">   
       <fileset dir="build">
       </fileset>
     </scp>
 
-    <scp trust="yes" port="${port}" file="build.xml" todir="root:password@${host}:/opt/incubator-cloudstack/">   
+    <scp trust="yes" port="${port}" file="build.xml" todir="root:password@${host}:/opt/cloudstack/incubator-cloudstack/">   
     </scp>
 
     <echo message="copying deps folder to remote"/>
-    <scp trust="yes" port="${port}" todir="root:password@${host}:/opt/incubator-cloudstack/deps">   
+    <scp trust="yes" port="${port}" todir="root:password@${host}:/opt/cloudstack/incubator-cloudstack/deps">   
       <fileset dir="deps">
       </fileset>
     </scp>
 
     <echo message="copying target folder to remote"/>
-    <scp trust="yes" port="${port}" todir="root:password@${host}:/opt/incubator-cloudstack/target">   
+    <scp trust="yes" port="${port}" todir="root:password@${host}:/opt/cloudstack/incubator-cloudstack/target">   
       <fileset dir="target">
       </fileset>
     </scp>
 
     <echo message="copying dist folder to remote"/>
-    <scp trust="yes" port="${port}" todir="root:password@${host}:/opt/incubator-cloudstack/dist">   
+    <scp trust="yes" port="${port}" todir="root:password@${host}:/opt/cloudstack/incubator-cloudstack/dist">   
       <fileset dir="dist">
       </fileset>
     </scp>
    
-    <sshexec host="${host}" port="${port}" username="root" password="password" command="echo $CATALINA_HOME; export CATALINA_HOME=/opt/apache-tomcat-6.0.32;cd /opt/incubator-cloudstack;ant deploy-server"/>
+    <sshexec host="${host}" port="${port}" username="root" password="password" command="echo $CATALINA_HOME; export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32;cd /opt/cloudstack/incubator-cloudstack;ant deploy-server"/>
 
   </target>
   
