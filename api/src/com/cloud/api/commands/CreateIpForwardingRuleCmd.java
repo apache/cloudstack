@@ -302,5 +302,10 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.FirewallRule;
     }
+	
+    @Override
+    public TrafficType getTrafficType() {
+        return null;
+    }
 
 }

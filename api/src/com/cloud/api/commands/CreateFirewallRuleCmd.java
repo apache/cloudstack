@@ -316,5 +316,10 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.FirewallRule;
     }
+    
+    @Override
+    public TrafficType getTrafficType() {
+        return null;
+    }
 
 }

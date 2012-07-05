@@ -29,7 +29,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.rules.NetworkACL;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Deletes a Network ACL", responseObject=SuccessResponse.class)
@@ -78,7 +78,7 @@ public class DeleteNetworkACLCmd extends BaseAsyncCmd {
     @Override
     public long getEntityOwnerId() {
         if (ownerId == null) {
-            NetworkACL rule = _networkACLService.getNetworkACL(id);
+            FirewallRule rule = _networkACLService.getNetworkACL(id);
             if (rule == null) {
                 throw new InvalidParameterValueException("Unable to find network ACL by id=" + id);
             } else {

@@ -44,7 +44,7 @@ import com.cloud.utils.net.NetUtils;
 @Table(name="firewall_rules")
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="purpose", discriminatorType=DiscriminatorType.STRING, length=32)
-public class FirewallRuleVO implements Identity, NetworkACL {
+public class FirewallRuleVO implements Identity, FirewallRule {
     protected final FirewallRulesCidrsDaoImpl _firewallRulesCidrsDao = ComponentLocator.inject(FirewallRulesCidrsDaoImpl.class);
     
     @Id

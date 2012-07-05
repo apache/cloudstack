@@ -151,7 +151,6 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
-import com.cloud.network.rules.NetworkACL;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StickinessPolicy;
@@ -2983,7 +2982,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     @Override
-    public NetworkACLResponse createNetworkACLResponse(NetworkACL networkACL) {
+    public NetworkACLResponse createNetworkACLResponse(FirewallRule networkACL) {
         NetworkACLResponse response = new NetworkACLResponse();
 
         response.setId(networkACL.getId());

@@ -22,7 +22,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.NetworkACL;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
@@ -30,7 +29,7 @@ import com.cloud.utils.net.NetUtils;
 
 @Implementation(description = "Creates a ACL rule the given network (the network has to belong to VPC)", 
 responseObject = NetworkACLResponse.class)
-public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements NetworkACL {
+public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallRule {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkACLCmd.class.getName());
 
     private static final String s_name = "createnetworkaclresponse";
@@ -139,7 +138,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements NetworkAC
     public void execute() throws ResourceUnavailableException {
         UserContext callerContext = UserContext.current();
         boolean success = false;
-        NetworkACL rule = _networkACLService.getNetworkACL(getEntityId());
+        FirewallRule rule = _networkACLService.getNetworkACL(getEntityId());
         try {
             UserContext.current().setEventDetails("Rule Id: " + getEntityId());
             success = _networkACLService.applyNetworkACLs(rule.getNetworkId(), callerContext.getCaller());
@@ -239,7 +238,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements NetworkAC
         }
 
         try {
-            NetworkACL result = _networkACLService.createNetworkACL(this);
+            FirewallRule result = _networkACLService.createNetworkACL(this);
             setEntityId(result.getId());
         } catch (NetworkRuleConflictException ex) {
             s_logger.info("Network rule conflict: " + ex.getMessage());

@@ -358,4 +358,9 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         return AsyncJob.Type.FirewallRule;
     }
 
+    @Override
+    public TrafficType getTrafficType() {
+        return null;
+    }
+
 }
