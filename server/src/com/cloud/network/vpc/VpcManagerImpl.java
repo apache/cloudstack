@@ -56,6 +56,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.vpc.VpcOffering.State;
 import com.cloud.network.vpc.Dao.PrivateIpDao;
@@ -132,6 +133,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
     NetworkOfferingServiceMapDao _ntwkOffServiceDao ;
     @Inject
     VpcOfferingServiceMapDao _vpcOffServiceDao;
+    @Inject
+    PhysicalNetworkDao _pNtwkDao;
     
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     
@@ -502,7 +505,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
             if (networkDomain == null) {
                 networkDomain = "cs" + Long.toHexString(owner.getId()) + _ntwkMgr.getDefaultNetworkDomain();
             }
-        } 
+        }
         
         return createVpc(zoneId, vpcOffId, owner, vpcName, displayText, cidr, networkDomain);
     }
@@ -510,6 +513,20 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @Override
     public Vpc createVpc(long zoneId, long vpcOffId, Account vpcOwner, String vpcName, String displayText, String cidr, 
             String networkDomain) {
+        
+        //the provider has to be enabled at least in one network in the zone
+        boolean providerEnabled = false;
+        for (PhysicalNetwork pNtwk : _pNtwkDao.listByZone(zoneId)) {
+            if (_ntwkMgr.isProviderEnabledInPhysicalNetwork(pNtwk.getId(), Provider.VPCVirtualRouter.getName())) {
+                providerEnabled = true;
+                break;
+            }
+        }
+        
+        if (!providerEnabled) {
+            throw new InvalidParameterValueException("Provider " + Provider.VPCVirtualRouter.getName() +
+                    " should be enabled in at least one physical network of the zone specified");
+        }
         
         //Validate CIDR
         if (!NetUtils.isValidCIDR(cidr)) {
