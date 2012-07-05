@@ -51,8 +51,12 @@ class Domain:
             cmd.parentdomainid = parentdomainid
         elif "parentdomainid" in services:
             cmd.parentdomainid = services["parentdomainid"]
-
-        return Domain(apiclient.createDomain(cmd).__dict__)
+        try:
+            domain = apiclient.createDomain(cmd)
+            if domain is not None:
+                return Domain(domain.__dict__)
+        except Exception as e:
+            raise e
 
     def delete(self, apiclient, cleanup=None):
         """Delete an domain"""
@@ -155,6 +159,12 @@ class User:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listUsers(cmd))
 
+    @classmethod
+    def registerUserKeys(cls, apiclient, userid):
+        cmd = registerUserKeys.registerUserKeysCmd()
+        cmd.id = userid
+        return apiclient.registerUserKeys(cmd)
+
 
 class VirtualMachine:
     """Manage virtual machine lifecycle"""
@@ -255,14 +265,14 @@ class VirtualMachine:
                                            virtual_machine.domainid,
                                            services
                                            )
-            fw_rule = FireWallRule.create(
+            FireWallRule.create(
                                           apiclient,
                                           ipaddressid=public_ip.ipaddress.id,
                                           protocol='TCP',
                                           cidrlist=['0.0.0.0/0'],
                                           startport=22,
                                           endport=22
-                            )
+                               )
             nat_rule = NATRule.create(
                                     apiclient,
                                     virtual_machine,
@@ -481,7 +491,7 @@ class Volume:
         return(apiclient.listVolumes(cmd))
 
     @classmethod
-    def upload(cls, apiclient, services, zoneid=None, account=None, domainid=None):
+    def upload(cls, apiclient, services, zoneid=None, account=None, domainid=None, url=None):
         """Uploads the volume to specified account"""
 
         cmd = uploadVolume.uploadVolumeCmd()
@@ -493,7 +503,10 @@ class Volume:
             cmd.domainid = domainid
         cmd.format = services["format"]
         cmd.name = services["diskname"]
-        cmd.url = services["url"]
+        if url:
+            cmd.url = url
+        else:
+            cmd.url = services["url"]
         return Volume(apiclient.uploadVolume(cmd).__dict__)
 
     def wait_for_upload(self, apiclient, timeout=5, interval=60):
@@ -506,14 +519,13 @@ class Volume:
                                     apiclient,
                                     id=self.id,
                                     zoneid=self.zoneid,
-                                    templatefilter='self'
                                     )
             if isinstance(volume_response, list):
 
                 volume = volume_response[0]
                 # If volume is ready,
                 # volume.state = Allocated
-                if volue.state == 'Allocated':
+                if volume.state == 'Uploaded':
                     break
 
                 elif 'Uploading' in volume.state:
@@ -523,7 +535,6 @@ class Volume:
                     raise Exception(
                         "Error in uploading volume: status - %s" %
                                                             volume.state)
-
             elif timeout == 0:
                 break
 
@@ -531,6 +542,7 @@ class Volume:
                 time.sleep(interval)
                 timeout = timeout - 1
         return
+
 
 class Snapshot:
     """Manage Snapshot Lifecycle
@@ -1104,7 +1116,7 @@ class NetworkOffering:
             cmd.specifyVlan = services["specifyVlan"]
         if "specifyIpRanges" in services:
             cmd.specifyIpRanges = services["specifyIpRanges"]
-	cmd.availability = 'Optional'
+        cmd.availability = 'Optional'
 
         [setattr(cmd, k, v) for k, v in kwargs.items()]
 
@@ -1811,6 +1823,7 @@ class PhysicalNetwork:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listPhysicalNetworks(cmd))
 
+
 class SecurityGroup:
     """Manage Security Groups"""
 
@@ -2177,6 +2190,7 @@ class NetworkServiceProvider:
         cmd = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listNetworkServiceProviders(cmd))
+
 
 class Router:
     """Manage router life cycle"""
