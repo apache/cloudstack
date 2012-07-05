@@ -212,7 +212,7 @@ STATD_PORT=662
 STATD_OUTGOING_PORT=2020
     </screen>
     <para> Now we need to configure the firewall to permit incoming NFS connections. 
-    Edit the file <filename>/etc/sysconfig/nfs</filename>
+    Edit the file <filename>/etc/sysconfig/iptables</filename>
     </para>
     <screen>
 -A INPUT -m state --state NEW -p udp --dport 111 -j ACCEPT
