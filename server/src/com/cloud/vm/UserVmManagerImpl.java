@@ -2341,6 +2341,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>();
         short defaultNetworkNumber = 0;
         boolean securityGroupEnabled = false;
+        boolean vpcNetwork = false;
         for (NetworkVO network : networkList) {
             if (network.getDataCenterId() != zone.getId()) {
                 throw new InvalidParameterValueException("Network id=" + network.getId() + " doesn't belong to zone " + zone.getId());
@@ -2367,6 +2368,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
             if (_networkMgr.isSecurityGroupSupportedInNetwork(network)) {
                 securityGroupEnabled = true;
+            }
+            
+            //vm can't be a part of more than 1 VPC network
+            if (network.getVpcId() != null) {
+                if (vpcNetwork) {
+                    throw new InvalidParameterValueException("Vm can't be a part of more than 1 VPC network");
+                }
+                vpcNetwork = true;
             }
         }
 
