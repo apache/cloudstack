@@ -80,11 +80,16 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
     public Site2SiteVpnGateway createVpnGateway(CreateVpnGatewayCmd cmd) {
         Long ipId = cmd.getPublicIpId();
 	    IpAddress ip = _networkMgr.getIp(ipId);
+	    Long vpcId = ip.getVpcId();
 	    if (ip.getVpcId() == null) {
             throw new InvalidParameterValueException("The VPN gateway cannot create with ip not belong to VPC");
 	    }
         if (_vpnGatewayDao.findByIpAddrId(ipId) != null) {
             throw new InvalidParameterValueException("The VPN gateway with ip ID " + ipId + " already existed!");
+        }
+        List<Site2SiteVpnGatewayVO> gws = _vpnGatewayDao.listByVpcId(vpcId);
+        if (gws != null && gws.size() != 0) {
+            throw new InvalidParameterValueException("The VPN gateway of VPC " + vpcId + " already existed!");
         }
         Site2SiteVpnGatewayVO gw = new Site2SiteVpnGatewayVO(ipId);
         _vpnGatewayDao.persist(gw);
