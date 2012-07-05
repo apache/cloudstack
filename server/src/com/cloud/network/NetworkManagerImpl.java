@@ -2084,7 +2084,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         List<Provider> providersToImplement = getNetworkProviders(network.getId());
         for (NetworkElement element : _networkElements) {
             if (providersToImplement.contains(element.getProvider())) {
-                if (!isProviderEnabledInPhysicalNetwork(getPhysicalNetworkId(network), "VirtualRouter")) {
+                if (!isProviderEnabledInPhysicalNetwork(getPhysicalNetworkId(network), element.getProvider().getName())) {
                 	// The physicalNetworkId will not get translated into a uuid by the reponse serializer,
                 	// because the serializer would look up the NetworkVO class's table and retrieve the
                 	// network id instead of the physical network id.
@@ -3521,7 +3521,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         for (NetworkElement element : _networkElements) {
             if (providersToShutdown.contains(element.getProvider())) {
                 try {
-                    if (!isProviderEnabledInPhysicalNetwork(getPhysicalNetworkId(network), "VirtualRouter")) {
+                    if (!isProviderEnabledInPhysicalNetwork(getPhysicalNetworkId(network), element.getProvider().getName())) {
                         s_logger.warn("Unable to complete shutdown of the network elements due to element: " + element.getName() + " either doesn't exist or not enabled in the physical network "
                                 + getPhysicalNetworkId(network));
                         success = false;
@@ -3608,7 +3608,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         for (NetworkElement element : _networkElements) {
             if (providersToDestroy.contains(element.getProvider())) {
                 try {
-                    if (!isProviderEnabledInPhysicalNetwork(getPhysicalNetworkId(network), "VirtualRouter")) {
+                    if (!isProviderEnabledInPhysicalNetwork(getPhysicalNetworkId(network), element.getProvider().getName())) {
                         s_logger.warn("Unable to complete destroy of the network elements due to element: " + element.getName() + " either doesn't exist or not enabled in the physical network "
                                 + getPhysicalNetworkId(network));
                         success = false;
