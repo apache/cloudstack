@@ -20,6 +20,8 @@ import java.sql.SQLException;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
+
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
@@ -88,6 +90,46 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                     pstmtUpdate.executeUpdate();
                     pstmtUpdate.close();
                 }
+                
+                //check if any networks were untagged and remaining to be mapped to a physical network
+                
+                pstmt = conn.prepareStatement("SELECT count(n.id) FROM networks n WHERE n.physical_network_id IS NULL AND n.traffic_type = 'Guest' and n.data_center_id = ? and n.removed is null");
+                pstmt.setLong(1, zoneId);
+                rs = pstmt.executeQuery();
+                if(rs.next()){
+                    Long count = rs.getLong(1);
+                    if(count > 0){
+                        // find the default tag to use from global config or use 'cloud-private'
+                        String xenGuestLabel = getNetworkLabelFromConfig(conn, "xen.guest.network.device");
+                        //Decrypt this value.
+                        xenGuestLabel = DBEncryptionUtil.decrypt(xenGuestLabel);
+                        
+                        if(xenGuestLabel == null){
+                            xenGuestLabel = "cloud-private";
+                        }
+                        
+                        //Create a physical network with guest traffic type and this tag
+                        long physicalNetworkId = addPhysicalNetworkToZone(conn, zoneId, zoneName, networkType, null, domainId);
+                        addTrafficType(conn, physicalNetworkId, "Guest", xenGuestLabel, null, null);
+                        addDefaultVRProvider(conn, physicalNetworkId, zoneId);
+                        addDefaultSGProvider(conn, physicalNetworkId, zoneId, networkType, true);
+                        
+                        PreparedStatement pstmt3 = conn.prepareStatement("SELECT n.id FROM networks n WHERE n.physical_network_id IS NULL AND n.traffic_type = 'Guest' and n.data_center_id = ? and n.removed is null");
+                        pstmt3.setLong(1, zoneId);
+                        ResultSet rsNet = pstmt3.executeQuery();
+                        s_logger.debug("Adding PhysicalNetwork to VLAN");
+                        s_logger.debug("Adding PhysicalNetwork to user_ip_address");
+                        s_logger.debug("Adding PhysicalNetwork to networks");
+                        while(rsNet.next()){
+                            Long networkId = rsNet.getLong(1);
+                            addPhysicalNtwk_To_Ntwk_IP_Vlan(conn, physicalNetworkId,networkId);
+                        }
+                        rsNet.close();
+                        pstmt3.close();
+                    }
+                }
+                rs.close();
+                pstmt.close();
 
                 
                 boolean multiplePhysicalNetworks = false;
@@ -107,43 +149,6 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
     
                 if(multiplePhysicalNetworks){
                 
-                    //check if any networks were untagged and remaining to be mapped to a physical network
-                    
-                    pstmt = conn.prepareStatement("SELECT count(n.id) FROM networks n WHERE n.physical_network_id IS NULL AND n.traffic_type = 'Guest' and n.data_center_id = ? and n.removed is null");
-                    pstmt.setLong(1, zoneId);
-                    rs = pstmt.executeQuery();
-                    if(rs.next()){
-                        Long count = rs.getLong(1);
-                        if(count > 0){
-                            // find the default tag to use from global config or use 'cloud-private'
-                            String xenGuestLabel = getNetworkLabelFromConfig(conn, "xen.guest.network.device");
-                            if(xenGuestLabel == null){
-                                xenGuestLabel = "cloud-private";
-                            }
-                            
-                            //Create a physical network with guest traffic type and this tag
-                            long physicalNetworkId = addPhysicalNetworkToZone(conn, zoneId, zoneName, networkType, null, domainId);
-                            addTrafficType(conn, physicalNetworkId, "Guest", xenGuestLabel, null, null);
-                            addDefaultVRProvider(conn, physicalNetworkId, zoneId);
-                            addDefaultSGProvider(conn, physicalNetworkId, zoneId, networkType, true);
-                            
-                            PreparedStatement pstmt3 = conn.prepareStatement("SELECT n.id FROM networks n WHERE n.physical_network_id IS NULL AND n.traffic_type = 'Guest' and n.data_center_id = ? and n.removed is null");
-                            pstmt3.setLong(1, zoneId);
-                            ResultSet rsNet = pstmt3.executeQuery();
-                            s_logger.debug("Adding PhysicalNetwork to VLAN");
-                            s_logger.debug("Adding PhysicalNetwork to user_ip_address");
-                            s_logger.debug("Adding PhysicalNetwork to networks");
-                            while(rsNet.next()){
-                                Long networkId = rsNet.getLong(1);
-                                addPhysicalNtwk_To_Ntwk_IP_Vlan(conn, physicalNetworkId,networkId);
-                            }
-                            rsNet.close();
-                            pstmt3.close();
-                        }
-                    }
-                    rs.close();
-                    pstmt.close();
-                    
                     //add tags to the physical networks if not present and clone offerings
                     
                     pstmt = conn.prepareStatement("SELECT pn.id as pid , ptag.tag as tag FROM `cloud`.`physical_network` pn LEFT JOIN `cloud`.`physical_network_tags` ptag ON pn.id = ptag.physical_network_id where pn.data_center_id = ?");
