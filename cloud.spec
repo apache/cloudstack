@@ -633,7 +633,7 @@ fi
 %config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/usage/db.properties
 
 %files aws-api
-%defattr(0644,cloud,cloud,0755)
+%defattr(0666,cloud,cloud,0755)
 %{_datadir}/cloud/bridge/conf/*
 %{_datadir}/cloud/bridge/lib/*
 %{_datadir}/cloud/bridge/webapps/*
