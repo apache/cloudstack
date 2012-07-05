@@ -664,21 +664,33 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             ReservationContext context) {
         
         if (profile.getVirtualMachine().getVpcId() != null) {
-          //remove public and guest nics as we will plug them later
+            String defaultDns1 = null;
+            String defaultDns2 = null;
+            //remove public and guest nics as we will plug them later
             Iterator<NicProfile> it = profile.getNics().iterator();
             while (it.hasNext()) {
                 NicProfile nic = it.next();
                 if (nic.getTrafficType() == TrafficType.Public || nic.getTrafficType() == TrafficType.Guest) {
+                    //save dns information
+                    if(nic.getTrafficType() == TrafficType.Public) {
+                        defaultDns1 = nic.getDns1();
+                        defaultDns2 = nic.getDns2();
+                    }
                     s_logger.debug("Removing nic of type " + nic.getTrafficType() + " from the nics passed on vm start. " +
                             "The nic will be plugged later");
                     it.remove();
                 }
             }
             
-            //add vpc cidr to the boot load args
+            //add vpc cidr/dns/networkdomain to the boot load args
             StringBuilder buf = profile.getBootArgsBuilder();
             Vpc vpc = _vpcMgr.getVpc(profile.getVirtualMachine().getVpcId());
-            buf.append(" vpccidr=" + vpc.getCidr());
+            buf.append(" vpccidr=" + vpc.getCidr() + " domain=" + vpc.getNetworkDomain());
+            
+            buf.append(" dns1=").append(defaultDns1);
+            if (defaultDns2 != null) {
+                buf.append(" dns2=").append(defaultDns2);
+            }
         }
 
         return super.finalizeVirtualMachineProfile(profile, dest, context);
