@@ -21,7 +21,7 @@ import java.net.URL;
 import java.util.Iterator;
 import java.util.Map;
 
-/* @auth John Zucker
+/*
  * Provide a suitable subclass of format class to reflect the choice of bucket referencing format supported by
  * AWS S3 in constructing the URL for requesting RESTful services.  The three possibilities are
  * (*) hostname followed by bucket as path information (sometimes termed the path style)
