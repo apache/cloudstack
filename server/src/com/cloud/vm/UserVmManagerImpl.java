@@ -2243,7 +2243,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         // check if account/domain is with in resource limits to create a new vm
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.user_vm);
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume);
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, (diskOfferingId == null ? 1 : 2));
 
         //verify security group ids
         if (securityGroupIdList != null) {
