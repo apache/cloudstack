@@ -26,10 +26,9 @@ import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
-import com.cloud.api.response.FirewallResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.NetworkACLResponse;
-import com.cloud.network.rules.NetworkACL;
+import com.cloud.network.rules.FirewallRule;
 
 @Implementation(description="Lists all network ACLs", responseObject=NetworkACLResponse.class)
 public class ListNetworkACLsCmd extends BaseListProjectAndAccountResourcesCmd {
@@ -78,11 +77,11 @@ public class ListNetworkACLsCmd extends BaseListProjectAndAccountResourcesCmd {
     
     @Override
     public void execute(){
-        List<? extends NetworkACL> result = _networkACLService.listNetworkACLs(this);
+        List<? extends FirewallRule> result = _networkACLService.listNetworkACLs(this);
         ListResponse<NetworkACLResponse> response = new ListResponse<NetworkACLResponse>();
         List<NetworkACLResponse> aclResponses = new ArrayList<NetworkACLResponse>();
         
-        for (NetworkACL acl : result) {
+        for (FirewallRule acl : result) {
             NetworkACLResponse ruleData = _responseGenerator.createNetworkACLResponse(acl);
             aclResponses.add(ruleData);
         }

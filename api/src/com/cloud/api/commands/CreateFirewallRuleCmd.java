@@ -33,7 +33,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.NetworkACL;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.utils.net.NetUtils;
@@ -118,13 +117,13 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     public void execute() throws ResourceUnavailableException {
         UserContext callerContext = UserContext.current();
         boolean success = false;
-        FirewallRule rule = _entityMgr.findById(NetworkACL.class, getEntityId());
+        FirewallRule rule = _entityMgr.findById(FirewallRule.class, getEntityId());
         try {
             UserContext.current().setEventDetails("Rule Id: " + getEntityId());
             success = _firewallService.applyFirewallRules(rule.getSourceIpAddressId(), callerContext.getCaller());
 
             // State is different after the rule is applied, so get new object here
-            rule = _entityMgr.findById(NetworkACL.class, getEntityId());
+            rule = _entityMgr.findById(FirewallRule.class, getEntityId());
             FirewallResponse fwResponse = new FirewallResponse(); 
             if (rule != null) {
                 fwResponse = _responseGenerator.createFirewallResponse(rule);
@@ -312,6 +311,11 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.FirewallRule;
+    }
+    
+    @Override
+    public TrafficType getTrafficType() {
+        return null;
     }
 
 }

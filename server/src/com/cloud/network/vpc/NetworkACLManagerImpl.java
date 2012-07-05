@@ -42,7 +42,6 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.NetworkACL;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -111,7 +110,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
     }
 
     @Override
-    public NetworkACL createNetworkACL(NetworkACL acl) throws NetworkRuleConflictException {
+    public FirewallRule createNetworkACL(FirewallRule acl) throws NetworkRuleConflictException {
         return createNetworkACL(UserContext.current().getCaller(), acl.getXid(), acl.getSourcePortStart(), 
                 acl.getSourcePortEnd(), acl.getProtocol(), acl.getSourceCidrList(), acl.getIcmpCode(),
                 acl.getIcmpType(), null, acl.getType(), acl.getNetworkId(), acl.getTrafficType());
@@ -119,7 +118,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
 
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_FIREWALL_OPEN, eventDescription = "creating firewall rule", create = true)
-    protected NetworkACL createNetworkACL(Account caller, String xId, Integer portStart, 
+    protected FirewallRule createNetworkACL(Account caller, String xId, Integer portStart, 
             Integer portEnd, String protocol, List<String> sourceCidrList, Integer icmpCode, Integer icmpType,
             Long relatedRuleId, FirewallRule.FirewallRuleType type, long networkId, TrafficType trafficType) throws NetworkRuleConflictException {
         
@@ -173,7 +172,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
 
         txn.commit();
 
-        return newRule;
+        return getNetworkACL(newRule.getId());
     }
     
     
@@ -210,9 +209,13 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         }
     }
     
-    protected void detectNetworkACLConflict(NetworkACL newRule) throws NetworkRuleConflictException {
-
-        List<FirewallRuleVO> rules = _firewallDao.listByNetworkPurposeTrafficTypeAndNotRevoked(newRule.getNetworkId(), Purpose.NetworkACL, newRule.getTrafficType());
+    protected void detectNetworkACLConflict(FirewallRuleVO newRule) throws NetworkRuleConflictException {
+        if (newRule.getPurpose() != Purpose.NetworkACL) {
+            return;
+        }
+        
+        List<FirewallRuleVO> rules = _firewallDao.listByNetworkPurposeTrafficTypeAndNotRevoked(newRule.getNetworkId(),
+                Purpose.NetworkACL, newRule.getTrafficType());
         assert (rules.size() >= 1) : "For network ACLs, we now always first persist the rule and then check for " +
                 "network conflicts so we should at least have one rule at this point.";
 
@@ -301,8 +304,8 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
     }
     
     @Override
-    public NetworkACL getNetworkACL(long ACLId) {
-        FirewallRuleVO rule = _firewallDao.findById(ACLId);
+    public FirewallRule getNetworkACL(long ACLId) {
+        FirewallRule rule = _firewallDao.findById(ACLId);
         if (rule != null && rule.getPurpose() == Purpose.NetworkACL) {
             return rule;
         }
@@ -310,7 +313,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
     }
 
     @Override
-    public List<? extends NetworkACL> listNetworkACLs(ListNetworkACLsCmd cmd) {
+    public List<? extends FirewallRule> listNetworkACLs(ListNetworkACLsCmd cmd) {
         Long networkId = cmd.getNetworkId();
         Long id = cmd.getId();
         String trafficType = cmd.getTrafficType();
@@ -357,7 +360,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
 
 
     @Override
-    public List<? extends NetworkACL> listNetworkACLs(long guestNtwkId) {
+    public List<? extends FirewallRule> listNetworkACLs(long guestNtwkId) {
         return _firewallDao.listByNetworkAndPurpose(guestNtwkId, Purpose.NetworkACL);
     }
     

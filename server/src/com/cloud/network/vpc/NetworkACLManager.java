@@ -16,7 +16,7 @@ import java.util.List;
 
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.firewall.NetworkACLService;
-import com.cloud.network.rules.NetworkACL;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 
 /**
@@ -33,6 +33,6 @@ public interface NetworkACLManager extends NetworkACLService{
      */
     boolean revokeAllNetworkACLsForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException;
     
-    List<? extends NetworkACL> listNetworkACLs(long guestNtwkId);
+    List<? extends FirewallRule> listNetworkACLs(long guestNtwkId);
 
 }
