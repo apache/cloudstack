@@ -11,7 +11,8 @@ COMMIT
 -A INPUT -d 225.0.0.50/32 -j ACCEPT
 -A INPUT -p icmp -j ACCEPT
 -A INPUT -i lo -j ACCEPT
--A INPUT -i eth0 -p tcp --dport 3922 -j ACCEPT
+-A INPUT -i eth0 -p tcp -m state --state NEW --dport 3922 -j ACCEPT
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 -A FORWARD -m state --state ESTABLISHED,RELATED -j ACCEPT
 COMMIT
 *mangle

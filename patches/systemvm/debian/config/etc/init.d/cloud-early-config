@@ -560,7 +560,7 @@ setup_vpcrouter() {
   fi
 
     cat > /etc/network/interfaces << EOF
-auto lo $1
+auto lo
 iface lo inet loopback
 EOF
   setup_interface "0" $ETH0_IP $ETH0_MASK $GW
