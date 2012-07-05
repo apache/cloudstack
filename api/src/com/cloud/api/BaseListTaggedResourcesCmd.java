@@ -25,7 +25,7 @@ import com.cloud.exception.InvalidParameterValueException;
 public abstract class BaseListTaggedResourcesCmd extends BaseListProjectAndAccountResourcesCmd{
     @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "List resources by tags (key/value pairs)")
     private Map tags;
-    
+
     public Map<String, String> getTags() {
         Map<String, String> tagsMap = null;
         if (tags != null && !tags.isEmpty()) {
@@ -37,7 +37,7 @@ public abstract class BaseListTaggedResourcesCmd extends BaseListProjectAndAccou
                 String key = services.get("key");
                 String value = services.get("value");
                 if (value == null) {
-                    throw new InvalidParameterValueException("No value is passed in for key " + key);
+                    throw new InvalidParameterValueException("No value is passed in for key " + key, null);
                 }
                 tagsMap.put(key, value);
             }

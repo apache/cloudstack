@@ -24,8 +24,8 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.network.rules.LoadBalancer;
+import com.cloud.network.rules.StickinessPolicy;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -101,11 +101,11 @@ public class DeleteLBStickinessPolicyCmd extends BaseAsyncCmd {
         StickinessPolicy policy = _entityMgr.findById(StickinessPolicy.class,
                 getId());
         if (policy == null) {
-            throw new InvalidParameterValueException("Unable to find LB stickiness rule: " + id);        
+            throw new InvalidParameterValueException("Unable to find LB stickiness rule by id", null);
         }
         LoadBalancer lb = _lbService.findById(policy.getLoadBalancerId());
         if (lb == null) {
-            throw new InvalidParameterValueException("Unable to find load balancer rule for stickiness rule: " + id);                 
+            throw new InvalidParameterValueException("Unable to find load balancer rule for stickiness rule by id", null);
         }
         return lb.getNetworkId();
     }

@@ -36,7 +36,7 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(RemoveFromLoadBalancerRuleCmd.class.getName());
 
     private static final String s_name = "removefromloadbalancerruleresponse";
- 
+
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
@@ -100,7 +100,7 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to remove instance from load balancer rule");
         }
     }
-    
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.networkSyncObject;
@@ -108,10 +108,10 @@ public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public Long getSyncObjId() {
-    	LoadBalancer lb = _lbService.findById(id);
-    	if(lb == null){
-    		throw new InvalidParameterValueException("Unable to find load balancer rule: " + id);
-    	}
+        LoadBalancer lb = _lbService.findById(id);
+        if(lb == null){
+            throw new InvalidParameterValueException("Unable to find load balancer rule by id", null);
+        }
         return lb.getNetworkId();
     }
 }

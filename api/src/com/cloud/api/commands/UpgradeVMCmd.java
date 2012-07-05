@@ -28,8 +28,8 @@ import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
 
 @Implementation(responseObject=UserVmResponse.class, description="Changes the service offering for a virtual machine. " +
-																							"The virtual machine must be in a \"Stopped\" state for " +
-																							"this command to take effect.")
+        "The virtual machine must be in a \"Stopped\" state for " +
+        "this command to take effect.")
 public class UpgradeVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeVMCmd.class.getName());
     private static final String s_name = "changeserviceforvirtualmachineresponse";
@@ -68,9 +68,9 @@ public class UpgradeVMCmd extends BaseCmd {
     }
 
     public static String getResultObjectName() {
-    	return "virtualmachine";
+        return "virtualmachine";
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         UserVm userVm = _entityMgr.findById(UserVm.class, getId());
@@ -80,16 +80,16 @@ public class UpgradeVMCmd extends BaseCmd {
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Vm Id: "+getId());
-        
+
         ServiceOffering serviceOffering = _configService.getServiceOffering(serviceOfferingId);
         if (serviceOffering == null) {
-            throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
+            throw new InvalidParameterValueException("Unable to find service offering by id", null);
         }
-        
+
         UserVm result = _userVmService.upgradeVirtualMachine(this);
         if (result != null){
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);

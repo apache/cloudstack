@@ -48,11 +48,11 @@ public abstract class BaseListCmd extends BaseCmd {
 
     public Integer getPageSize() {
         if (pageSize != null && MAX_PAGESIZE != null && pageSize.longValue() > MAX_PAGESIZE.longValue()) {
-            throw new InvalidParameterValueException("Page size can't exceed max allowed page size value: " + MAX_PAGESIZE.longValue());
+            throw new InvalidParameterValueException("Page size can't exceed max allowed page size value: " + MAX_PAGESIZE.longValue(), null);
         }
 
         if (pageSize != null && pageSize.longValue() == PAGESIZE_UNLIMITED && page != null) {
-            throw new InvalidParameterValueException("Can't specify page parameter when pagesize is -1 (Unlimited)");
+            throw new InvalidParameterValueException("Can't specify page parameter when pagesize is -1 (Unlimited)", null);
         }
 
         return pageSize;

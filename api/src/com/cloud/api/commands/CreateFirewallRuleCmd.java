@@ -59,25 +59,26 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
 
     @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "the ending port of firewall rule")
     private Integer publicEndPort;
-    
+
     @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from")
     private List<String> cidrlist;
-    
+
     @Parameter(name = ApiConstants.ICMP_TYPE, type = CommandType.INTEGER, description = "type of the icmp message being sent")
     private Integer icmpType;
 
     @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this icmp message")
     private Integer icmpCode;
-    
+
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "type of firewallrule: system/user")
     private String type;
-    
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-    
+
+    @Override
     public String getEntityTable() {
-    	return "firewall_rules";
+        return "firewall_rules";
     }
 
     public Long getIpAddressId() {
@@ -89,6 +90,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         return protocol.trim();
     }
 
+    @Override
     public List<String> getSourceCidrList() {
         if (cidrlist != null) {
             return cidrlist;
@@ -97,7 +99,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
             oneCidrList.add(NetUtils.ALL_CIDRS);
             return oneCidrList;
         }
-        
+
     }
 
     // ///////////////////////////////////////////////////
@@ -108,7 +110,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     public String getCommandName() {
         return s_name;
     }
-    
+
     public void setSourceCidrList(List<String> cidrs){
         cidrlist = cidrs;
     }
@@ -171,7 +173,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         } else {
             return publicEndPort.intValue();
         }
-        
+
         return null;
     }
 
@@ -189,14 +191,14 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     public long getNetworkId() {
         IpAddress ip = _entityMgr.findById(IpAddress.class, getIpAddressId());
         Long ntwkId = null;
-        
+
         if (ip.getAssociatedWithNetworkId() != null) {
             ntwkId = ip.getAssociatedWithNetworkId();
         }
-        
+
         if (ntwkId == null) {
             throw new InvalidParameterValueException("Unable to create firewall rule for the ipAddress id=" + ipAddressId + 
-                    " as ip is not associated with any network and no networkId is passed in");
+                    " as ip is not associated with any network and no networkId is passed in", null);
         }
         return ntwkId;
     }
@@ -268,11 +270,11 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     private IpAddress getIp() {
         IpAddress ip = _networkService.getIp(ipAddressId);
         if (ip == null) {
-            throw new InvalidParameterValueException("Unable to find ip address by id " + ipAddressId);
+            throw new InvalidParameterValueException("Unable to find ip address by id", null);
         }
         return ip;
     }
-    
+
     @Override
     public Integer getIcmpCode() {
         if (icmpCode != null) {
@@ -282,14 +284,14 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         }
         return null;
     }
-    
+
     @Override
     public Integer getIcmpType() {
         if (icmpType != null) {
             return icmpType;
         } else if (protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO)) {
-                return -1;
-            
+            return -1;
+
         }
         return null;
     }
@@ -299,20 +301,20 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
         return null;
     }
 
-	@Override
-	public FirewallRuleType getType() {
-		if (type != null && type.equalsIgnoreCase("system")) {
-			return FirewallRuleType.System;
-		} else {
-			return FirewallRuleType.User;
-		}
-	}
-	
+    @Override
+    public FirewallRuleType getType() {
+        if (type != null && type.equalsIgnoreCase("system")) {
+            return FirewallRuleType.System;
+        } else {
+            return FirewallRuleType.User;
+        }
+    }
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.FirewallRule;
     }
-    
+
     @Override
     public TrafficType getTrafficType() {
         return null;

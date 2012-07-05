@@ -43,43 +43,43 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the network")
     private Long id;
-    
+
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, description="the new name for the network")
     private String name;
-    
+
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="the new display text for the network")
     private String displayText;
-    
+
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
     private String networkDomain;
-    
+
     @Parameter(name=ApiConstants.CHANGE_CIDR, type=CommandType.BOOLEAN, description="Force update even if cidr type is different")
     private Boolean changeCidr;
-    
+
     @IdentityMapper(entityTableName="network_offerings")
     @Parameter(name=ApiConstants.NETWORK_OFFERING_ID, type=CommandType.LONG, description="network offering ID")
     private Long networkOfferingId;
-  
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-   
+
     public Long getId() {
         return id;
     }
-    
+
     public String getNetworkName() {
         return name;
     }
-    
+
     public String getDisplayText() {
         return displayText;
     }
-    
+
     private String getNetworkDomain() {
         return networkDomain;
     }
-    
+
     private Long getNetworkOfferingId() {
         return networkOfferingId;
     }
@@ -98,17 +98,17 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Network network = _networkService.getNetwork(id);
         if (network == null) {
-            throw new InvalidParameterValueException("Networkd id=" + id + " doesn't exist");
+            throw new InvalidParameterValueException("Couldn't find network by id", null);
         } else {
             return _networkService.getNetwork(id).getAccountId();
         }
     }
-    
+
     @Override
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException{
         User callerUser = _accountService.getActiveUser(UserContext.current().getCallerUserId());
@@ -123,12 +123,12 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update network");
         }
     }
-    
+
     @Override
     public String getEventDescription() {
         return  "Updating network: " + getId();
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_NETWORK_UPDATE;

@@ -44,13 +44,13 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.IS_PUBLIC, type = CommandType.BOOLEAN, description = "true for public template/iso, false for private templates/isos")
     private Boolean isPublic;
-    
+
     @Parameter(name = ApiConstants.IS_EXTRACTABLE, type = CommandType.BOOLEAN, description = "true if the template/iso is extractable, false other wise. Can be set only by root admin")
     private Boolean isExtractable;
 
     @Parameter(name = ApiConstants.OP, type = CommandType.STRING, description = "permission operator (add, remove, reset)")
     private String operation;
-    
+
     @IdentityMapper(entityTableName="projects")
     @Parameter(name = ApiConstants.PROJECT_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, description = "a comma delimited list of projects. If specified, \"op\" parameter has to be passed in.")
     private List<Long> projectIds;
@@ -61,9 +61,9 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
 
     public List<String> getAccountNames() {
         if (accountNames != null && projectIds != null) {
-            throw new InvalidParameterValueException("Accounts and projectIds can't be specified together");  
+            throw new InvalidParameterValueException("Accounts and projectIds can't be specified together", null);
         }
-        
+
         return accountNames; 
     }
 
@@ -78,18 +78,18 @@ public abstract class UpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
     public Boolean isPublic() {
         return isPublic;
     }
-    
+
     public Boolean isExtractable() {
         return isExtractable;
     }
-    
+
     public String getOperation() {
         return operation;
     }
-    
+
     public List<Long> getProjectIds() {
         if (accountNames != null && projectIds != null) {
-            throw new InvalidParameterValueException("Accounts and projectIds can't be specified together");  
+            throw new InvalidParameterValueException("Accounts and projectIds can't be specified together", null);
         }
         return projectIds;
     }

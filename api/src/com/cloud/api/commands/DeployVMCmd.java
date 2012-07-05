@@ -111,39 +111,40 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @IdentityMapper(entityTableName="host")
     @Parameter(name=ApiConstants.HOST_ID, type=CommandType.LONG, description="destination Host ID to deploy the VM to - parameter available for root admin only")
     private Long hostId;
-    
+
     @IdentityMapper(entityTableName="security_group")
     @Parameter(name=ApiConstants.SECURITY_GROUP_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, description="comma separated list of security groups id that going to be applied to the virtual machine. Should be passed only when vm is created from a zone with Basic Network support. Mutually exclusive with securitygroupnames parameter")
     private List<Long> securityGroupIdList;
-    
+
     @Parameter(name=ApiConstants.SECURITY_GROUP_NAMES, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of security groups names that going to be applied to the virtual machine. Should be passed only when vm is created from a zone with Basic Network support. Mutually exclusive with securitygroupids parameter")
     private List<String> securityGroupNameList;
-    
+
     @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP, description = "ip to network mapping. Can't be specified with networkIds parameter. Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].networkid=204 - requests to use ip 10.10.10.11 in network id=204")
     private Map ipToNetworkList;
-    
+
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, description="the ip address for default vm's network")
     private String ipAddress;
-    
+
     @Parameter(name=ApiConstants.KEYBOARD, type=CommandType.STRING, description="an optional keyboard device type for the virtual machine. valid value can be one of de,de-ch,es,fi,fr,fr-be,fr-ch,is,it,jp,nl-be,no,pt,uk,us")
     private String keyboard;
-    
+
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="Deploy vm for the project")
     private Long projectId;
-    
+
     @Parameter(name=ApiConstants.START_VM, type=CommandType.BOOLEAN, description="true if network offering supports specifying ip ranges; defaulted to true if not specified")
     private Boolean startVm;
-    
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getEntityTable() {
-    	return "vm_instance";
+        return "vm_instance";
     }
-    
+
     public String getAccountName() {
         if (accountName == null) {
             return UserContext.current().getCaller().getAccountName();
@@ -176,16 +177,16 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
     public List<Long> getSecurityGroupIdList() {
         if (securityGroupNameList != null && securityGroupIdList != null) {
-            throw new InvalidParameterValueException("securitygroupids parameter is mutually exclusive with securitygroupnames parameter");
+            throw new InvalidParameterValueException("securitygroupids parameter is mutually exclusive with securitygroupnames parameter", null);
         }
-        
-       //transform group names to ids here
-       if (securityGroupNameList != null) {
+
+        //transform group names to ids here
+        if (securityGroupNameList != null) {
             List<Long> securityGroupIds = new ArrayList<Long>();
             for (String groupName : securityGroupNameList) {
                 Long groupId = _responseGenerator.getSecurityGroupId(groupName, getEntityOwnerId());
                 if (groupId == null) {
-                    throw new InvalidParameterValueException("Unable to find group by name " + groupName + " for account " + getEntityOwnerId());
+                    throw new InvalidParameterValueException("Unable to find group by name " + groupName + " for account " + getEntityOwnerId(), null);
                 } else {
                     securityGroupIds.add(groupId);
                 }
@@ -217,15 +218,15 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     }
 
     public List<Long> getNetworkIds() {
-       if (ipToNetworkList != null) {
-           if (networkIds != null || ipAddress != null) {
-               throw new InvalidParameterValueException("ipToNetworkMap can't be specified along with networkIds or ipAddress");
-           } else {
-               List<Long> networks = new ArrayList<Long>();
-               networks.addAll(getIpToNetworkMap().keySet());
-               return networks;
-           }
-       }
+        if (ipToNetworkList != null) {
+            if (networkIds != null || ipAddress != null) {
+                throw new InvalidParameterValueException("ipToNetworkMap can't be specified along with networkIds or ipAddress", null);
+            } else {
+                List<Long> networks = new ArrayList<Long>();
+                networks.addAll(getIpToNetworkMap().keySet());
+                return networks;
+            }
+        }
         return networkIds;
     }
 
@@ -240,14 +241,14 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     public Long getHostId() {
         return hostId;
     }
-    
+
     public boolean getStartVm() {
         return startVm == null ? true : startVm;
     }
-    
+
     private Map<Long, String> getIpToNetworkMap() {
         if ((networkIds != null || ipAddress != null) && ipToNetworkList != null) {
-            throw new InvalidParameterValueException("NetworkIds and ipAddress can't be specified along with ipToNetworkMap parameter");
+            throw new InvalidParameterValueException("NetworkIds and ipAddress can't be specified along with ipToNetworkMap parameter", null);
         }
         Map<Long, String> ipToNetworkMap = null;
         if (ipToNetworkList != null && !ipToNetworkList.isEmpty()) {
@@ -257,11 +258,11 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             while (iter.hasNext()) {
                 HashMap<String, String> ips = (HashMap<String, String>) iter.next();
                 Long networkId = Long.valueOf(_responseGenerator.getIdentiyId("networks", ips.get("networkid")));
-                String requestedIp = (String) ips.get("ip");
+                String requestedIp = ips.get("ip");
                 ipToNetworkMap.put(networkId, requestedIp);
             }
         }
-        
+
         return ipToNetworkMap;
     }
 
@@ -284,7 +285,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         if (accountId == null) {
             return UserContext.current().getCaller().getId();
         }
-        
+
         return accountId;
     }
 
@@ -316,7 +317,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute(){
         UserVm result;
-        
+
         if (getStartVm()) {
             try {
                 UserContext.current().setEventDetails("Vm Id: "+getEntityId());
@@ -339,7 +340,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
         } else {
             result = _userVmService.getUserVm(getEntityId());
         }
-        
+
         if (result != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", result).get(0);
             response.setResponseName(getCommandName());
@@ -357,24 +358,24 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
 
             DataCenter zone = _configService.getZone(zoneId);
             if (zone == null) {
-                throw new InvalidParameterValueException("Unable to find zone by id=" + zoneId);
+                throw new InvalidParameterValueException("Unable to find zone by id", null);
             }
 
             ServiceOffering serviceOffering = _configService.getServiceOffering(serviceOfferingId);
             if (serviceOffering == null) {
-                throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
+                throw new InvalidParameterValueException("Unable to find service offering by id", null);
             }
 
             VirtualMachineTemplate template = _templateService.getTemplate(templateId);
             // Make sure a valid template ID was specified
             if (template == null) {
-                throw new InvalidParameterValueException("Unable to use template " + templateId);
+                throw new InvalidParameterValueException("Unable to use template " + templateId, null);
             }
-            
+
             if (diskOfferingId != null) {
                 DiskOffering diskOffering = _configService.getDiskOffering(diskOfferingId);
                 if (diskOffering == null) {
-                    throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
+                    throw new InvalidParameterValueException("Unable to find disk offering by id", null);
                 }
             }
 
@@ -384,7 +385,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             } else {
                 if (zone.getNetworkType() == NetworkType.Basic) {
                     if (getNetworkIds() != null) {
-                        throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
+                        throw new InvalidParameterValueException("Can't specify network Ids in Basic zone", null);
                     } else {
                         vm = _userVmService.createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(), owner, name,
                                 displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
@@ -395,7 +396,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                                 owner, name, displayName, diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);
                     } else {
                         if (getSecurityGroupIdList() != null && !getSecurityGroupIdList().isEmpty()) {
-                            throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
+                            throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone", null);
                         }
                         vm = _userVmService.createAdvancedVirtualMachine(zone, serviceOffering, template, getNetworkIds(), owner, name, displayName,
                                 diskOfferingId, size, group, getHypervisor(), userData, sshKeyPairName, getIpToNetworkMap(), ipAddress, keyboard);

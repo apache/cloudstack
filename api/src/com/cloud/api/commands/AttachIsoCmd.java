@@ -67,14 +67,14 @@ public class AttachIsoCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         UserVm vm = _entityMgr.findById(UserVm.class, getVirtualMachineId());
         if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find virtual machine by id " + getVirtualMachineId());
+            throw new InvalidParameterValueException("Unable to find virtual machine by id " + getVirtualMachineId(), null);
         } 
-        
+
         return vm.getAccountId();
     }
 
@@ -87,10 +87,10 @@ public class AttachIsoCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "attaching ISO: " + getId() + " to vm: " + getVirtualMachineId();
     }
-    
+
     @Override
     public void execute(){
-    	UserContext.current().setEventDetails("Vm Id: " +getVirtualMachineId()+ " ISO Id: "+getId());
+        UserContext.current().setEventDetails("Vm Id: " +getVirtualMachineId()+ " ISO Id: "+getId());
         boolean result = _templateService.attachIso(id, virtualMachineId);
         if (result) {
             UserVm userVm = _responseGenerator.findUserVmById(virtualMachineId);

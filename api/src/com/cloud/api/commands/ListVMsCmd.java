@@ -65,25 +65,25 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the availability zone ID")
     private Long zoneId;
-    
+
     @Parameter(name=ApiConstants.FOR_VIRTUAL_NETWORK, type=CommandType.BOOLEAN, description="list by network type; true if need to list vms using Virtual Network, false otherwise")
     private Boolean forVirtualNetwork;
-    
+
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, description="list by network id")
     private Long networkId;
 
     @Parameter(name=ApiConstants.HYPERVISOR, type=CommandType.STRING, description="the target hypervisor for the template")
     private String hypervisor;
-    
+
     @IdentityMapper(entityTableName="storage_pool")
     @Parameter(name=ApiConstants.STORAGE_ID, type=CommandType.LONG, description="the storage ID where vm's volumes belong to")
     private Long storageId;
 
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of host details requested, " +
-    		"value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min]. If no parameter is passed in, the details will be defaulted to all" )
+            "value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min]. If no parameter is passed in, the details will be defaulted to all" )
     private List<String> viewDetails; 
-   
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -116,7 +116,7 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     public Boolean getForVirtualNetwork() {
         return forVirtualNetwork;
     }
@@ -124,19 +124,19 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     public void setForVirtualNetwork(Boolean forVirtualNetwork) {
         this.forVirtualNetwork = forVirtualNetwork;
     }
-    
+
     public Long getNetworkId() {
         return networkId;
     }
-        
+
     public String getHypervisor() {
-		return hypervisor;
-	}
-    
+        return hypervisor;
+    }
+
     public Long getStorageId() {
         return storageId;
     }
-    
+
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {
         EnumSet<VMDetails> dv;
         if (viewDetails==null || viewDetails.size() <=0){
@@ -151,39 +151,40 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
                 dv = EnumSet.copyOf(dc);
             }
             catch (IllegalArgumentException e){
-                throw new InvalidParameterValueException("The details parameter contains a non permitted value. The allowed values are " + EnumSet.allOf(VMDetails.class));
+                throw new InvalidParameterValueException("The details parameter contains a non permitted value. The allowed values are " + EnumSet.allOf(VMDetails.class), null);
             }
         }
         return dv;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
     @Override
-	public String getCommandName() {
+    public String getCommandName() {
         return s_name;
     }
-    
+
+    @Override
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.VirtualMachine;
+        return AsyncJob.Type.VirtualMachine;
     }
 
-	@Override
+    @Override
     public void execute(){
         List<? extends UserVm> result = _userVmService.searchForUserVMs(this);
         ListResponse<UserVmResponse> response = new ListResponse<UserVmResponse>();
         EnumSet<VMDetails> details = getDetails();
         List<UserVmResponse> vmResponses;
         if (details.contains(VMDetails.all)){ // for all use optimized version
-        	 vmResponses = _responseGenerator.createUserVmResponse("virtualmachine", result.toArray(new UserVm[result.size()]));
+            vmResponses = _responseGenerator.createUserVmResponse("virtualmachine", result.toArray(new UserVm[result.size()]));
         }
         else {
-        	 vmResponses = _responseGenerator.createUserVmResponse("virtualmachine", getDetails(), result.toArray(new UserVm[result.size()]));
+            vmResponses = _responseGenerator.createUserVmResponse("virtualmachine", getDetails(), result.toArray(new UserVm[result.size()]));
         }
         response.setResponses(vmResponses);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
     }
-    
+
 }

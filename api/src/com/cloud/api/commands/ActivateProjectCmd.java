@@ -18,7 +18,6 @@ import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
-import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -37,7 +36,7 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of the project to be modified")
     private Long id;
@@ -54,18 +53,18 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Project project= _projectService.getProject(id);
         //verify input parameters
         if (project == null) {
-            throw new InvalidParameterValueException("Unable to find project by id " + id);
+            throw new InvalidParameterValueException("Unable to find project by id", null);
         } 
-        
+
         return _projectService.getProjectOwner(id).getId(); 
     }
- 
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -83,12 +82,12 @@ public class ActivateProjectCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to activate a project");
         }
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_PROJECT_ACTIVATE;
     }
-    
+
     @Override
     public String getEventDescription() {
         return  "Activating project: " + id;

@@ -68,9 +68,9 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     public Long getVirtualMachineId() {
         return virtualMachineId;
     }
-    
+
     public Long getStoragePoolId() {
-    	return storageId;
+        return storageId;
     }
 
 
@@ -82,7 +82,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         UserVm userVm = _entityMgr.findById(UserVm.class, getVirtualMachineId());
@@ -102,66 +102,66 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "Attempting to migrate VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId();
     }
-    
+
     @Override
     public void execute(){
-    	if (getHostId() == null && getStoragePoolId() == null) {
-    		throw new InvalidParameterValueException("either hostId or storageId must be specified");
-    	}
-    	
-    	if (getHostId() != null && getStoragePoolId() != null) {
-    		throw new InvalidParameterValueException("only one of hostId and storageId can be specified");
-    	}
-    	
+        if (getHostId() == null && getStoragePoolId() == null) {
+            throw new InvalidParameterValueException("either hostId or storageId must be specified", null);
+        }
+
+        if (getHostId() != null && getStoragePoolId() != null) {
+            throw new InvalidParameterValueException("only one of hostId and storageId can be specified", null);
+        }
+
         UserVm userVm = _userVmService.getUserVm(getVirtualMachineId());
         if (userVm == null) {
-            throw new InvalidParameterValueException("Unable to find the VM by id=" + getVirtualMachineId());
+            throw new InvalidParameterValueException("Unable to find the VM by id=" + getVirtualMachineId(), null);
         }
-        
+
         Host destinationHost = null;
         if (getHostId() != null) {
-        	destinationHost = _resourceService.getHost(getHostId());
-        	if (destinationHost == null) {
-        		throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
-        	}
-        	UserContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId());
+            destinationHost = _resourceService.getHost(getHostId());
+            if (destinationHost == null) {
+                throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId(), null);
+            }
+            UserContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId());
         }
-        
+
         StoragePool destStoragePool = null;
         if (getStoragePoolId() != null) {
-        	destStoragePool = _storageService.getStoragePool(getStoragePoolId());
-        	if (destStoragePool == null) {
-        		throw new InvalidParameterValueException("Unable to find the storage pool to migrate the VM");
-        	}
-        	UserContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: "+ getStoragePoolId());
+            destStoragePool = _storageService.getStoragePool(getStoragePoolId());
+            if (destStoragePool == null) {
+                throw new InvalidParameterValueException("Unable to find the storage pool to migrate the VM", null);
+            }
+            UserContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to storage pool Id: "+ getStoragePoolId());
         }
-        
+
         try{
-        	VirtualMachine migratedVm = null;
-        	if (getHostId() != null) {
-        		migratedVm = _userVmService.migrateVirtualMachine(getVirtualMachineId(), destinationHost);
-        	} else if (getStoragePoolId() != null) {
-        		migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), destStoragePool);
-        	}
-	        if (migratedVm != null) {
+            VirtualMachine migratedVm = null;
+            if (getHostId() != null) {
+                migratedVm = _userVmService.migrateVirtualMachine(getVirtualMachineId(), destinationHost);
+            } else if (getStoragePoolId() != null) {
+                migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), destStoragePool);
+            }
+            if (migratedVm != null) {
                 UserVmResponse response = _responseGenerator.createUserVmResponse("virtualmachine", (UserVm)migratedVm).get(0);
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
-	        } else {
-	            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to migrate vm");
-	        }
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to migrate vm");
+            }
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
-		} catch (ManagementServerException e) {
+        } catch (ManagementServerException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
-		} catch (VirtualMachineMigrationException e) {
+        } catch (VirtualMachineMigrationException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
-		}  
+        }  
     }
 }

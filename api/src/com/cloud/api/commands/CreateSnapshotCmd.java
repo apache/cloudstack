@@ -60,9 +60,10 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-    
+
+    @Override
     public String getEntityTable() {
-    	return "snapshots";
+        return "snapshots";
     }
 
     public String getAccountName() {
@@ -100,23 +101,23 @@ public class CreateSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        
+
         Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
         if (volume == null) {
-        	throw new InvalidParameterValueException("Unable to find volume by id=" + volumeId);
+            throw new InvalidParameterValueException("Unable to find volume by id", null);
         }
-        
+
         Account account = _accountService.getAccount(volume.getAccountId());
         //Can create templates for enabled projects/accounts only
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-        	Project project = _projectService.findByProjectAccountId(volume.getAccountId());
+            Project project = _projectService.findByProjectAccountId(volume.getAccountId());
             if (project.getState() != Project.State.Active) {
                 throw new PermissionDeniedException("Can't add resources to the project id=" + project.getId() + " in state=" + project.getState() + " as it's no longer active");
             }
         } else if (account.getState() == Account.State.disabled) {
             throw new PermissionDeniedException("The owner of template is disabled: " + account);
         }
-        
+
         return volume.getAccountId();
     }
 

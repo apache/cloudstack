@@ -78,13 +78,13 @@ public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "deleting load balancer: " + getId();
     }
-	
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Load balancer Id: "+getId());
         boolean result = _firewallService.revokeRelatedFirewallRule(id, true);
         result = result && _lbService.deleteLoadBalancerRule(id, true);
-        
+
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
@@ -92,7 +92,7 @@ public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete load balancer");
         }
     }
-    
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.networkSyncObject;
@@ -100,13 +100,13 @@ public class DeleteLoadBalancerRuleCmd extends BaseAsyncCmd {
 
     @Override
     public Long getSyncObjId() {
-    	LoadBalancer lb = _lbService.findById(id);
-    	if(lb == null){
-    		throw new InvalidParameterValueException("Unable to find load balancer rule: " + id);
-    	}
+        LoadBalancer lb = _lbService.findById(id);
+        if(lb == null){
+            throw new InvalidParameterValueException("Unable to find load balancer rule by id", null);
+        }
         return lb.getNetworkId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.FirewallRule;

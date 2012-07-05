@@ -30,7 +30,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @Implementation(description="Create site to site vpn connection", responseObject=Site2SiteVpnConnectionResponse.class)
 public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
@@ -53,18 +52,19 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getEntityTable() {
-    	return "s2s_vpn_connection";
+        return "s2s_vpn_connection";
     }
-    
+
     public Long getVpnGatewayId() {
         return vpnGatewayId;
     }
-    
+
     public Long getCustomerGatewayId() {
         return customerGatewayId;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -75,21 +75,21 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
         return s_name;
     }
 
-	@Override
-	public long getEntityOwnerId() {
+    @Override
+    public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
 
-	@Override
-	public String getEventDescription() {
-		return "Create site-to-site VPN connection";
-	}
+    @Override
+    public String getEventDescription() {
+        return "Create site-to-site VPN connection";
+    }
 
-	@Override
-	public String getEventType() {
-		return EventTypes.EVENT_S2S_CONNECTION_CREATE;
-	}
-	
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_S2S_CONNECTION_CREATE;
+    }
+
     @Override
     public void create() {
         try {
@@ -122,8 +122,8 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         }
     }
-    
-    
+
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.vpcSyncObject;
@@ -137,7 +137,7 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
     private IpAddress getIp() {
         IpAddress ip = _s2sVpnService.getVpnGatewayIp(vpnGatewayId);
         if (ip == null) {
-            throw new InvalidParameterValueException("Unable to find ip address by vpn gateway id " + vpnGatewayId);
+            throw new InvalidParameterValueException("Unable to find ip address by vpn gateway id " + vpnGatewayId, null);
         }
         return ip;
     }

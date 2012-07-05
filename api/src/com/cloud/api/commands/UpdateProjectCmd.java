@@ -37,14 +37,14 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of the project to be modified")
     private Long id;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="new Admin account for the project")
     private String accountName;
-    
+
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="display text of the project")
     private String displayText;
 
@@ -68,18 +68,18 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Project project= _projectService.getProject(id);
         //verify input parameters
         if (project == null) {
-            throw new InvalidParameterValueException("Unable to find project by id " + id);
+            throw new InvalidParameterValueException("Unable to find project by id ", null);
         } 
-        
+
         return _projectService.getProjectOwner(id).getId(); 
     }
- 
+
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -97,12 +97,12 @@ public class UpdateProjectCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update a project");
         }
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_PROJECT_UPDATE;
     }
-    
+
     @Override
     public String getEventDescription() {
         return  "Updating project: " + id;

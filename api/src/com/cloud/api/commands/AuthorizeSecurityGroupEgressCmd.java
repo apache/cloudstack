@@ -17,7 +17,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.log4j.Logger;
+
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
@@ -25,8 +27,8 @@ import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.SecurityGroupRuleResponse;
 import com.cloud.api.response.SecurityGroupResponse;
+import com.cloud.api.response.SecurityGroupRuleResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -65,22 +67,22 @@ public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.USER_SECURITY_GROUP_LIST, type = CommandType.MAP, description = "user to security group mapping")
     private Map userSecurityGroupList;
-    
+
     @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the security group. If the account parameter is used, domainId must also be used.")
     private Long domainId;
-    
+
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the security group. Must be used with domainId.")
     private String accountName;
-    
+
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="an optional project of the security group")
     private Long projectId;
-    
+
     @IdentityMapper(entityTableName="security_group")
     @Parameter(name=ApiConstants.SECURITY_GROUP_ID, type=CommandType.LONG, description="The ID of the security group. Mutually exclusive with securityGroupName parameter")
     private Long securityGroupId;
-    
+
     @Parameter(name=ApiConstants.SECURITY_GROUP_NAME, type=CommandType.STRING, description="The name of the security group. Mutually exclusive with securityGroupName parameter")
     private String securityGroupName;
 
@@ -110,21 +112,21 @@ public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
 
     public Long getSecurityGroupId() {
         if (securityGroupId != null && securityGroupName != null) {
-            throw new InvalidParameterValueException("securityGroupId and securityGroupName parameters are mutually exclusive");
+            throw new InvalidParameterValueException("securityGroupId and securityGroupName parameters are mutually exclusive", null);
         }
-        
+
         if (securityGroupName != null) {
             securityGroupId = _responseGenerator.getSecurityGroupId(securityGroupName, getEntityOwnerId());
             if (securityGroupId == null) {
-                throw new InvalidParameterValueException("Unable to find security group " + securityGroupName + " for account id=" + getEntityOwnerId());
+                throw new InvalidParameterValueException("Unable to find security group " + securityGroupName + " for account id=" + getEntityOwnerId(), null);
             }
             securityGroupName = null;
         }
-        
+
         if (securityGroupId == null) {
-            throw new InvalidParameterValueException("Either securityGroupId or securityGroupName is required by authorizeSecurityGroupIngress command");
+            throw new InvalidParameterValueException("Either securityGroupId or securityGroupName is required by authorizeSecurityGroupIngress command", null);
         }
-        
+
         return securityGroupId;
     }
 
@@ -162,7 +164,7 @@ public class AuthorizeSecurityGroupEgressCmd extends BaseAsyncCmd {
         if (accountId == null) {
             return UserContext.current().getCaller().getId();
         }
-        
+
         return accountId;
     }
 

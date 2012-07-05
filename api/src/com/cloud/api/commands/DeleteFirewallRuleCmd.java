@@ -53,7 +53,7 @@ public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
     public Long getId() {
         return id;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -61,7 +61,7 @@ public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_FIREWALL_CLOSE;
@@ -71,25 +71,25 @@ public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  ("Deleting firewall rule id=" + id);
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         if (ownerId == null) {
             FirewallRule rule = _entityMgr.findById(FirewallRule.class, id);
             if (rule == null) {
-                throw new InvalidParameterValueException("Unable to find firewall rule by id=" + id);
+                throw new InvalidParameterValueException("Unable to find firewall rule by id", null);
             } else {
                 ownerId = _entityMgr.findById(FirewallRule.class, id).getAccountId();
             }
         }
         return ownerId;
     }
-    
+
     @Override
     public void execute() throws ResourceUnavailableException {
         UserContext.current().setEventDetails("Rule Id: " + id);
         boolean result = _firewallService.revokeFirewallRule(id, true);
-        
+
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
@@ -97,8 +97,8 @@ public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete firewall rule");
         }
     }
-    
-    
+
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.networkSyncObject;
@@ -108,7 +108,7 @@ public class DeleteFirewallRuleCmd extends BaseAsyncCmd {
     public Long getSyncObjId() {
         return _firewallService.getFirewallRule(id).getNetworkId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.FirewallRule;

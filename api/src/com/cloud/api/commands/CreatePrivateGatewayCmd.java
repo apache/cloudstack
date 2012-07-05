@@ -46,27 +46,27 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="physical_network")
     @Parameter(name=ApiConstants.PHYSICAL_NETWORK_ID, type=CommandType.LONG, description="the Physical Network ID the network belongs to")
     private Long physicalNetworkId;
 
     @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="the gateway of the Private gateway")
     private String gateway;
-    
+
     @Parameter(name=ApiConstants.NETMASK, type=CommandType.STRING, required=true, description="the netmask of the Private gateway")
     private String netmask;
-    
+
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required=true, description="the IP address of the Private gateaway")
     private String ipAddress;
-    
+
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, required=true, description="the Vlan for the private gateway")
     private String vlan;
-    
+
     @IdentityMapper(entityTableName="vpc")
     @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, required=true, description="the VPC network belongs to")
     private Long vpcId;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -78,7 +78,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     public String getVlan() {
         return vlan;
     }
-    
+
     public String getNetmask() {
         return netmask;
     }
@@ -86,11 +86,11 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     public String getStartIp() {
         return ipAddress;
     }
-    
+
     public Long getPhysicalNetworkId() {
         return physicalNetworkId;
     }
-    
+
     public Long getVpcId() {
         return vpcId;
     }
@@ -102,8 +102,8 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     public String getCommandName() {
         return s_name;
     }
-    
-    
+
+
     @Override
     public void create() throws ResourceAllocationException {
         PrivateGateway result = null;
@@ -118,17 +118,17 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, ex.getMessage());
         }
-        
+
         if (result != null) {
             this.setEntityId(result.getId());
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create private gateway");
         }
     }
-    
+
     @Override
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException, 
-                                ResourceAllocationException, ResourceUnavailableException {
+    ResourceAllocationException, ResourceUnavailableException {
         PrivateGateway result = _vpcService.applyVpcPrivateGateway(getEntityId());
         if (result != null) {
             PrivateGatewayResponse response = _responseGenerator.createPrivateGatewayResponse(result);
@@ -138,7 +138,7 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create private gateway");
         }
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
@@ -153,13 +153,13 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     public String getEventDescription() {
         return  "creating private gateway";
     }
-    
+
     @Override
     public String getEntityTable() {
         return "vpc_gateways";
     }
-    
-    
+
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.vpcSyncObject;
@@ -169,11 +169,11 @@ public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     public Long getSyncObjId() {
         Vpc vpc =  _vpcService.getVpc(vpcId);
         if (vpc == null) {
-            throw new InvalidParameterValueException("Invalid id is specified for the vpc");
+            throw new InvalidParameterValueException("Invalid id is specified for the vpc", null);
         }
         return vpc.getId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.PrivateGateway;

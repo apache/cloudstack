@@ -33,21 +33,21 @@ import com.cloud.user.Account;
 public class ListSupportedNetworkServicesCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(ListSupportedNetworkServicesCmd.class.getName());
     private static final String _name = "listsupportednetworkservicesresponse";
-    
+
     @Parameter(name=ApiConstants.PROVIDER, type=CommandType.STRING, description="network service provider name")
     private String providerName;
-    
+
     @Parameter(name=ApiConstants.SERVICE, type=CommandType.STRING, description="network service name to list providers and capabilities of")
     private String serviceName;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
 
     public void setProviderName(String providerName) {
         this.providerName = providerName;
@@ -74,7 +74,7 @@ public class ListSupportedNetworkServicesCmd extends BaseListCmd {
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
     }
-    
+
     @Override
     public void execute(){
         List<? extends Network.Service> services; 
@@ -83,7 +83,7 @@ public class ListSupportedNetworkServicesCmd extends BaseListCmd {
             if(serviceName != null){
                 service = Network.Service.getService(serviceName);
                 if(service == null){
-                    throw new InvalidParameterValueException("Invalid Network Service=" + serviceName);
+                    throw new InvalidParameterValueException("Invalid Network Service=" + serviceName, null);
                 }
             }
             List<Network.Service> serviceList = new ArrayList<Network.Service>();
@@ -92,14 +92,14 @@ public class ListSupportedNetworkServicesCmd extends BaseListCmd {
         }else{
             services = _networkService.listNetworkServices(getProviderName());
         }
-        
+
         ListResponse<ServiceResponse> response = new ListResponse<ServiceResponse>();
         List<ServiceResponse> servicesResponses = new ArrayList<ServiceResponse>();
         for (Network.Service service : services) {
-        	//skip gateway service
-        	if (service == Service.Gateway) {
-        		continue;
-        	}
+            //skip gateway service
+            if (service == Service.Gateway) {
+                continue;
+            }
             ServiceResponse serviceResponse = _responseGenerator.createNetworkServiceResponse(service);
             servicesResponses.add(serviceResponse);
         }
