@@ -543,6 +543,15 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
         
         
+        //don't allow overlapping CIDRS for the VPCs of the same account
+        List<? extends Vpc> vpcs = getVpcsForAccount(vpcOwner.getId());
+        for (Vpc vpc : vpcs) {
+            if (NetUtils.isNetworksOverlap(cidr, vpc.getCidr())) {
+                throw new InvalidParameterValueException("Account already has vpc with cidr " + vpc.getCidr() + 
+                        " that overlaps the cidr specified: " + cidr);
+            }
+        }
+        
         VpcVO vpc = new VpcVO (zoneId, vpcName, displayText, vpcOwner.getId(), vpcOwner.getDomainId(), vpcOffId, cidr, 
                 networkDomain);
         vpc = _vpcDao.persist(vpc);
