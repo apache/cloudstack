@@ -569,6 +569,9 @@ EOF
   echo 'AVAHI_DAEMON_DETECT_LOCAL=0' > /etc/default/avahi-daemon
   hostname $NAME
   
+  sed -i  /gateway/d /etc/hosts
+  sed -i /$NAME/d /etc/hosts
+  echo "$ETH0_IP $NAME" >> /etc/hosts
   #Nameserver
   sed -i -e "/^nameserver.*$/d" /etc/resolv.conf # remove previous entries
   sed -i -e "/^nameserver.*$/d" /etc/dnsmasq-resolv.conf # remove previous entries
@@ -610,9 +613,6 @@ EOF
   sudo ip rule add from $VPCCIDR table static_route 2>/dev/null
   sudo ip rule add from $VPCCIDR table static_route_back 2>/dev/null
 
-  sed -i  /gateway/d /etc/hosts
-
-  echo "$ETH0_IP $NAME" >> /etc/hosts
   setup_sshd $ETH0_IP
 
   enable_svc dnsmasq 1
