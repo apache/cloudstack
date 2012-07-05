@@ -64,4 +64,6 @@ public interface PhysicalNetworkServiceProvider {
     List<Service> getEnabledServices();
 
     String getUuid();
+
+    boolean isNetworkAclServiceProvided();
 }
