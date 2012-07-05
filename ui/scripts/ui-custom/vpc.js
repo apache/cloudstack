@@ -504,7 +504,11 @@
                   $loading.remove();
                 }
               );
-            }
+            },
+						error: function(errorMsg) {						 
+							cloudStack.dialog.notice({ message: _s(errorMsg) });							
+						  $loading.remove();
+						}						
           }
         });
       }
