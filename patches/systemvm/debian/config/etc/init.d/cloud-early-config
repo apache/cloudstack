@@ -596,7 +596,10 @@ EOF
   fi
   if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
   then
-    ip route add $MGMTNET via $LOCAL_GW dev eth1
+    if [ "$hyp" == "vmware" ]
+    then
+      ip route add $MGMTNET via $LOCAL_GW dev eth0
+    fi
   fi
 
   ip route delete default
