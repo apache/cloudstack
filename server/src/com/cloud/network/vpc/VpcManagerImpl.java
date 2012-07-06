@@ -84,6 +84,8 @@ import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -156,6 +158,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     Site2SiteVpnManager _s2sVpnMgr;
     @Inject
     VlanDao _vlanDao = null;
+
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private VpcProvider vpcElement = null;
@@ -694,7 +697,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @Override
     public List<? extends Vpc> listVpcs(Long id, String vpcName, String displayText, List<String> supportedServicesStr, 
             String cidr, Long vpcOffId, String state, String accountName, Long domainId, String keyword,
-            Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, Boolean restartRequired) {
+            Long startIndex, Long pageSizeVal, Long zoneId, Boolean isRecursive, Boolean listAll, Boolean restartRequired, Map<String, String> tags) {
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
         
@@ -719,6 +722,18 @@ public class VpcManagerImpl implements VpcManager, Manager{
         sb.and("restartRequired", sb.entity().isRestartRequired(), SearchCriteria.Op.EQ);
         sb.and("cidr", sb.entity().getCidr(), SearchCriteria.Op.EQ);
         
+        if (tags != null && !tags.isEmpty()) {
+            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            for (int count=0; count < tags.size(); count++) {
+                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.cp();
+            }
+            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.groupBy(sb.entity().getId());
+            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        }
+        
         // now set the SC criteria...
         SearchCriteria<VpcVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);  
@@ -737,6 +752,16 @@ public class VpcManagerImpl implements VpcManager, Manager{
         if (displayText != null) {
             sc.addAnd("displayText", SearchCriteria.Op.LIKE, "%" + displayText + "%");
         }
+        
+        if (tags != null && !tags.isEmpty()) {
+            int count = 0;
+            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.Vpc.toString());
+            for (String key : tags.keySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+                count++;
+            }   
+       }
 
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
@@ -1525,6 +1550,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         String accountName = cmd.getAccountName();
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        Map<String, String> tags = cmd.getTags();
         
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, 
                 ListProjectResourcesCriteria>(domainId, isRecursive, null);
@@ -1542,6 +1568,18 @@ public class VpcManagerImpl implements VpcManager, Manager{
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
         sb.and("vpcGatewayId", sb.entity().getVpcGatewayId(), SearchCriteria.Op.EQ);
         
+        if (tags != null && !tags.isEmpty()) {
+            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            for (int count=0; count < tags.size(); count++) {
+                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.cp();
+            }
+            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.groupBy(sb.entity().getId());
+            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        }
+        
         SearchCriteria<StaticRouteVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);  
         
@@ -1555,6 +1593,16 @@ public class VpcManagerImpl implements VpcManager, Manager{
         
         if (gatewayId != null) {
             sc.addAnd("vpcGatewayId", Op.EQ, gatewayId);
+        }
+        
+        if (tags != null && !tags.isEmpty()) {
+            int count = 0;
+            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.StaticRoute.toString());
+            for (String key : tags.keySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+                count++;
+            }   
         }
         
         return _staticRouteDao.search(sc, searchFilter);

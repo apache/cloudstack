@@ -22,6 +22,9 @@ import javax.ejb.Local;
 
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcVO;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagsDaoImpl;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -29,6 +32,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 
 
 @Local(value = VpcDao.class)
@@ -36,6 +40,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
     final GenericSearchBuilder<VpcVO, Integer> CountByOfferingId;
     final SearchBuilder<VpcVO> AllFieldsSearch;
+    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
 
     protected VpcDaoImpl() {
         super();
@@ -82,6 +87,20 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
         SearchCriteria<VpcVO> sc = AllFieldsSearch.create();
         sc.setParameters("state", Vpc.State.Inactive);
         return listBy(sc, null);
+    }
+    
+    @Override
+    @DB
+    public boolean remove(Long id) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        VpcVO entry = findById(id);
+        if (entry != null) {
+            _tagsDao.removeBy(id, TaggedResourceType.Vpc);
+        }
+        boolean result = super.remove(id);
+        txn.commit();
+        return result;
     }
 }
 

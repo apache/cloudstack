@@ -300,6 +300,8 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
                 _tagsDao.removeByIdAndType(id, TaggedResourceType.PortForwardingRule);
             } else if (entry.getPurpose() == Purpose.Firewall) {
                 _tagsDao.removeByIdAndType(id, TaggedResourceType.FirewallRule);
+            } else if (entry.getPurpose() == Purpose.NetworkACL) {
+                _tagsDao.removeByIdAndType(id, TaggedResourceType.NetworkACL);
             }
         }
         boolean result = super.remove(id);

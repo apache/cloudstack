@@ -45,6 +45,9 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.TrafficType;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
@@ -53,6 +56,7 @@ import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
@@ -66,7 +70,6 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
     String _name;
     private static final Logger s_logger = Logger.getLogger(NetworkACLManagerImpl.class);
 
-    
     @Inject
     AccountManager _accountMgr;
     @Inject
@@ -77,7 +80,8 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
     NetworkManager _networkMgr;
     @Inject
     VpcManager _vpcMgr;
-
+    @Inject
+    ResourceTagDao _resourceTagDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -328,6 +332,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         Long networkId = cmd.getNetworkId();
         Long id = cmd.getId();
         String trafficType = cmd.getTrafficType();
+        Map<String, String> tags = cmd.getTags();
 
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -348,6 +353,18 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         sb.and("networkId", sb.entity().getNetworkId(), Op.EQ);
         sb.and("purpose", sb.entity().getPurpose(), Op.EQ);
         sb.and("trafficType", sb.entity().getTrafficType(), Op.EQ);
+        
+        if (tags != null && !tags.isEmpty()) {
+            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            for (int count=0; count < tags.size(); count++) {
+                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.cp();
+            }
+            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.groupBy(sb.entity().getId());
+            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        }
 
         SearchCriteria<FirewallRuleVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
@@ -362,6 +379,16 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         
         if (trafficType != null) {
             sc.setParameters("trafficType", trafficType);
+        }
+        
+        if (tags != null && !tags.isEmpty()) {
+            int count = 0;
+            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.NetworkACL.toString());
+            for (String key : tags.keySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+                count++;
+            }   
         }
 
         sc.setParameters("purpose", Purpose.NetworkACL);

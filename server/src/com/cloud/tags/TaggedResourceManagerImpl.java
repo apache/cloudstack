@@ -39,7 +39,10 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.network.vpc.Dao.StaticRouteDao;
+import com.cloud.network.vpc.Dao.VpcDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.server.TaggedResourceService;
@@ -62,6 +65,7 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.vm.dao.UserVmDao;
 
@@ -104,6 +108,12 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
     RemoteAccessVpnDao _vpnDao;
     @Inject
     IPAddressDao _publicIpDao;
+    @Inject
+    ProjectDao _projectDao;
+    @Inject
+    VpcDao _vpcDao;
+    @Inject
+    StaticRouteDao _staticRouteDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -119,6 +129,10 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
         _daoMap.put(TaggedResourceType.FirewallRule, _firewallDao);
         _daoMap.put(TaggedResourceType.SecurityGroup, _securityGroupDao);
         _daoMap.put(TaggedResourceType.PublicIpAddress, _publicIpDao);
+        _daoMap.put(TaggedResourceType.Project, _projectDao);
+        _daoMap.put(TaggedResourceType.Vpc, _vpcDao);
+        _daoMap.put(TaggedResourceType.NetworkACL, _firewallDao);
+        _daoMap.put(TaggedResourceType.StaticRoute, _staticRouteDao);
 
         return true;
     }
@@ -141,6 +155,9 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
     
     private Long getResourceId(String resourceId, TaggedResourceType resourceType) {   
         GenericDao<?, Long> dao = _daoMap.get(resourceType);
+        if (dao == null) {
+            throw new CloudRuntimeException("Dao is not loaded for the resource type " + resourceType);
+        }
         Class<?> claz = DbUtil.getEntityBeanType(dao);
         
         Long identityId = null;
@@ -184,7 +201,7 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
                 if (tableName == null) {
                     throw new InvalidParameterValueException("Unable to find resource of type " + resourceType + " in the database");
                 }
-                pair = _identityDao.getAccountDomainInfo(tableName, resourceId);
+                pair = _identityDao.getAccountDomainInfo(tableName, resourceId, resourceType);
                 if (pair.first() != null || pair.second() != null) {
                     break;
                 }

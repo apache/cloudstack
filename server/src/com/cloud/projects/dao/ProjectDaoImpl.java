@@ -24,6 +24,9 @@ import org.apache.log4j.Logger;
 
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectVO;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagsDaoImpl;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -38,6 +41,7 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
     protected final SearchBuilder<ProjectVO> AllFieldsSearch;
     protected GenericSearchBuilder<ProjectVO, Long> CountByDomain;
     protected GenericSearchBuilder<ProjectVO, Long> ProjectAccountSearch;
+    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
 
     protected ProjectDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -73,7 +77,9 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
         if (!update(projectId, projectToRemove)) {
             s_logger.warn("Failed to reset name for the project id=" + projectId + " as a part of project remove");
             return false;
-        }
+        } 
+        
+        _tagsDao.removeByIdAndType(projectId, TaggedResourceType.Project);
         result = super.remove(projectId);
         txn.commit();
 
@@ -102,5 +108,4 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
         sc.setParameters("state", state);
         return listBy(sc);
     }
-
 }

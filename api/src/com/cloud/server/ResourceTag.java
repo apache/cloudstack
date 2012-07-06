@@ -31,7 +31,11 @@ public interface ResourceTag extends ControlledEntity{
         PortForwardingRule,
         FirewallRule,
         SecurityGroup,
-        PublicIpAddress
+        PublicIpAddress,
+        Project,
+        Vpc,
+        NetworkACL,
+        StaticRoute
     }
 
     /**

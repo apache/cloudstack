@@ -3063,6 +3063,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDomain(domain.getName());
 
         response.setOwner(ApiDBUtils.getProjectOwner(project.getId()).getAccountName());
+        
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Project, project.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        response.setTags(tagResponses);
 
         response.setObjectName("project");
         return response;
@@ -3141,6 +3150,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIcmpType(networkACL.getIcmpType());
 
         response.setState(stateToSet);
+        
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.NetworkACL, networkACL.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        response.setTags(tagResponses);
+        
         response.setObjectName("networkacl");
         return response;
     }
@@ -3722,7 +3741,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setNetworks(networkResponses);
         response.setServices(serviceResponses);
         populateOwner(response, vpc);
-
+        
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Vpc, vpc.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        response.setTags(tagResponses);
         response.setObjectName("vpc");
         return response;
     }
@@ -3765,6 +3792,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(stateToSet);
         populateAccount(response, result.getAccountId());
         populateDomain(response, result.getDomainId());
+        
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.StaticRoute, result.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        response.setTags(tagResponses);
         response.setObjectName("staticroute");
         
         return response;

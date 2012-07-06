@@ -22,6 +22,9 @@ import javax.ejb.Local;
 
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteVO;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagsDaoImpl;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -29,6 +32,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.Transaction;
 
 
 @Local(value = StaticRouteDao.class)
@@ -37,6 +41,7 @@ public class StaticRouteDaoImpl extends GenericDaoBase<StaticRouteVO, Long> impl
     protected final SearchBuilder<StaticRouteVO> AllFieldsSearch;
     protected final SearchBuilder<StaticRouteVO> NotRevokedSearch;
     protected final GenericSearchBuilder<StaticRouteVO, Long> RoutesByGatewayCount;
+    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
     
     protected StaticRouteDaoImpl() {
         super();
@@ -92,5 +97,19 @@ public class StaticRouteDaoImpl extends GenericDaoBase<StaticRouteVO, Long> impl
         SearchCriteria<Long> sc = RoutesByGatewayCount.create();
         sc.setParameters("gatewayId", gatewayId);
         return customSearch(sc, null).get(0);
+    }
+    
+    @Override
+    @DB
+    public boolean remove(Long id) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        StaticRouteVO entry = findById(id);
+        if (entry != null) {
+            _tagsDao.removeBy(id, TaggedResourceType.StaticRoute);
+        }
+        boolean result = super.remove(id);
+        txn.commit();
+        return result;
     }
 }
