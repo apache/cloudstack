@@ -148,7 +148,62 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                 pstmt.close();
     
                 if(multiplePhysicalNetworks){
-                
+                    //check if guest vnet is wrongly configured by earlier upgrade. If yes error out
+                    //check if any vnet is allocated and guest networks are using vnet But the physical network id does not match on the vnet and guest network.
+                    PreparedStatement pstmt4 = conn.prepareStatement("SELECT v.id, v.vnet, v.reservation_id, v.physical_network_id as vpid, n.id, n.physical_network_id as npid FROM `cloud`.`op_dc_vnet_alloc` v JOIN `cloud`.`networks` n ON CONCAT('vlan://' , v.vnet) = n.broadcast_uri WHERE v.taken IS NOT NULL AND v.data_center_id = ? AND n.removed IS NULL AND v.physical_network_id !=  n.physical_network_id");
+                    pstmt4.setLong(1, zoneId);
+                    ResultSet rsVNet = pstmt4.executeQuery();
+                    if(rsVNet.next()){
+                        String vnet = rsVNet.getString(2);
+                        String networkId = rsVNet.getString(5);
+                        String vpid = rsVNet.getString(4);
+                        String npid = rsVNet.getString(6);
+                        s_logger.error("Guest Vnet assignment is set wrongly . Cannot upgrade until that is corrected. Example- Vnet: "+ vnet +" has physical network id: " + vpid +" ,but the guest network: " +networkId+" that uses it has physical network id: " +npid );
+                        
+                        String message = "Cannot upgrade. Your setup has multiple Physical Networks and is using guest Vnet that is assigned wrongly. To upgrade, first correct the setup by doing the following: \n" +
+                        "1. Please rollback \n" +
+                        "2. Please stop all VMs through CloudStack and wait for all networks to shutdown. [Networks shutdown will be determined by network.gc.interval and network.gc.wait seconds] \n" +
+                        "3. Please ensure all networks are shutdown and all guest Vnet's are free." +
+                        "4. Run upgrade. This will allocate all your guest vnet range to first physical network.  \n" +
+                        "5. Reconfigure the vnet ranges for each physical network as desired by using updatePhysicalNetwork API \n" +
+                        "6. Start all your VMs";
+                        
+                        s_logger.error(message);
+                        throw new CloudRuntimeException("Cannot upgrade this setup since Guest Vnet assignment to the multiple physical networks is incorrect. Please check the logs for details on how to proceed");
+                        
+                    }
+                    rsVNet.close();
+                    pstmt4.close();
+                    
+                    //Clean up any vnets that have no live networks/nics
+                    pstmt4 = conn.prepareStatement("SELECT v.id, v.vnet, v.reservation_id FROM `cloud`.`op_dc_vnet_alloc` v LEFT JOIN networks n ON CONCAT('vlan://' , v.vnet) = n.broadcast_uri WHERE v.taken IS NOT NULL AND v.data_center_id = ? AND n.broadcast_uri IS NULL AND n.removed IS NULL");
+                    rsVNet = pstmt4.executeQuery();
+                    while(rsVNet.next()){
+                        Long vnet_id = rsVNet.getLong(1);
+                        String vnetValue = rsVNet.getString(2);
+                        String reservationId = rsVNet.getString(3);
+                        //does this vnet have any nic associated?
+                        PreparedStatement pstmt5 = conn.prepareStatement("SELECT id, instance_id FROM `cloud`.`nics` where broadcast_uri = ? and removed IS NULL");
+                        String uri = "vlan://"+vnetValue;
+                        pstmt5.setString(1, uri);
+                        ResultSet rsNic = pstmt5.executeQuery();
+                        Long nic_id = rsNic.getLong(1);
+                        Long instance_id = rsNic.getLong(2);
+                        if(rsNic.next()){
+                            throw new CloudRuntimeException("Cannot upgrade. Please cleanup the guest vnet: "+ vnetValue +" , it is being used by nic_id: "+ nic_id +" , instance_id: " + instance_id );
+                        }
+                        
+                        //free this vnet
+                        String freeVnet = "UPDATE `cloud`.`op_dc_vnet_alloc` SET account_id = NULL, taken = NULL, reservation_id = NULL WHERE id = ?";
+                        pstmtUpdate = conn.prepareStatement(freeVnet);
+                        pstmtUpdate.setLong(1, vnet_id);
+                        pstmtUpdate.executeUpdate();
+                        pstmtUpdate.close();
+                    }
+                    rsVNet.close();
+                    pstmt4.close();
+
+                    
                     //add tags to the physical networks if not present and clone offerings
                     
                     pstmt = conn.prepareStatement("SELECT pn.id as pid , ptag.tag as tag FROM `cloud`.`physical_network` pn LEFT JOIN `cloud`.`physical_network_tags` ptag ON pn.id = ptag.physical_network_id where pn.data_center_id = ?");
