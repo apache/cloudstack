@@ -41,6 +41,7 @@ import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.manager.Commands;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
@@ -98,6 +99,7 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -1014,9 +1016,22 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             return true;
         }
         
-        //send commands to only one router as there is only one in the VPC
-        return sendStaticRoutes(staticRoutes, routers.get(0));     
-         
+        boolean result = true;
+        for (VirtualRouter router : routers) {
+            if (router.getState() == State.Running) {
+                result = result && sendStaticRoutes(staticRoutes, routers.get(0));     
+
+            } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
+                s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + 
+                        ", so not sending StaticRoute command to the backend");
+            } else {
+                s_logger.warn("Unable to apply StaticRoute, virtual router is not in the right state " + router.getState());
+                
+                throw new ResourceUnavailableException("Unable to apply StaticRoute on the backend," +
+                		" virtual router is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+            }
+        }
+        return result;
     }
     
     protected boolean sendStaticRoutes(List<StaticRouteProfile> staticRoutes, DomainRouterVO router) 
