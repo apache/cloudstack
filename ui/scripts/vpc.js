@@ -87,163 +87,24 @@
         }
       }
     },
-    dataProvider: function(args) {
-      setTimeout(function() {
-        args.response.success({
-          data: [
-            {
-              "id": 11,
-              "protocol": "icmp",
-              "ipaddressid": 4,
-              "ipaddress": "10.223.71.23",
-              "state": "Active",
-              "cidrlist": "0.0.0.0/0",
-              "icmptype": 2,
-              "icmpcode": 22
-            },
-            {
-              "id": 10,
-              "protocol": "udp",
-              "startport": "500",
-              "endport": "10000",
-              "ipaddressid": 4,
-              "ipaddress": "10.223.71.23",
-              "state": "Active",
-              "cidrlist": "0.0.0.0/24"
-            },
-            {
-              "id": 9,
-              "protocol": "tcp",
-              "startport": "20",
-              "endport": "200",
-              "ipaddressid": 4,
-              "ipaddress": "10.223.71.23",
-              "state": "Active",
-              "cidrlist": "0.0.0.0/24"
-            },
-            {
-              "id": 11,
-              "protocol": "icmp",
-              "ipaddressid": 4,
-              "ipaddress": "10.223.71.23",
-              "state": "Active",
-              "cidrlist": "0.0.0.0/0",
-              "icmptype": 2,
-              "icmpcode": 22
-            },
-            {
-              "id": 10,
-              "protocol": "udp",
-              "startport": "500",
-              "endport": "10000",
-              "ipaddressid": 4,
-              "ipaddress": "10.223.71.23",
-              "state": "Active",
-              "cidrlist": "0.0.0.0/24"
-            },
-            {
-              "id": 9,
-              "protocol": "tcp",
-              "startport": "20",
-              "endport": "200",
-              "ipaddressid": 4,
-              "ipaddress": "10.223.71.23",
-              "state": "Active",
-              "cidrlist": "0.0.0.0/24"
-            },
-            {
-              "id": 11,
-              "protocol": "icmp",
-              "ipaddressid": 4,
-              "ipaddress": "10.223.71.23",
-              "state": "Active",
-              "cidrlist": "0.0.0.0/0",
-              "icmptype": 2,
-              "icmpcode": 22
-            },
-            {
-              "id": 10,
-              "protocol": "udp",
-              "startport": "500",
-              "endport": "10000",
-              "ipaddressid": 4,
-              "ipaddress": "10.223.71.23",
-              "state": "Active",
-              "cidrlist": "0.0.0.0/24"
-            },
-            {
-              "id": 9,
-              "protocol": "tcp",
-              "startport": "20",
-              "endport": "200",
-              "ipaddressid": 4,
-              "ipaddress": "10.223.71.23",
-              "state": "Active",
-              "cidrlist": "0.0.0.0/24"
-            },
-            {
-              "id": 11,
-              "protocol": "icmp",
-              "ipaddressid": 4,
-              "ipaddress": "10.223.71.23",
-              "state": "Active",
-              "cidrlist": "0.0.0.0/0",
-              "icmptype": 2,
-              "icmpcode": 22
-            },
-            {
-              "id": 10,
-              "protocol": "udp",
-              "startport": "500",
-              "endport": "10000",
-              "ipaddressid": 4,
-              "ipaddress": "10.223.71.23",
-              "state": "Active",
-              "cidrlist": "0.0.0.0/24"
-            },
-            {
-              "id": 9,
-              "protocol": "tcp",
-              "startport": "20",
-              "endport": "200",
-              "ipaddressid": 4,
-              "ipaddress": "10.223.71.23",
-              "state": "Active",
-              "cidrlist": "0.0.0.0/24"
-            },
-            {
-              "id": 11,
-              "protocol": "icmp",
-              "ipaddressid": 4,
-              "ipaddress": "10.223.71.23",
-              "state": "Active",
-              "cidrlist": "0.0.0.0/0",
-              "icmptype": 2,
-              "icmpcode": 22
-            },
-            {
-              "id": 10,
-              "protocol": "udp",
-              "startport": "500",
-              "endport": "10000",
-              "ipaddressid": 4,
-              "ipaddress": "10.223.71.23",
-              "state": "Active",
-              "cidrlist": "0.0.0.0/24"
-            },
-            {
-              "id": 9,
-              "protocol": "tcp",
-              "startport": "20",
-              "endport": "200",
-              "ipaddressid": 4,
-              "ipaddress": "10.223.71.23",
-              "state": "Active",
-              "cidrlist": "0.0.0.0/24"
-            }
-          ]
-        });
-      }, 100);
+    dataProvider: function(args) {						
+			$.ajax({
+				url: createURL('listNetworkACLs'),
+				data: {
+					listAll: true,
+					networkid: args.context.tiers[0].id
+				},
+				dataType: 'json',
+				async: true,
+				success: function(json) {					
+					args.response.success({
+						data: json.listnetworkaclsresponse.networkacl
+					});
+				},
+				error: function(XMLHttpResponse) {
+					args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+				}
+			});						
     }
   };
   
