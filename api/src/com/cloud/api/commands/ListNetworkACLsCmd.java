@@ -22,7 +22,8 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
+import com.cloud.api.BaseCmd.CommandType;
+import com.cloud.api.BaseListTaggedResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -31,7 +32,7 @@ import com.cloud.api.response.NetworkACLResponse;
 import com.cloud.network.rules.FirewallRule;
 
 @Implementation(description="Lists all network ACLs", responseObject=NetworkACLResponse.class)
-public class ListNetworkACLsCmd extends BaseListProjectAndAccountResourcesCmd {
+public class ListNetworkACLsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworkACLsCmd.class.getName());
 
     private static final String s_name = "listnetworkaclsresponse";

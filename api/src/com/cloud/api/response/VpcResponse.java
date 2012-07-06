@@ -79,6 +79,9 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     
     @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
     private String networkDomain;
+    
+    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the project", responseObject = ResourceTagResponse.class)
+    private List<ResourceTagResponse> tags;
 
     public void setId(Long id) {
         this.id.setValue(id);
@@ -159,5 +162,9 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     
     public void setZoneName(String zoneName) {
         this.zoneName = zoneName;
+    }
+    
+    public void setTags(List<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 }

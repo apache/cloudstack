@@ -327,6 +327,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     @Inject(adapter = StoragePoolDiscoverer.class)
     protected Adapters<StoragePoolDiscoverer> _discoverers;
 
+
     protected SearchBuilder<VMTemplateHostVO> HostTemplateStatesSearch;
     protected GenericSearchBuilder<StoragePoolHostVO, Long> UpHostsInPoolSearch;
     protected SearchBuilder<VMInstanceVO> StoragePoolSearch;
