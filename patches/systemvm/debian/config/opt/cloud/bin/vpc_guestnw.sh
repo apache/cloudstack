@@ -31,6 +31,24 @@ usage() {
 }
 
 
+setup_apache2() {
+  logger_it "Setting up apache web server for $dev"
+  cp /etc/apache2/vhostexample.conf /etc/apache2/conf.d/vhost$dev.conf
+  sed -i -e "s/<VirtualHost.*:80>/<VirtualHost $ip:80>/" /etc/apache2/conf.d/vhost$dev.conf
+  sed -i -e "s/<VirtualHost.*:443>/<VirtualHost $ip:443>/" /etc/apache2/conf.d/vhost$dev.conf
+  sed -i -e "s/\tServerName.*/\tServerName vhost$dev.cloudinternal.com/" /etc/apache2/conf.d/vhost$dev.conf
+  sed -i -e "s/Listen .*:80/Listen $ip:80/g" /etc/apache2/conf.d/vhost$dev.conf
+  sed -i -e "s/Listen .*:443/Listen $ip:443/g" /etc/apache2/conf.d/vhost$dev.conf
+  service apache2 restart
+}
+
+desetup_apache2() {
+  logger_it "Desetting up apache web server for $dev"
+  rm -f /etc/apache2/conf.d/vhost$dev.conf
+  service apache2 restart
+}
+
+
 setup_dnsmasq() {
   logger -t cloud "Setting up dnsmasq for network $ip/$mask "
   # setup static 
@@ -75,6 +93,13 @@ setup_usage() {
   sudo iptables -t mangle -A POSTROUTING -o $dev -j NETWORK_STATS_$dev
 }
 
+desetup_usage() {
+  sudo iptables -t mangle -F NETWORK_STATS_$dev
+  sudo iptables -t mangle -D POSTROUTING -s $subnet/$mask -j NETWORK_STATS_$dev
+  sudo iptables -t mangle -D POSTROUTING -o $dev -j NETWORK_STATS_$dev
+  sudo iptables -t mangle -X NETWORK_STATS_$dev
+}
+
 create_guest_network() {
   logger -t cloud " $(basename $0): Create network on interface $dev,  gateway $gw, network $ip/$mask "
   # setup ip configuration
@@ -95,6 +120,7 @@ create_guest_network() {
 
   setup_usage
   setup_dnsmasq
+  setup_apache2
 }
 
 destroy_guest_network() {
@@ -105,7 +131,9 @@ destroy_guest_network() {
   sudo iptables -D INPUT -i $dev -p udp -m udp --dport 53 -j ACCEPT
   sudo iptables -t mangle -D PREROUTING -i $dev -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
   sudo iptables -t nat -A POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
+  desetup_usage
   desetup_dnsmasq
+  desetup_apache2
 }
 
 #set -x

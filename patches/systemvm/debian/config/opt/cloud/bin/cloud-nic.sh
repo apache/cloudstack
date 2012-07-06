@@ -24,6 +24,8 @@ unplug_nic() {
     sudo iptables -t mangle $rule
   done
   sudo iptables -t mangle -X NETWORK_STATS_$dev 2>/dev/null
+  # remove apache config for this eth
+  rm -f /etc/apache2/conf.d/vhost$dev.conf
 }
 
 action=$1
