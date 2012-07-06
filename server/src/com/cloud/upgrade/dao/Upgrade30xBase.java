@@ -91,7 +91,7 @@ public abstract class Upgrade30xBase implements DbUpgrade{
             pstmtUpdate.setString(4, vnet);
             pstmtUpdate.setString(5, broadcastDomainRange);
             pstmtUpdate.setString(6, "Enabled");
-            zoneName = zoneName + "-pNtwk";
+            zoneName = zoneName + "-pNtwk" +physicalNetworkId;
             pstmtUpdate.setString(7, zoneName);
             s_logger.warn("Statement is " + pstmtUpdate.toString());
             pstmtUpdate.executeUpdate();
