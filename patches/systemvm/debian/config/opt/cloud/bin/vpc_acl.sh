@@ -89,7 +89,6 @@ acl_chain_for_guest_network () {
   sudo iptables -A FORWARD -o $dev -d $gcidr -j ACL_INBOUND_$dev  2>/dev/null
   # outbound
   sudo iptables -t mangle -N ACL_OUTBOUND_$dev 2>/dev/null
-  sudo iptables -t mangle -A ACL_OUTBOUND_$dev -j DROP 2>/dev/null
   sudo iptables -t mangle -A PREROUTING -m state --state NEW -i $dev -s $gcidr ! -d $ip -j ACL_OUTBOUND_$dev  2>/dev/null
 }
 
