@@ -69,7 +69,7 @@ public class BareMetalElement extends AdapterBase implements NetworkElement {
 	public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest,
 			ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
 		Host host = dest.getHost();
-		if (host.getHypervisorType() != HypervisorType.BareMetal) {
+		if (host == null || host.getHypervisorType() != HypervisorType.BareMetal) {
 			return true;
 		}
 		

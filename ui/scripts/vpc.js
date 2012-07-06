@@ -509,34 +509,36 @@
       },
 
       // Get tiers
-      dataProvider: function(args) {
-        var tiers = [ // Dummy content
-          {
-            id: 1,
-            name: 'web',
-            cidr: '192.168.0.0/24',
-            state: 'Running',
-            virtualMachines: [
-              { name: 'i-2-VM' },
-              { name: 'i-3-VM' }
-            ]
-          },
-          {
-            id: 2,
-            name: 'app',
-            state: 'Stopped',
-            cidr: '10.0.0.0/24',
-            virtualMachines: []
-          }
-        ];
-
-        setTimeout(function() {
-          args.response.success({
-            data: {
-              tiers: tiers
-            }
-          });
-        }, 1000);
+      dataProvider: function(args) {		
+				$.ajax({
+					url: createURL("listNetworks"),
+					dataType: "json",
+					data: {
+					  vpcid: args.context.vpc[0].id,
+						listAll: true
+					},
+					async: true,
+					success: function(json) {					  
+						var networks = json.listnetworksresponse.network;												
+						if(networks != null && networks.length > 0) {
+						  for(var i = 0; i < networks.length; i++) {							 
+							  $.ajax({
+								  url: createURL("listVirtualMachines"),
+									dataType: "json",
+									data: {
+									  networkid: networks[i].id,
+										listAll: true
+									},
+									async: false,
+									success: function(json) {									  
+									  networks[i].virtualMachines = json.listvirtualmachinesresponse.virtualmachine;										
+									}
+								});								
+							}
+						}								
+						args.response.success({ tiers: networks });
+					}
+				});	 
       }
     }
   };

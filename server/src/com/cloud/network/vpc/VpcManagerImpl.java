@@ -516,19 +516,23 @@ public class VpcManagerImpl implements VpcManager, Manager{
     }
     
     @Override
-    public Vpc createVpc(long zoneId, long vpcOffId, Account vpcOwner, String vpcName, String displayText, String cidr, 
-            String networkDomain) {
-        
+    public boolean vpcProviderEnabledInZone(long zoneId)
+    {
         //the provider has to be enabled at least in one network in the zone
-        boolean providerEnabled = false;
         for (PhysicalNetwork pNtwk : _pNtwkDao.listByZone(zoneId)) {
             if (_ntwkMgr.isProviderEnabledInPhysicalNetwork(pNtwk.getId(), Provider.VPCVirtualRouter.getName())) {
-                providerEnabled = true;
-                break;
+                return true;
             }
         }
         
-        if (!providerEnabled) {
+        return false;
+    }
+    
+    @Override
+    public Vpc createVpc(long zoneId, long vpcOffId, Account vpcOwner, String vpcName, String displayText, String cidr, 
+            String networkDomain) {
+        
+        if (!vpcProviderEnabledInZone(zoneId)) {
             throw new InvalidParameterValueException("Provider " + Provider.VPCVirtualRouter.getName() +
                     " should be enabled in at least one physical network of the zone specified");
         }

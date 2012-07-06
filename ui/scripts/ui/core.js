@@ -254,6 +254,12 @@
       $elem.appendTo($container);
     });
 
+    var checkTitle = function(str) {
+      if ($('#header.nologo').size() == 0) {
+        return str.replace(/CloudStack/ig,'CloudPlatform');
+      } else { return str; }
+    };
+
     // User options
     var $options = $('<div>').attr({ id: 'user-options' })
           .appendTo($('#header'));
@@ -274,13 +280,13 @@
       }
       if (this == 'About') {
         $link.click(function() {
-          var $logo = $('<div>').addClass('logo').html('CloudStack'),
+          var $logo = $('<div>').addClass('logo').html(checkTitle('CloudStack')),
           $version = $('<div>').addClass('version').html(g_cloudstackversion),
           $about = $('<div>').addClass('about').append($logo).append($version);
           $about.dialog({
             modal: true,
             width: 300,
-            title: 'About CloudStack',
+            title: checkTitle('About CloudStack'),
             closeOnEscape: false,
             dialogClass: 'dialog-about',
             buttons: {
