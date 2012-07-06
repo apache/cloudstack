@@ -323,7 +323,7 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         txn.start();
         IPAddressVO entry = findById(id);
         if (entry != null) {
-            _tagsDao.removeBy(id, TaggedResourceType.SecurityGroup);
+            _tagsDao.removeByIdAndType(id, TaggedResourceType.SecurityGroup);
         }
         boolean result = super.remove(id);
         txn.commit();

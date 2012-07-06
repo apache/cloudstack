@@ -556,7 +556,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     public boolean remove(Long id) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        _tagsDao.removeBy(id, TaggedResourceType.UserVm);
+        _tagsDao.removeByIdAndType(id, TaggedResourceType.UserVm);
         boolean result = super.remove(id);
         txn.commit();
         return result;

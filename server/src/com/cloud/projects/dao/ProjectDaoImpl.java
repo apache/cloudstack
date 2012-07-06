@@ -73,8 +73,6 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
         if (!update(projectId, projectToRemove)) {
             s_logger.warn("Failed to reset name for the project id=" + projectId + " as a part of project remove");
             return false;
-        } else {
-
         }
         result = super.remove(projectId);
         txn.commit();

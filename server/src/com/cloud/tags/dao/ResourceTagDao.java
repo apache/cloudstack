@@ -33,8 +33,15 @@ public interface ResourceTagDao extends GenericDao<ResourceTagVO, Long>{
      * @param resourceType
      * @return
      */
-    boolean removeBy(long resourceId, TaggedResourceType resourceType);
+    boolean removeByIdAndType(long resourceId, TaggedResourceType resourceType);
     
     List<? extends ResourceTag> listBy(long resourceId, TaggedResourceType resourceType);
+
+//    /**
+//     * @param resourceUuId
+//     * @param resourceType
+//     * @return
+//     */
+//    ResourceTag findByUuid(String resourceUuId, TaggedResourceType resourceType);
 
 }

@@ -108,7 +108,7 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
         txn.start();
         SecurityGroupVO entry = findById(id);
         if (entry != null) {
-            _tagsDao.removeBy(id, TaggedResourceType.SecurityGroup);
+            _tagsDao.removeByIdAndType(id, TaggedResourceType.SecurityGroup);
         }
         boolean result = super.remove(id);
         txn.commit();
