@@ -3231,10 +3231,7 @@
                     );
                   }
                 });								
-              },
-              notification: { 
-							  poll: pollAsyncJobResult
-							}							
+              }					
             },
             editVpc: {
               label: 'Edit VPC',

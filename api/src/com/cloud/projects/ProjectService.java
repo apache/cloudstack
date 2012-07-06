@@ -13,6 +13,7 @@
 package com.cloud.projects;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
@@ -55,7 +56,8 @@ public interface ProjectService {
      */
     Project getProject(long id);
 
-    List<? extends Project> listProjects(Long id, String name, String displayText, String state, String accountName, Long domainId, String keyword, Long startIndex, Long pageSize, boolean listAll, boolean isRecursive);
+    List<? extends Project> listProjects(Long id, String name, String displayText, String state, String accountName, 
+            Long domainId, String keyword, Long startIndex, Long pageSize, boolean listAll, boolean isRecursive, Map<String, String> tags);
 
     ProjectAccount assignAccountToProject(Project project, long accountId, Role accountRole);
 

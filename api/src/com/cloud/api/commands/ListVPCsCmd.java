@@ -18,7 +18,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListAccountResourcesCmd;
+import com.cloud.api.BaseListTaggedResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -31,7 +31,7 @@ import com.cloud.network.vpc.Vpc;
  */
 
 @Implementation(description="Lists VPCs", responseObject=VpcResponse.class)
-public class ListVPCsCmd extends BaseListAccountResourcesCmd{
+public class ListVPCsCmd extends BaseListTaggedResourcesCmd{
     public static final Logger s_logger = Logger.getLogger(ListVPCsCmd.class.getName());
     private static final String s_name = "listvpcsresponse";
     
@@ -137,7 +137,7 @@ public class ListVPCsCmd extends BaseListAccountResourcesCmd{
         List<? extends Vpc> vpcs = _vpcService.listVpcs(getId(), getVpcName(), getDisplayText(),
                 getSupportedServices(), getCidr(), getVpcOffId(), getState(), getAccountName(), getDomainId(), 
                 this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), getZoneId(), this.isRecursive(), 
-                this.listAll(), getRestartRequired());
+                this.listAll(), getRestartRequired(), getTags());
         ListResponse<VpcResponse> response = new ListResponse<VpcResponse>();
         List<VpcResponse> offeringResponses = new ArrayList<VpcResponse>();
         for (Vpc vpc : vpcs) {

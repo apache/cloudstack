@@ -46,7 +46,6 @@ import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
-import com.cloud.network.rules.NetworkACL;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
@@ -406,7 +405,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 return true;
             }
 
-            if (!_vpcRouterMgr.applyNetworkACLs(config, (List<NetworkACL>)rules, routers)) {
+            if (!_vpcRouterMgr.applyNetworkACLs(config, rules, routers)) {
                 throw new CloudRuntimeException("Failed to apply firewall rules in network " + config.getId());
             } else {
                 return true;

@@ -30,15 +30,10 @@ import org.apache.log4j.Logger;
 
 import com.cloud.bridge.util.ConfigurationHelper;
 
-public class BucketPolicyDao {
+public class BucketPolicyDao extends BaseDao {
 	public static final Logger logger = Logger.getLogger(BucketPolicyDao.class);
 
 	private Connection conn       = null;
-	private String     dbName     = null;
-	private String     dbUser     = null;
-	private String     dbPassword = null;
-    private String     dbHost     = null;
-    private String     dbPort     = null; 
 	
 	public BucketPolicyDao() 
 	{
@@ -54,11 +49,14 @@ public class BucketPolicyDao {
 			} catch (IOException e) {
 				logger.warn("Unable to read properties file: " + propertiesFile.getAbsolutePath(), e);
 			}
+	    	/* using the values from base class
             dbHost     = EC2Prop.getProperty( "db.cloud.host" );
             dbName     = EC2Prop.getProperty( "db.awsapi.name" );
             dbUser     = EC2Prop.getProperty( "db.cloud.username" );
             dbPassword = EC2Prop.getProperty( "db.cloud.password" );
             dbPort     = EC2Prop.getProperty( "db.cloud.port" );
+            */
+            
 		}
 	}
 
@@ -147,7 +145,7 @@ public class BucketPolicyDao {
     {
         if (null == conn) {
             Class.forName( "com.mysql.jdbc.Driver" ).newInstance();
-            conn = DriverManager.getConnection( "jdbc:mysql://" + dbHost + ":" + dbPort + "/" + dbName, dbUser, dbPassword );
+            conn = DriverManager.getConnection( "jdbc:mysql://" + dbHost + ":" + dbPort + "/" + awsapi_dbName, dbUser, dbPassword );
         }
     }
 

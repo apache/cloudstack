@@ -102,6 +102,7 @@ import com.cloud.user.Account.State;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -264,6 +265,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         return true;
     }
 
+    @Override
     public AccountVO getSystemAccount() {
         if (_systemAccount == null) {
             _systemAccount = _accountDao.findById(Account.ACCOUNT_ID_SYSTEM);
@@ -354,7 +356,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
             if (!granted) {
                 assert false : "How can all of the security checkers pass on checking this check: " + entity;
-                throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to " + entity);
+            throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to " + entity);
             }
         }
 
@@ -445,7 +447,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Override
     public boolean deleteAccount(AccountVO account, long callerUserId, Account caller) {
         long accountId = account.getId();
-        
+
         //delete the account record
         if (!_accountDao.remove(accountId)) {
             s_logger.error("Unable to delete account " + accountId);
@@ -463,7 +465,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     public boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) {
         long accountId = account.getId();
         boolean accountCleanupNeeded = false;
-        
+
         try {
             //cleanup the users from the account
             List<UserVO> users = _userDao.listByAccount(accountId);
@@ -473,10 +475,10 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     accountCleanupNeeded = true;
                 }
             }
-            
+
             //delete the account from project accounts
             _projectAccountDao.removeAccountFromProjects(accountId);
-            
+
             // delete all vm groups belonging to accont
             List<InstanceGroupVO> groups = _vmGroupDao.listByAccountId(accountId);
             for (InstanceGroupVO group : groups) {
@@ -598,7 +600,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 List<? extends IpAddress> ipsToRelease = _ipAddressDao.listByAccount(accountId);
                 for (IpAddress ip : ipsToRelease) {
                     s_logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
-                        if (!_networkMgr.disassociatePublicIpAddress(ip.getId(), callerUserId, caller)) {
+                    if (!_networkMgr.disassociatePublicIpAddress(ip.getId(), callerUserId, caller)) {
                         s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
                         accountCleanupNeeded = true;
                     }
@@ -704,37 +706,39 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (domainId == null) {
             domainId = DomainVO.ROOT_DOMAIN;
         }
-        
+
         if (userName.isEmpty()) {
-            throw new InvalidParameterValueException("Username is empty");
+            throw new InvalidParameterValueException("Username is empty", null);
         }
-        
+
         if (firstName.isEmpty()) {
-            throw new InvalidParameterValueException("Firstname is empty");
+            throw new InvalidParameterValueException("Firstname is empty", null);
         }
-        
+
         if (lastName.isEmpty()) {
-            throw new InvalidParameterValueException("Lastname is empty");
+            throw new InvalidParameterValueException("Lastname is empty", null);
         }
 
         // Validate domain
         Domain domain = _domainMgr.getDomain(domainId);
         if (domain == null) {
-            throw new InvalidParameterValueException("The domain " + domainId + " does not exist; unable to create account");
+            throw new InvalidParameterValueException("The domain does not exist; unable to create account", null);
         }
 
         // Check permissions
         checkAccess(UserContext.current().getCaller(), domain);
 
         if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
-            throw new InvalidParameterValueException("The user " + userName + " already exists in domain " + domainId);
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(domain, domainId, "domainId"));
+            throw new InvalidParameterValueException("The user " + userName + " already exists in domain with specified id", idList);
         }
 
         if (networkDomain != null) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
                         "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                                + "and the hyphen ('-'); can't start or end with \"-\"");
+                                + "and the hyphen ('-'); can't start or end with \"-\"", null);
             }
         }
 
@@ -778,7 +782,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         Account account = _accountDao.findEnabledAccount(accountName, domainId);
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain id=" + domainId + " to create user");
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(domain, domainId, "domainId"));
+            throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain with specified id to create user", idList);
         }
 
         if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
@@ -807,11 +813,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         UserVO user = _userDao.getUser(id);
 
         if (user == null) {
-            throw new InvalidParameterValueException("unable to find user by id");
+            throw new InvalidParameterValueException("unable to find user by id", null);
         }
 
         if ((apiKey == null && secretKey != null) || (apiKey != null && secretKey == null)) {
-            throw new InvalidParameterValueException("Please provide an userApiKey/userSecretKey pair");
+            throw new InvalidParameterValueException("Please provide an userApiKey/userSecretKey pair", null);
         }
 
         // If the account is an admin type, return an error. We do not allow this
@@ -819,7 +825,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         // don't allow updating project account
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("unable to find user by id");
+            throw new InvalidParameterValueException("unable to find user by id", null);
         }
 
         if (account != null && (account.getId() == Account.ACCOUNT_ID_SYSTEM)) {
@@ -830,37 +836,39 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         if (firstName != null) {
             if (firstName.isEmpty()) {
-                throw new InvalidParameterValueException("Firstname is empty");
+                throw new InvalidParameterValueException("Firstname is empty", null);
             }
-            
+
             user.setFirstname(firstName);
         }
         if (lastName != null) {
             if (lastName.isEmpty()) {
-                throw new InvalidParameterValueException("Lastname is empty");
+                throw new InvalidParameterValueException("Lastname is empty", null);
             }
-            
+
             user.setLastname(lastName);
         }
         if (userName != null) {
             if (userName.isEmpty()) {
-                throw new InvalidParameterValueException("Username is empty");
+                throw new InvalidParameterValueException("Username is empty", null);
             }
-            
+
             // don't allow to have same user names in the same domain
             List<UserVO> duplicatedUsers = _userDao.findUsersByName(userName);
             for (UserVO duplicatedUser : duplicatedUsers) {
                 if (duplicatedUser.getId() != user.getId()) {
                     Account duplicatedUserAccount = _accountDao.findById(duplicatedUser.getAccountId());
                     if (duplicatedUserAccount.getDomainId() == account.getDomainId()) {
-                        throw new InvalidParameterValueException("User with name " + userName + " already exists in domain " + duplicatedUserAccount.getDomainId());
+                        List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                        idList.add(new IdentityProxy("domain", duplicatedUserAccount.getDomainId(), "domainId"));
+                        throw new InvalidParameterValueException("User with name " + userName + " already exists in domain with specified id", idList);
                     }
                 }
             }
 
             user.setUsername(userName);
         }
-        
+
         if (password != null) {
             user.setPassword(password);
         }
@@ -888,7 +896,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 if (apiKeyOwner != null) {
                     User usr = apiKeyOwner.first();
                     if (usr.getId() != id) {
-                        throw new InvalidParameterValueException("The api key:" + apiKey + " exists in the system for user id:" + id + " ,please provide a unique key");
+                        List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                        idList.add(new IdentityProxy(usr, id, "userId"));
+                        throw new InvalidParameterValueException("The api key:" + apiKey + " exists in the system for user with specified id, please provide a unique key", idList);
                     } else {
                         // allow the updation to take place
                     }
@@ -911,19 +921,21 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         // Check if user exists in the system
         User user = _userDao.findById(userId);
         if (user == null || user.getRemoved() != null) {
-            throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+            throw new InvalidParameterValueException("Unable to find active user by id ", null);
         }
 
         Account account = _accountDao.findById(user.getAccountId());
 
         // don't allow disabling user belonging to project's account
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+            throw new InvalidParameterValueException("Unable to find active user by id", null);
         }
 
         // If the user is a System user, return an error
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new InvalidParameterValueException("User id : " + userId + " is a system user, disabling is not allowed");
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(user, userId, "userId"));
+            throw new InvalidParameterValueException("User with specified id is a system user, disabling is not allowed", idList);
         }
 
         checkAccess(caller, null, true, account);
@@ -947,18 +959,20 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         // Check if user exists in the system
         User user = _userDao.findById(userId);
         if (user == null || user.getRemoved() != null) {
-            throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+            throw new InvalidParameterValueException("Unable to find active user by id", null);
         }
 
         Account account = _accountDao.findById(user.getAccountId());
 
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("Unable to find active user by id " + userId);
+            throw new InvalidParameterValueException("Unable to find active user by id", null);
         }
 
         // If the user is a System user, return an error
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new InvalidParameterValueException("User id : " + userId + " is a system user, enabling is not allowed");
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(user, userId, "userId"));
+            throw new InvalidParameterValueException("User with specified id is a system user, enabling is not allowed", idList);
         }
 
         checkAccess(caller, null, true, account);
@@ -988,14 +1002,14 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         // Check if user with id exists in the system
         User user = _userDao.findById(userId);
         if (user == null || user.getRemoved() != null) {
-            throw new InvalidParameterValueException("Unable to find user by id");
+            throw new InvalidParameterValueException("Unable to find user by id", null);
         }
 
         Account account = _accountDao.findById(user.getAccountId());
 
         // don't allow to lock user of the account of type Project
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("Unable to find user by id");
+            throw new InvalidParameterValueException("Unable to find user by id", null);
         }
 
         // If the user is a System user, return an error. We do not allow this
@@ -1060,7 +1074,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         // don't allow removing Project account
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("The specified account does not exist in the system");
+            throw new InvalidParameterValueException("The specified account does not exist in the system", null);
         }
 
         checkAccess(caller, null, true, account);
@@ -1072,12 +1086,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         // Account that manages project(s) can't be removed
         List<Long> managedProjectIds = _projectAccountDao.listAdministratedProjectIds(accountId);
         if (!managedProjectIds.isEmpty()) {
-            StringBuilder projectIds = new StringBuilder();
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(account, accountId, "accountId"));
             for (Long projectId : managedProjectIds) {
-                projectIds.append(projectId + ", ");
+                idList.add(new IdentityProxy("projects", projectId, "projectId"));
             }
-
-            throw new InvalidParameterValueException("The account id=" + accountId + " manages project(s) with ids " + projectIds + "and can't be removed");
+            throw new InvalidParameterValueException("The account with specified id manages project(s) with specified ids and can't be removed", idList);
         }
 
         return deleteAccount(account, callerUserId, caller);
@@ -1095,12 +1109,14 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
 
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy("domain", domainId, "domainId"));
+            throw new InvalidParameterValueException("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain with specified id", idList);
         }
 
         // Don't allow to modify system account
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new InvalidParameterValueException("Can not modify system account");
+            throw new InvalidParameterValueException("Can not modify system account", null);
         }
 
         // Check if user performing the action is allowed to modify this account
@@ -1128,14 +1144,16 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
 
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("Unable to find active account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy("domain", domainId, "domainId"));
+            throw new InvalidParameterValueException("Unable to find active account by accountId: " + accountId + " OR by name: " + accountName + " in domain with specified id", idList);
         }
 
         checkAccess(caller, null, true, account);
 
         // don't allow modify system account
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new InvalidParameterValueException("can not lock system account");
+            throw new InvalidParameterValueException("can not lock system account", null);
         }
 
         if (lockAccount(account.getId())) {
@@ -1158,7 +1176,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
 
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy("domain", domainId, "domainId"));
+            throw new InvalidParameterValueException("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain with specified id", idList);
         }
 
         checkAccess(caller, null, true, account);
@@ -1191,34 +1211,34 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         // Check if account exists
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             s_logger.error("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
-            throw new InvalidParameterValueException("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain " + domainId);
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy("domain", domainId, "domainId"));
+            throw new InvalidParameterValueException("Unable to find account by accountId: " + accountId + " OR by name: " + accountName + " in domain with specified id", idList);
         }
 
         // Don't allow to modify system account
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new InvalidParameterValueException("Can not modify system account");
+            throw new InvalidParameterValueException("Can not modify system account", null);
         }
 
         // Check if user performing the action is allowed to modify this account
         checkAccess(UserContext.current().getCaller(), _domainMgr.getDomain(account.getDomainId()));
 
         // check if the given account name is unique in this domain for updating
-        Account duplicateAcccount = _accountDao.findActiveAccount(newAccountName, domainId);
-        if (duplicateAcccount != null && duplicateAcccount.getId() != account.getId()) {// allow
-                                                                                        // same
-                                                                                        // account
-                                                                                        // to
-                                                                                        // update
-                                                                                        // itself
-            throw new InvalidParameterValueException("There already exists an account with the name:" + newAccountName + " in the domain:" + domainId + " with existing account id:"
-                    + duplicateAcccount.getId());
+        Account duplicateAccount = _accountDao.findActiveAccount(newAccountName, domainId);
+        if (duplicateAccount != null && duplicateAccount.getId() != account.getId()) {
+            // allow same account to update itself
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy("domain", domainId, "domainId"));
+            idList.add(new IdentityProxy(duplicateAccount, duplicateAccount.getId(), "accountId"));
+            throw new InvalidParameterValueException("There already exists an account with the name:" + newAccountName + " in domain with specified id, with existing account with specified id", idList);
         }
 
         if (networkDomain != null && !networkDomain.isEmpty()) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
                         "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                                + "and the hyphen ('-'); can't start or end with \"-\"");
+                                + "and the hyphen ('-'); can't start or end with \"-\"", null);
             }
         }
 
@@ -1259,18 +1279,20 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         UserVO user = _userDao.findById(id);
 
         if (user == null) {
-            throw new InvalidParameterValueException("The specified user doesn't exist in the system");
+            throw new InvalidParameterValueException("The specified user doesn't exist in the system", null);
         }
 
         Account account = _accountDao.findById(user.getAccountId());
 
         // don't allow to delete the user from the account of type Project
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("The specified user doesn't exist in the system");
+            throw new InvalidParameterValueException("The specified user doesn't exist in the system", null);
         }
 
         if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new InvalidParameterValueException("Account id : " + user.getAccountId() + " is a system account, delete for user associated with this account is not allowed");
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(account, user.getAccountId(), "accountId"));
+            throw new InvalidParameterValueException("Account with specified id is a system account, delete for user associated with this account is not allowed", idList);
         }
 
         checkAccess(UserContext.current().getCaller(), null, true, account);
@@ -1377,18 +1399,18 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     public Account finalizeOwner(Account caller, String accountName, Long domainId, Long projectId) {
         // don't default the owner to the system account
         if (caller.getId() == Account.ACCOUNT_ID_SYSTEM && ((accountName == null || domainId == null) && projectId == null)) {
-            throw new InvalidParameterValueException("Account and domainId are needed for resource creation");
+            throw new InvalidParameterValueException("Account and domainId are needed for resource creation", null);
         }
 
         // projectId and account/domainId can't be specified together
         if ((accountName != null && domainId != null) && projectId != null) {
-            throw new InvalidParameterValueException("ProjectId and account/domainId can't be specified together");
+            throw new InvalidParameterValueException("ProjectId and account/domainId can't be specified together", null);
         }
 
         if (projectId != null) {
             Project project = _projectMgr.getProject(projectId);
             if (project == null) {
-                throw new InvalidParameterValueException("Unable to find project by id=" + projectId);
+                throw new InvalidParameterValueException("Unable to find project by id", null);
             }
 
             if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
@@ -1401,12 +1423,14 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (isAdmin(caller.getType()) && accountName != null && domainId != null) {
             Domain domain = _domainMgr.getDomain(domainId);
             if (domain == null) {
-                throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
+                throw new InvalidParameterValueException("Unable to find domain by id", null);
             }
 
             Account owner = _accountDao.findActiveAccount(accountName, domainId);
             if (owner == null) {
-                throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy("domain", domainId, "domainId"));
+                throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain with specified id", idList);
             }
             checkAccess(caller, domain);
 
@@ -1419,7 +1443,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
         } else {
             if ((accountName == null && domainId != null) || (accountName != null && domainId == null)) {
-                throw new InvalidParameterValueException("AccountName and domainId must be specified together");
+                throw new InvalidParameterValueException("AccountName and domainId must be specified together", null);
             }
             // regular user can't create/list resources for other people
             return caller;
@@ -1429,7 +1453,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Override
     public Account getActiveAccountByName(String accountName, Long domainId) {
         if (accountName == null || domainId == null) {
-            throw new InvalidParameterValueException("Both accountName and domainId are required for finding active account in the system");
+            throw new InvalidParameterValueException("Both accountName and domainId are required for finding active account in the system", null);
         } else {
             return _accountDao.findActiveAccount(accountName, domainId);
         }
@@ -1438,7 +1462,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Override
     public Account getActiveAccountById(Long accountId) {
         if (accountId == null) {
-            throw new InvalidParameterValueException("AccountId is required by account search");
+            throw new InvalidParameterValueException("AccountId is required by account search", null);
         } else {
             return _accountDao.findById(accountId);
         }
@@ -1447,7 +1471,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Override
     public Account getAccount(Long accountId) {
         if (accountId == null) {
-            throw new InvalidParameterValueException("AccountId is required by account search");
+            throw new InvalidParameterValueException("AccountId is required by account search", null);
         } else {
             return _accountDao.findByIdIncludingRemoved(accountId);
         }
@@ -1469,11 +1493,11 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         if (isAdmin(caller.getType())) {
             if (domainId == null && accountName != null) {
-                throw new InvalidParameterValueException("accountName and domainId might be specified together");
+                throw new InvalidParameterValueException("accountName and domainId might be specified together", null);
             } else if (domainId != null) {
                 Domain domain = _domainMgr.getDomain(domainId);
                 if (domain == null) {
-                    throw new InvalidParameterValueException("Unable to find the domain by id=" + domainId);
+                    throw new InvalidParameterValueException("Unable to find domain by id", null);
                 }
 
                 checkAccess(caller, domain);
@@ -1481,7 +1505,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 if (accountName != null) {
                     Account owner = getActiveAccountByName(accountName, domainId);
                     if (owner == null) {
-                        throw new InvalidParameterValueException("Unable to find account with name " + accountName + " in domain id=" + domainId);
+                        List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                        idList.add(new IdentityProxy("domain", domainId, "domainId"));
+                        throw new InvalidParameterValueException("Unable to find account with name " + accountName + " in domain with specified id", idList);
                     }
 
                     permittedAccounts.add(owner.getId());
@@ -1508,10 +1534,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 permittedAccounts.clear();
                 Project project = _projectMgr.getProject(projectId);
                 if (project == null) {
-                    throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+                    throw new InvalidParameterValueException("Unable to find project by id ", null);
                 }
                 if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
-                    throw new InvalidParameterValueException("Account " + caller + " can't access project id=" + projectId);
+                    List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                    idList.add(new IdentityProxy(project, projectId, "projectId"));
+                    throw new InvalidParameterValueException("Account " + caller + " can't access project with specified id", idList);
                 }
                 permittedAccounts.add(project.getProjectAccountId());
             }
@@ -1538,7 +1566,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         // Validate domain
         Domain domain = _domainMgr.getDomain(domainId);
         if (domain == null) {
-            throw new InvalidParameterValueException("The domain " + domainId + " does not exist; unable to create account");
+            throw new InvalidParameterValueException("Domain does not exist; unable to create account", null);
         }
 
         if (domain.getState().equals(Domain.State.Inactive)) {
@@ -1546,31 +1574,33 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         }
 
         if ((domainId != DomainVO.ROOT_DOMAIN) && (accountType == Account.ACCOUNT_TYPE_ADMIN)) {
-            throw new InvalidParameterValueException("Invalid account type " + accountType + " given for an account in domain " + domainId + "; unable to create user.");
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(domain, domainId, "domainId"));
+            throw new InvalidParameterValueException("Invalid account type " + accountType + " given for an account in domain with specified id; unable to create user.", idList);
         }
 
         // Validate account/user/domain settings
         if (_accountDao.findActiveAccount(accountName, domainId) != null) {
-            throw new InvalidParameterValueException("The specified account: " + accountName + " already exists");
+            throw new InvalidParameterValueException("The specified account: " + accountName + " already exists", null);
         }
 
         if (networkDomain != null) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
                         "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                                + "and the hyphen ('-'); can't start or end with \"-\"");
+                                + "and the hyphen ('-'); can't start or end with \"-\"", null);
             }
         }
 
         // Verify account type
         if ((accountType < Account.ACCOUNT_TYPE_NORMAL) || (accountType > Account.ACCOUNT_TYPE_PROJECT)) {
-            throw new InvalidParameterValueException("Invalid account type " + accountType + " given; unable to create user");
+            throw new InvalidParameterValueException("Invalid account type " + accountType + " given; unable to create user", null);
         }
 
         if (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
             List<DataCenterVO> dc = _dcDao.findZonesByDomainId(domainId);
             if (dc.isEmpty()) {
-                throw new InvalidParameterValueException("The account cannot be created as domain " + domain.getName() + " is not associated with any private Zone");
+                throw new InvalidParameterValueException("The account cannot be created as domain " + domain.getName() + " is not associated with any private Zone", null);
             }
         }
 
@@ -1808,8 +1838,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
         Long userId = cmd.getId();
 
-        if (getUserIncludingRemoved(userId) == null) {
-            throw new InvalidParameterValueException("unable to find user for id : " + userId);
+        if (getUserIncludingRemoved(userId) == null) {            
+            throw new InvalidParameterValueException("unable to find user by id", null);
         }
 
         // generate both an api key and a secret key, update the user table with the keys, return the keys to the user
@@ -1891,7 +1921,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (accountId != null) {
             Account account = _accountDao.findById(accountId);
             if (account == null || account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-                throw new InvalidParameterValueException("Unable to find account by id " + accountId);
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(account, accountId, "accountId"));
+                throw new InvalidParameterValueException("Unable to find account with specified id", idList);
             }
 
             checkAccess(caller, null, true, account);
@@ -1900,7 +1932,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (domainId != null) {
             Domain domain = _domainMgr.getDomain(domainId);
             if (domain == null) {
-                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(domain, domainId, "domainId"));
+                throw new InvalidParameterValueException("Domain with specified id doesn't exist", idList);
             }
 
             checkAccess(caller, domain);
@@ -1908,7 +1942,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             if (accountName != null) {
                 Account account = _accountDao.findActiveAccount(accountName, domainId);
                 if (account == null || account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-                    throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain " + domainId);
+                    List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                    idList.add(new IdentityProxy(domain, domainId, "domainId"));
+                    throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain with specified id", idList);
                 }
                 checkAccess(caller, null, true, account);
             }
@@ -2005,7 +2041,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (domainId != null) {
             Domain domain = _domainDao.findById(domainId);
             if (domain == null) {
-                throw new InvalidParameterValueException("Unable to find domain by id=" + domainId);
+                throw new InvalidParameterValueException("Unable to find domain by id", null);
             }
 
             checkAccess(caller, domain);
@@ -2169,7 +2205,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (domainId != null) {
             Domain domain = _domainDao.findById(domainId);
             if (domain == null) {
-                throw new InvalidParameterValueException("Unable to find domain by id " + domainId);
+                throw new InvalidParameterValueException("Unable to find domain by id", null);
             }
             // check permissions
             checkAccess(caller, domain);
@@ -2177,7 +2213,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         if (accountName != null) {
             if (projectId != null) {
-                throw new InvalidParameterValueException("Account and projectId can't be specified together");
+                throw new InvalidParameterValueException("Account and projectId can't be specified together", null);
             }
 
             Account userAccount = null;
@@ -2190,7 +2226,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             if (userAccount != null) {
                 permittedAccounts.add(userAccount.getId());
             } else {
-                throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domainId);
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy("domain", domainId, "domainId"));
+                throw new InvalidParameterValueException("could not find account " + accountName + " in domain with specified id", idList);
             }
         }
 
@@ -2206,7 +2244,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 } else {
                     Project project = _projectMgr.getProject(projectId);
                     if (project == null) {
-                        throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+                        throw new InvalidParameterValueException("Unable to find project by id", null);
                     }
                     if (!_projectMgr.canAccessProjectAccount(caller, project.getProjectAccountId())) {
                         throw new PermissionDeniedException("Account " + caller + " can't access project id=" + projectId);

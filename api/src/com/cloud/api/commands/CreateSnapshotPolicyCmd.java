@@ -45,11 +45,11 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     private Integer maxSnaps;
 
     @Parameter(name=ApiConstants.SCHEDULE, type=CommandType.STRING, required=true, description="time the snapshot is scheduled to be taken. " +
-    																				"Format is:" +
-    																				"* if HOURLY, MM" +
-    																				"* if DAILY, MM:HH" +
-    																				"* if WEEKLY, MM:HH:DD (1-7)" +
-    																				"* if MONTHLY, MM:HH:DD (1-28)")
+            "Format is:" +
+            "* if HOURLY, MM" +
+            "* if DAILY, MM:HH" +
+            "* if WEEKLY, MM:HH:DD (1-7)" +
+            "* if MONTHLY, MM:HH:DD (1-28)")
     private String schedule;
 
     @Parameter(name=ApiConstants.TIMEZONE, type=CommandType.STRING, required=true, description="Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
@@ -93,30 +93,30 @@ public class CreateSnapshotPolicyCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
         if (volume == null) {
-        	throw new InvalidParameterValueException("Unable to find volume by id=" + volumeId);
+            throw new InvalidParameterValueException("Unable to find volume by id", null);
         }
-        
+
         Account account = _accountService.getAccount(volume.getAccountId());
         //Can create templates for enabled projects/accounts only
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-        	Project project = _projectService.findByProjectAccountId(volume.getAccountId());
+            Project project = _projectService.findByProjectAccountId(volume.getAccountId());
             if (project.getState() != Project.State.Active) {
-            	PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the specified project id in state=" + project.getState() + " as it's no longer active");
+                PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the specified project id in state=" + project.getState() + " as it's no longer active");
                 ex.addProxyObject(project, project.getId(), "projectId");
                 throw ex;
             }
         } else if (account.getState() == Account.State.disabled) {
             throw new PermissionDeniedException("The owner of template is disabled: " + account);
         }
-        
+
         return volume.getAccountId();
     }
-    
+
     @Override
     public void execute(){
         SnapshotPolicy result = _snapshotService.createPolicy(this, _accountService.getAccount(getEntityOwnerId()));

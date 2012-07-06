@@ -57,7 +57,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd{
     public Long getId() {
         return id;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -65,7 +65,7 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd{
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_STATIC_ROUTE_DELETE;
@@ -75,25 +75,25 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd{
     public String getEventDescription() {
         return  ("Deleting static route id=" + id);
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         if (ownerId == null) {
             StaticRoute route = _entityMgr.findById(StaticRoute.class, id);
             if (route == null) {
-                throw new InvalidParameterValueException("Unable to find static route by id=" + id);
+                throw new InvalidParameterValueException("Unable to find static route by id", null);
             } else {
                 ownerId = route.getAccountId();
             }
         }
         return ownerId;
     }
-    
+
     @Override
     public void execute() throws ResourceUnavailableException {
         UserContext.current().setEventDetails("Route Id: " + id);
         boolean result = _vpcService.revokeStaticRoute(id);
-        
+
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
@@ -101,8 +101,8 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd{
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete static route");
         }
     }
-    
-    
+
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.vpcSyncObject;
@@ -112,11 +112,11 @@ public class DeleteStaticRouteCmd extends BaseAsyncCmd{
     public Long getSyncObjId() {
         StaticRoute route =  _vpcService.getStaticRoute(id);
         if (route == null) {
-            throw new InvalidParameterValueException("Invalid id is specified for the static route");
+            throw new InvalidParameterValueException("Invalid id is specified for the static route", null);
         }
         return route.getVpcId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.StaticRoute;

@@ -25,6 +25,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.IdentityMapper;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -97,7 +98,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
     
     @DB
     @Override
-    public Pair<Long, Long> getAccountDomainInfo(String tableName, Long identityId) {
+    public Pair<Long, Long> getAccountDomainInfo(String tableName, Long identityId, TaggedResourceType resourceType) {
         assert(tableName != null);
         
         PreparedStatement pstmt = null;
@@ -118,7 +119,11 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
             
             //get accountId
             try {
-                pstmt = txn.prepareAutoCloseStatement(String.format("SELECT account_id FROM `%s` WHERE id=?", tableName));
+                String account = "account_id";
+                if (resourceType == TaggedResourceType.Project) {
+                    account = "project_account_id";
+                }
+                pstmt = txn.prepareAutoCloseStatement(String.format("SELECT " + account + " FROM `%s` WHERE id=?", tableName));
                 pstmt.setLong(1, identityId);
                 ResultSet rs = pstmt.executeQuery();
                 if (rs.next()) {

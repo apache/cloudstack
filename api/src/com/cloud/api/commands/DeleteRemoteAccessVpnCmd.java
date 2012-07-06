@@ -37,7 +37,7 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     @IdentityMapper(entityTableName="user_ip_address")
     @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, required=true, description="public ip address id of the vpn server")
     private Long publicIpId;
-    
+
     // unexposed parameter needed for events logging
     @IdentityMapper(entityTableName="account")
     @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.LONG, expose=false)
@@ -45,43 +45,43 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-	
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-	@Override
+    @Override
     public String getCommandName() {
         return s_name;
     }
 
-	@Override
-	public long getEntityOwnerId() {
-	    if (ownerId == null) {
-	    	RemoteAccessVpn vpnEntity = _entityMgr.findById(RemoteAccessVpn.class, publicIpId);
-	    	if(vpnEntity != null)
-	    		return vpnEntity.getAccountId();
-	    	
-	    	throw new InvalidParameterValueException("The specified public ip is not allocated to any account");
-	    }
-	    return ownerId;
+    @Override
+    public long getEntityOwnerId() {
+        if (ownerId == null) {
+            RemoteAccessVpn vpnEntity = _entityMgr.findById(RemoteAccessVpn.class, publicIpId);
+            if(vpnEntity != null)
+                return vpnEntity.getAccountId();
+
+            throw new InvalidParameterValueException("The specified public ip is not allocated to any account", null);
+        }
+        return ownerId;
     }
 
-	@Override
-	public String getEventDescription() {
-		return "Delete Remote Access VPN for account " + getEntityOwnerId() + " for  ip id=" + publicIpId;
-	}
+    @Override
+    public String getEventDescription() {
+        return "Delete Remote Access VPN for account " + getEntityOwnerId() + " for  ip id=" + publicIpId;
+    }
 
-	@Override
-	public String getEventType() {
-		return EventTypes.EVENT_REMOTE_ACCESS_VPN_DESTROY;
-	}
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_REMOTE_ACCESS_VPN_DESTROY;
+    }
 
     @Override
     public void execute() throws ResourceUnavailableException {
         _ravService.destroyRemoteAccessVpn(publicIpId);
     }
-    
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.networkSyncObject;
@@ -91,5 +91,5 @@ public class DeleteRemoteAccessVpnCmd extends BaseAsyncCmd {
     public Long getSyncObjId() {
         return _ravService.getRemoteAccessVpn(publicIpId).getNetworkId();
     }
-	
+
 }

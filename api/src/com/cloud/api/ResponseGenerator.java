@@ -109,7 +109,6 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
-import com.cloud.network.rules.NetworkACL;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StickinessPolicy;
@@ -320,7 +319,7 @@ public interface ResponseGenerator {
      * @param networkACL
      * @return
      */
-    NetworkACLResponse createNetworkACLResponse(NetworkACL networkACL);
+    NetworkACLResponse createNetworkACLResponse(FirewallRule networkACL);
 
     /**
      * @param result

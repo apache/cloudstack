@@ -149,7 +149,6 @@ import com.cloud.network.VpnUser;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
-import com.cloud.network.rules.NetworkACL;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StickinessPolicy;
@@ -3045,6 +3044,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDomain(domain.getName());
 
         response.setOwner(ApiDBUtils.getProjectOwner(project.getId()).getAccountName());
+        
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Project, project.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        response.setTags(tagResponses);
 
         response.setObjectName("project");
         return response;
@@ -3095,7 +3103,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     @Override
-    public NetworkACLResponse createNetworkACLResponse(NetworkACL networkACL) {
+    public NetworkACLResponse createNetworkACLResponse(FirewallRule networkACL) {
         NetworkACLResponse response = new NetworkACLResponse();
 
         response.setId(networkACL.getId());
@@ -3123,6 +3131,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIcmpType(networkACL.getIcmpType());
 
         response.setState(stateToSet);
+        
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.NetworkACL, networkACL.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        response.setTags(tagResponses);
+        
         response.setObjectName("networkacl");
         return response;
     }
@@ -3703,6 +3721,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         
         response.setNetworks(networkResponses);
         response.setServices(serviceResponses);
+        
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Vpc, vpc.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        response.setTags(tagResponses);
+        
         response.setObjectName("vpc");
         return response;
     }
@@ -3744,6 +3772,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(stateToSet);
         populateAccount(response, result.getAccountId());
         populateDomain(response, result.getDomainId());
+        
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.StaticRoute, result.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        response.setTags(tagResponses);
         response.setObjectName("staticroute");
         
         return response;

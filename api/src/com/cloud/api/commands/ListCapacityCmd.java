@@ -38,7 +38,7 @@ public class ListCapacityCmd extends BaseListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
- 
+
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="lists capacity by the Zone ID")
     private Long zoneId;
@@ -46,28 +46,28 @@ public class ListCapacityCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="host_pod_ref")
     @Parameter(name=ApiConstants.POD_ID, type=CommandType.LONG, description="lists capacity by the Pod ID")
     private Long podId;
-    
+
     @IdentityMapper(entityTableName="cluster")
     @Parameter(name=ApiConstants.CLUSTER_ID, type=CommandType.LONG, since="3.0.0", description="lists capacity by the Cluster ID")
     private Long clusterId;
 
     @Parameter(name=ApiConstants.FETCH_LATEST, type=CommandType.BOOLEAN, since="3.0.0", description="recalculate capacities and fetch the latest")
     private Boolean fetchLatest;
-        
+
     @Parameter(name=ApiConstants.TYPE, type=CommandType.INTEGER, description="lists capacity by type" +
-    																		 "* CAPACITY_TYPE_MEMORY = 0" +
-    																		 "* CAPACITY_TYPE_CPU = 1" +
-    																		 "* CAPACITY_TYPE_STORAGE = 2" +
-    																		 "* CAPACITY_TYPE_STORAGE_ALLOCATED = 3" +
-    																		 "* CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP = 4" +
-    																		 "* CAPACITY_TYPE_PRIVATE_IP = 5" +
-    																		 "* CAPACITY_TYPE_SECONDARY_STORAGE = 6" +
-    																		 "* CAPACITY_TYPE_VLAN = 7" +
-    																		 "* CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP = 8" +
-    																		 "* CAPACITY_TYPE_LOCAL_STORAGE = 9.")
+            "* CAPACITY_TYPE_MEMORY = 0" +
+            "* CAPACITY_TYPE_CPU = 1" +
+            "* CAPACITY_TYPE_STORAGE = 2" +
+            "* CAPACITY_TYPE_STORAGE_ALLOCATED = 3" +
+            "* CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP = 4" +
+            "* CAPACITY_TYPE_PRIVATE_IP = 5" +
+            "* CAPACITY_TYPE_SECONDARY_STORAGE = 6" +
+            "* CAPACITY_TYPE_VLAN = 7" +
+            "* CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP = 8" +
+            "* CAPACITY_TYPE_LOCAL_STORAGE = 9.")
 
     private Integer type;
-    
+
     @Parameter(name=ApiConstants.SORT_BY, type=CommandType.STRING, since="3.0.0", description="Sort the results. Available values: Usage")
     private String sortBy;
 
@@ -78,32 +78,32 @@ public class ListCapacityCmd extends BaseListCmd {
     public Long getZoneId() {
         return zoneId;
     }
-    
+
     public Long getPodId() {
         return podId;
     }
 
     public Long getClusterId() {
-		return clusterId;
-	}
+        return clusterId;
+    }
 
-	public Boolean getFetchLatest() {
-		return fetchLatest;
-	}
+    public Boolean getFetchLatest() {
+        return fetchLatest;
+    }
 
-	public Integer getType() {
+    public Integer getType() {
         return type;
     }
-	
+
     public String getSortBy() {
         if (sortBy != null) {
             if (sortBy.equalsIgnoreCase("usage")) {
                 return sortBy;
             } else {
-                throw new InvalidParameterValueException("Only value supported for sortBy parameter is : usage");
+                throw new InvalidParameterValueException("Only value supported for sortBy parameter is : usage", null);
             }
         }
-        
+
         return null;
     }
 
@@ -115,7 +115,7 @@ public class ListCapacityCmd extends BaseListCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public void execute(){
         List<? extends Capacity> result = null;
@@ -124,7 +124,7 @@ public class ListCapacityCmd extends BaseListCmd {
         } else {
             result = _mgr.listCapacities(this);
         }
-        
+
         ListResponse<CapacityResponse> response = new ListResponse<CapacityResponse>();
         List<CapacityResponse> capacityResponses = _responseGenerator.createCapacityResponse(result, s_percentFormat);
         response.setResponses(capacityResponses);

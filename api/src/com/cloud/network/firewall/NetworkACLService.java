@@ -17,21 +17,21 @@ import java.util.List;
 import com.cloud.api.commands.ListNetworkACLsCmd;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.rules.NetworkACL;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 
 /**
  * @author Alena Prokharchyk
  */
 public interface NetworkACLService {
-    NetworkACL getNetworkACL(long ruleId);
+    FirewallRule getNetworkACL(long ruleId);
     boolean applyNetworkACLs(long networkId, Account caller) throws ResourceUnavailableException;
     
     /**
      * @param createNetworkACLCmd
      * @return
      */
-    NetworkACL createNetworkACL(NetworkACL acl) throws NetworkRuleConflictException;
+    FirewallRule createNetworkACL(FirewallRule acl) throws NetworkRuleConflictException;
     /**
      * @param ruleId
      * @param apply
@@ -42,6 +42,6 @@ public interface NetworkACLService {
      * @param listNetworkACLsCmd
      * @return
      */
-    List<? extends NetworkACL> listNetworkACLs(ListNetworkACLsCmd cmd);
+    List<? extends FirewallRule> listNetworkACLs(ListNetworkACLsCmd cmd);
     
 }

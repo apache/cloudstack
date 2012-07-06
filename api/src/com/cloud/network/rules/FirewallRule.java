@@ -15,6 +15,7 @@ package com.cloud.network.rules;
 import java.util.List;
 
 import com.cloud.acl.ControlledEntity;
+import com.cloud.network.rules.FirewallRule.TrafficType;
 
 public interface FirewallRule extends ControlledEntity {
     enum Purpose {
@@ -85,5 +86,10 @@ public interface FirewallRule extends ControlledEntity {
     Long getRelated();
 
 	FirewallRuleType getType();
+
+    /**
+     * @return
+     */
+    TrafficType getTrafficType();
 
 }

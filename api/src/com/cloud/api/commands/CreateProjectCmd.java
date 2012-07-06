@@ -56,6 +56,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
+    @Override
     public String getEntityTable() {
         return "projects";
     }
@@ -95,7 +96,7 @@ public class CreateProjectCmd extends BaseAsyncCreateCmd {
         Account caller = UserContext.current().getCaller();
 
         if ((accountName != null && domainId == null) || (domainId != null && accountName == null)) {
-            throw new InvalidParameterValueException("Account name and domain id must be specified together");
+            throw new InvalidParameterValueException("Account name and domain id must be specified together", null);
         }
 
         if (accountName != null) {

@@ -13,7 +13,11 @@
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -24,6 +28,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ProjectResponse;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 
 @Implementation(description="Lists projects and provides detailed information for listed projects", responseObject=ProjectResponse.class, since="3.0.0")
@@ -48,6 +53,9 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list projects by state")
     private String state;
     
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "List projects by tags (key/value pairs)")
+    private Map tags;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -68,6 +76,25 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
     public String getCommandName() {
         return s_name;
     }
+    
+    public Map<String, String> getTags() {
+        Map<String, String> tagsMap = null;
+        if (tags != null && !tags.isEmpty()) {
+            tagsMap = new HashMap<String, String>();
+            Collection<?> servicesCollection = tags.values();
+            Iterator<?> iter = servicesCollection.iterator();
+            while (iter.hasNext()) {
+                HashMap<String, String> services = (HashMap<String, String>) iter.next();
+                String key = services.get("key");
+                String value = services.get("value");
+                if (value == null) {
+                    throw new InvalidParameterValueException("No value is passed in for key " + key);
+                }
+                tagsMap.put(key, value);
+            }
+        }
+        return tagsMap;
+    }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -75,7 +102,9 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
 
     @Override
     public void execute(){
-        List<? extends Project> projects = _projectService.listProjects(id, name, displayText, state, this.getAccountName(), this.getDomainId(), this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), this.listAll(), this.isRecursive());
+        List<? extends Project> projects = _projectService.listProjects(id, name, displayText, state, 
+                this.getAccountName(), this.getDomainId(), this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(),
+                this.listAll(), this.isRecursive(), getTags());
         ListResponse<ProjectResponse> response = new ListResponse<ProjectResponse>();
         List<ProjectResponse> projectResponses = new ArrayList<ProjectResponse>();
         for (Project project : projects) {

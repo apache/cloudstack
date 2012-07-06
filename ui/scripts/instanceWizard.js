@@ -286,15 +286,18 @@
             networkObjs = json.listnetworksresponse.network ? json.listnetworksresponse.network : [];
           }
         });
-
-
-        var apiCmd = "listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled&specifyvlan=false&zoneid=" + args.currentData.zoneid ; 
-        var array1 = [];
-        var guestTrafficTypeTotal = 0;
-
+                  
         $.ajax({
-          url: createURL(apiCmd + array1.join("")), //get the network offering for isolated network with sourceNat
+          url: createURL("listNetworkOfferings"), 
           dataType: "json",
+					data: {
+						forvpc: false, 
+						zoneid: args.currentData.zoneid,
+						guestiptype: 'Isolated',
+						supportedServices: 'SourceNat',
+						specifyvlan: false,
+						state: 'Enabled'
+					},
           async: false,
           success: function(json) {
             networkOfferingObjs  = json.listnetworkofferingsresponse.networkoffering;

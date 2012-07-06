@@ -69,16 +69,16 @@ public class ListHostsCmd extends BaseListCmd {
     @IdentityMapper(entityTableName="vm_instance")
     @Parameter(name=ApiConstants.VIRTUAL_MACHINE_ID, type=CommandType.LONG, required=false, description="lists hosts in the same cluster as this VM and flag hosts with enough CPU/RAm to host this VM")
     private Long virtualMachineId;
-    
+
     @Parameter(name=ApiConstants.RESOURCE_STATE, type=CommandType.STRING, description="list hosts by resource state. Resource state represents current state determined by admin of host, valule can be one of [Enabled, Disabled, Unmanaged, PrepareForMaintenance, ErrorInMaintenance, Maintenance, Error]")
     private String resourceState;   
-    
+
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of host details requested, value can be a list of [ min, all, capacity, events, stats]" )
     private List<String> viewDetails;
-    
+
     @Parameter(name=ApiConstants.HA_HOST, type=CommandType.BOOLEAN, description="if true, list only hosts dedicated to HA")
     private Boolean haHost;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -106,7 +106,7 @@ public class ListHostsCmd extends BaseListCmd {
     public String getType() {
         return type;
     }
-    
+
     public Boolean getHaHost() {
         return haHost;
     }
@@ -118,7 +118,7 @@ public class ListHostsCmd extends BaseListCmd {
     public Long getVirtualMachineId() {
         return virtualMachineId;
     }
-    
+
     public EnumSet<HostDetails> getDetails() throws InvalidParameterValueException {
         EnumSet<HostDetails> dv;
         if (viewDetails==null || viewDetails.size() <=0){
@@ -133,14 +133,14 @@ public class ListHostsCmd extends BaseListCmd {
                 dv = EnumSet.copyOf(dc);
             }
             catch (IllegalArgumentException e){
-                throw new InvalidParameterValueException("The details parameter contains a non permitted value. The allowed values are " + EnumSet.allOf(HostDetails.class));
+                throw new InvalidParameterValueException("The details parameter contains a non permitted value. The allowed values are " + EnumSet.allOf(HostDetails.class), null);
             }
         }
         return dv;
     }
-    
+
     public String getResourceState() {
-    	return resourceState;
+        return resourceState;
     }
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -150,23 +150,24 @@ public class ListHostsCmd extends BaseListCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
+    @Override
     public AsyncJob.Type getInstanceType() {
-    	return AsyncJob.Type.Host;
+        return AsyncJob.Type.Host;
     }
 
     @Override
     public void execute(){
-    	List<? extends Host> result = new ArrayList<Host>();
-    	List<? extends Host> hostsWithCapacity = new ArrayList<Host>();
-    	 
-    	if(getVirtualMachineId() != null){
+        List<? extends Host> result = new ArrayList<Host>();
+        List<? extends Host> hostsWithCapacity = new ArrayList<Host>();
+
+        if(getVirtualMachineId() != null){
             Pair<List<? extends Host>, List<? extends Host>> hostsForMigration = _mgr.listHostsForMigrationOfVM(getVirtualMachineId(), this.getStartIndex(), this.getPageSizeVal());
             result = hostsForMigration.first();
             hostsWithCapacity = hostsForMigration.second();
-    	}else{
-    		result = _mgr.searchForServers(this);
-    	}
+        }else{
+            result = _mgr.searchForServers(this);
+        }
 
         ListResponse<HostResponse> response = new ListResponse<HostResponse>();
         List<HostResponse> hostResponses = new ArrayList<HostResponse>();

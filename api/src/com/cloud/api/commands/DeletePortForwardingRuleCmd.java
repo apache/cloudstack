@@ -52,7 +52,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
     public Long getId() {
         return id;
     }
-    
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -60,7 +60,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_NET_RULE_DELETE;
@@ -70,28 +70,28 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  ("Deleting port forwarding rule for id=" + id);
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         if (ownerId == null) {
             PortForwardingRule rule = _entityMgr.findById(PortForwardingRule.class, id);
             if (rule == null) {
-                throw new InvalidParameterValueException("Unable to find port forwarding rule by id=" + id);
+                throw new InvalidParameterValueException("Unable to find port forwarding rule by id", null);
             } else {
                 ownerId = _entityMgr.findById(PortForwardingRule.class, id).getAccountId();
             }
-           
+
         }
         return ownerId;
     }
-	
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Rule Id: "+id);
         //revoke corresponding firewall rule first
         boolean result  = _firewallService.revokeRelatedFirewallRule(id, true);
         result = result &&  _rulesService.revokePortForwardingRule(id, true);
-          
+
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
@@ -99,8 +99,8 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete port forwarding rule");
         }
     }
-    
-    
+
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.networkSyncObject;
@@ -110,7 +110,7 @@ public class DeletePortForwardingRuleCmd extends BaseAsyncCmd {
     public Long getSyncObjId() {
         return _rulesService.getPortForwardigRule(id).getNetworkId();
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.FirewallRule;

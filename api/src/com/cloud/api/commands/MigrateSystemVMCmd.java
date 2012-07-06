@@ -73,7 +73,7 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Account account = UserContext.current().getCaller();
@@ -93,38 +93,38 @@ public class MigrateSystemVMCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "Attempting to migrate VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId();
     }
-    
+
     @Override
     public void execute(){
-        
+
         Host destinationHost = _resourceService.getHost(getHostId());
         if (destinationHost == null) {
-            throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId());
+            throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId(), null);
         }
         try{
-        	UserContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId());
-        	//FIXME : Should not be calling UserVmService to migrate all types of VMs - need a generic VM layer
-        	VirtualMachine migratedVm = _userVmService.migrateVirtualMachine(getVirtualMachineId(), destinationHost);
-	        if (migratedVm != null) {
-	            // return the generic system VM instance response
-	            SystemVmInstanceResponse response = _responseGenerator.createSystemVmInstanceResponse(migratedVm);
+            UserContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId());
+            //FIXME : Should not be calling UserVmService to migrate all types of VMs - need a generic VM layer
+            VirtualMachine migratedVm = _userVmService.migrateVirtualMachine(getVirtualMachineId(), destinationHost);
+            if (migratedVm != null) {
+                // return the generic system VM instance response
+                SystemVmInstanceResponse response = _responseGenerator.createSystemVmInstanceResponse(migratedVm);
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
-	        } else {
-	            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to migrate the system vm");
-	        }
+            } else {
+                throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to migrate the system vm");
+            }
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
-		} catch (ManagementServerException e) {
+        } catch (ManagementServerException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
-		} catch (VirtualMachineMigrationException e) {
+        } catch (VirtualMachineMigrationException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.getMessage());
-		}  
+        }  
     }
 }

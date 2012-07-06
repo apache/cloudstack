@@ -214,4 +214,9 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
 	public FirewallRuleType getType() {
 		return FirewallRuleType.User;
 	}
+	
+    @Override
+    public TrafficType getTrafficType() {
+        return null;
+    }
 }

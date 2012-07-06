@@ -472,14 +472,13 @@
           context: context,
           data: args.data,
           response: {
-            success: function(args) {
+            success: function(args) {						  
               var tier = args.data;
 
               cloudStack.ui.notifications.add(
                 // Notification
                 {
-                  desc: actions.add.label,
-                  poll: actions.add.notification.poll
+                  desc: actions.add.label                  
                 },
 
                 // Success
@@ -504,7 +503,11 @@
                   $loading.remove();
                 }
               );
-            }
+            },
+						error: function(errorMsg) {						 
+							cloudStack.dialog.notice({ message: _s(errorMsg) });							
+						  $loading.remove();
+						}						
           }
         });
       }

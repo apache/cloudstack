@@ -1601,6 +1601,7 @@ public class ManagementServerImpl implements ManagementServer {
         String keyword = cmd.getKeyword();
         Long networkId = cmd.getNetworkId();
         Long vpcId = cmd.getVpcId();
+        Boolean forVpc = cmd.getForVpc();
 
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1622,6 +1623,14 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("podId", sb.entity().getPodIdToDeployIn(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
+        
+        if (forVpc != null) {
+            if (forVpc) {
+                sb.and("forVpc", sb.entity().getVpcId(), SearchCriteria.Op.NNULL); 
+            } else {
+                sb.and("forVpc", sb.entity().getVpcId(), SearchCriteria.Op.NULL); 
+            }
+        }
 
         if (networkId != null) {
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
@@ -1632,7 +1641,7 @@ public class ManagementServerImpl implements ManagementServer {
 
             sb.join("nicSearch", nicSearch, sb.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         }
-
+        
         SearchCriteria<DomainRouterVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 

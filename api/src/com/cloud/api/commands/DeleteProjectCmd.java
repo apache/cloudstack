@@ -70,26 +70,26 @@ public class DeleteProjectCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete project");
         }
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_PROJECT_DELETE;
     }
-    
+
     @Override
     public String getEventDescription() {
         return  "Deleting project: " + id;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Project project= _projectService.getProject(id);
         //verify input parameters
         if (project == null) {
-            throw new InvalidParameterValueException("Unable to find project by id " + id);
+            throw new InvalidParameterValueException("Unable to find project by id", null);
         } 
-        
+
         return _projectService.getProjectOwner(id).getId(); 
     }
-    
+
 }

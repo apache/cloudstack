@@ -45,7 +45,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name="iprange", type=CommandType.STRING, required=false, description="the range of ip addresses to allocate to vpn clients. The first ip in the range will be taken by the vpn server")
     private String ipRange;
-    
+
     @Deprecated
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for the VPN. Must be used with domainId.")
     private String accountName;
@@ -54,46 +54,47 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for the VPN. If the account parameter is used, domainId must also be used.")
     private Long domainId;
-    
+
     @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end pubic port is automatically created; if false - firewall rule has to be created explicitely. Has value true by default")
     private Boolean openFirewall;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    @Override
     public String getEntityTable() {
-    	return "user_ip_address";
+        return "user_ip_address";
     }
-    
+
     public Long getPublicIpId() {
-		return publicIpId;
-	}
-
-	public String getAccountName() {
-		return accountName;
-	}
-
-	public Long getDomainId() {
-		return domainId;
-	}
-
-	public String getIpRange() {
-		return ipRange;
-	}
-
-	public void setIpRange(String ipRange) {
-		this.ipRange = ipRange;
-	}
-	
-	public Boolean getOpenFirewall() {
-	    if (openFirewall != null) {
-	        return openFirewall;
-	    } else {
-	        return true;
-	    }
+        return publicIpId;
     }
-	
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public String getIpRange() {
+        return ipRange;
+    }
+
+    public void setIpRange(String ipRange) {
+        this.ipRange = ipRange;
+    }
+
+    public Boolean getOpenFirewall() {
+        if (openFirewall != null) {
+            return openFirewall;
+        } else {
+            return true;
+        }
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -104,42 +105,42 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
         return s_name;
     }
 
-	@Override
-	public long getEntityOwnerId() {
-	    IpAddress ip = _networkService.getIp(publicIpId);
-	    
-	    if (ip == null) {
-	        throw new InvalidParameterValueException("Unable to find ip address by id=" + publicIpId);
-	    }
-	    
-	    return ip.getAccountId();
+    @Override
+    public long getEntityOwnerId() {
+        IpAddress ip = _networkService.getIp(publicIpId);
+
+        if (ip == null) {
+            throw new InvalidParameterValueException("Unable to find ip address by id", null);
+        }
+
+        return ip.getAccountId();
     }
 
-	@Override
-	public String getEventDescription() {
-		return "Create Remote Access VPN for account " + getEntityOwnerId() + " using public ip id=" + publicIpId;
-	}
+    @Override
+    public String getEventDescription() {
+        return "Create Remote Access VPN for account " + getEntityOwnerId() + " using public ip id=" + publicIpId;
+    }
 
-	@Override
-	public String getEventType() {
-		return EventTypes.EVENT_REMOTE_ACCESS_VPN_CREATE;
-	}
-	
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_REMOTE_ACCESS_VPN_CREATE;
+    }
+
     public long getNetworkId() {
         IpAddress ip = _entityMgr.findById(IpAddress.class, getPublicIpId());
         Long ntwkId = null;
-        
+
         if (ip.getAssociatedWithNetworkId() != null) {
             ntwkId = ip.getAssociatedWithNetworkId();
         }
-        
+
         if (ntwkId == null) {
             throw new InvalidParameterValueException("Unable to create remote access vpn for the ipAddress id=" + getPublicIpId() + 
-                    " as ip is not associated with any network and no networkId is passed in");
+                    " as ip is not associated with any network and no networkId is passed in", null);
         }
         return ntwkId;
     }
-	
+
     @Override
     public void create() {
         try {
@@ -172,8 +173,8 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
             throw new ServerApiException(BaseCmd.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         }
     }
-    
-    
+
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.networkSyncObject;
@@ -187,7 +188,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     private IpAddress getIp() {
         IpAddress ip = _networkService.getIp(publicIpId);
         if (ip == null) {
-            throw new InvalidParameterValueException("Unable to find ip address by id " + publicIpId);
+            throw new InvalidParameterValueException("Unable to find ip address by id", null);
         }
         return ip;
     }

@@ -14,6 +14,7 @@ package com.cloud.api;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -56,6 +57,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.BareMetalVmService;
@@ -196,9 +198,9 @@ public abstract class BaseCmd {
     }
 
     public ManagementService getMgmtServiceRef() {
-    	return _mgr;
+        return _mgr;
     }
-    
+
     public static String getDateString(Date date) {
         if (date == null) {
             return "";
@@ -482,12 +484,12 @@ public abstract class BaseCmd {
     public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
         if (accountName != null) {
             if (domainId == null) {
-                throw new InvalidParameterValueException("Account must be specified with domainId parameter");
+                throw new InvalidParameterValueException("Account must be specified with domainId parameter", null);
             }
 
             Domain domain = _domainService.getDomain(domainId);
             if (domain == null) {
-                throw new InvalidParameterValueException("Unable to find domain by id=" + domainId);
+                throw new InvalidParameterValueException("Unable to find domain by id", null);
             }
 
             Account account = _accountService.getActiveAccountByName(accountName, domainId);
@@ -498,7 +500,9 @@ public abstract class BaseCmd {
                     throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");                    
                 }
             } else {
-                throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain id=" + domainId);
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy("domain", domainId, "domainId"));
+                throw new InvalidParameterValueException("Unable to find account by name " + accountName + " in domain with specified id", idList);
             }
         }
 
@@ -508,14 +512,12 @@ public abstract class BaseCmd {
                 if (!enabledOnly || project.getState() == Project.State.Active) {
                     return project.getProjectAccountId();
                 } else {
-                	PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() + " as it's no longer active");
-                	ex.addProxyObject(project, projectId, "projectId");                    
+                    PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() + " as it's no longer active");
+                    ex.addProxyObject(project, projectId, "projectId");                    
                     throw ex;
                 }
             } else {
-            	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified projectId");
-            	ex.addProxyObject(project, projectId, "projectId");                
-                throw ex;
+                throw new InvalidParameterValueException("Unable to find project by id", null);
             }
         }
         return null;

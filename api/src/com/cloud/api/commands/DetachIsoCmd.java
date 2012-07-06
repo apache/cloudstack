@@ -63,7 +63,7 @@ public class DetachIsoCmd extends BaseAsyncCmd {
         if (vm != null) {
             return vm.getAccountId();
         } else {
-            throw new InvalidParameterValueException("Unable to find vm by id " + getVirtualMachineId());
+            throw new InvalidParameterValueException("Unable to find vm by id", null);
         }  
     }
 
@@ -76,7 +76,7 @@ public class DetachIsoCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         return  "detaching ISO from vm: " + getVirtualMachineId();
     }
-	
+
     @Override
     public void execute(){
         boolean result = _templateService.detachIso(virtualMachineId);

@@ -7,4 +7,5 @@ import com.cloud.utils.db.GenericDao;
 
 public interface Site2SiteVpnGatewayDao extends GenericDao<Site2SiteVpnGatewayVO, Long> {
     Site2SiteVpnGatewayVO findByIpAddrId(long id);
+    List<Site2SiteVpnGatewayVO> listByVpcId(long vpcId);
 }

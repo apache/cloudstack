@@ -39,7 +39,7 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, required=true, description="id of the project to remove the account from")
     private Long projectId;
-    
+
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, required=true, description="name of the account to be removed from the project")
     private String accountName;
 
@@ -48,7 +48,7 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
 
-    
+
 
     @Override
     public String getCommandName() {
@@ -78,24 +78,24 @@ public class DeleteAccountFromProjectCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete account from the project");
         }
     }
-    
-    
+
+
     @Override
     public long getEntityOwnerId() {
         Project project= _projectService.getProject(projectId);
         //verify input parameters
         if (project == null) {
-            throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+            throw new InvalidParameterValueException("Unable to find project by id", null);
         } 
-        
+
         return _projectService.getProjectOwner(projectId).getId(); 
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_PROJECT_ACCOUNT_REMOVE;
     }
-    
+
     @Override
     public String getEventDescription() {
         return  "Removing account " + accountName + " from project: " + projectId;

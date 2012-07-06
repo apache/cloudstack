@@ -33,8 +33,8 @@ import com.cloud.user.UserContext;
 import com.cloud.vm.VirtualMachine;
 
 @Implementation(responseObject=SystemVmResponse.class, description="Changes the service offering for a system vm (console proxy or secondary storage). " +
-                                                                                            "The system vm must be in a \"Stopped\" state for " +
-                                                                                            "this command to take effect.")
+        "The system vm must be in a \"Stopped\" state for " +
+        "this command to take effect.")
 public class UpgradeSystemVMCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpgradeVMCmd.class.getName());
     private static final String s_name = "changeserviceforsystemvmresponse";
@@ -49,7 +49,7 @@ public class UpgradeSystemVMCmd extends BaseCmd {
 
     @IdentityMapper(entityTableName="disk_offering")
     @Parameter(name=ApiConstants.SERVICE_OFFERING_ID, type=CommandType.LONG, required=true, 
-                description="the service offering ID to apply to the system vm")
+    description="the service offering ID to apply to the system vm")
     private Long serviceOfferingId;
 
     /////////////////////////////////////////////////////
@@ -72,7 +72,7 @@ public class UpgradeSystemVMCmd extends BaseCmd {
     public String getCommandName() {
         return s_name;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Account account = UserContext.current().getCaller();
@@ -82,16 +82,16 @@ public class UpgradeSystemVMCmd extends BaseCmd {
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
-    
+
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Vm Id: "+getId());
-        
+
         ServiceOffering serviceOffering = _configService.getServiceOffering(serviceOfferingId);
         if (serviceOffering == null) {
-            throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
+            throw new InvalidParameterValueException("Unable to find service offering by id", null);
         }
-        
+
         VirtualMachine result = _mgr.upgradeSystemVM(this);
         if (result != null) {
             SystemVmResponse response = _responseGenerator.createSystemVmResponse(result);

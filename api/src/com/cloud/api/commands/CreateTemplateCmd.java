@@ -41,7 +41,7 @@ import com.cloud.user.UserContext;
 
 @Implementation(responseObject = StoragePoolResponse.class, description = "Creates a template of a virtual machine. " + "The virtual machine must be in a STOPPED state. "
         + "A template created from this command is automatically designated as a private template visible to the account that created it.")
-        public class CreateTemplateCmd extends BaseAsyncCreateCmd {
+public class CreateTemplateCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateTemplateCmd.class.getName());
     private static final String s_name = "createtemplateresponse";
 
@@ -91,16 +91,17 @@ import com.cloud.user.UserContext;
 
     @Parameter(name=ApiConstants.TEMPLATE_TAG, type=CommandType.STRING, description="the tag for this template.")
     private String templateTag;
-    
+
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.MAP, description="Template details in key/value pairs.")
     protected Map details;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-    
+
+    @Override
     public String getEntityTable() {
-    	return "vm_template";
+        return "vm_template";
     }
 
     public Integer getBits() {
@@ -154,17 +155,17 @@ import com.cloud.user.UserContext;
     public String getTemplateTag() {
         return templateTag;
     }
-    
+
     public Map getDetails() {
-    	if (details == null || details.isEmpty()) {
-    		return null;
-    	}
-    	
-    	Collection paramsCollection = details.values();
-    	Map params = (Map) (paramsCollection.toArray())[0];
-    	return params;
+        if (details == null || details.isEmpty()) {
+            return null;
+        }
+
+        Collection paramsCollection = details.values();
+        Map params = (Map) (paramsCollection.toArray())[0];
+        return params;
     }
-    
+
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
@@ -188,29 +189,29 @@ import com.cloud.user.UserContext;
             if (volume != null) {
                 accountId = volume.getAccountId();
             } else {
-            	throw new InvalidParameterValueException("Unable to find volume by id=" + volumeId);
+                throw new InvalidParameterValueException("Unable to find volume by id=" + volumeId, null);
             }
         } else {
             Snapshot snapshot = _entityMgr.findById(Snapshot.class, snapshotId);
             if (snapshot != null) {
                 accountId = snapshot.getAccountId();
             } else {
-            	throw new InvalidParameterValueException("Unable to find snapshot by id=" + snapshotId);
+                throw new InvalidParameterValueException("Unable to find snapshot by id=" + snapshotId, null);
             }
         }
-        
+
         Account account = _accountService.getAccount(accountId);
         //Can create templates for enabled projects/accounts only
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-        	Project project = _projectService.findByProjectAccountId(accountId);
+            Project project = _projectService.findByProjectAccountId(accountId);
             if (project.getState() != Project.State.Active) {
-            	PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the specified project id in state=" + project.getState() + " as it's no longer active");
+                PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the specified project id in state=" + project.getState() + " as it's no longer active");
                 ex.addProxyObject(project, project.getId(), "projectId");
             }
         } else if (account.getState() == Account.State.disabled) {
             throw new PermissionDeniedException("The owner of template is disabled: " + account);
         }
-        
+
         return accountId;
     }
 
@@ -246,7 +247,7 @@ import com.cloud.user.UserContext;
                 this.setEntityId(template.getId());
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR,
-                "Failed to create a template");
+                        "Failed to create a template");
             }
         }
     }

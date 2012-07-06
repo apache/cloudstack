@@ -48,7 +48,6 @@ import com.cloud.agent.api.GetDomRVersionCmd;
 import com.cloud.agent.api.ModifySshKeysCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
-import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.check.CheckSshAnswer;
@@ -63,7 +62,6 @@ import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
-import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.FirewallRuleTO;
@@ -129,9 +127,6 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
-import com.cloud.network.Site2SiteCustomerGatewayVO;
-import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.SshKeysDistriMonitor;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VirtualRouterProvider;
@@ -1722,7 +1717,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
          * to return DNS server rather than 
          * virtual router itself. */
         if (dnsProvided || dhcpProvided) {
-            buf.append(" dns1=").append(defaultDns1);
+            if (defaultDns1 != null) {
+                buf.append(" dns1=").append(defaultDns1);
+            }
             if (defaultDns2 != null) {
                 buf.append(" dns2=").append(defaultDns2);
             }

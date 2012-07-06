@@ -65,7 +65,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     @IdentityMapper(entityTableName = "vm_instance")
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.LONG, required = true, 
-                description = "the ID of the virtual machine for the port forwarding rule")
+    description = "the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
 
     @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING,
@@ -74,20 +74,21 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, 
             description = "if true, firewall rule for source/end pubic port is automatically created; " +
-            		"if false - firewall rule has to be created explicitely. If not specified 1) defaulted to false when PF" +
-            		" rule is being created for VPC guest network 2) in all other cases defaulted to true")
+                    "if false - firewall rule has to be created explicitely. If not specified 1) defaulted to false when PF" +
+            " rule is being created for VPC guest network 2) in all other cases defaulted to true")
     private Boolean openFirewall;
-    
+
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.NETWORK_ID, type=CommandType.LONG, 
-        description="The network of the vm the Port Forwarding rule will be created for. " +
-        		"Required when public Ip address is not associated with any Guest network yet (VPC case)")
+    description="The network of the vm the Port Forwarding rule will be created for. " +
+            "Required when public Ip address is not associated with any Guest network yet (VPC case)")
     private Long networkId;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
 
+    @Override
     public String getEntityTable() {
         return "firewall_rules";
     }
@@ -106,10 +107,11 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         return virtualMachineId;
     }
 
+    @Override
     public List<String> getSourceCidrList() {
         if (cidrlist != null) {
             throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall " +
-            		"rule for the specific cidr, please refer to createFirewallRule command");
+                    "rule for the specific cidr, please refer to createFirewallRule command", null);
         }
         return null;
     }
@@ -118,7 +120,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         boolean isVpc = getVpcId() == null ? false : true;
         if (openFirewall != null) {
             if (isVpc && openFirewall) {
-                throw new InvalidParameterValueException("Can't have openFirewall=true when IP address belongs to VPC");
+                throw new InvalidParameterValueException("Can't have openFirewall=true when IP address belongs to VPC", null);
             }
             return openFirewall;
         } else {
@@ -128,12 +130,12 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
             return true;
         }
     }
-    
+
     private Long getVpcId() {
         if (ipAddressId != null) {
             IpAddress ipAddr = _networkService.getIp(ipAddressId);
             if (ipAddr == null || !ipAddr.readyToUse()) {
-                throw new InvalidParameterValueException("Unable to create PF rule, invalid IP address id " + ipAddr.getId());
+                throw new InvalidParameterValueException("Unable to create PF rule, invalid IP address id " + ipAddr.getId(), null);
             } else {
                 return ipAddr.getVpcId();
             }
@@ -226,7 +228,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     public long getNetworkId() {
         IpAddress ip = _entityMgr.findById(IpAddress.class, getIpAddressId());
         Long ntwkId = null;
-        
+
         if (ip.getAssociatedWithNetworkId() != null) {
             ntwkId = ip.getAssociatedWithNetworkId();
         } else {
@@ -234,7 +236,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
         }
         if (ntwkId == null) {
             throw new InvalidParameterValueException("Unable to create port forwarding rule for the ipAddress id=" + ipAddressId + 
-                    " as ip is not associated with any network and no networkId is passed in");
+                    " as ip is not associated with any network and no networkId is passed in", null);
         }
         return ntwkId;
     }
@@ -281,7 +283,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     public void create() {
         // cidr list parameter is deprecated
         if (cidrlist != null) {
-            throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
+            throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command", null);
         }
 
         try {
@@ -324,7 +326,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     private IpAddress getIp() {
         IpAddress ip = _networkService.getIp(ipAddressId);
         if (ip == null) {
-            throw new InvalidParameterValueException("Unable to find ip address by id " + ipAddressId);
+            throw new InvalidParameterValueException("Unable to find ip address by id", null);
         }
         return ip;
     }
@@ -348,10 +350,15 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     public FirewallRuleType getType() {
         return FirewallRuleType.User;
     }
-    
+
     @Override
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.FirewallRule;
+    }
+
+    @Override
+    public TrafficType getTrafficType() {
+        return null;
     }
 
 }

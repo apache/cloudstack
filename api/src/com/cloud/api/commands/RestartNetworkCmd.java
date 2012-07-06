@@ -40,7 +40,7 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    
+
     @IdentityMapper(entityTableName="networks")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="The id of the network to restart.")
     private Long id;
@@ -52,16 +52,16 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-    
+
     public Long getNetworkId() {
         Network network = _networkService.getNetwork(id);
         if (network == null) {
-            throw new InvalidParameterValueException("Unable to find network by id " + id);
+            throw new InvalidParameterValueException("Unable to find network by id", null);
         } else {
             return network.getId();
         }
     }
-    
+
     public Boolean getCleanup() {
         if (cleanup != null) {
             return cleanup;
@@ -83,7 +83,7 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     public static String getResultObjectName() {
         return "addressinfo";
     }
-    
+
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
         boolean result = _networkService.restartNetwork(this, getCleanup());
@@ -94,7 +94,7 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to restart network");
         }
     }
-    
+
     @Override
     public String getSyncObjType() {
         return BaseAsyncCmd.networkSyncObject;
@@ -104,21 +104,22 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
     public Long getSyncObjId() {
         return id;
     }
-    
+
+    @Override
     public String getEventDescription() {
         return  "Restarting network: " + getNetworkId();
     }
-    
+
     @Override
     public String getEventType() {
         return EventTypes.EVENT_NETWORK_RESTART;
     }
-    
+
     @Override
     public long getEntityOwnerId() {
         Network network = _networkService.getNetwork(id);
         if (network == null) {
-            throw new InvalidParameterValueException("Networkd id=" + id + " doesn't exist");
+            throw new InvalidParameterValueException("Couldn't find network by id", null);
         } else {
             return _networkService.getNetwork(id).getAccountId();
         }

@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
+import com.cloud.api.BaseListTaggedResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -29,7 +29,7 @@ import com.cloud.network.vpc.StaticRoute;
  */
 
 @Implementation(description="Lists all static routes", responseObject=StaticRouteResponse.class)
-public class ListStaticRoutesCmd extends BaseListProjectAndAccountResourcesCmd {
+public class ListStaticRoutesCmd extends BaseListTaggedResourcesCmd {
     private static final String s_name = "liststaticroutesresponse";
     
     /////////////////////////////////////////////////////
