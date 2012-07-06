@@ -2137,6 +2137,15 @@ public class ApiResponseHelper implements ResponseGenerator {
             Account owner = ApiDBUtils.findAccountById(iso.getAccountId());
             populateAccount(isoResponse, owner.getId());
             populateDomain(isoResponse, owner.getDomainId());
+            
+            //set tag information
+            List<? extends ResourceTag> tags =  ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.ISO, iso.getId());
+            List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+            for (ResourceTag tag : tags) {
+                ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+                tagResponses.add(tagResponse);
+            }
+            isoResponse.setTags(tagResponses);
 
             isoResponse.setObjectName("iso");
             isoResponses.add(isoResponse);
@@ -2285,6 +2294,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (isoSize > 0) {
             isoResponse.setSize(isoSize);
         }
+        
+        //set tag information
+        List<? extends ResourceTag> tags =  ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.ISO, iso.getId());
+        
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        isoResponse.setTags(tagResponses);
 
         isoResponse.setObjectName("iso");
         isoResponses.add(isoResponse);
