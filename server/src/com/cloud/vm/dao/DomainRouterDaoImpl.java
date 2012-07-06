@@ -26,6 +26,7 @@ import com.cloud.network.Network;
 import com.cloud.network.RouterNetworkDaoImpl;
 import com.cloud.network.RouterNetworkVO;
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
@@ -268,7 +269,12 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         if (guestNetworks != null && !guestNetworks.isEmpty()) {
             // 2) add router to the network
             for (Network guestNetwork : guestNetworks) {
-                addRouterToGuestNetwork(router, guestNetwork);
+                if (!isRouterPartOfGuestNetwork(router.getId(), guestNetwork.getId())) {
+                    //add only when network is not private network
+                    if (!(guestNetwork.getName() != NetworkOffering.SystemPrivateGatewayNetworkOffering)) {
+                        addRouterToGuestNetwork(router, guestNetwork);
+                    }
+                }
             }
         }
        
