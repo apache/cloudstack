@@ -334,7 +334,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), Op.EQ);
-        sb.and("network", sb.entity().getNetworkId(), Op.EQ);
+        sb.and("networkId", sb.entity().getNetworkId(), Op.EQ);
         sb.and("purpose", sb.entity().getPurpose(), Op.EQ);
         sb.and("trafficType", sb.entity().getTrafficType(), Op.EQ);
 
