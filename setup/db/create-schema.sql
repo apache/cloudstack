@@ -2139,7 +2139,7 @@ CREATE TABLE `cloud`.`port_profile` (
 CREATE TABLE `cloud`.`s2s_vpn_gateway` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
-  `addr_id` bigint unsigned UNIQUE NOT NULL,
+  `addr_id` bigint unsigned NOT NULL,
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_s2s_vpn_gateway__addr_id` FOREIGN KEY (`addr_id`) REFERENCES `user_ip_address` (`id`) ON DELETE CASCADE,
@@ -2149,7 +2149,7 @@ CREATE TABLE `cloud`.`s2s_vpn_gateway` (
 CREATE TABLE `cloud`.`s2s_customer_gateway` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
-  `gateway_ip` char(40) UNIQUE NOT NULL,
+  `gateway_ip` char(40) NOT NULL,
   `guest_cidr_list` varchar(200) NOT NULL,
   `ipsec_psk` varchar(256),
   `ike_policy` varchar(30) NOT NULL,
