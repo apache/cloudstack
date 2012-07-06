@@ -95,7 +95,7 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
         txn.start();
         VpcVO entry = findById(id);
         if (entry != null) {
-            _tagsDao.removeBy(id, TaggedResourceType.Vpc);
+            _tagsDao.removeByIdAndType(id, TaggedResourceType.Vpc);
         }
         boolean result = super.remove(id);
         txn.commit();

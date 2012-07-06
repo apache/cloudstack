@@ -517,7 +517,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         txn.start();
         NetworkVO entry = findById(id);
         if (entry != null) {
-            _tagsDao.removeBy(id, TaggedResourceType.Network);
+            _tagsDao.removeByIdAndType(id, TaggedResourceType.Network);
         }
         boolean result = super.remove(id);
         txn.commit();

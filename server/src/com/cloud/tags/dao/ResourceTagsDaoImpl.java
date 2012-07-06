@@ -35,18 +35,27 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
     protected ResourceTagsDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("resourceId", AllFieldsSearch.entity().getResourceId(), Op.EQ);
+        AllFieldsSearch.and("uuid", AllFieldsSearch.entity().getResourceUuid(), Op.EQ);
         AllFieldsSearch.and("resourceType", AllFieldsSearch.entity().getResourceType(), Op.EQ);
         AllFieldsSearch.done();
     }
     
     @Override
-    public boolean removeBy(long resourceId, ResourceTag.TaggedResourceType resourceType) {
+    public boolean removeByIdAndType(long resourceId, ResourceTag.TaggedResourceType resourceType) {
         SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
         sc.setParameters("resourceId", resourceId);
         sc.setParameters("resourceType", resourceType);
         remove(sc);
         return true;
     }
+    
+//    @Override
+//    public ResourceTag findByUuid(String resourceUuId, ResourceTag.TaggedResourceType resourceType) {
+//        SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
+//        sc.setParameters("uuid", resourceUuId);
+//        sc.setParameters("resourceType", resourceType);
+//        return findOneBy(sc);
+//    }
 
     @Override
     public List<? extends ResourceTag> listBy(long resourceId, TaggedResourceType resourceType) {

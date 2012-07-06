@@ -105,7 +105,7 @@ public class StaticRouteDaoImpl extends GenericDaoBase<StaticRouteVO, Long> impl
         txn.start();
         StaticRouteVO entry = findById(id);
         if (entry != null) {
-            _tagsDao.removeBy(id, TaggedResourceType.StaticRoute);
+            _tagsDao.removeByIdAndType(id, TaggedResourceType.StaticRoute);
         }
         boolean result = super.remove(id);
         txn.commit();

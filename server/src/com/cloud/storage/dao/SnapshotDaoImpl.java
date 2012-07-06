@@ -297,7 +297,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         txn.start();
         SnapshotVO entry = findById(id);
         if (entry != null) {
-            _tagsDao.removeBy(id, TaggedResourceType.Snapshot);
+            _tagsDao.removeByIdAndType(id, TaggedResourceType.Snapshot);
         }
         boolean result = super.remove(id);
         txn.commit();

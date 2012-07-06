@@ -403,7 +403,7 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         txn.start();
         VolumeVO entry = findById(id);
         if (entry != null) {
-            _tagsDao.removeBy(id, TaggedResourceType.Volume);
+            _tagsDao.removeByIdAndType(id, TaggedResourceType.Volume);
         }
         boolean result = super.remove(id);
         txn.commit();

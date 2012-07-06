@@ -67,4 +67,9 @@ public interface ResourceTag extends ControlledEntity{
      */
     String getCustomer();
 
+    /**
+     * @return
+     */
+    String getResourceUuid();
+
 }

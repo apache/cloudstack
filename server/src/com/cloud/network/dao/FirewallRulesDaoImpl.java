@@ -293,13 +293,13 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         FirewallRuleVO entry = findById(id);
         if (entry != null) {
             if (entry.getPurpose() == Purpose.LoadBalancing) {
-                _tagsDao.removeBy(id, TaggedResourceType.LoadBalancer);
+                _tagsDao.removeByIdAndType(id, TaggedResourceType.LoadBalancer);
             } else if (entry.getPurpose() == Purpose.PortForwarding) {
-                _tagsDao.removeBy(id, TaggedResourceType.PortForwardingRule);
+                _tagsDao.removeByIdAndType(id, TaggedResourceType.PortForwardingRule);
             } else if (entry.getPurpose() == Purpose.Firewall) {
-                _tagsDao.removeBy(id, TaggedResourceType.FirewallRule);
+                _tagsDao.removeByIdAndType(id, TaggedResourceType.FirewallRule);
             } else if (entry.getPurpose() == Purpose.NetworkACL) {
-                _tagsDao.removeBy(id, TaggedResourceType.NetworkACL);
+                _tagsDao.removeByIdAndType(id, TaggedResourceType.NetworkACL);
             }
         }
         boolean result = super.remove(id);

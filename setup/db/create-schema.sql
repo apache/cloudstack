@@ -2179,6 +2179,7 @@ CREATE TABLE `cloud`.`resource_tags` (
   `key` varchar(255),
   `value` varchar(255),
   `resource_id` bigint unsigned NOT NULL,
+  `resource_uuid` varchar(40),
   `resource_type` varchar(255),
   `customer` varchar(255),
   `domain_id` bigint unsigned NOT NULL COMMENT 'foreign key to domain id',
@@ -2186,7 +2187,9 @@ CREATE TABLE `cloud`.`resource_tags` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_tags__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`),
   CONSTRAINT `fk_tags__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`),
-  UNIQUE `i_tags__resource_id__resource_type__key`(`resource_id`, `resource_type`, `key`)
+  UNIQUE `i_tags__resource_id__resource_type__key`(`resource_id`, `resource_type`, `key`),
+  CONSTRAINT `uc_resource_tags__uuid` UNIQUE (`uuid`),
+  CONSTRAINT `uc_resource_tags__resource_uuid` UNIQUE (`resource_uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`vpc` (

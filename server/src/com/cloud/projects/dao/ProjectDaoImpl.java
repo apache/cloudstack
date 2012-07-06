@@ -75,7 +75,7 @@ public class ProjectDaoImpl extends GenericDaoBase<ProjectVO, Long> implements P
             return false;
         } 
         
-        _tagsDao.removeBy(projectId, TaggedResourceType.Project);
+        _tagsDao.removeByIdAndType(projectId, TaggedResourceType.Project);
         result = super.remove(projectId);
         txn.commit();
 
