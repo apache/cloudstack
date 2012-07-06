@@ -17,7 +17,6 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 
 /**
@@ -28,7 +27,7 @@ import com.cloud.server.ResourceTag.TaggedResourceType;
 public class DeleteTagsCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteTagsCmd.class.getName());
 
-    private static final String s_name = "deleteTagsresponse";
+    private static final String s_name = "deletetagsresponse";
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
