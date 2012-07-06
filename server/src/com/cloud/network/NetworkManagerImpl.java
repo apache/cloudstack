@@ -2090,7 +2090,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     // because the serializer would look up the NetworkVO class's table and retrieve the
                     // network id instead of the physical network id.
                     // So just throw this exception as is. We may need to TBD by changing the serializer.
-                    throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + "either doesn't exist or is not enabled in physical network id: " + network.getPhysicalNetworkId());                	
+                    throw new CloudRuntimeException("Service provider " + element.getProvider().getName() + "either doesn't exist or is not enabled in physical network id: " + network.getPhysicalNetworkId());
                 }
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Asking " + element.getName() + " to implemenet " + network);
@@ -3530,7 +3530,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         for (NetworkElement element : _networkElements) {
             if (providersToShutdown.contains(element.getProvider())) {
                 try {
-                    if (!isProviderEnabledInPhysicalNetwork(getPhysicalNetworkId(network), "VirtualRouter")) {
+                    if (!isProviderEnabledInPhysicalNetwork(getPhysicalNetworkId(network), element.getProvider().getName())) {
                         s_logger.warn("Unable to complete shutdown of the network elements due to element: " + element.getName() + " either doesn't exist or not enabled in the physical network "
                                 + getPhysicalNetworkId(network));
                         success = false;
@@ -3617,7 +3617,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         for (NetworkElement element : _networkElements) {
             if (providersToDestroy.contains(element.getProvider())) {
                 try {
-                    if (!isProviderEnabledInPhysicalNetwork(getPhysicalNetworkId(network), "VirtualRouter")) {
+                    if (!isProviderEnabledInPhysicalNetwork(getPhysicalNetworkId(network), element.getProvider().getName())) {
                         s_logger.warn("Unable to complete destroy of the network elements due to element: " + element.getName() + " either doesn't exist or not enabled in the physical network "
                                 + getPhysicalNetworkId(network));
                         success = false;

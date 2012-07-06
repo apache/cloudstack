@@ -87,6 +87,9 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
     @Column(name = "security_group_service_provided")
     boolean securitygroupServiceProvided;
     
+    @Column(name = "networkacl_service_provided")
+    boolean networkAclServiceProvided;
+    
     @Column(name=GenericDao.REMOVED_COLUMN)
     Date removed;
     
@@ -261,6 +264,7 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
         this.setPortForwardingServiceProvided(services.contains(Service.PortForwarding));
         this.setUserdataServiceProvided(services.contains(Service.UserData));
         this.setSecuritygroupServiceProvided(services.contains(Service.SecurityGroup));
+        this.setNetworkAclServiceProvided(services.contains(Service.NetworkACL));
     }
     
     @Override
@@ -300,5 +304,14 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
             services.add(Service.SecurityGroup);
         }
         return services;
+    }
+    
+    @Override
+    public boolean isNetworkAclServiceProvided() {
+        return networkAclServiceProvided;
+    }
+
+    public void setNetworkAclServiceProvided(boolean networkAclServiceProvided) {
+        this.networkAclServiceProvided = networkAclServiceProvided;
     }
 }

@@ -1717,7 +1717,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
          * to return DNS server rather than 
          * virtual router itself. */
         if (dnsProvided || dhcpProvided) {
-            buf.append(" dns1=").append(defaultDns1);
+            if (defaultDns1 != null) {
+                buf.append(" dns1=").append(defaultDns1);
+            }
             if (defaultDns2 != null) {
                 buf.append(" dns2=").append(defaultDns2);
             }

@@ -560,7 +560,7 @@ setup_vpcrouter() {
   fi
 
     cat > /etc/network/interfaces << EOF
-auto lo $1
+auto lo
 iface lo inet loopback
 EOF
   setup_interface "0" $ETH0_IP $ETH0_MASK $GW
@@ -596,7 +596,10 @@ EOF
   fi
   if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
   then
-    ip route add $MGMTNET via $LOCAL_GW dev eth1
+    if [ "$hyp" == "vmware" ]
+    then
+      ip route add $MGMTNET via $LOCAL_GW dev eth0
+    fi
   fi
 
   ip route delete default

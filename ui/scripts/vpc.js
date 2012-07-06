@@ -380,35 +380,84 @@
 
         return state == 'Running' ? ['start'] : ['stop'];
       },
-      actions: {
-        // Add new tier
+      actions: {        
         add: {
-          label: 'Add new tier to VPC',
-          action: function(args) {
-            setTimeout(function() {
-              args.response.success({
-                data: {
-                  name: args.data.name,
-                  cidr: args.data.cidr,
-                  state: 'Stopped'
-                }
-              });
-            }, 500);
-          },
-
-          createForm: {
-            title: 'Add new tier',
-            desc: 'Please fill in the following to add a new VPC tier.',
-            fields: {
-              name: { label: 'label.name', validation: { required: true } },
-              cidr: { label: 'label.cidr', validation: { required: true } }
-            }
-          },
-
-          notification: {
-            poll: function(args) { args.complete(); }
-          }
-        },
+					label: 'Add new tier',     
+					createForm: {
+						title: 'Add new tier',               
+						fields: {
+							name: { label: 'label.name', 
+								validation: { required: true } 
+							},                                
+							networkOfferingId: {
+								label: 'label.network.offering',
+								validation: { required: true },
+								dependsOn: 'zoneId',
+								select: function(args) {										 
+									$.ajax({
+										url: createURL('listNetworkOfferings'),
+										data: {
+											forvpc: true,
+											zoneid: args.zoneId,
+											guestiptype: 'Isolated',
+											supportedServices: 'SourceNat',
+											specifyvlan: false,
+											state: 'Enabled'
+										},
+										success: function(json) {
+											var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
+											args.response.success({
+												data: $.map(networkOfferings, function(zone) {
+													return {
+														id: zone.id,
+														description: zone.name
+													};
+												})
+											});
+										}
+									});
+								}
+							},
+							gateway: { 
+								label: 'label.gateway', 
+								validation: { required: true } 
+							},        
+							netmask: { 
+								label: 'label.netmask', 
+								validation: { required: true } 
+							},        
+						}
+					},
+					action: function(args) {	
+						var dataObj = {
+						  vpcid: args.context.vpc[0].id,
+							zoneId: args.context.vpc[0].zoneid,
+							networkOfferingId: args.data.networkOfferingId,
+							name: args.data.name,
+							displayText: args.data.name,
+							gateway: args.data.gateway, 
+							netmask: args.data.netmask
+						};
+					
+						$.ajax({
+							url: createURL('createNetwork'),
+							dataType: 'json',
+							data: dataObj,
+							success: function(json) {		                				
+								args.response.success({
+									data: json.createnetworkresponse.network
+								});
+							},
+							error: function(XMLHttpResponse) {                				
+								args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+							}
+						});
+					},
+					messages: {
+						notification: function() { return 'Add new tier'; }
+					}
+				},
+				
         start: {
           label: 'Start tier',
           shortLabel: 'Start',
@@ -419,6 +468,7 @@
             poll: function(args) { args.complete({ data: { state: 'Running' } }); }
           }
         },
+				
         stop: {
           label: 'Stop tier',
           shortLabel: 'Stop',
@@ -429,6 +479,7 @@
             poll: function(args) { args.complete({ data: { state: 'Stopped' } }); }
           }
         },
+				
         addVM: {
           label: 'Add VM to tier',
           shortLabel: 'Add VM',
@@ -439,11 +490,13 @@
             poll: pollAsyncJobResult
           }
         },
+				
         acl: {
           label: 'Configure ACL for tier',
           shortLabel: 'ACL',
           multiEdit: aclMultiEdit
         },
+				
         remove: {
           label: 'Remove tier',
           action: function(args) {
