@@ -242,6 +242,7 @@ public class ApiConstants {
     public static final String LINMIN_USERNAME = "linminusername";
     public static final String LIST_ACCOUNTS = "listAccounts";
     public static final String LIST_ACCOUNTS_RESPONSE = "listaccountsresponse";
+    public static final String LIST_ALL = "listall";
     public static final String LIST_CAPABILITIES = "listCapabilities";
     public static final String LIST_CAPABILITIES_RESPONSE = "listcapabilitiesresponse";
     public static final String LIST_DISK_OFFERINGS = "listDiskOfferings";

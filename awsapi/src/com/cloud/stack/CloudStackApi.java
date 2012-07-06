@@ -311,13 +311,14 @@ public class CloudStackApi {
 	 * @return
 	 * @throws Exception
 	 */
-	public List<CloudStackUserVm> listVirtualMachines(String account, String accountId, Boolean forVirtualNetwork, String groupId, String hostId, 
+    public List<CloudStackUserVm> listVirtualMachines(String account, String accountId, Boolean listAll, Boolean forVirtualNetwork, String groupId, String hostId,
 			String hypervisor, String id, Boolean isRecursive, String keyWord, String name, String networkId, String podId, String state, String storageId, 
 			String zoneId) throws Exception {
 		CloudStackCommand cmd = new CloudStackCommand(ApiConstants.LIST_VIRTUAL_MACHINES);
 		if (cmd != null) {
 			if (account != null) cmd.setParam(ApiConstants.ACCOUNT, account);
 			if (accountId != null) cmd.setParam(ApiConstants.ACCOUNT_ID, accountId);
+            if (listAll != null) cmd.setParam(ApiConstants.LIST_ALL, listAll.toString());
 			if (forVirtualNetwork != null) cmd.setParam(ApiConstants.FOR_VIRTUAL_NETWORK, forVirtualNetwork.toString());
 			if (groupId != null) cmd.setParam(ApiConstants.GROUP_ID, groupId);
 			if (hostId != null) cmd.setParam(ApiConstants.HOST_ID, hostId);
@@ -1087,13 +1088,14 @@ public class CloudStackApi {
 	 * @return
 	 * @throws Exception
 	 */
-	public List<CloudStackSecurityGroup> listSecurityGroups(String account, String domainId, String id, String keyWord, String securityGroupName, 
-			String virtualMachineId) throws Exception {
+    public List<CloudStackSecurityGroup> listSecurityGroups(String account, String domainId, String id, Boolean listAll, String keyWord,
+            String securityGroupName, String virtualMachineId) throws Exception {
 		CloudStackCommand cmd = new CloudStackCommand(ApiConstants.LIST_SECURITY_GROUPS);
 		if (cmd != null) { 
 			if (account != null) cmd.setParam(ApiConstants.ACCOUNT, account);
 			if (domainId != null) cmd.setParam(ApiConstants.DOMAIN_ID, domainId);
 			if (id != null) cmd.setParam(ApiConstants.ID, id);
+            if (listAll != null) cmd.setParam(ApiConstants.LIST_ALL, listAll.toString());
 			if (keyWord != null) cmd.setParam(ApiConstants.KEYWORD, keyWord);
 			if (securityGroupName != null) cmd.setParam(ApiConstants.SECURITY_GROUP_NAME, securityGroupName);
 			if (virtualMachineId != null) cmd.setParam(ApiConstants.VIRTUAL_MACHINE_ID, virtualMachineId);
