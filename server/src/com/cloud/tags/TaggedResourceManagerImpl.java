@@ -295,14 +295,14 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
                if (tableName == null) {
                    throw new InvalidParameterValueException("Unable to find resource of type " + resourceType + " in the database");
                }
-               identiyUUId = _identityDao.getIdentityUuid(tableName, resourceId);
-               if (identiyUUId != null) {
-                   break;
-               }
+               
+               claz = claz.getSuperclass();
+               if (claz == Object.class) {
+                   identiyUUId = _identityDao.getIdentityUuid(tableName, resourceId);
+               } 
            } catch (Exception ex) {
                //do nothing here, it might mean uuid field is missing and we have to search further
            }
-           claz = claz.getSuperclass();
        }
        
        if (identiyUUId == null) {
