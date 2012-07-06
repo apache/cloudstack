@@ -2182,7 +2182,6 @@ CREATE TABLE  `cloud`.`netscaler_pod_ref` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-<<<<<<< HEAD
 CREATE TABLE `cloud`.`vpc` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40) NOT NULL,
