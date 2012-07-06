@@ -189,14 +189,14 @@ public class CreateTemplateCmd extends BaseAsyncCreateCmd {
             if (volume != null) {
                 accountId = volume.getAccountId();
             } else {
-                throw new InvalidParameterValueException("Unable to find volume by id=" + volumeId, null);
+                throw new InvalidParameterValueException("Unable to find volume by id", null);
             }
         } else {
             Snapshot snapshot = _entityMgr.findById(Snapshot.class, snapshotId);
             if (snapshot != null) {
                 accountId = snapshot.getAccountId();
             } else {
-                throw new InvalidParameterValueException("Unable to find snapshot by id=" + snapshotId, null);
+                throw new InvalidParameterValueException("Unable to find snapshot by id", null);
             }
         }
 

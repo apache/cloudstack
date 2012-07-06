@@ -39,7 +39,7 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    
+
     @IdentityMapper(entityTableName="projects")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list projects by project ID")
     private Long id;
@@ -49,13 +49,13 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
 
     @Parameter(name=ApiConstants.DISPLAY_TEXT, type=CommandType.STRING, description="list projects by display text")
     private String displayText;
-    
+
     @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list projects by state")
     private String state;
-    
+
     @Parameter(name = ApiConstants.TAGS, type = CommandType.MAP, description = "List projects by tags (key/value pairs)")
     private Map tags;
-    
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -71,12 +71,12 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
     public String getDisplayText() {
         return displayText;
     }
-    
+
     @Override
     public String getCommandName() {
         return s_name;
     }
-    
+
     public Map<String, String> getTags() {
         Map<String, String> tagsMap = null;
         if (tags != null && !tags.isEmpty()) {
@@ -88,7 +88,7 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
                 String key = services.get("key");
                 String value = services.get("value");
                 if (value == null) {
-                    throw new InvalidParameterValueException("No value is passed in for key " + key);
+                    throw new InvalidParameterValueException("No value is passed in for key " + key, null);
                 }
                 tagsMap.put(key, value);
             }
@@ -113,7 +113,7 @@ public class ListProjectsCmd extends BaseListAccountResourcesCmd {
         }
         response.setResponses(projectResponses);
         response.setResponseName(getCommandName());
-        
+
         this.setResponseObject(response);
     }
 }

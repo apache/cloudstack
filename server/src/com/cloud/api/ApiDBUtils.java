@@ -205,7 +205,7 @@ public class ApiDBUtils {
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
-         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
+        ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         _asyncMgr = locator.getManager(AsyncJobManager.class);
         _securityGroupMgr = locator.getManager(SecurityGroupManager.class);
         _storageMgr = locator.getManager(StorageManager.class);
@@ -287,20 +287,20 @@ public class ApiDBUtils {
         // into this utils class.
         return _ms.getMemoryOrCpuCapacityByHost(poolId, capacityType);
     }
-    
+
     public static List<SummedCapacity> getCapacityByClusterPodZone(Long zoneId, Long podId, Long clusterId){
-    	return _capacityDao.findByClusterPodZone(zoneId,podId,clusterId);		 
+        return _capacityDao.findByClusterPodZone(zoneId,podId,clusterId);		 
     }
-    
+
     public static List<SummedCapacity> findNonSharedStorageForClusterPodZone(Long zoneId, Long podId, Long clusterId){
-    	return _capacityDao.findNonSharedStorageForClusterPodZone(zoneId,podId,clusterId);		 
+        return _capacityDao.findNonSharedStorageForClusterPodZone(zoneId,podId,clusterId);		 
     }
-    
+
     public static List<CapacityVO> getCapacityByPod(){
-		return null;
-    	
+        return null;
+
     }
-    
+
     public static Long getPodIdForVlan(long vlanDbId) {
         return _networkMgr.getPodIdForVlan(vlanDbId);
     }
@@ -389,15 +389,15 @@ public class ApiDBUtils {
     public static StorageStats getSecondaryStorageStatistics(long id) {
         return _statsCollector.getStorageStats(id);
     }
-    
+
     public static CapacityVO getStoragePoolUsedStats(Long poolId, Long clusterId, Long podId, Long zoneId){
-    	return _storageMgr.getStoragePoolUsedStats(poolId, clusterId, podId, zoneId);
+        return _storageMgr.getStoragePoolUsedStats(poolId, clusterId, podId, zoneId);
     }
 
     public static CapacityVO getSecondaryStorageUsedStats(Long hostId, Long zoneId){
-    	return _storageMgr.getSecondaryStorageUsedStats(hostId, zoneId);
+        return _storageMgr.getSecondaryStorageUsedStats(hostId, zoneId);
     }
-    
+
     // ///////////////////////////////////////////////////////////
     // Dao methods //
     // ///////////////////////////////////////////////////////////
@@ -441,7 +441,7 @@ public class ApiDBUtils {
     public static GuestOS findGuestOSByDisplayName(String displayName) {
         return _guestOSDao.listByDisplayName(displayName);
     }
-    
+
     public static HostVO findHostById(Long hostId) {
         return _hostDao.findByIdIncludingRemoved(hostId);
     }
@@ -507,15 +507,15 @@ public class ApiDBUtils {
     }
 
     public static VMTemplateVO findTemplateById(Long templateId) {
-    	VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templateId);
-    	if(template != null) {
-    		Map details = _templateDetailsDao.findDetails(templateId);
-    		if(details != null && !details.isEmpty())
-    			template.setDetails(details);
-    	}
-    	return template;
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templateId);
+        if(template != null) {
+            Map details = _templateDetailsDao.findDetails(templateId);
+            if(details != null && !details.isEmpty())
+                template.setDetails(details);
+        }
+        return template;
     }
-    
+
     public static VMTemplateHostVO findTemplateHostRef(long templateId, long zoneId) {
         return findTemplateHostRef(templateId, zoneId, false);
     }
@@ -529,12 +529,12 @@ public class ApiDBUtils {
             return _storageMgr.getTemplateHostRef(zoneId, templateId, readyOnly);
         }
     }
-    
-    
+
+
     public static VolumeHostVO findVolumeHostRef(long volumeId, long zoneId) {
         return _volumeHostDao.findVolumeByZone(volumeId, zoneId);
     }
-    
+
     public static VMTemplateSwiftVO findTemplateSwiftRef(long templateId) {
         return _templateSwiftDao.findOneByTemplateId(templateId);
     }
@@ -562,11 +562,11 @@ public class ApiDBUtils {
     public static Site2SiteVpnGatewayVO findVpnGatewayById(Long vpnGatewayId) {
         return _site2SiteVpnGatewayDao.findById(vpnGatewayId);
     }
-    
+
     public static Site2SiteCustomerGatewayVO findCustomerGatewayById(Long customerGatewayId) {    	
-    	return _site2SiteCustomerGatewayDao.findById(customerGatewayId);
+        return _site2SiteCustomerGatewayDao.findById(customerGatewayId);
     }
-    
+
     public static List<UserVO> listUsersByAccount(long accountId) {
         return _userDao.listByAccount(accountId);
     }
@@ -587,9 +587,9 @@ public class ApiDBUtils {
     public static HypervisorType getVolumeHyperType(long volumeId) {
         return _volumeDao.getHypervisorType(volumeId);
     }
-    
+
     public static HypervisorType getHypervisorTypeFromFormat(ImageFormat format){
-    	return _storageMgr.getHypervisorTypeFromFormat(format);    	   	
+        return _storageMgr.getHypervisorTypeFromFormat(format);    	   	
     }
 
     public static List<VMTemplateHostVO> listTemplateHostBy(long templateId, Long zoneId, boolean readyOnly) {
@@ -621,7 +621,7 @@ public class ApiDBUtils {
         // Check that the volume is valid
         VolumeVO volume = _volumeDao.findById(volumeId);
         if (volume == null) {
-            throw new InvalidParameterValueException("Please specify a valid volume ID.");
+            throw new InvalidParameterValueException("Please specify a valid volume ID.", null);
         }
 
         return _storageMgr.volumeOnSharedStoragePool(volume);
@@ -690,13 +690,13 @@ public class ApiDBUtils {
         float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
         return cpuOverprovisioningFactor;
     }
-    
+
     public static boolean isExtractionDisabled(){
-    	String disableExtractionString = _configDao.getValue(Config.DisableExtraction.toString());
+        String disableExtractionString = _configDao.getValue(Config.DisableExtraction.toString());
         boolean disableExtraction  = (disableExtractionString == null) ? false : Boolean.parseBoolean(disableExtractionString);
         return disableExtraction;
     }
-    
+
     public static SecurityGroup getSecurityGroup(String groupName, long ownerId) {
         return _securityGroupMgr.getSecurityGroup(groupName, ownerId);
     }
@@ -704,77 +704,77 @@ public class ApiDBUtils {
     public static ConsoleProxyVO findConsoleProxy(long id) {
         return _consoleProxyDao.findById(id);
     }
-    
+
     public static List<String> findFirewallSourceCidrs(long id){
         return _firewallCidrsDao.getSourceCidrs(id);  
     }
-    
+
     public static Hashtable<Long, UserVmData> listVmDetails(Hashtable<Long, UserVmData> vmData){
         return _userVmDao.listVmDetails(vmData);
     }
-    
+
     public static Account getProjectOwner(long projectId) {
         return _projectMgr.getProjectOwner(projectId);
     }
-    
+
     public static Project findProjectByProjectAccountId(long projectAccountId) {
         return _projectMgr.findByProjectAccountId(projectAccountId);
     }
-    
+
     public static Project findProjectById(long projectId) {
         return _projectMgr.getProject(projectId);
     }
-    
+
     public static long getProjectOwnwerId(long projectId) {
         return _projectMgr.getProjectOwner(projectId).getId();
     }
-    
+
     public static Map<String, String> getAccountDetails(long accountId) {
-    	Map<String, String> details = _accountDetailsDao.findDetails(accountId);
-    	return details.isEmpty() ? null : details;
+        Map<String, String> details = _accountDetailsDao.findDetails(accountId);
+        return details.isEmpty() ? null : details;
     }
 
     public static Map<Service, Set<Provider>> listNetworkOfferingServices(long networkOfferingId) {
         return _networkMgr.getNetworkOfferingServiceProvidersMap(networkOfferingId);
     }
-    
+
     public static List<Service> getElementServices(Provider provider) {
-         return _networkMgr.getElementServices(provider);
+        return _networkMgr.getElementServices(provider);
     }
-    
+
     public static List<? extends Provider> getProvidersForService(Service service) {
         return _networkMgr.listSupportedNetworkServiceProviders(service.getName());
-   }
+    }
 
     public static boolean canElementEnableIndividualServices(Provider serviceProvider) {
         return _networkMgr.canElementEnableIndividualServices(serviceProvider);
     }
-    
+
     public static Pair<Long, Boolean> getDomainNetworkDetails(long networkId) {
-    	NetworkDomainVO map = _networkDomainDao.getDomainNetworkMapByNetworkId(networkId);
-    	
-    	boolean subdomainAccess = (map.isSubdomainAccess() != null) ? map.isSubdomainAccess() : _networkMgr.getAllowSubdomainAccessGlobal();
-    	
-    	return new Pair<Long, Boolean>(map.getDomainId(), subdomainAccess);
+        NetworkDomainVO map = _networkDomainDao.getDomainNetworkMapByNetworkId(networkId);
+
+        boolean subdomainAccess = (map.isSubdomainAccess() != null) ? map.isSubdomainAccess() : _networkMgr.getAllowSubdomainAccessGlobal();
+
+        return new Pair<Long, Boolean>(map.getDomainId(), subdomainAccess);
     }
-    
+
     public static long countFreePublicIps() {
-    	return _ipAddressDao.countFreePublicIPs();
+        return _ipAddressDao.countFreePublicIPs();
     }
-    
+
     public static long findDefaultRouterServiceOffering() {
         ServiceOfferingVO serviceOffering = _serviceOfferingDao.findByName(ServiceOffering.routerDefaultOffUniqueName);
         return serviceOffering.getId();
     }
-    
+
     public static IpAddress findIpByAssociatedVmId(long vmId) {
         return _ipAddressDao.findByAssociatedVmId(vmId);
     }
-    
+
     public static String getHaTag() {
         return _haMgr.getHaTag();
     }
-    
+
     public static String getUuid(String resourceId, TaggedResourceType resourceType) {
         return _taggedResourceService.getUuid(resourceId, resourceType);
     }
@@ -782,19 +782,19 @@ public class ApiDBUtils {
     public static Map<Service, Set<Provider>> listVpcOffServices(long vpcOffId) {
         return _vpcMgr.getVpcOffSvcProvidersMap(vpcOffId);
     }
-    
+
     public static List<? extends Network> listVpcNetworks(long vpcId) {
         return _networkMgr.listNetworksByVpc(vpcId);
     }
-    
+
     public static boolean canUseForDeploy(Network network) {
         return _networkMgr.canUseForDeploy(network);
     }
-    
+
     public static List<? extends ResourceTag> listByResourceTypeAndId(TaggedResourceType type, long resourceId) {
         return _taggedResourceService.listByResourceTypeAndId(type, resourceId);
     }
-    
+
     public static boolean isOfferingForVpc(NetworkOffering offering) {
         boolean vpcProvider = _configMgr.isOfferingForVpc(offering);
         return vpcProvider;

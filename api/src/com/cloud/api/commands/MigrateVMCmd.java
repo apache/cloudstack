@@ -115,14 +115,14 @@ public class MigrateVMCmd extends BaseAsyncCmd {
 
         UserVm userVm = _userVmService.getUserVm(getVirtualMachineId());
         if (userVm == null) {
-            throw new InvalidParameterValueException("Unable to find the VM by id=" + getVirtualMachineId(), null);
+            throw new InvalidParameterValueException("Unable to find VM by id", null);
         }
 
         Host destinationHost = null;
         if (getHostId() != null) {
             destinationHost = _resourceService.getHost(getHostId());
             if (destinationHost == null) {
-                throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id=" + getHostId(), null);
+                throw new InvalidParameterValueException("Unable to find the host to migrate the VM to", null);
             }
             UserContext.current().setEventDetails("VM Id: " + getVirtualMachineId() + " to host Id: "+ getHostId());
         }

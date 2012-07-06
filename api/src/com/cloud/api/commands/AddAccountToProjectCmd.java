@@ -96,9 +96,7 @@ public class AddAccountToProjectCmd extends BaseAsyncCmd {
         Project project= _projectService.getProject(projectId);
         //verify input parameters
         if (project == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project with specified id", null);
-            ex.addProxyObject(project, projectId, "projectId");            
-            throw ex;
+            throw new InvalidParameterValueException("Unable to find project with specified id", null);
         } 
 
         return _projectService.getProjectOwner(projectId).getId(); 

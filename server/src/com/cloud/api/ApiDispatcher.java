@@ -531,7 +531,7 @@ public class ApiDispatcher {
             case STRING:
                 if ((paramObj != null) && paramObj.toString().length() > annotation.length()) {
                     s_logger.error("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
-                    throw new InvalidParameterValueException("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName());
+                    throw new InvalidParameterValueException("Value greater than max allowed length " + annotation.length() + " for param: " + field.getName(), null);
                 }
                 field.set(cmdObj, paramObj.toString());
                 break;
