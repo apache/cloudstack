@@ -22,7 +22,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
+import com.cloud.api.BaseListTaggedResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -32,7 +32,7 @@ import com.cloud.network.Network;
 
 
 @Implementation(description="Lists all available networks.", responseObject=NetworkResponse.class)
-public class ListNetworksCmd extends BaseListProjectAndAccountResourcesCmd {
+public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworksCmd.class.getName());
     private static final String _name = "listnetworksresponse";
 

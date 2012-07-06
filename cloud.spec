@@ -427,6 +427,8 @@ fi
 %{_javadir}/%{name}-user-authenticator-plaintext.jar
 %{_javadir}/%{name}-vmware.jar
 %{_javadir}/%{name}-xen.jar
+%{_javadir}/%{name}-plugin-elb.jar
+%{_javadir}/%{name}-plugin-netapp.jar
 %config(noreplace) %{_sysconfdir}/%{name}/server/*
 
 %files agent-scripts

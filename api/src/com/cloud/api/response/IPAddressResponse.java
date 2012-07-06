@@ -17,10 +17,11 @@
 package com.cloud.api.response;
 
 import java.util.Date;
+import java.util.List;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
+import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
@@ -99,6 +100,13 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     
     @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the ip belongs to")
     private IdentityProxy vpcId = new IdentityProxy("vpc");
+    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with ip address", responseObject = ResourceTagResponse.class)
+    private List<ResourceTagResponse> tags;
+
+/*    
+    @SerializedName(ApiConstants.JOB_ID) @Param(description="shows the current pending asynchronous job ID. This tag is not returned if no current pending jobs are acting on the volume")
+    private IdentityProxy jobId = new IdentityProxy("async_job");
+*/    
 
 
     public void setIpAddress(String ipAddress) {
@@ -213,5 +221,9 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     
     public void setVpcId(Long vpcId) {
         this.vpcId.setValue(vpcId);
+    }
+    
+    public void setTags(List<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 }

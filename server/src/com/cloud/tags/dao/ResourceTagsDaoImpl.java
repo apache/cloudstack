@@ -16,10 +16,17 @@
 // under the License.
 package com.cloud.tags.dao;
 
+import java.util.List;
+
 import javax.ejb.Local;
 
+import com.cloud.server.ResourceTag;
+import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 
 /**
  * @author Alena Prokharchyk
@@ -27,7 +34,38 @@ import com.cloud.utils.db.GenericDaoBase;
 
 @Local(value = { ResourceTagDao.class })
 public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> implements ResourceTagDao{
+    final SearchBuilder<ResourceTagVO> AllFieldsSearch;
     
-    protected ResourceTagsDaoImpl() {  
+    protected ResourceTagsDaoImpl() {
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("resourceId", AllFieldsSearch.entity().getResourceId(), Op.EQ);
+        AllFieldsSearch.and("uuid", AllFieldsSearch.entity().getResourceUuid(), Op.EQ);
+        AllFieldsSearch.and("resourceType", AllFieldsSearch.entity().getResourceType(), Op.EQ);
+        AllFieldsSearch.done();
+    }
+    
+    @Override
+    public boolean removeByIdAndType(long resourceId, ResourceTag.TaggedResourceType resourceType) {
+        SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
+        sc.setParameters("resourceId", resourceId);
+        sc.setParameters("resourceType", resourceType);
+        remove(sc);
+        return true;
+    }
+    
+//    @Override
+//    public ResourceTag findByUuid(String resourceUuId, ResourceTag.TaggedResourceType resourceType) {
+//        SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
+//        sc.setParameters("uuid", resourceUuId);
+//        sc.setParameters("resourceType", resourceType);
+//        return findOneBy(sc);
+//    }
+
+    @Override
+    public List<? extends ResourceTag> listBy(long resourceId, TaggedResourceType resourceType) {
+        SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
+        sc.setParameters("resourceId", resourceId);
+        sc.setParameters("resourceType", resourceType);
+        return listBy(sc);
     }
 }

@@ -14,21 +14,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-/*
- * Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.cloud.bridge.service;
 
 import java.io.ByteArrayInputStream;
@@ -82,9 +67,6 @@ import com.cloud.bridge.util.HeaderParam;
 import com.cloud.bridge.util.RestAuth;
 import com.cloud.bridge.util.S3SoapAuth;
 
-/**
- * @author Kelven Yang, Mark Joseph, John Zucker
- */
 public class S3RestServlet extends HttpServlet {
 	private static final long serialVersionUID = -6168996266762804877L;
 	public static final String ENABLE_S3_API="enable.s3.api";

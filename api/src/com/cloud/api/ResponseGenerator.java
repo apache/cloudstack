@@ -300,9 +300,10 @@ public interface ResponseGenerator {
 
     /**
      * @param resourceTag
+     * @param keyValueOnly TODO
      * @return
      */
-    ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag);
+    ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag, boolean keyValueOnly);
 
     Site2SiteVpnGatewayResponse createSite2SiteVpnGatewayResponse(Site2SiteVpnGateway result);
 

@@ -132,6 +132,7 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ManagementServer;
+import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
@@ -156,6 +157,8 @@ import com.cloud.storage.listener.StoragePoolMonitor;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.snapshot.SnapshotScheduler;
+import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -320,6 +323,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     protected CheckPointManager _checkPointMgr;
     @Inject
     protected DownloadMonitor _downloadMonitor;
+    @Inject
+    protected ResourceTagDao _resourceTagDao;
 
     @Inject(adapter = StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -3725,6 +3730,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         String name = cmd.getVolumeName();
         String keyword = cmd.getKeyword();
         String type = cmd.getType();
+        Map<String, String> tags = cmd.getTags();
 
         Long zoneId = cmd.getZoneId();
         Long podId = null;
@@ -3764,6 +3770,18 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         vmSearch.and("type", vmSearch.entity().getType(), SearchCriteria.Op.NIN);
         vmSearch.or("nulltype", vmSearch.entity().getType(), SearchCriteria.Op.NULL);
         sb.join("vmSearch", vmSearch, sb.entity().getInstanceId(), vmSearch.entity().getId(), JoinBuilder.JoinType.LEFTOUTER);
+        
+        if (tags != null && !tags.isEmpty()) {
+        SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            for (int count=0; count < tags.size(); count++) {
+                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.cp();
+            }
+            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.groupBy(sb.entity().getId());
+            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        }
 
         // now set the SC criteria...
         SearchCriteria<VolumeVO> sc = sb.create();
@@ -3782,6 +3800,16 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         }
 
         sc.setJoinParameters("diskOfferingSearch", "systemUse", 1);
+        
+        if (tags != null && !tags.isEmpty()) {
+            int count = 0;
+            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.Volume.toString());
+            for (String key : tags.keySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+                count++;
+            }
+        }
 
         if (id != null) {
             sc.setParameters("id", id);

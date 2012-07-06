@@ -16,11 +16,14 @@
 // under the License.
 package com.cloud.api.response;
 
+import java.util.List;
+
 import com.cloud.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
+import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
+@SuppressWarnings("unused")
 public class FirewallRuleResponse extends BaseResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the ID of the port forwarding rule")
     private IdentityProxy id = new IdentityProxy("firewall_rules");
@@ -61,7 +64,8 @@ public class FirewallRuleResponse extends BaseResponse{
     @SerializedName(ApiConstants.CIDR_LIST) @Param(description="the cidr list to forward traffic from")
     private String cidrList;
     
-    
+    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
+    private List<ResourceTagResponse> tags;
     
     public Long getId() {
         return id.getValue();
@@ -167,4 +171,7 @@ public class FirewallRuleResponse extends BaseResponse{
         this.cidrList = cidrs;
     }
     
+    public void setTags(List<ResourceTagResponse> tags) {
+        this.tags = tags;
+    }
 }

@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api.response;
 
+import java.util.List;
+
 import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
 import com.cloud.utils.IdentityProxy;
@@ -52,6 +54,9 @@ public class FirewallResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ICMP_CODE) @Param(description = "error code for this icmp message")
     private Integer icmpCode;
+
+    @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the rule", responseObject = ResourceTagResponse.class)
+    private List<ResourceTagResponse> tags;
 
     public void setId(Long id) {
         this.id.setValue(id);
@@ -91,5 +96,9 @@ public class FirewallResponse extends BaseResponse {
 
     public void setIcmpCode(Integer icmpCode) {
         this.icmpCode = icmpCode;
+    }
+
+    public void setTags(List<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 }

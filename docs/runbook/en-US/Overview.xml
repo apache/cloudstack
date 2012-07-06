@@ -37,7 +37,8 @@
       <para>
 	  This runbook will focus on building a CloudStack cloud using KVM with 
 	  CentOS 6.2 with NFS storage on a flat layer-2 network utilizing 
-          layer-3 network isolation (aka Security Groups).  
+          layer-3 network isolation (aka Security Groups), and doing it all
+          on a single piece of hardware.   
       </para>
       <para> 
         KVM, or Kernel-based Virtual Machine is a virtualization technology
@@ -49,7 +50,17 @@
         to a group of virtual machines.
       </para>
     </section>
-	
+    <section id="sect-Runbook-Overview-hilevel">
+      <title>High level overview of the process</title>
+      <para> 
+        Before we actually get to installing CloudStack, we'll start with 
+        installing our base operating system, and then configuring that to act
+        as an NFS server for several types of storage. We'll install the 
+        management server, download the systemVMs, and finally install the agent
+        software. Finally we'll spend a good deal of time configuring the entire
+        cloud in the CloudStack web interface. 
+      </para>
+    </section>	
     <section id="sect-Runbook-Overview-prereqs">
       <title>Prerequisites</title>
         <para>
@@ -62,8 +73,9 @@
             </listitem>
             <listitem>
               <para>
-                The CentOS 6.2 x86_64 minimal installation CD available from here:
+                The 
                 <ulink url="http://mirrors.kernel.org/centos/6.2/isos/x86_64/CentOS-6.2-x86_64-minimal.iso">
+                CentOS 6.2 x86_64 minimal install CD
                 </ulink>
               </para>
             </listitem>
@@ -75,8 +87,9 @@
             </listitem>
             <listitem>
               <para>
-                Copy of CloudStack 3.0.2 for Red Hat Enterprise Linux (RHEL) and CentOS 6.2 available here:
+                Copy of 
                 <ulink url="http://sourceforge.net/projects/cloudstack/files/CloudStack%20Acton/3.0.2/CloudStack-oss-3.0.2-1-rhel6.2.tar.gz/download">
+                  CloudStack 3.0.2 for RHEL and CentOS 6.2
                 </ulink>
               </para>
             </listitem>

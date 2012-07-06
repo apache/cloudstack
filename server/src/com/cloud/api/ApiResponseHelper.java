@@ -172,6 +172,7 @@ import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.server.Criteria;
 import com.cloud.server.ResourceTag;
+import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSCategoryVO;
@@ -548,6 +549,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         snapshotResponse.setName(snapshot.getName());
         snapshotResponse.setIntervalType(ApiDBUtils.getSnapshotIntervalTypes(snapshot.getId()));
         snapshotResponse.setState(snapshot.getStatus());
+        
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Snapshot, snapshot.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        snapshotResponse.setTags(tagResponses);
+        
         snapshotResponse.setObjectName("snapshot");
         return snapshotResponse;
     }
@@ -819,6 +830,15 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
         
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.PublicIpAddress, ipAddr.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        ipResponse.setTags(tagResponses);
+        
         ipResponse.setObjectName("ipaddress");
         return ipResponse;
     }
@@ -846,6 +866,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         lbResponse.setState(stateToSet);
         populateOwner(lbResponse, loadBalancer);
         lbResponse.setZoneId(publicIp.getDataCenterId());
+
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.UserVm, loadBalancer.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        lbResponse.setTags(tagResponses);
 
         lbResponse.setObjectName("loadbalancer");
         return lbResponse;
@@ -1134,6 +1163,15 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
         
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Volume, volume.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        volResponse.setTags(tagResponses);
+        
         volResponse.setExtractable(isExtractable);
         volResponse.setObjectName("volume");
         return volResponse;
@@ -1281,6 +1319,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (state.equals(FirewallRule.State.Revoke)) {
             stateToSet = "Deleting";
         }
+        
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.PortForwardingRule, fwRule.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        response.setTags(tagResponses);
+        
         response.setState(stateToSet);
         response.setObjectName("portforwardingrule");
         return response;
@@ -1556,6 +1604,15 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
                 userVmResponse.setNics(nicResponses);
             }
+            
+            //set tag information
+            List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.UserVm, userVm.getId());
+            List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+            for (ResourceTag tag : tags) {
+                ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+                tagResponses.add(tagResponse);
+            }
+            userVmResponse.setTags(tagResponses);
             
             IpAddress ip = ApiDBUtils.findIpByAssociatedVmId(userVm.getId());
             if (ip != null) {
@@ -1835,6 +1892,21 @@ public class ApiResponseHelper implements ResponseGenerator {
         populateAccount(response, owner.getId());
         populateDomain(response, owner.getDomainId());
 
+        //set tag information
+        List<? extends ResourceTag> tags = null;
+        if (result.getFormat() == ImageFormat.ISO) {
+            tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.ISO, result.getId());
+        } else {
+            tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Template, result.getId());
+        }
+        
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        response.setTags(tagResponses);
+
         response.setObjectName("iso");
         return response;
     }
@@ -2020,6 +2092,20 @@ public class ApiResponseHelper implements ResponseGenerator {
         templateResponse.setChecksum(template.getChecksum());
 
         templateResponse.setTemplateTag(template.getTemplateTag());
+
+        //set tag information
+        List<? extends ResourceTag> tags = null;
+        if (template.getFormat() == ImageFormat.ISO) {
+            tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.ISO, template.getId());
+        } else {
+            tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Template, template.getId());
+        }
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        templateResponse.setTags(tagResponses);
 
         templateResponse.setObjectName("template");
         responses.add(templateResponse);
@@ -2258,6 +2344,15 @@ public class ApiResponseHelper implements ResponseGenerator {
                         egressRulesResponse.add(ruleData);
                     }
                 }
+                //set tag information
+                List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.UserVm, networkGroup.getId());
+                List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+                for (ResourceTag tag : tags) {
+                    ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+                    tagResponses.add(tagResponse);
+                }
+                netGrpResponse.setTags(tagResponses);
+                
                 netGrpResponse
                         .setSecurityGroupIngressRules(ingressRulesResponse);
                 netGrpResponse.setSecurityGroupEgressRules(egressRulesResponse);
@@ -2914,6 +3009,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setVpcId(network.getVpcId());
         response.setCanUseForDeploy(ApiDBUtils.canUseForDeploy(network));
 
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Network, network.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        response.setTags(tagResponses);
+
         response.setObjectName("network");
         return response;
     }
@@ -2975,6 +3079,15 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         response.setIcmpCode(fwRule.getIcmpCode());
         response.setIcmpType(fwRule.getIcmpType());
+
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.FirewallRule, fwRule.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        response.setTags(tagResponses);
 
         response.setState(stateToSet);
         response.setObjectName("firewallrule");
@@ -3130,6 +3243,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         userVmResponse.setNics(new ArrayList<NicResponse>(nicResponses));
         userVmResponse.setPublicIpId(userVmData.getPublicIpId());
         userVmResponse.setPublicIp(userVmData.getPublicIp());
+
+        //set tag information
+        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.UserVm, userVmData.getId());
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+            tagResponses.add(tagResponse);
+        }
+        userVmResponse.setTags(tagResponses);
 
         return userVmResponse;
     }
@@ -3462,10 +3584,12 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
     
     @Override
-    public ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag) {
+    public ResourceTagResponse createResourceTagResponse(ResourceTag resourceTag, boolean keyValueOnly) {
         ResourceTagResponse response = new ResourceTagResponse();
         response.setKey(resourceTag.getKey());
         response.setValue(resourceTag.getValue());
+        
+        if (!keyValueOnly) {
         response.setResourceType(resourceTag.getResourceType().toString());        
         response.setId(ApiDBUtils.getUuid(String.valueOf(resourceTag.getResourceId()),resourceTag.getResourceType()));
         Long accountId = resourceTag.getAccountId();
@@ -3489,6 +3613,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         
         response.setCustomer(resourceTag.getCustomer());
+        }
         
         response.setObjectName("tag");
   

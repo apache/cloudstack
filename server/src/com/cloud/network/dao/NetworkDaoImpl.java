@@ -39,6 +39,8 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -69,7 +71,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     private final GenericSearchBuilder<NetworkVO, Integer> NetworksCount;
     final SearchBuilder<NetworkVO> SourceNATSearch;
     final GenericSearchBuilder<NetworkVO, Long>  CountByZoneAndURI;
-
+    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
 
     NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
     NetworkDomainDaoImpl _domainsDao = ComponentLocator.inject(NetworkDomainDaoImpl.class);
@@ -512,4 +514,16 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         return findOneBy(sc);
     }
 
+    @DB
+    public boolean remove(Long id) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        NetworkVO entry = findById(id);
+        if (entry != null) {
+            _tagsDao.removeByIdAndType(id, TaggedResourceType.Network);
+        }
+        boolean result = super.remove(id);
+        txn.commit();
+        return result;
+    }
 }

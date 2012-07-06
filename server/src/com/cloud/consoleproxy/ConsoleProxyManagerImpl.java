@@ -263,6 +263,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private Map<Long, ConsoleProxyLoadInfo> _zoneVmCountMap; // map <zone id, info about running VMs count in zone>
     
     private String _hashKey;
+    private String _staticPublicIp;
+    private int _staticPort;
 
     private final GlobalLock _allocProxyLock = GlobalLock.getInternLock(getAllocProxyLockName());
 
@@ -467,7 +469,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         KeystoreVO ksVo = _ksDao.findByName(ConsoleProxyManager.CERTIFICATE_NAME);
         assert (ksVo != null);
 
+        if (_staticPublicIp == null) {
         return new ConsoleProxyInfo(proxy.isSslEnabled(), proxy.getPublicIpAddress(), _consoleProxyPort, proxy.getPort(), ksVo.getDomainSuffix());
+        } else {
+        	return new ConsoleProxyInfo(proxy.isSslEnabled(), _staticPublicIp, _consoleProxyPort, _staticPort, ksVo.getDomainSuffix());
+        }
     }
 
     public ConsoleProxyVO doAssignProxy(long dataCenterId, long vmId) {
@@ -1530,6 +1536,11 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         _loadScanner = new SystemVmLoadScanner<Long>(this);
         _loadScanner.initScan(STARTUP_DELAY, _capacityScanInterval);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
+
+        _staticPublicIp = _configDao.getValue("consoleproxy.static.publicIp");
+        if (_staticPublicIp != null) {
+        	_staticPort = NumbersUtil.parseInt(_configDao.getValue("consoleproxy.static.port"), 8443);
+        }
 
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Console Proxy Manager is configured.");

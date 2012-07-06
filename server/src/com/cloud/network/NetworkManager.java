@@ -94,7 +94,7 @@ public interface NetworkManager extends NetworkService {
      * @param userId
      * @param caller
      *            TODO
-     * @param ipAddress
+     * @param IpAddress
      * @return true if it did; false if it didn't
      */
     public boolean disassociatePublicIpAddress(long id, long userId, Account caller);

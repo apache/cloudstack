@@ -108,7 +108,7 @@ binlog-format = 'ROW'
       with the <command>mount</command> command run on the management server:
     </para>
     <screen>
-      <prompt># </prompt><userinput><command>mount</command> -t nfs <replaceable>172.16.10.</replaceable>2/secondary /mnt/secondary</userinput>
+      <prompt># </prompt><userinput><command>mount</command> -t nfs <replaceable>172.16.10.</replaceable>2:/secondary /mnt/secondary</userinput>
     </screen>
     <para>
       Now we need to download the system VM template and deploy that to the
