@@ -96,4 +96,10 @@ public interface VpcManager extends VpcService{
      * @return
      */
     List<DomainRouterVO> getVpcRouters(long vpcId);
+
+    /**
+     * @param zoneId
+     * @return
+     */
+    boolean vpcProviderEnabledInZone(long zoneId);
 }
