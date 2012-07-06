@@ -67,7 +67,7 @@ class Services:
                                 "numretries": 2,
                                 "lbdevicededicated": False,
                                 "lbdevicecapacity": 50,
-				"port": 22,
+                "port": 22,
                          },
                          "network_offering": {
                                     "name": 'Netscaler',
@@ -76,7 +76,7 @@ class Services:
                                     "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
                                     "traffictype": 'GUEST',
                                     "availability": 'Optional',
-                                    "serviceProviderList" : {
+                                    "serviceProviderList": {
                                             "Dhcp": 'VirtualRouter',
                                             "Dns": 'VirtualRouter',
                                             "SourceNat": 'VirtualRouter',
@@ -104,7 +104,7 @@ class Services:
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 10,
-                         "mode":'advanced'
+                         "mode": 'advanced'
                     }
 
 
@@ -541,7 +541,6 @@ class TestLbWithLeastConn(cloudstackTestCase):
         return
 
 
-
 class TestLbWithSourceIp(cloudstackTestCase):
 
     @classmethod
@@ -752,7 +751,6 @@ class TestLbWithSourceIp(cloudstackTestCase):
             self.fail("SSH Access failed for %s: %s" % \
                       (self.services["netscaler"]["ipaddress"], e))
         return
-
 
 
 class TestLbAlgoRrLc(cloudstackTestCase):
@@ -967,7 +965,6 @@ class TestLbAlgoRrLc(cloudstackTestCase):
         return
 
 
-
 class TestLbAlgoLcRr(cloudstackTestCase):
 
     @classmethod
@@ -1175,7 +1172,6 @@ class TestLbAlgoLcRr(cloudstackTestCase):
             self.fail("SSH Access failed for %s: %s" % \
                       (self.services["netscaler"]["ipaddress"], e))
         return
-
 
 
 class TestLbAlgoRrSb(cloudstackTestCase):
@@ -1388,7 +1384,6 @@ class TestLbAlgoRrSb(cloudstackTestCase):
             self.fail("SSH Access failed for %s: %s" % \
                       (self.services["netscaler"]["ipaddress"], e))
         return
-
 
 
 class TestLbAlgoSbRr(cloudstackTestCase):
@@ -1605,7 +1600,6 @@ class TestLbAlgoSbRr(cloudstackTestCase):
         return
 
 
-
 class TestLbAlgoSbLc(cloudstackTestCase):
 
     @classmethod
@@ -1820,7 +1814,6 @@ class TestLbAlgoSbLc(cloudstackTestCase):
         return
 
 
-
 class TestLbAlgoLcSb(cloudstackTestCase):
 
     @classmethod
@@ -1970,7 +1963,7 @@ class TestLbAlgoLcSb(cloudstackTestCase):
                                                 lb_rule.name
                                                 ))
         lb_rule.assign(self.apiclient, [self.virtual_machine])
-        
+
         self.debug("SSH into Netscaler to check whether algorithm is configured properly or not?")
         self.debug("SSH into netscaler: %s" %
                                     self.services["netscaler"]["ipaddress"])

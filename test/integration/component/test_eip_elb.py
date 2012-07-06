@@ -44,8 +44,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100,    # in MHz
-                                    "memory": 64,       # In MBs
+                                    "cpuspeed": 100, # in MHz
+                                    "memory": 64, # In MBs
                                     },
                          "lbrule": {
                                     "name": "SSH",
@@ -180,7 +180,7 @@ class TestEIP(cloudstackTestCase):
     def test_01_eip_by_deploying_instance(self):
         """Test EIP by deploying an instance
         """
-        
+
         tags = ["eip"]
 
         # Validate the following
@@ -347,7 +347,7 @@ class TestEIP(cloudstackTestCase):
     def test_02_acquire_ip_enable_static_nat(self):
         """Test associate new IP and enable static NAT for new IP and the VM
         """
-        
+
         tags = ["eip"]
 
         # Validate the following
@@ -491,7 +491,7 @@ class TestEIP(cloudstackTestCase):
     def test_03_disable_static_nat(self):
         """Test disable static NAT and release EIP acquired
         """
-        
+
         tags = ["eip"]
 
         # Validate the following
@@ -690,7 +690,7 @@ class TestEIP(cloudstackTestCase):
     def test_04_disable_static_nat_system(self):
         """Test disable static NAT with system = True
         """
-        
+
         tags = ["eip"]
 
         # Validate the following
@@ -759,7 +759,7 @@ class TestEIP(cloudstackTestCase):
     def test_05_destroy_instance(self):
         """Test EIO after destroying instance
         """
-        
+
         tags = ["eip"]
 
         # Validate the following
@@ -997,7 +997,7 @@ class TestELB(cloudstackTestCase):
     def test_01_elb_create(self):
         """Test ELB by creating a LB rule
         """
-        
+
         tags = ["eip"]
 
         # Validate the following
@@ -1170,7 +1170,7 @@ class TestELB(cloudstackTestCase):
     def test_02_elb_acquire_and_create(self):
         """Test ELB by acquiring IP and then creating a LB rule
         """
-        
+
         tags = ["eip"]
 
         # Validate the following
@@ -1318,7 +1318,7 @@ class TestELB(cloudstackTestCase):
     def test_03_elb_delete_lb_system(self):
         """Test delete LB rule generated with public IP with is_system = 1
         """
-        
+
         tags = ["eip"]
 
         # Validate the following
@@ -1422,7 +1422,7 @@ class TestELB(cloudstackTestCase):
     def test_04_delete_lb_on_eip(self):
         """Test delete LB rule generated on EIP
         """
-        
+
         tags = ["eip"]
 
         # Validate the following

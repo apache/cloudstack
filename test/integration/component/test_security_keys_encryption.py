@@ -30,8 +30,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100,    # in MHz
-                                    "memory": 64,       # In MBs
+                                    "cpuspeed": 100, # in MHz
+                                    "memory": 64, # In MBs
                         },
                         "virtual_machine": {
                                     "displayname": "TestVM",
@@ -52,23 +52,23 @@ class Services:
                                    "password": "fr3sca",
                                 },
                          "globalconfig": {
-                                   "security.hash.key": "test",
-                                    "vmware.guest.vswitch": "test",
-                                    "vmware.public.vswitch": "test",
-                                    "vmware.private.vswitch": "test",
-                                    "kvm.guest.network.device": "test",
-                                    "ovm.guest.network.device": "test",
-                                    "xen.guest.network.device": "test",
-                                    "kvm.public.network.device": "test",
-                                    "ovm.public.network.device": "test",
-                                    "xen.public.network.device": "test",
-                                    "kvm.private.network.device": "test",
-                                    "ovm.private.network.device": "test",
-                                    "xen.private.network.device": "test",
-                                    "xen.storage.network.device1": "test",
-                                    "xen.storage.network.device2": "test",
-                                    "alert.smtp.password": "test",
-                                    "project.smtp.password": "test",
+                                   "security.hash.key" : "test",
+                                    "vmware.guest.vswitch" : "test",
+                                    "vmware.public.vswitch" : "test",
+                                    "vmware.private.vswitch" : "test",
+                                    "kvm.guest.network.device" : "test",
+                                    "ovm.guest.network.device" : "test",
+                                    "xen.guest.network.device" : "test",
+                                    "kvm.public.network.device" : "test",
+                                    "ovm.public.network.device" : "test",
+                                    "xen.public.network.device" : "test",
+                                    "kvm.private.network.device" : "test",
+                                    "ovm.private.network.device" : "test",
+                                    "xen.private.network.device" : "test",
+                                    "xen.storage.network.device1" : "test",
+                                    "xen.storage.network.device2" : "test",
+                                    "alert.smtp.password" : "test",
+                                    "project.smtp.password" : "test",
                                 },
                         "ostypeid": '7ddbbbb5-bb09-40de-b038-ee78995788ea',
                         # Cent OS 5.3 (64 bit)
@@ -364,7 +364,7 @@ class TestSecurityKeysEncryption(cloudstackTestCase):
             self.assertNotEqual(
                          config_value,
                          v,
-                         "Configuration %s 's value should be stored in encrypted format in DB" % k
+                         "Check configuration value in database is not equal to value set to verify the value is encrypted"
                          )
 
             #Setting the configuration value back to None as default value

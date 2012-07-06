@@ -44,8 +44,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
+                                    "cpuspeed": 100,    # in MHz
+                                    "memory": 64,       # In MBs
                                     },
                          "lbrule": {
                                     "name": "SSH",
@@ -59,7 +59,7 @@ class Services:
                                     "publicport": 22,
                                     "protocol": "TCP"
                                 },
-                         "fw_rule":{
+                         "fw_rule": {
                                     "startport": 1,
                                     "endport": 6000,
                                     "cidr": '55.55.0.0/11',
@@ -83,7 +83,7 @@ class Services:
                                 "ostypeid": '1d4a6dce-8db1-4c08-8752-e88b360d8287',
                                 "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                                 "hypervisor": 'XenServer',
-                                "format" : 'VHD',
+                                "format": 'VHD',
                                 "isfeatured": True,
                                 "ispublic": True,
                                 "isextractable": True,
@@ -93,7 +93,7 @@ class Services:
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 100,
-                         "mode":'advanced'
+                         "mode": 'advanced'
                     }
 
 
@@ -172,7 +172,7 @@ class TestHighAvailability(cloudstackTestCase):
     def test_01_host_maintenance_mode(self):
         """Test host maintenance mode
         """
-        
+
         tags = ["advanced", "advancedns"]
 
         # Validate the following
@@ -563,7 +563,7 @@ class TestHighAvailability(cloudstackTestCase):
     def test_02_host_maintenance_mode_with_activities(self):
         """Test host maintenance mode with activities
         """
-        
+
         tags = ["advanced", "advancedns"]
 
         # Validate the following
@@ -692,7 +692,7 @@ class TestHighAvailability(cloudstackTestCase):
             self.fail("SSH Access failed for %s: %s" % \
                       (virtual_machine.ipaddress, e)
                       )
-        # Get the Root disk of VM 
+        # Get the Root disk of VM
         volumes = list_volumes(
                             self.apiclient,
                             virtualmachineid=virtual_machine.id,
@@ -861,7 +861,7 @@ class TestHighAvailability(cloudstackTestCase):
         self.apiclient.cancelHostMaintenance(cmd)
         self.debug("Maintenance mode canceled for host: %s" % first_host)
 
-        # Get the Root disk of VM 
+        # Get the Root disk of VM
         volumes = list_volumes(
                             self.apiclient,
                             virtualmachineid=virtual_machine_2.id,

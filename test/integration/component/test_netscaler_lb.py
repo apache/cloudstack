@@ -44,8 +44,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
+                                    "cpuspeed": 100,    # in MHz
+                                    "memory": 64,       # In MBs
                          },
                          "virtual_machine": {
                                     "displayname": "TestVM",
@@ -78,7 +78,7 @@ class Services:
                                     "availability": 'Optional',
                                     "specifyVlan": False,
                                     "specifyIpRanges": False,
-                                    "serviceProviderList" : {
+                                    "serviceProviderList": {
                                             "Dhcp": 'VirtualRouter',
                                             "Dns": 'VirtualRouter',
                                             "SourceNat": 'VirtualRouter',
@@ -105,7 +105,7 @@ class Services:
                                     "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
                                     "traffictype": 'GUEST',
                                     "availability": 'Optional',
-                                    "serviceProviderList" : {
+                                    "serviceProviderList": {
                                             "Dhcp": 'VirtualRouter',
                                             "Dns": 'VirtualRouter',
                                             "SourceNat": 'VirtualRouter',
@@ -138,7 +138,7 @@ class Services:
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 10,
-                         "mode":'advanced'
+                         "mode": 'advanced'
                     }
 
 
@@ -224,7 +224,7 @@ class TestLbSourceNat(cloudstackTestCase):
     def test_add_lb_on_source_nat(self):
         """Test Create LB rule for sourceNat IP address
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -433,7 +433,7 @@ class TestLbOnIpWithPf(cloudstackTestCase):
     def test_lb_on_ip_with_pf(self):
         """Test Create LB rule for sourceNat IP address
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -644,7 +644,7 @@ class TestPfOnIpWithLb(cloudstackTestCase):
     def test_pf_on_ip_with_lb(self):
         """Test Create a port forwarding rule  on an Ip address that already has a LB rule.
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -856,7 +856,7 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
     def test_lb_on_non_source_nat(self):
         """Test Create LB rule for non-sourceNat IP address
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -1071,7 +1071,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
     def test_add_multiple_vms_lb(self):
         """Test Add multiple Vms to an existing LB rule.
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -1082,7 +1082,7 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
         #    this rule. LB rule should be
         # In Netscaler: For every Vm added to the LB rule:
         # 1. A server and service instance is created using guest VM’s IP and
-        #    port number on the Netscaler LB device, 
+        #    port number on the Netscaler LB device,
         # 2. This service is bound to lb virtual server corresponding to lb
         #    rule.
 
@@ -1349,7 +1349,7 @@ class TestMultipleLbRules(cloudstackTestCase):
     def test_multiple_lb_publicip(self):
         """Test Create multiple LB rules using different public Ips acquired
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -1665,7 +1665,7 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
     def test_multiple_lb_same_publicip(self):
         """Test Create multiple LB rules using same public Ips on diff ports
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -2022,7 +2022,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
     def test_01_edit_name_lb_rule(self):
         """Test edit name of LB rule
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -2056,7 +2056,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
     def test_02_edit_lb_ports(self):
         """Test edit public port of LB rule
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -2078,7 +2078,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
     def test_03_delete_lb_rule(self):
         """Test delete LB rule
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -2126,6 +2126,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
             self.fail("SSH Access failed for %s: %s" % \
                       (self.services["netscaler"]["ipaddress"], e))
         return
+
 
 @unittest.skip("Questions - How to verify after changing public/private ports?")
 class TestDeleteCreateLBRule(cloudstackTestCase):
@@ -2244,7 +2245,7 @@ class TestDeleteCreateLBRule(cloudstackTestCase):
 
     def test_01_create_with_same_public_port(self):
         """Test create LB rule with same public port after deleting rule"""
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -2405,7 +2406,7 @@ class TestVmWithLb(cloudstackTestCase):
 
     def test_01_delete_public_ip(self):
         """Test delete one public Ip with LB rules"""
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -2474,7 +2475,7 @@ class TestVmWithLb(cloudstackTestCase):
 
     def test_02_stop_user_vm(self):
         """Test stop user VM with LB"""
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -2554,7 +2555,7 @@ class TestVmWithLb(cloudstackTestCase):
 
     def test_03_start_user_vm(self):
         """Test start user VM with LB"""
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -2625,11 +2626,11 @@ class TestVmWithLb(cloudstackTestCase):
 
     def test_04_migrate_user_vm(self):
         """Test migrate user VM with LB"""
-        
+
         tags = ["advancedns"]
 
         # Validate the following
-        # 1. Create 2 instances and add these two for load balancing 
+        # 1. Create 2 instances and add these two for load balancing
         # 2. migrate one Vm to another host.
         # 3. Test whether the request are sent to stopped user VM after migrate
         # 4. In netscaler, the LB rules are still configured.
@@ -2738,7 +2739,7 @@ class TestVmWithLb(cloudstackTestCase):
 
     def test_05_reboot_user_vm(self):
         """Test reboot user VM with LB"""
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -2808,7 +2809,7 @@ class TestVmWithLb(cloudstackTestCase):
 
     def test_06_destroy_user_vm(self):
         """Test destroy user VM with LB"""
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -2891,7 +2892,7 @@ class TestVmWithLb(cloudstackTestCase):
 
     def test_07_delete_all_public_ip(self):
         """Test delete all public Ip with LB rules"""
-        
+
         tags = ["advancedns"]
 
         # Validate the following

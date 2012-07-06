@@ -89,7 +89,7 @@ class Services:
                                     "publicport": 22,
                          },
                         "sleep": 50,
-                        "ostypeid": '7ddbbbb5-bb09-40de-b038-ee78995788ea',
+                        "ostypeid": 'e6e3dd0f-03c8-4cab-9c32-89769c17ccb3',
                         "mode": 'basic',
                     }
 

@@ -44,8 +44,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 128, # In MBs
+                                    "cpuspeed": 100,    # in MHz
+                                    "memory": 128,      # In MBs
                          },
                          "virtual_machine": {
                                     "displayname": "TestVM",
@@ -102,7 +102,7 @@ class Services:
                                     "availability": 'Optional',
                                     "specifyVlan": False,
                                     "specifyIpRanges": False,
-                                    "serviceProviderList" : {
+                                    "serviceProviderList": {
                                             "Dhcp": 'VirtualRouter',
                                             "Dns": 'VirtualRouter',
                                             "SourceNat": 'VirtualRouter',
@@ -129,7 +129,7 @@ class Services:
                                     "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
                                     "traffictype": 'GUEST',
                                     "availability": 'Optional',
-                                    "serviceProviderList" : {
+                                    "serviceProviderList": {
                                             "Dhcp": 'VirtualRouter',
                                             "Dns": 'VirtualRouter',
                                             "SourceNat": 'VirtualRouter',
@@ -157,9 +157,8 @@ class Services:
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 10,
-                         "mode":'advanced'
+                         "mode": 'advanced'
                     }
-
 
 
 class TestAddMultipleNetScaler(cloudstackTestCase):
@@ -205,7 +204,7 @@ class TestAddMultipleNetScaler(cloudstackTestCase):
     def test_add_netscaler_device(self):
         """Test add netscaler device
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -363,7 +362,7 @@ class TestAddMultipleNSDiffZone(cloudstackTestCase):
     def test_add_mul_netscaler_diff_zone(self):
         """Test add netscaler devices in different zones
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -651,7 +650,7 @@ class TestNetScalerSharedMode(cloudstackTestCase):
     def test_01_netscaler_shared_mode(self):
         """Test netscaler device in shared mode
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -806,12 +805,12 @@ class TestNetScalerSharedMode(cloudstackTestCase):
     def test_02_multiple_netscaler_capacilty(self):
         """Test multiple netscaler devices with limited capacity
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
-        # 1. Add another netscaler device and spawn a new VM again         
-        # 2. VM deployement should be successful 
+        # 1. Add another netscaler device and spawn a new VM again
+        # 2. VM deployement should be successful
 
         self.debug("Adding another netscaler device: %s" %
                                     self.services["netscaler_2"]["ipaddress"])
@@ -908,7 +907,7 @@ class TestNetScalerSharedMode(cloudstackTestCase):
     def test_03_multiple_netscaler_full_capacilty(self):
         """Test netscaler device with full capacity
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -993,7 +992,7 @@ class TestNetScalerSharedMode(cloudstackTestCase):
     def test_04_delete_account_after_capacity_full(self):
         """Test delete and add resouces after netscaler device capacity is full
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -1178,7 +1177,7 @@ class TestNwOffDedicatedNetscaler(cloudstackTestCase):
     def test_nw_off_dedicated_mode(self):
         """Test network offering in dedicated mode device
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -1211,7 +1210,7 @@ class TestNwOffDedicatedNetscaler(cloudstackTestCase):
         # Creating network using the network offering created
         self.debug("Creating network with network offering: %s" %
                                                     self.network_offering.id)
-	
+
         self.network_1 = Network.create(
                                     self.apiclient,
                                     self.services["network"],
@@ -1220,18 +1219,18 @@ class TestNwOffDedicatedNetscaler(cloudstackTestCase):
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
-	self.debug("Deploy Instance with network: %s" % self.network_1.name)
+        self.debug("Deploy Instance with network: %s" % self.network_1.name)
         with self.assertRaises(Exception):
-        	# Spawn an instance in that network
-	        VirtualMachine.create(
+            # Spawn an instance in that network
+            VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account_1.account.name,
                                   domainid=self.account_1.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network_1.id)]
-                                  ) 
-	self.debug("Created instance failed!")
+                                  )
+        self.debug("Created instance failed!")
         return
 
 
@@ -1372,7 +1371,7 @@ class TestNwOffNetscaler(cloudstackTestCase):
     def test_ns_shared_nw_dedicated(self):
         """Test netscaler device in shared mode with network offering in dedicated mode
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -1413,37 +1412,37 @@ class TestNwOffNetscaler(cloudstackTestCase):
                                     networkofferingid=self.network_offering.id,
                                     zoneid=self.zone.id
                                     )
-	self.debug("Deploying VM in account: %s" % self.account_1.account.name)
-	virtual_machine = VirtualMachine.create(
+        self.debug("Deploying VM in account: %s" % self.account_1.account.name)
+        virtual_machine = VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account_1.account.name,
                                   domainid=self.account_1.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network.id)]
-                                  )	
+                                  )
         # Creating network using the network offering created
         self.debug("Creating different network with network offering: %s" %
                                                     self.network_offering.id)
 
         self.network_2 = Network.create(
-                        		self.apiclient,
-		                        self.services["network"],
-                	        	accountid=self.account_2.account.name,
-		                      	domainid=self.account_2.account.domainid,
-		                      	networkofferingid=self.network_offering.id,
-		                       	zoneid=self.zone.id
-		                       )
+                                self.apiclient,
+                                self.services["network"],
+                                accountid=self.account_2.account.name,
+                                domainid=self.account_2.account.domainid,
+                                networkofferingid=self.network_offering.id,
+                                zoneid=self.zone.id
+                               )
         self.debug("Created network with ID: %s" % self.network_2.id)
         with self.assertRaises(Exception):
-		VirtualMachine.create(
+            VirtualMachine.create(
                                   self.apiclient,
                                   self.services["virtual_machine"],
                                   accountid=self.account_2.account.name,
                                   domainid=self.account_2.account.domainid,
                                   serviceofferingid=self.service_offering.id,
                                   networkids=[str(self.network_2.id)]
-                                  )	
+                                  )
         self.debug(
             "Attempt to create second network with dedicated network offering failed!")
         self.debug("Deleting account: %s" % self.account_1.account.name)
@@ -1682,7 +1681,7 @@ class TestNwOffSToDUpgrade(cloudstackTestCase):
 
     def test_shared_to_dedicated_upgrade(self):
         """Test upgrade from shared LB isolation to dedicated LB isolation"""
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -1850,9 +1849,9 @@ class TestNwOffSToDUpgrade(cloudstackTestCase):
                                   physicalnetworkid=self.physical_network.id
                                   )
 
-	self.debug("Stopping All VMs before upgrading network for account: %s" %
-							self.account_1.account.name)
-	virtual_machine_1.stop(self.apiclient)
+        self.debug("Stopping All VMs before upgrading network for account: %s" %
+                            self.account_1.account.name)
+        virtual_machine_1.stop(self.apiclient)
 
         list_vm_response = VirtualMachine.list(
                                         self.apiclient,
@@ -1876,7 +1875,7 @@ class TestNwOffSToDUpgrade(cloudstackTestCase):
                             "Stopped",
                             "VM state should be running after deployment"
                         )
-	self.debug("All Vms are in stopped state")
+        self.debug("All Vms are in stopped state")
         self.debug("Upgrading the network: %s" % self.network_1.id)
         self.network_1.update(
                             self.apiclient,
@@ -1905,9 +1904,9 @@ class TestNwOffSToDUpgrade(cloudstackTestCase):
                         "Network offering ID should match with new offering ID"
                         )
 
-	self.debug("Starting All VMs after upgrading network for account: %s" %
-							self.account_1.account.name)
-	virtual_machine_1.start(self.apiclient)
+        self.debug("Starting All VMs after upgrading network for account: %s" %
+                            self.account_1.account.name)
+        virtual_machine_1.start(self.apiclient)
 
         list_vm_response = VirtualMachine.list(
                                         self.apiclient,
@@ -1931,7 +1930,7 @@ class TestNwOffSToDUpgrade(cloudstackTestCase):
                             "Running",
                             "VM state should be running after deployment"
                         )
-	self.debug("All Vms are in running state")
+        self.debug("All Vms are in running state")
         try:
             self.debug(
                 "Associating public Ip to the network: %s" %
@@ -2099,7 +2098,7 @@ class TestNwOffDToSUpgrade(cloudstackTestCase):
 
     def test_shared_to_dedicated_upgrade(self):
         """Test upgrade from shared LB isolation to dedicated LB isolation"""
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -2258,8 +2257,8 @@ class TestNwOffDToSUpgrade(cloudstackTestCase):
                             "VM state should be running after deployment"
                         )
 
-	self.debug("Stopping all VMs in account: %s" % self.account_3.account.name)
-	virtual_machine_3.stop(self.apiclient)
+        self.debug("Stopping all VMs in account: %s" % self.account_3.account.name)
+        virtual_machine_3.stop(self.apiclient)
 
         list_vm_response = VirtualMachine.list(
                                         self.apiclient,
@@ -2283,7 +2282,7 @@ class TestNwOffDToSUpgrade(cloudstackTestCase):
                             "Stopped",
                             "VM state should be stopped"
                         )
-	self.debug("All user VMs stopped")
+        self.debug("All user VMs stopped")
         self.debug("Upgrading the network: %s" % self.network_3.id)
         self.network_3.update(
                             self.apiclient,
@@ -2311,10 +2310,10 @@ class TestNwOffDToSUpgrade(cloudstackTestCase):
                         self.network_offering_shared.id,
                         "Network offering ID should match with new offering ID"
                         )
-       	self.debug("Starting instances in account: %s" % self.account_3.account.name)
-	virtual_machine_3.start(self.apiclient)
+        self.debug("Starting instances in account: %s" % self.account_3.account.name)
+        virtual_machine_3.start(self.apiclient)
 
-	list_vm_response = VirtualMachine.list(
+        list_vm_response = VirtualMachine.list(
                                         self.apiclient,
                                         id=virtual_machine_3.id
                                         )
