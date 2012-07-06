@@ -30,12 +30,12 @@
 
   <target name="deploydbIfSet" if="deploydb.is.set">
     <echo message="ant deploydb"/>
-    <sshexec host="${host}" port="${port}" username="root" password="password" command="echo $CATALINA_HOME; export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32;killall java;cd /opt/cloudstack/incubator-cloudstack;ant deploycddb"/>
+    <sshexec host="${host}" port="${port}" username="root" password="password" command="echo $CATALINA_HOME; export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32;killall java; service cloud-management stop;cd /opt/cloudstack/incubator-cloudstack;ant deploycddb"/>
   </target>
 
   <target name="rdeploydb">
     <echo message="ant rdeploydb"/>
-    <sshexec host="${host}" port="${port}" username="root" password="password" command="echo $CATALINA_HOME; export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32;killall java;cd /opt/cloudstack/incubator-cloudstack;ant deploycddb -Drhost=${host}"/>
+    <sshexec host="${host}" port="${port}" username="root" password="password" command="echo $CATALINA_HOME; export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32;killall java;service cloud-management stop;cd /opt/cloudstack/incubator-cloudstack;ant deploycddb -Drhost=${host}"/>
   </target>
 
   <target name="deploycddb" description="deploy specific db configuration for clouddev" depends="deploydb">
@@ -48,12 +48,12 @@
 
   <target name="rdebug-suspend" >
     <echo message="ant debug-suspend"/>
-    <sshexec host="${host}" port="${port}" username="root" password="password" command="killall java;sleep 1;echo $CATALINA_HOME; export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32;cd /opt/cloudstack/incubator-cloudstack;ant deploy-server;ant debug-suspend"/>
+    <sshexec host="${host}" port="${port}" username="root" password="password" command="killall java;service cloud-management stop;sleep 1;echo $CATALINA_HOME; export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32;cd /opt/cloudstack/incubator-cloudstack;ant deploy-server;ant debug-suspend"/>
   </target>
   
   <target name="rdebug">
     <echo message="ant debug"/>
-    <sshexec host="${host}" port="${port}" username="root" password="password" command="killall java;sleep 1;export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32;cd /opt/cloudstack/incubator-cloudstack;ant deploy-server; ant debug "/>
+    <sshexec host="${host}" port="${port}" username="root" password="password" command="killall java;service cloud-management stop;sleep 1;export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32;cd /opt/cloudstack/incubator-cloudstack;ant deploy-server; ant debug "/>
   </target>
 
 
