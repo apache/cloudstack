@@ -82,7 +82,7 @@ class Services:
                                     "publicport": 2222,
                                     "protocol": 'TCP',
                                 },
-                         "fw_rule":{
+                         "fw_rule": {
                                     "startport": 1,
                                     "endport": 6000,
                                     "cidr": '55.55.0.0/11',
@@ -90,7 +90,7 @@ class Services:
                                     },
                          "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
                          # Used for Get_Template : CentOS 5.3 (64 bit)
-                         "mode": 'advanced', # Networking mode: Advanced, basic
+                         "mode": 'advanced',    # Networking mode: Advanced, basic
                         }
 
 
@@ -180,7 +180,7 @@ class TestRouterServices(cloudstackTestCase):
         #    e. LB
         #    f. VPN
         #    g. userdata
-        # 2. wait for router to start and guest network to be created 
+        # 2. wait for router to start and guest network to be created
         #    a. listRouters account=user, domainid=1 (router state=Running)
         #    b. listNetworks account=user domainid=1 (network state=Implemented)
         #    c. listVirtualMachines account=user domainid=1 (VM state=Running)
@@ -318,7 +318,7 @@ class TestRouterServices(cloudstackTestCase):
         """
         tags = ["advanced"]
         # Validate the following
-        # 1. wait for router to start and guest network to be created 
+        # 1. wait for router to start and guest network to be created
         #    a.listRouters account=user, domainid=1 (router state=Running)
         #    b.listNetworks account=user domainid=1 (network state=Implemented)
         #    c.listVirtualMachines account=user domainid=1 (VM states=Running)
@@ -436,9 +436,9 @@ class TestRouterServices(cloudstackTestCase):
                         )
         self.debug("network.gc.wait: %s" % gcwait[0].value)
 
-	total_wait = int(gcinterval[0].value) + int (gcwait[0].value)
+        total_wait = int(gcinterval[0].value) + int(gcwait[0].value)
         # Router is stopped after (network.gc.interval *2) time. Wait for
-        # (network.gc.interval+network.gc.wait) * 2 for moving router to 'Stopped' 
+        # (network.gc.interval+network.gc.wait) * 2 for moving router to 'Stopped'
         time.sleep(total_wait * 2)
 
         routers = list_routers(
@@ -580,7 +580,6 @@ class TestRouterServices(cloudstackTestCase):
         return
 
 
-
 class TestRouterStopCreatePF(cloudstackTestCase):
 
     @classmethod
@@ -657,10 +656,10 @@ class TestRouterStopCreatePF(cloudstackTestCase):
         # 2. stopRouter for this account
         # 3. wait for listRouters to report Router as 'Stopped'
         # 4. listPublicIpAddresses account=user, domainid=1 - pick ipaddressid
-        # 5. createPortForwardingRule (ipaddressid from step 5.) 
+        # 5. createPortForwardingRule (ipaddressid from step 5.)
         #    a. for port 22 (ssh) for user VM deployed in step 1.
         #    b. public port 222 , private port 22
-        # 6. startRouter stopped for this account 
+        # 6. startRouter stopped for this account
         # 7. wait for listRouters to show router as Running
 
         # Get router details associated for that account
@@ -720,7 +719,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
                         )
         public_ip = public_ips[0]
 
-        # Open up firewall port for SSH        
+        # Open up firewall port for SSH
         fw_rule = FireWallRule.create(
                             self.apiclient,
                             ipaddressid=public_ip.id,
@@ -790,6 +789,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
                       (self.vm_1.ipaddress, e)
                       )
         return
+
 
 class TestRouterStopCreateLB(cloudstackTestCase):
 
@@ -923,8 +923,8 @@ class TestRouterStopCreateLB(cloudstackTestCase):
                         "Check for list public IPs response return valid data"
                         )
         public_ip = public_ips[0]
-        
-        # Open up firewall port for SSH        
+
+        # Open up firewall port for SSH
         fw_rule = FireWallRule.create(
                             self.apiclient,
                             ipaddressid=public_ip.id,
@@ -1076,7 +1076,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         #    (optional backend)
         # 3. verify on router using iptables -t nat -nvx if rules are applied
 
-        # Get the router details associated with account 
+        # Get the router details associated with account
         routers = list_routers(
                                self.apiclient,
                                account=self.account.account.name,
@@ -1223,4 +1223,3 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                             "Check public IP address"
                         )
         return
-

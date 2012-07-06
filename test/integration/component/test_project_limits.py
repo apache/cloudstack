@@ -25,6 +25,7 @@ from integration.lib.base import *
 from integration.lib.common import *
 import datetime
 
+
 class Services:
     """Test Resource Limits Services
     """
@@ -60,8 +61,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
+                                    "cpuspeed": 100,    # in MHz
+                                    "memory": 64,       # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Tiny Disk Offering",
@@ -100,13 +101,13 @@ class TestProjectLimits(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.api_client = super(
-                               TestProjectLimits, 
+                               TestProjectLimits,
                                cls
                                ).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone
         cls.zone = get_zone(cls.api_client, cls.services)
-        
+
         # Create domains, account etc.
         cls.domain = Domain.create(
                                    cls.api_client,
@@ -125,10 +126,10 @@ class TestProjectLimits(cloudstackTestCase):
                             domainid=cls.domain.id
                             )
         cls._cleanup = [
-			cls.admin,
-			cls.user,
-			cls.domain
-			]
+            cls.admin,
+            cls.user,
+            cls.domain
+            ]
         return
 
     @classmethod
@@ -183,9 +184,9 @@ class TestProjectLimits(cloudstackTestCase):
         self.cleanup.append(project)
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
-        
+
         list_projects_reponse = Project.list(
-                                             self.apiclient, 
+                                             self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
@@ -223,7 +224,7 @@ class TestProjectLimits(cloudstackTestCase):
                          )
 
         # Reduce resource limits for project
-        # Resource: 0 - Instance. Number of instances a user can create. 
+        # Resource: 0 - Instance. Number of instances a user can create.
         # Resource: 1 - IP. Number of public IP addresses a user can own.
         # Resource: 2 - Volume. Number of disk volumes a user can create.
         # Resource: 3 - Snapshot. Number of snapshots a user can create.
@@ -261,7 +262,7 @@ class TestProjectLimits(cloudstackTestCase):
                          1,
                          "Resource limit should be updated to 1"
                          )
-        
+
         # Get the resource limits for domain
         resource_limits = list_resource_limits(
                                                 self.apiclient,
@@ -277,7 +278,7 @@ class TestProjectLimits(cloudstackTestCase):
                          0,
                          "List resource API response should not be empty"
                          )
-        
+
         for resource in resource_limits:
             # Update domain resource limits to 2
             update_resource_limit(
@@ -300,6 +301,7 @@ class TestProjectLimits(cloudstackTestCase):
                                         projectid=project.id
                                       )
         return
+
     @unittest.skip("No provision for updating resource limits from account through API")
     def test_02_project_limits_normal_user(self):
         """ Test project limits
@@ -323,9 +325,9 @@ class TestProjectLimits(cloudstackTestCase):
         self.cleanup.append(project)
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
-        
+
         list_projects_reponse = Project.list(
-                                             self.apiclient, 
+                                             self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
@@ -363,7 +365,7 @@ class TestProjectLimits(cloudstackTestCase):
                          )
 
         # Reduce resource limits for project
-        # Resource: 0 - Instance. Number of instances a user can create. 
+        # Resource: 0 - Instance. Number of instances a user can create.
         # Resource: 1 - IP. Number of public IP addresses a user can own.
         # Resource: 2 - Volume. Number of disk volumes a user can create.
         # Resource: 3 - Snapshot. Number of snapshots a user can create.
@@ -401,7 +403,7 @@ class TestProjectLimits(cloudstackTestCase):
                          1,
                          "Resource limit should be updated to 1"
                          )
-        
+
         self.debug("Adding %s user to project: %s" % (
                                                 self.user.account.name,
                                                 project.name
@@ -409,10 +411,10 @@ class TestProjectLimits(cloudstackTestCase):
 
         # Add user to the project
         project.addAccount(
-                           self.apiclient, 
-                           self.user.account.name, 
+                           self.apiclient,
+                           self.user.account.name,
                            )
-        
+
         # Get the resource limits for domain
         resource_limits = list_resource_limits(
                                                 self.apiclient,
@@ -428,7 +430,7 @@ class TestProjectLimits(cloudstackTestCase):
                          0,
                          "List resource API response should not be empty"
                          )
-        
+
         for resource in resource_limits:
             #with self.assertRaises(Exception):
             self.debug(
@@ -535,12 +537,12 @@ class TestResourceLimitsProject(cloudstackTestCase):
         #    should be raised
 
         self.debug(
-            "Updating instance resource limits for project: %s" % 
+            "Updating instance resource limits for project: %s" %
                                                         self.project.id)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              0, # Instance
+                              0,    # Instance
                               max=2,
                               projectid=self.project.id
                               )
@@ -589,7 +591,11 @@ class TestResourceLimitsProject(cloudstackTestCase):
     def test_04_publicip_per_project(self):
         """Test Public IP limit per project
         """
+<<<<<<< HEAD
 
+=======
+        tags = ["advanced", "eip", "advancedns"]
+>>>>>>> 6d17e21... This commit has following fixes:
         # Validate the following
         # 1. set max no of IPs per project to 2.
         # 2. Create an account in this domain
@@ -599,12 +605,12 @@ class TestResourceLimitsProject(cloudstackTestCase):
         #    appropriate error and an alert should be generated.
 
         self.debug(
-            "Updating public IP resource limits for project: %s" % 
+            "Updating public IP resource limits for project: %s" %
                                                             self.project.id)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              1, # Public Ip
+                              1,    # Public Ip
                               max=2,
                               projectid=self.project.id
                               )
@@ -625,7 +631,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                             "Check VM state is Running or not"
                         )
         networks = Network.list(
-                                self.apiclient, 
+                                self.apiclient,
                                 projectid=self.project.id,
                                 listall=True
                                 )
@@ -640,7 +646,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                     "Check list networks response returns a valid network"
                     )
         network = networks[0]
-        self.debug("Associating public IP for project: %s" % 
+        self.debug("Associating public IP for project: %s" %
                                                             self.project.id)
         public_ip_1 = PublicIPAddress.create(
                                            self.apiclient,
@@ -679,16 +685,16 @@ class TestResourceLimitsProject(cloudstackTestCase):
         # 1. set max no of snapshots per project to 1.
         # 2. Create one snapshot in the project. Snapshot should be
         #    successfully created
-        # 5. Try to create another snapshot in this project. It should give      
+        # 5. Try to create another snapshot in this project. It should give
         #    user an appropriate error and an alert should be generated.
 
         self.debug(
-            "Updating snapshot resource limits for project: %s" % 
+            "Updating snapshot resource limits for project: %s" %
                                         self.project.id)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              3, # Snapshot
+                              3,    # Snapshot
                               max=1,
                               projectid=self.project.id
                               )
@@ -760,12 +766,12 @@ class TestResourceLimitsProject(cloudstackTestCase):
         #    should be generated.
 
         self.debug(
-            "Updating volume resource limits for project: %s" % 
+            "Updating volume resource limits for project: %s" %
                                                     self.project.id)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              2, # Volume
+                              2,    # Volume
                               max=2,
                               projectid=self.project.id
                               )
@@ -796,12 +802,17 @@ class TestResourceLimitsProject(cloudstackTestCase):
                           projectid=self.project.id
                         )
         return
-    
+
     def test_07_templates_per_project(self):
         """Test Templates limit per project
         """
+<<<<<<< HEAD
 
         # Validate the following 
+=======
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
+        # Validate the following
+>>>>>>> 6d17e21... This commit has following fixes:
         # 1. set max no of templates per project to 1.
         # 2. Create a template in this project. Both template should be in
         #    ready state
@@ -811,17 +822,17 @@ class TestResourceLimitsProject(cloudstackTestCase):
         # Reset the volume limits
         update_resource_limit(
                               self.apiclient,
-                              2, # Volume
+                              2,    # Volume
                               max=5,
                               projectid=self.project.id
                               )
         self.debug(
-            "Updating template resource limits for domain: %s" % 
+            "Updating template resource limits for domain: %s" %
                                         self.account.account.domainid)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              4, # Template
+                              4,    # Template
                               max=1,
                               projectid=self.project.id
                               )

@@ -49,8 +49,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
+                                    "cpuspeed": 100,    # in MHz
+                                    "memory": 64,       # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Small",
@@ -71,15 +71,15 @@ class Services:
                                 "diskname": "Test Volume",
                                  },
                         "templates": {
-                            # Configs for different Template formats 
+                            # Configs for different Template formats
                             # For Eg. raw image, zip etc
-                            0:{
+                            0: {
                                 "displaytext": "Public Template",
                                 "name": "Public template",
                                 "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
                                 "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                                 "hypervisor": 'XenServer',
-                                "format" : 'VHD',
+                                "format": 'VHD',
                                 "isfeatured": True,
                                 "ispublic": True,
                                 "isextractable": True,
@@ -92,11 +92,11 @@ class Services:
                                 "templatefilter": 'self',
                         },
                         "templatefilter": 'self',
-                        "destzoneid": 2, # For Copy template (Destination zone)
+                        "destzoneid": 2,    # For Copy template (Destination zone)
                         "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
                         "sleep": 60,
                         "timeout": 10,
-                        "mode": 'advanced', # Networking mode: Advanced, basic
+                        "mode": 'advanced',     # Networking mode: Advanced, basic
                      }
 
 
@@ -162,7 +162,7 @@ class TestCreateTemplate(cloudstackTestCase):
     def test_01_create_template(self):
         """Test create public & private template
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
         # Validate the following:
         # 1. Upload a templates in raw img format. Create a Vm instances from
         #    raw img template.
@@ -212,7 +212,7 @@ class TestCreateTemplate(cloudstackTestCase):
                     break
                 elif timeout == 0:
                     raise Exception("List template failed!")
-                
+
                 time.sleep(5)
                 timeout = timeout - 1
             #Verify template response to check whether template added successfully
@@ -221,13 +221,13 @@ class TestCreateTemplate(cloudstackTestCase):
                         True,
                         "Check for list template response return valid data"
                         )
-            
+
             self.assertNotEqual(
                             len(list_template_response),
                             0,
                             "Check template available in List Templates"
                         )
-            
+
             template_response = list_template_response[0]
             self.assertEqual(
                             template_response.isready,
@@ -314,10 +314,10 @@ class TestTemplates(cloudstackTestCase):
         #Stop virtual machine
         cls.virtual_machine.stop(cls.api_client)
 
-        timeout = cls.services["timeout"]        
+        timeout = cls.services["timeout"]
         #Wait before server has be successfully stopped
         time.sleep(cls.services["sleep"])
-        
+
         while True:
             list_volume = list_volumes(
                                    cls.api_client,
@@ -329,10 +329,10 @@ class TestTemplates(cloudstackTestCase):
                 break
             elif timeout == 0:
                 raise Exception("List volumes failed.")
-            
+
             time.sleep(5)
-            timeout = timeout -1
-            
+            timeout = timeout - 1
+
         cls.volume = list_volume[0]
 
         #Create template from volume
@@ -378,7 +378,7 @@ class TestTemplates(cloudstackTestCase):
     def test_01_create_template_volume(self):
         """Test Create template from volume
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
         # Validate the following:
         # 1. Deploy new VM using the template created from Volume
@@ -392,7 +392,7 @@ class TestTemplates(cloudstackTestCase):
                                     domainid=self.account.account.domainid,
                                     serviceofferingid=self.service_offering.id,
                                     )
-        
+
         self.debug("creating an instance with template ID: %s" % self.template.id)
         self.cleanup.append(virtual_machine)
         vm_response = list_virtual_machines(
@@ -417,12 +417,12 @@ class TestTemplates(cloudstackTestCase):
 
     def test_02_copy_template(self):
         """Test for copy template from one zone to another"""
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. copy template should be successful and
         #    secondary storage should contain new copied template.
-        
+
         self.debug(
             "Copying template from zone: %s to %s" % (
                                                 self.template.id,
@@ -447,7 +447,7 @@ class TestTemplates(cloudstackTestCase):
                         True,
                         "Check for list template response return valid list"
                         )
-        
+
         self.assertNotEqual(
                             len(list_template_response),
                             0,
@@ -476,7 +476,7 @@ class TestTemplates(cloudstackTestCase):
     def test_03_delete_template(self):
         """Test Delete template
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
         # Validate the following:
         # 1. Create a template and verify it is shown in list templates response
@@ -495,7 +495,7 @@ class TestTemplates(cloudstackTestCase):
                         True,
                         "Check for list template response return valid list"
                         )
-        
+
         self.assertNotEqual(
                             len(list_template_response),
                             0,
@@ -508,12 +508,12 @@ class TestTemplates(cloudstackTestCase):
                             self.template.id,
                             "Check display text of updated template"
                         )
-        
+
         self.debug("Deleting template: %s" % self.template)
         # Delete the template
         self.template.delete(self.apiclient)
         self.debug("Delete template: %s successful" % self.template)
-        
+
         list_template_response = list_templates(
                                     self.apiclient,
                                     templatefilter=\
@@ -531,7 +531,7 @@ class TestTemplates(cloudstackTestCase):
     def test_04_template_from_snapshot(self):
         """Create Template from snapshot
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 2. Snapshot the Root disk
@@ -546,7 +546,7 @@ class TestTemplates(cloudstackTestCase):
                         listall=True
                         )
         volume = volumes[0]
-        
+
         self.debug("Creating a snapshot from volume: %s" % volume.id)
         #Create a snapshot of volume
         snapshot = Snapshot.create(

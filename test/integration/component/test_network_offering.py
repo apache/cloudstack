@@ -47,8 +47,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
+                                    "cpuspeed": 100,    # in MHz
+                                    "memory": 64,       # In MBs
                                     },
                          "network_offering": {
                                     "name": 'Network offering-VR services',
@@ -57,16 +57,16 @@ class Services:
                                     "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
                                     "traffictype": 'GUEST',
                                     "availability": 'Optional',
-                                    "serviceProviderList" : {
+                                    "serviceProviderList": {
                                             "Dhcp": 'VirtualRouter',
                                             "Dns": 'VirtualRouter',
                                             "SourceNat": 'VirtualRouter',
                                             "PortForwarding": 'VirtualRouter',
-					                        "Vpn": 'VirtualRouter',
-					                        "Firewall": 'VirtualRouter',
-					                        "Lb": 'VirtualRouter',
-					                        "UserData": 'VirtualRouter',
-					                        "StaticNat": 'VirtualRouter',
+                                            "Vpn": 'VirtualRouter',
+                                            "Firewall": 'VirtualRouter',
+                                            "Lb": 'VirtualRouter',
+                                            "UserData": 'VirtualRouter',
+                                            "StaticNat": 'VirtualRouter',
                                         },
                                     },
                          "network_offering_netscaler": {
@@ -76,7 +76,7 @@ class Services:
                                     "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
                                     "traffictype": 'GUEST',
                                     "availability": 'Optional',
-                                    "serviceProviderList" : {
+                                    "serviceProviderList": {
                                             "Dhcp": 'VirtualRouter',
                                             "Dns": 'VirtualRouter',
                                             "SourceNat": 'VirtualRouter',
@@ -118,7 +118,7 @@ class Services:
                                     "publicport": 66,
                                     "protocol": "TCP"
                                 },
-                         "fw_rule":{
+                         "fw_rule": {
                                     "startport": 1,
                                     "endport": 6000,
                                     "cidr": '55.55.0.0/11',
@@ -140,7 +140,7 @@ class Services:
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 10,
-                         "mode":'advanced'
+                         "mode": 'advanced'
                     }
 
 
@@ -212,7 +212,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
     def test_01_network_off_without_conserve_mode(self):
         """Test Network offering with Conserve mode off and VR - All services
         """
-        
+
         tags = ["advanced"]
 
         # Validate the following
@@ -245,7 +245,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
 
         self.debug("Created n/w offering with ID: %s" %
                                                     self.network_offering.id)
-	    # Enable Network offering
+        # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
 
         # Creating network using the network offering created
@@ -257,7 +257,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                     accountid=self.account.account.name,
                                     domainid=self.account.account.domainid,
                                     networkofferingid=self.network_offering.id,
-				                    zoneid=self.zone.id
+                                    zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
@@ -334,7 +334,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                         ip_with_nat_rule.ipaddress.ipaddress)
         NATRule.create(
                          self.apiclient,
-                       	 virtual_machine,
+                         virtual_machine,
                          self.services["natrule"],
                          ipaddressid=ip_with_nat_rule.ipaddress.id
                       )
@@ -457,7 +457,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
     def test_02_network_off_with_conserve_mode(self):
         """Test Network offering with Conserve mode ON and VR - All services
         """
-        
+
         tags = ["advanced"]
 
         # Validate the following
@@ -488,7 +488,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
 
         self.debug("Created n/w offering with ID: %s" %
                                                     self.network_offering.id)
-	# Enable Network offering
+    # Enable Network offering
         self.network_offering.update(self.apiclient, state='Enabled')
 
         # Creating network using the network offering created
@@ -500,7 +500,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
                                     accountid=self.account.account.name,
                                     domainid=self.account.account.domainid,
                                     networkofferingid=self.network_offering.id,
-				                    zoneid=self.zone.id
+                                    zoneid=self.zone.id
                                     )
         self.debug("Created network with ID: %s" % self.network.id)
 
@@ -705,7 +705,7 @@ class TestNOVirtualRouter(cloudstackTestCase):
         vpns = Vpn.list(
                         self.apiclient,
                         publicipid=src_nat.id,
-			listall=True,
+            listall=True,
                         )
 
         self.assertEqual(
@@ -790,7 +790,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
     def test_01_network_off_without_conserve_mode(self):
         """Test Nw off with Conserve mode off, VR-All services, LB-netscaler
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -802,13 +802,12 @@ class TestNOWithNetscaler(cloudstackTestCase):
         # 5. On an ipaddress that has Lb rules , we should NOT allow firewall
         #    rules to be programmed.
         # 6. On an ipaddress that has Lb rules , we should NOT allow PF rules
-        #    to be programmed.   
+        #    to be programmed.
         # 7. We should be allowed to program multiple PF rules on the same Ip
         #    address on different public ports.
         # 8. We should be allowed to program multiple LB rules on the same Ip
-        #    address for different public port ranges.   
+        #    address for different public port ranges.
         # 9. On source NAT ipaddress, we should NOT be allowed to Enable VPN.
-
 
         # Create a network offering with all virtual router services enabled
         self.debug(
@@ -897,7 +896,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
                            )
         self.debug("Creating firewall rule on source NAT: %s" %
                                                         src_nat.ipaddress)
-        #Create Firewall rule on source NAT       
+        #Create Firewall rule on source NAT
         fw_rule = FireWallRule.create(
                             self.apiclient,
                             ipaddressid=src_nat.id,
@@ -1060,7 +1059,7 @@ class TestNOWithNetscaler(cloudstackTestCase):
     def test_02_network_off_with_conserve_mode_netscaler(self):
         """Test NW off with Conserve mode ON, LB-Netscaler and VR-All services
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -1073,13 +1072,12 @@ class TestNOWithNetscaler(cloudstackTestCase):
         # 5. On an ipaddress that has Lb rules , we should NOT allow firewall
         #    rules to be programmed.
         # 6. On an ipaddress that has Lb rules , we should NOT allow PF rules
-        #    to be programmed.   
+        #    to be programmed.
         # 7. We should be allowed to program multiple PF rules on the same Ip
         #    address on different public ports.
         # 8. We should be allowed to program multiple LB rules on the same Ip
-        #    address for different public port ranges.   
+        #    address for different public port ranges.
         # 9. On source NAT ipaddress, we should be allowed to Enable VPN.
-
 
         # Create a network offering with all virtual router services enabled
         self.debug(
@@ -1436,7 +1434,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
     def test_01_nwupgrade_netscaler_conserve_on(self):
         """Test Nw upgrade to netscaler lb service and conserve mode ON
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following
@@ -1635,7 +1633,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
     def test_02_nwupgrade_netscaler_conserve_off(self):
         """Test Nw upgrade to netscaler lb service and conserve mode OFF
         """
-        
+
         tags = ["advancedns"]
 
         # Validate the following

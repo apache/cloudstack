@@ -37,7 +37,7 @@ class Services:
 
     def __init__(self):
         self.services = {
-                "disk_offering":{
+                "disk_offering": {
                     "displaytext": "Small",
                     "name": "Small",
                     "disksize": 1
@@ -67,8 +67,8 @@ class Services:
                     "name": "Tiny Instance",
                     "displaytext": "Tiny Instance",
                     "cpunumber": 1,
-                    "cpuspeed": 100, # in MHz
-                    "memory": 64, # In MBs
+                    "cpuspeed": 100,    # in MHz
+                    "memory": 64,       # In MBs
                 },
                 "security_group": {
                     "name": 'SSH',
@@ -110,8 +110,9 @@ class Services:
                     "protocol": 'TCP',
                     "startport": 22,
                     "endport": 22,
+                    "cidrlist": '0.0.0.0/0'
                 },
-		"mgmt_server": {
+                "mgmt_server": {
                     "username": "root",
                     "password": "fr3sca",
                     "ipaddress": "192.168.100.21"
@@ -120,7 +121,7 @@ class Services:
             # CentOS 5.3 (64-bit)
             "sleep": 60,
             "timeout": 10,
-            "mode":'basic',
+            "mode": 'basic',
             # Networking mode: Basic or Advanced
         }
 
@@ -197,7 +198,7 @@ class TestDefaultSecurityGroupEgress(cloudstackTestCase):
     def test_deployVM_InDefaultSecurityGroup(self):
         """Test deploy VM in default security group with no egress rules
         """
-        
+
         tags = ["sg", "eip"]
 
         # Validate the following:
@@ -354,7 +355,7 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
     def test_authorizeIngressRule(self):
         """Test authorize ingress rule
         """
-        
+
         tags = ["sg", "eip"]
 
         # Validate the following:
@@ -512,7 +513,7 @@ class TestDefaultGroupEgress(cloudstackTestCase):
     def test_01_default_group_with_egress(self):
         """Test default group with egress rule before VM deploy and ping, ssh
         """
-        
+
         tags = ["sg", "eip"]
 
         # Validate the following:
@@ -714,7 +715,7 @@ class TestDefaultGroupEgressAfterDeploy(cloudstackTestCase):
         """ Test default group with egress rule added after vm deploy and ping,
             ssh test
         """
-        
+
         tags = ["sg", "eip"]
 
         # Validate the following:
@@ -811,7 +812,7 @@ class TestDefaultGroupEgressAfterDeploy(cloudstackTestCase):
             # --- www.l.google.com ping statistics ---
             # 1 packets transmitted, 1 received, 0% packet loss, time 0ms
             # rtt min/avg/max/mdev = 25.970/25.970/25.970/0.000 ms
-	    self.debug("SSH result: %s" % str(res))
+            self.debug("SSH result: %s" % str(res))
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
                       (self.virtual_machine.ipaddress, e)
@@ -896,7 +897,7 @@ class TestRevokeEgressRule(cloudstackTestCase):
     def test_revoke_egress_rule(self):
         """Test revoke security group egress rule
         """
-        
+
         tags = ["sg", "eip"]
 
         # Validate the following:
@@ -997,7 +998,7 @@ class TestRevokeEgressRule(cloudstackTestCase):
             # --- www.l.google.com ping statistics ---
             # 1 packets transmitted, 1 received, 0% packet loss, time 0ms
             # rtt min/avg/max/mdev = 25.970/25.970/25.970/0.000 ms
-	    self.debug("SSH result: %s" % str(res))
+            self.debug("SSH result: %s" % str(res))
         except Exception as e:
             self.fail("SSH Access failed for %s: %s" % \
                       (self.virtual_machine.ipaddress, e)
@@ -1038,7 +1039,7 @@ class TestRevokeEgressRule(cloudstackTestCase):
 
         result = security_group.revokeEgress(
                                 self.apiclient,
-                                id = ssh_egress_rule["ruleid"]
+                                id=ssh_egress_rule["ruleid"]
                                 )
         self.debug("Revoke egress rule result: %s" % result)
 
@@ -1158,7 +1159,7 @@ class TestInvalidAccountAuthroize(cloudstackTestCase):
     def test_invalid_account_authroize(self):
         """Test invalid account authroize
         """
-        
+
         tags = ["sg", "eip"]
 
         # Validate the following:
@@ -1286,7 +1287,7 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
     def test_multiple_account_egress_rule_negative(self):
         """Test multiple account egress rules negative case
         """
-        
+
         tags = ["sg", "eip"]
 
         # Validate the following:
@@ -1335,14 +1336,14 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
                 "Authorizing egress rule for sec group ID: %s for ssh access"
                                                         % security_group.id)
         # Authorize to only account not CIDR
-	user_secgrp_list = {self.accountB.account.name: 'default'}
+        user_secgrp_list = {self.accountB.account.name: 'default'}
 
         egress_rule = security_group.authorizeEgress(
                                         self.apiclient,
                                         self.services["sg_account"],
                                         account=self.accountA.account.name,
                                         domainid=self.accountA.account.domainid,
-					user_secgrp_list=user_secgrp_list
+                                        user_secgrp_list=user_secgrp_list
                                         )
 
         self.assertEqual(
@@ -1438,7 +1439,7 @@ class TestMultipleAccountsEgressRuleNeg(cloudstackTestCase):
 
         try:
             self.debug("SSHing into VM type B from VM A")
-	    self.debug("VM IP: %s" % self.virtual_machineB.ssh_ip)
+            self.debug("VM IP: %s" % self.virtual_machineB.ssh_ip)
             res = ssh.execute("ssh %s@%s" % (
                                 self.services["virtual_machine"]["username"],
                                 self.virtual_machineB.ssh_ip
@@ -1534,7 +1535,7 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
     def test_multiple_account_egress_rule_positive(self):
         """Test multiple account egress rules positive case
         """
-        
+
         tags = ["sg", "eip"]
 
         # Validate the following:
@@ -1610,14 +1611,14 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
                 "Authorizing egress rule for sec group ID: %s for ssh access"
                                                         % security_groupA.id)
         # Authorize to only account not CIDR
-	user_secgrp_list = {self.accountB.account.name: security_groupB.name}
+        user_secgrp_list = {self.accountB.account.name: security_groupB.name}
 
         egress_rule = security_groupA.authorizeEgress(
                                         self.apiclient,
                                         self.services["sg_account"],
                                         account=self.accountA.account.name,
                                         domainid=self.accountA.account.domainid,
-					user_secgrp_list=user_secgrp_list
+                                        user_secgrp_list=user_secgrp_list
                                         )
 
         self.assertEqual(
@@ -1734,7 +1735,7 @@ class TestMultipleAccountsEgressRule(cloudstackTestCase):
 
         try:
             self.debug("SSHing into VB type B from VM A")
-	    self.debug("VM IP: %s" % self.virtual_machineB.ssh_ip)
+            self.debug("VM IP: %s" % self.virtual_machineB.ssh_ip)
 
             res = ssh.execute("ssh %s@%s" % (
                                 self.services["virtual_machine"]["username"],
@@ -1825,7 +1826,7 @@ class TestStartStopVMWithEgressRule(cloudstackTestCase):
     def test_start_stop_vm_egress(self):
         """ Test stop start Vm with egress rules
         """
-        
+
         tags = ["sg", "eip"]
 
         # Validate the following:
@@ -1965,6 +1966,7 @@ class TestStartStopVMWithEgressRule(cloudstackTestCase):
                       )
         return
 
+
 @unittest.skip("Valid bug- ID: CS-12647")
 class TestInvalidParametersForEgress(cloudstackTestCase):
 
@@ -2036,7 +2038,7 @@ class TestInvalidParametersForEgress(cloudstackTestCase):
     def test_invalid_parameters(self):
         """ Test invalid parameters for egress rules
         """
-        
+
         tags = ["sg", "eip"]
 
         # Validate the following:
@@ -2223,7 +2225,7 @@ class TestEgressAfterHostMaintainance(cloudstackTestCase):
     def test_egress_after_host_maintainance(self):
         """Test maintenance case for egress
         """
-        
+
         tags = ["sg", "eip"]
 
         # Validate the following:
@@ -2329,12 +2331,12 @@ class TestEgressAfterHostMaintainance(cloudstackTestCase):
                     )
         vm = vms[0]
 
-        self.debug("Enabling host maintainance for ID: %s" % host.id)
+        self.debug("Enabling host maintainance for ID: %s" % vm.hostid)
         cmd = prepareHostForMaintenance.prepareHostForMaintenanceCmd()
         cmd.id = vm.hostid
         self.apiclient.prepareHostForMaintenance(cmd)
 
-        self.debug("Canceling host maintainance for ID: %s" % host.id)
+        self.debug("Canceling host maintainance for ID: %s" % vm.hostid)
         cmd = cancelHostMaintenance.cancelHostMaintenanceCmd()
         cmd.id = vm.hostid
         self.apiclient.cancelHostMaintenance(cmd)

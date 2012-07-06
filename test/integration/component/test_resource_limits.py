@@ -25,6 +25,7 @@ from integration.lib.base import *
 from integration.lib.common import *
 import datetime
 
+
 class Services:
     """Test Resource Limits Services
     """
@@ -47,8 +48,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
+                                    "cpuspeed": 100,    # in MHz
+                                    "memory": 64,       # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Small",
@@ -80,6 +81,7 @@ class Services:
                         "timeout": 10,
                         "mode": 'advanced',
                     }
+
 
 class TestResourceLimitsAccount(cloudstackTestCase):
 
@@ -153,7 +155,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
     def test_01_vm_per_account(self):
         """Test VM limit per account
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. Set user_vm=1 limit for account 1.
@@ -162,18 +164,18 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         # 3. Try to start 2 VMs account 2. Verify 2 SM are started properly
 
         self.debug(
-            "Updating instance resource limit for account: %s" % 
+            "Updating instance resource limit for account: %s" %
                                                 self.account_1.account.name)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              0, # Instance
+                              0,    # Instance
                               account=self.account_1.account.name,
                               domainid=self.account_1.account.domainid,
                               max=1
                               )
         self.debug(
-            "Deploying VM instance in account: %s" % 
+            "Deploying VM instance in account: %s" %
                                         self.account_1.account.name)
 
         virtual_machine = VirtualMachine.create(
@@ -204,7 +206,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                 serviceofferingid=self.service_offering.id
                                 )
         self.debug(
-            "Deploying VM instance in account: %s" % 
+            "Deploying VM instance in account: %s" %
                                         self.account_2.account.name)
         # Start 2 instances for account_2
         virtual_machine_1 = VirtualMachine.create(
@@ -224,7 +226,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                         )
 
         self.debug(
-            "Deploying VM instance in account: %s" % 
+            "Deploying VM instance in account: %s" %
                                         self.account_2.account.name)
         virtual_machine_2 = VirtualMachine.create(
                                 self.apiclient,
@@ -246,7 +248,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
     def test_02_publicip_per_account(self):
         """Test Public IP limit per account
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. Set Public_IP= 2 limit for account 1.
@@ -256,21 +258,21 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         #    denied to acquire more than one IP.
         # 5. Acquire 2 IP in account 2. Verify account 2 should be able to
         #    Acquire IP without any warning
-        
+
         self.debug(
-            "Updating public IP resource limit for account: %s" % 
+            "Updating public IP resource limit for account: %s" %
                                                 self.account_1.account.name)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              1, # Public Ip
+                              1,    # Public Ip
                               account=self.account_1.account.name,
                               domainid=self.account_1.account.domainid,
                               max=2
                               )
 
         self.debug(
-            "Deploying VM instance in account: %s" % 
+            "Deploying VM instance in account: %s" %
                                         self.account_1.account.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
@@ -289,7 +291,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                         )
 
         self.debug(
-            "Deploying VM instance in account: %s" % 
+            "Deploying VM instance in account: %s" %
                                         self.account_2.account.name)
         # Create VM for second account
         virtual_machine_2 = VirtualMachine.create(
@@ -308,7 +310,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             "Check VM state is Running or not"
                         )
         self.debug(
-            "Associating public IP for account: %s" % 
+            "Associating public IP for account: %s" %
                                         virtual_machine_1.account)
         public_ip_1 = PublicIPAddress.create(
                                            self.apiclient,
@@ -343,7 +345,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                                            )
 
         self.debug(
-            "Associating public IP for account: %s" % 
+            "Associating public IP for account: %s" %
                                         virtual_machine_2.account)
         # Assign Public IP for account 2
         public_ip_3 = PublicIPAddress.create(
@@ -365,7 +367,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                             "Check Public IP state is allocated or not"
                         )
         self.debug(
-            "Associating public IP for account: %s" % 
+            "Associating public IP for account: %s" %
                                         virtual_machine_2.account)
         public_ip_4 = PublicIPAddress.create(
                                            self.apiclient,
@@ -389,7 +391,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
     def test_03_snapshots_per_account(self):
         """Test Snapshot limit per account
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. Set snapshot= 2 limit for account 1.
@@ -401,19 +403,19 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         #    create snapshots without any warning
 
         self.debug(
-            "Updating public IP resource limit for account: %s" % 
+            "Updating public IP resource limit for account: %s" %
                                                 self.account_1.account.name)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              3, # Snapshot
+                              3,    # Snapshot
                               account=self.account_1.account.name,
                               domainid=self.account_1.account.domainid,
                               max=1
                               )
 
         self.debug(
-            "Deploying VM instance in account: %s" % 
+            "Deploying VM instance in account: %s" %
                                         self.account_1.account.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
@@ -432,7 +434,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                         )
 
         self.debug(
-            "Deploying VM instance in account: %s" % 
+            "Deploying VM instance in account: %s" %
                                         self.account_1.account.name)
         # Create VM for second account
         virtual_machine_2 = VirtualMachine.create(
@@ -504,7 +506,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                         "Check for list volume response return valid data"
                         )
         volume = volumes[0]
-        
+
         self.debug("Creating snapshot from volume: %s" % volumes[0].id)
         # Create a snapshot from the ROOTDISK (Account 2)
         snapshot_2 = Snapshot.create(self.apiclient,
@@ -545,7 +547,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
     def test_04_volumes_per_account(self):
         """Test Volumes limit per account
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. Set volumes=2 limit for account 1.
@@ -557,12 +559,12 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         #    create Volume without any warning
 
         self.debug(
-            "Updating volume resource limit for account: %s" % 
+            "Updating volume resource limit for account: %s" %
                                                 self.account_1.account.name)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              2, # Volume
+                              2,    # Volume
                               account=self.account_1.account.name,
                               domainid=self.account_1.account.domainid,
                               max=2
@@ -687,7 +689,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
     def test_05_templates_per_account(self):
         """Test Templates limit per account
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. Set templates=1 limit for account 1.
@@ -697,19 +699,19 @@ class TestResourceLimitsAccount(cloudstackTestCase):
         #    able to create template without any error
 
         self.debug(
-            "Updating template resource limit for account: %s" % 
+            "Updating template resource limit for account: %s" %
                                                 self.account_1.account.name)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              4, # Template
+                              4,    # Template
                               account=self.account_1.account.name,
                               domainid=self.account_1.account.domainid,
                               max=1
                               )
 
         self.debug(
-            "Updating volume resource limit for account: %s" % 
+            "Updating volume resource limit for account: %s" %
                                                 self.account_1.account.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
@@ -728,7 +730,7 @@ class TestResourceLimitsAccount(cloudstackTestCase):
                         )
 
         self.debug(
-            "Deploying virtual machine for account: %s" % 
+            "Deploying virtual machine for account: %s" %
                                                 self.account_2.account.name)
         # Create VM for second account
         virtual_machine_2 = VirtualMachine.create(
@@ -917,7 +919,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
     def test_01_vm_per_domain(self):
         """Test VM limit per domain
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. Set max VM per domain to 2
@@ -926,12 +928,12 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         #    should be raised
 
         self.debug(
-            "Updating instance resource limits for domain: %s" % 
+            "Updating instance resource limits for domain: %s" %
                                         self.account.account.domainid)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              0, # Instance
+                              0,    # Instance
                               domainid=self.account.account.domainid,
                               max=2
                               )
@@ -983,7 +985,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
     def test_01_publicip_per_domain(self):
         """Test Public IP limit per domain
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. set max no of IPs per domain to 2.
@@ -994,12 +996,12 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         #    appropriate error and an alert should be generated.
 
         self.debug(
-            "Updating public IP resource limits for domain: %s" % 
+            "Updating public IP resource limits for domain: %s" %
                                         self.account.account.domainid)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              1, # Public Ip
+                              1,    # Public Ip
                               domainid=self.account.account.domainid,
                               max=2
                               )
@@ -1053,7 +1055,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
     def test_03_snapshots_per_domain(self):
         """Test Snapshot limit per domain
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. set max no of snapshots per domain to 1.
@@ -1065,12 +1067,12 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         #    user an appropriate error and an alert should be generated.
 
         self.debug(
-            "Updating snapshot resource limits for domain: %s" % 
+            "Updating snapshot resource limits for domain: %s" %
                                         self.account.account.domainid)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              3, # Snapshot
+                              3,    # Snapshot
                               domainid=self.account.account.domainid,
                               max=1
                               )
@@ -1136,7 +1138,7 @@ class TestResourceLimitsDomain(cloudstackTestCase):
     def test_04_volumes_per_domain(self):
         """Test Volumes limit per domain
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. set max no of volume per domain to 1.
@@ -1147,12 +1149,12 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         #    should be generated.
 
         self.debug(
-            "Updating volume resource limits for domain: %s" % 
+            "Updating volume resource limits for domain: %s" %
                                         self.account.account.domainid)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              2, # Volume
+                              2,    # Volume
                               domainid=self.account.account.domainid,
                               max=2
                               )
@@ -1189,9 +1191,9 @@ class TestResourceLimitsDomain(cloudstackTestCase):
     def test_05_templates_per_domain(self):
         """Test Templates limit per domain
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
-        # Validate the following 
+        # Validate the following
         # 1. set max no of templates per domain to 2.
         # 2. Create an account in this domain
         # 3. Create 2 templates in this domain. Both template should be in
@@ -1202,18 +1204,18 @@ class TestResourceLimitsDomain(cloudstackTestCase):
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              2, # Volume
+                              2,    # Volume
                               domainid=self.account.account.domainid,
                               max=5
                               )
 
         self.debug(
-            "Updating template resource limits for domain: %s" % 
+            "Updating template resource limits for domain: %s" %
                                         self.account.account.domainid)
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              4, # Template
+                              4,    # Template
                               domainid=self.account.account.domainid,
                               max=2
                               )
@@ -1301,14 +1303,14 @@ class TestResources(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.api_client = super(
-                               TestResources, 
+                               TestResources,
                                cls
                                ).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
         cls._cleanup = []
-	return
+    return
 
     @classmethod
     def tearDownClass(cls):
@@ -1335,16 +1337,16 @@ class TestResources(cloudstackTestCase):
 
     def test_01_zones(self):
         """Check the status of zones"""
-        tags = ["advanced","advancedns"]
-        
+        tags = ["advanced", "advancedns"]
+
         # Validate the following
         # 1. List zones
         # 2. Check allocation state is "enabled" or not
-        
+
         zones = Zone.list(
                           self.apiclient,
                           id=self.zone.id,
-			  listall=True
+              listall=True
                           )
         self.assertEqual(
                          isinstance(zones, list),
@@ -1361,16 +1363,16 @@ class TestResources(cloudstackTestCase):
 
     def test_02_pods(self):
         """Check the status of pods"""
-        tags = ["advanced","advancedns"]
-        
+        tags = ["advanced", "advancedns"]
+
         # Validate the following
         # 1. List pods
         # 2. Check allocation state is "enabled" or not
-        
+
         pods = Pod.list(
                           self.apiclient,
                           zoneid=self.zone.id,
-			  listall=True
+              listall=True
                           )
         self.assertEqual(
                          isinstance(pods, list),
@@ -1384,19 +1386,19 @@ class TestResources(cloudstackTestCase):
                              "Pods allocation state should be enabled"
                              )
         return
-    
+
     def test_03_clusters(self):
         """Check the status of clusters"""
-        tags = ["advanced","advancedns"]
-        
+        tags = ["advanced", "advancedns"]
+
         # Validate the following
         # 1. List clusters
         # 2. Check allocation state is "enabled" or not
-        
+
         clusters = Cluster.list(
                           self.apiclient,
                           zoneid=self.zone.id,
-			  listall=True
+              listall=True
                           )
         self.assertEqual(
                          isinstance(clusters, list),
@@ -1410,20 +1412,20 @@ class TestResources(cloudstackTestCase):
                              "Clusters allocation state should be enabled"
                              )
         return
-    
+
     def test_04_hosts(self):
         """Check the status of hosts"""
-        tags = ["advanced","advancedns"]
-        
+        tags = ["advanced", "advancedns"]
+
         # Validate the following
         # 1. List hosts with type=Routing
         # 2. Check state is "Up" or not
-        
+
         hosts = Host.list(
                           self.apiclient,
                           zoneid=self.zone.id,
                           type='Routing',
-			  listall=True
+              listall=True
                           )
         self.assertEqual(
                          isinstance(hosts, list),
@@ -1437,19 +1439,19 @@ class TestResources(cloudstackTestCase):
                              "Host should be in Up state and running"
                              )
         return
-    
+
     def test_05_storage_pools(self):
         """Check the status of Storage pools"""
-        tags = ["advanced","advancedns"]
-        
+        tags = ["advanced", "advancedns"]
+
         # Validate the following
         # 1. List storage pools for the zone
         # 2. Check state is "enabled" or not
-        
+
         storage_pools = StoragePool.list(
                           self.apiclient,
                           zoneid=self.zone.id,
-			  listall=True
+              listall=True
                           )
         self.assertEqual(
                          isinstance(storage_pools, list),
@@ -1463,20 +1465,20 @@ class TestResources(cloudstackTestCase):
                              "storage pool should be in Up state and running"
                              )
         return
-    
+
     def test_06_secondary_storage(self):
         """Check the status of secondary storage"""
-        tags = ["advanced","advancedns"]
-        
+        tags = ["advanced", "advancedns"]
+
         # Validate the following
         # 1. List secondary storage
         # 2. Check state is "Up" or not
-        
+
         sec_storages = Host.list(
                           self.apiclient,
                           zoneid=self.zone.id,
                           type='SecondaryStorage',
-			  listall=True
+              listall=True
                           )
         self.assertEqual(
                          isinstance(sec_storages, list),

@@ -50,8 +50,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
+                                    "cpuspeed": 100,    # in MHz
+                                    "memory": 64,       # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Small",
@@ -143,7 +143,7 @@ class TestAttachVolume(cloudstackTestCase):
     def test_01_volume_attach(self):
         """Test Attach volumes (max capacity)
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. Deploy a vm and create 5 data disk
         # 2. Attach all the created Volume to the vm.
@@ -163,7 +163,7 @@ class TestAttachVolume(cloudstackTestCase):
                                    )
             self.debug("Created volume: %s for account: %s" % (
                                                 volume.id,
-                                                self.account.account.name               
+                                                self.account.account.name
                                                 ))
             # Check List Volume response for newly created volume
             list_volume_response = list_volumes(
@@ -182,7 +182,7 @@ class TestAttachVolume(cloudstackTestCase):
                                                 )
             self.debug("Attach volume: %s to VM: %s" % (
                                                 volume.id,
-                                                self.virtual_machine.id       
+                                                self.virtual_machine.id
                                                 ))
         # Check all volumes attached to same VM
         list_volume_response = list_volumes(
@@ -196,7 +196,7 @@ class TestAttachVolume(cloudstackTestCase):
                                 True,
                                 "Check list volumes response for valid list"
                         )
-        
+
         self.assertNotEqual(
                                 list_volume_response,
                                 None,
@@ -246,7 +246,7 @@ class TestAttachVolume(cloudstackTestCase):
                                 True,
                                 "Check list VM response for valid list"
                         )
-        
+
         #Verify VM response to check whether VM deployment was successful
         self.assertNotEqual(
                             len(vm_response),
@@ -276,7 +276,7 @@ class TestAttachVolume(cloudstackTestCase):
                                 True,
                                 "Check list VM response for valid list"
                         )
-        
+
         #Verify VM response to check whether VM deployment was successful
         self.assertNotEqual(
                             len(vm_response),
@@ -295,7 +295,7 @@ class TestAttachVolume(cloudstackTestCase):
     def test_02_volume_attach_max(self):
         """Test attach volumes (more than max) to an instance
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. Attach one more data volume to VM (Already 5 attached)
@@ -312,7 +312,7 @@ class TestAttachVolume(cloudstackTestCase):
                                )
         self.debug("Created volume: %s for account: %s" % (
                                                 volume.id,
-                                                self.account.account.name               
+                                                self.account.account.name
                                                 ))
         # Check List Volume response for newly created volume
         list_volume_response = list_volumes(
@@ -324,7 +324,7 @@ class TestAttachVolume(cloudstackTestCase):
                                 True,
                                 "Check list volumes response for valid list"
                         )
-        
+
         self.assertNotEqual(
                             list_volume_response,
                             None,
@@ -334,7 +334,7 @@ class TestAttachVolume(cloudstackTestCase):
         with self.assertRaises(Exception):
             self.debug("Trying to Attach volume: %s to VM: %s" % (
                                                 volume.id,
-                                                self.virtual_machine.id       
+                                                self.virtual_machine.id
                                                 ))
             self.virtual_machine.attach_volume(
                                                 self.apiclient,
@@ -426,7 +426,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
     def test_01_volume_attach_detach(self):
         """Test Volume attach/detach to VM (5 data volumes)
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. Deploy a vm and create 5 data disk
@@ -449,7 +449,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
                                    )
             self.debug("Created volume: %s for account: %s" % (
                                                 volume.id,
-                                                self.account.account.name               
+                                                self.account.account.name
                                                 ))
             self.cleanup.append(volume)
             volumes.append(volume)
@@ -464,7 +464,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
                                 True,
                                 "Check list volumes response for valid list"
                         )
-        
+
             self.assertNotEqual(
                                 list_volume_response,
                                 None,
@@ -472,7 +472,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
                                 )
             self.debug("Attach volume: %s to VM: %s" % (
                                                 volume.id,
-                                                self.virtual_machine.id       
+                                                self.virtual_machine.id
                                                 ))
             # Attach volume to VM
             self.virtual_machine.attach_volume(
@@ -492,7 +492,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
                                 True,
                                 "Check list volumes response for valid list"
                         )
-        
+
         self.assertNotEqual(
                                 list_volume_response,
                                 None,
@@ -508,7 +508,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
         for volume in volumes:
             self.debug("Detach volume: %s to VM: %s" % (
                                                 volume.id,
-                                                self.virtual_machine.id       
+                                                self.virtual_machine.id
                                                 ))
             self.virtual_machine.detach_volume(
                                                 self.apiclient,
@@ -530,7 +530,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
                                 True,
                                 "Check list VM response for valid list"
                         )
-        
+
         self.assertNotEqual(
                             len(vm_response),
                             0,
@@ -542,7 +542,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
                             'Running',
                             "Check the state of VM"
                         )
-        
+
         # Stop VM
         self.debug("Stopping the VM: %s" % self.virtual_machine.id)
         self.virtual_machine.stop(self.apiclient)
@@ -674,7 +674,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
     def test_01_volume_iso_attach(self):
         """Test Volumes and ISO attach
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. Create and attach 5 data volumes to VM
@@ -693,7 +693,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
                                    )
             self.debug("Created volume: %s for account: %s" % (
                                                 volume.id,
-                                                self.account.account.name               
+                                                self.account.account.name
                                                 ))
             # Check List Volume response for newly created volume
             list_volume_response = list_volumes(
@@ -746,7 +746,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
                          domainid=self.account.account.domainid,
                          )
         self.debug("Created ISO with ID: %s for account: %s" % (
-                                                    iso.id, 
+                                                    iso.id,
                                                     self.account.account.name
                                                     ))
 
@@ -778,7 +778,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
                                 True,
                                 "Check list VM response for valid list"
                         )
-        
+
         self.assertNotEqual(
                             len(vm_response),
                             0,
@@ -870,7 +870,7 @@ class TestVolumes(cloudstackTestCase):
     def test_01_attach_volume(self):
         """Attach a created Volume to a Running VM
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. Create a data volume.
         # 2. List Volumes should not have vmname and virtualmachineid fields in
@@ -954,7 +954,7 @@ class TestVolumes(cloudstackTestCase):
     def test_02_detach_volume(self):
         """Detach a Volume attached to a VM
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. Data disk should be detached from instance
@@ -979,7 +979,7 @@ class TestVolumes(cloudstackTestCase):
                          True,
                          "Check list volumes response for valid list"
                         )
-        
+
         self.assertNotEqual(
                             list_volume_response,
                             None,
@@ -1002,7 +1002,7 @@ class TestVolumes(cloudstackTestCase):
     def test_03_delete_detached_volume(self):
         """Delete a Volume unattached to an VM
         """
-        tags = ["advanced","advancedns"]
+        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. volume should be deleted successfully and listVolume should not
         #    contain the deleted volume details.
