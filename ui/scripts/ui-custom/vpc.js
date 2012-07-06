@@ -161,7 +161,7 @@
         $title.html(name);
         $cidr.html(cidr);
         $vmCount.append(
-          $('<span>').addClass('total').html(virtualMachines.length),
+          $('<span>').addClass('total').html(virtualMachines != null? virtualMachines.length: 0),
           ' VMs'
         );
         $tier.append($actions);
@@ -221,7 +221,7 @@
 
       return $tier;
     },
-    chart: function(args) {
+    chart: function(args) {		 
       var $browser = args.$browser;
       var siteToSiteVPN = args.siteToSiteVPN;
       var tiers = args.tiers;
@@ -260,7 +260,7 @@
         return true;
       };
 
-      if (tiers.length) {
+      if (tiers != null && tiers.length > 0) {
         $(tiers).map(function(index, tier) {
           var $tier = elems.tier({
             name: tier.name,
@@ -538,7 +538,7 @@
             context: context,
             response: {
               success: function(args) {
-                var tiers = args.data.tiers;
+                var tiers = args.tiers;
                 var $chart = elems.chart({
                   $browser: $browser,
                   siteToSiteVPN: siteToSiteVPN,
