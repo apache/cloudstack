@@ -42,7 +42,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd implements FirewallR
             "the protocol for the ACL rule. Valid values are TCP/UDP/ICMP.")
     private String protocol;
 
-    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, required=true, description = "the starting port of ACL")
+    @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "the starting port of ACL")
     private Integer publicStartPort;
 
     @Parameter(name = ApiConstants.END_PORT, type = CommandType.INTEGER, description = "the ending port of ACL")
