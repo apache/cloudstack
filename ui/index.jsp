@@ -209,8 +209,9 @@
             <div class="step network" wizard-step-id="network">
               <!-- 5a: Network description -->
               <div class="wizard-step-conditional nothing-to-select">
-                <p><fmt:message key="message.zone.no.network.selection"/></p>
-                <p><fmt:message key="message.please.proceed"/></p>
+                <p id="from_instance_page_1"><fmt:message key="message.zone.no.network.selection"/></p>
+								<p id="from_instance_page_2"><fmt:message key="message.please.proceed"/></p>
+								<p id="from_vpc_tier"></p>                
               </div>
 
               <!-- 5b: Select network -->

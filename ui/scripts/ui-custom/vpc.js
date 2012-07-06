@@ -341,34 +341,31 @@
         },
 
         // Success
-        function(args) {
-          var newData = args.data ? args.data : {};
-          var newTier = $.extend(true, {}, context.tiers[0], newData);
-          var newContext = $.extend(true, {}, context);
-
-          // Update data
-          newContext.tiers = [newTier];
-
-          if (remove) {
-            $tier.remove();
-          } else {
-            $loading.remove();
-          }
-
-          if (actionID == 'addVM') {
-            // Increment VM total
-            var $total = $tier.find('.vm-count .total');
-            var prevTotal = parseInt($total.html());
-            var newTotal = prevTotal + 1;
-
-            $total.html(newTotal);
-          }
-
-          filterActions({
-            $actions: $actions,
-            actionPreFilter: actionPreFilter,
-            context: newContext
-          });
+        function(args) {				  
+					if (actionID == 'addVM') {	
+						// Increment VM total
+						var $total = $tier.find('.vm-count .total');
+						var prevTotal = parseInt($total.html());
+						var newTotal = prevTotal + 1;
+						$total.html(newTotal);
+						
+						$loading.remove();
+						
+						var newVM = args.data;		
+            var newContext = $.extend(true, {}, context, {
+						  vms: [newVM]
+						});			
+						filterActions({
+							$actions: $actions,
+							actionPreFilter: actionPreFilter,
+							context: newContext
+						});						
+					}	
+					
+					else if (actionID == 'remove') { //remove tier		
+					  $tier.remove();
+					}				
+					
         },
 
         {},

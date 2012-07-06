@@ -3140,7 +3140,12 @@
           },
           actions: {
             add: {
-              label: 'Add VPC',
+              label: 'Add VPC',							
+							messages: {								
+								notification: function(args) {
+									return 'Add VPC';
+								}
+							},
               createForm: {
                 title: 'Add VPC',
 								messages: {

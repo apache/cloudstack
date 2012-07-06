@@ -483,8 +483,12 @@
         addVM: {
           label: 'Add VM to tier',
           shortLabel: 'Add VM',
-          action: cloudStack.uiCustom.instanceWizard(
-            cloudStack.instanceWizard
+          action: cloudStack.uiCustom.instanceWizard(						
+						$.extend(true, {}, cloudStack.instanceWizard, {
+						  pluginForm: {
+								name: 'vpcTierInstanceWizard'
+							}
+						})	
           ),
           notification: {
             poll: pollAsyncJobResult
@@ -535,7 +539,7 @@
 									}
 								});								
 							}
-						}								
+						}		
 						args.response.success({ tiers: networks });
 					}
 				});	 

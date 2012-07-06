@@ -162,7 +162,9 @@
         var dataProvider = function(step, providerArgs, callback) {
           // Call appropriate data provider
           args.steps[step - 1]($.extend(providerArgs, {
-            currentData: cloudStack.serializeForm($form)
+            currentData: cloudStack.serializeForm($form),
+						initArgs: args,
+						context: context
           }));
         };
 

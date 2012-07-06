@@ -231,8 +231,22 @@
         }
       }
 
-      if (selectedZoneObj.networktype == "Advanced") {  //Advanced zone. Show network list.
-        step5ContainerType = 'select-network';
+      if (selectedZoneObj.networktype == "Advanced") {  //Advanced zone. Show network list.	 
+				var $networkStep = $(".step.network:visible .nothing-to-select");		
+				if(args.initArgs.pluginForm != null && args.initArgs.pluginForm.name == "vpcTierInstanceWizard") { //from VPC Tier chart
+				  step5ContainerType = 'nothing-to-select'; 					
+					$networkStep.find("#from_instance_page_1").hide();		
+          $networkStep.find("#from_instance_page_2").hide();					
+					$networkStep.find("#from_vpc_tier").text("tier " + args.context.tiers[0].name);					
+					$networkStep.find("#from_vpc_tier").show();					
+				}
+			  else { //from Instance page 
+          step5ContainerType = 'select-network';
+					$networkStep.find("#from_instance_page_1").show();		
+          $networkStep.find("#from_instance_page_2").show();
+					$networkStep.find("#from_vpc_tier").text("");			
+					$networkStep.find("#from_vpc_tier").hide();
+				}
       }
       else { //Basic zone. Show securigy group list or nothing(when no SecurityGroup service in guest network)
         var includingSecurityGroupService = false;
@@ -370,14 +384,6 @@
     }
     ],
     action: function(args) {
-/*
-var isValid = true;
-isValid &= validateString("Name", $thisPopup.find("#wizard_vm_name"), $thisPopup.find("#wizard_vm_name_errormsg"), true);   //optional
-isValid &= validateString("Group", $thisPopup.find("#wizard_vm_group"), $thisPopup.find("#wizard_vm_group_errormsg"), true); //optional
-if (!isValid)
-return;
-*/
-
       // Create a new VM!!!!
       var array1 = [];
 
@@ -470,7 +476,11 @@ return;
         if(checkedSecurityGroupIdArray.length > 0)
           array1.push("&securitygroupids=" + checkedSecurityGroupIdArray.join(","));
       }
-
+      else if (step5ContainerType == 'nothing-to-select') {		
+				if(args.context.tiers != null) //from VPC tier
+				  array1.push("&networkIds=" + args.context.tiers[0].id);
+			}
+			
       var displayname = args.data.displayname;
       if(displayname != null && displayname.length > 0) {
         array1.push("&displayname="+todb(displayname));
