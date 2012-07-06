@@ -84,6 +84,8 @@ public class ApiConstants {
     public static final String CREATE_SNAPSHOT_RESPONSE = "createsnapshotresponse";
     public static final String CREATE_SSH_KEY_PAIR = "createSSHKeyPair";
     public static final String CREATE_SSH_KEY_PAIR_RESPONSE = "createsshkeypairresponse";
+    public static final String CREATE_TAGS = "createTags";
+    public static final String CREATE_TAGS_RESPONSE = "createtagsresponse";
     public static final String CREATE_TEMPLATE = "createTemplate";
     public static final String CREATE_TEMPLATE_RESPONSE = "createtemplateresponse";
     public static final String CREATE_VOLUME = "createVolume";
@@ -113,6 +115,8 @@ public class ApiConstants {
     public static final String DELETE_SNAPSHOT_RESPONSE = "deletesnapshotresponse";
     public static final String DELETE_SSH_KEY_PAIR = "deleteSSHKeyPair";
     public static final String DELETE_SSH_KEY_PAIR_RESPONSE = "deletesshkeypairresponse";
+    public static final String DELETE_TAGS = "deleteTags";
+    public static final String DELETE_TAGS_RESPONSE = "deleteTagsresponse";
     public static final String DELETE_TEMPLATE = "deleteTemplate";
     public static final String DELETE_TEMPLATE_RESPONSE = "deletetemplateresponse";
     public static final String DELETE_VOLUME = "deleteVolume";
@@ -227,6 +231,7 @@ public class ApiConstants {
     public static final String ISOLATION_URI = "isolationuri";
     public static final String JOB_ID = "jobid";
     public static final String JOB_STATUS = "jobstatus";
+    public static final String KEY = "key";
     public static final String KEY_PAIR = "keypair";
     public static final String KEYWORD = "keyword";
     public static final String LASTNAME = "lastname";
@@ -239,6 +244,7 @@ public class ApiConstants {
     public static final String LINMIN_APID = "linminapid";
     public static final String LINMIN_PASSWORD = "linminpassword";
     public static final String LINMIN_USERNAME = "linminusername";
+    public static final String LIST_ALL = "listAll";
     public static final String LIST_ACCOUNTS = "listAccounts";
     public static final String LIST_ACCOUNTS_RESPONSE = "listaccountsresponse";
     public static final String LIST_CAPABILITIES = "listCapabilities";
@@ -287,6 +293,8 @@ public class ApiConstants {
     public static final String LIST_SNAPSHOTS_RESPONSE = "listsnapshotsresponse";
     public static final String LIST_SSH_KEY_PAIRS = "listSSHKeyPairs";
     public static final String LIST_SSH_KEY_PAIRS_RESPONSE = "listsshkeypairsresponse";
+    public static final String LIST_TAGS = "listTags";
+    public static final String LIST_TAGS_RESPONSE = "listtagsresponse";
     public static final String LIST_TEMPLATE_PERMISSIONS = "listTemplatePermissions";
     public static final String LIST_TEMPLATE_PERMISSIONS_RESPONSE = "listtemplatepermissionsresponse";
     public static final String LIST_TEMPLATES = "listTemplates";
@@ -378,6 +386,8 @@ public class ApiConstants {
 	public static final String REQUIRES_HVM = "requireshvm";
 	public static final String RESET_PASSWORD_FOR_VIRTUAL_MACHINE = "resetPasswordForVirtualMachine";
 	public static final String RESET_PASSWORD_FOR_VIRTUAL_MACHINE_RESPONSE = "resetpasswordforvirtualmachineresponse";
+    public static final String RESOURCE_ID = "resourceid";
+    public static final String RESOURCE_IDS = "resourceIds";
 	public static final String RESOURCE_LIMIT = "resourcelimit";
 	public static final String RESOURCE_TYPE = "resourcetype";
 	public static final String RESTART_NETWORK = "restartNetwork";
@@ -431,6 +441,7 @@ public class ApiConstants {
 	public static final String STORAGE_TYPE = "storagetype";
 	public static final String SUCCESS = "success";
 	public static final String SYSTEM_VM_TYPE = "systemvmtype";
+    public static final String TAG = "tag";
 	public static final String TAGS = "tags";
 	public static final String TARGET_IQN = "targetiqn";
 	public static final String TEMPLATE = "template";
@@ -501,6 +512,5 @@ public class ApiConstants {
 	public static final String ZONE = "zone";
 	public static final String ZONE_ID = "zoneid";
 	public static final String ZONE_NAME = "zonename";
-	public static final String ZONE_TOKEN = "zonetoken";
-	
+	public static final String ZONE_TOKEN = "zonetoken";	
 }
