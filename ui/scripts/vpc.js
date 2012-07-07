@@ -399,11 +399,26 @@
 				
         remove: {
           label: 'Remove tier',
-          action: function(args) {
-            args.response.success();
+          action: function(args) {					 
+						$.ajax({
+						  url: createURL('deleteNetwork'),
+							dataType: "json",
+							data: {
+							  id: args.context.tiers[0].id
+							},
+							success: function(json) {							  
+								var jid = json.deletenetworkresponse.jobid;
+								args.response.success(
+									{_custom:
+									  {jobId: jid
+									 }
+									}
+								);
+							}
+						});
           },
           notification: {
-            poll: function(args) { args.complete(); }
+            poll: pollAsyncJobResult
           }
         }
       },

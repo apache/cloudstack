@@ -392,8 +392,10 @@
         action({
           context: context,
           response: {
-            success: function(args) {
-              success({ remove: true });
+            success: function(args) {						  				
+              success($.extend(args, { 
+							  remove: true 
+							}));
             }
           }
         });
