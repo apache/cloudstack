@@ -19,7 +19,7 @@ TESTDIR="/root/cloudstack-oss/test/integration/smoke-simulator/"
 CONFIG="/root/cloudstack-oss/test/integration/smoke-simulator/simulator-smoke.cfg"
 DB_SVR="localhost"
 
-while getopts 't:d:m:c:' OPTION
+while getopts 't:d:m:c:b:' OPTION
 do
   case $OPTION in
   d)    dflag=1
@@ -33,6 +33,9 @@ do
 		;;
   c)    cflag=1
 		CONFIG="$OPTARG"
+		;;
+  b)    bflag=1
+		BASEDIR="$OPTARG"
 		;;
   ?)	usage
 		failed 2
@@ -64,7 +67,7 @@ then
     sleep 60
     python -m marvin.deployAndRun -c $CONFIG -t /tmp/t.log -r /tmp/r.log -f $TESTDIR/testSetupSuccess.py -l
     cat /tmp/r.log
-    python -m marvin.deployAndRun -c $CONFIG -t /tmp/t.log -r /tmp/r.log -d $TESTDIR -l
+    python -m marvin.deployAndRun -c $CONFIG -t /tmp/t.log -r /tmp/r.log -d $TESTDIR -l -n
     echo "Done"
 else
     echo "Python version 2.7 not detected on system. Aborting"

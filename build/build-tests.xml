@@ -109,7 +109,7 @@
 
   <target name="run-simulator-tests">
       <exec dir="test/" executable="bash">
-          <arg line="setup.sh -t integration/smoke-simulator/ -c integration/smoke-simulator/simulator-smoke.cfg -d localhost -m localhost" />
+          <arg line="setup.sh -b ${base.dir}/test -t integration/smoke-simulator/ -c integration/smoke-simulator/simulator-smoke.cfg -d localhost -m localhost" />
       </exec>
   </target>
   <!--   -->
