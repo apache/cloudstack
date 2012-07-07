@@ -23,6 +23,7 @@ class NoseCloudStackTestLoader(nose.loader.TestLoader):
             tests = []
             for testCaseName in testCaseNames:
                 testCase = testCaseClass(testCaseName)
+                self._injectClients(testCase)
                 tests.append(testCase)
             return self.suiteClass(tests)
         else:
@@ -33,7 +34,25 @@ class NoseCloudStackTestLoader(nose.loader.TestLoader):
     
     def loadTestsFromNames(self, names, module=None):
         return nose.loader.TestLoader.loadTestsFromNames(self, names, module=module)
-            
+
+    def setClient(self, client):
+        self.testclient = client
+
+    def setClientLog(self, clientlog):
+        self.log = clientlog
+
+    def _injectClients(self, test):
+        testcaselogger = logging.getLogger("testclient.testcase.%s"%test.__class__.__name__)
+        fh = logging.FileHandler(self.log) 
+        fh.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s"))
+        testcaselogger.addHandler(fh)
+        testcaselogger.setLevel(logging.DEBUG)
+        
+        setattr(test, "testClient", self.testclient)
+        setattr(test, "debug", partial(testCaseLogger, logger=testcaselogger))
+        setattr(test.__class__, "clstestclient", self.testclient)
+        if hasattr(test, "UserName"):
+            self.testclient.createNewApiClient(test.UserName, test.DomainName, test.AcctType)           
 
 class NoseTestExecuteEngine(object):
     """
@@ -64,14 +83,14 @@ class NoseTestExecuteEngine(object):
  
         if workingdir is not None:
             self.loader = NoseCloudStackTestLoader()
-            self.suite = self.loader.loadTestsFromName(workingdir)
-            for test in self.suite:
-                self.injectClients(test)
+            self.loader.setClient(self.testclient)
+            self.loader.setClientLog(self.logfile)
+            self.suite = self.loader.loadTestsFromDir(workingdir)
         elif filename is not None:
             self.loader = NoseCloudStackTestLoader()
+            self.loader.setClient(self.testclient)
+            self.loader.setClientLog(self.logfile)
             self.suite = self.loader.loadTestsFromFile(filename)
-            for test in self.suite:
-                self.injectClients(test)
         else:
             raise EnvironmentError("Need to give either a test directory or a test file")
         
@@ -81,17 +100,6 @@ class NoseTestExecuteEngine(object):
             self.runner = xmlrunner.XMLTestRunner(output='xml-reports', verbose=True)
             
     def runTests(self):
-         nose.core.TestProgram(argv=["--process-timeout=3600"], testRunner=self.runner, testLoader=self.loader)
-        
-    def injectClients(self, test):
-        testcaselogger = logging.getLogger("testclient.testcase.%s"%test.__class__.__name__)
-        fh = logging.FileHandler(self.logfile) 
-        fh.setFormatter(self.logformat)
-        testcaselogger.addHandler(fh)
-        testcaselogger.setLevel(logging.DEBUG)
-        
-        setattr(test, "testClient", self.testclient)
-        setattr(test, "debug", partial(testCaseLogger, logger=testcaselogger))
-        setattr(test.__class__, "clstestclient", self.testclient)
-        if hasattr(test, "UserName"):
-            self.testclient.createNewApiClient(test.UserName, test.DomainName, test.AcctType)
+         #nose.core.TestProgram(argv=["--process-timeout=3600"], testRunner=self.runner, testLoader=self.loader)
+         nose.core.TestProgram(argv=["--process-timeout=3600"], \
+                               testRunner=self.runner, suite=self.suite)
