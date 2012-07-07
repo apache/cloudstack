@@ -31,6 +31,20 @@ usage() {
 }
 
 
+destroy_acl_outbound_chain() {
+  sudo iptables -t mangle -F ACL_OUTBOUND_$dev 2>/dev/null
+  sudo iptables -t mangle -D PREROUTING -i $dev -s $subnet/$mask ! -d $ip -j ACL_OUTBOUND_$dev  2>/dev/null
+  sudo iptables -t mangle -X ACL_OUTBOUND_$dev 2>/dev/null
+}
+
+create_acl_outbound_chain() {
+  destroy_acl_outbound_chain
+  sudo iptables -t mangle -N ACL_OUTBOUND_$dev 2>/dev/null
+  sudo iptables -t mangle -A ACL_OUTBOUND_$dev -j DROP 2>/dev/null
+  sudo iptables -t mangle -A PREROUTING -i $dev -s $subnet/$mask ! -d $ip -j ACL_OUTBOUND_$dev  2>/dev/null
+}
+
+
 setup_apache2() {
   logger_it "Setting up apache web server for $dev"
   cp /etc/apache2/vhostexample.conf /etc/apache2/conf.d/vhost$dev.conf
@@ -119,7 +133,7 @@ create_guest_network() {
   sudo iptables -t mangle -A PREROUTING -i $dev -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
   # set up hairpin
   sudo iptables -t nat -A POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
-
+  create_acl_outbound_chain
   setup_usage
   setup_dnsmasq
   setup_apache2
@@ -133,6 +147,7 @@ destroy_guest_network() {
   sudo iptables -D INPUT -i $dev -p udp -m udp --dport 53 -j ACCEPT
   sudo iptables -t mangle -D PREROUTING -i $dev -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
   sudo iptables -t nat -A POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
+  destroy_acl_outbound_chain
   desetup_usage
   desetup_dnsmasq
   desetup_apache2
