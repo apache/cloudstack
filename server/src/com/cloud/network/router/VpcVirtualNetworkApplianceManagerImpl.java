@@ -391,20 +391,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException, 
             StorageUnavailableException, ResourceUnavailableException {
         
+
         DomainRouterVO router = 
-                super.deployRouter(owner, dest, plan, params, isRedundant, vrProvider, svcOffId, vpcId, sourceNatIp, 
-                        false, null, null);
-        
-        //Plug public nic
-        if (router != null && sourceNatIp != null) {
-            Network publicNetwork = _networkDao.listByZoneAndTrafficType(dest.getDataCenter().getId(), TrafficType.Public).get(0);
-            if (!addPublicIpToVpc(router, publicNetwork, sourceNatIp)) {
-                s_logger.warn("Failed to add router " + router + " to public network in zone " + dest.getDataCenter() + " cleaninig up");
-                destroyRouter(router.getId());
-                return null;
-            }
-            
-        }
+                super.deployRouter(owner, dest, plan, params, isRedundant, vrProvider, svcOffId, vpcId, false, 
+                        null, new Pair<Boolean, PublicIp>(true, sourceNatIp));
         
         return router;
     }
