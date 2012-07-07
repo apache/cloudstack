@@ -9,81 +9,116 @@
 // See the License for the specific language governing permissions and
 // limitations under the License. 
 (function($, cloudStack) {
-  var aclMultiEdit = {
-    noSelect: true,
-    fields: {
-      'cidrlist': { edit: true, label: 'Source CIDR' },
-      'protocol': {
-        label: 'Protocol',
-        select: function(args) {
-          args.$select.change(function() {
-            var $inputs = args.$form.find('input');
-            var $icmpFields = $inputs.filter(function() {
-              var name = $(this).attr('name');
+  var aclMultiEdit = {   
+		noSelect: true,
+		fields: {
+			'cidrlist': { edit: true, label: 'label.cidr.list' },
+			'protocol': {
+				label: 'label.protocol',
+				select: function(args) {
+					args.$select.change(function() {
+						var $inputs = args.$form.find('input');
+						var $icmpFields = $inputs.filter(function() {
+							var name = $(this).attr('name');
 
-              return $.inArray(name, [
-                'icmptype',
-                'icmpcode'
-              ]) > -1;
-            });
-            var $otherFields = $inputs.filter(function() {
-              var name = $(this).attr('name');
+							return $.inArray(name, [
+								'icmptype',
+								'icmpcode'
+							]) > -1;
+						});
+						var $otherFields = $inputs.filter(function() {
+							var name = $(this).attr('name');
 
-              return name != 'icmptype' && name != 'icmpcode' && name != 'cidrlist';
-            });
+							return name != 'icmptype' && name != 'icmpcode' && name != 'cidrlist';
+						});
 
-            if ($(this).val() == 'icmp') {
-              $icmpFields.attr('disabled', false);
-              $otherFields.attr('disabled', 'disabled');
-            } else {
-              $otherFields.attr('disabled', false);
-              $icmpFields.attr('disabled', 'disabled');
-            }
-          });
+						if ($(this).val() == 'icmp') {
+							$icmpFields.show();
+							$icmpFields.attr('disabled', false);
+							$otherFields.attr('disabled', 'disabled');
+							$otherFields.hide();
+							$otherFields.parent().find('label.error').hide();
+						} else {
+							$otherFields.show();
+							$otherFields.parent().find('label.error').hide();
+							$otherFields.attr('disabled', false);
+							$icmpFields.attr('disabled', 'disabled');
+							$icmpFields.hide();
+							$icmpFields.parent().find('label.error').hide();
+						}
+					});
 
-          args.response.success({
-            data: [
-              { name: 'tcp', description: 'TCP' },
-              { name: 'udp', description: 'UDP' },
-              { name: 'icmp', description: 'ICMP' }
-            ]
-          });
-        }
-      },
-      'startport': { edit: true, label: 'Start Port' },
-      'endport': { edit: true, label: 'End Port' },
-      'icmptype': { edit: true, label: 'ICMP Type', isDisabled: true },
-      'icmpcode': { edit: true, label: 'ICMP Code', isDisabled: true },
-      'add-rule': {
-        label: 'Add',
-        addButton: true
-      }
-    },
+					args.response.success({
+						data: [
+							{ name: 'tcp', description: 'TCP' },
+							{ name: 'udp', description: 'UDP' },
+							{ name: 'icmp', description: 'ICMP' }
+						]
+					});
+				}
+			},
+			'startport': { edit: true, label: 'label.start.port' },
+			'endport': { edit: true, label: 'label.end.port' },
+			'icmptype': { edit: true, label: 'ICMP.type', isDisabled: true },
+			'icmpcode': { edit: true, label: 'ICMP.code', isDisabled: true },
+			'add-rule': {
+				label: 'label.add.rule',
+				addButton: true
+			}
+		},  
     add: {
-      label: 'Add',
-      action: function(args) {
-        setTimeout(function() {
-          args.response.success({
-            notification: {
-              label: 'Add ACL rule',
-              poll: function(args) { args.complete(); }
-            }
-          });
-        }, 500);
+      label: 'Add ACL',
+      action: function(args) {        
+				$.ajax({
+					url: createURL('createNetworkACL'),
+					data: $.extend(args.data, {
+						networkid: args.context.tiers[0].id
+					}),
+					dataType: 'json',
+					success: function(data) {
+						args.response.success({
+							_custom: {
+								jobId: data.createnetworkaclresponse.jobid
+							},
+							notification: {
+								label: 'Add ACL',
+								poll: pollAsyncJobResult
+							}
+						});
+					},
+					error: function(data) {
+						args.response.error(parseXMLHttpResponse(data));
+					}
+				});
       }
     },
     actions: {
       destroy: {
-        label: 'Remove Rule',
-        action: function(args) {
-          setTimeout(function() {
-            args.response.success({
-              notification: {
-                label: 'Remove ACL rule',
-                poll: function(args) { args.complete(); }
-              }
-            });
-          }, 500);
+        label: 'Remove ACL',
+        action: function(args) {     
+					$.ajax({
+						url: createURL('deleteNetworkACL'),
+						data: {
+							id: args.context.multiRule[0].id
+						},
+						dataType: 'json',
+						async: true,
+						success: function(data) {
+							var jobID = data.deletenetworkaclresponse.jobid;
+							args.response.success({
+								_custom: {
+									jobId: jobID
+								},
+								notification: {
+									label: 'Remove ACL',
+									poll: pollAsyncJobResult
+								}
+							});
+						},
+						error: function(data) {
+							args.response.error(parseXMLHttpResponse(data));
+						}
+					});					
         }
       }
     },
