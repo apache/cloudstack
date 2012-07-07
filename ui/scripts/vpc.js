@@ -254,9 +254,43 @@
             }
           }
         },
-        dataProvider: function(args) {
+        dataProvider: function(args) {	          
+					var array1 = [];
+					if(args.filterBy != null) {
+						if(args.filterBy.kind != null) {
+							switch(args.filterBy.kind) {
+							case "all":
+								array1.push("&listAll=true");
+								break;
+							case "mine":
+								if (!args.context.projects) array1.push("&domainid=" + g_domainid + "&account=" + g_account);
+								break;
+							case "running":
+								array1.push("&listAll=true&state=Running");
+								break;
+							case "stopped":
+								array1.push("&listAll=true&state=Stopped");
+								break;
+							case "destroyed":
+								array1.push("&listAll=true&state=Destroyed");
+								break;
+							}
+						}
+						if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+							switch(args.filterBy.search.by) {
+							case "name":
+								if(args.filterBy.search.value.length > 0)
+									array1.push("&keyword=" + args.filterBy.search.value);
+								break;
+							}
+						}
+					}
+									
           $.ajax({
-            url: createURL('listVirtualMachines'),
+            url: createURL('listVirtualMachines' + array1.join("")),
+						data: {
+						  networkid: args.context.tiers[0].id
+						},
             success: function(json) {
               args.response.success({ data: json.listvirtualmachinesresponse.virtualmachine });
             }
@@ -354,6 +388,7 @@
 					}
 				},
 				
+				/*
         start: {
           label: 'Start tier',
           shortLabel: 'Start',
@@ -364,7 +399,9 @@
             poll: function(args) { args.complete({ data: { state: 'Running' } }); }
           }
         },
+				*/
 				
+				/*
         stop: {
           label: 'Stop tier',
           shortLabel: 'Stop',
@@ -375,6 +412,7 @@
             poll: function(args) { args.complete({ data: { state: 'Stopped' } }); }
           }
         },
+				*/
 				
         addVM: {
           label: 'Add VM to tier',
