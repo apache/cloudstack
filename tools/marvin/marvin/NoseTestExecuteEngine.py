@@ -1,33 +1,49 @@
 from functools import partial
 import unittest
 import nose
-import nose.config
 import nose.core
 import os
 import sys
 import logging
+import xmlrunner
 from cloudstackTestCase import cloudstackTestCase
-from nose.suite import ContextSuite, ContextSuiteFactory
-
-class CloudStackTestSelector(nose.selector.Selector):
-    """
-    custom test selector for cloudstackTestCase
-    """
-    
-    def wantClass(self, cls):
-        if issubclass(cls, cloudstackTestCase):
-            return nose.selector.Selector.wantClass(self, cls)
 
 def testCaseLogger(message, logger=None):
     if logger is not None:
         logger.debug(message)
+        
+class NoseCloudStackTestLoader(nose.loader.TestLoader):
+    """
+    Custom test loader for the cloudstackTestCase to be loaded into nose
+    """
+    
+    def loadTestsFromTestCase(self, testCaseClass):
+        if issubclass(testCaseClass, cloudstackTestCase):
+            testCaseNames = self.getTestCaseNames(testCaseClass)
+            tests = []
+            for testCaseName in testCaseNames:
+                testCase = testCaseClass(testCaseName)
+                tests.append(testCase)
+            return self.suiteClass(tests)
+        else:
+            return super(NoseCloudStackTestLoader, self).loadTestsFromTestCase(testCaseClass)
+    
+    def loadTestsFromName(self, name, module=None, discovered=False):
+        return nose.loader.TestLoader.loadTestsFromName(self, name, module=module, discovered=discovered)
+    
+    def loadTestsFromNames(self, names, module=None):
+        return nose.loader.TestLoader.loadTestsFromNames(self, names, module=module)
+            
 
 class NoseTestExecuteEngine(object):
-    def __init__(self, testclient=None, workingdir=None, clientLog=None, resultLog=None, format="text"):
+    """
+    Runs the CloudStack tests using nose as the execution engine
+    """
+    
+    def __init__(self, testclient=None, workingdir=None, filename=None, clientLog=None, resultLog=None, format="text"):
         self.testclient = testclient
         self.logformat = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
         self.suite = []
-        realPath = os.path.abspath(workingdir)
 
         if clientLog is not None:
             self.logfile = clientLog
@@ -44,42 +60,38 @@ class NoseTestExecuteEngine(object):
             fp = open(resultLog, "w")
             self.testResultLogFile = fp
         else:
-            self.testResultLogFile = sys.stdout
+            self.testResultLogFile = sys.stderr
  
-        if workingdir is not None and os.path.exists(realPath + '/' + '__init__.py'):
-            self.loader = nose.loader.TestLoader()
-            [self.suite.append(test) for test in self.loader.discover(workingdir, "test*.py")]
+        if workingdir is not None:
+            self.loader = NoseCloudStackTestLoader()
+            self.suite = self.loader.loadTestsFromName(workingdir)
             for test in self.suite:
-                self.injectTestCase(test)
-            print self.suite[0].countTestCases()
+                self.injectClients(test)
+        elif filename is not None:
+            self.loader = NoseCloudStackTestLoader()
+            self.suite = self.loader.loadTestsFromFile(filename)
+            for test in self.suite:
+                self.injectClients(test)
         else:
-            raise Exception("Single module test runs unsupported using Nose")
-            
+            raise EnvironmentError("Need to give either a test directory or a test file")
+        
         if format == "text":
             self.runner = nose.core.TextTestRunner(stream=self.testResultLogFile, descriptions=1, verbosity=2, config=None)
         else:
-            raise Exception("XML runner not supported under nose")
+            self.runner = xmlrunner.XMLTestRunner(output='xml-reports', verbose=True)
             
     def runTests(self):
-        #testProgram = nose.core.TestProgram(argv=["--process-timeout=3600"], testRunner = self.runner, testLoader = self.loader)
-        testProgram = nose.core.TestProgram(argv=["--process-timeout=3600"], testRunner = self.runner, suite = self.suite)
-        testProgram.runTests()
+         nose.core.TestProgram(argv=["--process-timeout=3600"], testRunner=self.runner, testLoader=self.loader)
         
-    def injectTestCase(self, testSuites):
-        for test in testSuites:
-            if isinstance(test, unittest.BaseTestSuite):
-                self.injectTestCase(test)
-            else:
-                #logger bears the name of the test class
-                testcaselogger = logging.getLogger("testclient.testcase.%s"%test.__class__.__name__)
-                fh = logging.FileHandler(self.logfile) 
-                fh.setFormatter(self.logformat)
-                testcaselogger.addHandler(fh)
-                testcaselogger.setLevel(logging.DEBUG)
-                
-                #inject testclient and logger into each unittest 
-                setattr(test, "testClient", self.testclient)
-                setattr(test, "debug", partial(testCaseLogger, logger=testcaselogger))
-                setattr(test.__class__, "clstestclient", self.testclient)
-                if hasattr(test, "UserName"):
-                    self.testclient.createNewApiClient(test.UserName, test.DomainName, test.AcctType)
+    def injectClients(self, test):
+        testcaselogger = logging.getLogger("testclient.testcase.%s"%test.__class__.__name__)
+        fh = logging.FileHandler(self.logfile) 
+        fh.setFormatter(self.logformat)
+        testcaselogger.addHandler(fh)
+        testcaselogger.setLevel(logging.DEBUG)
+        
+        setattr(test, "testClient", self.testclient)
+        setattr(test, "debug", partial(testCaseLogger, logger=testcaselogger))
+        setattr(test.__class__, "clstestclient", self.testclient)
+        if hasattr(test, "UserName"):
+            self.testclient.createNewApiClient(test.UserName, test.DomainName, test.AcctType)
