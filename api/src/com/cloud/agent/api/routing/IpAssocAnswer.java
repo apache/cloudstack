@@ -17,11 +17,7 @@
 package com.cloud.agent.api.routing;
 
 import com.cloud.agent.api.Answer;
-/**
- * 
- * @author alena
- *
- */
+
 public class IpAssocAnswer extends Answer{
     String[] results;
     

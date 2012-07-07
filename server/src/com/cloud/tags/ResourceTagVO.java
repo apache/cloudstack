@@ -30,9 +30,6 @@ import javax.persistence.Table;
 import com.cloud.api.Identity;
 import com.cloud.server.ResourceTag;
 
-/**
- * @author Alena Prokharchyk
- */
 
 @Entity
 @Table(name="resource_tags")

@@ -65,9 +65,7 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.uuididentity.dao.IdentityDao;
 import com.cloud.vm.dao.UserVmDao;
 
-/**
- * @author Alena Prokharchyk
- */
+
 @Local(value = { TaggedResourceService.class})
 public class TaggedResourceManagerImpl implements TaggedResourceService, Manager{
     public static final Logger s_logger = Logger.getLogger(TaggedResourceManagerImpl.class);

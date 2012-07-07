@@ -23,9 +23,6 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
-/**
- * @author Alena Prokharchyk
- */
 
 @Entity
 @Table(name="private_ip_address")

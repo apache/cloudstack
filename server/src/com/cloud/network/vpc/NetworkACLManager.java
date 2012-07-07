@@ -19,9 +19,7 @@ import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 
-/**
- * @author Alena Prokharchyk
- */
+
 public interface NetworkACLManager extends NetworkACLService{
     
     /**

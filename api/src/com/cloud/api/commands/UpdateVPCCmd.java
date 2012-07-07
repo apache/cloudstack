@@ -25,9 +25,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
-/**
- * @author Alena Prokharchyk
- */
 public class UpdateVPCCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(UpdateVPCCmd.class.getName());
     private static final String _name = "updatevpcresponse";

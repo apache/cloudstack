@@ -25,9 +25,6 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VpcOfferingResponse;
 import com.cloud.network.vpc.VpcOffering;
 
-/**
- * @author Alena Prokharchyk
- */
 public class ListVPCOfferingsCmd extends BaseListCmd{
     public static final Logger s_logger = Logger.getLogger(ListVPCOfferingsCmd.class.getName());
     private static final String _name = "listvpcofferingsresponse";

@@ -17,9 +17,7 @@
 package com.cloud.tags.dao;
 
 import java.util.List;
-
 import javax.ejb.Local;
-
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.ResourceTagVO;
@@ -28,9 +26,6 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 
-/**
- * @author Alena Prokharchyk
- */
 
 @Local(value = { ResourceTagDao.class })
 public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> implements ResourceTagDao{
@@ -52,14 +47,6 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
         remove(sc);
         return true;
     }
-    
-//    @Override
-//    public ResourceTag findByUuid(String resourceUuId, ResourceTag.TaggedResourceType resourceType) {
-//        SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
-//        sc.setParameters("uuid", resourceUuId);
-//        sc.setParameters("resourceType", resourceType);
-//        return findOneBy(sc);
-//    }
 
     @Override
     public List<? extends ResourceTag> listBy(long resourceId, TaggedResourceType resourceType) {

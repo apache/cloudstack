@@ -14,7 +14,6 @@ package com.cloud.network.router;
 
 import java.util.List;
 import java.util.Map;
-
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -30,9 +29,7 @@ import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.VirtualMachineProfile.Param;
 
-/**
- * @author Alena Prokharchyk
- */
+
 public interface VpcVirtualNetworkApplianceManager extends VirtualNetworkApplianceManager, VpcVirtualNetworkApplianceService{
 
     /**

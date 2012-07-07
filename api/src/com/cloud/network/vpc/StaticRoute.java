@@ -14,10 +14,6 @@ package com.cloud.network.vpc;
 
 import com.cloud.acl.ControlledEntity;
 
-
-/**
- * @author Alena Prokharchyk
- */
 public interface StaticRoute extends ControlledEntity{
     enum State {
         Staged, // route been created but has never got through network rule conflict detection.  Routes in this state can not be sent to VPC virtual router.

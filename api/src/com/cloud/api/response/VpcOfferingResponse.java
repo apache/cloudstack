@@ -20,9 +20,6 @@ import com.cloud.serializer.Param;
 import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
-/**
- * @author Alena Prokharchyk
- */
 @SuppressWarnings("unused")
 public class VpcOfferingResponse extends BaseResponse{
     @SerializedName("id") @Param(description="the id of the vpc offering")

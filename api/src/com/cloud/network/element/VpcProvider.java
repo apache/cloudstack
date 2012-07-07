@@ -25,9 +25,6 @@ import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.vm.ReservationContext;
 
-/**
- * @author Alena Prokharchyk
- */
 public interface VpcProvider extends NetworkElement{
     /**
      * Start vpc element as specified

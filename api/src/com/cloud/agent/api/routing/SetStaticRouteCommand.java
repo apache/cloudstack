@@ -16,9 +16,6 @@ import java.util.List;
 
 import com.cloud.network.vpc.StaticRouteProfile;
 
-/**
- * @author Alena Prokharchyk
- */
 public class SetStaticRouteCommand extends NetworkElementCommand{
     StaticRouteProfile[] staticRoutes;
     

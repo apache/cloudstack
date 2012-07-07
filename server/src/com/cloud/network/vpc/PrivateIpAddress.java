@@ -14,9 +14,7 @@ package com.cloud.network.vpc;
 
 import com.cloud.utils.net.NetUtils;
 
-/**
- * @author Alena Prokharchyk
- */
+
 public class PrivateIpAddress implements PrivateIp{
     String vlanTag;
     String gateway;

@@ -96,10 +96,6 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.dao.DomainRouterDao;
 
 
-/**
- * @author Alena Prokharchyk
- */
-
 @Local(value = { VpcManager.class, VpcService.class })
 public class VpcManagerImpl implements VpcManager, Manager{
     private static final Logger s_logger = Logger.getLogger(VpcManagerImpl.class);

@@ -31,9 +31,6 @@ import com.cloud.network.vpc.VpcGateway;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-/**
- * @author Alena Prokharchyk
- */
 @Implementation(description="Deletes a Private gateway", responseObject=SuccessResponse.class)
 public class DeletePrivateGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeletePrivateGatewayCmd.class.getName());

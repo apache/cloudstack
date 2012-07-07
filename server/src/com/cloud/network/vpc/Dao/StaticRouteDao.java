@@ -18,9 +18,6 @@ import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteVO;
 import com.cloud.utils.db.GenericDao;
 
-/**
- * @author Alena Prokharchyk
- */
 public interface StaticRouteDao extends GenericDao<StaticRouteVO, Long>{
     
     boolean setStateToAdd(StaticRouteVO rule);

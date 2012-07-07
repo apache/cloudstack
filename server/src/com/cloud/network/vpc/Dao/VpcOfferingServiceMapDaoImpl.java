@@ -25,9 +25,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
 
-/**
- * @author Alena Prokharchyk
- */
+
 @Local(value = VpcOfferingServiceMapDao.class)
 @DB(txn = false)
 public class VpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServiceMapVO, Long> implements VpcOfferingServiceMapDao{

@@ -27,9 +27,6 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 
-/**
- * @author Alena Prokharchyk
- */
 public interface VpcService {
     
     public VpcOffering getVpcOffering(long vpcOfferingId);

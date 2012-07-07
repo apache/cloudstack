@@ -14,11 +14,8 @@ package com.cloud.network.vpc.Dao;
 
 import java.util.Date;
 import java.util.List;
-
 import javax.ejb.Local;
-
 import org.apache.log4j.Logger;
-
 import com.cloud.network.vpc.PrivateIpVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -29,9 +26,6 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
-/**
- * @author Alena Prokharchyk
- */
 
 @Local(value = PrivateIpDao.class)
 @DB(txn = false)

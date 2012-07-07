@@ -23,9 +23,6 @@ import javax.persistence.Table;
 
 import com.cloud.network.Network.GuestType;
 
-/**
- * @author Alena Prokharchyk
- */
 
 @Entity
 @Table(name="router_network_ref")

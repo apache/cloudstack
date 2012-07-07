@@ -24,9 +24,6 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 
-/**
- * @author Alena Prokharchyk
- */
 public class DeleteVPCOfferingCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteVPCOfferingCmd.class.getName());
     private static final String s_name = "deletevpcofferingresponse";

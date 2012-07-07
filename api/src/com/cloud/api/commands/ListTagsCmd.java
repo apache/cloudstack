@@ -28,10 +28,6 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.ResourceTagResponse;
 import com.cloud.server.ResourceTag;
 
-/**
- * @author Alena Prokharchyk
- */
-
 @Implementation(description = "List resource tag(s)", responseObject = ResourceTagResponse.class, since = "Burbank")
 public class ListTagsCmd extends BaseListProjectAndAccountResourcesCmd{
     private static final String s_name = "listtagsresponse";

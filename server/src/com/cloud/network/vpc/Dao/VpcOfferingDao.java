@@ -15,9 +15,7 @@ package com.cloud.network.vpc.Dao;
 import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.utils.db.GenericDao;
 
-/**
- * @author Alena Prokharchyk
- */
+
 public interface VpcOfferingDao extends GenericDao<VpcOfferingVO, Long>{
     /**
      * Returns the VPC offering that matches the unique name.

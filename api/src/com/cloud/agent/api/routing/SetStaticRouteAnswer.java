@@ -14,9 +14,6 @@ package com.cloud.agent.api.routing;
 
 import com.cloud.agent.api.Answer;
 
-/**
- * @author Alena Prokharchyk
- */
 public class SetStaticRouteAnswer extends Answer{
     String[] results;
     

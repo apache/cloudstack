@@ -21,9 +21,6 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
-/**
- * @author Alena Prokharchyk
- */
 
 @Local(value = VpcGatewayDao.class)
 @DB(txn = false)

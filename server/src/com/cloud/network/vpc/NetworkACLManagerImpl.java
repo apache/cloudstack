@@ -58,9 +58,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
-/**
- * @author Alena Prokharchyk
- */
 
 @Local(value = { NetworkACLService.class, NetworkACLManager.class})
 public class NetworkACLManagerImpl implements Manager,NetworkACLManager{

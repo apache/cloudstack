@@ -29,10 +29,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.user.UserContext;
 
-/**
- * @author Alena Prokharchyk
- */
-
 @Implementation(description="Deletes a static route", responseObject=SuccessResponse.class)
 public class DeleteStaticRouteCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteStaticRouteCmd.class.getName());

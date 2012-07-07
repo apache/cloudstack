@@ -21,10 +21,6 @@ import com.cloud.serializer.Param;
 import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
-/**
- * @author Alena Prokharchyk
- */
-
 @SuppressWarnings("unused")
 public class ResourceTagResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.KEY) @Param(description="tag key name")

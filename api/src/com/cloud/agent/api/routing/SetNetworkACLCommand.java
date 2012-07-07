@@ -17,9 +17,6 @@ import java.util.List;
 import com.cloud.agent.api.to.NetworkACLTO;
 import com.cloud.agent.api.to.NicTO;
 
-/**
- * @author Alena Prokharchyk
- */
 public class SetNetworkACLCommand extends NetworkElementCommand{
     NetworkACLTO[] rules;
     NicTO nic;

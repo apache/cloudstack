@@ -25,9 +25,7 @@ import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VpcResponse;
 import com.cloud.network.vpc.Vpc;
 
-/**
- * @author Alena Prokharchyk
- */
+
 public class ListVPCsCmd extends BaseListAccountResourcesCmd{
     public static final Logger s_logger = Logger.getLogger(ListVPCsCmd.class.getName());
     private static final String s_name = "listvpcsresponse";

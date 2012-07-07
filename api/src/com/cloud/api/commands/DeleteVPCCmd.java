@@ -23,14 +23,10 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
-/**
- * @author Alena Prokharchyk
- */
 public class DeleteVPCCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(DeleteVPCCmd.class.getName());
     private static final String s_name = "deletevpcresponse";

@@ -25,9 +25,6 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.utils.db.GenericDao;
 
-/**
- * @author Alena Prokharchyk
- */
 
 @Entity
 @Table(name="vpc_offering_service_map")

@@ -16,17 +16,12 @@
 // under the License.package com.cloud.server;
 
 package com.cloud.server;
-
-
 import java.util.List;
 import java.util.Map;
 
 import com.cloud.api.commands.ListTagsCmd;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 
-/**
- * @author Alena Prokharchyk
- */
 public interface TaggedResourceService {
     
     TaggedResourceType getResourceType (String resourceTypeStr);

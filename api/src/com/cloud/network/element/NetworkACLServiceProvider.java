@@ -18,9 +18,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.rules.FirewallRule;
 
-/**
- * @author Alena Prokharchyk
- */
 public interface NetworkACLServiceProvider extends NetworkElement{
 
     /**

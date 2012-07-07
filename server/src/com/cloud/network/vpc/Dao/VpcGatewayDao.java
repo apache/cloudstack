@@ -15,9 +15,7 @@ package com.cloud.network.vpc.Dao;
 import com.cloud.network.vpc.VpcGatewayVO;
 import com.cloud.utils.db.GenericDao;
 
-/**
- * @author Alena Prokharchyk
- */
+
 public interface VpcGatewayDao extends GenericDao<VpcGatewayVO, Long>{
     VpcGatewayVO getPrivateGateway(long vpcId);
 }

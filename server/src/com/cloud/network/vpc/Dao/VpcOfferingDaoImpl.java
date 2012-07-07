@@ -22,9 +22,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 
-/**
- * @author Alena Prokharchyk
- */
+
 @Local(value = VpcOfferingDao.class)
 @DB(txn = false)
 public class VpcOfferingDaoImpl extends GenericDaoBase<VpcOfferingVO, Long> implements VpcOfferingDao{

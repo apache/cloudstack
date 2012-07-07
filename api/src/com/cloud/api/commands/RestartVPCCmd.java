@@ -17,9 +17,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
-/**
- * @author Alena Prokharchyk
- */
 public class RestartVPCCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(RestartVPCCmd.class.getName());
     private static final String _name = "restartvpcresponse";

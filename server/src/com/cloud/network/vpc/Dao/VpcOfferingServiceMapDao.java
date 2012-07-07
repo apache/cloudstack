@@ -18,9 +18,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.vpc.VpcOfferingServiceMapVO;
 import com.cloud.utils.db.GenericDao;
 
-/**
- * @author Alena Prokharchyk
- */
+
 public interface VpcOfferingServiceMapDao extends GenericDao<VpcOfferingServiceMapVO, Long>{
     
     List<VpcOfferingServiceMapVO> listByVpcOffId(long vpcOffId);

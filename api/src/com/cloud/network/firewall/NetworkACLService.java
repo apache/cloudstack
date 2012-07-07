@@ -20,9 +20,6 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
 
-/**
- * @author Alena Prokharchyk
- */
 public interface NetworkACLService {
     FirewallRule getNetworkACL(long ruleId);
     boolean applyNetworkACLs(long networkId, Account caller) throws ResourceUnavailableException;

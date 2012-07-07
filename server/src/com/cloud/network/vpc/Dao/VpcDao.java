@@ -18,9 +18,7 @@ import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.utils.db.GenericDao;
 
-/**
- * @author Alena Prokharchyk
- */
+
 public interface VpcDao extends GenericDao<VpcVO, Long>{
 
     /**

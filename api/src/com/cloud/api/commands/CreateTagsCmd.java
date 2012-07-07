@@ -35,11 +35,6 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
-
-/**
- * @author Alena Prokharchyk
- */
-
 @Implementation(description = "Creates resource tag(s)", responseObject = SuccessResponse.class, since = "Burbank")
 public class CreateTagsCmd extends BaseAsyncCmd{
     public static final Logger s_logger = Logger.getLogger(CreateTagsCmd.class.getName());

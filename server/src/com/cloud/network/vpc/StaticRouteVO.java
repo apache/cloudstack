@@ -27,9 +27,6 @@ import javax.persistence.Table;
 import com.cloud.api.Identity;
 import com.cloud.utils.db.GenericDao;
 
-/**
- * @author Alena Prokharchyk
- */
 
 @Entity
 @Table(name="static_routes")

@@ -17,9 +17,6 @@ import java.util.List;
 import com.cloud.network.vpc.PrivateIpVO;
 import com.cloud.utils.db.GenericDao;
 
-/**
- * @author Alena Prokharchyk
- */
 public interface PrivateIpDao extends GenericDao<PrivateIpVO, Long>{
 
     /**

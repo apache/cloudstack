@@ -15,9 +15,6 @@ package com.cloud.agent.api;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 
-/**
- * @author Alena Prokharchyk
- */
 public class UnPlugNicCommand extends Command{
     VirtualMachineTO vm;
     NicTO nic;

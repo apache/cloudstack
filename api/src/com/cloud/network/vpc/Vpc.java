@@ -15,10 +15,6 @@ package com.cloud.network.vpc;
 import com.cloud.acl.ControlledEntity;
 import com.cloud.network.Network;
 
-
-/**
- * @author Alena Prokharchyk
- */
 public interface Vpc extends ControlledEntity{
     public enum State {
         Enabled,

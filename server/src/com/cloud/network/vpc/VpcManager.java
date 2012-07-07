@@ -27,9 +27,6 @@ import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 
 
-/**
- * @author Alena Prokharchyk
- */
 public interface VpcManager extends VpcService{
 
     /**

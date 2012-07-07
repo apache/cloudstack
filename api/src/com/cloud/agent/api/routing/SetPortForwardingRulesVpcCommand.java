@@ -16,9 +16,6 @@ import java.util.List;
 
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 
-/**
- * @author Alena Prokharchyk
- */
 public class SetPortForwardingRulesVpcCommand extends SetPortForwardingRulesCommand{
     protected SetPortForwardingRulesVpcCommand() {
     }

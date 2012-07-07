@@ -17,9 +17,6 @@ import com.cloud.serializer.Param;
 import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
-/**
- * @author Alena Prokharchyk
- */
 @SuppressWarnings("unused")
 public class StaticRouteResponse extends BaseResponse implements ControlledEntityResponse{
     @SerializedName(ApiConstants.ID) @Param(description="the ID of static route")

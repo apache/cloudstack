@@ -15,9 +15,6 @@ package com.cloud.agent.api;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.NicTO;
 
-/**
- * @author Alena Prokharchyk
- */
 public class SetupGuestNetworkCommand extends NetworkElementCommand{
     String dhcpRange;
     String networkDomain;

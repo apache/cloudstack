@@ -34,9 +34,6 @@ import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 
-/**
- * @author Alena Prokharchyk
- */
 @Implementation(description="Creates a private gateway", responseObject=PrivateGatewayResponse.class)
 public class CreatePrivateGatewayCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreatePrivateGatewayCmd.class.getName());

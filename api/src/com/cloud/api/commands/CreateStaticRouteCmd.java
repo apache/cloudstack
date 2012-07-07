@@ -13,7 +13,6 @@
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
-
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseAsyncCreateCmd;
@@ -29,14 +28,9 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.VpcGateway;
 import com.cloud.user.UserContext;
-
-/**
- * @author Alena Prokharchyk
- */
 
 @Implementation(description="Creates a static route", responseObject=StaticRouteResponse.class)
 public class CreateStaticRouteCmd extends BaseAsyncCreateCmd{
