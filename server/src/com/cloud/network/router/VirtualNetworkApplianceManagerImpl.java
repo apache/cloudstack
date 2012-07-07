@@ -1258,7 +1258,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             int count = routerCount - routers.size();
             for (int i = 0; i < count; i++) {
                 DomainRouterVO router = deployRouter(owner, dest, plan, params, isRedundant, vrProvider, offeringId,
-                        null, sourceNatIp, publicNetwork, guestNetwork, new Pair<Boolean, PublicIp>(publicNetwork, sourceNatIp));
+                        null, publicNetwork, guestNetwork, new Pair<Boolean, PublicIp>(publicNetwork, sourceNatIp));
                 //add router to router network map
                 if (!_routerDao.isRouterPartOfGuestNetwork(router.getId(), network.getId())) {
                     DomainRouterVO routerVO = _routerDao.findById(router.getId());
@@ -1276,7 +1276,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     protected DomainRouterVO deployRouter(Account owner, DeployDestination dest, DeploymentPlan plan, Map<Param, Object> params,
             boolean isRedundant, VirtualRouterProvider vrProvider, long svcOffId,
-            Long vpcId, PublicIp sourceNatIp, boolean setupPublicNetwork, Network guestNetwork, Pair<Boolean, PublicIp> publicNetwork) throws ConcurrentOperationException, 
+            Long vpcId, boolean setupPublicNetwork, Network guestNetwork, Pair<Boolean, PublicIp> publicNetwork) throws ConcurrentOperationException, 
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException, 
             StorageUnavailableException, ResourceUnavailableException {
         
@@ -1386,7 +1386,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         boolean setupPublicNetwork = false;
         if (publicNetwork != null) {
             setupPublicNetwork = publicNetwork.first();
-            }
+        }
         
         //Form networks
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(3);

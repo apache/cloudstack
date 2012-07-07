@@ -1063,7 +1063,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      * @see com.cloud.network.NetworkManager#isPrivateGateway(com.cloud.vm.Nic)
      */
     @Override
-    public boolean isPrivateGateway(Nic guestNic) {
+    public boolean isPrivateGateway(long nicId) {
         // TODO Auto-generated method stub
         return false;
     }
