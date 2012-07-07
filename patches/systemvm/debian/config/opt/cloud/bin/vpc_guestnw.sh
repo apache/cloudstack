@@ -40,12 +40,14 @@ setup_apache2() {
   sed -i -e "s/Listen .*:80/Listen $ip:80/g" /etc/apache2/conf.d/vhost$dev.conf
   sed -i -e "s/Listen .*:443/Listen $ip:443/g" /etc/apache2/conf.d/vhost$dev.conf
   service apache2 restart
+  sudo iptables -A INPUT -i $dev -d $ip -p tcp -m state --state NEW --dport 80 -j ACCEPT
 }
 
 desetup_apache2() {
   logger_it "Desetting up apache web server for $dev"
   rm -f /etc/apache2/conf.d/vhost$dev.conf
   service apache2 restart
+  sudo iptables -D INPUT -i $dev -d $ip -p tcp -m state --state NEW --dport 80 -j ACCEPT
 }
 
 

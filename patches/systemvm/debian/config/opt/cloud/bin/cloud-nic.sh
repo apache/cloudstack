@@ -16,7 +16,7 @@ unplug_nic() {
   sudo ip route flush table $tableName
   sudo sed -i /"$tableNo $tableName"/d /etc/iproute2/rt_tables 2>/dev/null
   sudo ip route flush cache
-  # remove rules
+  # remove network usage rules
   sudo iptables -t mangle -F NETWORK_STATS_$dev 2>/dev/null
   iptables-save -t mangle | grep NETWORK_STATS_$dev | grep "\-A"  | while read rule
   do
@@ -24,6 +24,17 @@ unplug_nic() {
     sudo iptables -t mangle $rule
   done
   sudo iptables -t mangle -X NETWORK_STATS_$dev 2>/dev/null
+  # remove rules on this dev
+  iptables-save -t mangle | grep $dev | grep "\-A"  | while read rule
+  do
+    rule=$(echo $rule | sed 's/\-A/\-D/')
+    sudo iptables -t mangle $rule
+  done
+  iptables-save | grep $dev | grep "\-A"  | while read rule
+  do
+    rule=$(echo $rule | sed 's/\-A/\-D/')
+    sudo iptables $rule
+  done
   # remove apache config for this eth
   rm -f /etc/apache2/conf.d/vhost$dev.conf
 }
