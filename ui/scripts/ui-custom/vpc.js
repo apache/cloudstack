@@ -40,7 +40,8 @@
 					  $browser.cloudBrowser('addPanel', {
 						  title: 'IP Addresses',
 							maximizeIfSelected: true,
-							complete: function($panel) {			
+							complete: function($panel) {	
+                //ipAddresses.listView is a function					
 								$panel.listView(ipAddresses.listView(), {context: ipAddresses.context});
 							}
 						});
@@ -51,11 +52,9 @@
             $browser.cloudBrowser('addPanel', {
               title: 'Site-to-site VPNs',
               maximizeIfSelected: true,
-              complete: function($panel) {							  
-                $panel.listView(
-                  $.isFunction(siteToSiteVPN.listView) ?
-                    siteToSiteVPN.listView() : siteToSiteVPN.listView
-                );
+              complete: function($panel) {	
+								//siteToSiteVPN is an object
+                $panel.listView(siteToSiteVPN, {context: siteToSiteVPN.context});		
               }
             });
             break;
