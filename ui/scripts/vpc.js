@@ -169,90 +169,195 @@
 
         // List view actions
         actions: {
-          restart: {
-            label: 'Restart instance',
-            action: function(args) {
-              setTimeout(function() {
-                args.response.success({
-                  data: {
-                    state: 'Restarting'
-                  }
-                });
-              }, 1000);
-            },
-            messages: {
-              confirm: function(args) {
-                return 'Are you sure you want to restart ' + args.name + '?';
-              },
-              notification: function(args) {
-                return 'Rebooting VM: ' + args.name;
-              }
-            },
-            notification: {
-              poll: function(args) { args.complete(); }
-            }
-          },
-          stop: {
-            label: 'Stop instance',
-            action: function(args) {
-              setTimeout(function() {
-                args.response.success({
-                  data: { state: 'Stopping' }
-                });
-              }, 500);
-            },
-            messages: {
-              confirm: function(args) {
-                return 'Are you sure you want to shutdown ' + args.name + '?';
-              },
-              notification: function(args) {
-                return 'Rebooting VM: ' + args.name;
-              }
-            },
-            notification: {
-              poll: function(args) { args.complete(); }
-            }
-          },
-          start: {
-            label: 'Start instance',
-            action: function(args) {
-              setTimeout(function() {
-                args.response.success({
-                  data: { state: 'Starting' }
-                });
-              }, 500);
-            },
-            messages: {
-              confirm: function(args) {
-                return 'Are you sure you want to start ' + args.name + '?';
-              },
-              notification: function(args) {
-                return 'Starting VM: ' + args.name;
-              }
-            },
-            notification: {
-              poll: function(args) { args.complete(); }
-            }
-          },
-          destroy: {
-            label: 'Destroy instance',
-            messages: {
-              confirm: function(args) {
-                return 'Are you sure you want to destroy ' + args.name + '?';
-              },
-              notification: function(args) {
-                return 'Destroyed VM: ' + args.name;
-              }
-            },
-            action: function(args) {
-              setTimeout(function() {
-                args.response.success({ data: { state: 'Destroying' }});
-              }, 200);
-            },
-            notification: {
-              poll: function(args) { args.complete(); }
-            }
-          }
+          //???
+					start: {
+						label: 'label.action.start.instance' ,
+						action: function(args) {						  
+							$.ajax({
+								url: createURL("startVirtualMachine&id=" + args.context.vpcTierInstances[0].id),
+								dataType: "json",
+								async: true,
+								success: function(json) {
+									var jid = json.startvirtualmachineresponse.jobid;								
+									args.response.success(
+										{_custom:
+										 {jobId: jid,
+											getUpdatedItem: function(json) {											  
+												return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+											},
+											getActionFilter: function() {											  
+												return cloudStack.actionFilter.vmActionFilter;
+											}
+										 }
+										}
+									);
+								}
+							});
+						},
+						messages: {
+							confirm: function(args) {
+								return 'message.action.start.instance';
+							},
+							notification: function(args) {
+								return 'label.action.start.instance';
+							},
+							complete: function(args) {						  
+								if(args.password != null) {
+									alert('Password of the VM is ' + args.password);
+								}
+								return 'label.action.start.instance';
+							}			
+						},
+						notification: {
+							poll: pollAsyncJobResult
+						}
+					},
+					stop: {
+						label: 'label.action.stop.instance',
+						addRow: 'false',
+						createForm: {
+							title: 'label.action.stop.instance',
+							desc: 'message.action.stop.instance',
+							fields: {
+								forced: {
+									label: 'force.stop',
+									isBoolean: true,
+									isChecked: false
+								}
+							}
+						},
+						action: function(args) {
+							var array1 = [];
+							array1.push("&forced=" + (args.data.forced == "on"));
+							$.ajax({
+								url: createURL("stopVirtualMachine&id=" + args.context.vpcTierInstances[0].id + array1.join("")),
+								dataType: "json",
+								async: true,
+								success: function(json) {
+									var jid = json.stopvirtualmachineresponse.jobid;
+									args.response.success(
+										{_custom:
+										 {jobId: jid,
+											getUpdatedItem: function(json) {
+												return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+											},
+											getActionFilter: function() {
+												return cloudStack.actionFilter.vmActionFilter;
+											}
+										 }
+										}
+									);
+								}
+							});
+						},
+						messages: {
+							confirm: function(args) {
+								return 'message.action.stop.instance';
+							},
+
+							notification: function(args) {
+								return 'label.action.stop.instance';
+							}
+						},
+						notification: {
+							poll: pollAsyncJobResult
+						}
+					},
+					restart: {
+						label: 'instances.actions.reboot.label',
+						action: function(args) {
+							$.ajax({
+								url: createURL("rebootVirtualMachine&id=" + args.context.vpcTierInstances[0].id),
+								dataType: "json",
+								async: true,
+								success: function(json) {
+									var jid = json.rebootvirtualmachineresponse.jobid;
+									args.response.success(
+										{_custom:
+										 {jobId: jid,
+											getUpdatedItem: function(json) {
+												return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+											},
+											getActionFilter: function() {
+												return cloudStack.actionFilter.vmActionFilter;
+											}
+										 }
+										}
+									);
+								}
+							});
+						},
+						messages: {
+							confirm: function(args) {
+								return 'message.action.reboot.instance';
+							},
+							notification: function(args) {
+								return 'instances.actions.reboot.label';
+							}
+						},
+						notification: {
+							poll: pollAsyncJobResult
+						}
+					},
+					destroy: {
+						label: 'label.action.destroy.instance',
+						messages: {
+							confirm: function(args) {
+								return 'message.action.destroy.instance';
+							},            
+							notification: function(args) {
+								return 'label.action.destroy.instance';
+							}
+						},
+						action: function(args) {
+							$.ajax({
+								url: createURL("destroyVirtualMachine&id=" + args.context.vpcTierInstances[0].id),
+								dataType: "json",
+								async: true,
+								success: function(json) {
+									var jid = json.destroyvirtualmachineresponse.jobid;
+									args.response.success(
+										{_custom:
+										 {jobId: jid,
+											getUpdatedItem: function(json) {
+												return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+											},
+											getActionFilter: function() {
+												return cloudStack.actionFilter.vmActionFilter;
+											}
+										 }
+										}
+									);
+								}
+							});
+						},
+						notification: {
+							poll: pollAsyncJobResult
+						}
+					},
+					restore: {     
+						label: 'label.action.restore.instance',
+						messages: {
+							confirm: function(args) {
+								return 'message.action.restore.instance';
+							},
+							notification: function(args) {
+								return 'label.action.restore.instance';
+							}
+						},					
+						action: function(args) {
+							$.ajax({
+								url: createURL("recoverVirtualMachine&id=" + args.context.vpcTierInstances[0].id),
+								dataType: "json",
+								async: true,
+								success: function(json) {
+									var item = json.recovervirtualmachineresponse.virtualmachine;
+									args.response.success({data:item});
+								}
+							});
+						}
+					}
+					//???
         },
         dataProvider: function(args) {	          
 					var array1 = [];
@@ -292,7 +397,10 @@
 						  networkid: args.context.tiers[0].id
 						},
             success: function(json) {
-              args.response.success({ data: json.listvirtualmachinesresponse.virtualmachine });
+              args.response.success({ 
+							  data: json.listvirtualmachinesresponse.virtualmachine,
+								actionFilter: cloudStack.actionFilter.vmActionFilter
+							});
             }
           });
         }
