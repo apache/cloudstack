@@ -1065,6 +1065,10 @@
                 }
               }
             }
+											
+						if("vpc" in args.context) 
+						  array1.push("&vpcid=" + args.context.vpc[0].id);						
+						
             $.ajax({
               url: createURL("listPublicIpAddresses&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               data: data,

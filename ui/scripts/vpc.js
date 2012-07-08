@@ -168,8 +168,7 @@
         },
 
         // List view actions
-        actions: {
-          //???
+        actions: {          
 					start: {
 						label: 'label.action.start.instance' ,
 						action: function(args) {						  
@@ -356,8 +355,7 @@
 								}
 							});
 						}
-					}
-					//???
+					}					
         },
         dataProvider: function(args) {	          
 					var array1 = [];
@@ -406,6 +404,14 @@
         }
       }
     },
+		ipAddresses: {		 
+		  listView: function() {
+		    return cloudStack.sections.network.sections.ipAddresses;
+			}
+		},
+		gateways: {
+		
+		},
     siteToSiteVPN: {
       listView: function() { 
         return cloudStack.sections.network.sections.siteToSiteVpn;

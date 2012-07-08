@@ -12,6 +12,8 @@
   var elems = {
     vpcConfigureTooltip: function(args) {
       var $browser = args.$browser;
+			var ipAddresses = args.ipAddresses;
+			var gateways = args.gateways;
       var siteToSiteVPN = args.siteToSiteVPN;
       var links = {
         'ip-addresses': 'IP Addresses',
@@ -32,13 +34,24 @@
         $link.appendTo($links);
 
         // Link event
-        $link.click(function() {
+        $link.click(function() {				  
           switch (id) {
-          case 'site-to-site-vpn':
+          case 'ip-addresses':					 
+					  $browser.cloudBrowser('addPanel', {
+						  title: 'IP Addresses',
+							maximizeIfSelected: true,
+							complete: function($panel) {			
+								$panel.listView(ipAddresses.listView(), {context: ipAddresses.context});
+							}
+						});
+					  break;
+					case 'gateways':
+					  break;
+					case 'site-to-site-vpn':
             $browser.cloudBrowser('addPanel', {
               title: 'Site-to-site VPNs',
               maximizeIfSelected: true,
-              complete: function($panel) {
+              complete: function($panel) {							  
                 $panel.listView(
                   $.isFunction(siteToSiteVPN.listView) ?
                     siteToSiteVPN.listView() : siteToSiteVPN.listView
@@ -46,7 +59,7 @@
               }
             });
             break;
-          }
+          }					
         });
       });
 
@@ -70,9 +83,11 @@
 
       return $tooltip;
     },
-    vpcConfigureArea: function(args) {
+    vpcConfigureArea: function(args) {				  
       var $browser = args.$browser;
-      var siteToSiteVPN = args.siteToSiteVPN;
+      var ipAddresses = args.ipAddresses;
+			var gateways = args.gateways;
+			var siteToSiteVPN = args.siteToSiteVPN;
       var $config = $('<div>').addClass('config-area');
       var $configIcon = $('<span>').addClass('icon').html('&nbsp');
 
@@ -82,6 +97,8 @@
       $configIcon.mouseover(function() {
         var $tooltip = elems.vpcConfigureTooltip({
           $browser: $browser,
+					ipAddresses: ipAddresses,
+					gateways: gateways,
           siteToSiteVPN: siteToSiteVPN
         });
 
@@ -223,7 +240,9 @@
     },
     chart: function(args) {		 
       var $browser = args.$browser;
-      var siteToSiteVPN = args.siteToSiteVPN;
+      var ipAddresses = args.ipAddresses;
+			var gateways = args.gateways;
+			var siteToSiteVPN = args.siteToSiteVPN;
       var tiers = args.tiers;
       var vmListView = args.vmListView;
       var actions = args.actions;
@@ -240,7 +259,9 @@
             .append(
               elems.vpcConfigureArea({
                 $browser: $browser,
-                siteToSiteVPN: siteToSiteVPN
+								ipAddresses: $.extend(ipAddresses, {context: context}),
+								gateways: $.extend(gateways, {context: context}),
+                siteToSiteVPN: $.extend(siteToSiteVPN, {context: context})
               })
             );
 
@@ -516,7 +537,9 @@
   cloudStack.uiCustom.vpc = function(args) {
     var vmListView = args.vmListView;
     var tierArgs = args.tiers;
-    var siteToSiteVPN = args.siteToSiteVPN;
+    var ipAddresses = args.ipAddresses;
+		var gateways = args.gateways;
+		var siteToSiteVPN = args.siteToSiteVPN;
 
     return function(args) {
       var context = args.context;
@@ -536,10 +559,12 @@
           tierArgs.dataProvider({
             context: context,
             response: {
-              success: function(args) {
+              success: function(args) {			
                 var tiers = args.tiers;
                 var $chart = elems.chart({
                   $browser: $browser,
+									ipAddresses: ipAddresses,
+									gateways: gateways,
                   siteToSiteVPN: siteToSiteVPN,
                   vmListView: vmListView,
                   context: context,
