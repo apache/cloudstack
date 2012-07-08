@@ -290,7 +290,7 @@
             actions: actions,
             actionPreFilter: actionPreFilter,
             context: $.extend(true, {}, context, {
-              tiers: [tier]
+              networks: [tier]
             })
           });
 
@@ -505,7 +505,7 @@
                   $loading.remove();
                   addNewTier({
                     context: $.extend(true, {}, context, {
-                      tiers: [tier]
+                      networks: [tier]
                     }),
                     tier: tier,
                     $tiers: $tiers,

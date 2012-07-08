@@ -72,7 +72,7 @@
 				$.ajax({
 					url: createURL('createNetworkACL'),
 					data: $.extend(args.data, {
-						networkid: args.context.tiers[0].id
+						networkid: args.context.networks[0].id
 					}),
 					dataType: 'json',
 					success: function(data) {
@@ -127,7 +127,7 @@
 				url: createURL('listNetworkACLs'),
 				data: {
 					listAll: true,
-					networkid: args.context.tiers[0].id
+					networkid: args.context.networks[0].id
 				},
 				dataType: 'json',
 				async: true,
@@ -392,7 +392,7 @@
           $.ajax({
             url: createURL('listVirtualMachines' + array1.join("")),
 						data: {
-						  networkid: args.context.tiers[0].id
+						  networkid: args.context.networks[0].id
 						},
             success: function(json) {
               args.response.success({ 
@@ -872,7 +872,7 @@
 		
     tiers: {
       actionPreFilter: function(args) {
-        var tier = args.context.tiers[0];
+        var tier = args.context.networks[0];
         var state = tier.state;
 
         return state == 'Running' ? ['start'] : ['stop'];
@@ -1009,7 +1009,7 @@
 						  url: createURL('deleteNetwork'),
 							dataType: "json",
 							data: {
-							  id: args.context.tiers[0].id
+							  id: args.context.networks[0].id
 							},
 							success: function(json) {							  
 								var jid = json.deletenetworkresponse.jobid;
