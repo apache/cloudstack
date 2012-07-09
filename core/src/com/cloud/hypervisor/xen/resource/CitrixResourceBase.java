@@ -7209,7 +7209,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 String lmac = vif.getMAC(conn);
                 if ( lmac.equals(mac) ) {
                     vif.unplug(conn);
+                    Network network = vif.getNetwork(conn);
                     vif.destroy(conn);
+                    if (network.getNameLabel(conn).startsWith("VLAN")) {
+                        disableVlanNetwork(conn, network);
+                    }
                     break;
                 }
             }
