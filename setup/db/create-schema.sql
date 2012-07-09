@@ -2285,8 +2285,10 @@ CREATE TABLE `cloud`.`private_ip_address` (
   `network_id` bigint unsigned NOT NULL COMMENT 'id of the network ip belongs to',
   `reservation_id` char(40) COMMENT 'reservation id',
   `mac_address` varchar(17) COMMENT 'mac address',
+  `vpc_id` bigint unsigned COMMENT 'vpc this ip belongs to',
   `taken` datetime COMMENT 'Date taken',
   PRIMARY KEY (`id`),
+  CONSTRAINT `fk_private_ip_address__vpc_id` FOREIGN KEY `fk_private_ip_address__vpc_id`(`vpc_id`) REFERENCES `vpc`(`id`),
   CONSTRAINT `fk_private_ip_address__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

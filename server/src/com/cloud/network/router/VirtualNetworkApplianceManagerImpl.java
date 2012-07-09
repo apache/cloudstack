@@ -1257,8 +1257,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             //3) deploy virtual router(s)
             int count = routerCount - routers.size();
             for (int i = 0; i < count; i++) {
+                List<Pair<NetworkVO, NicProfile>> networks = createRouterNetworks(owner, isRedundant, plan, guestNetwork,
+                        new Pair<Boolean, PublicIp>(publicNetwork, sourceNatIp));
                 DomainRouterVO router = deployRouter(owner, dest, plan, params, isRedundant, vrProvider, offeringId,
-                        null, publicNetwork, guestNetwork, new Pair<Boolean, PublicIp>(publicNetwork, sourceNatIp));
+                        null, networks);
                 //add router to router network map
                 if (!_routerDao.isRouterPartOfGuestNetwork(router.getId(), network.getId())) {
                     DomainRouterVO routerVO = _routerDao.findById(router.getId());
@@ -1276,7 +1278,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     protected DomainRouterVO deployRouter(Account owner, DeployDestination dest, DeploymentPlan plan, Map<Param, Object> params,
             boolean isRedundant, VirtualRouterProvider vrProvider, long svcOffId,
-            Long vpcId, boolean setupPublicNetwork, Network guestNetwork, Pair<Boolean, PublicIp> publicNetwork) throws ConcurrentOperationException, 
+            Long vpcId, List<Pair<NetworkVO, NicProfile>> networks) throws ConcurrentOperationException, 
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException, 
             StorageUnavailableException, ResourceUnavailableException {
         
@@ -1284,15 +1286,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating the router " + id + " in datacenter "  + dest.getDataCenter());
         }
-        
-        //1) Create router networks
-        List<Pair<NetworkVO, NicProfile>> networks = createRouterNetworks(owner, isRedundant, plan, guestNetwork,
-                publicNetwork);
 
-       
         ServiceOfferingVO routerOffering = _serviceOfferingDao.findById(svcOffId);
 
-        //2) Router is the network element, we don't know the hypervisor type yet.
+        // Router is the network element, we don't know the hypervisor type yet.
         //Try to allocate the domR twice using diff hypervisors, and when failed both times, throw the exception up
         List<HypervisorType> supportedHypervisors = new ArrayList<HypervisorType>();
         HypervisorType defaults = _resourceMgr.getDefaultHypervisor(dest.getDataCenter().getId());
@@ -1456,7 +1453,6 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), defaultNic));
         }
 
-        
         return networks;
     }
 

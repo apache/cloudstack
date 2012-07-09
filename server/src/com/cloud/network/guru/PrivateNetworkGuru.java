@@ -101,7 +101,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
             return null;
         }
 
-        NetworkVO network = new NetworkVO(offering.getTrafficType(), Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(),
+        NetworkVO network = new NetworkVO(offering.getTrafficType(), Mode.Static, BroadcastDomainType.Vlan, offering.getId(),
                 State.Allocated, plan.getDataCenterId(), plan.getPhysicalNetworkId());
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) || 
@@ -175,10 +175,9 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     
     
     protected void getIp(NicProfile nic, DataCenter dc, Network network)
-            throws InsufficientVirtualNetworkCapcityException,
-    InsufficientAddressCapacityException {
+            throws InsufficientVirtualNetworkCapcityException,InsufficientAddressCapacityException {
         if (nic.getIp4Address() == null) {
-            PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(network.getDataCenterId(), network.getId());
+            PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(network.getDataCenterId(), network.getId(), null);
             String vlanTag = network.getBroadcastUri().getHost();
             String netmask = NetUtils.getCidrNetmask(network.getCidr());
             PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, ipVO.getMacAddress());

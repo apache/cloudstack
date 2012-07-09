@@ -39,7 +39,7 @@ public class VpcGatewayDaoImpl extends GenericDaoBase<VpcGatewayVO, Long> implem
 
 
     @Override
-    public VpcGatewayVO getPrivateGateway(long vpcId) {
+    public VpcGatewayVO getPrivateGatewayForVpc(long vpcId) {
         SearchCriteria<VpcGatewayVO> sc = AllFieldsSearch.create();
         sc.setParameters("vpcId", vpcId);
         sc.setParameters("type", VpcGateway.Type.Private);

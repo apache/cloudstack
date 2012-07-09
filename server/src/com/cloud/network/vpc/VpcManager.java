@@ -102,4 +102,10 @@ public interface VpcManager extends VpcService{
      * @return
      */
     boolean vpcProviderEnabledInZone(long zoneId);
+
+    /**
+     * @param vpcId
+     * @return
+     */
+    VpcGateway getPrivateGatewayForVpc(long vpcId);
 }

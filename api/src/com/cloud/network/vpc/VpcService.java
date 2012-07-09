@@ -118,12 +118,13 @@ public interface VpcService {
 
     /**
      * @param vpcId
+     * @param destroyOnFailure TODO
      * @return
      * @throws InsufficientCapacityException 
      * @throws ResourceUnavailableException 
      * @throws ConcurrentOperationException 
      */
-    boolean startVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
+    boolean startVpc(long vpcId, boolean destroyOnFailure) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
     /**
      * @param vpcId

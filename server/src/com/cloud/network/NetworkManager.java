@@ -55,6 +55,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 
 /**
  * NetworkManager manages the network for the different end users.
@@ -460,6 +461,22 @@ public interface NetworkManager extends NetworkService {
      * @return
      */
     boolean isPrivateGateway(Nic guestNic);
+
+
+    /**
+     * @param network
+     * @param requested
+     * @param context
+     * @param vmProfile
+     * @return
+     * @throws InsufficientVirtualNetworkCapcityException
+     * @throws InsufficientAddressCapacityException
+     * @throws ConcurrentOperationException
+     * @throws InsufficientCapacityException
+     * @throws ResourceUnavailableException
+     */
+    NicProfile allocateAndPrepareNic(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfileImpl<VMInstanceVO> vmProfile) throws InsufficientVirtualNetworkCapcityException,
+            InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
     
 
 }

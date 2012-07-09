@@ -157,13 +157,14 @@ public interface NetworkService {
      * @param gateway
      * @param netmask
      * @param networkOwnerId
+     * @param vpcId TODO
      * @return
      * @throws InsufficientCapacityException 
      * @throws ConcurrentOperationException 
      * @throws ResourceAllocationException 
      */
     Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan,
-            String startIp, String endIP, String gateway, String netmask, long networkOwnerId) 
+            String startIp, String endIP, String gateway, String netmask, long networkOwnerId, Long vpcId) 
                     throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException;
     /**
      * @param network

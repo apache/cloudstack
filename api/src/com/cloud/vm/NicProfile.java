@@ -294,4 +294,5 @@ public class NicProfile {
     public String toString() {
         return new StringBuilder("NicProfile[").append(id).append("-").append(vmId).append("-").append(reservationId).toString();
     }
+
 }
