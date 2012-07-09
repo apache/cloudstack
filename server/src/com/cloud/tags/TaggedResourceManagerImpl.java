@@ -338,9 +338,13 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
 
        sb.and("key", sb.entity().getKey(), SearchCriteria.Op.EQ);
        sb.and("value", sb.entity().getValue(), SearchCriteria.Op.EQ);
-       sb.and().op("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
-       sb.or("resourceUuid", sb.entity().getResourceUuid(), SearchCriteria.Op.EQ);
-       sb.cp();
+       
+       if (resourceId != null) {
+           sb.and().op("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+           sb.or("resourceUuid", sb.entity().getResourceUuid(), SearchCriteria.Op.EQ);
+           sb.cp();  
+       }
+       
        sb.and("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
        sb.and("customer", sb.entity().getCustomer(), SearchCriteria.Op.EQ);
        
