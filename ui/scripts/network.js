@@ -113,14 +113,13 @@
         disallowedActions.push('disableStaticNAT');
       }
 
-      if ($.inArray('Vpn', $.map(args.context.networks[0].service,
-                                 function(service) { return service.name; })) > -1) {
+			if(item.networkOfferingHavingVpnService == true) {      
         if (item.vpnenabled) {
           disallowedActions.push('enableVPN');
         } else {
           disallowedActions.push('disableVPN');
         }
-      } else {
+      } else { //item.networkOfferingHavingVpnService == false
         disallowedActions.push('disableVPN');
         disallowedActions.push('enableVPN');
       }
@@ -1469,40 +1468,54 @@
                     async: true,
                     success: function(json) {
                       var ipObj = items[0];	
-											$.ajax({
-												url: createURL('listNetworkOfferings'),
-												data: {
-													id: args.context.networks[0].networkofferingid
-												},
-												dataType: 'json',
-												async: true,
-												success: function(json) {		
-													var networkOfferingObj = json.listnetworkofferingsresponse.networkoffering[0];
-													ipObj.networkOfferingConserveMode= networkOfferingObj.conservemode; 
-																									
-													// Get VPN data
-													$.ajax({
-														url: createURL('listRemoteAccessVpns'),
-														data: {
-															listAll: true,
-															publicipid: ipObj.id
-														},
-														dataType: 'json',
-														async: true,
-														success: function(vpnResponse) {
-															var isVPNEnabled = vpnResponse.listremoteaccessvpnsresponse.count;
-															if (isVPNEnabled) {
-																ipObj.vpnenabled = true;
-																ipObj.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
-															};
-															args.response.success({
-																actionFilter: actionFilters.ipAddress,
-																data: ipObj
-															});
-														}
-													});													
-												}
-											});					
+											
+											if('networks' in args.context) { //from Guest Network section		
+											  //get ipObj.networkOfferingConserveMode and ipObj.networkOfferingHavingVpnService from guest network's network offering
+												$.ajax({
+													url: createURL('listNetworkOfferings'), 
+													data: {
+														id: args.context.networks[0].networkofferingid  
+													},													
+													async: false,
+													success: function(json) {		
+														var networkOfferingObj = json.listnetworkofferingsresponse.networkoffering[0];
+														ipObj.networkOfferingConserveMode = networkOfferingObj.conservemode; 
+																												
+														$(networkOfferingObj.service).each(function(){
+															var thisService = this;
+															if(thisService.name == "Vpn")
+																ipObj.networkOfferingHavingVpnService = true;                          
+														});
+																												
+														if(ipObj.networkOfferingHavingVpnService == true) {														 
+															$.ajax({
+																url: createURL('listRemoteAccessVpns'), 
+																data: {
+																	listAll: true,
+																	publicipid: ipObj.id
+																},												
+																async: false,
+																success: function(vpnResponse) {
+																	var isVPNEnabled = vpnResponse.listremoteaccessvpnsresponse.count;
+																	if (isVPNEnabled) {
+																		ipObj.vpnenabled = true;
+																		ipObj.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
+																	};													
+																}
+															});																	
+														}																
+													}
+												});														
+                      }											
+											else { //from VPC section 											  
+											  ipObj.networkOfferingConserveMode = false; //conserve mode of IP in VPC is always off, so hardcode it as false											
+												ipObj.networkOfferingHavingVpnService = false; //VPN is not supported in IP in VPC, so hardcode it as false													
+											}			
+
+                      args.response.success({
+												actionFilter: actionFilters.ipAddress,
+												data: ipObj
+											});													
                     },
                     error: function(data) {
                       args.response.error(parseXMLHttpResponse(data));
