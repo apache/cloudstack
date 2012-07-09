@@ -228,7 +228,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
                 continue; // Skips my own rule.
             }
 
-            // if rules cidrs are different, we can skip port ranges verification
+            // if one cidr overlaps another, do port veirficatino
             boolean duplicatedCidrs = false;
             // Verify that the rules have different cidrs
             List<String> ruleCidrList = rule.getSourceCidrList();
@@ -237,15 +237,19 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
             if (ruleCidrList == null || newRuleCidrList == null) {
                 continue;
             }
-
-            Collection<String> similar = new HashSet<String>(ruleCidrList);
-            similar.retainAll(newRuleCidrList);
-
-            if (similar.size() > 0) {
-                duplicatedCidrs = true;
+            
+            for (String newCidr : newRuleCidrList) {
+                for (String ruleCidr : ruleCidrList) {
+                    if (NetUtils.isNetworksOverlap(newCidr, ruleCidr)) {
+                        duplicatedCidrs = true;
+                        break;
+                    }
+                    if (duplicatedCidrs) {
+                        break;
+                    }
+                }
             }
             
-
             if (newRule.getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO) && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol())) {
                 if (newRule.getIcmpCode().longValue() == rule.getIcmpCode().longValue() 
                         && newRule.getIcmpType().longValue() == rule.getIcmpType().longValue()
