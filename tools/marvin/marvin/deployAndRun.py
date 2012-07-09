@@ -26,7 +26,7 @@ if __name__ == "__main__":
     parser.add_option("-l", "--load", dest="load", action="store_true", help="only load config, do not deploy, it will only run testcase")
     parser.add_option("-f", "--file", dest="module", help="run tests in the given file")
     parser.add_option("-n", "--nose", dest="nose", action="store_true", help="run tests using nose")
-    parser.add_option("-x", "--xml", dest="xmlrunner", action="store_true", help="use the xml runner to generate xml reports")
+    parser.add_option("-x", "--xml", dest="xmlrunner", action="store", default="./xml-reports", help="use the xml runner to generate xml reports and path to store xml files")
     (options, args) = parser.parse_args()
     
     testResultLogFile = None
@@ -43,7 +43,9 @@ if __name__ == "__main__":
         deploy.deploy()
         
     format = "text"        
-    if options.xmlrunner:
+    xmlDir = "xml-reports"
+    if options.xmlrunner is not None:
+        xmlDir = options.xmlrunner
         format = "xml"
     
     if options.testCaseFolder is None:
@@ -55,7 +57,7 @@ if __name__ == "__main__":
                 engine = NoseTestExecuteEngine.NoseTestExecuteEngine(deploy.testClient, testCaseLogFile, testResultLogFile, format)
                 engine.runTestsFromFile(options.module)
             else:
-                engine = TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient, testCaseLogFile, testResultLogFile, format)
+                engine = TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient, testCaseLogFile, testResultLogFile, format, xmlDir)
                 engine.loadTestsFromFile(options.module)
                 engine.run()
     else:
@@ -63,6 +65,6 @@ if __name__ == "__main__":
             engine = NoseTestExecuteEngine.NoseTestExecuteEngine(deploy.testClient, clientLog=testCaseLogFile, resultLog=testResultLogFile, workingdir=options.testCaseFolder, format=format)
             engine.runTests()
         else:
-           engine = TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient, testCaseLogFile, testResultLogFile, format)
+           engine = TestCaseExecuteEngine.TestCaseExecuteEngine(deploy.testClient, testCaseLogFile, testResultLogFile, format, xmlDir)
            engine.loadTestsFromDir(options.testCaseFolder)
            engine.run()
