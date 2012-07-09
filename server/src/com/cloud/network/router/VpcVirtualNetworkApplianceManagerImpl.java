@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 
@@ -1030,13 +1031,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     protected void finalizeIpAssocForNetwork(Commands cmds, VirtualRouter router, Provider provider, 
             Long guestNetworkId) {
         
-        ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(router, provider, guestNetworkId);
+        ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(router, provider, guestNetworkId, IpAddress.State.Releasing);
         
         if (publicIps != null && !publicIps.isEmpty()) {
             s_logger.debug("Found " + publicIps.size() + " ip(s) to apply as a part of domR " + router + " start.");
             // Re-apply public ip addresses - should come before PF/LB/VPN
             createVpcAssociatePublicIPCommands(router, publicIps, cmds);
-            
         }
     }
 
@@ -1209,4 +1209,5 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         privateNic.setMacAddress(ip.getMacAddress());
         return privateNic;
     }
+   
 }
