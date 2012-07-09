@@ -5289,7 +5289,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         try {
             txn.start();
             // Create the new physical network in the database
-            PhysicalNetworkVO pNetwork = new PhysicalNetworkVO(zoneId, vnetRange, networkSpeed, domainId, broadcastDomainRange, name);
+            long id = _physicalNetworkDao.getNextInSequence(Long.class, "id");
+            
+            PhysicalNetworkVO pNetwork = new PhysicalNetworkVO(id, zoneId, vnetRange, networkSpeed, domainId, broadcastDomainRange, name);
             pNetwork.setTags(tags);
             pNetwork.setIsolationMethods(isolationMethods);
 

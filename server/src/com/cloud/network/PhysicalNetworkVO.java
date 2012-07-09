@@ -90,7 +90,7 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
         
     }
     
-    public PhysicalNetworkVO(long dataCenterId, String vnet, String speed, Long domainId, BroadcastDomainRange broadcastDomainRange, String name) {
+    public PhysicalNetworkVO(long id, long dataCenterId, String vnet, String speed, Long domainId, BroadcastDomainRange broadcastDomainRange, String name) {
         this.dataCenterId = dataCenterId;
         this.setVnet(vnet);
         this.setSpeed(speed);
@@ -103,6 +103,7 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
         this.state = State.Disabled;
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
+        this.id = id;
     }
 
     @Override
