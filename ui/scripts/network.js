@@ -985,56 +985,19 @@
             add: {
               label: 'label.acquire.new.ip',
               addRow: 'true',			              
-              messages: {                
+              messages: {   
+                confirm: function(args) {
+                  return 'message.acquire.new.ip';
+                },							
                 notification: function(args) {
                   return 'label.acquire.new.ip';
                 }
-              },							
-							createForm: {
-								title: 'label.acquire.new.ip',
-								desc: 'Please confirm that you want to acquire a new IP',
-                preFilter: function(args) {                  
-									if('vpc' in args.context) {
-									  args.$form.find('.form-item[rel=networkid]').css('display', 'inline-block'); //shown
-									}				
-                  else {
-                    args.$form.find('.form-item[rel=networkid]').hide(); //hidden
-                  }			
-                },								
-								fields: {
-									networkid: {
-										label: 'tier',
-										select: function(args) {	 
-                      if('vpc' in args.context) {
-											  $.ajax({											
-													url: createURL("listNetworks"),											
-													data: {
-														vpcid: args.context.vpc[0].id,
-														listAll: true
-													},
-													success: function(json) {												 
-														var networks = json.listnetworksresponse.network;	
-														var items = [];
-														$(networks).each(function(){
-															items.push({id: this.id, description: this.displaytext});
-														});
-														args.response.success({data: items});
-													}
-												});		
-											}											  
-											else {
-												args.response.success({data: []});
-                      }												
-										}
-									}
-								}
-							},
+              },	
               action: function(args) {                
-								var dataObj = {};			
+								var dataObj = {};											
 								if('vpc' in args.context) { //from VPC section
 								  $.extend(dataObj, {
-									  vpcid: args.context.vpc[0].id,
-									  networkid: args.data.networkid
+									  vpcid: args.context.vpc[0].id
 									});
 								}
 								else if('networks' in args.context) { //from Guest Network section
@@ -1048,8 +1011,7 @@
 											account: g_account
 										});
 									}									
-								}								
-								
+								}			
                 $.ajax({
                   url: createURL('associateIpAddress'),
                   data: dataObj,   
