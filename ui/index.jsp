@@ -258,7 +258,7 @@
 
                                 <!-- Name -->
                                 <div class="field name hide-if-unselected">
-                                  <div class="name"><fmt:message key="label.name"/></div>
+                                  <div class="name"> <span class="field-required">*</span> <fmt:message key="label.name"/></div>
                                   <div class="value">
                                     <input type="text" class="required" name="new-network-name" />
                                   </div>
