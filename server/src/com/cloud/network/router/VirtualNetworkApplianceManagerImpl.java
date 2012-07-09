@@ -2038,15 +2038,29 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
     }
 
-    protected ArrayList<? extends PublicIpAddress> getPublicIpsToApply(VirtualRouter router, Provider provider, Long guestNetworkId) {
+    protected ArrayList<? extends PublicIpAddress> getPublicIpsToApply(VirtualRouter router, Provider provider, 
+            Long guestNetworkId, com.cloud.network.IpAddress.State... skipInStates) {
         long ownerId = router.getAccountId();
         final List<IPAddressVO> userIps = _networkMgr.listPublicIpsAssignedToGuestNtwk(ownerId, guestNetworkId, null);
         List<PublicIp> allPublicIps = new ArrayList<PublicIp>();
         if (userIps != null && !userIps.isEmpty()) {
+            boolean addIp = true;
             for (IPAddressVO userIp : userIps) {
+                if (skipInStates != null) {
+                    for (IpAddress.State stateToSkip : skipInStates) {
+                        if (userIp.getState() == stateToSkip) {
+                            s_logger.debug("Skipping ip address " + userIp + " in state " + userIp.getState());
+                            addIp = false;
+                            break;
+                        }
+                    }
+                }
+                
+                if (addIp) {
                     PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), 
                             NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
-                allPublicIps.add(publicIp);
+                    allPublicIps.add(publicIp);
+                }
             }
         }
         
