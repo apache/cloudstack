@@ -104,10 +104,6 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                         //Decrypt this value.
                         xenGuestLabel = DBEncryptionUtil.decrypt(xenGuestLabel);
                         
-                        if(xenGuestLabel == null){
-                            xenGuestLabel = "cloud-private";
-                        }
-                        
                         //Create a physical network with guest traffic type and this tag
                         long physicalNetworkId = addPhysicalNetworkToZone(conn, zoneId, zoneName, networkType, null, domainId);
                         addTrafficType(conn, physicalNetworkId, "Guest", xenGuestLabel, null, null);
