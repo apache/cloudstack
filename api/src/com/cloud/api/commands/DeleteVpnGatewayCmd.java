@@ -23,12 +23,13 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.Site2SiteVpnGatewayResponse;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Delete site to site vpn gateway", responseObject=Site2SiteVpnGatewayResponse.class)
+@Implementation(description="Delete site to site vpn gateway", responseObject=SuccessResponse.class)
 public class DeleteVpnGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVpnGatewayCmd.class.getName());
 
@@ -101,8 +102,7 @@ public class DeleteVpnGatewayCmd extends BaseAsyncCmd {
     public void execute(){
         Site2SiteVpnGateway result = _s2sVpnService.deleteVpnGateway(this);
         if (result != null) {
-            Site2SiteVpnGatewayResponse response = _responseGenerator.createSite2SiteVpnGatewayResponse(result);
-            response.setResponseName(getCommandName());
+            SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete customer VPN gateway");
