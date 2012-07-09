@@ -800,6 +800,9 @@
                     success: function(json) {
                       var item = json.updateuserresponse.user;
                       args.response.success({data:item});
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
                     }
                   });
 
