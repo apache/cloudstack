@@ -16,20 +16,19 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.Site2SiteVpnConnectionResponse;
+import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Delete site to site vpn connection", responseObject=Site2SiteVpnConnectionResponse.class)
+@Implementation(description="Delete site to site vpn connection", responseObject=SuccessResponse.class)
 public class DeleteVpnConnectionCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVpnConnectionCmd.class.getName());
 
@@ -103,8 +102,7 @@ public class DeleteVpnConnectionCmd extends BaseAsyncCmd {
         try {
             Site2SiteVpnConnection result = _s2sVpnService.deleteVpnConnection(this);
             if (result != null) {
-                Site2SiteVpnConnectionResponse response = _responseGenerator.createSite2SiteVpnConnectionResponse(result);
-                response.setResponseName(getCommandName());
+                SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);
             } else {
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to delete site to site VPN connection");
