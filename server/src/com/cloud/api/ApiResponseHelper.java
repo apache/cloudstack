@@ -3848,6 +3848,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         	response.setLifetime(customerGateway.getLifetime());
         }      
                 
+        response.setState(result.getState().toString());
         response.setCreated(result.getCreated());
         response.setRemoved(result.getRemoved());
         response.setObjectName("vpnconnection");

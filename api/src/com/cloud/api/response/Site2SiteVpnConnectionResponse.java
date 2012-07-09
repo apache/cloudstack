@@ -51,6 +51,9 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse {
     @SerializedName(ApiConstants.LIFETIME) @Param(description="Lifetime of vpn connection to the customer gateway, in seconds") //from CustomerGateway
     private Long lifetime;
     
+    @SerializedName(ApiConstants.STATE) @Param(description="State of vpn connection")
+    private String state;
+    
     @SerializedName(ApiConstants.CREATED) @Param(description="the date and time the host was created")
     private Date created;
 
@@ -97,6 +100,10 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse {
     	this.lifetime = lifetime;
     }     
     
+    public void setState(String state) {
+        this.state = state;
+    }
+
     public void setCreated(Date created) {
         this.created = created;
     }
