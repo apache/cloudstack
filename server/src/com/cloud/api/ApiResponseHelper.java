@@ -793,14 +793,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setAssociatedNetworkId(ipAddr.getAssociatedWithNetworkId());
         ipResponse.setVpcId(ipAddr.getVpcId());
 
-        // Network id the ip is associated withif associated networkId is null, try to get this information from vlan
-        Long associatedNetworkId = ipAddr.getAssociatedWithNetworkId();
+        // Network id the ip is associated with (if associated networkId is null, try to get this information from vlan)
         Long vlanNetworkId = ApiDBUtils.getVlanNetworkId(ipAddr.getVlanId());
-        if (associatedNetworkId == null) {
-            associatedNetworkId = vlanNetworkId;
-        }
-
-        ipResponse.setAssociatedNetworkId(associatedNetworkId);
 
         // Network id the ip belongs to
         Long networkId;
