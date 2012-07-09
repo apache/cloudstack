@@ -15,6 +15,7 @@
 # @VERSION@
 
 source /root/func.sh
+source /opt/cloud/bin/vpc_func.sh
 
 lock="biglock"
 locked=$(getLockFile $lock)
@@ -90,7 +91,7 @@ fw_entry() {
     do
       local pubIp=$(echo $i | cut -d: -f1)
       local dport=$(echo $i | cut -d: -f2)    
-      sudo iptables -A load_balancer -p tcp -d $pubIp --dport $dport -j ACCEPT 2>/dev/null
+      sudo iptables -A load_balancer -p tcp -d $pubIp --dport $dport -j ACL_INBOUND_$dev 2>/dev/null
       success=$?
       if [ $success -gt 0 ]
       then
@@ -135,18 +136,16 @@ restore_lb() {
   fi
 }
 
-mflag=
 iflag=
 aflag=
 dflag=
-fflag=
 sflag=
 
 while getopts 'i:a:d:s:' OPTION
 do
   case $OPTION in
   i)	iflag=1
-		domRIp="$OPTARG"
+		ip="$OPTARG"
 		;;
   a)	aflag=1
 		addedIps="$OPTARG"
@@ -162,6 +161,9 @@ do
 		;;
   esac
 done
+
+
+dev=$(getEthByIp $ip)
 
 if [ "$addedIps" == "" ]
 then
@@ -184,14 +186,12 @@ fi
 
 # iptables entry to ensure that haproxy receives traffic
 fw_entry $addedIps $removedIps $statsIp
-  	
-if [ $? -gt 0 ]
+result=$?  	
+if [ $result -gt 0 ]
 then
   logger -t cloud "Failed to apply firewall rules for load balancing, reverting HA Proxy config"
   # Restore the LB
   restore_lb
 fi
  
-unlock_exit 0 $lock $locked
-  	
-
+unlock_exit $result $lock $locked

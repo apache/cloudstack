@@ -1584,7 +1584,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String[] statRules = rules[LoadBalancerConfigurator.STATS];
 
         String args = "vpc_loadbalancer.sh " + routerIp;
-
+        String ip = cmd.getNic().getIp();
+        args += " -i " + ip;
         StringBuilder sb = new StringBuilder();
         if (addRules.length > 0) {
             for (int i = 0; i < addRules.length; i++) {

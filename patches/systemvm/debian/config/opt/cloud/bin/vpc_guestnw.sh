@@ -31,17 +31,25 @@ usage() {
 }
 
 
-destroy_acl_outbound_chain() {
+destroy_acl_chain() {
   sudo iptables -t mangle -F ACL_OUTBOUND_$dev 2>/dev/null
   sudo iptables -t mangle -D PREROUTING -i $dev -s $subnet/$mask ! -d $ip -j ACL_OUTBOUND_$dev  2>/dev/null
   sudo iptables -t mangle -X ACL_OUTBOUND_$dev 2>/dev/null
+  sudo iptables -F ACL_INBOUND_$dev 2>/dev/null
+  sudo iptables -D FORWARD -o $dev -d $subnet/$mask -j ACL_INBOUND_$dev  2>/dev/null
+  sudo iptables -X ACL_INBOUND_$dev 2>/dev/null
+
 }
 
-create_acl_outbound_chain() {
-  destroy_acl_outbound_chain
+create_acl_chain() {
+  destroy_acl_chain
   sudo iptables -t mangle -N ACL_OUTBOUND_$dev 2>/dev/null
   sudo iptables -t mangle -A ACL_OUTBOUND_$dev -j DROP 2>/dev/null
   sudo iptables -t mangle -A PREROUTING -i $dev -s $subnet/$mask ! -d $ip -j ACL_OUTBOUND_$dev  2>/dev/null
+  sudo iptables -N ACL_INBOUND_$dev 2>/dev/null
+  # drop if no rules match (this will be the last rule in the chain)
+  sudo iptables -A ACL_INBOUND_$dev -j DROP 2>/dev/null
+  sudo iptables -A FORWARD -o $dev -d $subnet/$mask -j ACL_INBOUND_$dev  2>/dev/null
 }
 
 
@@ -133,7 +141,7 @@ create_guest_network() {
   sudo iptables -t mangle -A PREROUTING -i $dev -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
   # set up hairpin
   sudo iptables -t nat -A POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
-  create_acl_outbound_chain
+  create_acl_chain
   setup_usage
   setup_dnsmasq
   setup_apache2
