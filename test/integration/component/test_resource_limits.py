@@ -1307,7 +1307,7 @@ class TestResources(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
         cls._cleanup = []
-    return
+        return
 
     @classmethod
     def tearDownClass(cls):

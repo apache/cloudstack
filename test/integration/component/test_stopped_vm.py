@@ -1568,10 +1568,10 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
                                         account=self.account.account.name,
                                         domainid=self.account.account.domainid
                                         )
-    try:
-        self.template.download(self.apiclient)
-    except Exception as e:
-        raise Exception("Template download failed: %s" % e)
+        try:
+            self.template.download(self.apiclient)
+        except Exception as e:
+            raise Exception("Template download failed: %s" % e)
 
         self.cleanup = [self.account]
         return
