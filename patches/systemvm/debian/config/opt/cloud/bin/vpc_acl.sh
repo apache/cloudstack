@@ -34,7 +34,7 @@ acl_remove_backup() {
   sudo iptables -D FORWARD -o $dev -d $gcidr -j _ACL_INBOUND_$dev  2>/dev/null
   sudo iptables -X _ACL_INBOUND_$dev 2>/dev/null
   sudo iptables -t mangle -F _ACL_OUTBOUND_$dev 2>/dev/null
-  sudo iptables -t mangle -D PREROUTING -i $dev -s $gcidr ! -d $ip -j _ACL_OUTBOUND_$dev  2>/dev/null
+  sudo iptables -t mangle -D PREROUTING -m state --state NEW -i $dev -s $gcidr ! -d $ip -j _ACL_OUTBOUND_$dev  2>/dev/null
   sudo iptables -t mangle -X _ACL_OUTBOUND_$dev 2>/dev/null
 }
 
@@ -43,7 +43,7 @@ acl_remove() {
   sudo iptables -D FORWARD -o $dev -d $gcidr -j ACL_INBOUND_$dev  2>/dev/null
   sudo iptables -X ACL_INBOUND_$dev 2>/dev/null
   sudo iptables -t mangle -F ACL_OUTBOUND_$dev 2>/dev/null
-  sudo iptables -t mangle -D PREROUTING -i $dev -s $gcidr ! -d $ip -j ACL_OUTBOUND_$dev  2>/dev/null
+  sudo iptables -t mangle -D PREROUTING -m state --state NEW -i $dev -s $gcidr ! -d $ip -j ACL_OUTBOUND_$dev  2>/dev/null
   sudo iptables -t mangle -X ACL_OUTBOUND_$dev 2>/dev/null
 }
 
@@ -69,7 +69,7 @@ acl_chain_for_guest_network () {
   # outbound
   sudo iptables -t mangle -N ACL_OUTBOUND_$dev 2>/dev/null
   sudo iptables -t mangle -A ACL_OUTBOUND_$dev -j DROP 2>/dev/null
-  sudo iptables -t mangle -A PREROUTING -i $dev -s $gcidr ! -d $ip -j ACL_OUTBOUND_$dev  2>/dev/null
+  sudo iptables -t mangle -A PREROUTING -m state --state NEW -i $dev -s $gcidr ! -d $ip -j ACL_OUTBOUND_$dev  2>/dev/null
 }
 
 
