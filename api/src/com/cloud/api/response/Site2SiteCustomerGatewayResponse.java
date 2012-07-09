@@ -22,7 +22,7 @@ import com.google.gson.annotations.SerializedName;
 @SuppressWarnings("unused")
 public class Site2SiteCustomerGatewayResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the vpn gateway ID")
-    private IdentityProxy id = new IdentityProxy("s2s_vpn_gateway");
+    private IdentityProxy id = new IdentityProxy("s2s_customer_gateway");
 
     @SerializedName(ApiConstants.GATEWAY) @Param(description="public ip address id of the customer gateway")
     private String gatewayIp;

@@ -16,9 +16,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
-import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
@@ -26,7 +24,6 @@ import com.cloud.api.response.Site2SiteCustomerGatewayResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @Implementation(description="Creates site to site vpn customer gateway", responseObject=Site2SiteCustomerGatewayResponse.class)
 public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
