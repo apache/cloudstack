@@ -2448,7 +2448,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         
         s_logger.debug("Adding vm " + vm + " to network " + network);
         VMInstanceVO vmVO = _vmDao.findById(vm.getId());
-        NetworkVO networkVO = _networkDao.findById(network.getId());
         ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM), 
                 _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
         
@@ -2459,35 +2458,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         Host host = _hostDao.findById(vm.getHostId()); 
         DeployDestination dest = new DeployDestination(dc, null, null, host);
         
-        NicProfile nic = null;
-        String broadcastUri = null;
-        if (requested != null && requested.getBroadCastUri() != null) {
-            broadcastUri = requested.getBroadCastUri().toString();
-            NicVO nicVO = _nicsDao.findByInstanceIdNetworkIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri);
-            if (nicVO != null) {
-                nic = _networkMgr.getNicProfile(vm, network.getId());
-            }
-        }
-        
-        if (nic == null) {
-            s_logger.debug("Allocating nic for the " + vm + " in network " + network);
-            //1) allocate nic and prepare nic if needed
-            int deviceId = _nicsDao.countNics(vm.getId());
-            
-            nic = _networkMgr.allocateNic(requested, network, false, 
-                    deviceId, vmProfile).first();
-            
-            if (nic == null) {
-                throw new CloudRuntimeException("Failed to allocate nic for vm " + vm + " in network " + network);
-            }
-            
-            s_logger.debug("Nic is allocated successfully for vm " + vm + " in network " + network);
-            
-            nic = _networkMgr.prepareNic(vmProfile, dest, context, nic.getId(), networkVO);
-            
-            s_logger.debug("Nic is prepared successfully for vm " + vm + " in network " + network);
-            
-        }
+        //1) allocate and prepare nic
+        NicProfile nic = _networkMgr.allocateAndPrepareNic(network, requested, context, vmProfile);
         
         //2) Convert vmProfile to vmTO
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
@@ -2508,6 +2480,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             return null;
         }
     }
+
 
     @Override
     public NicTO toNicTO(NicProfile nic, HypervisorType hypervisorType) {

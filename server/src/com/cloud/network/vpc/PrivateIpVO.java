@@ -46,13 +46,17 @@ public class PrivateIpVO{
     @Column(name="network_id", updatable=false, nullable=false)
     private long networkId;
     
+    @Column(name="vpc_id")
+    private Long vpcId;
+    
     public PrivateIpVO() {
     } 
 
-    public PrivateIpVO(String ipAddress, long networkId, long macAddress) {
+    public PrivateIpVO(String ipAddress, long networkId, long macAddress, long vpcId) {
         this.ipAddress = ipAddress;
         this.networkId = networkId;
         this.macAddress = macAddress;
+        this.vpcId = vpcId;
     }
     
     public void setTakenAt(Date takenDate) {
@@ -77,5 +81,9 @@ public class PrivateIpVO{
 
     public long getMacAddress() {
         return macAddress;
+    }
+    
+    public Long getVpcId() {
+        return vpcId;
     }
 }

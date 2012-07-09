@@ -45,6 +45,7 @@ public class PrivateIpDaoImpl extends GenericDaoBase<PrivateIpVO, Long> implemen
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("ipAddress", AllFieldsSearch.entity().getIpAddress(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("taken", AllFieldsSearch.entity().getTakenAt(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
         
         CountAllocatedByNetworkId = createSearchBuilder(Integer.class);
@@ -60,10 +61,14 @@ public class PrivateIpDaoImpl extends GenericDaoBase<PrivateIpVO, Long> implemen
     }
     
     @Override
-    public PrivateIpVO allocateIpAddress(long dcId, long networkId) {
+    public PrivateIpVO allocateIpAddress(long dcId, long networkId, String requestedIp) {
         SearchCriteria<PrivateIpVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkId", networkId);
         sc.setParameters("taken", (Date)null);
+        
+        if (requestedIp != null) {
+            sc.setParameters("ipAddress", requestedIp);
+        }
         
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -93,14 +98,20 @@ public class PrivateIpDaoImpl extends GenericDaoBase<PrivateIpVO, Long> implemen
         update(vo, sc);
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.vpc.Dao.PrivateIpDao#findByIpAndSourceNetworkId(long, java.lang.String)
-     */
+
     @Override
     public PrivateIpVO findByIpAndSourceNetworkId(long networkId, String ip4Address) {
         SearchCriteria<PrivateIpVO> sc = AllFieldsSearch.create();
         sc.setParameters("ip", ip4Address);
         sc.setParameters("networkId", networkId);
+        return findOneBy(sc);
+    }
+    
+    @Override
+    public PrivateIpVO findByIpAndVpcId(long vpcId, String ip4Address) {
+        SearchCriteria<PrivateIpVO> sc = AllFieldsSearch.create();
+        sc.setParameters("ip", ip4Address);
+        sc.setParameters("vpcId", vpcId);
         return findOneBy(sc);
     }
     

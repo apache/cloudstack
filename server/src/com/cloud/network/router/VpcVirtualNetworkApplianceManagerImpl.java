@@ -60,6 +60,8 @@ import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkService;
+import com.cloud.network.NetworkVO;
+import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.TrafficType;
@@ -391,10 +393,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException, 
             StorageUnavailableException, ResourceUnavailableException {
         
-
+        List<Pair<NetworkVO, NicProfile>> networks = createVpcRouterNetworks(owner, isRedundant, plan, new Pair<Boolean, PublicIp>(true, sourceNatIp),
+                vpcId);
         DomainRouterVO router = 
-                super.deployRouter(owner, dest, plan, params, isRedundant, vrProvider, svcOffId, vpcId, false, 
-                        null, new Pair<Boolean, PublicIp>(true, sourceNatIp));
+                super.deployRouter(owner, dest, plan, params, isRedundant, vrProvider, svcOffId, vpcId, networks);
         
         return router;
     }
@@ -792,6 +794,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             }
         }
         
+       
+        
+        
+        //4) PREPARE PLUG NIC COMMANDS
         try {
             //add VPC router to public networks
             List<PublicIp> sourceNat = new ArrayList<PublicIp>(1);
@@ -853,7 +859,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             return false;
         }
         
-        //3) RE-APPLY ALL STATIC ROUTE RULES
+        //5) RE-APPLY ALL STATIC ROUTE RULES
         List<? extends StaticRoute> routes = _staticRouteDao.listByVpcId(router.getVpcId());
         List<StaticRouteProfile> staticRouteProfiles = new ArrayList<StaticRouteProfile>(routes.size());
         Map<Long, VpcGateway> gatewayMap = new HashMap<Long, VpcGateway>();
@@ -872,9 +878,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             createStaticRouteCommands(staticRouteProfiles, router, cmds);
         }
         
-        //4) REISSUE VPN CONNECTION
+        //6) REISSUE VPN CONNECTION
         
-        //5) REPROGRAM GUEST NETWORK
+        //7) REPROGRAM GUEST NETWORK
         boolean reprogramGuestNtwks = true;
         if (profile.getParameter(Param.ReProgramGuestNetworks) != null 
                 && (Boolean) profile.getParameter(Param.ReProgramGuestNetworks) == false) {
@@ -924,7 +930,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         boolean result = true;
         try {
             Network network = _networkMgr.getNetwork(gateway.getNetworkId());
-            NicProfile guestNic = _itMgr.addVmToNetwork(router, network, null);
+            NicProfile requested = createPrivateNicProfile(gateway);
+            
+            NicProfile guestNic = _itMgr.addVmToNetwork(router, network, requested);
             
             //setup source nat
             if (guestNic != null) {
@@ -1159,5 +1167,46 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
             cmds.addCommand("IPAssocVpcCommand", cmd);
         }
+    }
+    
+    
+    protected List<Pair<NetworkVO, NicProfile>> createVpcRouterNetworks(Account owner, boolean isRedundant, 
+            DeploymentPlan plan, Pair<Boolean, PublicIp> publicNetwork, long vpcId) throws ConcurrentOperationException,
+            InsufficientAddressCapacityException {
+
+        List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(4);
+        networks = super.createRouterNetworks(owner, isRedundant, plan, null, publicNetwork);
+        
+        //allocate nic for private gateway if needed
+        VpcGateway privateGateway = _vpcMgr.getPrivateGatewayForVpc(vpcId);
+        if (privateGateway != null) {
+            NicProfile privateNic = createPrivateNicProfile(privateGateway);
+            Network privateNetwork = _networkMgr.getNetwork(privateGateway.getNetworkId());
+            networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) privateNetwork, privateNic));
+        }
+        
+        return networks;
+    }
+
+    @DB
+    protected NicProfile createPrivateNicProfile(VpcGateway privateGateway) {
+        Network network = _networkMgr.getNetwork(privateGateway.getNetworkId());
+        PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(network.getDataCenterId(), network.getId(), privateGateway.getIp4Address());
+        
+        NicProfile privateNic = new NicProfile();
+        String vlanTag = network.getBroadcastUri().getHost();
+        String netmask = NetUtils.getCidrNetmask(network.getCidr());
+        PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, ipVO.getMacAddress());
+        
+        privateNic.setIp4Address(ip.getIpAddress());
+        privateNic.setGateway(ip.getGateway());
+        privateNic.setNetmask(ip.getNetmask());
+        privateNic.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
+        privateNic.setBroadcastUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
+        privateNic.setBroadcastType(BroadcastDomainType.Vlan);
+        privateNic.setFormat(AddressFormat.Ip4);
+        privateNic.setReservationId(String.valueOf(ip.getVlanTag()));
+        privateNic.setMacAddress(ip.getMacAddress());
+        return privateNic;
     }
 }

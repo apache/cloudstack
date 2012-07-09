@@ -118,7 +118,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
     public void execute() {
         Vpc vpc = null;
         try {
-             if (_vpcService.startVpc(this.getEntityId())) {
+             if (_vpcService.startVpc(this.getEntityId(), true)) {
                  vpc = _vpcService.getVpc(getEntityId());
              }
         } catch (ResourceUnavailableException ex) {

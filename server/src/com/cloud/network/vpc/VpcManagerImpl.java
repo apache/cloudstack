@@ -766,7 +766,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     }
     
     @Override
-    public boolean startVpc(long vpcId) throws ConcurrentOperationException, ResourceUnavailableException, 
+    public boolean startVpc(long vpcId, boolean destroyOnFailure) throws ConcurrentOperationException, ResourceUnavailableException, 
     InsufficientCapacityException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
@@ -800,7 +800,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
             result = false;
         } finally {
             //do cleanup
-            if (!result) {
+            if (!result && destroyOnFailure) {
                 s_logger.debug("Destroying vpc " + vpc + " that failed to start");
                 if (destroyVpc(vpc)) {
                     s_logger.warn("Successfully destroyed vpc " + vpc + " that failed to start");
@@ -998,7 +998,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
         
         //3) Delete private gateway
-        PrivateGateway gateway = getVpcPrivateGateway(vpcId);
+        VpcGateway gateway = getPrivateGatewayForVpc(vpcId);
         if (gateway != null) {
             s_logger.debug("Deleting private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
             if (!deleteVpcPrivateGateway(gateway.getId())) {
@@ -1040,7 +1040,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
             }
             
             s_logger.debug("Starting VPC " + vpc + " as a part of VPC restart process");
-            if (!startVpc(vpcId)) {
+            if (!startVpc(vpcId, false)) {
                 s_logger.warn("Failed to start vpc as a part of VPC " + vpc + " restart process");
                 restartRequired = true;
                 return false;
@@ -1096,7 +1096,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
         
         //allow only one private gateway per vpc
-        VpcGatewayVO gatewayVO = _vpcGatewayDao.getPrivateGateway(vpcId);
+        VpcGatewayVO gatewayVO = _vpcGatewayDao.getPrivateGatewayForVpc(vpcId);
         if (gatewayVO != null) {
             throw new InvalidParameterValueException("Private ip address already exists for vpc " + vpc);
         }
@@ -1116,7 +1116,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         //1) create private network
         String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
         Network privateNtwk = _ntwkMgr.createPrivateNetwork(networkName, networkName, physicalNetworkId, 
-                vlan, ipAddress, null, gateway, netmask, gatewayOwnerId);
+                vlan, ipAddress, null, gateway, netmask, gatewayOwnerId, vpcId);
         
         //2) create gateway entry
         gatewayVO = new VpcGatewayVO(ipAddress, VpcGateway.Type.Private, vpcId, privateNtwk.getDataCenterId(),
@@ -1186,7 +1186,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        PrivateIpVO ip = _privateIpDao.findByIpAndSourceNetworkId(gateway.getNetworkId(), gateway.getIp4Address());
+        PrivateIpVO ip = _privateIpDao.findByIpAndVpcId(gateway.getVpcId(), gateway.getIp4Address());
         if (ip != null) {
             _privateIpDao.remove(ip.getId());
             s_logger.debug("Deleted private ip " + ip);
@@ -1526,5 +1526,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 s_logger.error("Exception ", e);
             }
         }
+    }
+    
+    @Override
+    public VpcGateway getPrivateGatewayForVpc(long vpcId) {
+        return _vpcGatewayDao.getPrivateGatewayForVpc(vpcId);
     }
 }

@@ -22,9 +22,10 @@ public interface PrivateIpDao extends GenericDao<PrivateIpVO, Long>{
     /**
      * @param dcId
      * @param networkId
+     * @param requestedIp TODO
      * @return
      */
-    PrivateIpVO allocateIpAddress(long dcId, long networkId);
+    PrivateIpVO allocateIpAddress(long dcId, long networkId, String requestedIp);
 
     /**
      * @param ipAddress
@@ -58,5 +59,13 @@ public interface PrivateIpDao extends GenericDao<PrivateIpVO, Long>{
     
     int countByNetworkId(long ntwkId);
 
+    /**
+     * @param vpcId
+     * @param ip4Address
+     * @return
+     */
+    PrivateIpVO findByIpAndVpcId(long vpcId, String ip4Address);
+
+    
 
 }

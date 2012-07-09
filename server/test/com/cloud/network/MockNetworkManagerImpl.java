@@ -51,6 +51,7 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
+import com.cloud.network.element.Site2SiteVpnServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
@@ -68,6 +69,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 
 @Local(value = { NetworkManager.class, NetworkService.class })
 public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkService {
@@ -851,7 +853,8 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      * @see com.cloud.network.NetworkService#updateGuestNetwork(long, java.lang.String, java.lang.String, com.cloud.user.Account, com.cloud.user.User, java.lang.String, java.lang.Long, java.lang.Boolean)
      */
     @Override
-    public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr) {
+    public Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan, String startIp, String endIP, String gateway, String netmask, long networkOwnerId, Long vpcId)
+            throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -999,15 +1002,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 		return false;
 	}
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#createPrivateNetwork(java.lang.String, java.lang.String, long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, long)
-     */
-    @Override
-    public Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, String vlan, String startIp, String endIP, String gateway, String netmask, long networkOwnerId)
-            throws ResourceAllocationException, ConcurrentOperationException, InsufficientCapacityException {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#checkVirtualNetworkCidrOverlap(java.lang.Long, java.lang.String)
@@ -1090,14 +1084,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#isPrivateGateway(com.cloud.vm.Nic)
-     */
-    @Override
-    public boolean isPrivateGateway(long nicId) {
-        // TODO Auto-generated method stub
-        return false;
-    }
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#assignPublicIpAddress(long, java.lang.Long, com.cloud.user.Account, com.cloud.dc.Vlan.VlanType, java.lang.Long, java.lang.String, boolean)
@@ -1113,6 +1099,43 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      */
     @Override
     public String getAccountNetworkDomain(long accountId, long zoneId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkService#updateGuestNetwork(long, java.lang.String, java.lang.String, com.cloud.user.Account, com.cloud.user.User, java.lang.String, java.lang.Long, java.lang.Boolean)
+     */
+    @Override
+    public Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId, Boolean changeCidr) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#getSite2SiteVpnElements()
+     */
+    @Override
+    public List<? extends Site2SiteVpnServiceProvider> getSite2SiteVpnElements() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#isPrivateGateway(com.cloud.vm.Nic)
+     */
+    @Override
+    public boolean isPrivateGateway(Nic guestNic) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#allocateAndPrepareNic(com.cloud.network.Network, com.cloud.vm.NicProfile, com.cloud.vm.ReservationContext, com.cloud.vm.VirtualMachineProfileImpl)
+     */
+    @Override
+    public NicProfile allocateAndPrepareNic(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfileImpl<VMInstanceVO> vmProfile) throws InsufficientVirtualNetworkCapcityException,
+            InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
     }

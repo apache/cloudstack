@@ -139,7 +139,7 @@ public class CreatePrivateNetworkCmd extends BaseAsyncCreateCmd {
         Network result = null;
         try {
             result = _networkService.createPrivateNetwork(getNetworkName(), getDisplayText(), getPhysicalNetworkId(), getVlan(),
-                    getStartIp(), getEndIp(), getGateway(), getNetmask(), getEntityOwnerId());
+                    getStartIp(), getEndIp(), getGateway(), getNetmask(), getEntityOwnerId(), null);
         } catch (InsufficientCapacityException ex){
             s_logger.info(ex);
             s_logger.trace(ex);
