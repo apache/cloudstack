@@ -237,7 +237,7 @@
 				  step5ContainerType = 'nothing-to-select'; 					
 					$networkStep.find("#from_instance_page_1").hide();		
           $networkStep.find("#from_instance_page_2").hide();					
-					$networkStep.find("#from_vpc_tier").text("tier " + args.context.tiers[0].name);					
+					$networkStep.find("#from_vpc_tier").text("tier " + args.context.networks[0].name);					
 					$networkStep.find("#from_vpc_tier").show();					
 				}
 			  else { //from Instance page 
@@ -477,8 +477,8 @@
           array1.push("&securitygroupids=" + checkedSecurityGroupIdArray.join(","));
       }
       else if (step5ContainerType == 'nothing-to-select') {		
-				if(args.context.tiers != null) //from VPC tier
-				  array1.push("&networkIds=" + args.context.tiers[0].id);
+				if(args.context.networks != null) //from VPC tier
+				  array1.push("&networkIds=" + args.context.networks[0].id);
 			}
 			
       var displayname = args.data.displayname;
