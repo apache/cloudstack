@@ -3190,9 +3190,12 @@
                         url: createURL('listZones'),
                         data: data,
                         success: function(json) {
-                          var zones = json.listzonesresponse.zone;
+                          var zones = json.listzonesresponse.zone;													
+													var advZones = $.grep(zones, function(zone) {													  
+													  return zone.networktype == 'Advanced';
+													});		
                           args.response.success({
-                            data: $.map(zones, function(zone) {
+                            data: $.map(advZones, function(zone) {
                               return {
                                 id: zone.id,
                                 description: zone.name
