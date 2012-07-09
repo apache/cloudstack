@@ -1532,27 +1532,64 @@
                     if (args.context.ipAddresses[0].isstaticnat)
                       disallowedActions.push("nonStaticNATChart");  //tell ipRules widget to show staticNAT chart instead of non-staticNAT chart.
 
-
                     var networkOfferingHavingFirewallService = false;
                     var networkOfferingHavingPortForwardingService = false;
                     var networkOfferingHavingLbService = false;
-                    $.ajax({
-                      url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid),
-                      dataType: "json",
-                      async: false,
-                      success: function(json) {
-                        var networkoffering = json.listnetworkofferingsresponse.networkoffering[0];
-                        $(networkoffering.service).each(function(){
-                          var thisService = this;
-                          if(thisService.name == "Firewall")
-                            networkOfferingHavingFirewallService = true;
-                          if(thisService.name == "PortForwarding")
-                            networkOfferingHavingPortForwardingService = true;
-                          if(thisService.name == "Lb")
-                            networkOfferingHavingLbService = true;
-                        });
-                      }
-                    });
+										var networkOfferingHavingVpnService = false;		
+										
+                    if('networks' in args.context) { //from Guest Network section
+											$.ajax({
+												url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid),
+												dataType: "json",
+												async: false,
+												success: function(json) {
+													var networkoffering = json.listnetworkofferingsresponse.networkoffering[0];
+													$(networkoffering.service).each(function(){
+														var thisService = this;
+														if(thisService.name == "Firewall")
+															networkOfferingHavingFirewallService = true;
+														if(thisService.name == "PortForwarding")
+															networkOfferingHavingPortForwardingService = true;
+														if(thisService.name == "Lb")
+															networkOfferingHavingLbService = true;
+														if(thisService.name == "Vpn")
+															networkOfferingHavingVpnService = true;
+													});
+												}
+											});
+										}
+										else { //from VPC section
+										  networkOfferingHavingFirewallService = false;  //Firewall is not supported in IP Address page in VPC section
+											networkOfferingHavingVpnService = false; //VPN is not supported in IP Address page in VPC section
+										
+										  if(args.context.ipAddresses[0].associatednetworkid == null) { //IP is not associated with any tier yet												
+												networkOfferingHavingPortForwardingService = true;
+												networkOfferingHavingLbService = true;												
+											}
+											else { //IP is associated with a tier
+											  $.ajax({
+												  url: createURL("listNetworks&id=" + args.context.ipAddresses[0].associatednetworkid),
+													async: false,
+													success: function(json) {													  
+													  var networkObj = json.listnetworksresponse.network[0];													 
+														$.ajax({
+															url: createURL("listNetworkOfferings&id=" + networkObj.networkofferingid),													
+															async: false,
+															success: function(json) {
+																var networkoffering = json.listnetworkofferingsresponse.networkoffering[0];
+																$(networkoffering.service).each(function(){
+																	var thisService = this;																	
+																	if(thisService.name == "PortForwarding")
+																		networkOfferingHavingPortForwardingService = true;
+																	if(thisService.name == "Lb")
+																		networkOfferingHavingLbService = true;																	
+																});
+															}
+														});																										  
+													}												
+												});
+											}
+										}
 																				
 										if(args.context.ipAddresses[0].networkOfferingConserveMode == false) {			 
 											/*
@@ -1566,16 +1603,23 @@
 											/*
 											(2) If IP is non-SourceNat, show StaticNat/VPN/PortForwarding/LoadBalancer at first.
 											1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
-											2. Once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
+											2. If VPN service is supported (i.e. IP comes from Guest Network section, not from VPC section), once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
 											3. Once a PortForwarding rule is added, hide StaticNat/VPN/LoadBalancer.
 											4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
 											*/
-											else { //args.context.ipAddresses[0].issourcenat == false				   
+											else { //args.context.ipAddresses[0].issourcenat == false		 
+												if(networkOfferingHavingFirewallService == false)
+													disallowedActions.push("firewall");
+												if(networkOfferingHavingPortForwardingService == false)
+													disallowedActions.push("portForwarding");
+												if(networkOfferingHavingLbService == false)
+													disallowedActions.push("loadBalancing");
+											
 												if (args.context.ipAddresses[0].isstaticnat) { //1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
 												  disallowedActions.push("portForwarding");
 													disallowedActions.push("loadBalancing");
 												}
-												if (args.context.ipAddresses[0].vpnenabled) { //2. Once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
+												if (networkOfferingHavingVpnService && args.context.ipAddresses[0].vpnenabled) { //2. If VPN service is supported (i.e. IP comes from Guest Network section, not from VPC section), once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
 													disallowedActions.push("portForwarding");
 													disallowedActions.push("loadBalancing"); 
 												}
@@ -1616,14 +1660,7 @@
 												});															
 											}						
 										}
-																				
-                    if(networkOfferingHavingFirewallService == false)
-                      disallowedActions.push("firewall");
-                    if(networkOfferingHavingPortForwardingService == false)
-                      disallowedActions.push("portForwarding");
-                    if(networkOfferingHavingLbService == false)
-                      disallowedActions.push("loadBalancing");
-
+										
                     return disallowedActions;
                   },
 
