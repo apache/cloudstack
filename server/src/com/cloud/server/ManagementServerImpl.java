@@ -170,6 +170,7 @@ import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
+import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -196,6 +197,8 @@ import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.upload.UploadMonitor;
+import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -248,6 +251,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
 import edu.emory.mathcs.backport.java.util.Arrays;
 import edu.emory.mathcs.backport.java.util.Collections;
 
@@ -303,6 +307,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     private final Adapters<HostAllocator> _hostAllocators;
     private final ConfigurationManager _configMgr;
+    private final ResourceTagDao _resourceTagDao;
     
     @Inject
     ProjectManager _projectMgr;
@@ -378,6 +383,7 @@ public class ManagementServerImpl implements ManagementServer {
         _ksMgr = locator.getManager(KeystoreManager.class);
         _resourceMgr = locator.getManager(ResourceManager.class);
         _configMgr = locator.getManager(ConfigurationManager.class);
+        _resourceTagDao = locator.getDao(ResourceTagDao.class);
 
         _hypervisorCapabilitiesDao = locator.getDao(HypervisorCapabilitiesDao.class);
 
@@ -1252,6 +1258,7 @@ public class ManagementServerImpl implements ManagementServer {
     public Set<Pair<Long, Long>> listIsos(ListIsosCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
         TemplateFilter isoFilter = TemplateFilter.valueOf(cmd.getIsoFilter());
         Account caller = UserContext.current().getCaller();
+        Map<String, String> tags = cmd.getTags();
 
         boolean listAll = (caller.getType() != Account.ACCOUNT_TYPE_NORMAL && (isoFilter != null && isoFilter == TemplateFilter.all));
         List<Long> permittedAccountIds = new ArrayList<Long>();
@@ -1266,14 +1273,14 @@ public class ManagementServerImpl implements ManagementServer {
 
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
         return listTemplates(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(), cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, true,
-                cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria);
+                cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags);
     }
 
     @Override
     public Set<Pair<Long, Long>> listTemplates(ListTemplatesCmd cmd) throws IllegalArgumentException, InvalidParameterValueException {
         TemplateFilter templateFilter = TemplateFilter.valueOf(cmd.getTemplateFilter());
         Long id = cmd.getId();
-
+        Map<String, String> tags = cmd.getTags();
         Account caller = UserContext.current().getCaller();
 
         boolean listAll = (caller.getType() != Account.ACCOUNT_TYPE_NORMAL && (templateFilter != null && templateFilter == TemplateFilter.all));
@@ -1289,12 +1296,15 @@ public class ManagementServerImpl implements ManagementServer {
         boolean showDomr = ((templateFilter != TemplateFilter.selfexecutable) && (templateFilter != TemplateFilter.featured));
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
-        return listTemplates(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, showDomr,
-                cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria);
+        return listTemplates(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, 
+                cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, showDomr,
+                cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags);
     }
 
-    private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter, boolean isIso, Boolean bootable, Long pageSize, Long startIndex,
-            Long zoneId, HypervisorType hyperType, boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller, ListProjectResourcesCriteria listProjectResourcesCriteria) {
+    private Set<Pair<Long, Long>> listTemplates(Long templateId, String name, String keyword, TemplateFilter templateFilter,
+            boolean isIso, Boolean bootable, Long pageSize, Long startIndex, Long zoneId, HypervisorType hyperType,
+            boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller,
+            ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
 
         VMTemplateVO template = null;
         if (templateId != null) {
@@ -1330,11 +1340,14 @@ public class ManagementServerImpl implements ManagementServer {
         Set<Pair<Long, Long>> templateZonePairSet = new HashSet<Pair<Long, Long>>();
         if (_swiftMgr.isSwiftEnabled()) {
             if (template == null) {
-                templateZonePairSet = _templateDao.searchSwiftTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
-                        permittedAccounts, caller);
+                templateZonePairSet = _templateDao.searchSwiftTemplates(name, keyword, templateFilter, isIso, 
+                        hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
+                        permittedAccounts, caller, tags);
                 Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
-                templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
-                        permittedAccounts, caller, listProjectResourcesCriteria);
+                templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, 
+                        bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
+                        permittedAccounts, caller, listProjectResourcesCriteria, tags);
+                
                 for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
                     if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), -1L))) {
                         templateZonePairSet.add(tmpltPair);
@@ -1351,8 +1364,9 @@ public class ManagementServerImpl implements ManagementServer {
             }
         } else {
             if (template == null) {
-                templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
-                        permittedAccounts, caller, listProjectResourcesCriteria);
+                templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, 
+                        bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
+                        permittedAccounts, caller, listProjectResourcesCriteria, tags);
             } else {
                 // if template is not public, perform permission check here
                 if (!template.isPublicTemplate() && caller.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -1675,6 +1689,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long ipId = cmd.getId();
         Boolean sourceNat = cmd.getIsSourceNat();
         Boolean staticNat = cmd.getIsStaticNat();
+        Map<String, String> tags = cmd.getTags();
 
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -1712,6 +1727,19 @@ public class ManagementServerImpl implements ManagementServer {
         if (keyword != null && address == null) {
             sb.and("addressLIKE", sb.entity().getAddress(), SearchCriteria.Op.LIKE);
         }
+        
+        if (tags != null && !tags.isEmpty()) {
+            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            for (int count=0; count < tags.size(); count++) {
+                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.cp();
+            }
+            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.groupBy(sb.entity().getId());
+            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        }
+
 
         SearchBuilder<VlanVO> vlanSearch = _vlanDao.createSearchBuilder();
         vlanSearch.and("vlanType", vlanSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
@@ -1739,6 +1767,16 @@ public class ManagementServerImpl implements ManagementServer {
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sc.setJoinParameters("vlanSearch", "vlanType", vlanType);
+        
+        if (tags != null && !tags.isEmpty()) {
+            int count = 0;
+            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.PublicIpAddress.toString());
+            for (String key : tags.keySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+                count++;
+            }
+        }
 
         if (zone != null) {
             sc.setParameters("dataCenterId", zone);

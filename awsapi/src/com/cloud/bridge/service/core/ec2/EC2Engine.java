@@ -14,21 +14,6 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-/*
- * Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.cloud.bridge.service.core.ec2;
 
 import java.io.File;
@@ -885,7 +870,7 @@ public class EC2Engine {
 	public boolean associateAddress( EC2AssociateAddress request ) {
 		try {
 			CloudStackIpAddress cloudIp = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null).get(0);
-			CloudStackUserVm cloudVm = getApi().listVirtualMachines(null, null, null, null, null, null, request.getInstanceId(), null, null, null, null, null, null, null, null).get(0);
+	        CloudStackUserVm cloudVm = getApi().listVirtualMachines(null, null, true, null, null, null, null, request.getInstanceId(), null, null, null, null, null, null, null, null).get(0);
 
 			CloudStackInfoResponse resp = getApi().enableStaticNat(cloudIp.getId(), cloudVm.getId());
 			if (resp != null) {
@@ -1798,7 +1783,7 @@ public class EC2Engine {
 			throws Exception {
 
 		String instId = instanceId != null ? instanceId : null;
-		List<CloudStackUserVm> vms = getApi().listVirtualMachines(null, null, null, null, null, null, 
+        List<CloudStackUserVm> vms = getApi().listVirtualMachines(null, null, true, null, null, null, null,
 				instId, null, null, null, null, null, null, null, null);
 		
 		if(vms != null && vms.size() > 0) {
@@ -1926,8 +1911,8 @@ public class EC2Engine {
 	public EC2DescribeSecurityGroupsResponse listSecurityGroups( String[] interestedGroups ) throws Exception {
 		try {
 			EC2DescribeSecurityGroupsResponse groupSet = new EC2DescribeSecurityGroupsResponse();
-			
-			List<CloudStackSecurityGroup> groups = getApi().listSecurityGroups(null, null, null, null, null, null);
+
+            List<CloudStackSecurityGroup> groups = getApi().listSecurityGroups(null, null, null, true, null, null, null);
 			if (groups != null && groups.size() > 0)
     			for (CloudStackSecurityGroup group : groups) {
     				boolean matched = false;

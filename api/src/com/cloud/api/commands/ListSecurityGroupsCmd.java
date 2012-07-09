@@ -21,8 +21,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseCmd.CommandType;
-import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
+import com.cloud.api.BaseListTaggedResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -31,8 +30,9 @@ import com.cloud.api.response.SecurityGroupResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.network.security.SecurityGroupRules;
 
+
 @Implementation(description="Lists security groups", responseObject=SecurityGroupResponse.class)
-public class ListSecurityGroupsCmd extends BaseListProjectAndAccountResourcesCmd {
+public class ListSecurityGroupsCmd extends BaseListTaggedResourcesCmd {
 	public static final Logger s_logger = Logger.getLogger(ListSecurityGroupsCmd.class.getName());
 
     private static final String s_name = "listsecuritygroupsresponse";

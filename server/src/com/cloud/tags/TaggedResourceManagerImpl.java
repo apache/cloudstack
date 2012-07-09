@@ -236,10 +236,12 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
         for (String tag : tags.keySet()) {
             for (String resourceId : resourceIds) {
                 Long id = getResourceId(resourceId, resourceType);
+                String resourceUuid = getUuid(resourceId, resourceType);
                 
                 //check if object exists
                 if (_daoMap.get(resourceType).findById(id) == null) {
-                    throw new InvalidParameterValueException("Unable to find resource by id " + resourceId + " and type " + resourceType);
+                    throw new InvalidParameterValueException("Unable to find resource by id " + resourceId + 
+                            " and type " + resourceType);
                 }
                 
                 Pair<Long, Long> accountDomainPair = getAccountDomain(id, resourceType);
@@ -257,10 +259,9 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
                
                 ResourceTagVO resourceTag = new ResourceTagVO(tag, tags.get(tag), accountDomainPair.first(),
                         accountDomainPair.second(), 
-                        id, resourceType, customer);
+                        id, resourceType, customer, resourceUuid);
                 resourceTag = _resourceTagDao.persist(resourceTag);
                 resourceTags.add(resourceTag);
-
             }
         }
         
@@ -282,14 +283,14 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
                if (tableName == null) {
                    throw new InvalidParameterValueException("Unable to find resource of type " + resourceType + " in the database");
                }
-               identiyUUId = _identityDao.getIdentityUuid(tableName, resourceId);
-               if (identiyUUId != null) {
-                   break;
-               }
+               
+               claz = claz.getSuperclass();
+               if (claz == Object.class) {
+                   identiyUUId = _identityDao.getIdentityUuid(tableName, resourceId);
+               } 
            } catch (Exception ex) {
                //do nothing here, it might mean uuid field is missing and we have to search further
            }
-           claz = claz.getSuperclass();
        }
        
        if (identiyUUId == null) {
@@ -324,7 +325,9 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
 
        sb.and("key", sb.entity().getKey(), SearchCriteria.Op.EQ);
        sb.and("value", sb.entity().getValue(), SearchCriteria.Op.EQ);
-       sb.and("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+       sb.and().op("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+       sb.or("resourceUuid", sb.entity().getResourceUuid(), SearchCriteria.Op.EQ);
+       sb.cp();
        sb.and("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
        sb.and("customer", sb.entity().getCustomer(), SearchCriteria.Op.EQ);
        
@@ -342,6 +345,7 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
        
        if (resourceId != null) {
            sc.setParameters("resourceId", resourceId);
+           sc.setParameters("resourceUuid", resourceId);
        }
        
        if (resourceType != null) {
@@ -362,10 +366,14 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
         Account caller = UserContext.current().getCaller();
         
         SearchBuilder<ResourceTagVO> sb = _resourceTagDao.createSearchBuilder();
-        sb.and("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.IN);
+        sb.and().op("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.IN);
+        sb.or("resourceUuid", sb.entity().getResourceUuid(), SearchCriteria.Op.IN);
+        sb.cp();
         sb.and("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
+        
         SearchCriteria<ResourceTagVO> sc = sb.create();
         sc.setParameters("resourceId", resourceIds.toArray());
+        sc.setParameters("resourceUuid", resourceIds.toArray());
         sc.setParameters("resourceType", resourceType);
         
         List<? extends ResourceTag> resourceTags = _resourceTagDao.search(sc, null);;
@@ -400,6 +408,10 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
             }
         }
         
+        if (tagsToRemove.isEmpty()) {
+            throw new InvalidParameterValueException("Unable to find tags by parameters specified");
+        }
+        
         //Remove the tags
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -410,5 +422,11 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
         txn.commit();
 
         return true;
+    }
+
+
+    @Override
+    public List<? extends ResourceTag> listByResourceTypeAndId(TaggedResourceType type, long resourceId) {
+        return _resourceTagDao.listBy(resourceId, type);
     }
 }

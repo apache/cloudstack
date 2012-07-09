@@ -1450,6 +1450,18 @@ def bumpUpPriority(session, args):
         txt = ''
 
     return txt
+    
+@echo
+def setDNATRule(session, args):
+    add = args["add"]
+    if add == "false":
+        util.pread2(["iptables", "-t", "nat", "-F"])
+    else:
+        ip = args["ip"]
+        port = args["port"]
+        util.pread2(["iptables", "-t", "nat", "-F"])
+        util.pread2(["iptables", "-t", "nat", "-A", "PREROUTING", "-i", "xenbr0", "-p", "tcp", "--dport", port, "-m", "state", "--state", "NEW", "-j", "DNAT", "--to-destination", ip +":443"])
+    return ""
 
 @echo
 def createISOVHD(session, args):
@@ -1533,4 +1545,5 @@ if __name__ == "__main__":
                             "cleanup_rules":cleanup_rules, "checkRouter":checkRouter,
                             "bumpUpPriority":bumpUpPriority, "getDomRVersion":getDomRVersion,
                             "kill_copy_process":kill_copy_process,
-                            "createISOVHD":createISOVHD})
+                            "createISOVHD":createISOVHD,
+                            "setDNATRule":setDNATRule})

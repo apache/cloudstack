@@ -27,10 +27,6 @@ import com.cloud.baremetal.PxeServerManager.PxeServerType;
 import com.cloud.baremetal.PxeServerManagerImpl;
 import com.cloud.baremetal.PxeServerService;
 import com.cloud.ha.HighAvailabilityManagerExtImpl;
-import com.cloud.netapp.NetappManagerImpl;
-import com.cloud.netapp.dao.LunDaoImpl;
-import com.cloud.netapp.dao.PoolDaoImpl;
-import com.cloud.netapp.dao.VolumeDaoImpl;
 import com.cloud.network.ExternalNetworkDeviceManagerImpl;
 import com.cloud.network.NetworkUsageManagerImpl;
 import com.cloud.secstorage.CommandExecLogDaoImpl;
@@ -51,9 +47,6 @@ public class PremiumComponentLibrary extends DefaultComponentLibrary {
         addDao("UsageDao", UsageDaoImpl.class);
         addDao("UsageIpAddressDao", UsageIPAddressDaoImpl.class);
         addDao("CommandExecLogDao", CommandExecLogDaoImpl.class);
-        addDao("NetappPool", PoolDaoImpl.class);
-        addDao("NetappVolume", VolumeDaoImpl.class);
-        addDao("NetappLun", LunDaoImpl.class);
     }
 
     @Override
@@ -68,7 +61,6 @@ public class PremiumComponentLibrary extends DefaultComponentLibrary {
         addManager("ExternalDhcpManager", ExternalDhcpManagerImpl.class);
         addManager("PxeServerManager", PxeServerManagerImpl.class);
         addManager("NetworkUsageManager", NetworkUsageManagerImpl.class);
-        addManager("NetappManager", NetappManagerImpl.class);
     }
 
     @Override

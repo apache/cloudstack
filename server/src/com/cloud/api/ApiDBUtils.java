@@ -81,6 +81,7 @@ import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.Criteria;
 import com.cloud.server.ManagementServer;
+import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
@@ -301,7 +302,7 @@ public class ApiDBUtils {
     }
 
     public static List<UserVmVO> searchForUserVMs(Criteria c, List<Long> permittedAccounts) {
-        return _userVmMgr.searchForUserVMs(c, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM), null, false, permittedAccounts, false, null);
+        return _userVmMgr.searchForUserVMs(c, _accountDao.findById(Account.ACCOUNT_ID_SYSTEM), null, false, permittedAccounts, false, null, null);
     }
 
     public static List<? extends StoragePoolVO> searchForStoragePools(Criteria c) {
@@ -766,4 +767,7 @@ public class ApiDBUtils {
         return _taggedResourceService.getUuid(resourceId, resourceType);
     }
 
+    public static List<? extends ResourceTag> listByResourceTypeAndId(TaggedResourceType type, long resourceId) {
+        return _taggedResourceService.listByResourceTypeAndId(type, resourceId);
+    }
 }

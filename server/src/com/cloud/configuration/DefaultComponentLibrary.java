@@ -100,9 +100,7 @@ import com.cloud.network.dao.VpnUserDaoImpl;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.network.firewall.FirewallManagerImpl;
-import com.cloud.network.lb.ElasticLoadBalancerManagerImpl;
 import com.cloud.network.lb.LoadBalancingRulesManagerImpl;
-import com.cloud.network.lb.dao.ElasticLbVmMapDaoImpl;
 import com.cloud.network.router.VirtualNetworkApplianceManagerImpl;
 import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
@@ -296,7 +294,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addDao("AgentTransferMapDao", HostTransferMapDaoImpl.class);
         addDao("ProjectDao", ProjectDaoImpl.class);
         addDao("InlineLoadBalancerNicMapDao", InlineLoadBalancerNicMapDaoImpl.class);
-        addDao("ElasticLbVmMap", ElasticLbVmMapDaoImpl.class);
         addDao("ProjectsAccountDao", ProjectAccountDaoImpl.class);
         addDao("ProjectInvitationDao", ProjectInvitationDaoImpl.class);
         addDao("IdentityDao", IdentityDaoImpl.class);
@@ -369,7 +366,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         ComponentInfo<? extends Manager> info = addManager("ConsoleProxyManager", ConsoleProxyManagerImpl.class);
         info.addParameter("consoleproxy.sslEnabled", "true");
         addManager("ProjectManager", ProjectManagerImpl.class);
-        addManager("ElasticLoadBalancerManager", ElasticLoadBalancerManagerImpl.class);
         addManager("SwiftManager", SwiftManagerImpl.class);
         addManager("StorageNetworkManager", StorageNetworkManagerImpl.class);
         addManager("ExternalLoadBalancerUsageManager", ExternalLoadBalancerUsageManagerImpl.class);

@@ -14,15 +14,8 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-/**
- * 
- */
 package com.cloud.bridge.service.core.s3;
 
-/**
- * @author Mark
- *
- */
 public class S3CopyObjectRequest extends S3Request {
 	public enum MetadataDirective { COPY, REPLACE  };
 	

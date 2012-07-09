@@ -32,9 +32,12 @@ import org.apache.log4j.Logger;
 
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDaoImpl;
+import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Attribute;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -76,6 +79,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByHost;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByAccount;
     protected SearchBuilder<VMInstanceVO> NetworkTypeSearch;
+    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
 
     protected final Attribute _updateTimeAttr;
     
@@ -549,5 +553,19 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setJoinParameters("nicSearch", "networkId", networkId);
 
         return listBy(sc);
+    }
+    
+    @Override
+    @DB
+    public boolean remove(Long id) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        VMInstanceVO vm = findById(id);
+        if (vm != null && vm.getType() == Type.User) {
+            _tagsDao.removeByIdAndType(id, TaggedResourceType.UserVm);
+        }
+        boolean result = super.remove(id);
+        txn.commit();
+        return result;
     }
 }

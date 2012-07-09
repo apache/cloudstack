@@ -16,6 +16,10 @@
 // under the License.
 package com.cloud.tags.dao;
 
+import java.util.List;
+
+import com.cloud.server.ResourceTag;
+import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.utils.db.GenericDao;
 
@@ -23,5 +27,21 @@ import com.cloud.utils.db.GenericDao;
  * @author Alena Prokharchyk
  */
 public interface ResourceTagDao extends GenericDao<ResourceTagVO, Long>{
+
+    /**
+     * @param resourceId
+     * @param resourceType
+     * @return
+     */
+    boolean removeByIdAndType(long resourceId, TaggedResourceType resourceType);
+    
+    List<? extends ResourceTag> listBy(long resourceId, TaggedResourceType resourceType);
+
+//    /**
+//     * @param resourceUuId
+//     * @param resourceType
+//     * @return
+//     */
+//    ResourceTag findByUuid(String resourceUuId, TaggedResourceType resourceType);
 
 }

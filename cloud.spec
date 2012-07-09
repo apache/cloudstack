@@ -414,6 +414,21 @@ fi
 %{_javadir}/%{name}-server.jar
 %{_javadir}/%{name}-vmware-base.jar
 %{_javadir}/%{name}-ovm.jar
+%{_javadir}/%{name}-dp-user-concentrated-pod.jar
+%{_javadir}/%{name}-dp-user-dispersing.jar
+%{_javadir}/%{name}-host-allocator-random.jar
+%{_javadir}/%{name}-plugin-f5.jar
+%{_javadir}/%{name}-plugin-netscaler.jar
+%{_javadir}/%{name}-plugin-ovs.jar
+%{_javadir}/%{name}-plugin-srx.jar
+%{_javadir}/%{name}-storage-allocator-random.jar
+%{_javadir}/%{name}-user-authenticator-ldap.jar
+%{_javadir}/%{name}-user-authenticator-md5.jar
+%{_javadir}/%{name}-user-authenticator-plaintext.jar
+%{_javadir}/%{name}-vmware.jar
+%{_javadir}/%{name}-xen.jar
+%{_javadir}/%{name}-plugin-elb.jar
+%{_javadir}/%{name}-plugin-netapp.jar
 %config(noreplace) %{_sysconfdir}/%{name}/server/*
 
 %files agent-scripts

@@ -351,6 +351,7 @@ def build_xml_api_description ():
 			install_path="${CLIDIR}"
 		)
 	
+	bld.install_as("${PYTHONDIR}/cloud_utils.py", 'python/lib/cloud_utils.py')
 	bld.install_files("${PYTHONDIR}/cloudtool", 'cloud-cli/cloudtool/*')
 	bld.install_files("${PYTHONDIR}/cloudutils", 'python/lib/cloudutils/*')
 	bld.install_as("${PYTHONDIR}/cloudapis.py", 'cloud-cli/cloudapis/cloud.py')

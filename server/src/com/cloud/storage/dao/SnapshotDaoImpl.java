@@ -24,13 +24,15 @@ import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -60,6 +62,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private final SearchBuilder<SnapshotVO> InstanceIdSearch;
     private final SearchBuilder<SnapshotVO> StatusSearch;
     private final GenericSearchBuilder<SnapshotVO, Long> CountSnapshotsByAccount;
+    ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
     
     protected final VMInstanceDaoImpl _instanceDao = ComponentLocator.inject(VMInstanceDaoImpl.class);
     protected final VolumeDaoImpl _volumeDao = ComponentLocator.inject(VolumeDaoImpl.class);
@@ -289,5 +292,19 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     	sc.setParameters("volumeId", volumeId);
     	sc.setParameters("status", (Object[])status);
     	return listBy(sc, null);
+    }
+    
+    @Override
+    @DB
+    public boolean remove(Long id) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        SnapshotVO entry = findById(id);
+        if (entry != null) {
+            _tagsDao.removeByIdAndType(id, TaggedResourceType.Snapshot);
+        }
+        boolean result = super.remove(id);
+        txn.commit();
+        return result;
     }
 }

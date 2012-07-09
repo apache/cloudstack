@@ -61,6 +61,9 @@ public class ResourceTagVO implements Identity, ResourceTag{
     @Column(name="resource_id")
     long resourceId;
     
+    @Column(name="resource_uuid")
+    private String resourceUuid;
+    
     @Column(name="resource_type")
     @Enumerated(value=EnumType.STRING)
     private TaggedResourceType resourceType;
@@ -81,9 +84,10 @@ public class ResourceTagVO implements Identity, ResourceTag{
      * @param resourceId
      * @param resourceType
      * @param customer TODO
+     * @param resourceUuid TODO
      */
     public ResourceTagVO(String key, String value, long accountId, long domainId, long resourceId, 
-            TaggedResourceType resourceType, String customer) {
+            TaggedResourceType resourceType, String customer, String resourceUuid) {
         super();
         this.key = key;
         this.value = value;
@@ -93,6 +97,7 @@ public class ResourceTagVO implements Identity, ResourceTag{
         this.resourceType = resourceType;
         this.uuid = UUID.randomUUID().toString();
         this.customer = customer;
+        this.resourceUuid = resourceUuid;
     }
     
     
@@ -148,5 +153,10 @@ public class ResourceTagVO implements Identity, ResourceTag{
     @Override
     public String getCustomer() {
         return customer;
+    }
+
+    @Override
+    public String getResourceUuid() {
+        return resourceUuid;
     }
 }

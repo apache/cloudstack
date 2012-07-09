@@ -23,7 +23,7 @@ import java.util.Set;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
-import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
+import com.cloud.api.BaseListTaggedResourcesCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
@@ -36,7 +36,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.Pair;
 
 @Implementation(description="List all public, private, and privileged templates.", responseObject=TemplateResponse.class)
-public class ListTemplatesCmd extends BaseListProjectAndAccountResourcesCmd {
+public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListTemplatesCmd.class.getName());
 
     private static final String s_name = "listtemplatesresponse";

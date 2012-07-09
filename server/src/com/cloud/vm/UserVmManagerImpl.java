@@ -149,6 +149,7 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.Criteria;
+import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -182,6 +183,8 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.tags.ResourceTagVO;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.Account;
@@ -342,6 +345,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject
     protected ItWorkDao _workDao;
     VolumeHostDao _volumeHostDao;
+    @Inject
+    ResourceTagDao _resourceTagDao;
 
 
     protected ScheduledExecutorService _executor = null;
@@ -2888,6 +2893,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
          String hypervisor = cmd.getHypervisor();
          boolean listAll = cmd.listAll();
          Long id = cmd.getId();
+         Map<String, String> tags = cmd.getTags();
 
          Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, listAll, false);
@@ -2927,11 +2933,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         c.addCriteria(Criteria.ISADMIN, _accountMgr.isAdmin(caller.getType()));
 
-        return searchForUserVMs(c, caller, domainId, isRecursive, permittedAccounts, listAll, listProjectResourcesCriteria);
+        return searchForUserVMs(c, caller, domainId, isRecursive, permittedAccounts, listAll, listProjectResourcesCriteria, tags);
     }
 
     @Override
-    public List<UserVmVO> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria) {
+    public List<UserVmVO> searchForUserVMs(Criteria c, Account caller, Long domainId, boolean isRecursive, 
+            List<Long> permittedAccounts, boolean listAll, ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags) {
         Filter searchFilter = new Filter(UserVmVO.class, c.getOrderBy(), c.getAscending(), c.getOffset(), c.getLimit());
 
         SearchBuilder<UserVmVO> sb = _vmDao.createSearchBuilder();
@@ -2974,6 +2981,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             groupSearch.and("groupId", groupSearch.entity().getGroupId(), SearchCriteria.Op.EQ);
             sb.join("groupSearch", groupSearch, sb.entity().getId(), groupSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         }
+        
+        if (tags != null && !tags.isEmpty()) {
+            SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
+            for (int count=0; count < tags.size(); count++) {
+                tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
+                tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
+                tagSearch.cp();
+            }
+            tagSearch.and("resourceType", tagSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.groupBy(sb.entity().getId());
+            sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
+        }
 
         if (networkId != null) {
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
@@ -2995,6 +3014,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // populate the search criteria with the values passed in
         SearchCriteria<UserVmVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        
+        if (tags != null && !tags.isEmpty()) {
+            int count = 0;
+            sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.UserVm.toString());
+            for (String key : tags.keySet()) {
+                sc.setJoinParameters("tagSearch", "key" + String.valueOf(count), key);
+                sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
+                count++;
+            }
+        }
         
         if (groupId != null && (Long) groupId == -1) {
             sc.setJoinParameters("vmSearch", "instanceId", (Object) null);
