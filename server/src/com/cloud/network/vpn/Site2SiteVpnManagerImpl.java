@@ -183,25 +183,25 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
     }
 
     @Override
-    public Site2SiteCustomerGateway deleteCustomerGateway(DeleteVpnCustomerGatewayCmd cmd) {
+    public boolean deleteCustomerGateway(DeleteVpnCustomerGatewayCmd cmd) {
         Long id = cmd.getId();
         Site2SiteCustomerGateway customerGateway = _customerGatewayDao.findById(id);
         if (customerGateway == null) {
             throw new InvalidParameterValueException("Fail to find customer gateway with " + id + " !");
         }
         _customerGatewayDao.remove(id);
-        return customerGateway;
+        return true;
     }
 
     @Override
-    public Site2SiteVpnGateway deleteVpnGateway(DeleteVpnGatewayCmd cmd) {
+    public boolean deleteVpnGateway(DeleteVpnGatewayCmd cmd) {
         Long id = cmd.getId();
         Site2SiteVpnGateway vpnGateway = _vpnGatewayDao.findById(id);
         if (vpnGateway == null) {
             throw new InvalidParameterValueException("Fail to find vpn gateway with " + id + " !");
         }
         _vpnGatewayDao.remove(id);
-        return vpnGateway;
+        return true;
     }
 
     @Override
@@ -252,7 +252,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
     }
 
     @Override
-    public Site2SiteVpnConnection deleteVpnConnection(DeleteVpnConnectionCmd cmd) throws ResourceUnavailableException {
+    public boolean deleteVpnConnection(DeleteVpnConnectionCmd cmd) throws ResourceUnavailableException {
         Long id = cmd.getId();
         Site2SiteVpnConnectionVO conn = _vpnConnectionDao.findById(id);
         if (conn == null) {
@@ -262,7 +262,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
             stopVpnConnection(id);
         }
         _vpnConnectionDao.remove(id);
-        return conn;
+        return true;
     }
 
     private void stopVpnConnection(Long id) throws ResourceUnavailableException {
