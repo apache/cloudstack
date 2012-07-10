@@ -15,6 +15,10 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
+  var getMultiData = function($multi) {
+    return cloudStack.serializeForm($multi.find('form'));
+  };
+
   var _medit = cloudStack.ui.widgets.multiEdit = {
     /**
      * Append item to list
@@ -790,7 +794,7 @@
       var addItem = function(itemData) {
         var data = {};
 
-        $.each(cloudStack.serializeForm($multiForm), function(key, value) {
+        $.each(getMultiData($multi), function(key, value) {
           if (value != '') {
             data[key] = value;
           }
