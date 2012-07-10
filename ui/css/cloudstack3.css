@@ -6925,6 +6925,33 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   margin: 0 22px 0 0;
 }
 
+/** Header fields*/
+.multi-edit .header-fields {
+  float: left;
+  height: 32px;
+  width: 100%;
+  margin-left: 8px;
+}
+
+.multi-edit .header-fields .form-item {
+  margin-bottom: 32px;
+  float: left;
+}
+
+.multi-edit .header-fields .form-item .name,
+.multi-edit .header-fields .form-item .value {
+  float: left;
+}
+
+.multi-edit .header-fields .form-item .name {
+  font-size: 14px;
+  padding: 5px;
+  color: #55687A;
+}
+
+.multi-edit .header-fields input[type=submit] {
+}
+
 /*Security Rules*/
 .security-rules .multi-edit input {
   width: 69px;

@@ -750,6 +750,24 @@
       }
     });
 
+    // Setup header fields
+    var showHeaderFields = args.headerFields ? true : false;
+    var headerForm = showHeaderFields ? cloudStack.dialog.createForm({
+      noDialog: true,
+      form: {
+        fields: args.headerFields
+      },
+      after: function(args) {
+        // Form fields are handled by main 'add' action
+      }
+    }) : null;
+    var $headerFields = $('<div>').addClass('header-fields');
+
+    if (headerForm) {
+      $headerFields.append(headerForm.$formContainer)
+        .prependTo($multi);
+    }
+
     if (args.actions && !args.noHeaderActionsColumn) {
       $thead.append($('<th></th>').html(_l('label.actions')).addClass('multi-actions'));
       $inputForm.append($('<td></td>').addClass('multi-actions'));
