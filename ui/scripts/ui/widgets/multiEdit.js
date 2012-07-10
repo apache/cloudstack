@@ -366,6 +366,7 @@
       var $listView;
       var instances = $.extend(true, {}, listView, {
         context: $.extend(true, {}, context, {
+          multiData: getMultiData($multi),
           multiRule: options.multiRule ? [options.multiRule] : null
         }),
         uiCustom: true
