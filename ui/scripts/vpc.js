@@ -534,134 +534,156 @@
 								}		
 							}
 						},
-						action: function(args) {							  				 
-							$.ajax({
-								url: createURL('createVpnGateway'),
-								data: {
-									publicipid: args.data.publicipid
-								},
-								dataType: 'json',									
-								success: function(json) {
-									var jid = json.createvpngatewayresponse.jobid;                          
-									var createvpngatewayIntervalID = setInterval(function() { 																
-										$.ajax({
-											url: createURL("queryAsyncJobResult&jobid=" + jid),
-											dataType: "json",
-											success: function(json) {													
-												var result = json.queryasyncjobresultresponse;												
-												if (result.jobstatus == 0) {
-													return; //Job has not completed
-												}
-												else {                                      
-													clearInterval(createvpngatewayIntervalID); 														
-													if (result.jobstatus == 1) {															
-														var obj = result.jobresult.vpngateway;
-														var vpngatewayid = obj.id;	
-													
-														$.ajax({
-															url: createURL('createVpnCustomerGateway'),
-															data: {
-																gateway: args.data.gateway,
-																cidrlist: args.data.cidrlist,
-																ipsecpsk: args.data.ipsecpsk,
-																ikepolicy: args.data.ikepolicy,
-																esppolicy: args.data.esppolicy,
-																lifetime: args.data.lifetime
-															},
-															dataType: 'json',									
-															success: function(json) {
-																var jid = json.createvpncustomergatewayresponse.jobid;                          
-																var createvpncustomergatewayIntervalID = setInterval(function() { 																
-																	$.ajax({
-																		url: createURL("queryAsyncJobResult&jobid=" + jid),
-																		dataType: "json",
-																		success: function(json) {													
-																			var result = json.queryasyncjobresultresponse;	
-																			if (result.jobstatus == 0) {
-																				return; //Job has not completed
-																			}
-																			else {                                      
-																				clearInterval(createvpncustomergatewayIntervalID); 														
-																				if (result.jobstatus == 1) {															
-																					var obj = result.jobresult.vpncustomergateway;
-																					var vpncustomergatewayid = obj.id;	
-																							
-																					$.ajax({
-																						url: createURL('createVpnConnection'),
-																						data: {
-																							s2svpngatewayid: vpngatewayid,
-																							s2scustomergatewayid: vpncustomergatewayid
-																						},
-																						dataType: 'json',									
-																						success: function(json) {
-																							var jid = json.createvpnconnectionresponse.jobid;                          
-																							var createvpnconnectionIntervalID = setInterval(function() { 																
-																								$.ajax({
-																									url: createURL("queryAsyncJobResult&jobid=" + jid),
-																									dataType: "json",
-																									success: function(json) {													
-																										var result = json.queryasyncjobresultresponse;	
-																										if (result.jobstatus == 0) {
-																											return; //Job has not completed
-																										}
-																										else {                                      
-																											clearInterval(createvpnconnectionIntervalID); 
-																																																					
-																											if (result.jobstatus == 1) {																														
-																												//remove loading image on table row																													
-																												var $listviewTable = $("div.list-view  div.data-table table.body tbody");														
-																												var $tr1 = $listviewTable.find("tr.loading").removeClass("loading");
-																												$tr1.find("td div.loading").removeClass("loading");
+						action: function(args) {	
+							var createVpnCustomerGatewayAndVpnConnection = function(vpngatewayid) {							 
+								$.ajax({
+									url: createURL('createVpnCustomerGateway'),
+									data: {
+										gateway: args.data.gateway,
+										cidrlist: args.data.cidrlist,
+										ipsecpsk: args.data.ipsecpsk,
+										ikepolicy: args.data.ikepolicy,
+										esppolicy: args.data.esppolicy,
+										lifetime: args.data.lifetime
+									},
+									dataType: 'json',									
+									success: function(json) {
+										var jid = json.createvpncustomergatewayresponse.jobid;                          
+										var createvpncustomergatewayIntervalID = setInterval(function() { 																
+											$.ajax({
+												url: createURL("queryAsyncJobResult&jobid=" + jid),
+												dataType: "json",
+												success: function(json) {													
+													var result = json.queryasyncjobresultresponse;	
+													if (result.jobstatus == 0) {
+														return; //Job has not completed
+													}
+													else {                                      
+														clearInterval(createvpncustomergatewayIntervalID); 														
+														if (result.jobstatus == 1) {															
+															var obj = result.jobresult.vpncustomergateway;
+															var vpncustomergatewayid = obj.id;	
+																	
+															$.ajax({
+																url: createURL('createVpnConnection'),
+																data: {
+																	s2svpngatewayid: vpngatewayid,
+																	s2scustomergatewayid: vpncustomergatewayid
+																},
+																dataType: 'json',									
+																success: function(json) {
+																	var jid = json.createvpnconnectionresponse.jobid;                          
+																	var createvpnconnectionIntervalID = setInterval(function() { 																
+																		$.ajax({
+																			url: createURL("queryAsyncJobResult&jobid=" + jid),
+																			dataType: "json",
+																			success: function(json) {													
+																				var result = json.queryasyncjobresultresponse;	
+																				if (result.jobstatus == 0) {
+																					return; //Job has not completed
+																				}
+																				else {                                      
+																					clearInterval(createvpnconnectionIntervalID); 
+																																															
+																					if (result.jobstatus == 1) {																														
+																						//remove loading image on table row																													
+																						var $listviewTable = $("div.list-view  div.data-table table.body tbody");														
+																						var $tr1 = $listviewTable.find("tr.loading").removeClass("loading");
+																						$tr1.find("td div.loading").removeClass("loading");
 
-																												var item = result.jobresult.vpnconnection;	                                                         	
-																												$tr1.find("td.publicip span").text(item.publicip);																													
-																												
-																												cloudStack.dialog.notice({ message: "site-to-site VPN is created successfully." });		
-																											}
-																											else if (result.jobstatus == 2) {
-																												$.removeTableRowInAction();
-																												cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });																														
-																											}
-																										}
-																									},
-																									error: function(XMLHttpResponse) {
-																										$.removeTableRowInAction();
-																										cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });	
-																									}
-																								});                              
-																							}, 3000); 																
-																						}
-																					});																		
+																						var item = result.jobresult.vpnconnection;	                                                         	
+																						$tr1.find("td.publicip span").text(item.publicip);																													
+																						
+																						cloudStack.dialog.notice({ message: "site-to-site VPN is created successfully." });		
+																					}
+																					else if (result.jobstatus == 2) {
+																						$.removeTableRowInAction();
+																						cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });																														
+																					}
 																				}
-																				else if (result.jobstatus == 2) {
-																					$.removeTableRowInAction();
-																					cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });																									
-																				}
+																			},
+																			error: function(XMLHttpResponse) {
+																				$.removeTableRowInAction();
+																				cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });	
 																			}
-																		},
-																		error: function(XMLHttpResponse) {
-																			$.removeTableRowInAction();
-																			cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });																				
-																		}
-																	});                              
-																}, 3000); 																
-															}
-														});									
+																		});                              
+																	}, 3000); 																
+																}
+															});																		
+														}
+														else if (result.jobstatus == 2) {
+															$.removeTableRowInAction();
+															cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });																									
+														}
 													}
-													else if (result.jobstatus == 2) {		
-														$.removeTableRowInAction();
-														cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });																
-													}
+												},
+												error: function(XMLHttpResponse) {
+													$.removeTableRowInAction();
+													cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });																				
 												}
-											},
-											error: function(XMLHttpResponse) {													
-												$.removeTableRowInAction();
-												cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });	
-											}
-										});                              
-									}, 3000); 																
+											});                              
+										}, 3000); 																
+									}
+								});			
+							}							
+						  							
+							var vpngatewayid;
+							$.ajax({
+							  url: createURL('listVpnGateways'),
+								data: {
+								  vpcid: args.context.vpc[0].id
+								},
+								async: false,
+								success: function(json) {								  
+								  var items = json.listvpngatewaysresponse.vpngateway;
+									if(items != null && items.length > 0) {
+									  vpngatewayid = items[0].id;
+									}
 								}
-							});							  	
+							});
+						 
+						  if(vpngatewayid == null) {						
+								$.ajax({
+									url: createURL('createVpnGateway'),
+									data: {
+										publicipid: args.data.publicipid
+									},														
+									success: function(json) {
+										var jid = json.createvpngatewayresponse.jobid;                          
+										var createvpngatewayIntervalID = setInterval(function() { 																
+											$.ajax({
+												url: createURL("queryAsyncJobResult&jobid=" + jid),
+												dataType: "json",
+												success: function(json) {													
+													var result = json.queryasyncjobresultresponse;												
+													if (result.jobstatus == 0) {
+														return; //Job has not completed
+													}
+													else {                                      
+														clearInterval(createvpngatewayIntervalID); 														
+														if (result.jobstatus == 1) {															
+															var obj = result.jobresult.vpngateway;
+															vpngatewayid = obj.id;														
+															createVpnCustomerGatewayAndVpnConnection(vpngatewayid); 
+														}
+														else if (result.jobstatus == 2) {		
+															$.removeTableRowInAction();
+															cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });																
+														}
+													}
+												},
+												error: function(XMLHttpResponse) {													
+													$.removeTableRowInAction();
+													cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });	
+												}
+											});                              
+										}, 3000); 																
+									}
+								});				
+              }
+              else { //vpngatewayid != null							
+							  createVpnCustomerGatewayAndVpnConnection(vpngatewayid); 
+							}								
 						}              
 					}
 				},
