@@ -1285,11 +1285,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         new Pair<Boolean, PublicIp>(publicNetwork, sourceNatIp));
                 DomainRouterVO router = deployRouter(owner, dest, plan, params, isRedundant, vrProvider, offeringId,
                         null, networks);
-                //add router to router network map
-                if (!_routerDao.isRouterPartOfGuestNetwork(router.getId(), network.getId())) {
-                    DomainRouterVO routerVO = _routerDao.findById(router.getId());
-                    _routerDao.addRouterToGuestNetwork(routerVO, network);
-                }
+                
+                _routerDao.addRouterToGuestNetwork(router, network);
+                
                 routers.add(router);
             }
         } finally {
@@ -1443,6 +1441,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             } else {
                 gatewayNic.setDefaultNic(true);
             }
+            
             networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, gatewayNic));
             hasGuestNetwork = true;
         }

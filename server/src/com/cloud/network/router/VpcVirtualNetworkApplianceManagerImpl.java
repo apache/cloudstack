@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ejb.Local;
 
@@ -221,11 +220,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         //Add router to the Guest network
         boolean result = true;
         try {
-            if (!_routerDao.isRouterPartOfGuestNetwork(router.getId(), network.getId())) {
-                DomainRouterVO routerVO = _routerDao.findById(router.getId());
-                _routerDao.addRouterToGuestNetwork(routerVO, network);
-            } 
-            
+            _routerDao.addRouterToGuestNetwork(router, network);
+
             NicProfile guestNic = _itMgr.addVmToNetwork(router, network, null);
             //setup guest network
             if (guestNic != null) {
@@ -275,11 +271,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         
         if (result) {
             if (result) {
-                //check if router is already part of network
-                if (_routerDao.isRouterPartOfGuestNetwork(router.getId(), network.getId())) {
-                    s_logger.debug("Removing router " + router + " from network" + network);
-                    _routerDao.removeRouterFromNetwork(router.getId(), network.getId());
-                }
+                _routerDao.removeRouterFromGuestNetwork(router.getId(), network.getId());
             }
         }
         return result;
@@ -795,10 +787,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             }
         }
         
-       
-        
-        
-        //4) PREPARE PLUG NIC COMMANDS
+        //3) PREPARE PLUG NIC COMMANDS
         try {
             //add VPC router to public networks
             List<PublicIp> sourceNat = new ArrayList<PublicIp>(1);
@@ -860,7 +849,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             return false;
         }
         
-        //5) RE-APPLY ALL STATIC ROUTE RULES
+        //4) RE-APPLY ALL STATIC ROUTE RULES
         List<? extends StaticRoute> routes = _staticRouteDao.listByVpcId(router.getVpcId());
         List<StaticRouteProfile> staticRouteProfiles = new ArrayList<StaticRouteProfile>(routes.size());
         Map<Long, VpcGateway> gatewayMap = new HashMap<Long, VpcGateway>();
@@ -879,9 +868,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             createStaticRouteCommands(staticRouteProfiles, router, cmds);
         }
         
-        //6) REISSUE VPN CONNECTION
+        //5) REISSUE VPN CONNECTION
         
-        //7) REPROGRAM GUEST NETWORK
+        //6) REPROGRAM GUEST NETWORK
         boolean reprogramGuestNtwks = true;
         if (profile.getParameter(Param.ReProgramGuestNetworks) != null 
                 && (Boolean) profile.getParameter(Param.ReProgramGuestNetworks) == false) {
@@ -931,7 +920,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         boolean result = true;
         try {
             Network network = _networkMgr.getNetwork(gateway.getNetworkId());
-            NicProfile requested = createPrivateNicProfile(gateway);
+            NicProfile requested = createPrivateNicProfileForGateway(gateway);
             
             NicProfile guestNic = _itMgr.addVmToNetwork(router, network, requested);
             
@@ -1177,19 +1166,26 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(4);
         networks = super.createRouterNetworks(owner, isRedundant, plan, null, publicNetwork);
         
-        //allocate nic for private gateway if needed
+        //1) allocate nic for private gateway if needed
         VpcGateway privateGateway = _vpcMgr.getPrivateGatewayForVpc(vpcId);
         if (privateGateway != null) {
-            NicProfile privateNic = createPrivateNicProfile(privateGateway);
+            NicProfile privateNic = createPrivateNicProfileForGateway(privateGateway);
             Network privateNetwork = _networkMgr.getNetwork(privateGateway.getNetworkId());
             networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) privateNetwork, privateNic));
+        }
+        
+        //2) allocate nic for guest gateway if needed
+        List<? extends Network> guestNetworks = _vpcMgr.getVpcNetworks(vpcId);
+        for (Network guestNetwork : guestNetworks) {
+            NicProfile guestNic = createGuestNicProfileForVpcRouter(guestNetwork);
+            networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, guestNic));
         }
         
         return networks;
     }
 
     @DB
-    protected NicProfile createPrivateNicProfile(VpcGateway privateGateway) {
+    protected NicProfile createPrivateNicProfileForGateway(VpcGateway privateGateway) {
         Network network = _networkMgr.getNetwork(privateGateway.getNetworkId());
         PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(network.getDataCenterId(), network.getId(), privateGateway.getIp4Address());
         
@@ -1210,4 +1206,16 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         return privateNic;
     }
    
+    protected NicProfile createGuestNicProfileForVpcRouter(Network guestNetwork) {
+        NicProfile guestNic = new NicProfile();
+        guestNic.setIp4Address(guestNetwork.getGateway());
+        guestNic.setBroadcastUri(guestNetwork.getBroadcastUri());
+        guestNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
+        guestNic.setIsolationUri(guestNetwork.getBroadcastUri());
+        guestNic.setMode(guestNetwork.getMode());
+        String gatewayCidr = guestNetwork.getCidr();
+        guestNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
+        
+        return guestNic;
+    }
 }

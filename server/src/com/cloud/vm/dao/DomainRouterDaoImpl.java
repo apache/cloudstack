@@ -25,6 +25,7 @@ import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.network.Network;
 import com.cloud.network.RouterNetworkDaoImpl;
 import com.cloud.network.RouterNetworkVO;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.UserStatisticsVO;
@@ -269,12 +270,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         if (guestNetworks != null && !guestNetworks.isEmpty()) {
             // 2) add router to the network
             for (Network guestNetwork : guestNetworks) {
-                if (!isRouterPartOfGuestNetwork(router.getId(), guestNetwork.getId())) {
-                    //add only when network is not private network
-                    if (!(guestNetwork.getName() != NetworkOffering.SystemPrivateGatewayNetworkOffering)) {
-                        addRouterToGuestNetwork(router, guestNetwork);
-                    }
-                }
+                addRouterToGuestNetwork(router, guestNetwork);  
             }
         }
        
@@ -284,27 +280,32 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     
     @Override
     @DB
-    public void addRouterToGuestNetwork(DomainRouterVO router, Network guestNetwork) {
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        //1) add router to network
-        RouterNetworkVO routerNtwkMap = new RouterNetworkVO(router.getId(), guestNetwork.getId(), guestNetwork.getGuestType());
-        _routerNetworkDao.persist(routerNtwkMap);
-        //2) create user stats entry for the network
-        UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn(), 
-                guestNetwork.getId(), null, router.getId(), router.getType().toString());
-        if (stats == null) {
-            stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), null, router.getId(),
-                    router.getType().toString(), guestNetwork.getId());
-            _userStatsDao.persist(stats);
-        }
-        txn.commit();
+    public void addRouterToGuestNetwork(VirtualRouter router, Network guestNetwork) {
+        if (_routerNetworkDao.findByRouterAndNetwork(router.getId(), guestNetwork.getId()) == null && 
+                guestNetwork.getName() != NetworkOffering.SystemPrivateGatewayNetworkOffering) {
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            //1) add router to network
+            RouterNetworkVO routerNtwkMap = new RouterNetworkVO(router.getId(), guestNetwork.getId(), guestNetwork.getGuestType());
+            _routerNetworkDao.persist(routerNtwkMap);
+            //2) create user stats entry for the network
+            UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn(), 
+                    guestNetwork.getId(), null, router.getId(), router.getType().toString());
+            if (stats == null) {
+                stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), null, router.getId(),
+                        router.getType().toString(), guestNetwork.getId());
+                _userStatsDao.persist(stats);
+            }
+            txn.commit();
+        }  
     }
     
     @Override
-    public void removeRouterFromNetwork(long routerId, long guestNetworkId) {
+    public void removeRouterFromGuestNetwork(long routerId, long guestNetworkId) {
         RouterNetworkVO routerNtwkMap = _routerNetworkDao.findByRouterAndNetwork(routerId, guestNetworkId);
-        _routerNetworkDao.remove(routerNtwkMap.getId());
+        if (routerNtwkMap != null) {
+            _routerNetworkDao.remove(routerNtwkMap.getId());
+        }
     }
     
     @Override
@@ -318,12 +319,6 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
         sc.setParameters("vpcId", vpcId);
         sc.setParameters("role", Role.VIRTUAL_ROUTER);
         return listBy(sc);
-    }
-    
-    @Override
-    public boolean isRouterPartOfGuestNetwork(long routerId, long guestNetworkId) {
-        RouterNetworkVO routerNtwkMap = _routerNetworkDao.findByRouterAndNetwork(routerId, guestNetworkId);
-        return routerNtwkMap != null;
     }
 
 }
