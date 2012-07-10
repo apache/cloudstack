@@ -1086,7 +1086,7 @@ public class NetUtils {
             if (!hash.matches("md5|sha1")) {
                 return false;
             }
-            if (pfsGroup != null && !pfsGroup.matches("modp768|modp1024|modp2048")) {
+            if (pfsGroup != null && !pfsGroup.matches("modp1024|modp1536")) {
                 return false;
             }
         }
