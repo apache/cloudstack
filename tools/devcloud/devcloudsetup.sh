@@ -49,6 +49,8 @@ iface xenbr0 inet dhcp
 
 auto eth0
 iface eth0 inet dhcp
+pre-up iptables-save < /etc/iptables.save
+pre-up /etc/init.d/ebtables load
 EOF
 
     echo TOOLSTACK=xapi > /etc/default/xen
@@ -68,6 +70,14 @@ postsetup() {
         print "xen dom0 is not running, make sure dom0 is installed"
         exit 1
     fi
+  
+    #disable virtualbox dhcp server for Vms created by cloudstack
+    apt-get install ebtables
+    iptables -A POSTROUTING -t mangle -p udp --dport bootpc -j CHECKSUM --checksum-fill
+    mac=`ifconfig xenbr0 |grep HWaddr |awk '{print $5}'`
+    ebtables -I FORWARD -d ! $mac -i eth0 -p IPV4 --ip-prot udp --ip-dport 67:68 -j DROP
+    iptables-save > /etc/iptables.save
+    /etc/init.d/ebtables save
 
     echo "configure NFS server"
     aptitude -y install nfs-server
