@@ -133,6 +133,7 @@
         // Get tier data
         tierSelect({
           context: context,
+          $tierSelect: $tierSelect,
           response: {
             success: function(args) {
               var data = args.data;
