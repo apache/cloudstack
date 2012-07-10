@@ -15,6 +15,7 @@
 # @VERSION@
 
 source /root/func.sh
+source /opt/cloud/bin/vpc_func.sh
 
 lock="biglock"
 locked=$(getLockFile $lock)
@@ -31,6 +32,9 @@ usage() {
 
 add_snat() {
   logger -t cloud "$(basename $0):Added SourceNAT $pubIp on interface $ethDev"
+  vpccidr=$(getVPCcidr)
+  sudo iptables -D FORWARD -s $vpccidr ! -d $vpccidr -j ACCEPT
+  sudo iptables -A FORWARD -s $vpccidr ! -d $vpccidr -j ACCEPT
   sudo iptables -t nat -D POSTROUTING   -j SNAT -o $ethDev --to-source $pubIp
   sudo iptables -t nat -A POSTROUTING   -j SNAT -o $ethDev --to-source $pubIp
   return $?
