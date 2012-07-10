@@ -21,13 +21,15 @@ install_xen() {
     aptitude update
     echo "install xen"
     aptitude -y install linux-headers-3.2.0-23-generic-pae
-    aptitude -y install xen-hypervisor-4.1 xcp-xapi 
+    aptitude -y install xen-hypervisor-4.1-i386 xcp-xapi 
     echo "configure xen"
 
     sed -i -e 's/xend_start$/#xend_start/' -e 's/xend_stop$/#xend_stop/' /etc/init.d/xend
     update-rc.d xendomains disable
 
-    sed -i 's/GRUB_DEFAULT=.\+/GRUB_DEFAULT="Xen 4.1-amd64"/' /etc/default/grub
+    sed -i 's/GRUB_DEFAULT=.\+/GRUB_DEFAULT="Xen 4.1-i386"/' /etc/default/grub
+    echo 'GRUB_CMDLINE_XEN_DEFAULT="dom0_mem=512M,max:512M"' | cat /etc/default/grub - >> /etc/default/newgrub
+    mv /etc/default/newgrub /etc/default/grub
     update-grub
 
     mkdir /usr/share/qemu
@@ -51,6 +53,9 @@ EOF
 
     echo TOOLSTACK=xapi > /etc/default/xen
     echo bridge > /etc/xcp/network.conf
+
+    echo "set root password"
+    echo "root:password" | chpasswd
 
     echo "reboot"
     reboot
