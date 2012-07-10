@@ -100,8 +100,8 @@ public class DeleteVpnConnectionCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         try {
-            Site2SiteVpnConnection result = _s2sVpnService.deleteVpnConnection(this);
-            if (result != null) {
+            boolean result = _s2sVpnService.deleteVpnConnection(this);
+            if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 this.setResponseObject(response);
             } else {

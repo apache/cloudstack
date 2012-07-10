@@ -100,8 +100,8 @@ public class DeleteVpnGatewayCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute(){
-        Site2SiteVpnGateway result = _s2sVpnService.deleteVpnGateway(this);
-        if (result != null) {
+        boolean result = _s2sVpnService.deleteVpnGateway(this);
+        if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
