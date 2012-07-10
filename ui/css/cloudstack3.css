@@ -6594,6 +6594,11 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .multi-edit {
 }
 
+.multi-edit > form {
+  position: relative;
+  clear: both;
+}
+
 .multi-edit table.multi-edit {
   border-top: none;
 }
@@ -6927,10 +6932,11 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 /** Header fields*/
 .multi-edit .header-fields {
-  float: left;
-  height: 32px;
-  width: 100%;
-  margin-left: 8px;
+  position: relative;
+  /*+placement:shift 8px 11px;*/
+  position: relative;
+  left: 8px;
+  top: 11px;
 }
 
 .multi-edit .header-fields .form-item {
