@@ -2243,8 +2243,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
 
         // check if account/domain is with in resource limits to create a new vm
+        boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.user_vm);
-        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume);
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, (isIso || diskOfferingId == null ? 1 : 2));
 
         //verify security group ids
         if (securityGroupIdList != null) {
@@ -2274,7 +2275,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (listZoneTemplate == null || listZoneTemplate.isEmpty()) {
             throw new InvalidParameterValueException("The template " + template.getId() + " is not available for use");
         }
-        boolean isIso = Storage.ImageFormat.ISO == template.getFormat();
+
         if (isIso && !template.isBootable()) {
             throw new InvalidParameterValueException("Installing from ISO requires an ISO that is bootable: " + template.getId());
         }
