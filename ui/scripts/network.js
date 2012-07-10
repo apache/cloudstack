@@ -1955,7 +1955,7 @@
                         select: function(args) {
                           args.response.success({
                             data: [
-                              { id: '-1', name: '', description: 'None' },
+                              { id: '', name: '', description: 'None' },
                               { id: '1', name: 'tier1', description: 'tier1' },
                               { id: '2', name: 'tier2', description: 'tier2' },
                               { id: '3', name: 'tier3', description: 'tier3' }
@@ -2300,7 +2300,7 @@
                         select: function(args) {
                           args.response.success({
                             data: [
-                              { id: '-1', name: '', description: 'None' },
+                              { id: '', name: '', description: 'None' },
                               { id: '1', name: 'tier1', description: 'tier1' },
                               { id: '2', name: 'tier2', description: 'tier2' },
                               { id: '3', name: 'tier3', description: 'tier3' }
