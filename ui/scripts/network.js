@@ -1949,6 +1949,21 @@
                         }
                       }
                     }),
+                    headerFields: {
+                      tier: {
+                        label: 'Tier',
+                        select: function(args) {
+                          args.response.success({
+                            data: [
+                              { id: '-1', name: '', description: 'None' },
+                              { id: '1', name: 'tier1', description: 'tier1' },
+                              { id: '2', name: 'tier2', description: 'tier2' },
+                              { id: '3', name: 'tier3', description: 'tier3' }
+                            ]
+                          });
+                        }
+                      }
+                    },
                     multipleAdd: true,
                     fields: {
                       'name': { edit: true, label: 'label.name', isEditable: true },
@@ -1967,6 +1982,7 @@
                           });
                         }
                       },
+
                       'sticky': {
                         label: 'label.stickiness',
                         custom: {
@@ -2278,6 +2294,21 @@
 
                   // Port forwarding rules
                   portForwarding: {
+                    headerFields: {
+                      tier: {
+                        label: 'Tier',
+                        select: function(args) {
+                          args.response.success({
+                            data: [
+                              { id: '-1', name: '', description: 'None' },
+                              { id: '1', name: 'tier1', description: 'tier1' },
+                              { id: '2', name: 'tier2', description: 'tier2' },
+                              { id: '3', name: 'tier3', description: 'tier3' }
+                            ]
+                          });
+                        }
+                      }
+                    },
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
                         dataProvider: function(args) {
