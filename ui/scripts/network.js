@@ -193,7 +193,7 @@
               label: 'label.add.guest.network',
 
               preFilter: function(args) {
-                var basicZoneExists = false;
+                var basicZoneExists = true;
                 $.ajax({
                   url: createURL("listZones"),
                   dataType: "json",
@@ -202,8 +202,8 @@
                     if(json.listzonesresponse.zone != null && json.listzonesresponse.zone.length > 0) {
                       zoneObjs = json.listzonesresponse.zone;
                       $(zoneObjs).each(function() {
-                        if(this.networktype == "Basic") {
-                          basicZoneExists = true;
+                        if(this.networktype == "Advanced") {
+                          basicZoneExists = false; // Modifying the logic for displaying the add network tab if we have a multi zone installation (advanced/basic)
                           return false; //break each loop
                         }
                       });
