@@ -1236,12 +1236,20 @@
                   custom: cloudStack.uiCustom.enableStaticNAT({
                     // VPC
                     tierSelect: function(args) {
-                      args.response.success({
-                        data: [
-                          { id: '1', description: 'VPC 1' },
-                          { id: '2', description: 'VPC 2' }
-                        ]
-                      });
+                      args.$tierSelect.hide(); // Hidden by default
+                      
+                      // Determine if tiers are supported here
+                      var enableTiers = false;
+
+                      if (enableTiers) {
+                        args.$tierSelect.show();
+                        args.response.success({
+                          data: [
+                            { id: '1', description: 'VPC 1' },
+                            { id: '2', description: 'VPC 2' }
+                          ]
+                        });
+                      }
                     },
 
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
