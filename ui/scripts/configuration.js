@@ -1028,7 +1028,8 @@
                 title: 'label.add.network.offering',               														
 								preFilter: function(args) {								  									
                   var $availability = args.$form.find('.form-item[rel=availability]');
-                  var $serviceOfferingId = args.$form.find('.form-item[rel=serviceOfferingId]');
+                  var $serviceOfferingId = args.$form.find('.form-item[rel=serviceOfferingId]');									
+									var $conservemode = args.$form.find('.form-item[rel=conservemode]');									
                   var hasAdvancedZones = false;
 
                   // Check whether there are any advanced zones
@@ -1060,7 +1061,8 @@
                       $availability.hide();
                     }
 
-										//check whether to show or hide serviceOfferingId field										
+										
+										//when service(s) has Virtual Router as provider.....							
                     var havingVirtualRouterForAtLeastOneService = false;									
 										$(serviceCheckboxNames).each(function(){										  
 											var checkboxName = this;                      								
@@ -1072,13 +1074,40 @@
 													return false; //break each loop
 												}
 											}																					
-										});
-                    
-                    if(havingVirtualRouterForAtLeastOneService == true)
+										});                    
+                    if(havingVirtualRouterForAtLeastOneService == true) {
                       $serviceOfferingId.css('display', 'inline-block');
-                    else
+										}
+                    else {
                       $serviceOfferingId.hide();		
+										}
 
+										
+										/*
+										when service(s) has VPC Virtual Router as provider:
+                    (1) conserve mode is set to unchecked and grayed-out							
+                    */										
+                    var havingVpcVirtualRouterForAtLeastOneService = false;									
+										$(serviceCheckboxNames).each(function(){										  
+											var checkboxName = this;                      								
+											if($("input[name='" + checkboxName + "']").is(":checked") == true) {											  
+											  var providerFieldName = checkboxName.replace(".isEnabled", ".provider"); //either dropdown or input hidden field
+                        var providerName = $("[name='" + providerFieldName + "']").val(); 
+												if(providerName == "VpcVirtualRouter") {
+												  havingVpcVirtualRouterForAtLeastOneService = true;
+													return false; //break each loop
+												}
+											}																					
+										});                    
+                    if(havingVpcVirtualRouterForAtLeastOneService == true) {
+										  $conservemode.find("input[type=checkbox]").attr("disabled", "disabled"); //make it read-only
+                      $conservemode.find("input[type=checkbox]").attr('checked', false);	//make it unchecked								
+										}
+                    else {
+                      $conservemode.find("input[type=checkbox]").removeAttr("disabled"); //make it editable						
+										}
+										
+										
 	                  $(':ui-dialog').dialog('option', 'position', 'center');
 
 										
