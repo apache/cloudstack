@@ -1029,7 +1029,8 @@
 								preFilter: function(args) {								  									
                   var $availability = args.$form.find('.form-item[rel=availability]');
                   var $serviceOfferingId = args.$form.find('.form-item[rel=serviceOfferingId]');									
-									var $conservemode = args.$form.find('.form-item[rel=conservemode]');									
+									var $conservemode = args.$form.find('.form-item[rel=conservemode]');										
+                  var $serviceSourceNatRedundantRouterCapabilityCheckbox = args.$form.find('.form-item[rel="service.SourceNat.redundantRouterCapabilityCheckbox"]');	                  		
                   var hasAdvancedZones = false;
 
                   // Check whether there are any advanced zones
@@ -1085,7 +1086,8 @@
 										
 										/*
 										when service(s) has VPC Virtual Router as provider:
-                    (1) conserve mode is set to unchecked and grayed-out							
+                    (1) Conserve mode is set to unchecked and grayed out.	
+                    (2) Redundant router capability checkbox is set to unchecked and grayed out.										
                     */										
                     var havingVpcVirtualRouterForAtLeastOneService = false;									
 										$(serviceCheckboxNames).each(function(){										  
@@ -1100,11 +1102,15 @@
 											}																					
 										});                    
                     if(havingVpcVirtualRouterForAtLeastOneService == true) {
-										  $conservemode.find("input[type=checkbox]").attr("disabled", "disabled"); //make it read-only
-                      $conservemode.find("input[type=checkbox]").attr('checked', false);	//make it unchecked								
+										  $conservemode.find("input[type=checkbox]").attr("disabled", "disabled"); 
+                      $conservemode.find("input[type=checkbox]").attr('checked', false);		
+
+                      $serviceSourceNatRedundantRouterCapabilityCheckbox.find("input[type=checkbox]").attr("disabled", "disabled"); 
+                      $serviceSourceNatRedundantRouterCapabilityCheckbox.find("input[type=checkbox]").attr('checked', false);										
 										}
                     else {
-                      $conservemode.find("input[type=checkbox]").removeAttr("disabled"); //make it editable						
+                      $conservemode.find("input[type=checkbox]").removeAttr("disabled"); 
+                      $serviceSourceNatRedundantRouterCapabilityCheckbox.find("input[type=checkbox]").removeAttr("disabled"); 									
 										}
 										
 										
