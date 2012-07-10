@@ -193,6 +193,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                         
                         //Clean up any vnets that have no live networks/nics
                         pstmt4 = conn.prepareStatement("SELECT v.id, v.vnet, v.reservation_id FROM `cloud`.`op_dc_vnet_alloc` v LEFT JOIN networks n ON CONCAT('vlan://' , v.vnet) = n.broadcast_uri WHERE v.taken IS NOT NULL AND v.data_center_id = ? AND n.broadcast_uri IS NULL AND n.removed IS NULL");
+                        pstmt4.setLong(1, zoneId);
                         rsVNet = pstmt4.executeQuery();
                         while(rsVNet.next()){
                             Long vnet_id = rsVNet.getLong(1);
