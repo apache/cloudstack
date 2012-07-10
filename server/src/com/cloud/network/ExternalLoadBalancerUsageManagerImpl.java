@@ -351,7 +351,7 @@ public class ExternalLoadBalancerUsageManagerImpl implements ExternalLoadBalance
 
                     long zoneId = zone.getId();
 
-                    List<NetworkVO> networksForAccount = _networkDao.listBy(accountId, zoneId, Network.GuestType.Isolated);
+                    List<NetworkVO> networksForAccount = _networkDao.listByZoneAndGuestType(accountId, zoneId, Network.GuestType.Isolated, false);
                     if (networksForAccount == null) {
                         continue;
                     }

@@ -1015,7 +1015,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner) {
 
-        return _networksDao.listBy(owner.getId(), zoneId, Network.GuestType.Isolated);
+        return _networksDao.listByZoneAndGuestType(owner.getId(), zoneId, Network.GuestType.Isolated, false);
     }
 
     @Override
@@ -4463,7 +4463,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public String getIpOfNetworkElementInVirtualNetwork(long accountId, long dataCenterId) {
 
-        List<NetworkVO> virtualNetworks = _networksDao.listBy(accountId, dataCenterId, Network.GuestType.Isolated);
+        List<NetworkVO> virtualNetworks = _networksDao.listByZoneAndGuestType(accountId, dataCenterId, Network.GuestType.Isolated, false);
 
         if (virtualNetworks.isEmpty()) {
             s_logger.trace("Unable to find default Virtual network account id=" + accountId);

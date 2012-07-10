@@ -31,7 +31,7 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
 
     List<NetworkVO> listBy(long accountId, long dataCenterId, String cidr);
 
-    List<NetworkVO> listBy(long accountId, long dataCenterId, Network.GuestType type);
+    List<NetworkVO> listByZoneAndGuestType(long accountId, long dataCenterId, Network.GuestType type, Boolean isSystem);
 
     NetworkVO persist(NetworkVO network, boolean gc, Map<String, String> serviceProviderMap);
 

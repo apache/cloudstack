@@ -176,8 +176,8 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         if (accountName != null && domainId != null) {
             Account account = _accountService.finalizeOwner(caller, accountName, domainId, projectId);
             return account.getId();
-        } else if (getNetworkId() != null){
-            Network network = _networkService.getNetwork(getNetworkId());
+        } else if (networkId != null){
+            Network network = _networkService.getNetwork(networkId);
             return network.getAccountId();
         } else if (vpcId != null) {
             Vpc vpc = _vpcService.getVpc(getVpcId());
@@ -187,7 +187,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             return vpc.getAccountId();
         }
 
-        throw new InvalidParameterValueException("Failed to determine ip owner", null);
+        return caller.getAccountId();
     }
 
     @Override
