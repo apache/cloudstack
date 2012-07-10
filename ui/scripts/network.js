@@ -1241,9 +1241,20 @@
               },
               enableStaticNAT: {
                 label: 'label.action.enable.static.NAT',
+                
                 action: {
                   noAdd: true,
                   custom: cloudStack.uiCustom.enableStaticNAT({
+                    // VPC
+                    tierSelect: function(args) {
+                      args.response.success({
+                        data: [
+                          { id: '1', description: 'VPC 1' },
+                          { id: '2', description: 'VPC 2' }
+                        ]
+                      });
+                    },
+
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
                         dataProvider: function(args) {

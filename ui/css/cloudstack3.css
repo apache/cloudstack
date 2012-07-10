@@ -9265,6 +9265,34 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   width: 46px;
 }
 
+/*VPC: Enable Static NAT fields*/
+.list-view.instances .filters.tier-select {
+  width: 246px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  background: #8F98A1;
+  padding: 2px 20px 2px 13px;
+  margin: 1px 120px 0 19px;
+  border: 1px solid #000000;
+}
+
+.list-view.instances .filters.tier-select label {
+  color: #FFFFFF;
+  /*+text-shadow:0px 1px 3px #000000;*/
+  -moz-text-shadow: 0px 1px 3px #000000;
+  -webkit-text-shadow: 0px 1px 3px #000000;
+  -o-text-shadow: 0px 1px 3px #000000;
+  text-shadow: 0px 1px 3px #000000;
+}
+
+.list-view.instances .filters.tier-select select {
+  width: 166px;
+  float: left;
+}
+
 /*Configure ACL dialog*/
 .ui-dialog.configure-acl {
 }
