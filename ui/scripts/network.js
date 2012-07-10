@@ -1542,10 +1542,10 @@
                     if (args.context.ipAddresses[0].isstaticnat)
                       disallowedActions.push("nonStaticNATChart");  //tell ipRules widget to show staticNAT chart instead of non-staticNAT chart.
 
-                    var networkOfferingHavingFirewallService = false;
-                    var networkOfferingHavingPortForwardingService = false;
-                    var networkOfferingHavingLbService = false;
-										var networkOfferingHavingVpnService = false;		
+                    var havingFirewallService = false;
+                    var havingPortForwardingService = false;
+                    var havingLbService = false;
+										var havingVpnService = false;		
 										
                     if('networks' in args.context) { //from Guest Network section
 											$.ajax({
@@ -1557,24 +1557,24 @@
 													$(networkoffering.service).each(function(){
 														var thisService = this;
 														if(thisService.name == "Firewall")
-															networkOfferingHavingFirewallService = true;
+															havingFirewallService = true;
 														if(thisService.name == "PortForwarding")
-															networkOfferingHavingPortForwardingService = true;
+															havingPortForwardingService = true;
 														if(thisService.name == "Lb")
-															networkOfferingHavingLbService = true;
+															havingLbService = true;
 														if(thisService.name == "Vpn")
-															networkOfferingHavingVpnService = true;
+															havingVpnService = true;
 													});
 												}
 											});
 										}
 										else { //from VPC section
-										  networkOfferingHavingFirewallService = false;  //Firewall is not supported in IP Address page in VPC section
-											networkOfferingHavingVpnService = false; //VPN is not supported in IP Address page in VPC section
+										  havingFirewallService = false;  //firewall is not supported in IP from VPC section (because ACL has already supported in tier from VPC section)
+											havingVpnService = false; //VPN is not supported in IP from VPC section
 										
 										  if(args.context.ipAddresses[0].associatednetworkid == null) { //IP is not associated with any tier yet												
-												networkOfferingHavingPortForwardingService = true;
-												networkOfferingHavingLbService = true;												
+												havingPortForwardingService = true;
+												havingLbService = true;												
 											}
 											else { //IP is associated with a tier
 											  $.ajax({
@@ -1590,9 +1590,9 @@
 																$(networkoffering.service).each(function(){
 																	var thisService = this;																	
 																	if(thisService.name == "PortForwarding")
-																		networkOfferingHavingPortForwardingService = true;
+																		havingPortForwardingService = true;
 																	if(thisService.name == "Lb")
-																		networkOfferingHavingLbService = true;																	
+																		havingLbService = true;																	
 																});
 															}
 														});																										  
@@ -1606,6 +1606,10 @@
 											(1) If IP is SourceNat, no StaticNat/VPN/PortForwarding/LoadBalancer can be enabled/added. 
 											*/
 											if (args.context.ipAddresses[0].issourcenat){
+											  if(havingFirewallService == false) { //firewall is not supported in IP from VPC section (because ACL has already supported in tier from VPC section)
+													disallowedActions.push("firewall");
+												}
+											
 											  disallowedActions.push("portForwarding");			
 											  disallowedActions.push("loadBalancing");											  									
 											}
@@ -1618,18 +1622,18 @@
 											4. Once a LoadBalancer rule is added, hide StaticNat/VPN/PortForwarding.
 											*/
 											else { //args.context.ipAddresses[0].issourcenat == false		 
-												if(networkOfferingHavingFirewallService == false)
+												if(havingFirewallService == false)
 													disallowedActions.push("firewall");
-												if(networkOfferingHavingPortForwardingService == false)
+												if(havingPortForwardingService == false)
 													disallowedActions.push("portForwarding");
-												if(networkOfferingHavingLbService == false)
+												if(havingLbService == false)
 													disallowedActions.push("loadBalancing");
 											
 												if (args.context.ipAddresses[0].isstaticnat) { //1. Once StaticNat is enabled, hide VPN/PortForwarding/LoadBalancer.
 												  disallowedActions.push("portForwarding");
 													disallowedActions.push("loadBalancing");
 												}
-												if (networkOfferingHavingVpnService && args.context.ipAddresses[0].vpnenabled) { //2. If VPN service is supported (i.e. IP comes from Guest Network section, not from VPC section), once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
+												if (havingVpnService && args.context.ipAddresses[0].vpnenabled) { //2. If VPN service is supported (i.e. IP comes from Guest Network section, not from VPC section), once VPN is enabled, hide StaticNat/PortForwarding/LoadBalancer.
 													disallowedActions.push("portForwarding");
 													disallowedActions.push("loadBalancing"); 
 												}
