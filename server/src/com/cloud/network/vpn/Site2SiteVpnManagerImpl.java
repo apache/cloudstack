@@ -20,6 +20,7 @@ import com.cloud.api.commands.ListVpnCustomerGatewaysCmd;
 import com.cloud.api.commands.ListVpnGatewaysCmd;
 import com.cloud.api.commands.ResetVpnConnectionCmd;
 import com.cloud.api.commands.UpdateVpnCustomerGatewayCmd;
+import com.cloud.domain.Domain;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -91,7 +92,12 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
         if (gws != null && gws.size() != 0) {
             throw new InvalidParameterValueException("The VPN gateway of VPC " + vpcId + " already existed!");
         }
-        Site2SiteVpnGatewayVO gw = new Site2SiteVpnGatewayVO(ipId);
+        Long accountId = cmd.getEntityOwnerId();
+        Long domainId = cmd.getDomainId();
+        if (domainId == null) {
+            domainId = Domain.ROOT_DOMAIN;
+        }
+        Site2SiteVpnGatewayVO gw = new Site2SiteVpnGatewayVO(accountId, domainId, ipId);
         _vpnGatewayDao.persist(gw);
         return gw;
     }
@@ -126,7 +132,12 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
         if (_customerGatewayDao.findByGatewayIp(gatewayIp) != null) {
             throw new InvalidParameterValueException("The customer gateway with ip " + gatewayIp + " already existed!");
         }
-        Site2SiteCustomerGatewayVO gw = new Site2SiteCustomerGatewayVO(gatewayIp, guestCidrList, ipsecPsk,
+        Long accountId = cmd.getEntityOwnerId();
+        Long domainId = cmd.getDomainId();
+        if (domainId == null) {
+            domainId = Domain.ROOT_DOMAIN;
+        }
+        Site2SiteCustomerGatewayVO gw = new Site2SiteCustomerGatewayVO(accountId, domainId, gatewayIp, guestCidrList, ipsecPsk,
                 ikePolicy, espPolicy, lifetime);
         _customerGatewayDao.persist(gw);
         return gw;
@@ -149,7 +160,12 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
             throw new InvalidParameterValueException("The vpn connection with customer gateway id " + customerGatewayId + " or vpn gateway id " 
                     + vpnGatewayId + " already existed!");
         }
-        Site2SiteVpnConnectionVO conn = new Site2SiteVpnConnectionVO(vpnGatewayId, customerGatewayId);
+        Long accountId = cmd.getEntityOwnerId();
+        Long domainId = cmd.getDomainId();
+        if (domainId == null) {
+            domainId = Domain.ROOT_DOMAIN;
+        }
+        Site2SiteVpnConnectionVO conn = new Site2SiteVpnConnectionVO(accountId, domainId, vpnGatewayId, customerGatewayId);
         conn.setState(State.Pending);
         _vpnConnectionDao.persist(conn);
         return conn;
@@ -320,10 +336,14 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
     @Override
     public List<Site2SiteVpnGateway> searchForVpnGateways(ListVpnGatewaysCmd cmd) {
         Long id = cmd.getId();
+        Long vpcId = cmd.getVpcId();
+        
         List<Site2SiteVpnGateway> results = new ArrayList<Site2SiteVpnGateway>();
         if (id != null) {
             results.add(_vpnGatewayDao.findById(cmd.getId()));
-        } else {
+        } else if (vpcId != null) {
+            results.addAll(_vpnGatewayDao.listByVpcId(vpcId));
+        } else { //id == null && vpcId == null
             results.addAll(_vpnGatewayDao.listAll());
         }
         return results;
@@ -332,10 +352,14 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
     @Override
     public List<Site2SiteVpnConnection> searchForVpnConnections(ListVpnConnectionsCmd cmd) {
         Long id = cmd.getId();
+        Long vpcId = cmd.getVpcId();
+        
         List<Site2SiteVpnConnection> results = new ArrayList<Site2SiteVpnConnection>();
         if (id != null) {
             results.add(_vpnConnectionDao.findById(cmd.getId()));
-        } else {
+        } else if (vpcId != null) {
+            results.addAll(_vpnConnectionDao.listByVpcId(vpcId));
+        } else { //id == null && vpcId == null
             results.addAll(_vpnConnectionDao.listAll());
         }
         return results;

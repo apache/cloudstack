@@ -2,7 +2,9 @@ package com.cloud.network;
 
 import java.util.Date;
 
-public interface Site2SiteVpnConnection {
+import com.cloud.acl.ControlledEntity;
+
+public interface Site2SiteVpnConnection extends ControlledEntity {
     enum State {
         Pending,
         Connected,

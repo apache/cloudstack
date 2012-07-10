@@ -44,6 +44,14 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, required=true, description="public ip address id of the vpn gateway")
     private Long publicIpId;
 
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the connection. Must be used with the domainId parameter.")
+    private String accountName;
+    
+    @IdentityMapper(entityTableName="domain")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the connection. " +
+    		"If used with the account parameter returns the connection associated with the account for the specified domain.")
+    private Long domainId;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -54,6 +62,14 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
     
     public Long getPublicIpId() {
         return publicIpId;
+    }
+
+    public String getAccountName() {
+        return accountName;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     /////////////////////////////////////////////////////

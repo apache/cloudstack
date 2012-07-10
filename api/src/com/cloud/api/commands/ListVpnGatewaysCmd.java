@@ -44,13 +44,20 @@ public class ListVpnGatewaysCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="id of the vpn gateway")
     private Long id;
 
+    @IdentityMapper(entityTableName="vpc")
+    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="id of vpc")
+    private Long vpcId;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    
     public Long getId() {
         return id;
+    }
+
+    public Long getVpcId() {
+        return vpcId;
     }
 
     /////////////////////////////////////////////////////
