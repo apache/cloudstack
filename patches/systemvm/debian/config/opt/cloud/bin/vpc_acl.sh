@@ -32,7 +32,7 @@ usage() {
 
 acl_switch_to_new() {
   sudo iptables -D FORWARD -o $dev -d $gcidr -j _ACL_INBOUND_$dev  2>/dev/null
-  sudo iptables-save  | grep _ACL_INBOUND_$dev | grep "\-A" | while read rule;
+  sudo iptables-save  | grep "\-j _ACL_INBOUND_$dev" | grep "\-A" | while read rule;
   do
     rule1=$(echo $rule | sed 's/\_ACL_INBOUND/ACL_INBOUND/')
     sudo iptables $rule1
