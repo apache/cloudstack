@@ -2194,7 +2194,9 @@
                         }
                       }
                     },
-                    dataProvider: function(args) {   
+                    dataProvider: function(args) {
+                      var $multi = args.$multi;
+
                       $.ajax({
                         url: createURL('listLoadBalancerRules'),
 												data: {
@@ -2289,6 +2291,16 @@
                           });
                         }
                       });
+
+                      // Check if tiers are present; hide/show header drop-down
+                      var hasTiers = false;
+                      var $headerFields = $multi.find('.header-fields');
+
+                      if (hasTiers) {
+                        $headerFields.hide();
+                      } else {
+                        $headerFields.show();
+                      }
                     }
                   },
 
@@ -2444,6 +2456,8 @@
                       }
                     },
                     dataProvider: function(args) {
+                      var $multi = args.$multi;
+                      
                       $.ajax({
                         url: createURL('listPortForwardingRules'),
                         data: {
@@ -2495,6 +2509,16 @@
                               }
                             });
                           });
+
+                          // Check if tiers are present; hide/show header drop-down
+                          var hasTiers = false;
+                          var $headerFields = $multi.find('.header-fields');
+
+                          if (hasTiers) {
+                            $headerFields.hide();
+                          } else {
+                            $headerFields.show();
+                          }
                         },
                         error: function(data) {
                           args.response.error(parseXMLHttpResponse(data));

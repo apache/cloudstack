@@ -896,6 +896,7 @@
     var getData = function() {
       dataProvider({
         context: context,
+        $multi: $multi,
         response: {
           success: function(args) {
             $multi.find('.data-item').remove();
