@@ -32,6 +32,12 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection {
     @Column(name="state")
     private State state;
     
+    @Column(name="domain_id")
+    private Long domainId;
+    
+    @Column(name="account_id")
+    private Long accountId;
+
     @Column(name=GenericDao.CREATED_COLUMN)
     private Date created;
     
@@ -40,11 +46,13 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection {
     
     public Site2SiteVpnConnectionVO() { }
 
-    public Site2SiteVpnConnectionVO(long vpnGatewayId, long customerGatewayId) {
+    public Site2SiteVpnConnectionVO(long accountId, long domainId, long vpnGatewayId, long customerGatewayId) {
         this.uuid = UUID.randomUUID().toString();
         this.setVpnGatewayId(vpnGatewayId);
         this.setCustomerGatewayId(customerGatewayId);
         this.setState(State.Pending);
+        this.accountId = accountId;
+        this.domainId = domainId;
     }
     
     @Override
@@ -99,5 +107,15 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection {
     
     public String getUuid() {
         return uuid;
+    }
+    
+    @Override
+    public long getDomainId() {
+        return domainId;
+    }
+
+    @Override
+    public long getAccountId() {
+        return accountId;
     }
 }

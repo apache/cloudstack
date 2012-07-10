@@ -20,7 +20,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
-public class Site2SiteCustomerGatewayResponse extends BaseResponse {
+public class Site2SiteCustomerGatewayResponse extends BaseResponse implements ControlledEntityResponse {
     @SerializedName(ApiConstants.ID) @Param(description="the vpn gateway ID")
     private IdentityProxy id = new IdentityProxy("s2s_customer_gateway");
 
@@ -36,6 +36,21 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse {
     @SerializedName(ApiConstants.IPSEC_PSK) @Param(description="IPsec preshared-key of customer gateway")
     private String ipsecPsk;
 
+    @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner")
+    private String accountName;
+    
+    @SerializedName(ApiConstants.PROJECT_ID) @Param(description="the project id")
+    private IdentityProxy projectId = new IdentityProxy("projects");
+    
+    @SerializedName(ApiConstants.PROJECT) @Param(description="the project name")
+    private String projectName;
+
+    @SerializedName(ApiConstants.DOMAIN_ID) @Param(description="the domain id of the owner")
+    private IdentityProxy domainId = new IdentityProxy("domain");
+    
+    @SerializedName(ApiConstants.DOMAIN) @Param(description="the domain name of the owner")
+    private String domain;
+    
     @SerializedName(ApiConstants.REMOVED) @Param(description="the date and time the host was removed")
     private Date removed;
 
@@ -62,4 +77,30 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse {
     public void setRemoved(Date removed) {
         this.removed = removed;
     }	
+    
+    @Override
+    public void setAccountName(String accountName) {
+        this.accountName = accountName;
+    }
+
+    @Override
+    public void setProjectId(Long projectId) {
+        this.projectId.setValue(projectId);
+    }
+
+    @Override
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+
+    @Override
+    public void setDomainId(Long domainId) {
+        this.domainId.setValue(domainId);
+    }
+
+    @Override
+    public void setDomainName(String domainName) {
+        this.domain = domainName;
+    }
+
 }

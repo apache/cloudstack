@@ -26,14 +26,22 @@ public class Site2SiteVpnGatewayVO implements Site2SiteVpnGateway {
     @Column(name="addr_id")
     private long addrId;
 
+    @Column(name="domain_id")
+    private Long domainId;
+    
+    @Column(name="account_id")
+    private Long accountId;
+
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
     
     public Site2SiteVpnGatewayVO() { }
 
-    public Site2SiteVpnGatewayVO(long addrId) {
+    public Site2SiteVpnGatewayVO(long accountId, long domainId, long addrId) {
         this.uuid = UUID.randomUUID().toString();
         this.setAddrId(addrId);
+        this.accountId = accountId;
+        this.domainId = domainId;
     }
     
     @Override
@@ -61,5 +69,15 @@ public class Site2SiteVpnGatewayVO implements Site2SiteVpnGateway {
 
     public String getUuid() {
         return uuid;
+    }
+    
+    @Override
+    public long getDomainId() {
+        return domainId;
+    }
+
+    @Override
+    public long getAccountId() {
+        return accountId;
     }
 }

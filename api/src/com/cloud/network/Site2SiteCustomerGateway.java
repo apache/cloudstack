@@ -2,7 +2,9 @@ package com.cloud.network;
 
 import java.util.Date;
 
-public interface Site2SiteCustomerGateway {
+import com.cloud.acl.ControlledEntity;
+
+public interface Site2SiteCustomerGateway extends ControlledEntity {
     public long getId();
     public String getGatewayIp();
     public String getGuestCidrList();

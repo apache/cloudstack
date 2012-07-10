@@ -3806,6 +3806,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIp(ApiDBUtils.findIpAddressById(result.getAddrId()).getAddress().toString());
         response.setRemoved(result.getRemoved());
         response.setObjectName("vpngateway");
+        
+        populateAccount(response, result.getAccountId());
+        populateDomain(response, result.getDomainId());
+        
         return response;
     }
 
@@ -3818,6 +3822,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIpsecPsk(result.getIpsecPsk());
         response.setRemoved(result.getRemoved());
         response.setObjectName("vpncustomergateway");
+        
+        populateAccount(response, result.getAccountId());
+        populateDomain(response, result.getDomainId());
+        
         return response;
     }
 
@@ -3848,6 +3856,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         	response.setLifetime(customerGateway.getLifetime());
         }      
                 
+        populateAccount(response, result.getAccountId());
+        populateDomain(response, result.getDomainId());
+        
         response.setState(result.getState().toString());
         response.setCreated(result.getCreated());
         response.setRemoved(result.getRemoved());

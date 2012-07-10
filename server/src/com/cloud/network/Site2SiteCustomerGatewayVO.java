@@ -41,12 +41,18 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     @Column(name="lifetime")
     private long lifetime;
 
+    @Column(name="domain_id")
+    private Long domainId;
+    
+    @Column(name="account_id")
+    private Long accountId;
+
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;
 
     public Site2SiteCustomerGatewayVO() { }
 
-    public Site2SiteCustomerGatewayVO(String gatewayIp, String guestCidrList, String ipsecPsk, String ikePolicy, String espPolicy, long lifetime) {
+    public Site2SiteCustomerGatewayVO(long accountId, long domainId, String gatewayIp, String guestCidrList, String ipsecPsk, String ikePolicy, String espPolicy, long lifetime) {
         this.gatewayIp = gatewayIp;
         this.guestCidrList = guestCidrList;
         this.ipsecPsk = ipsecPsk;
@@ -54,6 +60,8 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
         this.espPolicy = espPolicy;
         this.lifetime = lifetime;
         this.uuid = UUID.randomUUID().toString();
+        this.accountId = accountId;
+        this.domainId = domainId;
     }
 
     @Override
@@ -123,5 +131,15 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
 
     public String getUuid() {
         return uuid;
+    }
+    
+    @Override
+    public long getDomainId() {
+        return domainId;
+    }
+
+    @Override
+    public long getAccountId() {
+        return accountId;
     }
 }
