@@ -171,22 +171,22 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     
     @Override
     public long getEntityOwnerId() {
-    	Account caller = UserContext.current().getCaller();
-    	if (accountName != null && domainId != null) {
-    		Account account = _accountService.finalizeOwner(caller, accountName, domainId, projectId);
-    		return account.getId();
-    	} else if (getNetworkId() != null){
-    		Network network = _networkService.getNetwork(getNetworkId());
+        Account caller = UserContext.current().getCaller();
+        if (accountName != null && domainId != null) {
+            Account account = _accountService.finalizeOwner(caller, accountName, domainId, projectId);
+            return account.getId();
+        } else if (networkId != null){
+            Network network = _networkService.getNetwork(networkId);
             return network.getAccountId();
-    	} else if (vpcId != null) {
-    	    Vpc vpc = _vpcService.getVpc(getVpcId());
-    	    if (vpc == null) {
-    	        throw new InvalidParameterValueException("Can't find Enabled vpc by id specified");
-    	    }
-    	    return vpc.getAccountId();
-    	}
-    	
-    	throw new InvalidParameterValueException("Failed to determine ip owner");
+        } else if (vpcId != null) {
+            Vpc vpc = _vpcService.getVpc(getVpcId());
+            if (vpc == null) {
+                throw new InvalidParameterValueException("Can't find Enabled vpc by id specified");
+            }
+            return vpc.getAccountId();
+        }
+
+        return caller.getAccountId();
     }
 
     @Override

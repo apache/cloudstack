@@ -99,6 +99,9 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         AllFieldsSearch.and("physicalNetwork", AllFieldsSearch.entity().getPhysicalNetworkId(), Op.EQ);
         AllFieldsSearch.and("broadcastUri", AllFieldsSearch.entity().getBroadcastUri(), Op.EQ);
         AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), Op.EQ);
+        SearchBuilder<NetworkOfferingVO> join1 = _ntwkOffDao.createSearchBuilder();
+        join1.and("isSystem", join1.entity().isSystemOnly(), Op.EQ);
+        AllFieldsSearch.join("offerings", join1, AllFieldsSearch.entity().getNetworkOfferingId(), join1.entity().getId(), JoinBuilder.JoinType.INNER);
         AllFieldsSearch.done();
 
         AccountSearch = createSearchBuilder();
@@ -139,12 +142,11 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
 
         CountByZoneAndURI.done();
         
-
         ZoneSecurityGroupSearch = createSearchBuilder();
         ZoneSecurityGroupSearch.and("dataCenterId", ZoneSecurityGroupSearch.entity().getDataCenterId(), Op.EQ);
-        SearchBuilder<NetworkServiceMapVO> join1 = _ntwkSvcMap.createSearchBuilder();
-        join1.and("service", join1.entity().getService(), Op.EQ);
-        ZoneSecurityGroupSearch.join("services", join1, ZoneSecurityGroupSearch.entity().getId(), join1.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
+        SearchBuilder<NetworkServiceMapVO> offJoin = _ntwkSvcMap.createSearchBuilder();
+        offJoin.and("service", offJoin.entity().getService(), Op.EQ);
+        ZoneSecurityGroupSearch.join("services", offJoin, ZoneSecurityGroupSearch.entity().getId(), offJoin.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
         ZoneSecurityGroupSearch.done();
 
         CountBy = createSearchBuilder(Integer.class);
@@ -195,13 +197,18 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override
-    public List<NetworkVO> listBy(long accountId, long dataCenterId, Network.GuestType type) {
+    public List<NetworkVO> listByZoneAndGuestType(long accountId, long dataCenterId, Network.GuestType type, Boolean isSystem) {
         SearchCriteria<NetworkVO> sc = AllFieldsSearch.create();
         sc.setParameters("datacenter", dataCenterId);
         sc.setParameters("account", accountId);
         if (type != null) {
             sc.setParameters("guestType", type);
         }
+        
+        if (isSystem != null) {
+            sc.setJoinParameters("offerings", "isSystem", isSystem);
+        }
+        
         return listBy(sc, null);
     }
 
