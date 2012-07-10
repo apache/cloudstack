@@ -110,10 +110,10 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
         String ikePolicy = cmd.getIkePolicy();
         String espPolicy = cmd.getEspPolicy();
         if (!NetUtils.isValidS2SVpnPolicy(ikePolicy)) {
-            throw new InvalidParameterValueException("The customer gateway IKE policy" + ikePolicy + " is invalid!");
+            throw new InvalidParameterValueException("The customer gateway IKE policy " + ikePolicy + " is invalid!");
         }
         if (!NetUtils.isValidS2SVpnPolicy(espPolicy)) {
-            throw new InvalidParameterValueException("The customer gateway ESP policy" + espPolicy + " is invalid!");
+            throw new InvalidParameterValueException("The customer gateway ESP policy " + espPolicy + " is invalid!");
         }
         Long lifetime = cmd.getLifetime();
         if (lifetime == null) {
