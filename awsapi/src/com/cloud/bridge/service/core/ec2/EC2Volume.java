@@ -15,6 +15,9 @@
  */
 package com.cloud.bridge.service.core.ec2;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class EC2Volume {
 
@@ -31,6 +34,7 @@ public class EC2Volume {
 	private String   hypervisor;
     private String created;
 	private String attached;
+    private List<EC2TagKeyValue>    tagsSet;
     
 	public EC2Volume() {
 		id         = null;
@@ -45,6 +49,7 @@ public class EC2Volume {
 		hypervisor = null;
 		created    = null;
 		attached   = null;
+		tagsSet    = new ArrayList<EC2TagKeyValue>();
 	}
 	
 	public void setSize(Long size) {
@@ -229,5 +234,13 @@ public class EC2Volume {
 	public void setAttached(String attached) {
 		this.attached = attached;
 	}
+
+    public void addResourceTag( EC2TagKeyValue param ) {
+        tagsSet.add( param );
+    }
+
+    public EC2TagKeyValue[] getResourceTags() {
+        return tagsSet.toArray(new EC2TagKeyValue[0]);
+    }
 	
 }

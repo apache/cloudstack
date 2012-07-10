@@ -15,6 +15,8 @@
  */
 package com.cloud.stack.models;
 
+import java.util.List;
+
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackSnapshot {
@@ -46,6 +48,8 @@ public class CloudStackSnapshot {
     private String volumeName;
     @SerializedName(ApiConstants.VOLUME_TYPE)
     private String volumeType;
+    @SerializedName(ApiConstants.TAGS)
+    private List<CloudStackKeyValue> tags;
 
     public CloudStackSnapshot() {
     }
@@ -105,4 +109,8 @@ public class CloudStackSnapshot {
 	public String getState() {
 		return state;
 	}
+	
+    public List<CloudStackKeyValue> getTags() {
+        return tags;
+    }
 }

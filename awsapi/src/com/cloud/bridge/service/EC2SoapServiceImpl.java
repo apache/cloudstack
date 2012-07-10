@@ -955,7 +955,11 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             param7.addItem( param8 );
 
             param3.setBlockDeviceMapping( param7 );
-		    param2.addItem( param3 );
+
+            EC2TagKeyValue[] tags = images[i].getResourceTags();
+            param3.setTagSet(setResourceTags(tags));
+
+            param2.addItem( param3 );
 		}
 
 		param1.setImagesSet( param2 );
@@ -1262,14 +1266,9 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             }
 	        
             param3.setAttachmentSet( param4 );
-            
-            // -> try to generate an empty tag does not seem to work
-            ResourceTagSetType param6 = new ResourceTagSetType();
-            ResourceTagSetItemType param7 = new ResourceTagSetItemType();
-            param7.setKey("");
-            param7.setValue("");
-            param6.addItem( param7 );
-            param3.setTagSet( param6 );          
+
+            EC2TagKeyValue[] tags = vol.getResourceTags();
+            param3.setTagSet( setResourceTags(tags) );
             param2.addItem( param3 );
         }
 	    param1.setVolumeSet( param2 );
@@ -1396,6 +1395,9 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             param7.setInstanceLifecycle( "" );
             param7.setSpotInstanceRequestId( "" );
             param7.setHypervisor(inst.getHypervisor());
+
+            EC2TagKeyValue[] tags = inst.getResourceTags();
+            param7.setTagSet(setResourceTags(tags));
 
 	        param6.addItem( param7 );
 	        param3.setInstancesSet( param6 );
@@ -1879,12 +1881,9 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	         param3.setDescription( snap.getName());
 	         param3.setOwnerAlias( snap.getAccountName() );
 	         
-	         ResourceTagSetType param18 = new ResourceTagSetType();
-	         ResourceTagSetItemType param19 = new ResourceTagSetItemType();
-	         param19.setKey("");
-	         param19.setValue("");
-	         param18.addItem( param19 );
-	         param3.setTagSet( param18 );          
+
+	         EC2TagKeyValue[] tags = snap.getResourceTags();
+	         param3.setTagSet(setResourceTags(tags));
              param2.addItem( param3 );
 	    }
 	    
@@ -2208,7 +2207,29 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	public GetPasswordDataResponse getPasswordData(GetPasswordData getPasswordData) {
 		return toGetPasswordData(engine.getPasswordData(getPasswordData.getGetPasswordData().getInstanceId()));
 	}
-	
+
+    public static ResourceTagSetType setResourceTags(EC2TagKeyValue[] tags){
+        ResourceTagSetType param1 = new ResourceTagSetType();
+        if (null == tags || 0 == tags.length) {
+            ResourceTagSetItemType param2 = new ResourceTagSetItemType();
+            param2.setKey("");
+            param2.setValue("");
+            param1.addItem( param2 );
+        }
+        else {
+            for(EC2TagKeyValue tag : tags) {
+                ResourceTagSetItemType param2 = new ResourceTagSetItemType();
+                param2.setKey(tag.getKey());
+                if (tag.getValue() != null)
+                    param2.setValue(tag.getValue());
+                else
+                    param2.setValue("");
+                param1.addItem(param2);
+            }
+        }
+        return param1;
+    }
+
 	@SuppressWarnings("serial")
 	public static GetPasswordDataResponse toGetPasswordData(final EC2PasswordData passwdData) {
 		return new GetPasswordDataResponse() {{

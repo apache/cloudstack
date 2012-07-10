@@ -15,7 +15,9 @@
  */
 package com.cloud.bridge.service.core.ec2;
 
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 
 import com.cloud.bridge.util.EC2RestAuth;
 
@@ -30,6 +32,7 @@ public class EC2Snapshot {
     private Calendar created;
     private String 	 accountName;
     private String 	 domainId;
+    private List<EC2TagKeyValue>    tagsSet;
     
 	public EC2Snapshot() {
 		id         	= null;
@@ -41,6 +44,7 @@ public class EC2Snapshot {
 		created    	= null;
 		accountName = null;
 		domainId	= null;
+		tagsSet    = new ArrayList<EC2TagKeyValue>();
 	}
 	
 	public void setId(String id ) {
@@ -115,4 +119,12 @@ public class EC2Snapshot {
 	public void setState(String state) {
 		this.state = state;
 	}
+
+    public void addResourceTag( EC2TagKeyValue param ) {
+        tagsSet.add( param );
+    }
+
+    public EC2TagKeyValue[] getResourceTags() {
+        return tagsSet.toArray(new EC2TagKeyValue[0]);
+    }
 }

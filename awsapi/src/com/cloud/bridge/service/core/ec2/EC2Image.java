@@ -15,6 +15,9 @@
  */
 package com.cloud.bridge.service.core.ec2;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * An EC2 Image is a Cloud template.
  */
@@ -28,6 +31,7 @@ public class EC2Image {
 	private boolean isReady;
 	private String 	accountName;
 	private String 	domainId;
+    private List<EC2TagKeyValue>    tagsSet;
 	
 	public EC2Image() {
 		id          = null;
@@ -38,6 +42,7 @@ public class EC2Image {
 		isReady     = false;
 		accountName	= null;
 		domainId 	= null;
+		tagsSet    = new ArrayList<EC2TagKeyValue>();
 	}
 	
 	public void setId( String id ) {
@@ -103,5 +108,13 @@ public class EC2Image {
 	public void setDomainId(String domainId) {
 		this.domainId = domainId;
 	}
+
+    public void addResourceTag( EC2TagKeyValue param ) {
+        tagsSet.add( param );
+    }
+
+    public EC2TagKeyValue[] getResourceTags() {
+        return tagsSet.toArray(new EC2TagKeyValue[0]);
+    }
 	
 }
