@@ -197,7 +197,7 @@
               label: 'label.add.guest.network',
 
               preFilter: function(args) {
-                var basicZoneExists = false;
+                var basicZoneExists = true; //Modifying the logic behind displaying the tabs depending on the networktype
                 $.ajax({
                   url: createURL("listZones"),
                   dataType: "json",
@@ -206,8 +206,8 @@
                     if(json.listzonesresponse.zone != null && json.listzonesresponse.zone.length > 0) {
                       zoneObjs = json.listzonesresponse.zone;
                       $(zoneObjs).each(function() {
-                        if(this.networktype == "Basic") {
-                          basicZoneExists = true;
+                        if(this.networktype == "Advanced") {
+                          basicZoneExists = false; // For any occurence of an Advanced zone with any combination of basic zone , the add guest network tab will be displayed
                           return false; //break each loop
                         }
                       });
