@@ -49,13 +49,13 @@ copy_table() {
 backup_table() {
   flush_table "static_route_back"
   copy_table "static_route" "static_route_back"
-  flush table "static_route"
+  flush_table "static_route"
 }
 
 restore_table() {
   flush_table "static_route"
   copy_table "static_route_back" "static_route"
-  flush table "static_route_back"
+  flush_table "static_route_back"
 }
 
 static_route() {
@@ -63,16 +63,16 @@ static_route() {
   local ip=$(echo $rule | cut -d: -f1)
   local gateway=$(echo $rule | cut -d: -f2)
   local cidr=$(echo $rule | cut -d: -f3)
-  logger -t cloud "$(basename $0): static route: public ip=$publicIp \
+  logger -t cloud "$(basename $0): static route: public ip=$ip \
   	gateway=$gateway cidr=$cidr"
-  local dev=$(getDevByIp $ip)
+  local dev=$(getEthByIp $ip)
   if [ $? -gt 0 ]
   then
     return 1
   fi
-  sudo ip route table static_route add $cidr dev $dev via $gateway &>>  $OUTFILE
+  sudo ip route add $cidr dev $dev via $gateway table static_route &>/dev/null
   result=$?
-  logger -t cloud "$(basename $0): done static route: public ip=$publicIp \
+  logger -t cloud "$(basename $0): done static route: public ip=$ip \
   	gateway=$gateway cidr=$cidr"
   return $result
 }
@@ -94,7 +94,7 @@ done
 
 if [ -n "$rules" ]
 then
-  rules_list=$(echo $rules | cut -d, --output-delimiter=" ")
+  rules_list=$(echo $rules | cut -d, -f1- --output-delimiter=" ")
 fi
 
 success=0

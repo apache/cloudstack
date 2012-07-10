@@ -7484,10 +7484,10 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         try {
             String [][] rules = cmd.generateSRouteRules();
             StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < rules.length; i++) {
-                sb.append(rules[i]).append(',');
+            String[] srRules = rules[0];
+            for (int i = 0; i < srRules.length; i++) {
+                sb.append(srRules[i]).append(',');
             }
-
             String args = "vpc_staticroute.sh " + routerIp;
             args += " -a " + sb.toString();
             callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
@@ -7500,7 +7500,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             return new SetStaticRouteAnswer(cmd, true, results);
         } catch (Exception e) {
-            String msg = "SetNetworkACL failed due to " + e.toString();
+            String msg = "SetStaticRoute failed due to " + e.toString();
             s_logger.error(msg, e);
             return new SetStaticRouteAnswer(cmd, false, results);
         }
