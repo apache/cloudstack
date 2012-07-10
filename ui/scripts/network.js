@@ -2391,14 +2391,13 @@
                         }
                       });
 
-                      // Check if tiers are present; hide/show header drop-down
-                      var hasTiers = false;
+                      // Check if tiers are present; hide/show header drop-down                     
                       var $headerFields = $multi.find('.header-fields');
-
-                      if (hasTiers) {
-                        $headerFields.hide();
-                      } else {
+                      if ('vpc' in args.context) {
                         $headerFields.show();
+                      } 
+											else if('networks' in args.context){
+                        $headerFields.hide();
                       }
                     }
                   },
