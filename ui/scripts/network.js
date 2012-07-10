@@ -1244,23 +1244,30 @@
                 
                 action: {
                   noAdd: true,
-                  custom: cloudStack.uiCustom.enableStaticNAT({
-                    // VPC
+                  custom: cloudStack.uiCustom.enableStaticNAT({                    
                     tierSelect: function(args) {
-                      args.$tierSelect.hide(); // Hidden by default
-                      
-                      // Determine if tiers are supported here
-                      var enableTiers = false;
-
-                      if (enableTiers) {
-                        args.$tierSelect.show();
-                        args.response.success({
-                          data: [
-                            { id: '1', description: 'VPC 1' },
-                            { id: '2', description: 'VPC 2' }
-                          ]
-                        });
+											if ('vpc' in args.context) { //from VPC section
+                        args.$tierSelect.show(); //show tier dropdown
+												
+												$.ajax({ //populate tier dropdown
+													url: createURL("listNetworks"),															
+													data: {
+														vpcid: args.context.vpc[0].id,
+														listAll: true
+													},															
+													success: function(json) {					  
+														var networks = json.listnetworksresponse.network;	
+														var items = [];
+														$(networks).each(function(){																  
+															items.push({id: this.id, description: this.displaytext});
+														});
+														args.response.success({ data: items });																
+													}
+												});	
                       }
+											else { //from Guest Network section
+											   args.$tierSelect.hide(); 
+											}
                     },
 
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
@@ -1268,11 +1275,21 @@
                         dataProvider: function(args) {
                           var data = {
                             page: args.page,
-                            pageSize: pageSize,
-                            networkid: args.context.networks[0].id,
+                            pageSize: pageSize,                            
                             listAll: true
                           };
-
+													
+													if('vpc' in args.context) {
+													  $.extend(data, {
+														  vpcid: args.context.vpc[0].id
+														});
+													}
+													else if('networks' in args.context) {
+													  $.extend(data, {
+														  networkid: args.context.networks[0].id
+														});
+													}
+													
                           if (!args.context.projects) {
                             $.extend(data, {
                               account: args.context.ipAddresses[0].account,
@@ -1305,13 +1322,25 @@
                         }
                       }
                     }),
-                    action: function(args) {
+                    action: function(args) {										  
+											var data = {
+												ipaddressid: args.context.ipAddresses[0].id,
+												virtualmachineid: args.context.instances[0].id
+											};
+											
+											if('vpc' in args.context) {
+											  if(args.tierID == null) {
+												  args.response.error('Tier is required');
+												  return;
+												}											
+											  $.extend(data, {
+												  networkid: args.tierID
+												});
+											}
+										
                       $.ajax({
                         url: createURL('enableStaticNat'),
-                        data: {
-                          ipaddressid: args.context.ipAddresses[0].id,
-                          virtualmachineid: args.context.instances[0].id
-                        },
+                        data: data,
                         dataType: 'json',
                         async: true,
                         success: function(data) {
@@ -2095,7 +2124,7 @@
 												var networkid;												
 											  if('vpc' in args.context) { //from VPC section
 												  if(args.data.tier == null) {													  
-														args.response.error('Tier is required.');
+														args.response.error('Tier is required');
 													  return;
 													}												
 												  networkid = args.data.tier;		
