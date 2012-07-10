@@ -763,6 +763,7 @@
     // Setup header fields
     var showHeaderFields = args.headerFields ? true : false;
     var headerForm = showHeaderFields ? cloudStack.dialog.createForm({
+      context: context,
       noDialog: true,
       form: {
         fields: args.headerFields
