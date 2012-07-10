@@ -15,6 +15,7 @@ package com.cloud.vm.dao;
 import java.util.List;
 
 import com.cloud.network.Network;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.DomainRouterVO;
@@ -116,19 +117,12 @@ public interface DomainRouterDao extends GenericDao<DomainRouterVO, Long> {
      * @param routerId
      * @param guestNetwork
      */
-    void addRouterToGuestNetwork(DomainRouterVO router, Network guestNetwork);
+    void addRouterToGuestNetwork(VirtualRouter router, Network guestNetwork);
 
     /**
      * @param routerId
      * @param guestNetworkId
      */
-    void removeRouterFromNetwork(long routerId, long guestNetworkId);
-
-    /**
-     * @param routerId
-     * @param guestNetworkId
-     * @return
-     */
-    boolean isRouterPartOfGuestNetwork(long routerId, long guestNetworkId);
+    void removeRouterFromGuestNetwork(long routerId, long guestNetworkId);
     
 }
