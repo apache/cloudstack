@@ -28,6 +28,8 @@ install_xen() {
     update-rc.d xendomains disable
 
     sed -i 's/GRUB_DEFAULT=.\+/GRUB_DEFAULT="Xen 4.1-amd64"/' /etc/default/grub
+    echo 'GRUB_CMDLINE_XEN_DEFAULT="dom0_mem=512M,max:512M"' | cat /etc/default/grub - >> /etc/default/newgrub
+    mv /etc/default/newgrub /etc/default/grub
     update-grub
 
     mkdir /usr/share/qemu
@@ -51,6 +53,9 @@ EOF
 
     echo TOOLSTACK=xapi > /etc/default/xen
     echo bridge > /etc/xcp/network.conf
+
+    echo "set root password"
+    echo "root:password" | chpasswd
 
     echo "reboot"
     reboot
