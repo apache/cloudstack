@@ -45,17 +45,22 @@ public class ExceptionResponse extends BaseResponse {
     public void setErrorText(String errorText) {
         this.errorText = errorText;
     }
-	
-	public void addProxyObject(String tableName, Long id, String idFieldName) {
-		idList.add(new IdentityProxy(tableName, id, idFieldName));
-		return;
-	}
-	
-	public ArrayList<IdentityProxy> getIdProxyList() {
-		return idList;
-	}
-	
-	public void setCSErrorCode(int cserrcode) {
-		this.csErrorCode = cserrcode;
-	}
+
+    public void addProxyObject(String tableName, Long id, String idFieldName) {
+        idList.add(new IdentityProxy(tableName, id, idFieldName));
+        return;
+    }
+
+    public ArrayList<IdentityProxy> getIdProxyList() {
+        return idList;
+    }
+
+    public void setCSErrorCode(int cserrcode) {
+        this.csErrorCode = cserrcode;
+    }
+ 
+    @Override
+    public String toString() {
+        return ("Error Code: " + errorCode + " Error text: " + errorText);
+    }
 }
