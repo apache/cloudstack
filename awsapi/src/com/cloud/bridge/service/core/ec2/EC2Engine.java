@@ -870,7 +870,7 @@ public class EC2Engine {
 	public boolean associateAddress( EC2AssociateAddress request ) {
 		try {
 			CloudStackIpAddress cloudIp = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null).get(0);
-			CloudStackUserVm cloudVm = getApi().listVirtualMachines(null, null, null, null, null, null, request.getInstanceId(), null, null, null, null, null, null, null, null).get(0);
+	        CloudStackUserVm cloudVm = getApi().listVirtualMachines(null, null, true, null, null, null, null, request.getInstanceId(), null, null, null, null, null, null, null, null).get(0);
 
 			CloudStackInfoResponse resp = getApi().enableStaticNat(cloudIp.getId(), cloudVm.getId());
 			if (resp != null) {
@@ -1783,7 +1783,7 @@ public class EC2Engine {
 			throws Exception {
 
 		String instId = instanceId != null ? instanceId : null;
-		List<CloudStackUserVm> vms = getApi().listVirtualMachines(null, null, null, null, null, null, 
+        List<CloudStackUserVm> vms = getApi().listVirtualMachines(null, null, true, null, null, null, null,
 				instId, null, null, null, null, null, null, null, null);
 		
 		if(vms != null && vms.size() > 0) {
@@ -1911,8 +1911,8 @@ public class EC2Engine {
 	public EC2DescribeSecurityGroupsResponse listSecurityGroups( String[] interestedGroups ) throws Exception {
 		try {
 			EC2DescribeSecurityGroupsResponse groupSet = new EC2DescribeSecurityGroupsResponse();
-			
-			List<CloudStackSecurityGroup> groups = getApi().listSecurityGroups(null, null, null, null, null, null);
+
+            List<CloudStackSecurityGroup> groups = getApi().listSecurityGroups(null, null, null, true, null, null, null);
 			if (groups != null && groups.size() > 0)
     			for (CloudStackSecurityGroup group : groups) {
     				boolean matched = false;

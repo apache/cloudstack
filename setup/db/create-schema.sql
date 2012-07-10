@@ -2318,9 +2318,8 @@ CREATE TABLE `cloud`.`resource_tags` (
   CONSTRAINT `fk_tags__account_id` FOREIGN KEY(`account_id`) REFERENCES `account`(`id`),
   CONSTRAINT `fk_tags__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `domain`(`id`),
   UNIQUE `i_tags__resource_id__resource_type__key`(`resource_id`, `resource_type`, `key`),
-  CONSTRAINT `uc_resource_tags__uuid` UNIQUE (`uuid`),
-  CONSTRAINT `uc_resource_tags__resource_uuid` UNIQUE (`resource_uuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  CONSTRAINT `uc_resource_tags__uuid` UNIQUE (`uuid`)
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
 SET foreign_key_checks = 1;
