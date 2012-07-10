@@ -857,6 +857,26 @@
     },
 		
     tiers: {
+      detailView: {
+        name: 'Tier details',
+        tabs: {
+          details: {
+            title: 'Details',
+            fields: [
+              { id: { label: 'ID' }},
+              {
+                name: { label: 'Name' },
+                cidr: { label: 'CIDR' }
+              }
+            ],
+            dataProvider: function(args) {
+              args.response.success({
+                data: args.context.networks[0]
+              });
+            }
+          }
+        }
+      },
       actionPreFilter: function(args) {
         var tier = args.context.networks[0];
         var state = tier.state;
@@ -908,7 +928,7 @@
 							netmask: { 
 								label: 'label.netmask', 
 								validation: { required: true } 
-							},        
+							}
 						}
 					},
 					action: function(args) {	

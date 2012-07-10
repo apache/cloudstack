@@ -9013,11 +9013,13 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .vpc-chart li.tier span.title {
   color: #FFFFFF;
-  /*+placement:shift 11px 13px;*/
+  /*+placement:shift 8px 7px;*/
   position: relative;
-  left: 11px;
-  top: 13px;
+  left: 8px;
+  top: 7px;
   position: absolute;
+  cursor: pointer;
+  padding: 3px;
   font-size: 24px;
   /*+text-shadow:1px 2px 2px #000000;*/
   -moz-text-shadow: 1px 2px 2px #000000;
@@ -9175,7 +9177,8 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   margin: 4px;
 }
 
-.vpc-chart li.tier .vm-count:hover {
+.vpc-chart li.tier .vm-count:hover,
+.vpc-chart li.tier .title:hover {
   border-radius: 4px;
   border: 1px solid #4C545E;
   background: url(../images/bg-gradients.png) 0px -2751px;
@@ -9229,6 +9232,8 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -webkit-text-shadow: 0px 0px 7px #FFFFFF;
   -o-text-shadow: 0px 0px 7px #FFFFFF;
   text-shadow: 0px 0px 7px #FFFFFF;
+  background: none;
+  border: none;
 }
 
 .vpc-chart li.tier.virtual-router {

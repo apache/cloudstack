@@ -134,6 +134,8 @@
           };
         }
       );
+      var detailView = args.detailView;
+      var $browser = args.$browser;
       var isPlaceholder = args.isPlaceholder;
       var virtualMachines = args.virtualMachines;
       var $tier = $('<li>').addClass('tier');
@@ -168,6 +170,19 @@
             }
           }
         }).closest('.ui-dialog').overlay();
+      });
+
+      // Title shows tier details
+      $title.click(function() {
+        $browser.cloudBrowser('addPanel', {
+          title: name,
+          maximizeIfSelected: true,
+          complete: function($panel) {
+            $panel.detailView($.extend(true, {}, detailView, {
+              context: context
+            }));
+          }
+        });
       });
 
       if (isPlaceholder) {
@@ -248,6 +263,7 @@
       var actionPreFilter = args.actionPreFilter;
       var vpcName = args.vpcName;
       var context = args.context;
+      var tierDetailView = args.tierDetailView;
       var $tiers = $('<ul>').addClass('tiers');
       var $router = elems.router();
       var $chart = $('<div>').addClass('vpc-chart');
@@ -270,6 +286,8 @@
         }
 
         addTierDialog({
+          $browser: $browser,
+          tierDetailView: tierDetailView,
           $tiers: $tiers,
           context: context,
           actions: actions,
@@ -283,6 +301,8 @@
       if (tiers != null && tiers.length > 0) {
         $(tiers).map(function(index, tier) {
           var $tier = elems.tier({
+            $browser: $browser,
+            detailView: tierDetailView,
             name: tier.name,
             cidr: tier.cidr,
             virtualMachines: tier.virtualMachines,
@@ -458,7 +478,11 @@
     var vmListView = args.vmListView;
     var actionPreFilter = args.actionPreFilter;
     var context = args.context;
+    var $browser = args.$browser;
+    var tierDetailView = args.tierDetailView;
     var tier = $.extend(args.tier, {
+      $browser: $browser,
+      detailView: tierDetailView,
       context: context,
       vmListView: vmListView,
       actions: actions,
@@ -482,6 +506,8 @@
     var vmListView = args.vmListView;
     var actionPreFilter = args.actionPreFilter;
     var $tiers = args.$tiers;
+    var $browser = args.$browser;
+    var tierDetailView = args.tierDetailView;
 
     cloudStack.dialog.createForm({
       form: actions.add.createForm,
@@ -504,6 +530,8 @@
                 function(args) {
                   $loading.remove();
                   addNewTier({
+                    $browser: $browser,
+                    tierDetailView: tierDetailView,
                     context: $.extend(true, {}, context, {
                       networks: [tier]
                     }),
@@ -564,6 +592,7 @@
                   $browser: $browser,
 									ipAddresses: ipAddresses,
 									gateways: gateways,
+                  tierDetailView: tierArgs.detailView,
                   siteToSiteVPN: siteToSiteVPN,
                   vmListView: vmListView,
                   context: context,
