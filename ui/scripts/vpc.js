@@ -794,17 +794,17 @@
 													}
 													else {
 														clearInterval(deleteVpnConnectionIntervalID); 
-														if (result.jobstatus == 1) {	
-															$.ajax({
-																url: createURL("deleteVpnGateway"),
+														if (result.jobstatus == 1) {																
+                              $.ajax({
+																url: createURL("deleteVpnCustomerGateway"),
 																dataType: "json",
 																data: {
-																	id: args.context.siteToSiteVpn[0].s2svpngatewayid
+																	id: args.context.siteToSiteVpn[0].s2scustomergatewayid
 																},
 																async: true,
-																success: function(json) {		
-																	var jid = json.deletevpngatewayresponse.jobid;							
-																	var deleteVpnGatewayIntervalID = setInterval(function() { 	
+																success: function(json) {	
+																	var jid = json.deletecustomergatewayresponse.jobid;			
+																	var deleteVpnCustomerGatewayIntervalID = setInterval(function() { 	
 																		$.ajax({
 																			url: createURL("queryAsyncJobResult&jobId=" + jid),
 																			dataType: "json",
@@ -814,62 +814,26 @@
 																					return; //Job has not completed
 																				}
 																				else {
-																					clearInterval(deleteVpnGatewayIntervalID); 
-																					if (result.jobstatus == 1) {					
-																						$.ajax({
-																							url: createURL("deleteVpnCustomerGateway"),
-																							dataType: "json",
-																							data: {
-																								id: args.context.siteToSiteVpn[0].s2scustomergatewayid
-																							},
-																							async: true,
-																							success: function(json) {	
-																								var jid = json.deletecustomergatewayresponse.jobid;			
-																								var deleteVpnCustomerGatewayIntervalID = setInterval(function() { 	
-																									$.ajax({
-																										url: createURL("queryAsyncJobResult&jobId=" + jid),
-																										dataType: "json",
-																										success: function(json) {
-																											var result = json.queryasyncjobresultresponse;
-																											if (result.jobstatus == 0) {
-																												return; //Job has not completed
-																											}
-																											else {
-																												clearInterval(deleteVpnCustomerGatewayIntervalID); 
-																												if (result.jobstatus == 1) {	
-																													$("div.detail-view div.loading-overlay").remove();
-																													cloudStack.dialog.notice({ message: "site-to-site VPN has been deleted." });																															
-																													$.removeDetailViewAndTableRow();																														
-																												}
-																												else if (result.jobstatus == 2) {
-																													$("div.detail-view div.loading-overlay").remove();
-																													cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });																										
-																												}
-																											}
-																										},
-																										error: function(XMLHttpResponse) {
-																											$("div.detail-view div.loading-overlay").remove();
-																											cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });																												
-																										}
-																									});
-																								}, 3000);		
-																							}
-																						});																																									
+																					clearInterval(deleteVpnCustomerGatewayIntervalID); 
+																					if (result.jobstatus == 1) {	
+																						$("div.detail-view div.loading-overlay").remove();
+																						cloudStack.dialog.notice({ message: "site-to-site VPN has been deleted." });																															
+																						$.removeDetailViewAndTableRow();																														
 																					}
 																					else if (result.jobstatus == 2) {
 																						$("div.detail-view div.loading-overlay").remove();
-																						cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });	
+																						cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });																										
 																					}
 																				}
 																			},
 																			error: function(XMLHttpResponse) {
 																				$("div.detail-view div.loading-overlay").remove();
-																				cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });	
+																				cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });																												
 																			}
 																		});
 																	}, 3000);		
 																}
-															});																												
+															});										
 														}
 														else if (result.jobstatus == 2) {
 															$("div.detail-view div.loading-overlay").remove();
