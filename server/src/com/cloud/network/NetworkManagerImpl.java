@@ -6040,9 +6040,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         //release all ip addresses
         List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedNetwork(networkId, null);
         for (IPAddressVO ipToRelease : ipsToRelease) {
-            if (ipToRelease.getVpcId() != null) {
+            if (ipToRelease.getVpcId() == null) {
                 IPAddressVO ip = markIpAsUnavailable(ipToRelease.getId());
                 assert (ip != null) : "Unable to mark the ip address id=" + ipToRelease.getId() + " as unavailable.";
+            } else {
+                unassignIPFromVpcNetwork(ipToRelease.getId());
             }
         }
 
