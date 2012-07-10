@@ -29,6 +29,23 @@ usage() {
 }
 #set -x
 #FIXME: eating up the error code during execution of iptables
+
+acl_switch_to_new() {
+  sudo iptables -D FORWARD -o $dev -d $gcidr -j _ACL_INBOUND_$dev  2>/dev/null
+  sudo iptables-save  | grep _ACL_INBOUND_$dev | grep "\-A" | while read rule;
+  do
+    rule1=$(echo $rule | sed 's/\_ACL_INBOUND/ACL_INBOUND/')
+    sudo iptables $rule1
+    rule2=$(echo $rule | sed 's/\-A/\-D/')
+    sudo iptables $rule2
+  done
+  sudo iptables -F _ACL_INBOUND_$dev 2>/dev/null
+  sudo iptables -X _ACL_INBOUND_$dev 2>/dev/null
+  sudo iptables -t mangle -F _ACL_OUTBOUND_$dev 2>/dev/null
+  sudo iptables -t mangle -D PREROUTING -m state --state NEW -i $dev -s $gcidr ! -d $ip -j _ACL_OUTBOUND_$dev  2>/dev/null
+  sudo iptables -t mangle -X _ACL_OUTBOUND_$dev 2>/dev/null
+}
+
 acl_remove_backup() {
   sudo iptables -F _ACL_INBOUND_$dev 2>/dev/null
   sudo iptables -D FORWARD -o $dev -d $gcidr -j _ACL_INBOUND_$dev  2>/dev/null
@@ -198,7 +215,7 @@ then
   acl_restore
 else
   logger -t cloud "$(basename $0): deleting backup for guest network: $gcidr"
-  acl_remove_backup
+  acl_switch_to_new
 fi
 unlock_exit $success $lock $locked
 
