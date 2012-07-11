@@ -984,6 +984,7 @@
     setLoading($table, function(setLoadingArgs) {
       $table.dataTable();
       $.extend(loadArgs, {
+        $listView: $table.closest('.list-view'),
         context: options.context,
         response: {
           success: function(args) {
