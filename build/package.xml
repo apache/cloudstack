@@ -225,6 +225,7 @@
         <include name="${core.jar}" />
         <include name="${api.jar}" />
         <include name="${vmware-base.jar}" />
+          <include name="${vmware.jar}" />
       </zipfileset>
       <zipfileset dir="${console-proxy.dist.dir}" filemode="555"/>
       <zipfileset dir="${scripts.dir}/storage/secondary" prefix="scripts/storage/secondary" filemode="555">

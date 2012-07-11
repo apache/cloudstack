@@ -361,6 +361,10 @@ public class ApiConstants {
     public static final String RESOURCE_IDS = "resourceids";
     public static final String RESOURCE_ID = "resourceid";
     public static final String CUSTOMER = "customer";
+    public static final String NICIRA_NVP_DEVICE_ID = "nvpdeviceid";
+    public static final String NICIRA_NVP_TRANSPORT_ZONE_UUID = "transportzoneuuid";
+    public static final String NICIRA_NVP_DEVICE_NAME = "niciradevicename";
+
     
     public enum HostDetails {
         all, capacity, events, stats, min;

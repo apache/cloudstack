@@ -1,0 +1,12 @@
+### bitmap of permissions at the end of each classname, 1 = ADMIN, 2 = RESOURCE_DOMAIN_ADMIN, 4 = DOMAIN_ADMIN, 8 = USER
+### Please standardize naming conventions to camel-case (even for acronyms).
+
+#### nicira nvp commands
+
+addNiciraNvpDevice = com.cloud.api.commands.AddNiciraNvpDeviceCmd;1
+deleteNiciraNvpDevice = com.cloud.api.commands.DeleteNiciraNvpDeviceCmd;1
+listNiciraNvpDevices = com.cloud.api.commands.ListNiciraNvpDevicesCmd;1
+listNiciraNvpDeviceNetworks = com.cloud.api.commands.ListNiciraNvpDeviceNetworksCmd;1
+
+# Not implemented (yet)
+#configureNiciraNvpDevice = com.cloud.api.commands.ConfigureNiciraNvpDeviceCmd;1
