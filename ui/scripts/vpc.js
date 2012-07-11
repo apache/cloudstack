@@ -432,30 +432,60 @@
             },
             actions: {
               add: {
-                label: 'Add new gateway',
+                label: 'Add new gateway',//???
                 createForm: {
                   title: 'Add new gateway',
                   desc: 'Please specify the information to add a new gateway to this VPC.',
                   fields: {
-                    ipAddress: { label: 'label.ip.address', validation: { required: true } },
-                    vlan: { label: 'label.vlan', validation: { required: true }},
-                    cidr: { label: 'label.cidr', validation: { required: true }}
+									  ipaddress: { label: 'label.ip.address', validation: { required: true }},
+										gateway: { label: 'label.gateway', validation: { required: true }},
+										netmask: { label: 'label.netmask', validation: { required: true }}, 									
+                    vlan: { label: 'label.vlan', validation: { required: true }}                    
                   }
                 },
-                action: function(args) {
-                  args.response.success();
+                action: function(args) {								 
+									$.ajax({
+									  url: createURL('createPrivateGateway'),
+										data: {
+										  vpcid: args.context.vpc[0].id,
+											ipaddress: args.data.ipaddress,
+											gateway: args.data.gateway,
+											netmask: args.data.netmask,
+											vlan: args.data.vlan
+										},
+										success: function(json) {										 							
+											var jid = json.createprivategatewayresponse.jobid;
+											args.response.success(
+												{_custom:
+												 {jobId: jid,
+													getUpdatedItem: function(json) {													 
+														return json.queryasyncjobresultresponse.jobresult.privategateway;
+													}
+												 }
+												}
+											);																					
+										},
+										error: function(json) {
+                      args.response.error(parseXMLHttpResponse(json));
+                    }										
+									});		
                 },
                 messages: {
                   notification: function() { return 'Add gateway to VPC'; }
                 }
               }
             },
-            dataProvider: function(args) {
-              args.response.success({ data: [{
-                ipAddress: '10.0.0.1',
-                vlan: '123',
-                cidr: '10.0.0.0/24'
-              }] }); // Dummy data
+            dataProvider: function(args) {						 
+							$.ajax({
+							  url: createURL('listPrivateGateways'),
+								data: {
+								  vpcid: args.context.vpc[0].id
+								},
+								success: function(json) {
+								  var items = json.listprivategatewaysresponse.privategateway;
+									args.response.success({ data: items });									
+								}
+							});						
             },
             detailView: {
               name: 'Gateway details',
