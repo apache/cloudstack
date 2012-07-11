@@ -18,8 +18,10 @@
 package com.cloud.api;
 
 import java.text.DecimalFormat;
+import java.util.EnumSet;
 import java.util.List;
 
+import com.cloud.api.ApiConstants.VolumeDetails;
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.AsyncJobResponse;
@@ -140,7 +142,9 @@ public interface ResponseGenerator {
     ZoneResponse createZoneResponse(DataCenter dataCenter);
 
     VolumeResponse createVolumeResponse(Volume volume);
-
+    
+    VolumeResponse createVolumeResponse(Volume volume,  EnumSet<VolumeDetails> details);
+    
     InstanceGroupResponse createInstanceGroupResponse(InstanceGroup group);
 
     StoragePoolResponse createStoragePoolResponse(StoragePool pool);

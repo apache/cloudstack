@@ -254,4 +254,10 @@ public class ApiConstants {
     public static final String KEYBOARD="keyboard";
     public static final String OPEN_FIREWALL="openfirewall";
     public static final String TEMPLATE_TAG = "templatetag";
+    
+    public enum VolumeDetails {
+        all, vm, account, storage_type, disk_offering, min;
+    }
+
+    
 }
