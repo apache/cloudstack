@@ -61,13 +61,24 @@
 			'endport': { edit: true, label: 'label.end.port' },
 			'icmptype': { edit: true, label: 'ICMP.type', isDisabled: true },
 			'icmpcode': { edit: true, label: 'ICMP.code', isDisabled: true },
+			'traffictype' : { 
+			  label: 'Traffic type',
+				select: function(args) {				  
+					args.response.success({
+						data: [
+							{ name: 'Ingress', description: 'Ingress' },
+							{ name: 'Egress', description: 'Egress' }
+						]
+					});		
+				}
+			},
 			'add-rule': {
 				label: 'label.add.rule',
 				addButton: true
 			}
 		},  
     add: {
-      label: 'Add ACL',
+      label: 'Add',
       action: function(args) {        
 				$.ajax({
 					url: createURL('createNetworkACL'),
