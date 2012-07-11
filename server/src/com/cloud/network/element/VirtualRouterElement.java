@@ -66,6 +66,7 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.AccountManager;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
@@ -86,8 +87,8 @@ import com.google.gson.Gson;
 
 @Local(value = NetworkElement.class)
 public class VirtualRouterElement extends AdapterBase implements VirtualRouterElementService, DhcpServiceProvider, 
-    UserDataServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
-        LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer {
+UserDataServiceProvider, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
+LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer {
     private static final Logger s_logger = Logger.getLogger(VirtualRouterElement.class);
 
     protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -128,7 +129,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         if (physicalNetworkId == null) {
             return false;
         }
-        
+
         if (network.getVpcId() != null) {
             return false;
         }
@@ -157,7 +158,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context)
             throws ResourceUnavailableException, ConcurrentOperationException,
             InsufficientCapacityException {
-        
+
         if (offering.isSystemOnly()) {
             return false;
         }
@@ -172,14 +173,14 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             throw new ResourceUnavailableException("Can't find at least one running router!",
                     DataCenter.class, network.getDataCenterId());
         }
-        
+
         return true;       
     }
 
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, 
             DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+                    throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (vm.getType() != VirtualMachine.Type.User || vm.getHypervisorType() == HypervisorType.BareMetal) {
             return false;
         }
@@ -205,7 +206,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             throw new ResourceUnavailableException("Can't find at least one running router!",
                     DataCenter.class, network.getDataCenterId());
         }
-        
+
         return true;      
     }
 
@@ -215,7 +216,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " +
-                		"router doesn't exist in the network " + config.getId());
+                        "router doesn't exist in the network " + config.getId());
                 return true;
             }
 
@@ -243,7 +244,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             boolean matchedEndChar = false;
             if (str.length() < 2)
                 return false; // atleast one numeric and one char. example:
-                              // 3h
+            // 3h
             char strEnd = str.toCharArray()[str.length() - 1];
             for (char c : endChar.toCharArray()) {
                 if (strEnd == c) {
@@ -285,12 +286,16 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                         expire = value;
                 }
                 if ((expire != null) && !containsOnlyNumbers(expire, timeEndChar)) {
-                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + 
-                            " Cause: expire is not in timeformat: " + expire);
+                    List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                    idList.add(new IdentityProxy(rule, rule.getId(), "ruleId"));
+                    throw new InvalidParameterValueException("Failed LB in validation rule with specified id." +
+                            " Cause: expire is not in timeformat: " + expire, idList);
                 }
                 if ((tablesize != null) && !containsOnlyNumbers(tablesize, "kmg")) {
-                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + 
-                            " Cause: tablesize is not in size format: " + tablesize);
+                    List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                    idList.add(new IdentityProxy(rule, rule.getId(), "ruleId"));
+                    throw new InvalidParameterValueException("Failed LB in validation rule with specified id." +
+                            " Cause: tablesize is not in size format: " + tablesize, idList);
 
                 }
             } else if (StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
@@ -316,12 +321,16 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 }
 
                 if ((length != null) && (!containsOnlyNumbers(length, null))) {
-                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + 
-                            " Cause: length is not a number: " + length);
+                    List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                    idList.add(new IdentityProxy(rule, rule.getId(), "ruleId"));
+                    throw new InvalidParameterValueException("Failed LB in validation rule with specified id." +
+                            " Cause: length is not a number: " + length, idList);
                 }
                 if ((holdTime != null) && (!containsOnlyNumbers(holdTime, timeEndChar) && !containsOnlyNumbers(holdTime, null))) {
-                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + 
-                            " Cause: holdtime is not in timeformat: " + holdTime);
+                    List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                    idList.add(new IdentityProxy(rule, rule.getId(), "ruleId"));
+                    throw new InvalidParameterValueException("Failed LB in validation rule with specified id." +
+                            " Cause: holdtime is not in timeformat: " + holdTime, idList);
                 }
             }
         }
@@ -346,7 +355,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " +
-                		"router doesn't exist in the network " + network.getId());
+                        "router doesn't exist in the network " + network.getId());
                 return true;
             }
 
@@ -368,7 +377,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply vpn users on the backend; virtual router" +
-                		" doesn't exist in the network " + network.getId());
+                        " doesn't exist in the network " + network.getId());
                 return null;
             }
             return _routerMgr.applyVpnUsers(network, users, routers);
@@ -384,7 +393,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need stop vpn on the backend; virtual router doesn't" +
-                		" exist in the network " + network.getId());
+                        " exist in the network " + network.getId());
                 return true;
             }
             return _routerMgr.startRemoteAccessVpn(network, vpn, routers);
@@ -400,7 +409,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need stop vpn on the backend; virtual router doesn't " +
-                		"exist in the network " + network.getId());
+                        "exist in the network " + network.getId());
                 return true;
             }
             return _routerMgr.deleteRemoteAccessVpn(network, vpn, routers);
@@ -424,7 +433,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to associate ip addresses on the backend; virtual " +
-                		"router doesn't exist in the network " + network.getId());
+                        "router doesn't exist in the network " + network.getId());
                 return true;
             }
 
@@ -452,61 +461,61 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
         method.addParam("cookie-name", false, "Cookie name passed in http header by the LB to the client.", false);
         method.addParam("mode", false,
                 "Valid values: insert, rewrite, prefix. Default value: insert.  In the insert mode cookie will be created" +
-                " by the LB. In other modes, cookie will be created by the server and LB modifies it.", false);
+                        " by the LB. In other modes, cookie will be created by the server and LB modifies it.", false);
         method.addParam(
                 "nocache",
                 false,
                 "This option is recommended in conjunction with the insert mode when there is a cache between the client" +
-                " and HAProxy, as it ensures that a cacheable response will be tagged non-cacheable if  a cookie needs " +
-                "to be inserted. This is important because if all persistence cookies are added on a cacheable home page" +
-                " for instance, then all customers will then fetch the page from an outer cache and will all share the " +
-                "same persistence cookie, leading to one server receiving much more traffic than others. See also the " +
-                "insert and postonly options. ",
-                true);
+                        " and HAProxy, as it ensures that a cacheable response will be tagged non-cacheable if  a cookie needs " +
+                        "to be inserted. This is important because if all persistence cookies are added on a cacheable home page" +
+                        " for instance, then all customers will then fetch the page from an outer cache and will all share the " +
+                        "same persistence cookie, leading to one server receiving much more traffic than others. See also the " +
+                        "insert and postonly options. ",
+                        true);
         method.addParam(
                 "indirect",
                 false,
                 "When this option is specified in insert mode, cookies will only be added when the server was not reached" +
-                " after a direct access, which means that only when a server is elected after applying a load-balancing algorithm," +
-                " or after a redispatch, then the cookie  will be inserted. If the client has all the required information" +
-                " to connect to the same server next time, no further cookie will be inserted. In all cases, when the " +
-                "indirect option is used in insert mode, the cookie is always removed from the requests transmitted to " +
-                "the server. The persistence mechanism then becomes totally transparent from the application point of view.",
-                true);
+                        " after a direct access, which means that only when a server is elected after applying a load-balancing algorithm," +
+                        " or after a redispatch, then the cookie  will be inserted. If the client has all the required information" +
+                        " to connect to the same server next time, no further cookie will be inserted. In all cases, when the " +
+                        "indirect option is used in insert mode, the cookie is always removed from the requests transmitted to " +
+                        "the server. The persistence mechanism then becomes totally transparent from the application point of view.",
+                        true);
         method.addParam(
                 "postonly",
                 false,
                 "This option ensures that cookie insertion will only be performed on responses to POST requests. It is an" +
-                " alternative to the nocache option, because POST responses are not cacheable, so this ensures that the " +
-                "persistence cookie will never get cached.Since most sites do not need any sort of persistence before the" +
-                " first POST which generally is a login request, this is a very efficient method to optimize caching " +
-                "without risking to find a persistence cookie in the cache. See also the insert and nocache options.",
-                true);
+                        " alternative to the nocache option, because POST responses are not cacheable, so this ensures that the " +
+                        "persistence cookie will never get cached.Since most sites do not need any sort of persistence before the" +
+                        " first POST which generally is a login request, this is a very efficient method to optimize caching " +
+                        "without risking to find a persistence cookie in the cache. See also the insert and nocache options.",
+                        true);
         method.addParam(
                 "domain",
                 false,
                 "This option allows to specify the domain at which a cookie is inserted. It requires exactly one parameter:" +
-                " a valid domain name. If the domain begins with a dot, the browser is allowed to use it for any host " +
-                "ending with that name. It is also possible to specify several domain names by invoking this option multiple" +
-                " times. Some browsers might have small limits on the number of domains, so be careful when doing that. " +
-                "For the record, sending 10 domains to MSIE 6 or Firefox 2 works as expected.",
-                false);
+                        " a valid domain name. If the domain begins with a dot, the browser is allowed to use it for any host " +
+                        "ending with that name. It is also possible to specify several domain names by invoking this option multiple" +
+                        " times. Some browsers might have small limits on the number of domains, so be careful when doing that. " +
+                        "For the record, sending 10 domains to MSIE 6 or Firefox 2 works as expected.",
+                        false);
         methodList.add(method);
 
         method = new LbStickinessMethod(StickinessMethodType.AppCookieBased,
                 "This is App session based sticky method. Define session stickiness on an existing application cookie. " +
                 "It can be used only for a specific http traffic");
         method.addParam("cookie-name", false, "This is the name of the cookie used by the application and which LB will " +
-        		"have to learn for each new session. Default value: Auto geneared based on ip", false);
+                "have to learn for each new session. Default value: Auto geneared based on ip", false);
         method.addParam("length", false, "This is the max number of characters that will be memorized and checked in " +
-        		"each cookie value. Default value:52", false);
+                "each cookie value. Default value:52", false);
         method.addParam(
                 "holdtime",
                 false,
                 "This is the time after which the cookie will be removed from memory if unused. The value should be in " +
-                "the format Example : 20s or 30m  or 4h or 5d . only seconds(s), minutes(m) hours(h) and days(d) are valid," +
-                " cannot use th combinations like 20h30m. Default value:3h ",
-                false);
+                        "the format Example : 20s or 30m  or 4h or 5d . only seconds(s), minutes(m) hours(h) and days(d) are valid," +
+                        " cannot use th combinations like 20h30m. Default value:3h ",
+                        false);
         method.addParam(
                 "request-learn",
                 false,
@@ -516,24 +525,24 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
                 "prefix",
                 false,
                 "When this option is specified, haproxy will match on the cookie prefix (or URL parameter prefix). " +
-                "The appsession value is the data following this prefix. Example : appsession ASPSESSIONID len 64 timeout 3h prefix  This will match the cookie ASPSESSIONIDXXXX=XXXXX, the appsession value will be XXXX=XXXXX.",
-                true);
+                        "The appsession value is the data following this prefix. Example : appsession ASPSESSIONID len 64 timeout 3h prefix  This will match the cookie ASPSESSIONIDXXXX=XXXXX, the appsession value will be XXXX=XXXXX.",
+                        true);
         method.addParam(
                 "mode",
                 false,
                 "This option allows to change the URL parser mode. 2 modes are currently supported : - path-parameters " +
-                ": The parser looks for the appsession in the path parameters part (each parameter is separated by a semi-colon), " +
-                "which is convenient for JSESSIONID for example.This is the default mode if the option is not set. - query-string :" +
-                " In this mode, the parser will look for the appsession in the query string.",
-                false);
+                        ": The parser looks for the appsession in the path parameters part (each parameter is separated by a semi-colon), " +
+                        "which is convenient for JSESSIONID for example.This is the default mode if the option is not set. - query-string :" +
+                        " In this mode, the parser will look for the appsession in the query string.",
+                        false);
         methodList.add(method);
 
         method = new LbStickinessMethod(StickinessMethodType.SourceBased, "This is source based Stickiness method, " +
-        		"it can be used for any type of protocol.");
+                "it can be used for any type of protocol.");
         method.addParam("tablesize", false, "Size of table to store source ip addresses. example: tablesize=200k or 300m" +
-        		" or 400g. Default value:200k", false);
+                " or 400g. Default value:200k", false);
         method.addParam("expire", false, "Entry in source ip table will expire after expire duration. units can be s,m,h,d ." +
-        		" example: expire=30m 20s 50h 4d. Default value:3h", false);
+                " example: expire=30m 20s 50h 4d. Default value:3h", false);
         methodList.add(method);
 
         Gson gson = new Gson();
@@ -593,7 +602,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(config.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply static nat on the backend; virtual " +
-                		"router doesn't exist in the network " + config.getId());
+                        "router doesn't exist in the network " + config.getId());
                 return true;
             }
 
@@ -694,7 +703,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
                 s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual " +
-                		"router doesn't exist in the network " + network.getId());
+                        "router doesn't exist in the network " + network.getId());
                 return true;
             }
 
@@ -735,7 +744,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
             result = result && (_routerMgr.destroyRouter(router.getId()) != null);
         }
         _vrProviderDao.remove(elementId);
-        
+
         return result;
     }
 
@@ -764,7 +773,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Override
     public boolean addDhcpEntry(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, 
             DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+                    throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (canHandle(network, Service.Dhcp)) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;
@@ -787,7 +796,7 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     @Override
     public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm,
             DeployDestination dest, ReservationContext context)
-            throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+                    throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         if (canHandle(network, Service.UserData)) {
             if (vm.getType() != VirtualMachine.Type.User) {
                 return false;

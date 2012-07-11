@@ -136,7 +136,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) || 
                     (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
-                throw new InvalidParameterValueException("cidr and gateway must be specified together.");
+                throw new InvalidParameterValueException("cidr and gateway must be specified together.", null);
             }
 
             if (userSpecified.getCidr() != null) {
@@ -255,12 +255,12 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     }
 
     protected void allocateVnet(Network network, NetworkVO implemented, long dcId,
-    		long physicalNetworkId, String reservationId) throws InsufficientVirtualNetworkCapcityException {
+            long physicalNetworkId, String reservationId) throws InsufficientVirtualNetworkCapcityException {
         if (network.getBroadcastUri() == null) {
             String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId);
             if (vnet == null) {
                 throw new InsufficientVirtualNetworkCapcityException("Unable to allocate vnet as a " +
-                		"part of network " + network + " implement ", DataCenter.class, dcId);
+                        "part of network " + network + " implement ", DataCenter.class, dcId);
             }
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vnet));
             EventUtils.saveEvent(UserContext.current().getCallerUserId(), network.getAccountId(), 
@@ -269,7 +269,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }
     }
-    
+
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination dest, 
             ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
@@ -299,10 +299,10 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm)
             throws InsufficientVirtualNetworkCapcityException,
-    InsufficientAddressCapacityException {
+            InsufficientAddressCapacityException {
 
         assert (network.getTrafficType() == TrafficType.Guest) : "Look at my name!  Why are you calling" +
-        		" me when the traffic type is : " + network.getTrafficType();
+                " me when the traffic type is : " + network.getTrafficType();
 
         if (nic == null) {
             nic = new NicProfile(ReservationStrategy.Start, null, null, null, null);
@@ -363,7 +363,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm,
             DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+                    throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         assert (nic.getReservationStrategy() == ReservationStrategy.Start) : "What can I do for nics that are not allocated at start? ";
 
         nic.setBroadcastUri(network.getBroadcastUri());
@@ -385,7 +385,7 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
                     profile.getPhysicalNetworkId(), profile.getAccountId(), profile.getReservationId());
             EventUtils.saveEvent(UserContext.current().getCallerUserId(), profile.getAccountId(), 
                     EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_RELEASE, "Released Zone Vlan: "
-                    +profile.getBroadcastUri().getHost()+" for Network: "+profile.getId(), 0);
+                            +profile.getBroadcastUri().getHost()+" for Network: "+profile.getId(), 0);
             profile.setBroadcastUri(null);
         }
     }

@@ -65,24 +65,24 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     IPAddressDao _ipAddressDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao;
-    
+
     private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
-    
+
     @Override
     public boolean isMyTrafficType(TrafficType type) {
-    	for (TrafficType t : _trafficTypes) {
-    		if (t == type) {
-    			return true;
-    		}
-    	}
-    	return false;
+        for (TrafficType t : _trafficTypes) {
+            if (t == type) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
     public TrafficType[] getSupportedTrafficType() {
-    	return _trafficTypes;
+        return _trafficTypes;
     }
-    
+
     protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
         // this guru handles only Guest networks in Advance zone with source nat service disabled
         if (dc.getNetworkType() == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && offering.getGuestType() == GuestType.Shared) {
@@ -110,7 +110,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) || (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
-                throw new InvalidParameterValueException("cidr and gateway must be specified together.");
+                throw new InvalidParameterValueException("cidr and gateway must be specified together.", null);
             }
 
             if (userSpecified.getCidr() != null) {
@@ -152,7 +152,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public NicProfile allocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException, ConcurrentOperationException {
+    InsufficientAddressCapacityException, ConcurrentOperationException {
 
         DataCenter dc = _dcDao.findById(network.getDataCenterId());    
 
@@ -191,10 +191,10 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override @DB
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm) {
-    	if (s_logger.isDebugEnabled()) {
+        if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());
         }
-    	
+
         IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
         if (ip != null) {
             Transaction txn = Transaction.currentTxn();

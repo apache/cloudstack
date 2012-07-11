@@ -21,7 +21,6 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -60,7 +59,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     protected PrivateIpDao _privateIpDao;
     @Inject
     protected NetworkManager _networkMgr;
-    
+
     private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
 
     protected PrivateNetworkGuru() {
@@ -106,14 +105,14 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) || 
                     (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
-                throw new InvalidParameterValueException("cidr and gateway must be specified together.");
+                throw new InvalidParameterValueException("cidr and gateway must be specified together.", null);
             }
 
             if (userSpecified.getCidr() != null) {
                 network.setCidr(userSpecified.getCidr());
                 network.setGateway(userSpecified.getGateway());
             } else {
-                throw new InvalidParameterValueException("Can't design network " + network + "; netmask/gateway must be passed in");
+                throw new InvalidParameterValueException("Can't design network " + network + "; netmask/gateway must be passed in", null);
             }
 
             if (offering.getSpecifyVlan()) {
@@ -122,7 +121,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
             }
         } else {
             throw new CloudRuntimeException("Can't design network " + network + "; netmask/gateway must be passed in");
-           
+
         }
 
         return network;
@@ -133,19 +132,19 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Deallocate network: networkId: " + nic.getNetworkId() + ", ip: " + nic.getIp4Address());
         }
-        
+
         PrivateIpVO ip = _privateIpDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIp4Address());
         if (ip != null) {
             _privateIpDao.releaseIpAddress(nic.getIp4Address(), nic.getNetworkId());
         }
         nic.deallocate();
     }
-    
-    
+
+
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination dest, 
             ReservationContext context) throws InsufficientVirtualNetworkCapcityException {
-        
+
         return network;
     }
 
@@ -157,11 +156,11 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
         if (!canHandle(offering, dc)) {
             return null;
         }
-        
+
         if (nic == null) {
             nic = new NicProfile(ReservationStrategy.Create, null, null, null, null);
         }
-        
+
         getIp(nic, dc, network);
 
         if (nic.getIp4Address() == null) {
@@ -172,8 +171,8 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
 
         return nic;
     }
-    
-    
+
+
     protected void getIp(NicProfile nic, DataCenter dc, Network network)
             throws InsufficientVirtualNetworkCapcityException,InsufficientAddressCapacityException {
         if (nic.getIp4Address() == null) {
@@ -196,7 +195,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
         nic.setDns1(dc.getDns1());
         nic.setDns2(dc.getDns2());
     }
-    
+
 
     @Override
     public void updateNicProfile(NicProfile profile, Network network) {
@@ -210,7 +209,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile<? extends VirtualMachine> vm,
             DeployDestination dest, ReservationContext context)
-            throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
+                    throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException {
         if (nic.getIp4Address() == null) {
             getIp(nic, _configMgr.getZone(network.getDataCenterId()), network);
             nic.setStrategy(ReservationStrategy.Create);
@@ -224,7 +223,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
 
     @Override
     public void shutdown(NetworkProfile profile, NetworkOffering offering) {
-        
+
     }
 
     @Override
