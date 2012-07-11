@@ -1261,6 +1261,7 @@
                           url: createURL("listNetworks"),
                           async: false,
                           data: {
+                            vpcid: args.context.vpc[0].id,
                             listAll: true
                           },
                           success: function(json) {
