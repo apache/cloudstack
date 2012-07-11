@@ -1266,7 +1266,7 @@
                           },
                           success: function(json) {
                             var networks = json.listnetworksresponse.network;
-                            var items = [{ id: -1, description: 'All' }];
+                            var items = [{ id: -1, description: '' }];
                             $(networks).each(function(){
                               items.push({id: this.id, description: this.displaytext});
                             });
@@ -1350,7 +1350,7 @@
 											};
 											
 											if('vpc' in args.context) {
-											  if(args.tierID == null) {
+											  if(args.tierID == '-1') {
 												  args.response.error('Tier is required');
 												  return;
 												}											
