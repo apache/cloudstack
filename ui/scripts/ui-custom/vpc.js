@@ -182,15 +182,17 @@
 
       // Title shows tier details
       $title.click(function() {
-        $browser.cloudBrowser('addPanel', {
-          title: name,
-          maximizeIfSelected: true,
-          complete: function($panel) {
-            $panel.detailView($.extend(true, {}, detailView, {
-              context: context
-            }));
-          }
-        });
+        if ($browser && $browser.size()) { // Fix null exception, if add tier returns error
+          $browser.cloudBrowser('addPanel', {
+            title: name,
+            maximizeIfSelected: true,
+            complete: function($panel) {
+              $panel.detailView($.extend(true, {}, detailView, {
+                context: context
+              }));
+            }
+          });
+        }
       });
 
       if (isPlaceholder) {
