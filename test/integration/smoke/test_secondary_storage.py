@@ -200,7 +200,7 @@ class TestSecStorageServices(cloudstackTestCase):
         while True:
             list_hosts_response = list_hosts(
                            self.apiclient,
-                           type='SecondaryStorage',
+                           type='SecondaryStorageVM',
                            zoneid=self.zone.id,
                            )
 
