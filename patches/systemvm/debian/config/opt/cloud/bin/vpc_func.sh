@@ -43,3 +43,17 @@ getVPCcidr () {
   done
   return 1
 }
+
+removeRulesForIp() {
+  local ip=$1
+  iptables-save -t mangle | grep $ip | grep "\-A"  | while read rule
+  do
+    rule=$(echo $rule | sed 's/\-A/\-D/')
+    sudo iptables -t mangle $rule
+  done
+  iptables-save -t filter | grep $ip | grep "\-A"  | while read rule
+  do
+    rule=$(echo $rule | sed 's/\-A/\-D/')
+    sudo iptables -t filter $rule
+  done
+}

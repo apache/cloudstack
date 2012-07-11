@@ -92,7 +92,13 @@ ethDev=$(getEthByIp $publicIp)
 result=$?
 if [ $result -gt 0 ]
 then
-  unlock_exit $result $lock $locked
+  if [ "$op" == "-D" ]
+  then 
+    removeRulesForIp $publicIp
+    unlock_exit 0 $lock $locked
+  else
+    unlock_exit $result $lock $locked
+  fi
 fi
 OUTFILE=$(mktemp)
 
