@@ -1126,48 +1126,69 @@
 								label: 'label.network.offering',
 								validation: { required: true },
 								dependsOn: 'zoneId',
-								select: function(args) {		
-                  //debugger;								
-                  //args.context is null (Brian will fix it to have value)
-									/*
-									var networkSupportingLbExists = false;
+								select: function(args) {		                 								
+									var networkSupportingLbExists = false;									
 									$.ajax({
 									  url: createURL('listNetworks'),
 										data: {
 										  vpcid: args.context.vpc[0].id,
-										  supportedservices: LB
-										},
-										async: false,
-										success: function(json) {										  
-											if(json.listnetworksresponse.network != null && json.listnetworksresponse.network.length > 0) {
+										  supportedservices: 'LB'
+										},										
+										success: function(json) {		
+                      var networkSupportingLbExists;										
+											if(json.listnetworksresponse.network != null && json.listnetworksresponse.network.length > 0) 
 											  networkSupportingLbExists = true;
-											}		
+											else
+                        networkSupportingLbExists = false;											
+											
+											//???
+											$.ajax({
+												url: createURL('listNetworkOfferings'),
+												data: {
+													forvpc: true,
+													zoneid: args.zoneId,
+													guestiptype: 'Isolated',
+													supportedServices: 'SourceNat',
+													specifyvlan: false,
+													state: 'Enabled'
+												},
+												success: function(json) {
+													var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
+																										
+													var items;
+													if(networkSupportingLbExists == true) {
+													  items = $.grep(networkOfferings, function(networkOffering) {
+															var includingLbService = false;
+															$(networkOffering.service).each(function(){
+																var thisService = this;
+																if(thisService.name == "Lb") {
+																	includingLbService = true;																	
+																	return false; //break $.each() loop
+																}
+															});	
+                              return !includingLbService;															
+														});
+													}
+													else {
+													  items = networkOfferings;
+													}
+																										
+													args.response.success({
+														data: $.map(items, function(item) {
+															return {
+																id: item.id,
+																description: item.name
+															};
+														})
+													});
+												}
+											});
+											//???											
 										}
 									});									
-									*/
+									
 								
-									$.ajax({
-										url: createURL('listNetworkOfferings'),
-										data: {
-											forvpc: true,
-											zoneid: args.zoneId,
-											guestiptype: 'Isolated',
-											supportedServices: 'SourceNat',
-											specifyvlan: false,
-											state: 'Enabled'
-										},
-										success: function(json) {
-											var networkOfferings = json.listnetworkofferingsresponse.networkoffering;
-											args.response.success({
-												data: $.map(networkOfferings, function(zone) {
-													return {
-														id: zone.id,
-														description: zone.name
-													};
-												})
-											});
-										}
-									});
+									
 								}
 							},
 							gateway: { 
