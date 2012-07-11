@@ -39,7 +39,7 @@ public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCm
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @IdentityMapper(entityTableName="static_routes")
+    @IdentityMapper(entityTableName="vpc_gateways")
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, description="list private gateway by id")
     private Long id;
     
