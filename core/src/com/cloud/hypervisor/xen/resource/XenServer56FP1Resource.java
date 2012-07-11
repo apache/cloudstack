@@ -139,7 +139,8 @@ public class XenServer56FP1Resource extends XenServer56Resource {
         record.VCPUsMax = (long) vmSpec.getCpus();
         record.VCPUsAtStartup = (long) vmSpec.getCpus();
         record.consoles.clear();
-
+        String pvBootloaderArgs = CitrixHelper.getPVbootloaderArgs(guestOsTypeName);
+        record.PVBootloaderArgs += pvBootloaderArgs;
         VM vm = VM.create(conn, record);
         VM.Record vmr = vm.getRecord(conn);
         if (s_logger.isDebugEnabled()) {

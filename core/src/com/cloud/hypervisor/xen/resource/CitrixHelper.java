@@ -21,6 +21,8 @@ import org.apache.log4j.Logger;
  * Reduce bloat inside CitrixResourceBase
  *
  */
+
+
 public class CitrixHelper {
     private static final Logger s_logger = Logger.getLogger(CitrixHelper.class);
     private static final HashMap<String, String> _xcp100GuestOsMap = new HashMap<String, String>(70);
@@ -631,5 +633,16 @@ public class CitrixHelper {
 
         }
         return guestOS;
+    }
+
+    public static String getPVbootloaderArgs(String guestOS) {
+        if (guestOS.startsWith("SUSE Linux Enterprise Server")) {
+            if (guestOS.contains("64-bit")) {
+                return " --kernel /boot/vmlinuz-xen --ramdisk /boot/initrd-xen";
+            } else if (guestOS.contains("32-bit")) {
+                return " --kernel /boot/vmlinuz-xenpae --ramdisk /boot/initrd-xenpae";
+            }
+        }
+        return "";
     }
 }
