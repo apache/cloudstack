@@ -421,7 +421,115 @@
 			}
 		},
 		gateways: {
-		
+		  listView: function() {
+		    return {
+          listView: {
+            id: 'vpcGateways',
+            fields: {
+              ipAddress: { label: 'label.ip.address' },
+              vlan: { label: 'label.vlan' },
+              cidr: { label: 'label.cidr' }
+            },
+            actions: {
+              add: {
+                label: 'Add new gateway',
+                createForm: {
+                  title: 'Add new gateway',
+                  desc: 'Please specify the information to add a new gateway to this VPC.',
+                  fields: {
+                    ipAddress: { label: 'label.ip.address', validation: { required: true } },
+                    vlan: { label: 'label.vlan', validation: { required: true }},
+                    cidr: { label: 'label.cidr', validation: { required: true }}
+                  }
+                },
+                action: function(args) {
+                  args.response.success();
+                },
+                messages: {
+                  notification: function() { return 'Add gateway to VPC'; }
+                }
+              }
+            },
+            dataProvider: function(args) {
+              args.response.success({ data: [{
+                ipAddress: '10.0.0.1',
+                vlan: '123',
+                cidr: '10.0.0.0/24'
+              }] }); // Dummy data
+            },
+            detailView: {
+              name: 'Gateway details',
+              tabs: {
+                details: {
+                  title: 'label.details',
+                  fields: [
+                    {
+                      tierId: { label: 'Tier ID' }
+                    },
+                    {
+                      ipAddress: { label: 'label.ip.address', validation: { required: true } },
+                      vlan: { label: 'label.vlan', validation: { required: true }},
+                      cidr: { label: 'label.cidr', validation: { required: true }}
+                    }
+                  ],
+                  dataProvider: function(args) {
+                    args.response.success({ data: args.context.vpcGateways[0] });
+                  }
+                },
+                staticRoutes: {
+                  title: 'Static Routes',
+                  custom: function(args) {
+                    return $('<div>').multiEdit({
+                      noSelect: true,
+                      context: args.context,
+                      fields: {
+                        cidr: { edit: true, label: 'label.cidr' },
+                        'add-rule': {
+				                  label: 'Add route',
+				                  addButton: true
+			                  }
+                      },
+                      add: {
+                        label: 'Add',
+                        action: function(args) {
+                          args.response.success({
+                            notification: {
+                              label: 'Add static route to gateway',
+                              poll: function(args) { args.complete(); }
+                            }
+                          });
+                        }
+                      },
+                      actions: {
+                        destroy: {
+                          label: 'Remove ACL',
+                          action: function(args) {     
+					                  args.response.success({
+                              notification: {
+                                label: 'Remove static route from gateway',
+                                poll: function(args) { args.complete(); }
+                              }
+                            });
+                          }
+                        }
+                      },
+                      dataProvider: function(args) {
+                        setTimeout(function() {
+						              args.response.success({
+                            data: [
+                              { cidr: '10.2.2.0/24' }
+                            ]
+                          });
+                        }, 500);
+                      }
+                    });
+                  }
+                }
+              }
+            }
+          }
+        };
+			}		
 		},
     siteToSiteVPN: {//start siteToSiteVPN
 			type: 'select',

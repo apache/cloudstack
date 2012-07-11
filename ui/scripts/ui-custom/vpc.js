@@ -47,6 +47,14 @@
 						});
 					  break;
 					case 'gateways':
+					  $browser.cloudBrowser('addPanel', {
+						  title: 'Gateways',
+							maximizeIfSelected: true,
+							complete: function($panel) {	
+                //ipAddresses.listView is a function					
+								$panel.listView(gateways.listView(), {context: gateways.context});
+							}
+						});
 					  break;
 					case 'site-to-site-vpn':
             $browser.cloudBrowser('addPanel', {
