@@ -562,14 +562,17 @@
                           }
                         }
                       },
-                      dataProvider: function(args) {
-                        setTimeout(function() {
-						              args.response.success({
-                            data: [
-                              { cidr: '10.2.2.0/24' }
-                            ]
-                          });
-                        }, 500);
+                      dataProvider: function(args) {											  
+												$.ajax({
+												  url: createURL('listStaticRoutes'),
+													data: {
+													  gatewayid: args.context.vpcGateways[0].id
+													},
+													success: function(json) {													 
+														var items = json.liststaticroutesresponse.staticroute;
+														args.response.success({ data: items });
+													}
+												});												
                       }
                     });
                   }
