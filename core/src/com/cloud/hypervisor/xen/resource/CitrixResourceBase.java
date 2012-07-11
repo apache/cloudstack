@@ -1929,7 +1929,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             
             VIF correctVif = getCorrectVif(conn, router, ip);
             if (correctVif == null) {
-                throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
+                if (ip.isAdd()) {
+                    throw new InternalErrorException("Failed to find DomR VIF to associate IP with.");
+                } else {
+                    s_logger.debug("VIF to deassociate IP with does not exist, return success");
+                    return;
+                }
             }           
            
             String args = "vpc_ipassoc.sh " + routerIp;
