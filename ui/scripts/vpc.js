@@ -433,7 +433,13 @@
             },
             actions: {
               add: {
-                label: 'Add new gateway',
+                label: 'Add new gateway',															
+								preFilter: function(args) {
+									if(isAdmin())
+									  return true;
+									else
+									  return false;
+								},															
                 createForm: {
                   title: 'Add new gateway',
                   desc: 'Please specify the information to add a new gateway to this VPC.',
