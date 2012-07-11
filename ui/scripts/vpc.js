@@ -561,15 +561,31 @@
                       },
                       actions: {
                         destroy: {
-                          label: 'Remove ACL',
-                          action: function(args) {     
-					                  args.response.success({
-                              notification: {
-                                label: 'Remove static route from gateway',
-                                poll: function(args) { args.complete(); }
+                          label: 'Remove static route',
+													action: function(args) {
+													  //debugger;
+                            $.ajax({
+                              url: createURL('deleteStaticRoute'),
+                              data: {                                
+                                id: args.context.multiRule[0].id
+                              },
+                              dataType: 'json',
+                              async: true,
+                              success: function(data) {
+                                var jobID = data.deletestaticrouteresponse.jobid;
+
+                                args.response.success({
+                                  _custom: {
+                                    jobId: jobID
+                                  },
+                                  notification: {
+                                    label: 'Remove static route',
+                                    poll: pollAsyncJobResult
+                                  }
+                                });
                               }
                             });
-                          }
+                          }													
                         }
                       },
                       dataProvider: function(args) {											  
