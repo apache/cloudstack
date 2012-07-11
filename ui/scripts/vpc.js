@@ -425,14 +425,15 @@
 		    return {
           listView: {
             id: 'vpcGateways',
-            fields: {
-              ipAddress: { label: 'label.ip.address' },
-              vlan: { label: 'label.vlan' },
-              cidr: { label: 'label.cidr' }
+            fields: {						 
+						  ipaddress: { label: 'label.ip.address', validation: { required: true }},
+							gateway: { label: 'label.gateway', validation: { required: true }},
+							netmask: { label: 'label.netmask', validation: { required: true }}, 									
+							vlan: { label: 'label.vlan', validation: { required: true }}  
             },
             actions: {
               add: {
-                label: 'Add new gateway',//???
+                label: 'Add new gateway',
                 createForm: {
                   title: 'Add new gateway',
                   desc: 'Please specify the information to add a new gateway to this VPC.',
@@ -494,16 +495,34 @@
                   title: 'label.details',
                   fields: [
                     {
-                      tierId: { label: 'Tier ID' }
+                      ipaddress: { label: 'label.ip.address' }
                     },
-                    {
-                      ipAddress: { label: 'label.ip.address', validation: { required: true } },
-                      vlan: { label: 'label.vlan', validation: { required: true }},
-                      cidr: { label: 'label.cidr', validation: { required: true }}
+                    {  	
+											gateway: { label: 'label.gateway' },
+											netmask: { label: 'label.netmask'}, 									
+											vlan: { label: 'label.vlan' },   
+											id: { label: 'label.id' },
+											zonename: { label: 'label.zone' },
+											domain: { label: 'label.domain' },
+											account: { label: 'label.account' }											
                     }
                   ],
-                  dataProvider: function(args) {
-                    args.response.success({ data: args.context.vpcGateways[0] });
+                  dataProvider: function(args) {	
+									  /*
+										$.ajax({
+											url: createURL('listPrivateGateways'),
+											data: {
+												id: args.context.vpcGateways[0].id
+											},
+											success: function(json) {
+												var item = json.listprivategatewaysresponse.privategateway[0];
+												args.response.success({ data: item });									
+											}
+										});	
+                    */
+
+                    args.response.success({ data: args.context.vpcGateways[0] });	
+										
                   }
                 },
                 staticRoutes: {
