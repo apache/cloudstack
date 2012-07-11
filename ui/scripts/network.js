@@ -2027,10 +2027,17 @@
                         dataProvider: function(args) {
                           var itemData = $.isArray(args.context.multiRule) && args.context.multiRule[0]['_itemData'] ?
                             args.context.multiRule[0]['_itemData'] : [];
+																											                    
+													var networkid;
+													if('vpc' in args.context) 
+													  networkid = args.context.multiData.tier;													
+													else 
+													  networkid = args.context.ipAddresses[0].associatednetworkid;			
+													
                           var data = {
                             page: args.page,
                             pageSize: pageSize,
-                            networkid: args.context.ipAddresses[0].associatednetworkid,
+                            networkid: networkid,
                             listAll: true
                           };
 
