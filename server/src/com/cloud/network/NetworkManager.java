@@ -454,6 +454,7 @@ public interface NetworkManager extends NetworkService {
      * @param requested
      * @param context
      * @param vmProfile
+     * @param prepare TODO
      * @return
      * @throws InsufficientVirtualNetworkCapcityException
      * @throws InsufficientAddressCapacityException
@@ -461,7 +462,7 @@ public interface NetworkManager extends NetworkService {
      * @throws InsufficientCapacityException
      * @throws ResourceUnavailableException
      */
-    NicProfile allocateAndPrepareNic(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfileImpl<VMInstanceVO> vmProfile) throws InsufficientVirtualNetworkCapcityException,
+    NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfileImpl<VMInstanceVO> vmProfile, boolean prepare) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
     
 
