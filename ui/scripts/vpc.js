@@ -490,6 +490,39 @@
             },
             detailView: {
               name: 'Gateway details',
+							actions: {							  
+								remove: {
+									label: 'delete gateway',
+									messages: {
+										confirm: function(args) {
+											return 'Please confirm you want to delete the gateway';
+										},
+										notification: function(args) {
+											return 'delete gateway';
+										}
+									},
+									action: function(args) {
+										$.ajax({
+											url: createURL("deletePrivateGateway&id=" + args.context.vpcGateways[0].id),
+											dataType: "json",
+											async: true,
+											success: function(json) {
+												var jid = json.deleteprivategatewayresponse.jobid;
+												args.response.success(
+													{_custom:
+													  {
+														  jobId: jid
+													  }
+													}
+												);	
+											}
+										});
+									},	
+									notification: {
+										poll: pollAsyncJobResult
+									}									
+								}								
+							},
               tabs: {
                 details: {
                   title: 'label.details',
@@ -500,7 +533,8 @@
                     {  	
 											gateway: { label: 'label.gateway' },
 											netmask: { label: 'label.netmask'}, 									
-											vlan: { label: 'label.vlan' },   
+											vlan: { label: 'label.vlan' },  
+                      state: { label: 'label.state' },											
 											id: { label: 'label.id' },
 											zonename: { label: 'label.zone' },
 											domain: { label: 'label.domain' },
@@ -562,8 +596,7 @@
                       actions: {
                         destroy: {
                           label: 'Remove static route',
-													action: function(args) {
-													  //debugger;
+													action: function(args) {													  
                             $.ajax({
                               url: createURL('deleteStaticRoute'),
                               data: {                                
