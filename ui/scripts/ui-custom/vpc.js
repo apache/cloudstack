@@ -520,6 +520,7 @@
     var tierDetailView = args.tierDetailView;
 
     cloudStack.dialog.createForm({
+      context: context,
       form: actions.add.createForm,
       after: function(args) {
         var $loading = $('<div>').addClass('loading-overlay').prependTo($tiers.find('li.placeholder'));
