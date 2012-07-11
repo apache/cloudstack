@@ -2421,13 +2421,18 @@
                       });
 
                       // Check if tiers are present; hide/show header drop-down                     
-                      var $headerFields = $multi.find('.header-fields');
-                      if ('vpc' in args.context) {
-                        $headerFields.show();
-                      } 
+											var $headerFields = $multi.find('.header-fields');													
+											if ('vpc' in args.context) {
+												if(args.context.ipAddresses[0].associatednetworkid == null) {
+													$headerFields.show();
+												}
+												else {
+													$headerFields.hide();
+												}
+											} 
 											else if('networks' in args.context){
-                        $headerFields.hide();
-                      }
+												$headerFields.hide();
+											}													
                     }
                   },
 
@@ -2653,9 +2658,14 @@
                           });
                  													
 													// Check if tiers are present; hide/show header drop-down                     
-													var $headerFields = $multi.find('.header-fields');
+													var $headerFields = $multi.find('.header-fields');													
 													if ('vpc' in args.context) {
-														$headerFields.show();
+													  if(args.context.ipAddresses[0].associatednetworkid == null) {
+														  $headerFields.show();
+														}
+														else {
+														  $headerFields.hide();
+														}
 													} 
 													else if('networks' in args.context){
 														$headerFields.hide();
