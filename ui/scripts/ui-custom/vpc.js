@@ -459,7 +459,7 @@
       ).dialog({
         title: 'Configure ACL',
         dialogClass: 'configure-acl',
-        width: 820,
+        width: 900,
         height: 600,
         buttons: {
           'Done': function() {
