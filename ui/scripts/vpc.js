@@ -1015,7 +1015,26 @@
 								label: 'label.network.offering',
 								validation: { required: true },
 								dependsOn: 'zoneId',
-								select: function(args) {										 
+								select: function(args) {		
+                  //debugger;								
+                  //args.context is null (Brian will fix it to have value)
+									/*
+									var networkSupportingLbExists = false;
+									$.ajax({
+									  url: createURL('listNetworks'),
+										data: {
+										  vpcid: args.context.vpc[0].id,
+										  supportedservices: LB
+										},
+										async: false,
+										success: function(json) {										  
+											if(json.listnetworksresponse.network != null && json.listnetworksresponse.network.length > 0) {
+											  networkSupportingLbExists = true;
+											}		
+										}
+									});									
+									*/
+								
 									$.ajax({
 										url: createURL('listNetworkOfferings'),
 										data: {
