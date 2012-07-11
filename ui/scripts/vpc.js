@@ -507,8 +507,7 @@
 											account: { label: 'label.account' }											
                     }
                   ],
-                  dataProvider: function(args) {	
-									  /*
+                  dataProvider: function(args) {										  
 										$.ajax({
 											url: createURL('listPrivateGateways'),
 											data: {
@@ -519,10 +518,6 @@
 												args.response.success({ data: item });									
 											}
 										});	
-                    */
-
-                    args.response.success({ data: args.context.vpcGateways[0] });	
-										
                   }
                 },
                 staticRoutes: {
@@ -540,13 +535,28 @@
                       },
                       add: {
                         label: 'Add',
-                        action: function(args) {
-                          args.response.success({
-                            notification: {
-                              label: 'Add static route to gateway',
-                              poll: function(args) { args.complete(); }
-                            }
-                          });
+                        action: function(args) {												  
+												  $.ajax({
+													  url: createURL('createStaticRoute'),
+														data: {
+														  gatewayid: args.context.vpcGateways[0].id,
+															cidr: args.data.cidr
+														},																
+                            success: function(data) {
+                              args.response.success({
+                                _custom: {
+                                  jobId: data.createstaticrouteresponse.jobid
+                                },
+                                notification: {
+                                  label: 'Add static route',
+                                  poll: pollAsyncJobResult
+                                }
+                              });
+                            },
+                            error: function(data) {
+                              args.response.error(parseXMLHttpResponse(data));
+                            }															
+													});												
                         }
                       },
                       actions: {
