@@ -2264,37 +2264,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     		ConcurrentOperationException, ResourceUnavailableException {
         List<NicVO> nics = _nicDao.listByVmId(vmProfile.getId());
         for (NicVO nic : nics) {
-            NetworkVO network = _networksDao.findById(nic.getNetworkId());
-            releaseNic(vmProfile, nic, network);
+            releaseNic(vmProfile, nic);
         }
     }
-    
     @Override
-    public NicProfile releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NetworkVO network) 
+    public void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, Nic nic) 
             throws ConcurrentOperationException, ResourceUnavailableException {
-        NicVO nic = _nicDao.findByInstanceIdAndNetworkId(network.getId(), vmProfile.getId());
-        releaseNic(vmProfile, nic, network);
-        
-        NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, 
-                isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
-        return profile;
-    }
-    
-    
-    @Override
-    public NicProfile releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NetworkVO network, URI broadcastUri) 
-            throws ConcurrentOperationException, ResourceUnavailableException {
-        NicVO nic = _nicDao.findByInstanceIdNetworkIdAndBroadcastUri(network.getId(), vmProfile.getId(), broadcastUri.toString());
-        releaseNic(vmProfile, nic, network);
-        
-        NicProfile profile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), null, 
-                isSecurityGroupSupportedInNetwork(network), getNetworkTag(vmProfile.getVirtualMachine().getHypervisorType(), network));
-        return profile;
+        NicVO nicVO = _nicDao.findById(nic.getId());
+        releaseNic(vmProfile, nicVO);
     }
 
 
-    protected void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NicVO nic, NetworkVO network) 
+    protected void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NicVO nic) 
             throws ConcurrentOperationException, ResourceUnavailableException {
+        NetworkVO network = _networksDao.findById(nic.getNetworkId());
         if (nic.getState() == Nic.State.Reserved || nic.getState() == Nic.State.Reserving) {
             Nic.State originalState = nic.getState();
             if (nic.getReservationStrategy() == Nic.ReservationStrategy.Start) {

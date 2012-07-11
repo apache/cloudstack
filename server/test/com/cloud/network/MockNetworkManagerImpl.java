@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -805,15 +804,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#releaseNic(com.cloud.vm.VirtualMachineProfile, com.cloud.network.NetworkVO)
-     */
-    @Override
-    public NicProfile releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NetworkVO network) throws ConcurrentOperationException, ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#removeNic(com.cloud.vm.VirtualMachineProfile, com.cloud.network.Network)
      */
     @Override
@@ -962,8 +952,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      * @see com.cloud.network.NetworkManager#allocateDirectIp(com.cloud.vm.NicProfile, com.cloud.dc.DataCenter, com.cloud.vm.VirtualMachineProfile, com.cloud.network.Network, java.lang.String)
      */
     @Override
-    public void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network, String requestedIp) throws InsufficientVirtualNetworkCapcityException,
-            InsufficientAddressCapacityException {
+    public void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         
     }
@@ -1067,15 +1056,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#releaseNic(com.cloud.vm.VirtualMachineProfile, com.cloud.network.NetworkVO, java.net.URI)
-     */
-    @Override
-    public NicProfile releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NetworkVO network, URI broadcastUri) throws ConcurrentOperationException, ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#getPhysicalNtwksSupportingTrafficType(long, com.cloud.network.Networks.TrafficType)
      */
     @Override
@@ -1138,5 +1118,15 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
             InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#allocateDirectIp(com.cloud.vm.NicProfile, com.cloud.dc.DataCenter, com.cloud.vm.VirtualMachineProfile, com.cloud.network.Network, java.lang.String)
+     */
+    @Override
+    public void allocateDirectIp(NicProfile nic, DataCenter dc, VirtualMachineProfile<? extends VirtualMachine> vm, Network network, String requestedIp) throws InsufficientVirtualNetworkCapcityException,
+            InsufficientAddressCapacityException {
+        // TODO Auto-generated method stub
+        
     }
 }

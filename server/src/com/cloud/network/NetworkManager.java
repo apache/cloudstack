@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.network;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -388,17 +387,6 @@ public interface NetworkManager extends NetworkService {
 
 
     /**
-     * @param vmProfile
-     * @param network
-     * @return TODO
-     * @throws ConcurrentOperationException
-     * @throws ResourceUnavailableException
-     */
-    NicProfile releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NetworkVO network) 
-            throws ConcurrentOperationException, ResourceUnavailableException;
-
-
-    /**
      * @param vm
      * @param network
      */
@@ -446,13 +434,11 @@ public interface NetworkManager extends NetworkService {
 
     /**
      * @param vmProfile
-     * @param network
-     * @param broadcastUri
-     * @return
+     * @param nic TODO
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    NicProfile releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, NetworkVO network, URI broadcastUri) 
+    void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, Nic nic) 
             throws ConcurrentOperationException, ResourceUnavailableException;
 
 
