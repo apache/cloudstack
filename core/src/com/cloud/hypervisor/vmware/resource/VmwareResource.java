@@ -137,6 +137,7 @@ import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
@@ -439,6 +440,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 return execute((SetNetworkACLCommand) cmd);
             } else if (cmd instanceof SetPortForwardingRulesVpcCommand) {
                 return execute((SetPortForwardingRulesVpcCommand) cmd);
+            } else if (cmd instanceof Site2SiteVpnCfgCommand) {
+                return execute((Site2SiteVpnCfgCommand) cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -1000,6 +1003,62 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
         }
         return new SetPortForwardingRulesAnswer(cmd, results, endResult);
+    }
+    
+    protected Answer execute(Site2SiteVpnCfgCommand cmd) {
+        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+
+        String routerIp = getRouterSshControlIp(cmd);
+
+        String args ="";
+        if (cmd.isCreate()) {
+            args += " -A";
+            args += " -l ";
+	        args += cmd.getLocalPublicIp();
+            args += " -n ";
+	        args += cmd.getLocalGuestCidr();
+            args += " -g ";
+	        args += cmd.getLocalPublicGateway();
+            args += " -r ";
+	        args += cmd.getPeerGatewayIp();
+            args += " -N ";
+	        args += cmd.getPeerGuestCidrList();
+            args += " -e ";
+	        args += cmd.getEspPolicy();
+            args += " -i ";
+	        args += cmd.getIkePolicy();
+            args += " -t ";
+	        args += Long.toString(cmd.getLifetime());
+            args += " -s ";
+	        args += cmd.getIpsecPsk();
+        } else {
+            args += " -D";
+            args += " -r ";
+            args += cmd.getPeerGatewayIp();
+            args += " -N ";
+            args += cmd.getPeerGuestCidrList();
+        }
+        
+        Pair<Boolean, String> result;
+        try {
+            result = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
+                    "/opt/cloud/bin/ipsectunnel.sh " + args);
+
+            if (!result.first()) {
+                s_logger.error("Setup site2site VPN " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " failed, message: " + result.second());
+
+                return new Answer(cmd, false, "Setup site2site VPN falied due to " + result.second());
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("setup site 2 site vpn on router " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP) + " completed");
+            }
+        } catch (Throwable e) {
+            String msg = "Setup site2site VPN falied due to " + VmwareHelper.getExceptionMessage(e);
+            s_logger.error(msg, e);
+            return new Answer(cmd, false, "Setup site2site VPN failed due to " + VmwareHelper.getExceptionMessage(e));
+        }
+        return new Answer(cmd, true, result.second());
     }
     
     private PlugNicAnswer execute(PlugNicCommand cmd) {
