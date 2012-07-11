@@ -1026,4 +1026,13 @@ public class ElasticLoadBalancerManagerImpl implements
 	public void prepareStop(VirtualMachineProfile<DomainRouterVO> profile) {
 		
 	}
+
+
+	@Override
+	public boolean recreateNeeded(
+			VirtualMachineProfile<DomainRouterVO> profile, long hostId,
+			Commands cmds, ReservationContext context) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

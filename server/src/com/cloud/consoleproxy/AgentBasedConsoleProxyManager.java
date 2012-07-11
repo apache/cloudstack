@@ -367,4 +367,12 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
 	@Override
 	public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
 	}
+
+	@Override
+	public boolean recreateNeeded(
+			VirtualMachineProfile<ConsoleProxyVO> profile, long hostId,
+			Commands cmds, ReservationContext context) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }
