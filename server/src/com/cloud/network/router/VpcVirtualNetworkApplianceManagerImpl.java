@@ -994,7 +994,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     " virtual router " + router + " is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
         }
         return true;
-      
     }
 
     @Override
@@ -1008,10 +1007,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         
         Network privateNetwork = _networkMgr.getNetwork(gateway.getNetworkId());
         
-        s_logger.debug("Unsetting source nat for " + router + "'s private gateway " + gateway + " as a part of delete private gateway");
+        s_logger.debug("Releasing private ip for gateway " + gateway + " from " + router);
         boolean result = setupVpcPrivateNetwork(router, false, _networkMgr.getNicProfile(router, privateNetwork.getId()));
         if (!result) {
-            s_logger.warn("Failed to delete private gateway " + gateway + " on router " + router);
+            s_logger.warn("Failed to release private ip for gateway " + gateway + " on router " + router);
             return false;
         }
         
