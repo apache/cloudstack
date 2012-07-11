@@ -1252,41 +1252,53 @@
                 
                 action: {
                   noAdd: true,
-                  custom: cloudStack.uiCustom.enableStaticNAT({                    
+                  custom: cloudStack.uiCustom.enableStaticNAT({
                     tierSelect: function(args) {
-											if ('vpc' in args.context) { //from VPC section
+                      if ('vpc' in args.context) { //from VPC section
                         args.$tierSelect.show(); //show tier dropdown
-												
-												$.ajax({ //populate tier dropdown
-													url: createURL("listNetworks"),															
-													data: {
-														vpcid: args.context.vpc[0].id,
-														listAll: true
-													},															
-													success: function(json) {					  
-														var networks = json.listnetworksresponse.network;	
-														var items = [];
-														$(networks).each(function(){																  
-															items.push({id: this.id, description: this.displaytext});
-														});
-														args.response.success({ data: items });																
-													}
-												});	
+
+                        $.ajax({ //populate tier dropdown
+                          url: createURL("listNetworks"),
+                          async: false,
+                          data: {
+                            listAll: true
+                          },
+                          success: function(json) {
+                            var networks = json.listnetworksresponse.network;
+                            var items = [{ id: -1, description: 'All' }];
+                            $(networks).each(function(){
+                              items.push({id: this.id, description: this.displaytext});
+                            });
+                            args.response.success({ data: items });
+                          }
+                        });
                       }
-											else { //from Guest Network section
-											   args.$tierSelect.hide(); 
-											}
+                      else { //from Guest Network section
+                        args.$tierSelect.hide();
+                      }
+
+                      args.$tierSelect.change(function() {
+                        args.$tierSelect.closest('.list-view').listView('refresh');
+                      });
                     },
 
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
                         dataProvider: function(args) {
+                          var $listView = args.$listView;
                           var data = {
                             page: args.page,
                             pageSize: pageSize,                            
                             listAll: true
                           };
-													
+
+                          // See if tier is selected
+                          var $tierSelect = $listView.find('.tier-select select');
+                          
+                          if ($tierSelect.size() && $tierSelect.val() != '-1') {
+                            data.networkid = $tierSelect.val();
+                          }
+
 													if('vpc' in args.context) {
 													  $.extend(data, {
 														  vpcid: args.context.vpc[0].id
@@ -1304,7 +1316,7 @@
                               domainid: args.context.ipAddresses[0].domainid
                             }); 
                           }
-                          
+
                           $.ajax({
                             url: createURL('listVirtualMachines'),
                             data: data,
