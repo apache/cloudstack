@@ -61,9 +61,9 @@ class Services:
                                     "protocol": 'TCP',
                                 },
                          "mgmt_server": {
-                                    "ipaddress": '192.168.100.21',
+                                    "ipaddress": '10.223.133.41',
                                     "username": "root",
-                                    "password": "fr3sca",
+                                    "password": "password",
                                     "port": 22,
                                 },
                         "recurring_snapshot": {
@@ -77,7 +77,7 @@ class Services:
                         "templates": {
                                     "displaytext": 'Template',
                                     "name": 'Template',
-                                    "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
+                                    "ostypeid": 'd847814b-e1fb-4310-afd5-ed64c1d13e6c',
                                     "templatefilter": 'self',
                                 },
                         "diskdevice": "/dev/xvda",
@@ -90,7 +90,7 @@ class Services:
                         "sub_lvl_dir2": "test2",
                         "random_data": "random.data",
 
-                        "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
+                        "ostypeid": 'd847814b-e1fb-4310-afd5-ed64c1d13e6c',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
@@ -335,7 +335,7 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
             time.sleep(self.services["sleep"])
             try:
                 # Login to VM to check snapshot present on sec disk
-                ssh_client = remoteSSHClient.remoteSSHClient(
+                ssh_client = remoteSSHClient(
                                     self.services["mgmt_server"]["ipaddress"],
                                     self.services["mgmt_server"]["port"],
                                     self.services["mgmt_server"]["username"],
@@ -344,7 +344,7 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
 
                 cmds = [
                     "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s/%s %s" % (
+                    "mount -t nfs %s:/%s %s" % (
                                          sec_storage_ip,
                                          export_path,
                                          self.services["mount_dir"]
@@ -594,7 +594,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
             time.sleep(self.services["sleep"])
             try:
                 # Login to Secondary storage VM to check snapshot present on sec disk
-                ssh_client = remoteSSHClient.remoteSSHClient(
+                ssh_client = remoteSSHClient(
                                     self.services["mgmt_server"]["ipaddress"],
                                     self.services["mgmt_server"]["port"],
                                     self.services["mgmt_server"]["username"],
@@ -603,7 +603,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
 
                 cmds = [
                     "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s/%s %s" % (
+                    "mount -t nfs %s:/%s %s" % (
                                          sec_storage_ip,
                                          export_path,
                                          self.services["mount_dir"]
@@ -683,7 +683,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
 
             try:
                 cmds = [
-                        "mount %s/%s %s" % (
+                        "mount -t %s:/%s %s" % (
                                          sec_storage_ip,
                                          export_path,
                                          self.services["mount_dir"]
@@ -958,7 +958,7 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
             try:
                 # Login to Management server to check snapshot present on
                 # sec disk
-                ssh_client = remoteSSHClient.remoteSSHClient(
+                ssh_client = remoteSSHClient(
                                     self.services["mgmt_server"]["ipaddress"],
                                     self.services["mgmt_server"]["port"],
                                     self.services["mgmt_server"]["username"],
@@ -967,7 +967,7 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
 
                 cmds = [
                     "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s/%s %s" % (
+                    "mount -t nfs %s:/%s %s" % (
                                          sec_storage_ip,
                                          export_path,
                                          self.services["mount_dir"]
@@ -1207,7 +1207,7 @@ class TestSnapshotLimit(cloudstackTestCase):
             # Export path: export/test
             try:
                 # Login to VM to check snapshot present on sec disk
-                ssh_client = remoteSSHClient.remoteSSHClient(
+                ssh_client = remoteSSHClient(
                                     self.services["mgmt_server"]["ipaddress"],
                                     self.services["mgmt_server"]["port"],
                                     self.services["mgmt_server"]["username"],
@@ -1216,7 +1216,7 @@ class TestSnapshotLimit(cloudstackTestCase):
 
                 cmds = [
                     "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s/%s %s" % (
+                    "mount -t %s:/%s %s" % (
                                          sec_storage_ip,
                                          export_path,
                                          self.services["mount_dir"]
