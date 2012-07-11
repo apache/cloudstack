@@ -1307,11 +1307,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.debug("Releasing ip id=" + addrId + "; sourceNat = " + ip.isSourceNat());
         }
 
-        Network network = null;
         if (ip.getAssociatedWithNetworkId() != null) {
-            network = _networksDao.findById(ip.getAssociatedWithNetworkId());
-        }
-        if (network != null) {
+            Network network = _networksDao.findById(ip.getAssociatedWithNetworkId());
             try {
                 if (!applyIpAssociations(network, true)) {
                     s_logger.warn("Unable to apply ip address associations for " + network);
