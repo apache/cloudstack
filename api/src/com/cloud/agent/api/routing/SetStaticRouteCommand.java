@@ -36,6 +36,12 @@ public class SetStaticRouteCommand extends NetworkElementCommand{
         return staticRoutes;
     }
 
+    public boolean isEmpty() {
+        if(staticRoutes == null || staticRoutes.length == 0 ) {
+            return true;
+        }
+        return false;
+    }
     public String[][] generateSRouteRules() {
         String [][] result = new String [2][];
         Set<String> toAdd = new HashSet<String>();

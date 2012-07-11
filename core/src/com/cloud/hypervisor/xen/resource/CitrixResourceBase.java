@@ -7477,32 +7477,43 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     
     
     private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
-        String[] results = new String[cmd.getStaticRoutes().length];
         String callResult;
         Connection conn = getConnection();
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         try {
-            String [][] rules = cmd.generateSRouteRules();
-            StringBuilder sb = new StringBuilder();
-            String[] srRules = rules[0];
-            for (int i = 0; i < srRules.length; i++) {
-                sb.append(srRules[i]).append(',');
-            }
-            String args = "vpc_staticroute.sh " + routerIp;
-            args += " -a " + sb.toString();
-            callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
-            if (callResult == null || callResult.isEmpty()) {
-                //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
-                for (int i=0; i < results.length; i++) {
-                    results[i] = "Failed";
+            if ( !cmd.isEmpty() ) {
+                String[] results = new String[cmd.getStaticRoutes().length];
+                String [][] rules = cmd.generateSRouteRules();
+                StringBuilder sb = new StringBuilder();
+                String[] srRules = rules[0];
+                for (int i = 0; i < srRules.length; i++) {
+                    sb.append(srRules[i]).append(',');
                 }
-                return new SetStaticRouteAnswer(cmd, false, results);
+                String args = "vpc_staticroute.sh " + routerIp;
+                args += " -a " + sb.toString();
+                callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+                if (callResult == null || callResult.isEmpty()) {
+                    //FIXME - in the future we have to process each rule separately; now we temporarily set every rule to be false if single rule fails
+                    for (int i=0; i < results.length; i++) {
+                        results[i] = "Failed";
+                    }
+                    return new SetStaticRouteAnswer(cmd, false, results);
+                }
+                return new SetStaticRouteAnswer(cmd, true, results);
+            } else {
+                String args = "vpc_staticroute.sh " + routerIp;
+                args += " -a none";
+                callResult = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+                if (callResult == null || callResult.isEmpty()) {
+                    return new SetStaticRouteAnswer(cmd, false, null);
+                }
+                return new SetStaticRouteAnswer(cmd, true, null);
             }
-            return new SetStaticRouteAnswer(cmd, true, results);
+            
         } catch (Exception e) {
             String msg = "SetStaticRoute failed due to " + e.toString();
             s_logger.error(msg, e);
-            return new SetStaticRouteAnswer(cmd, false, results);
+            return new SetStaticRouteAnswer(cmd, false, null);
         }
     }
 }

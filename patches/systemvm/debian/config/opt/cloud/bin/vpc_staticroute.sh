@@ -60,6 +60,10 @@ restore_table() {
 
 static_route() {
   local rule=$1
+  if [ "$rule" == "none" ]
+  then
+    return 0
+  fi
   local ip=$(echo $rule | cut -d: -f1)
   local gateway=$(echo $rule | cut -d: -f2)
   local cidr=$(echo $rule | cut -d: -f3)
