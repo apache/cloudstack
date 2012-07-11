@@ -53,6 +53,9 @@ public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCm
     @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="list gateways by vpc")
     private Long vpcId;
     
+    @Parameter(name=ApiConstants.STATE, type=CommandType.STRING, description="list gateways by state")
+    private String state;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -72,6 +75,10 @@ public class ListPrivateGatewaysCmd extends BaseListProjectAndAccountResourcesCm
     
     public Long getId() {
         return id;
+    }
+    
+    public String getState() {
+        return state;
     }
 
     /////////////////////////////////////////////////////

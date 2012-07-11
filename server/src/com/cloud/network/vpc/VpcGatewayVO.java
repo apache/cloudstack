@@ -79,6 +79,10 @@ public class VpcGatewayVO implements VpcGateway{
     @Column(name = "domain_id")
     long domainId;
     
+    @Column(name="state")
+    @Enumerated(value=EnumType.STRING)
+    State state;
+    
     protected VpcGatewayVO(){
         this.uuid = UUID.randomUUID().toString();
     }
@@ -109,6 +113,7 @@ public class VpcGatewayVO implements VpcGateway{
         this.uuid = UUID.randomUUID().toString();
         this.accountId = accountId;
         this.domainId = domainId;
+        this.state = State.Creating;
     }
 
     @Override
@@ -176,5 +181,14 @@ public class VpcGatewayVO implements VpcGateway{
     @Override
     public long getDomainId() {
         return domainId;
+    }
+
+    @Override
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
     }
 }

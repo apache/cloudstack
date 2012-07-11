@@ -68,6 +68,9 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     @Param(description = "the domain associated with the private gateway")
     private String domainName;
     
+    @SerializedName(ApiConstants.STATE) @Param(description="State of the gateway, can be Creating, Ready, Deleting")
+    private String state;
+    
     
     public void setId(Long id) {
         this.id.setValue(id);
@@ -128,6 +131,10 @@ public class PrivateGatewayResponse extends BaseResponse implements ControlledEn
     @Override
     public void setProjectName(String projectName) {
         this.projectName = projectName;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 }
 

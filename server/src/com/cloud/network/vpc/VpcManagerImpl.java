@@ -1166,43 +1166,71 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
 
     @Override
+    @DB
     public PrivateGateway applyVpcPrivateGateway(Long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException {
-        PrivateGateway gateway = getVpcPrivateGateway(gatewayId);
-        if (getVpcElement().createPrivateGateway(gateway)) {
-            s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
-            return gateway;
-        } else {
-            s_logger.warn("Private gateway " + gateway + " failed to apply on the backend");
-            return null;
+        VpcGatewayVO vo = _vpcGatewayDao.acquireInLockTable(gatewayId);
+        if (vo == null) {
+            throw new ConcurrentOperationException("Unable to lock gateway " + gatewayId);
+        }
+        
+        try {
+            PrivateGateway gateway = getVpcPrivateGateway(gatewayId);
+            if (getVpcElement().createPrivateGateway(gateway)) {
+                s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
+                if (vo.getState() != VpcGateway.State.Ready) {
+                    vo.setState(VpcGateway.State.Ready);
+                    _vpcGatewayDao.update(vo.getId(), vo);
+                    s_logger.debug("Marke gateway " + gateway + " with state " + VpcGateway.State.Ready);
+                }
+                return getVpcPrivateGateway(gatewayId);
+            } else {
+                s_logger.warn("Private gateway " + gateway + " failed to apply on the backend");
+                return null;
+            }
+        } finally {
+            if (vo != null) {
+                _vpcGatewayDao.releaseFromLockTable(gatewayId);
+            }
         }
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_DELETE, eventDescription = "deleting private gateway")
+    @DB
     public boolean deleteVpcPrivateGateway(Long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException {
-        VpcGatewayVO gatewayVO = _vpcGatewayDao.findById(gatewayId);
+        VpcGatewayVO gatewayVO = _vpcGatewayDao.acquireInLockTable(gatewayId);
         if (gatewayVO == null || gatewayVO.getType() != VpcGateway.Type.Private) {
-            throw new InvalidParameterValueException("Can't find private gateway by id specified");
+            throw new ConcurrentOperationException("Unable to lock gateway " + gatewayId);
         }
         
-        //don't allow to remove gateway when there are static routes associated with it
-        long routeCount = _staticRouteDao.countRoutesByGateway(gatewayVO.getId());
-        if (routeCount > 0) {
-            throw new CloudRuntimeException("Can't delete private gateway " + gatewayVO + " as it has " + routeCount +
-                    " static routes applied. Remove the routes first");
-        }
-                
-        //1) delete the gateway on the backend
-        PrivateGateway gateway = getVpcPrivateGateway(gatewayId);
-        if (getVpcElement().deletePrivateGateway(gateway)) {
-            s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
-        } else {
-            s_logger.warn("Private gateway " + gateway + " failed to apply on the backend");
-            return false;
-        }
-        
-        //2) Delete private gateway from the DB
-        return deletePrivateGatewayFromTheDB(gateway);
+        try {
+            gatewayVO.setState(VpcGateway.State.Deleting);
+            _vpcGatewayDao.update(gatewayVO.getId(), gatewayVO);
+            s_logger.debug("Marked gateway " + gatewayVO + " with state " + VpcGateway.State.Deleting);
+            //don't allow to remove gateway when there are static routes associated with it
+            long routeCount = _staticRouteDao.countRoutesByGateway(gatewayVO.getId());
+            if (routeCount > 0) {
+                throw new CloudRuntimeException("Can't delete private gateway " + gatewayVO + " as it has " + routeCount +
+                        " static routes applied. Remove the routes first");
+            }
+                    
+            //1) delete the gateway on the backend
+            PrivateGateway gateway = getVpcPrivateGateway(gatewayId);
+            if (getVpcElement().deletePrivateGateway(gateway)) {
+                s_logger.debug("Private gateway " + gateway + " was applied succesfully on the backend");
+            } else {
+                s_logger.warn("Private gateway " + gateway + " failed to apply on the backend");
+                return false;
+            }
+            
+            //2) Delete private gateway from the DB
+            return deletePrivateGatewayFromTheDB(gateway);
+            
+        } finally {
+            if (gatewayVO != null) {
+                _vpcGatewayDao.releaseFromLockTable(gatewayId);
+            }
+        } 
     }
     
     @DB
@@ -1253,6 +1281,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         String accountName = cmd.getAccountName();
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
+        String state = cmd.getState();
         
         Filter searchFilter = new Filter(VpcGatewayVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, 
@@ -1281,6 +1310,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
         
         if (ipAddress != null) {
             sc.addAnd("ip4Address", Op.EQ, ipAddress);
+        }
+        
+        if (state != null) {
+            sc.addAnd("state", Op.EQ, state);
         }
         
         if (vpcId != null) {
@@ -1373,6 +1406,12 @@ public class VpcManagerImpl implements VpcManager, Manager{
         if (route == null) {
             throw new InvalidParameterValueException("Unable to find static route by id");
         }
+        
+        VpcGateway gateway = _vpcGatewayDao.findById(route.getVpcGatewayId());
+        
+        if (gateway.getState() != VpcGateway.State.Ready) {
+            throw new InvalidParameterValueException("Gateway is not in the " + VpcGateway.State.Ready + " state: " + gateway.getState());
+        }
 
         _accountMgr.checkAccess(caller, null, false, route);
 
@@ -1410,6 +1449,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
         VpcGateway gateway = _vpcGatewayDao.findById(gatewayId);
         if (gateway == null) {
             throw new InvalidParameterValueException("Invalid gateway id is given");
+        }
+        
+        if (gateway.getState() != VpcGateway.State.Ready) {
+            throw new InvalidParameterValueException("Gateway is not in the " + VpcGateway.State.Ready + " state: " + gateway.getState());
         }
         
         Vpc vpc = getActiveVpc(gateway.getVpcId());

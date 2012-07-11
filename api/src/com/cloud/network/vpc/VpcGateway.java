@@ -25,6 +25,12 @@ public interface VpcGateway extends Identity, ControlledEntity {
         Vpn
     }
     
+    public enum State {
+        Creating,
+        Ready,
+        Deleting
+    }
+    
     long getId();
 
     /**
@@ -66,4 +72,9 @@ public interface VpcGateway extends Identity, ControlledEntity {
      * @return
      */
     String getVlanTag();
+
+    /**
+     * @return
+     */
+    State getState();
 }

@@ -93,4 +93,9 @@ public class PrivateGatewayProfile implements PrivateGateway{
     public long getDomainId() {
         return vpcGateway.getDomainId();
     }
+
+    @Override
+    public State getState() {
+        return vpcGateway.getState();
+    }
 }
