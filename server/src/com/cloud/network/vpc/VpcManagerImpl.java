@@ -1170,7 +1170,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
         
         try {
-            gatewayVO.setState(VpcGateway.State.Deleting);
             _vpcGatewayDao.update(gatewayVO.getId(), gatewayVO);
             s_logger.debug("Marked gateway " + gatewayVO + " with state " + VpcGateway.State.Deleting);
             //don't allow to remove gateway when there are static routes associated with it
@@ -1179,7 +1178,9 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 throw new CloudRuntimeException("Can't delete private gateway " + gatewayVO + " as it has " + routeCount +
                         " static routes applied. Remove the routes first");
             }
-                    
+            
+            gatewayVO.setState(VpcGateway.State.Deleting);
+            
             //1) delete the gateway on the backend
             PrivateGateway gateway = getVpcPrivateGateway(gatewayId);
             if (getVpcElement().deletePrivateGateway(gateway)) {
@@ -1373,12 +1374,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
             throw new InvalidParameterValueException("Unable to find static route by id");
         }
         
-        VpcGateway gateway = _vpcGatewayDao.findById(route.getVpcGatewayId());
-        
-        if (gateway.getState() != VpcGateway.State.Ready) {
-            throw new InvalidParameterValueException("Gateway is not in the " + VpcGateway.State.Ready + " state: " + gateway.getState());
-        }
-
         _accountMgr.checkAccess(caller, null, false, route);
 
         markStaticRouteForRevoke(route, caller);
