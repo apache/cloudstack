@@ -2436,15 +2436,24 @@
                     headerFields: {
                       tier: {
                         label: 'Tier',
-                        select: function(args) {
-                          args.response.success({
-                            data: [
-                              { id: '', name: '', description: 'None' },
-                              { id: '1', name: 'tier1', description: 'tier1' },
-                              { id: '2', name: 'tier2', description: 'tier2' },
-                              { id: '3', name: 'tier3', description: 'tier3' }
-                            ]
-                          });
+                        select: function(args) {												  
+													if('vpc' in args.context) {													
+														$.ajax({
+															url: createURL("listNetworks"),															
+															data: {
+																vpcid: args.context.vpc[0].id,
+																listAll: true
+															},															
+															success: function(json) {					  
+																var networks = json.listnetworksresponse.network;	
+																var items = [];
+																$(networks).each(function(){																  
+																	items.push({id: this.id, description: this.displaytext});
+																});
+																args.response.success({ data: items });																
+															}
+														});	 
+													}	
                         }
                       }
                     },
@@ -2521,19 +2530,25 @@
                     },
                     add: {
                       label: 'label.add.vm',
-                      action: function(args) {
-                        var openFirewall = false;
-
+                      action: function(args) {                        
+												var data = $.extend(args.data, {
+													openfirewall: false,
+													ipaddressid: args.context.ipAddresses[0].id,
+													virtualmachineid: args.itemData[0].id
+												});									
+												if('vpc' in args.context) { //from VPC section
+												  if(args.data.tier == null) {													  
+														args.response.error('Tier is required');
+													  return;
+													}	
+                          $.extend(data, {
+                            networkid: args.data.tier		
+                          });	
+												}
+												
                         $.ajax({
                           url: createURL('createPortForwardingRule'),
-
-                          data: $.extend(args.data, {
-                            openfirewall: openFirewall,
-                            ipaddressid: args.context.ipAddresses[0].id,
-                            virtualmachineid: args.itemData[0].id
-                          }),
-                          dataType: 'json',
-                          async: true,
+                          data: data,                        
                           success: function(data) {
                             args.response.success({
                               _custom: {
@@ -2636,16 +2651,15 @@
                               }
                             });
                           });
-
-                          // Check if tiers are present; hide/show header drop-down
-                          var hasTiers = false;
-                          var $headerFields = $multi.find('.header-fields');
-
-                          if (hasTiers) {
-                            $headerFields.hide();
-                          } else {
-                            $headerFields.show();
-                          }
+                 													
+													// Check if tiers are present; hide/show header drop-down                     
+													var $headerFields = $multi.find('.header-fields');
+													if ('vpc' in args.context) {
+														$headerFields.show();
+													} 
+													else if('networks' in args.context){
+														$headerFields.hide();
+													}													
                         },
                         error: function(data) {
                           args.response.error(parseXMLHttpResponse(data));
