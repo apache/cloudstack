@@ -1491,7 +1491,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
         
         if (gatewayId != null) {
-            sc.addAnd("vpcGatewayId", Op.EQ, vpcId);
+            sc.addAnd("vpcGatewayId", Op.EQ, gatewayId);
         }
         
         return _staticRouteDao.search(sc, searchFilter);

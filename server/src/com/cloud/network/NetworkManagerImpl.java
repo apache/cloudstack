@@ -4446,8 +4446,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         // remote access vpn can be enabled only for static nat ip, so this part should never be executed under normal
         // conditions
-        // only when ip address failed to be cleaned up as a part of account destroy and was marked as Releasing, this
-// part of
+        // only when ip address failed to be cleaned up as a part of account destroy and was marked as Releasing, this part of
         // the code would be triggered
         s_logger.debug("Cleaning up remote access vpns as a part of public IP id=" + ipId + " release...");
         try {
