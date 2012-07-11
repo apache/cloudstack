@@ -1240,7 +1240,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         Network network = _networkDao.acquireInLockTable(guestNetwork.getId());
         if (network == null) {
             throw new ConcurrentOperationException("Unable to lock network " + guestNetwork.getId());
-        } 
+        }
 
         try {
             //Check if providers are supported in the physical networks

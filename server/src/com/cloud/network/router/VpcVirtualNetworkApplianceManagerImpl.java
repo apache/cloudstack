@@ -823,6 +823,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 createVpcAssociatePublicIPCommands(router, sourceNat, cmds);
             }
             
+            //add VPC router to guest networks
             for (Nic nic : guestNics.keySet()) {
                 //plug guest nic 
                 PlugNicCommand plugNicCmd = new PlugNicCommand(_itMgr.toVmTO(profile), getNicTO(router, nic.getNetworkId()));

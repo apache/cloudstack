@@ -2260,6 +2260,7 @@ CREATE TABLE `cloud`.`vpc_gateways` (
   `created` datetime COMMENT 'date created',
   `account_id` bigint unsigned NOT NULL COMMENT 'owner id',
   `domain_id` bigint unsigned NOT NULL COMMENT 'domain id',
+  `state` varchar(32) NOT NULL COMMENT 'what state the vpc gateway in',
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_vpc_gateways__network_id` FOREIGN KEY `fk_vpc_gateways__network_id`(`network_id`) REFERENCES `networks`(`id`),

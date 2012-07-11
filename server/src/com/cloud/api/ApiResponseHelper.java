@@ -3736,6 +3736,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         
         populateAccount(response, result.getAccountId());
         populateDomain(response, result.getDomainId());
+        response.setState(result.getState().toString());
         
         response.setObjectName("privategateway");
         
