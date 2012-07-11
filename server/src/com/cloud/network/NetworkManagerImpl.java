@@ -7358,8 +7358,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public NicProfile allocateAndPrepareNic(Network network, NicProfile requested, ReservationContext context,
-            VirtualMachineProfileImpl<VMInstanceVO> vmProfile)
+    public NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context,
+            VirtualMachineProfileImpl<VMInstanceVO> vmProfile, boolean prepare)
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, 
             ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         
@@ -7369,20 +7369,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Host host = _hostDao.findById(vm.getHostId()); 
         DeployDestination dest = new DeployDestination(dc, null, null, host);
         
-        NicProfile nic = null;
-        String broadcastUri = null;
-        if (requested != null && requested.getBroadCastUri() != null) {
-            broadcastUri = requested.getBroadCastUri().toString();
-            NicVO nicVO = _nicDao.findByInstanceIdNetworkIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri);
-            if (nicVO != null) {
-                nic = getNicProfile(vm, network.getId());
-            }
-        } else {
-            NicVO nicVO = _nicDao.findByInstanceIdAndNetworkId(network.getId(), vm.getId());
-            if (nicVO != null) {
-                nic = getNicProfile(vm, network.getId());
-            }
-        }
+        NicProfile nic = getNicProfileForVm(network, requested, vm);
         
         //1) allocate nic (if needed)
         if (nic == null) {
@@ -7396,16 +7383,32 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new CloudRuntimeException("Failed to allocate nic for vm " + vm + " in network " + network);
             }
             
-            s_logger.debug("Nic is allocated successfully for vm " + vm + " in network " + network);
-            
-            
-            
-            s_logger.debug("Nic is prepared successfully for vm " + vm + " in network " + network);
+            s_logger.debug("Nic is allocated successfully for vm " + vm + " in network " + network); 
         }
         
         //2) prepare nic
-        nic = prepareNic(vmProfile, dest, context, nic.getId(), networkVO);
+        if (prepare) {
+            nic = prepareNic(vmProfile, dest, context, nic.getId(), networkVO);
+            s_logger.debug("Nic is prepared successfully for vm " + vm + " in network " + network);
+        }
         
+        return nic;
+    }
+
+    private NicProfile getNicProfileForVm(Network network, NicProfile requested, VirtualMachine vm) {
+        NicProfile nic = null;
+        if (requested != null && requested.getBroadCastUri() != null) {
+            String broadcastUri = requested.getBroadCastUri().toString();
+            NicVO nicVO = _nicDao.findByInstanceIdNetworkIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri);
+            if (nicVO != null) {
+                nic = getNicProfile(vm, network.getId());
+            }
+        } else {
+            NicVO nicVO = _nicDao.findByInstanceIdAndNetworkId(network.getId(), vm.getId());
+            if (nicVO != null) {
+                nic = getNicProfile(vm, network.getId());
+            }
+        }
         return nic;
     }
 }

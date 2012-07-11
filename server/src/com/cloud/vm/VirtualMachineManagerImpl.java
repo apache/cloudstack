@@ -2458,26 +2458,36 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         Host host = _hostDao.findById(vm.getHostId()); 
         DeployDestination dest = new DeployDestination(dc, null, null, host);
         
-        //1) allocate and prepare nic
-        NicProfile nic = _networkMgr.allocateAndPrepareNic(network, requested, context, vmProfile);
-        
-        //2) Convert vmProfile to vmTO
-        HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
-        VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
-        
-        //3) Convert nicProfile to NicTO
-        NicTO nicTO = toNicTO(nic, vmProfile.getVirtualMachine().getHypervisorType());
-        
-        //4) plug the nic to the vm
-        VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
-        
-        s_logger.debug("Plugging nic for vm " + vm + " in network " + network);
-        if (vmGuru.plugNic(network, nicTO, vmTO, context, dest)) {
-            s_logger.debug("Nic is plugged successfully for vm " + vm + " in network " + network + ". Vm  is a part of network now");
-            return nic;
+        //check vm state
+        if (vm.getState() == State.Running) {
+            //1) allocate and prepare nic
+            NicProfile nic = _networkMgr.createNicForVm(network, requested, context, vmProfile, true);
+            
+            //2) Convert vmProfile to vmTO
+            HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
+            VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
+            
+            //3) Convert nicProfile to NicTO
+            NicTO nicTO = toNicTO(nic, vmProfile.getVirtualMachine().getHypervisorType());
+            
+            //4) plug the nic to the vm
+            VirtualMachineGuru<VMInstanceVO> vmGuru = getVmGuru(vmVO);
+            
+            s_logger.debug("Plugging nic for vm " + vm + " in network " + network);
+            if (vmGuru.plugNic(network, nicTO, vmTO, context, dest)) {
+                s_logger.debug("Nic is plugged successfully for vm " + vm + " in network " + network + ". Vm  is a part of network now");
+                return nic;
+            } else {
+                s_logger.warn("Failed to plug nic to the vm " + vm + " in network " + network);
+                return null;
+            }
+        } else if (vm.getState() == State.Stopped) {
+            //1) allocate nic
+            return _networkMgr.createNicForVm(network, requested, context, vmProfile, false);
         } else {
-            s_logger.warn("Failed to plug nic to the vm " + vm + " in network " + network);
-            return null;
+            s_logger.warn("Unable to add vm " + vm + " to network  " + network);
+            throw new ResourceUnavailableException("Unable to add vm " + vm + " to network, is not in the right state",
+                    DataCenter.class, vm.getDataCenterIdToDeployIn());
         }
     }
 
@@ -2506,7 +2516,14 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getVirtualMachine().getHypervisorType());
         VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
         
-        Nic nic = _networkMgr.getNicInNetwork(vm.getId(), network.getId());
+        Nic nic = null;
+        
+        if (broadcastUri != null) {
+            nic = _nicsDao.findByInstanceIdNetworkIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri.getHost());
+        } else {
+            nic = _networkMgr.getNicInNetwork(vm.getId(), network.getId());
+        }
+        
         NicProfile nicProfile = new NicProfile(nic, network, nic.getBroadcastUri(), nic.getIsolationUri(), 
                 _networkMgr.getNetworkRate(network.getId(), vm.getId()), 
                 _networkMgr.isSecurityGroupSupportedInNetwork(network), 

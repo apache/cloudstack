@@ -419,9 +419,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 throw new AgentUnavailableException("Unable to plug nic for router " + vm.getHostName() + " in network " + network,
                         dest.getHost().getId(), e);
             }
-        } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
-            s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + 
-                    ", so not sending PlugNic command to the backend");
         } else {
             s_logger.warn("Unable to apply PlugNic, vm " + router + " is not in the right state " + router.getState());
             
@@ -472,22 +469,30 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     protected boolean setupVpcGuestNetwork(Network network, VirtualRouter router, boolean add, NicProfile guestNic) 
             throws ConcurrentOperationException, ResourceUnavailableException{
 
-        boolean result = true;
-        
-        SetupGuestNetworkCommand setupCmd = createSetupGuestNetworkCommand(router, add, guestNic);   
+        boolean result = true;  
+        if (router.getState() == State.Running) {
+            SetupGuestNetworkCommand setupCmd = createSetupGuestNetworkCommand(router, add, guestNic);   
 
-        Commands cmds = new Commands(OnError.Stop);
-        cmds.addCommand("setupguestnetwork", setupCmd);
-        sendCommandsToRouter(router, cmds);
-        
-        SetupGuestNetworkAnswer setupAnswer = cmds.getAnswer(SetupGuestNetworkAnswer.class);
-        String setup = add ? "set" : "destroy";
-        if (!(setupAnswer != null && setupAnswer.getResult())) {
-            s_logger.warn("Unable to " + setup + " guest network on router " + router);
-            result = false;
-        } 
-        
-        return result;
+            Commands cmds = new Commands(OnError.Stop);
+            cmds.addCommand("setupguestnetwork", setupCmd);
+            sendCommandsToRouter(router, cmds);
+            
+            SetupGuestNetworkAnswer setupAnswer = cmds.getAnswer(SetupGuestNetworkAnswer.class);
+            String setup = add ? "set" : "destroy";
+            if (!(setupAnswer != null && setupAnswer.getResult())) {
+                s_logger.warn("Unable to " + setup + " guest network on router " + router);
+                result = false;
+            }
+            return result;
+        } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
+            s_logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + 
+                    ", so not sending setup guest network command to the backend");
+            return true;
+        } else {
+            s_logger.warn("Unable to setup guest network on virtual router " + router + " is not in the right state " + router.getState());
+            throw new ResourceUnavailableException("Unable to setup guest network on the backend," +
+                    " virtual router " + router + " is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+        }
     }
 
     protected SetupGuestNetworkCommand createSetupGuestNetworkCommand(VirtualRouter router, boolean add, NicProfile guestNic) {
@@ -511,7 +516,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         String networkDomain = network.getNetworkDomain();
         String dhcpRange = getGuestDhcpRange(guestNic, network, _configMgr.getZone(network.getDataCenterId()));
         
-        VirtualMachine vm = _vmDao.findById(router.getId());
         NicProfile nicProfile = _networkMgr.getNicProfile(router, nic.getNetworkId());
 
         SetupGuestNetworkCommand setupCmd = new SetupGuestNetworkCommand(dhcpRange, networkDomain, false, null, 
@@ -957,9 +961,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     protected boolean setupVpcPrivateNetwork(VirtualRouter router, boolean add, NicProfile privateNic) 
             throws ResourceUnavailableException {
         
-        
         if (router.getState() == State.Running) {
-            
             PrivateIpVO ipVO = _privateIpDao.findByIpAndSourceNetworkId(privateNic.getNetworkId(), privateNic.getIp4Address());
             Network network = _networkDao.findById(privateNic.getNetworkId());
             String vlanTag = network.getBroadcastUri().getHost();
