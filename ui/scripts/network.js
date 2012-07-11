@@ -783,15 +783,23 @@
                       context: context,
                       listView: $.extend(true, {}, cloudStack.sections.instances, {
                         listView: {
-                          dataProvider: function(args) {
-                            $.ajax({
+                          dataProvider: function(args) {                           
+														var networkid;
+														if('vpc' in args.context) 
+															networkid = args.context.multiData.tier;														
+														else 
+															networkid = args.context.ipAddresses[0].associatednetworkid;
+														
+														var data = {
+															page: args.page,
+															pageSize: pageSize,
+															networkid: networkid,
+															listAll: true
+														};
+														
+														$.ajax({
                               url: createURL('listVirtualMachines'),
-                              data: {
-                                page: args.page,
-                                pageSize: pageSize,
-                                networkid: args.context.networks[0].id,
-                                listAll: true
-                              },
+                              data: data,
                               dataType: 'json',
                               async: true,
                               success: function(data) {
@@ -2465,11 +2473,17 @@
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
                         dataProvider: function(args) {
-                          var data = {
+                          var networkid;
+													if('vpc' in args.context) 
+													  networkid = args.context.multiData.tier;													
+													else 
+													  networkid = args.context.ipAddresses[0].associatednetworkid;													
+													
+													var data = {
                             page: args.page,
                             pageSize: pageSize,
                             listAll: true,
-                            networkid: args.context.ipAddresses[0].associatednetworkid
+                            networkid: networkid
                           };
 
                           if (!args.context.projects) {
