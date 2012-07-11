@@ -28,6 +28,7 @@ import com.cloud.network.RouterNetworkVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.dao.NetworkOfferingDaoImpl;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
@@ -53,6 +54,7 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     HostDaoImpl _hostsDao = ComponentLocator.inject(HostDaoImpl.class);
     RouterNetworkDaoImpl _routerNetworkDao = ComponentLocator.inject(RouterNetworkDaoImpl.class);
     UserStatisticsDaoImpl _userStatsDao = ComponentLocator.inject(UserStatisticsDaoImpl.class);
+    NetworkOfferingDaoImpl _offDao = ComponentLocator.inject(NetworkOfferingDaoImpl.class);
     protected final SearchBuilder<DomainRouterVO> VpcSearch;
     
     protected DomainRouterDaoImpl() {
@@ -281,22 +283,24 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     @Override
     @DB
     public void addRouterToGuestNetwork(VirtualRouter router, Network guestNetwork) {
-        if (_routerNetworkDao.findByRouterAndNetwork(router.getId(), guestNetwork.getId()) == null && 
-                !guestNetwork.getName().equalsIgnoreCase(NetworkOffering.SystemPrivateGatewayNetworkOffering)) {
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
-            //1) add router to network
-            RouterNetworkVO routerNtwkMap = new RouterNetworkVO(router.getId(), guestNetwork.getId(), guestNetwork.getGuestType());
-            _routerNetworkDao.persist(routerNtwkMap);
-            //2) create user stats entry for the network
-            UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn(), 
-                    guestNetwork.getId(), null, router.getId(), router.getType().toString());
-            if (stats == null) {
-                stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), null, router.getId(),
-                        router.getType().toString(), guestNetwork.getId());
-                _userStatsDao.persist(stats);
+        if (_routerNetworkDao.findByRouterAndNetwork(router.getId(), guestNetwork.getId()) == null) {
+            NetworkOffering off = _offDao.findById(guestNetwork.getNetworkOfferingId());
+            if (!(off.getName().equalsIgnoreCase(NetworkOffering.SystemPrivateGatewayNetworkOffering))) {
+                Transaction txn = Transaction.currentTxn();
+                txn.start();
+                //1) add router to network
+                RouterNetworkVO routerNtwkMap = new RouterNetworkVO(router.getId(), guestNetwork.getId(), guestNetwork.getGuestType());
+                _routerNetworkDao.persist(routerNtwkMap);
+                //2) create user stats entry for the network
+                UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn(), 
+                        guestNetwork.getId(), null, router.getId(), router.getType().toString());
+                if (stats == null) {
+                    stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), null, router.getId(),
+                            router.getType().toString(), guestNetwork.getId());
+                    _userStatsDao.persist(stats);
+                }
+                txn.commit();
             }
-            txn.commit();
         }  
     }
     
