@@ -1477,7 +1477,7 @@ class TestResources(cloudstackTestCase):
         sec_storages = Host.list(
                           self.apiclient,
                           zoneid=self.zone.id,
-                          type='SecondaryStorage',
+                          type='SecondaryStorageVM',
               listall=True
                           )
         self.assertEqual(
