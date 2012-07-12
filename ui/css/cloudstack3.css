@@ -1671,6 +1671,35 @@ div.detail-group.actions td {
   height: 26px;
 }
 
+.detail-group table td.detail-actions .action.text {
+  padding: 4px 6px 4px 7px;
+  cursor: pointer;
+  display: inline-block;
+  border: 1px solid #C2C2C2;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  background: url(../images/bg-gradients.png) repeat-x 0px -83px;
+}
+
+.detail-group table td.detail-actions .action.text .label {
+  font-size: 12px;
+  /*+placement:shift -1px 8px;*/
+  position: relative;
+  left: -1px;
+  top: 8px;
+}
+
+.detail-group table td.detail-actions .action.text:hover {
+  /*+box-shadow:inset 0px 1px 3px #171717;*/
+  -moz-box-shadow: inset 0px 1px 3px #171717;
+  -webkit-box-shadow: inset 0px 1px 3px #171717;
+  -o-box-shadow: inset 0px 1px 3px #171717;
+  box-shadow: inset 0px 1px 3px #171717;
+}
+
 .detail-group table td.detail-actions div.buttons {
   /*+placement:shift 6px 0px;*/
   position: relative;
