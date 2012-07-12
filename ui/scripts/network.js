@@ -3488,6 +3488,7 @@
             },
             editVpc: {
               label: 'Edit VPC',
+              textLabel: 'label.configure',
               action: {
                 custom: cloudStack.uiCustom.vpc(cloudStack.vpc)
               }
