@@ -26,7 +26,18 @@
         async: false,
         success: function(json) {
           zoneObjs = json.listzonesresponse.zone;
-          args.response.success({ data: {zones: zoneObjs}});
+										
+					var items;
+					if(args.initArgs.pluginForm != null && args.initArgs.pluginForm.name == "vpcTierInstanceWizard") { //from VPC Tier chart
+					  items = $.grep(zoneObjs, function(zoneObj) {						  
+							return zoneObj.networktype == 'Advanced';
+						});
+					}
+			    else { //from Instance page 
+            items = zoneObjs;
+          }		         			
+					
+          args.response.success({ data: {zones: items}});
         }
       });
     },
