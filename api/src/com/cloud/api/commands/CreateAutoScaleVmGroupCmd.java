@@ -175,8 +175,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
         AutoScaleVmGroup vmGroup = null;
         try
         {
-            success = true; // Temporary, till we call configure.
-            //            success = _lbService.configureAutoScaleVmGroup(this);
+            //            success = _autoScaleService.configureAutoScaleVmGroup(this);
             vmGroup = _entityMgr.findById(AutoScaleVmGroup.class, getEntityId());
             AutoScaleVmGroupResponse responseObject = _responseGenerator.createAutoScaleVmGroupResponse(vmGroup);
             setResponseObject(responseObject);

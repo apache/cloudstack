@@ -51,6 +51,9 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.MAX_MEMBERS, type = CommandType.INTEGER, required = true, description = "the maximum number of members in the vmgroup, The number of instances in the vm group will be equal to or less than this number.")
     private int maxMembers;
 
+    @Parameter(name=ApiConstants.INTERVAL, type=CommandType.INTEGER, description="the frequency at which the conditions have to be evaluated")
+    private Integer interval;
+
     @IdentityMapper(entityTableName = "autoscale_policies")
     @Parameter(name = ApiConstants.SCALEUP_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, description = "list of provision autoscale policies")
     private List<Long> scaleUpPolicyIds;
@@ -96,6 +99,10 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
         return maxMembers;
     }
 
+    public Integer getInterval() {
+        return interval;
+    }
+
     public List<Long> getScaleUpPolicyIds() {
         return scaleUpPolicyIds;
     }
@@ -133,5 +140,4 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
     public AsyncJob.Type getInstanceType() {
         return AsyncJob.Type.AutoScaleVmGroup;
     }
-
 }

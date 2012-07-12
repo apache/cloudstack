@@ -2412,7 +2412,6 @@ CREATE TABLE `cloud`.`autoscale_vmgroups` (
   `interval` int unsigned NOT NULL,
   `profile_id` bigint unsigned NOT NULL,
   `state` varchar(255) NOT NULL COMMENT 'enabled or disabled, a vmgroup is disabled to stop autoscaling activity',
-  `revoke` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 is when a condition needs to be disassociated with a policy',
   `created` datetime NOT NULL COMMENT 'date created',
   `removed` datetime COMMENT 'date removed if not null',
   PRIMARY KEY  (`id`),
@@ -2428,7 +2427,6 @@ CREATE TABLE `cloud`.`autoscale_policy_condition_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `policy_id` bigint unsigned NOT NULL,
   `condition_id` bigint unsigned NOT NULL,
-  `revoke` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 is when a condition needs to be disassociated with a policy',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_autoscale_policy_condition_map__policy_id` FOREIGN KEY `fk_autoscale_policy_condition_map__policy_id` (`policy_id`) REFERENCES `autoscale_policies` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_autoscale_policy_condition_map__condition_id` FOREIGN KEY `fk_autoscale_policy_condition_map__condition_id` (`condition_id`) REFERENCES `conditions` (`id`)
@@ -2438,7 +2436,6 @@ CREATE TABLE `cloud`.`autoscale_vmgroup_policy_map` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vmgroup_id` bigint unsigned NOT NULL,
   `policy_id` bigint unsigned NOT NULL,
-  `revoke` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT '1 is when a policy needs to be disassociated with a vmgroup',
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_autoscale_vmgroup_policy_map__vmgroup_id` FOREIGN KEY `fk_autoscale_vmgroup_policy_map__vmgroup_id` (`vmgroup_id`) REFERENCES `autoscale_vmgroups` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_autoscale_vmgroup_policy_map__policy_id` FOREIGN KEY `fk_autoscale_vmgroup_policy_map__policy_id` (`policy_id`) REFERENCES `autoscale_policies` (`id`)

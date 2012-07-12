@@ -50,7 +50,7 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup {
     private long accountId;
 
     @Column(name = "load_balancer_id")
-    private long loadBalancerId;
+    private Long loadBalancerId;
 
     @Column(name = "min_members", updatable = true)
     private int minMembers;
@@ -72,9 +72,6 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup {
 
     @Column(name = GenericDao.CREATED_COLUMN)
     protected Date created;
-
-    @Column(name = "revoke")
-    private boolean revoke = false;
 
     @Column(name = "state")
     private String state;
@@ -122,7 +119,7 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup {
     }
 
     @Override
-    public long getLoadBalancerId() {
+    public Long getLoadBalancerId() {
         return loadBalancerId;
     }
 
@@ -160,15 +157,6 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup {
     }
 
     @Override
-    public boolean isRevoke() {
-        return false;
-    }
-
-    public void setRevoke(boolean revoke) {
-        this.revoke = revoke;
-    }
-
-    @Override
     public String getState() {
         return state;
     }
@@ -184,4 +172,9 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup {
     public void setMaxMembers(int maxMembers) {
         this.maxMembers = maxMembers;
     }
+
+    public void setInterval(Integer interval) {
+        this.interval = interval;
+    }
+
 }

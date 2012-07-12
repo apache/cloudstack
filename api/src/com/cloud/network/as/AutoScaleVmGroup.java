@@ -25,16 +25,17 @@ import com.cloud.acl.ControlledEntity;
 
 public interface AutoScaleVmGroup extends ControlledEntity {
 
-    static enum Operator {
-        EQ, GT, LT, GE, LE
-    };
+    String State_New = "new";
+    String State_Revoke = "revoke";
+    String State_Enabled = "enabled";
+    String State_Disabled = "disabled";
 
     long getId();
 
     @Override
     long getAccountId();
 
-    long getLoadBalancerId();
+    Long getLoadBalancerId();
 
     long getProfileId();
 
@@ -45,8 +46,6 @@ public interface AutoScaleVmGroup extends ControlledEntity {
     int getMemberPort();
 
     int getInterval();
-
-    boolean isRevoke();
 
     String getState();
 

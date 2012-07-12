@@ -3826,6 +3826,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setId(vmGroup.getId());
         response.setMinMembers(vmGroup.getMinMembers());
         response.setMaxMembers(vmGroup.getMaxMembers());
+        response.setState(vmGroup.getState());
         response.setInterval(vmGroup.getInterval());
         response.setProfileId(vmGroup.getProfileId());
         response.setLoadBalancerId(vmGroup.getProfileId());

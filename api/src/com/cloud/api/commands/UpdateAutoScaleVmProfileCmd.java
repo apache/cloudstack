@@ -43,12 +43,12 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName = "autoscale_vmgroups")
+    @IdentityMapper(entityTableName = "autoscale_vmprofiles")
     @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the ID of the autoscale vm profile")
     private Long id;
 
     @IdentityMapper(entityTableName = "vm_template")
-    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.LONG, required = true, description = "the template of the auto deployed virtual machine")
+    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.LONG, description = "the template of the auto deployed virtual machine")
     private Long templateId;
 
     @Parameter(name = ApiConstants.OTHER_DEPLOY_PARAMS, type = CommandType.STRING, description = "parameters other than zoneId/serviceOfferringId/templateId of the auto deployed virtual machine")
