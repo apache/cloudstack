@@ -2144,7 +2144,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     networkId = network.getId();
                 }
             } else if (network.getGuestType() == null || network.getGuestType() == Network.GuestType.Isolated) {
-                throw new InvalidParameterValueException("Can't create direct vlan for network id=" + networkId + " with type: " + network.getGuestType());
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(network, networkId, "networkId"));
+                throw new InvalidParameterValueException("Can't create direct vlan for network with specified id, with type: " + network.getGuestType(), idList);
             }
         }
 
@@ -2259,7 +2261,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 throw new InvalidParameterValueException("Please specify a valid pod.", null);
             }
             if (pod.getDataCenterId() != zoneId) {
-                throw new InvalidParameterValueException("Pod id=" + podId + " doesn't belong to zone id=" + zoneId);
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(pod, podId, "podId"));
+                idList.add(new IdentityProxy(zone, zoneId, "zoneId"));
+                throw new InvalidParameterValueException("Pod with specified podId doesn't belong to zone with specified zoneId", idList);
             }
             //pod vlans can be created in basic zone only
             if (zone.getNetworkType() != NetworkType.Basic || network.getTrafficType() != TrafficType.Guest) {
@@ -2372,7 +2377,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             boolean vlansUntaggedAndVirtual = (vlanId.equals(Vlan.UNTAGGED) && vlanId.equals(vlan.getVlanTag()) && forVirtualNetwork && vlan.getVlanType() == VlanType.VirtualNetwork);
 
             if (vlansUntaggedAndVirtual && !newVlanSubnet.equals(otherVlanSubnet)) {
-                throw new InvalidParameterValueException("The Untagged ip range with different subnet already exists in zone " + zone.getId());
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(zone, zone.getId(), "zoneId"));
+                throw new InvalidParameterValueException("The Untagged ip range with different subnet already exists in zone with specified zoneId", idList);
             }
 
             if (vlanId.equals(vlan.getVlanTag()) && newVlanSubnet.equals(otherVlanSubnet)) {
@@ -2390,7 +2397,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         // Check if a guest VLAN is using the same tag
         if (_zoneDao.findVnet(zoneId, physicalNetworkId, vlanId).size() > 0) {
-            throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for the guest network in zone " + zone.getName());
+            throw new InvalidParameterValueException("The VLAN tag " + vlanId + " is already being used for the guest network in zone " + zone.getName(), null);
         }
 
         // For untagged vlan check if vlan per pod already exists. If yes,
@@ -2400,9 +2407,19 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             if (podVlans != null && !podVlans.isEmpty()) {
                 VlanVO podVlan = podVlans.get(0);
                 if (!podVlan.getVlanNetmask().equals(vlanNetmask)) {
-                    throw new InvalidParameterValueException("Vlan netmask is different from the netmask of Untagged vlan id=" + podVlan.getId() + " existing in the pod " + podId);
+                    List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                    idList.add(new IdentityProxy(podVlan, podVlan.getId(), "vlanId"));
+                    Pod pod = _podDao.findById(podId);
+                    idList.add(new IdentityProxy(pod, podId, "podId"));
+                    throw new InvalidParameterValueException("Vlan netmask is different from the netmask of Untagged vlan with specified vlanId " +
+                            "existing in the pod with specified podId", idList);
                 } else if (!podVlan.getVlanGateway().equals(vlanGateway)) {
-                    throw new InvalidParameterValueException("Vlan gateway is different from the gateway of Untagged vlan id=" + podVlan.getId() + " existing in the pod " + podId);
+                    List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                    idList.add(new IdentityProxy(podVlan, podVlan.getId(), "vlanId"));
+                    Pod pod = _podDao.findById(podId);
+                    idList.add(new IdentityProxy(pod, podId, "podId"));
+                    throw new InvalidParameterValueException("Vlan gateway is different from the gateway of Untagged vlan with specified vlanId " +
+                            "existing in the pod with specified podId", idList);
                 }
             }
         }
@@ -2473,19 +2490,30 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
                     for (IPAddressVO ip : ips) {
                         if (ip.isOneToOneNat()) {
-                            throw new InvalidParameterValueException("Can't delete account specific vlan " + vlanDbId + 
-                                    " as ip " + ip + " belonging to the range is used for static nat purposes. Cleanup the rules first");
+                            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                            idList.add(new IdentityProxy(ip, ip.getId(), "ipId"));
+                            idList.add(new IdentityProxy(vlan, vlanDbId, "vlanId"));
+                            throw new InvalidParameterValueException("Can't delete account specific vlan with specified id" +
+                                    " as ip with specified id belonging to the range is used for static nat purposes. Cleanup the rules first", idList);
                         }
 
                         if (ip.isSourceNat() && _networkMgr.getNetwork(ip.getAssociatedWithNetworkId()) != null) {
-                            throw new InvalidParameterValueException("Can't delete account specific vlan " + vlanDbId + 
-                                    " as ip " + ip + " belonging to the range is a source nat ip for the network id=" + ip.getSourceNetworkId() + 
-                                    ". IP range with the source nat ip address can be removed either as a part of Network, or account removal");
+                            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                            idList.add(new IdentityProxy(ip, ip.getId(), "ipId"));
+                            idList.add(new IdentityProxy(vlan, vlanDbId, "vlanId"));
+                            idList.add(new IdentityProxy("network", ip.getSourceNetworkId(), "networkId")); 
+                            throw new InvalidParameterValueException("Can't delete account specific vlan with specified id" +
+                                    " as ip with specified id belonging to the range is a source nat ip for the network with" +
+                                    " specified id. IP range with the source nat ip address can be removed either as a part of" +
+                                    " Network, or account removal", idList);
                         }
 
                         if (_firewallDao.countRulesByIpId(ip.getId()) > 0) {
-                            throw new InvalidParameterValueException("Can't delete account specific vlan " + vlanDbId + 
-                                    " as ip " + ip + " belonging to the range has firewall rules applied. Cleanup the rules first");
+                            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                            idList.add(new IdentityProxy(ip, ip.getId(), "ipId"));
+                            idList.add(new IdentityProxy(vlan, vlanDbId, "vlanId"));
+                            throw new InvalidParameterValueException("Can't delete account specific vlan with specified vlanId" +
+                                    " as ip with specified ipId belonging to the range has firewall rules applied. Cleanup the rules first", idList);
                         }
                         //release public ip address here
                         success = success && _networkMgr.disassociatePublicIpAddress(ip.getId(), userId, caller);
@@ -2937,7 +2965,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 throw new InvalidParameterValueException("Cannot find specified service offering by id", null);
             }
             if (!VirtualMachine.Type.DomainRouter.toString().equalsIgnoreCase(offering.getSystemVmType())) {
-                throw new InvalidParameterValueException("The specified service offering " + serviceOfferingId + " cannot be used by virtual router!");
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(offering, serviceOfferingId, "offeringId"));
+                throw new InvalidParameterValueException("The service offering with specified id cannot be used by virtual router!", idList);
             }
         }
 
@@ -3174,8 +3204,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             // only one network offering in the system can be Required
             List<NetworkOfferingVO> offerings = _networkOfferingDao.listByAvailability(Availability.Required, false);
             if (!offerings.isEmpty()) {
-                throw new InvalidParameterValueException("System already has network offering id=" + offerings.get(0).getId() 
-                        + " with availability " + Availability.Required);
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(offerings.get(0), offerings.get(0).getId(), "networkOfferingId"));
+                throw new InvalidParameterValueException("System already has network offering of specified id " + 
+                        " with availability " + Availability.Required, idList);
             }
         }
 
@@ -3509,8 +3541,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         // though)
         int networkCount = _networkDao.getNetworkCountByNetworkOffId(offeringId);
         if (networkCount > 0) {
-            throw new InvalidParameterValueException("Can't delete network offering " + offeringId + " as its used by " + networkCount + " networks. " +
-                    "To make the network offering unavaiable, disable it");
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(offering, offeringId, "networkOfferingId"));
+            throw new InvalidParameterValueException("Can't delete network offering with specified id as its used by " +
+                    networkCount + " networks. To make the network offering unavaiable, disable it", idList);
         }
 
         if (_networkOfferingDao.remove(offeringId)) {
@@ -3593,8 +3627,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                     // only one network offering in the system can be Required
                     List<NetworkOfferingVO> offerings = _networkOfferingDao.listByAvailability(Availability.Required, false);
                     if (!offerings.isEmpty() && offerings.get(0).getId() != offeringToUpdate.getId()) {
-                        throw new InvalidParameterValueException("System already has network offering id=" + 
-                                offerings.get(0).getId() + " with availability " + Availability.Required);
+                        List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                        idList.add(new IdentityProxy(offerings.get(0), offerings.get(0).getId(), "networkOfferingId"));
+                        throw new InvalidParameterValueException("System already has network offering with specified id" + 
+                                " with availability " + Availability.Required, idList);
                     }
                 }
                 offering.setAvailability(availability);
@@ -3617,7 +3653,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         Account account = _accountDao.findEnabledAccount(accountName, domainId);
         if (account == null) {
             s_logger.error("Unable to find account by name: " + accountName + " in domain " + domainId);
-            throw new InvalidParameterValueException("Account by name: " + accountName + " doesn't exist in domain " + domainId);
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy("domain", domainId, "domainId"));
+            throw new InvalidParameterValueException("Account by name: " + accountName + " doesn't exist in domain with specified id", idList);
         }
 
         // Don't allow modification of system account
