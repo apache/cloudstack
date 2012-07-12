@@ -79,6 +79,9 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
 
     @Parameter(name=ApiConstants.CAN_USE_FOR_DEPLOY, type=CommandType.BOOLEAN, description="list networks available for vm deployment")
     private Boolean canUseForDeploy;
+    
+    @Parameter(name=ApiConstants.FOR_VPC, type=CommandType.BOOLEAN, description="the network belongs to vpc")
+    private Boolean forVpc;
    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -130,6 +133,10 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
 	
 	public Boolean canUseForDeploy() {
         return canUseForDeploy;
+    }
+	
+    public Boolean getForVpc() {
+        return forVpc;
     }
 
     /////////////////////////////////////////////////////
