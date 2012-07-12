@@ -3101,6 +3101,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Long vpcId = cmd.getVpcId();
         Boolean canUseForDeploy = cmd.canUseForDeploy();
         Map<String, String> tags = cmd.getTags();
+        Boolean forVpc = cmd.getForVpc();
 
         // 1) default is system to false if not specified
         // 2) reset parameter to false if it's specified by the regular user
@@ -3171,6 +3172,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         Filter searchFilter = new Filter(NetworkVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<NetworkVO> sb = _networksDao.createSearchBuilder();
+        
+        if (forVpc != null) {
+            if (forVpc) {
+                sb.and("vpc", sb.entity().getVpcId(), Op.NNULL);
+            } else {
+                sb.and("vpc", sb.entity().getVpcId(), Op.NULL);
+            }
+        }
 
         // Don't display networks created of system network offerings
         SearchBuilder<NetworkOfferingVO> networkOfferingSearch = _networkOfferingDao.createSearchBuilder();
