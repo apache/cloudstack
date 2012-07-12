@@ -2470,14 +2470,24 @@
                     headerFields: {
                       tier: {
                         label: 'Tier',
-                        select: function(args) {												  
-													if('vpc' in args.context) {													
+                        select: function(args) {
+													if('vpc' in args.context) {		
+                            var data = {
+														  listAll: true
+														};
+														if(args.context.ipAddresses[0].associatednetworkid == null) {
+														  $.extend(data, {
+															  vpcid: args.context.vpc[0].id
+															});
+														}
+														else {
+														  $.extend(data, {
+															  id: args.context.ipAddresses[0].associatednetworkid
+															});
+														}													
 														$.ajax({
 															url: createURL("listNetworks"),															
-															data: {
-																vpcid: args.context.vpc[0].id,
-																listAll: true
-															},															
+															data: data,															
 															success: function(json) {					  
 																var networks = json.listnetworksresponse.network;	
 																var items = [];
@@ -2570,22 +2580,32 @@
                     },
                     add: {
                       label: 'label.add.vm',
-                      action: function(args) {                        
-												var data = $.extend(args.data, {
-													openfirewall: false,
-													ipaddressid: args.context.ipAddresses[0].id,
-													virtualmachineid: args.itemData[0].id
-												});									
+                      action: function(args) {  
+												var data = {
+												  ipaddressid: args.context.ipAddresses[0].id,
+												  privateport: args.data.privateport,
+													publicport: args.data.publicport,
+													protocol: args.data.protocol,		
+													virtualmachineid: args.itemData[0].id,
+                          openfirewall: false													
+												};	
+													
+                        //debugger;													
 												if('vpc' in args.context) { //from VPC section
 												  if(args.data.tier == null) {													  
 														args.response.error('Tier is required');
 													  return;
-													}	
+													}			
                           $.extend(data, {
                             networkid: args.data.tier		
                           });	
 												}
-												
+												else {  //from Guest Network section
+												  $.extend(data, {
+                            networkid: args.context.networks[0].id
+                          });	
+												}
+												//debugger;
                         $.ajax({
                           url: createURL('createPortForwardingRule'),
                           data: data,                        
@@ -2695,11 +2715,14 @@
 													// Check if tiers are present; hide/show header drop-down                     
 													var $headerFields = $multi.find('.header-fields');													
 													if ('vpc' in args.context) {
-													  if(args.context.ipAddresses[0].associatednetworkid == null) {
-														  $headerFields.show();
+													   $headerFields.show();
+													  if(args.context.ipAddresses[0].associatednetworkid == null) {														  
+															//$headerFields.find("select").removeAttr("disabled");
+															$headerFields.show();
 														}
-														else {
-														  $headerFields.hide();
+														else {								
+															//$headerFields.find("select").attr("disabled", true);
+															$headerFields.hide();
 														}
 													} 
 													else if('networks' in args.context){
