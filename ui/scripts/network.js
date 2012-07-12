@@ -2608,8 +2608,7 @@
 													virtualmachineid: args.itemData[0].id,
                           openfirewall: false													
 												};	
-													
-                        //debugger;													
+													                        								
 												if('vpc' in args.context) { //from VPC section
 												  if(args.data.tier == null) {													  
 														args.response.error('Tier is required');
@@ -2624,7 +2623,7 @@
                             networkid: args.context.networks[0].id
                           });	
 												}
-												//debugger;
+											
                         $.ajax({
                           url: createURL('createPortForwardingRule'),
                           data: data,                        
@@ -3548,6 +3547,40 @@
                 },
                 messages: { notification: function() { return ''; } }
               },
+							
+							edit: {
+                label: 'label.edit',
+                action: function(args) {            
+                  $.ajax({
+                    url: createURL('updateVPC'),
+                    data: {
+										  id: args.context.vpc[0].id,
+											name: args.data.name,
+											displaytext: args.data.displaytext
+										},
+                    success: function(json) {
+                      var jid = json.updatevpcresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+												    jobId: jid,
+                            getUpdatedItem: function(json) {														  
+															return json.queryasyncjobresultresponse.jobresult.vpc;
+														}
+													}													 
+                        }
+                      );						
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
+                    }
+                  });
+                },								
+								notification: {
+                  poll: pollAsyncJobResult
+                }								
+              },
+							
               remove: {
                 label: 'remove VPC',
                 messages: {
@@ -3568,9 +3601,9 @@
 											var jid = json.deletevpcresponse.jobid;
                       args.response.success(
                         {_custom:
-                         {
-												   jobId: jid //take snapshot from a volume doesn't change any property in this volume. So, don't need to specify getUpdatedItem() to return updated volume. Besides, createSnapshot API doesn't return updated volume. 
-                         }
+                          {
+												    jobId: jid 
+                          }
                         }
                       );											
                     },
@@ -3589,10 +3622,10 @@
                 title: 'label.details',
                 fields: [
                   {				
-                    name: { label: 'label.name' }
+                    name: { label: 'label.name', isEditable: true }
                   },
                   {	
-										displaytext: { label: 'label.description' },										
+										displaytext: { label: 'label.description', isEditable: true },										
 										zonename: { label: 'label.zone' },
 										cidr: { label: 'label.cidr' },
 										networkdomain: { label: 'label.network.domain' },
