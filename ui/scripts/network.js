@@ -3580,6 +3580,45 @@
                   poll: pollAsyncJobResult
                 }								
               },
+														
+							restart: {
+                label: 'restart VPC',
+                messages: {
+                  confirm: function(args) {
+                    return 'Please confirm that you want to restart the VPC';
+                  },
+                  notification: function(args) {
+                    return 'restart VPC';
+                  }
+                },
+                action: function(args) {								 
+                  $.ajax({
+                    url: createURL("restartVPC"),
+                    data: {
+										  id: args.context.vpc[0].id
+										},                    
+                    success: function(json) {                      
+											var jid = json.restartvpcresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+												    jobId: jid,
+														getUpdatedItem: function(json) {														  
+															return json.queryasyncjobresultresponse.jobresult.vpc;
+														}
+                          }
+                        }
+                      );											
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },							
 							
               remove: {
                 label: 'remove VPC',
