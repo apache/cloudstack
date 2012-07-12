@@ -180,23 +180,32 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
         
         Long networkId = rule.getNetworkId();
+        Network network = _networkMgr.getNetwork(networkId);
         //associate ip address to network (if needed)
         boolean performedIpAssoc = false;
         if (ipAddress.getAssociatedWithNetworkId() == null) {
-            //set networkId just for verification purposes
-            ipAddress.setAssociatedWithNetworkId(networkId);
-            _networkMgr.checkIpForService(ipAddress, Service.PortForwarding);
-            
-            s_logger.debug("The ip is not associated with the network id="+ networkId + " so assigning");
-            try {
-                ipAddress = _networkMgr.associateIPToGuestNetwork(ipAddrId, networkId);
-                performedIpAssoc = true;
-            } catch (Exception ex) {
-                throw new CloudRuntimeException("Failed to associate ip to network as " +
-                        "a part of port forwarding rule creation");
+            boolean assignToVpcNtwk =  network.getVpcId() != null 
+                    && ipAddress.getVpcId() != null && ipAddress.getVpcId().longValue() == network.getVpcId();
+            if (assignToVpcNtwk) {
+                //set networkId just for verification purposes
+                ipAddress.setAssociatedWithNetworkId(networkId);
+                _networkMgr.checkIpForService(ipAddress, Service.PortForwarding, networkId);
+
+                s_logger.debug("The ip is not associated with the VPC network id="+ networkId + ", so assigning");
+                try {
+                    ipAddress = _networkMgr.associateIPToGuestNetwork(ipAddrId, networkId);
+                    performedIpAssoc = true;
+                } catch (Exception ex) {
+                    throw new CloudRuntimeException("Failed to associate ip to VPC network as " +
+                            "a part of port forwarding rule creation");
+                }
             }
         } else {
-            _networkMgr.checkIpForService(ipAddress, Service.PortForwarding);
+            _networkMgr.checkIpForService(ipAddress, Service.PortForwarding, null);
+        }
+        
+        if (ipAddress.getAssociatedWithNetworkId() == null) { 
+            throw new InvalidParameterValueException("Ip address " + ipAddress + " is not assigned to the network " + network);
         }
         
         try {
@@ -313,7 +322,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         Long accountId = ipAddress.getAllocatedToAccountId();
         Long domainId = ipAddress.getAllocatedInDomainId();
 
-        _networkMgr.checkIpForService(ipAddress, Service.StaticNat);
+        _networkMgr.checkIpForService(ipAddress, Service.StaticNat, null);
 
         Network network = _networkMgr.getNetwork(networkId);
         NetworkOffering off = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
@@ -379,27 +388,43 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
         
         boolean setNetworkId = false;
-        //associate ip address to network (if needed)
-        if (ipAddress.getAssociatedWithNetworkId() == null) {
-            s_logger.debug("The ip is not associated with the network id="+ networkId + " so assigning");
-            try {
-                ipAddress = _networkMgr.associateIPToGuestNetwork(ipId, networkId);
-            } catch (Exception ex) {
-                s_logger.warn("Failed to associate ip id=" + ipId + " to network id=" + networkId + " as " +
-                        "a part of enable static nat");
-                return false;
-            }
-            setNetworkId = true;
+        Network network = _networkMgr.getNetwork(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Unable to find network by id");
         }
         
-        _networkMgr.checkIpForService(ipAddress, Service.StaticNat);
-
-        // Verify input parameters
         if (!isSystemVm) {
             UserVmVO vm = _vmDao.findById(vmId);
             if (vm == null) {
-                throw new InvalidParameterValueException("Can't enable static nat for the address id=" + ipId + ", invalid virtual machine id specified (" + vmId + ").");
+                throw new InvalidParameterValueException("Can't enable static nat for the address id=" + ipId + 
+                        ", invalid virtual machine id specified (" + vmId + ").");
             }
+            //associate ip address to network (if needed)
+            if (ipAddress.getAssociatedWithNetworkId() == null) {
+                boolean assignToVpcNtwk = network.getVpcId() != null 
+                        && ipAddress.getVpcId() != null && ipAddress.getVpcId().longValue() == network.getVpcId();
+                if (assignToVpcNtwk) {
+                    _networkMgr.checkIpForService(ipAddress, Service.StaticNat, networkId);
+                    
+                    s_logger.debug("The ip is not associated with the VPC network id="+ networkId + ", so assigning");
+                    try {
+                        ipAddress = _networkMgr.associateIPToGuestNetwork(ipId, networkId);
+                    } catch (Exception ex) {
+                        s_logger.warn("Failed to associate ip id=" + ipId + " to VPC network id=" + networkId + " as " +
+                                "a part of enable static nat");
+                        return false;
+                    }
+                    setNetworkId = true;
+                }
+            } else {
+                _networkMgr.checkIpForService(ipAddress, Service.StaticNat, null);
+            }
+            
+            
+            if (ipAddress.getAssociatedWithNetworkId() == null) { 
+                throw new InvalidParameterValueException("Ip address " + ipAddress + " is not assigned to the network " + network);
+            }
+
             // Check permissions
             checkIpAndUserVm(ipAddress, vm, caller);
         }
@@ -410,7 +435,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throw new InvalidParameterValueException("Vm doesn't belong to the network " + networkId);
         }
 
-        Network network = _networkMgr.getNetwork(networkId);
         if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
             throw new InvalidParameterValueException("Unable to create static nat rule; StaticNat service is not " +
             		"supported in network id=" + networkId);

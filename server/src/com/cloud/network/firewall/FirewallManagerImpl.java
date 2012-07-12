@@ -159,8 +159,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             throw new InvalidParameterValueException("Unable to create firewall rule; ip id=" + ipAddrId + 
                     " doesn't exist in the system");
         }
-        
-        _networkMgr.checkIpForService(ipAddress, Service.Firewall);  
+
+        _networkMgr.checkIpForService(ipAddress, Service.Firewall, null);  
 
         validateFirewallRule(caller, ipAddress, portStart, portEnd, protocol, Purpose.Firewall, type);
 

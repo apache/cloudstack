@@ -6954,8 +6954,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public boolean checkIpForService(IPAddressVO userIp, Service service) {
-        Long networkId = userIp.getAssociatedWithNetworkId();
+    public boolean checkIpForService(IPAddressVO userIp, Service service, Long networkId) {
+        if (networkId == null) {
+            networkId = userIp.getAssociatedWithNetworkId();
+        }
+        
         NetworkVO network = _networksDao.findById(networkId);
         NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         if (offering.getGuestType() != GuestType.Isolated) {
