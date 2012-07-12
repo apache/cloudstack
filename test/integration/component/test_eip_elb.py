@@ -310,7 +310,7 @@ class TestEIP(cloudstackTestCase):
         self.debug("SSH into netscaler: %s" %
                                     self.services["netscaler"]["ipaddress"])
         try:
-            ssh_client = remoteSSHClient.remoteSSHClient(
+            ssh_client = remoteSSHClient(
                                     self.services["netscaler"]["ipaddress"],
                                     22,
                                     self.services["netscaler"]["username"],
@@ -454,7 +454,7 @@ class TestEIP(cloudstackTestCase):
         self.debug("SSH into netscaler: %s" %
                                     self.services["netscaler"]["ipaddress"])
         try:
-            ssh_client = remoteSSHClient.remoteSSHClient(
+            ssh_client = remoteSSHClient(
                                     self.services["netscaler"]["ipaddress"],
                                     22,
                                     self.services["netscaler"]["username"],
@@ -653,7 +653,7 @@ class TestEIP(cloudstackTestCase):
         self.debug("SSH into netscaler: %s" %
                                     self.services["netscaler"]["ipaddress"])
         try:
-            ssh_client = remoteSSHClient.remoteSSHClient(
+            ssh_client = remoteSSHClient(
                                     self.services["netscaler"]["ipaddress"],
                                     22,
                                     self.services["netscaler"]["username"],
@@ -867,7 +867,7 @@ class TestEIP(cloudstackTestCase):
         self.debug("SSH into netscaler: %s" %
                                     self.services["netscaler"]["ipaddress"])
         try:
-            ssh_client = remoteSSHClient.remoteSSHClient(
+            ssh_client = remoteSSHClient(
                                     self.services["netscaler"]["ipaddress"],
                                     22,
                                     self.services["netscaler"]["username"],
@@ -1133,7 +1133,7 @@ class TestELB(cloudstackTestCase):
         self.debug("SSH into netscaler: %s" %
                                     self.services["netscaler"]["ipaddress"])
         try:
-            ssh_client = remoteSSHClient.remoteSSHClient(
+            ssh_client = remoteSSHClient(
                                     self.services["netscaler"]["ipaddress"],
                                     22,
                                     self.services["netscaler"]["username"],
@@ -1281,7 +1281,7 @@ class TestELB(cloudstackTestCase):
         self.debug("SSH into netscaler: %s" %
                                     self.services["netscaler"]["ipaddress"])
         try:
-            ssh_client = remoteSSHClient.remoteSSHClient(
+            ssh_client = remoteSSHClient(
                                     self.services["netscaler"]["ipaddress"],
                                     22,
                                     self.services["netscaler"]["username"],
@@ -1385,7 +1385,7 @@ class TestELB(cloudstackTestCase):
         self.debug("SSH into netscaler: %s" %
                                     self.services["netscaler"]["ipaddress"])
         try:
-            ssh_client = remoteSSHClient.remoteSSHClient(
+            ssh_client = remoteSSHClient(
                                     self.services["netscaler"]["ipaddress"],
                                     22,
                                     self.services["netscaler"]["username"],
@@ -1557,7 +1557,7 @@ class TestELB(cloudstackTestCase):
         self.debug("SSH into netscaler: %s" %
                                     self.services["netscaler"]["ipaddress"])
         try:
-            ssh_client = remoteSSHClient.remoteSSHClient(
+            ssh_client = remoteSSHClient(
                                     self.services["netscaler"]["ipaddress"],
                                     22,
                                     self.services["netscaler"]["username"],
