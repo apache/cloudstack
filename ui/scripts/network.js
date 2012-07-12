@@ -3529,7 +3529,7 @@
               }					
             },
             editVpc: {
-              label: 'Edit VPC',
+              label: 'Configure VPC',
               textLabel: 'label.configure',
               action: {
                 custom: cloudStack.uiCustom.vpc(cloudStack.vpc)
@@ -3538,7 +3538,44 @@
           },									
 					
 					detailView: {
-            name: 'label.details',
+            name: 'label.details',											
+						actions: {						 
+              remove: {
+                label: 'remove VPC',
+                messages: {
+                  confirm: function(args) {
+                    return 'Please confirm that you want to delete the VPC';
+                  },
+                  notification: function(args) {
+                    return 'remove VPC';
+                  }
+                },
+                action: function(args) {								 
+                  $.ajax({
+                    url: createURL("deleteVPC"),
+                    data: {
+										  id: args.context.vpc[0].id
+										},                    
+                    success: function(json) {                      
+											var jid = json.deletevpcresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {
+												   jobId: jid //take snapshot from a volume doesn't change any property in this volume. So, don't need to specify getUpdatedItem() to return updated volume. Besides, createSnapshot API doesn't return updated volume. 
+                         }
+                        }
+                      );											
+                    },
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              }
+            },						
             tabs: {
               details: {
                 title: 'label.details',
