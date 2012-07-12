@@ -82,6 +82,7 @@ import com.cloud.user.DomainManager;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -157,7 +158,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     UsageEventDao _usageEventDao;
     @Inject
     ResourceTagDao _resourceTagDao;
-    
+
     ScheduledExecutorService _executorPool;
     ScheduledExecutorService _cleanupExecutor;
 
@@ -454,7 +455,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         List<SecurityGroupVMMapVO> groupsForVm = _securityGroupVMMapDao.listByInstanceId(vm.getId());
         // For each group, find the security rules that allow the group
         for (SecurityGroupVMMapVO mapVO : groupsForVm) {// FIXME: use custom sql in the dao
-        	//Add usage events for security group assign
+            //Add usage events for security group assign
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SECURITY_GROUP_ASSIGN, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), mapVO.getSecurityGroupId());
             _usageEventDao.persist(usageEvent);
 
@@ -470,7 +471,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         List<SecurityGroupVMMapVO> groupsForVm = _securityGroupVMMapDao.listByInstanceId(vm.getId());
         // For each group, find the security rules rules that allow the group
         for (SecurityGroupVMMapVO mapVO : groupsForVm) {// FIXME: use custom sql in the dao
-        	//Add usage events for security group remove
+            //Add usage events for security group remove
             UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SECURITY_GROUP_REMOVE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), mapVO.getSecurityGroupId());
             _usageEventDao.persist(usageEvent);
 
@@ -574,26 +575,26 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         Map groupList = cmd.getUserSecurityGroupList();
         return authorizeSecurityGroupRule(securityGroupId,protocol,startPort,endPort,icmpType,icmpCode,cidrList,groupList,SecurityRuleType.IngressRule);
     }
-    
+
     private List<SecurityGroupRuleVO> authorizeSecurityGroupRule(Long securityGroupId,String protocol,Integer startPort,Integer endPort,Integer icmpType,Integer icmpCode,List<String>  cidrList,Map groupList,SecurityRuleType ruleType) {
         Integer startPortOrType = null;
         Integer endPortOrCode = null;
-        
+
         // Validate parameters
         SecurityGroup securityGroup = _securityGroupDao.findById(securityGroupId);
         if (securityGroup == null) {
-            throw new InvalidParameterValueException("Unable to find security group by id " + securityGroupId);
+            throw new InvalidParameterValueException("Unable to find security group by id ", null);
         }
 
         if (cidrList == null && groupList == null) {
-            throw new InvalidParameterValueException("At least one cidr or at least one security group needs to be specified");
+            throw new InvalidParameterValueException("At least one cidr or at least one security group needs to be specified", null);
         }
 
         Account caller = UserContext.current().getCaller();
         Account owner = _accountMgr.getAccount(securityGroup.getAccountId());
 
         if (owner == null) {
-            throw new InvalidParameterValueException("Unable to find security group owner by id=" + securityGroup.getAccountId());
+            throw new InvalidParameterValueException("Unable to find security group owner by id", null);
         }
 
         // Verify permissions
@@ -605,45 +606,45 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         }
 
         if (!NetUtils.isValidSecurityGroupProto(protocol)) {
-            throw new InvalidParameterValueException("Invalid protocol " + protocol);
+            throw new InvalidParameterValueException("Invalid protocol " + protocol, null);
         }
         if ("icmp".equalsIgnoreCase(protocol)) {
             if ((icmpType == null) || (icmpCode == null)) {
-                throw new InvalidParameterValueException("Invalid ICMP type/code specified, icmpType = " + icmpType + ", icmpCode = " + icmpCode);
+                throw new InvalidParameterValueException("Invalid ICMP type/code specified, icmpType = " + icmpType + ", icmpCode = " + icmpCode, null);
             }
             if (icmpType == -1 && icmpCode != -1) {
-                throw new InvalidParameterValueException("Invalid icmp code");
+                throw new InvalidParameterValueException("Invalid icmp code", null);
             }
             if (icmpType != -1 && icmpCode == -1) {
-                throw new InvalidParameterValueException("Invalid icmp code: need non-negative icmp code ");
+                throw new InvalidParameterValueException("Invalid icmp code: need non-negative icmp code ", null);
             }
             if (icmpCode > 255 || icmpType > 255 || icmpCode < -1 || icmpType < -1) {
-                throw new InvalidParameterValueException("Invalid icmp type/code ");
+                throw new InvalidParameterValueException("Invalid icmp type/code ", null);
             }
             startPortOrType = icmpType;
             endPortOrCode = icmpCode;
         } else if (protocol.equals(NetUtils.ALL_PROTO)) {
             if ((startPort != null) || (endPort != null)) {
-                throw new InvalidParameterValueException("Cannot specify startPort or endPort without specifying protocol");
+                throw new InvalidParameterValueException("Cannot specify startPort or endPort without specifying protocol", null);
             }
             startPortOrType = 0;
             endPortOrCode = 0;
         } else {
             if ((startPort == null) || (endPort == null)) {
-                throw new InvalidParameterValueException("Invalid port range specified, startPort = " + startPort + ", endPort = " + endPort);
+                throw new InvalidParameterValueException("Invalid port range specified, startPort = " + startPort + ", endPort = " + endPort, null);
             }
             if (startPort == 0 && endPort == 0) {
                 endPort = 65535;
             }
             if (startPort > endPort) {
-                throw new InvalidParameterValueException("Invalid port range " + startPort + ":" + endPort);
+                throw new InvalidParameterValueException("Invalid port range " + startPort + ":" + endPort, null);
             }
             if (startPort > 65535 || endPort > 65535 || startPort < -1 || endPort < -1) {
-                throw new InvalidParameterValueException("Invalid port numbers " + startPort + ":" + endPort);
+                throw new InvalidParameterValueException("Invalid port numbers " + startPort + ":" + endPort, null);
             }
 
             if (startPort < 0 || endPort < 0) {
-                throw new InvalidParameterValueException("Invalid port range " + startPort + ":" + endPort);
+                throw new InvalidParameterValueException("Invalid port range " + startPort + ":" + endPort, null);
             }
             startPortOrType = startPort;
             endPortOrCode = endPort;
@@ -662,18 +663,22 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
                 if ((group == null) || (authorizedAccountName == null)) {
                     throw new InvalidParameterValueException(
-                            "Invalid user group specified, fields 'group' and 'account' cannot be null, please specify groups in the form:  userGroupList[0].group=XXX&userGroupList[0].account=YYY");
+                            "Invalid user group specified, fields 'group' and 'account' cannot be null, please specify groups in the form:  userGroupList[0].group=XXX&userGroupList[0].account=YYY", null);
                 }
 
                 Account authorizedAccount = _accountDao.findActiveAccount(authorizedAccountName, domainId);
                 if (authorizedAccount == null) {
-                    throw new InvalidParameterValueException("Nonexistent account: " + authorizedAccountName + " when trying to authorize security group rule  for " + securityGroupId + ":" + protocol + ":"
-                            + startPortOrType + ":" + endPortOrCode);
+                    List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                    idList.add(new IdentityProxy(securityGroup, securityGroupId, "secGrpId"));
+                    throw new InvalidParameterValueException("Nonexistent account: " + authorizedAccountName + " when trying to authorize security group rule for security group with specified id:" + protocol + ":"
+                            + startPortOrType + ":" + endPortOrCode, idList);
                 }
 
                 SecurityGroupVO groupVO = _securityGroupDao.findByAccountAndName(authorizedAccount.getId(), group);
                 if (groupVO == null) {
-                    throw new InvalidParameterValueException("Nonexistent group " + group + " for account " + authorizedAccountName + "/" + domainId + " is given, unable to authorize security group rule.");
+                    List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                    idList.add(new IdentityProxy("domain", domainId, "domainId"));
+                    throw new InvalidParameterValueException("Nonexistent group " + group + " for account " + authorizedAccountName + "/<specified domain id> is given, unable to authorize security group rule.", idList);
                 }
 
                 // Check permissions
@@ -746,7 +751,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
             }
         }
     }
-    
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_SECURITY_GROUP_REVOKE_EGRESS, eventDescription = "Revoking Egress Rule ", async = true)
@@ -754,7 +759,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         Long id = cmd.getId();
         return revokeSecurityGroupRule(id, SecurityRuleType.EgressRule);
     }
-    
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_SECURITY_GROUP_REVOKE_INGRESS, eventDescription = "Revoking Ingress Rule ", async = true)
@@ -763,23 +768,25 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         Long id = cmd.getId();
         return revokeSecurityGroupRule(id, SecurityRuleType.IngressRule);
     }
-    
+
     private boolean revokeSecurityGroupRule(Long id, SecurityRuleType type) {
         // input validation
         Account caller = UserContext.current().getCaller();
-        
+
         SecurityGroupRuleVO rule = _securityGroupRuleDao.findById(id);
         if (rule == null) {
             s_logger.debug("Unable to find security rule with id " + id);
-            throw new InvalidParameterValueException("Unable to find security rule with id " + id);
+            throw new InvalidParameterValueException("Unable to find security rule byid ", null);
         }
 
         // check type
         if (type != rule.getRuleType()) {
             s_logger.debug("Mismatch in rule type for security rule with id " + id );
-            throw new InvalidParameterValueException("Mismatch in rule type for security rule with id " + id);
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(rule, id, "ruleId"));
+            throw new InvalidParameterValueException("Mismatch in rule type for security rule with specified id ", idList);
         }
-        	
+
         // Check permissions
         SecurityGroup securityGroup = _securityGroupDao.findById(rule.getSecurityGroupId());
         _accountMgr.checkAccess(caller, null, true, securityGroup);
@@ -824,7 +831,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
 
         if (_securityGroupDao.isNameInUse(owner.getId(), owner.getDomainId(), cmd.getSecurityGroupName())) {
-            throw new InvalidParameterValueException("Unable to create security group, a group with name " + name + " already exisits.");
+            throw new InvalidParameterValueException("Unable to create security group, a group with name " + name + " already exists.", null);
         }
 
         return createSecurityGroup(cmd.getSecurityGroupName(), cmd.getDescription(), owner.getDomainId(), owner.getAccountId(), owner.getAccountName());
@@ -861,12 +868,12 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         _serverId = ((ManagementServer) ComponentLocator.getComponent(ManagementServer.Name)).getId();
 
         s_logger.info("SecurityGroupManager: num worker threads=" + _numWorkerThreads + 
-                       ", time between cleanups=" + _timeBetweenCleanups + " global lock timeout=" + _globalWorkLockTimeout);
+                ", time between cleanups=" + _timeBetweenCleanups + " global lock timeout=" + _globalWorkLockTimeout);
         createThreadPools();
 
         return true;
     }
-    
+
     protected void createThreadPools() {
         _executorPool = Executors.newScheduledThreadPool(_numWorkerThreads, new NamedThreadFactory("NWGRP"));
         _cleanupExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NWGRP-Cleanup"));
@@ -963,7 +970,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
                         s_logger.debug("Unable to send ingress rules updates for vm: " + userVmId + "(agentid=" + agentId + ")");
                         _workDao.updateStep(work.getInstanceId(), seqnum, Step.Done);
                     }
-                    
+
                 }
             }
         } finally {
@@ -1026,10 +1033,10 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     @Override
     @DB
     public void removeInstanceFromGroups(long userVmId) {
-    	if (_securityGroupVMMapDao.countSGForVm(userVmId) < 1) {
-    		s_logger.trace("No security groups found for vm id=" + userVmId + ", returning");
-    		return;
-    	}
+        if (_securityGroupVMMapDao.countSGForVm(userVmId) < 1) {
+            s_logger.trace("No security groups found for vm id=" + userVmId + ", returning");
+            return;
+        }
         final Transaction txn = Transaction.currentTxn();
         txn.start();
         UserVm userVm = _userVMDao.acquireInLockTable(userVmId); // ensures that duplicate entries are not created in
@@ -1053,7 +1060,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
         SecurityGroupVO group = _securityGroupDao.findById(groupId);
         if (group == null) {
-            throw new InvalidParameterValueException("Unable to find network group: " + groupId + "; failed to delete group.");
+            throw new InvalidParameterValueException("Unable to find network group by id; failed to delete group.", null);
         }
 
         // check permissions
@@ -1064,11 +1071,11 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
 
         group = _securityGroupDao.lockRow(groupId, true);
         if (group == null) {
-            throw new InvalidParameterValueException("Unable to find security group by id " + groupId);
+            throw new InvalidParameterValueException("Unable to find security group by id ", null);
         }
 
         if (group.getName().equalsIgnoreCase(SecurityGroupManager.DEFAULT_GROUP_NAME)) {
-            throw new InvalidParameterValueException("The network group default is reserved");
+            throw new InvalidParameterValueException("The network group default is reserved", null);
         }
 
         List<SecurityGroupRuleVO> allowingRules = _securityGroupRuleDao.listByAllowedSecurityGroupId(groupId);
@@ -1100,27 +1107,27 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         if (instanceId != null) {
             UserVmVO userVM = _userVMDao.findById(instanceId);
             if (userVM == null) {
-                throw new InvalidParameterValueException("Unable to list network groups for virtual machine instance " + instanceId + "; instance not found.");
+                throw new InvalidParameterValueException("Unable to list network groups for virtual machine instance; unable to locate virtual machine instance by id", null);
             }
             _accountMgr.checkAccess(caller, null, true, userVM);
             return listSecurityGroupRulesByVM(instanceId.longValue());
         }
 
         List<SecurityGroupRulesVO> securityRulesList = new ArrayList<SecurityGroupRulesVO>();
-        
+
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
         _accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();        
-        
+
         Filter searchFilter = new Filter(SecurityGroupVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<SecurityGroupVO> sb = _securityGroupDao.createSearchBuilder();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-        
+
         if (tags != null && !tags.isEmpty()) {
             SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
             for (int count=0; count < tags.size(); count++) {
@@ -1139,7 +1146,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         if (id != null) {
             sc.setParameters("id", id);
         }
-        
+
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
             sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.SecurityGroup.toString());
