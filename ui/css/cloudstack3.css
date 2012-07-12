@@ -9046,6 +9046,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -webkit-text-shadow: 1px 2px 2px #000000;
   -o-text-shadow: 1px 2px 2px #000000;
   text-shadow: 1px 2px 2px #000000;
+  text-decoration: underline;
 }
 
 .vpc-chart li.tier span.cidr {
@@ -9195,6 +9196,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   width: 100px;
   border: 1px solid transparent;
   margin: 4px;
+  text-decoration: underline;
 }
 
 .vpc-chart li.tier .vm-count:hover,
@@ -9243,6 +9245,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   -webkit-text-shadow: none;
   -o-text-shadow: none;
   text-shadow: none;
+  text-decoration: none;
 }
 
 .vpc-chart li.tier.placeholder:hover span {
@@ -9281,6 +9284,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   position: relative;
   left: 53px;
   top: 22px;
+  text-decoration: none;
 }
 
 .vpc-chart li.tier.virtual-router span:hover {
