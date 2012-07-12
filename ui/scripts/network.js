@@ -3539,7 +3539,15 @@
 					
 					detailView: {
             name: 'label.details',											
-						actions: {						 
+						actions: {
+              editVpc: {
+                label: 'Edit VPC',
+                textLabel: 'label.configure',
+                action: {
+                  custom: cloudStack.uiCustom.vpc(cloudStack.vpc)
+                },
+                messages: { notification: function() { return ''; } }
+              },
               remove: {
                 label: 'remove VPC',
                 messages: {
