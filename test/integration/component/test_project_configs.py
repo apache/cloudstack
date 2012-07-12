@@ -86,7 +86,7 @@ class Services:
                          "template": {
                                 "displaytext": "Public Template",
                                 "name": "Public template",
-                                "ostypeid": 'f9b709f2-e0fc-4c0f-80f1-b0494168f58d',
+                                "ostypeid": '7ddbbbb5-bb09-40de-b038-ee78995788ea',
                                 "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                                 "hypervisor": 'XenServer',
                                 "format": 'VHD',
@@ -97,13 +97,7 @@ class Services:
                         "configs": {
                                 "project.invite.timeout": 300,
                         },
-                        "mail_account": {
-                                "server": 'imap.gmail.com',
-                                "email": 'administrator@clogeny.com',
-                                "password": 'fr3sca21!',
-                                "folder": 'inbox',
-                        },
-                        "ostypeid": 'f9b709f2-e0fc-4c0f-80f1-b0494168f58d',
+                        "ostypeid": '7ddbbbb5-bb09-40de-b038-ee78995788ea',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
@@ -122,6 +116,16 @@ class TestUserProjectCreation(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone
         cls.zone = get_zone(cls.api_client, cls.services)
+
+        configs = Configurations.list(
+                                      cls.api_client,
+                                      name='allow.user.create.projects'
+                                      )
+
+        if not isinstance(configs, list):
+            raise unittest.SkipTest("List configurations has no config: allow.user.create.projects")
+        elif (configs[0].value).lower() != 'true':
+            raise unittest.SkipTest("'allow.user.create.projects' should be true")
 
         # Create domains, account etc.
         cls.domain = Domain.create(
@@ -169,14 +173,10 @@ class TestUserProjectCreation(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    def test_01_admin_project_creation(self):
+    def test_admin_project_creation(self):
         """Test create project as a domain admin and domain user
         """
-<<<<<<< HEAD
-
-=======
         tags = ["advanced", "basic", "sg", "eip", "advancedns"]
->>>>>>> 6d17e21... This commit has following fixes:
         # Validate the following
         # 1. Check if 'allow.user.create.projects' configuration is true
         # 2. Create a Project as domain admin
@@ -200,6 +200,7 @@ class TestUserProjectCreation(cloudstackTestCase):
                             )
 
         # Create project as a domain admin
+
         project = Project.create(
                                  self.apiclient,
                                  self.services["project"],
@@ -267,8 +268,78 @@ class TestUserProjectCreation(cloudstackTestCase):
                         )
         return
 
+
+class TestProjectCreationNegative(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(
+                               TestProjectCreationNegative,
+                               cls
+                               ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        # Get Zone
+        cls.zone = get_zone(cls.api_client, cls.services)
+
+        # Checking for prereqisits - global configs
+        configs = Configurations.list(
+                                      cls.api_client,
+                                      name='allow.user.create.projects'
+                                      )
+
+        if not isinstance(configs, list):
+            raise unittest.SkipTest("List configurations has no config: allow.user.create.projects")
+        elif (configs[0].value).lower() != 'false':
+            raise unittest.SkipTest("'allow.user.create.projects' should be false")
+
+        # Create domains, account etc.
+        cls.domain = Domain.create(
+                                   cls.api_client,
+                                   cls.services["domain"]
+                                   )
+
+        cls.account = Account.create(
+                            cls.api_client,
+                            cls.services["account"],
+                            admin=True,
+                            domainid=cls.domain.id
+                            )
+
+        cls.user = Account.create(
+                            cls.api_client,
+                            cls.services["account"],
+                            admin=True,
+                            domainid=cls.domain.id
+                            )
+
+        cls._cleanup = [cls.account, cls.user, cls.domain]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            #Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created accounts, domains etc
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
     @unittest.skip("Known bug-able to create project as a domain user")
-    def test_02_user_project_creation(self):
+    def test_user_project_creation(self):
         """Test create project as a domain admin and domain user
         """
 
@@ -346,13 +417,27 @@ class TestProjectInviteRequired(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestProjectInviteRequired, cls).getClsTestClient().getApiClient()
+        cls.api_client = super(
+                                TestProjectInviteRequired,
+                                cls
+                            ).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone
         cls.zone = get_zone(cls.api_client, cls.services)
 
         # Create domains, account etc.
         cls.domain = get_domain(cls.api_client, cls.services)
+
+        # Verify 'project.invite.required' is set to false
+        configs = Configurations.list(
+                                      cls.api_client,
+                                      name='project.invite.required'
+                                      )
+
+        if not isinstance(configs, list):
+            raise unittest.SkipTest("The 'project.invite.required' is not found in global configs")
+        elif (configs[0].value).lower() != 'false':
+            raise unittest.SkipTest("'project.invite.required' should be false")
 
         cls.account = Account.create(
                             cls.api_client,
@@ -394,34 +479,15 @@ class TestProjectInviteRequired(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    def test_03_add_user_to_project(self):
+    def test_add_user_to_project(self):
         """Add user to project when 'project.invite.required' is false"""
-<<<<<<< HEAD
-        
-=======
+
         tags = ["advanced", "basic", "sg", "eip", "advancedns"]
->>>>>>> 6d17e21... This commit has following fixes:
+
         # Validate the following:
         # 1. Create a Project
         # 2. Add users to the project. Verify user is added to project
         #    as regular user
-
-        # Verify 'project.invite.required' is set to false
-        configs = Configurations.list(
-                                      self.apiclient,
-                                      name='project.invite.required'
-                                      )
-        self.assertEqual(
-                            isinstance(configs, list),
-                            True,
-                            "Check for a valid list configurations response"
-                            )
-        config = configs[0]
-        self.assertEqual(
-                            (config.value).lower(),
-                            'false',
-                            "'project.invite.required' should be true"
-                            )
 
         # Create project as a domain admin
         project = Project.create(
@@ -498,29 +564,80 @@ class TestProjectInviteRequired(cloudstackTestCase):
 
         return
 
-    def test_04_add_user_to_project(self):
+class TestProjectInviteRequiredTrue(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(
+                                TestProjectInviteRequiredTrue,
+                                cls
+                            ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        # Get Zone
+        cls.zone = get_zone(cls.api_client, cls.services)
+
+        # Create domains, account etc.
+        cls.domain = get_domain(cls.api_client, cls.services)
+
+        # Verify 'project.invite.required' is set to true
+        configs = Configurations.list(
+                                      cls.api_client,
+                                      name='project.invite.required'
+                                      )
+
+        if not isinstance(configs, list):
+            raise unittest.SkipTest("The 'project.invite.required' is not found in global configs")
+        elif (configs[0].value).lower() != 'true':
+            raise unittest.SkipTest("'project.invite.required' should be true")
+
+        cls.account = Account.create(
+                            cls.api_client,
+                            cls.services["account"],
+                            admin=True,
+                            domainid=cls.domain.id
+                            )
+
+        cls.user = Account.create(
+                            cls.api_client,
+                            cls.services["user"],
+                            admin=True,
+                            domainid=cls.domain.id
+                            )
+
+        cls._cleanup = [cls.account, cls.user]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            #Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created accounts, domains etc
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def test_add_user_to_project(self):
         """Add user to project when 'project.invite.required' is true"""
-        
+
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
+
         # Validate the following:
         # 1. Create a Project
         # 2. Add users to the project. verify user is shown in pending state
-
-        # Verify 'project.invite.required' is set to false
-        configs = Configurations.list(
-                                      self.apiclient,
-                                      name='project.invite.required'
-                                      )
-        self.assertEqual(
-                            isinstance(configs, list),
-                            True,
-                            "Check for a valid list configurations response"
-                            )
-        config = configs[0]
-        self.assertEqual(
-                            (config.value).lower(),
-                            'true',
-                            "'project.invite.required' should be true"
-                            )
 
         # Create project as a domain admin
         project = Project.create(
@@ -597,33 +714,97 @@ class TestProjectInviteRequired(cloudstackTestCase):
                     )
         return
 
-    def test_05_invitation_timeout(self):
+
+class TestProjectInviteTimeout(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(
+                                TestProjectInviteTimeout,
+                                cls
+                            ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        # Get Zone
+        cls.zone = get_zone(cls.api_client, cls.services)
+
+        # Create domains, account etc.
+        cls.domain = get_domain(cls.api_client, cls.services)
+
+        # Verify 'project.invite.required' is set to true
+        configs = Configurations.list(
+                                      cls.api_client,
+                                      name='project.invite.required'
+                                      )
+
+        if not isinstance(configs, list):
+            raise unittest.SkipTest("The 'project.invite.required' is not found in global configs")
+        elif (configs[0].value).lower() != 'true':
+            raise unittest.SkipTest("'project.invite.required' should be true")
+
+        # Verify 'project.invite.timeout' is set to 300
+        configs = Configurations.list(
+                                      cls.api_client,
+                                      name='project.invite.timeout'
+                                      )
+
+        if not isinstance(configs, list):
+            raise unittest.SkipTest("The 'project.invite.timeout' is not found in global configs")
+        elif int(configs[0].value) != cls.services["configs"]["project.invite.timeout"]:
+            raise unittest.SkipTest("'project.invite.timeout' should be: %s " %
+                            cls.services["configs"]["project.invite.timeout"])
+
+        cls.config = configs[0]
+        cls.account = Account.create(
+                            cls.api_client,
+                            cls.services["account"],
+                            admin=True,
+                            domainid=cls.domain.id
+                            )
+
+        cls.user = Account.create(
+                            cls.api_client,
+                            cls.services["user"],
+                            admin=True,
+                            domainid=cls.domain.id
+                            )
+
+        cls._cleanup = [cls.account, cls.user]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            #Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created accounts, domains etc
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def test_01_invitation_timeout(self):
         """Test global config project invitation timeout"""
-        
+
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
+
         # Validate the following:
         # 1. Set configuration to 5 mins
         # 2. Create a Project
         # 3. Add users to the project
         # 4. As a user accept invitation within 5 mins. Verify invitation is
         #    accepted and user become regular user of project
-
-        # Verify 'project.invite.required' is set to false
-        configs = Configurations.list(
-                                      self.apiclient,
-                                      name='project.invite.timeout'
-                                      )
-        self.assertEqual(
-                            isinstance(configs, list),
-                            True,
-                            "Check for a valid list configurations response"
-                            )
-        config = configs[0]
-        self.assertEqual(
-                    int(config.value),
-                    self.services["configs"]["project.invite.timeout"],
-                    "'project.invite.timeout' should be %s" %
-                            self.services["configs"]["project.invite.timeout"]
-                    )
 
         # Create project as a domain admin
         project = Project.create(
@@ -738,33 +919,17 @@ class TestProjectInviteRequired(cloudstackTestCase):
                             )
         return
 
-    def test_06_invitation_timeout_after_expiry(self):
+    def test_02_invitation_timeout_after_expiry(self):
         """Test global config project invitation timeout"""
-        
+
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
+
         # Validate the following:
         # 1. Set configuration to 5 mins
         # 2. Create a Project
         # 3. Add users to the project
         # 4. As a user accept invitation after 5 mins. Verify invitation is
         #    not accepted and is shown as expired
-
-        # Verify 'project.invite.required' is set to false
-        configs = Configurations.list(
-                                      self.apiclient,
-                                      name='project.invite.timeout'
-                                      )
-        self.assertEqual(
-                            isinstance(configs, list),
-                            True,
-                            "Check for a valid list configurations response"
-                            )
-        config = configs[0]
-        self.assertEqual(
-                    int(config.value),
-                    self.services["configs"]["project.invite.timeout"],
-                    "'project.invite.timeout' should be %s" %
-                            self.services["configs"]["project.invite.timeout"]
-                    )
 
         # Create project as a domain admin
         project = Project.create(
@@ -842,7 +1007,7 @@ class TestProjectInviteRequired(cloudstackTestCase):
 
         # sleep for 'project.invite.timeout' * 2 interval to wait for invite
         # to expire
-        time.sleep(int(config.value) * 2)
+        time.sleep(int(self.config.value) * 2)
 
         with self.assertRaises(Exception):
             # Accept the invite
@@ -884,9 +1049,11 @@ class TestProjectInviteRequired(cloudstackTestCase):
                     )
         return
 
-    def test_07_invite_after_expiry(self):
+    def test_03_invite_after_expiry(self):
         """Test global config project invitation timeout"""
-        
+
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
+
         # Validate the following:
         # 1. Set configuration to 5 mins
         # 2. Create a Project
@@ -894,24 +1061,6 @@ class TestProjectInviteRequired(cloudstackTestCase):
         # 4. As a user accept invitation after 5 mins.
         # 5. Resend the invitation
         # 6. Verify invitation is sent again
-
-        # Verify 'project.invite.required' is set to false
-        configs = Configurations.list(
-                                      self.apiclient,
-                                      name='project.invite.timeout'
-                                      )
-        self.assertEqual(
-                            isinstance(configs, list),
-                            True,
-                            "Check for a valid list configurations response"
-                            )
-        config = configs[0]
-        self.assertEqual(
-                    int(config.value),
-                    self.services["configs"]["project.invite.timeout"],
-                    "'project.invite.timeout' should be %s" %
-                            self.services["configs"]["project.invite.timeout"]
-                    )
 
         # Create project as a domain admin
         project = Project.create(
@@ -989,7 +1138,7 @@ class TestProjectInviteRequired(cloudstackTestCase):
 
         # sleep for 'project.invite.timeout' * 2 interval to wait for invite
         # to expire
-        time.sleep(int(config.value) * 2)
+        time.sleep(int(self.config.value) * 2)
 
         self.debug("Adding %s user again to project: %s" % (
                                                       self.user.account.name,
@@ -1029,9 +1178,11 @@ class TestProjectInviteRequired(cloudstackTestCase):
                     )
         return
 
-    def test_08_decline_invitation(self):
+    def test_04_decline_invitation(self):
         """Test decline invitation"""
-        
+
+        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
+
         # Validate the following:
         # 1. Set configuration to 5 mins
         # 2. Create a Project
@@ -1039,24 +1190,6 @@ class TestProjectInviteRequired(cloudstackTestCase):
         # 4. As a user decline invitation within 5 mins.
         # 5. Verify invitation is rejected and user doesn't become regular
         #    user.
-
-        # Verify 'project.invite.required' is set to false
-        configs = Configurations.list(
-                                      self.apiclient,
-                                      name='project.invite.timeout'
-                                      )
-        self.assertEqual(
-                            isinstance(configs, list),
-                            True,
-                            "Check for a valid list configurations response"
-                            )
-        config = configs[0]
-        self.assertEqual(
-                    int(config.value),
-                    self.services["configs"]["project.invite.timeout"],
-                    "'project.invite.timeout' should be %s" %
-                            self.services["configs"]["project.invite.timeout"]
-                    )
 
         # Create project as a domain admin
         project = Project.create(
