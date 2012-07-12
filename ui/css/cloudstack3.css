@@ -1672,9 +1672,11 @@ div.detail-group.actions td {
 }
 
 .detail-group table td.detail-actions .action.text {
-  padding: 4px 6px 4px 7px;
+  padding: 0px 6px 0px 0px;
   cursor: pointer;
   display: inline-block;
+  float: right;
+  margin-right: 8px;
   border: 1px solid #C2C2C2;
   /*+border-radius:4px;*/
   -moz-border-radius: 4px;
@@ -1744,6 +1746,10 @@ div.detail-group.actions td {
   height: 26px;
   background: url(../images/buttons.png);
   background-position: -414px -625px;
+}
+
+.detail-group table td.detail-actions div.action.text a {
+  background: none;
 }
 
 .detail-group table td.detail-actions div.action.single a:hover {

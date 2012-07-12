@@ -637,7 +637,7 @@
 
         if (value.textLabel) {
           $action
-            .addClass('text')
+            .addClass('single text')
             .prepend(
               $('<span>').addClass('label').html(_l(value.textLabel))
             );
@@ -646,7 +646,7 @@
         return true;
       });
 
-      var $actionButtons = $actions.find('div.action');
+      var $actionButtons = $actions.find('div.action:not(.text)');
       if ($actionButtons.size() == 1)
         $actionButtons.addClass('single');
       else {
