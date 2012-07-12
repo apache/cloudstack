@@ -157,7 +157,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
                     "couldn't locate IP address by id in the system", null);
         }
 
-        _networkMgr.checkIpForService(ipAddress, Service.Firewall);  
+        _networkMgr.checkIpForService(ipAddress, Service.Firewall, null);  
 
         validateFirewallRule(caller, ipAddress, portStart, portEnd, protocol, Purpose.Firewall, type);
 

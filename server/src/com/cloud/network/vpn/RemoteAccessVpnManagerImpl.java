@@ -120,7 +120,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         }
         
         IPAddressVO ipAddress = _ipAddressDao.findById(publicIpId);
-        _networkMgr.checkIpForService(ipAddress, Service.Vpn);
+        _networkMgr.checkIpForService(ipAddress, Service.Vpn, null);
 
         RemoteAccessVpnVO vpnVO = _remoteAccessVpnDao.findByPublicIpAddress(publicIpId);
        

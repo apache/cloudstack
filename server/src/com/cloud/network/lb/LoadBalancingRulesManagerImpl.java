@@ -749,19 +749,28 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             }
 
             try {
+                Network network = _networkMgr.getNetwork(lb.getNetworkId());
                 if (ipVO != null) {
                     if (ipVO.getAssociatedWithNetworkId() == null) {
-                        //set networkId just for verification purposes
-                        ipVO.setAssociatedWithNetworkId(lb.getNetworkId());
-                        _networkMgr.checkIpForService(ipVO, Service.Lb);
+                        boolean assignToVpcNtwk = network.getVpcId() != null 
+                                && ipVO.getVpcId() != null && ipVO.getVpcId().longValue() == network.getVpcId();
+                        if (assignToVpcNtwk) {
+                            //set networkId just for verification purposes
+                            ipVO.setAssociatedWithNetworkId(lb.getNetworkId());
+                            _networkMgr.checkIpForService(ipVO, Service.Lb, lb.getNetworkId());
 
-                        s_logger.debug("The ip is not associated with the network id="+ lb.getNetworkId() + " so assigning");
-                        ipVO = _networkMgr.associateIPToGuestNetwork(ipAddrId, lb.getNetworkId());
-                        performedIpAssoc = true;
-                    } else {                    
-                        _networkMgr.checkIpForService(ipVO, Service.Lb);
-                    }
-                }   
+                            s_logger.debug("The ip is not associated with the VPC network id="+ lb.getNetworkId() + " so assigning");
+                            ipVO = _networkMgr.associateIPToGuestNetwork(ipAddrId, lb.getNetworkId());
+                            performedIpAssoc = true;
+                        }
+                    } else {
+                        _networkMgr.checkIpForService(ipVO, Service.Lb, null);
+                    } 
+                }
+                
+                if (ipVO.getAssociatedWithNetworkId() == null) { 
+                    throw new InvalidParameterValueException("Ip address " + ipVO + " is not assigned to the network " + network);
+                }
 
                 if (lb.getSourceIpAddressId() == null) {
                     throw new CloudRuntimeException("No ip address is defined to assign the LB to");

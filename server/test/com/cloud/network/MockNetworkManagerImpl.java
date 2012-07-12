@@ -741,7 +741,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public boolean checkIpForService(IPAddressVO ip, Service service) {
+    public boolean checkIpForService(IPAddressVO ip, Service service, Long networkId) {
         // TODO Auto-generated method stub
         return false;
     }
