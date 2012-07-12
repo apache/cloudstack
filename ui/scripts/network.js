@@ -3528,7 +3528,7 @@
                 });								
               }					
             },
-            editVpc: {
+            configureVpc: {
               label: 'Configure VPC',
               textLabel: 'label.configure',
               action: {
@@ -3540,7 +3540,7 @@
 					detailView: {
             name: 'label.details',											
 						actions: {
-              editVpc: {
+              configureVpc: {
                 label: 'Edit VPC',
                 textLabel: 'label.configure',
                 action: {
