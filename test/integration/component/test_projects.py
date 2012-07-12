@@ -88,7 +88,7 @@ class Services:
                                     "publicport": 22,
                                     "protocol": 'TCP',
                          },
-                        "ostypeid": '8531d1df-faac-4895-a741-238d3b10e6e6',
+                        "ostypeid": '7ddbbbb5-bb09-40de-b038-ee78995788ea',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
@@ -113,6 +113,16 @@ class TestMultipleProjectCreation(cloudstackTestCase):
                                    cls.api_client,
                                    cls.services
                                    )
+
+        configs = Configurations.list(
+                                      cls.api_client,
+                                      name='project.invite.required'
+                                      )
+
+        if not isinstance(configs, list):
+            raise unittest.SkipTest("List configurations has no config: project.invite.required")
+        elif (configs[0].value).lower() != 'false':
+            raise unittest.SkipTest("'project.invite.required' should be set to false")
 
         cls.account = Account.create(
                             cls.api_client,
@@ -164,23 +174,6 @@ class TestMultipleProjectCreation(cloudstackTestCase):
         #    to create multiple projects
         # 2. add one account to multiple project. Verify at step 2 an account
         #    is allowed to added to multiple project
-
-        # Verify 'project.invite.required' is set to false
-        configs = Configurations.list(
-                                      self.apiclient,
-                                      name='project.invite.required'
-                                      )
-        self.assertEqual(
-                            isinstance(configs, list),
-                            True,
-                            "Check for a valid list configurations response"
-                            )
-        config = configs[0]
-        self.assertEqual(
-                    (config.value).lower(),
-                    'false',
-                    "'project.invite.required' should be set to false"
-                    )
 
         # Create project as a domain admin
         project_1 = Project.create(
@@ -331,6 +324,16 @@ class TestCrossDomainAccountAdd(cloudstackTestCase):
                                    cls.services
                                    )
 
+        configs = Configurations.list(
+                                      cls.api_client,
+                                      name='project.invite.required'
+                                      )
+
+        if not isinstance(configs, list):
+            raise unittest.SkipTest("List configurations has no config: project.invite.required")
+        elif (configs[0].value).lower() != 'false':
+            raise unittest.SkipTest("'project.invite.required' should be set to false")
+
         # Create domains, account etc.
         cls.new_domain = Domain.create(
                                    cls.api_client,
@@ -385,23 +388,6 @@ class TestCrossDomainAccountAdd(cloudstackTestCase):
         # 1. Create a project in a domain.
         # 2. Add different domain account to the project. Add account should
         #    fail
-
-        # Verify 'project.invite.required' is set to false
-        configs = Configurations.list(
-                                      self.apiclient,
-                                      name='project.invite.required'
-                                      )
-        self.assertEqual(
-                            isinstance(configs, list),
-                            True,
-                            "Check for a valid list configurations response"
-                            )
-        config = configs[0]
-        self.assertEqual(
-                    (config.value).lower(),
-                    'false',
-                    "'project.invite.required' should be set to false"
-                    )
 
         # Create project as a domain admin
         project = Project.create(
@@ -471,6 +457,16 @@ class TestDeleteAccountWithProject(cloudstackTestCase):
                                    cls.services
                                    )
 
+        configs = Configurations.list(
+                                      cls.api_client,
+                                      name='project.invite.required'
+                                      )
+
+        if not isinstance(configs, list):
+            raise unittest.SkipTest("List configurations has no config: project.invite.required")
+        elif (configs[0].value).lower() != 'false':
+            raise unittest.SkipTest("'project.invite.required' should be set to false")
+
         # Create account
         cls.account = Account.create(
                             cls.api_client,
@@ -512,23 +508,6 @@ class TestDeleteAccountWithProject(cloudstackTestCase):
         # 1. Create a project.
         # 2. Delete account who is owner of the project. Delete account should
         #    fail
-
-        # Verify 'project.invite.required' is set to false
-        configs = Configurations.list(
-                                      self.apiclient,
-                                      name='project.invite.required'
-                                      )
-        self.assertEqual(
-                            isinstance(configs, list),
-                            True,
-                            "Check for a valid list configurations response"
-                            )
-        config = configs[0]
-        self.assertEqual(
-                    (config.value).lower(),
-                    'false',
-                    "'project.invite.required' should be set to false"
-                    )
 
         # Create project as a domain admin
         project = Project.create(
@@ -586,6 +565,17 @@ class TestDeleteDomainWithProject(cloudstackTestCase):
         cls.services = Services().services
         # Get Zone
         cls.zone = get_zone(cls.api_client, cls.services)
+
+        configs = Configurations.list(
+                                      cls.api_client,
+                                      name='project.invite.required'
+                                      )
+
+        if not isinstance(configs, list):
+            raise unittest.SkipTest("List configurations has no config: project.invite.required")
+        elif (configs[0].value).lower() != 'false':
+            raise unittest.SkipTest("'project.invite.required' should be set to false")
+
         # Create account
         cls.domain = Domain.create(
                                    cls.api_client,
@@ -633,23 +623,6 @@ class TestDeleteDomainWithProject(cloudstackTestCase):
         # 1. Create a project in a domain
         # 2. Delete domain forcefully. Verify that project is also deleted as
         #    as part of domain cleanup
-
-        # Verify 'project.invite.required' is set to false
-        configs = Configurations.list(
-                                      self.apiclient,
-                                      name='project.invite.required'
-                                      )
-        self.assertEqual(
-                            isinstance(configs, list),
-                            True,
-                            "Check for a valid list configurations response"
-                            )
-        config = configs[0]
-        self.assertEqual(
-                    (config.value).lower(),
-                    'false',
-                    "'project.invite.required' should be set to false"
-                    )
 
         # Create project as a domain admin
         project = Project.create(
@@ -737,6 +710,16 @@ class TestProjectOwners(cloudstackTestCase):
                                    )
         cls.zone = get_zone(cls.api_client, cls.services)
 
+        configs = Configurations.list(
+                                      cls.api_client,
+                                      name='project.invite.required'
+                                      )
+
+        if not isinstance(configs, list):
+            raise unittest.SkipTest("List configurations has no config: project.invite.required")
+        elif (configs[0].value).lower() != 'false':
+            raise unittest.SkipTest("'project.invite.required' should be set to false")
+
         # Create accounts
         cls.admin = Account.create(
                             cls.api_client,
@@ -786,23 +769,6 @@ class TestProjectOwners(cloudstackTestCase):
         # 2. Add account to the project. Edit account to make it a project
         #    owner. verify new user is project owner and old account is
         #    regular user of the project.
-
-        # Verify 'project.invite.required' is set to false
-        configs = Configurations.list(
-                                      self.apiclient,
-                                      name='project.invite.required'
-                                      )
-        self.assertEqual(
-                            isinstance(configs, list),
-                            True,
-                            "Check for a valid list configurations response"
-                            )
-        config = configs[0]
-        self.assertEqual(
-                    (config.value).lower(),
-                    'false',
-                    "'project.invite.required' should be set to false"
-                    )
 
         # Create project as a domain admin
         project = Project.create(
@@ -944,23 +910,6 @@ class TestProjectOwners(cloudstackTestCase):
         # 2. Add account to the project. Edit account to make it a project
         #    owner.
         # 3. Update project to add another account as an owner
-
-        # Verify 'project.invite.required' is set to false
-        configs = Configurations.list(
-                                      self.apiclient,
-                                      name='project.invite.required'
-                                      )
-        self.assertEqual(
-                            isinstance(configs, list),
-                            True,
-                            "Check for a valid list configurations response"
-                            )
-        config = configs[0]
-        self.assertEqual(
-                    (config.value).lower(),
-                    'false',
-                    "'project.invite.required' should be set to false"
-                    )
 
         # Create project as a domain admin
         project = Project.create(
@@ -1188,6 +1137,16 @@ class TestProjectResources(cloudstackTestCase):
                                    cls.services
                                    )
 
+        configs = Configurations.list(
+                                      cls.api_client,
+                                      name='project.invite.required'
+                                      )
+
+        if not isinstance(configs, list):
+            raise unittest.SkipTest("List configurations has no config: project.invite.required")
+        elif (configs[0].value).lower() != 'false':
+            raise unittest.SkipTest("'project.invite.required' should be set to false")
+
         # Create account, disk offering etc.
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -1242,23 +1201,6 @@ class TestProjectResources(cloudstackTestCase):
         # 2. Add some accounts to project. Add resources to the project
         # 3. Delete the account. Verify resources are still there after
         #    account deletion.
-
-        # Verify 'project.invite.required' is set to false
-        configs = Configurations.list(
-                                      self.apiclient,
-                                      name='project.invite.required'
-                                      )
-        self.assertEqual(
-                            isinstance(configs, list),
-                            True,
-                            "Check for a valid list configurations response"
-                            )
-        config = configs[0]
-        self.assertEqual(
-                    (config.value).lower(),
-                    'false',
-                    "'project.invite.required' should be set to false"
-                    )
 
         # Create project as a domain admin
         project = Project.create(
@@ -1375,23 +1317,6 @@ class TestProjectResources(cloudstackTestCase):
         # 3. Delete the project. Verify resources are freed after
         #    account deletion.
         # 4. Verify all accounts are unassigned from project.
-
-        # Verify 'project.invite.required' is set to false
-        configs = Configurations.list(
-                                      self.apiclient,
-                                      name='project.invite.required'
-                                      )
-        self.assertEqual(
-                            isinstance(configs, list),
-                            True,
-                            "Check for a valid list configurations response"
-                            )
-        config = configs[0]
-        self.assertEqual(
-                    (config.value).lower(),
-                    'false',
-                    "'project.invite.required' should be set to false"
-                    )
 
         # Create project as a domain admin
         project = Project.create(
@@ -1524,6 +1449,16 @@ class TestProjectSuspendActivate(cloudstackTestCase):
                                     cls.zone.id,
                                     cls.services["ostypeid"]
                                     )
+        configs = Configurations.list(
+                                      cls.api_client,
+                                      name='project.invite.required'
+                                      )
+
+        if not isinstance(configs, list):
+            raise unittest.SkipTest("List configurations has no config: project.invite.required")
+        elif (configs[0].value).lower() != 'false':
+            raise unittest.SkipTest("'project.invite.required' should be set to false")
+
         # Create account, service offering, disk offering etc.
         cls.disk_offering = DiskOffering.create(
                                     cls.api_client,
@@ -1596,23 +1531,6 @@ class TestProjectSuspendActivate(cloudstackTestCase):
         # 2. Add some accounts to project. Add resources to the project
         # 3. Delete the account. Verify resources are still there after
         #    account deletion.
-
-        # Verify 'project.invite.required' is set to false
-        configs = Configurations.list(
-                                      self.apiclient,
-                                      name='project.invite.required'
-                                      )
-        self.assertEqual(
-                            isinstance(configs, list),
-                            True,
-                            "Check for a valid list configurations response"
-                            )
-        config = configs[0]
-        self.assertEqual(
-                    (config.value).lower(),
-                    'false',
-                    "'project.invite.required' should be set to false"
-                    )
 
         self.debug("Adding %s user to project: %s" % (
                                                 self.user.account.name,
@@ -1747,23 +1665,6 @@ class TestProjectSuspendActivate(cloudstackTestCase):
         # Validate the following
         # 1. Activate the project
         # 2. Verify project is activated and we are able to add resources
-
-        # Verify 'project.invite.required' is set to false
-        configs = Configurations.list(
-                                      self.apiclient,
-                                      name='project.invite.required'
-                                      )
-        self.assertEqual(
-                            isinstance(configs, list),
-                            True,
-                            "Check for a valid list configurations response"
-                            )
-        config = configs[0]
-        self.assertEqual(
-                    (config.value).lower(),
-                    'false',
-                    "'project.invite.required' should be set to false"
-                    )
 
         # Activating the project
         self.debug("Activating project: %s" % self.project.name)
