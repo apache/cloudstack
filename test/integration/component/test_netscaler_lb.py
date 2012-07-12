@@ -2660,7 +2660,7 @@ class TestVmWithLb(cloudstackTestCase):
 
         cmd = migrateVirtualMachine.migrateVirtualMachineCmd()
         cmd.hostid = host.id
-        cmd.virtualmachineid = self.medium_virtual_machine.id
+        cmd.virtualmachineid = self.vm_2.id
         self.apiclient.migrateVirtualMachine(cmd)
 
         list_vm_response = list_virtual_machines(
