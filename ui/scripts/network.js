@@ -344,9 +344,7 @@
               async: false,
               success: function(data) {
                 args.response.success({								  
-                  data: $.grep(data.listnetworksresponse.network, function(item) {
-									  return (item.vpcid == null);
-									})
+                  data: data.listnetworksresponse.network
                 });
               },
               error: function(data) {
