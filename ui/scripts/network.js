@@ -851,29 +851,37 @@
                       },
                       add: {
                         label: 'label.add.vms',
-                        action: function(args) {
-                          var openFirewall = false;
+                        action: function(args) {                         
                           var data = {
                             algorithm: args.data.algorithm,
                             name: args.data.name,
                             privateport: args.data.privateport,
-                            publicport: args.data.publicport
+                            publicport: args.data.publicport,
+														openfirewall: false,
+														domainid: g_domainid,
+														account: g_account
                           };
+													
+													if('vpc' in args.context) { //from VPC section
+														if(args.data.tier == null) {													  
+															args.response.error('Tier is required');
+															return;
+														}			
+														$.extend(data, {
+															networkid: args.data.tier		
+														});	
+													}
+													else {  //from Guest Network section
+														$.extend(data, {
+															networkid: args.context.networks[0].id
+														});	
+													}
+													
                           var stickyData = $.extend(true, {}, args.data.sticky);
-
-                          var apiCmd = "createLoadBalancerRule";
-                          //if(args.context.networks[0].type == "Shared")
-                          apiCmd += "&domainid=" + g_domainid + "&account=" + g_account;
-                          //else //args.context.networks[0].type == "Isolated"
-                          //apiCmd += "&account=" + args.context.users[0].account;
-                          //apiCmd += '&domainid=' + args.context.users[0].domainid;
-
+                         
                           $.ajax({
-                            url: createURL(apiCmd),
-                            data: $.extend(data, {
-                              openfirewall: openFirewall,
-                              networkid: args.context.networks[0].id
-                            }),
+                            url: createURL('createLoadBalancerRule'),
+                            data: data,
                             dataType: 'json',
                             async: true,
                             success: function(data) {
@@ -2096,13 +2104,24 @@
                       tier: {
                         label: 'Tier',
                         select: function(args) {	
-													if('vpc' in args.context) {													
+													if('vpc' in args.context) {		
+                            var data = {
+														  listAll: true
+														};
+														if(args.context.ipAddresses[0].associatednetworkid == null) {
+														  $.extend(data, {
+															  vpcid: args.context.vpc[0].id
+															});
+														}
+														else {
+														  $.extend(data, {
+															  id: args.context.ipAddresses[0].associatednetworkid
+															});
+														}			//???
+													
 														$.ajax({
 															url: createURL("listNetworks"),															
-															data: {
-																vpcid: args.context.vpc[0].id,
-																listAll: true
-															},															
+															data: data,															
 															success: function(json) {					  
 																var networks = json.listnetworksresponse.network;	
 																var items = [];
