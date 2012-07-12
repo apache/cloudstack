@@ -104,6 +104,23 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                         //Decrypt this value.
                         xenGuestLabel = DBEncryptionUtil.decrypt(xenGuestLabel);
                         
+                        //make sure that no physical network with this traffic label already exists. if yes, error out.
+                        if(xenGuestLabel != null){
+                            PreparedStatement pstmt5 = conn.prepareStatement("SELECT count(*) FROM `cloud`.`physical_network_traffic_types` pntt JOIN `cloud`.`physical_network` pn ON pntt.physical_network_id = pn.id WHERE pntt.traffic_type ='Guest' AND pn.data_center_id = ? AND pntt.xen_network_label = ?");
+                            pstmt5.setLong(1, zoneId);
+                            pstmt5.setString(2, xenGuestLabel);
+                            ResultSet rsSameLabel = pstmt5.executeQuery();
+                            
+                            if(rsSameLabel.next()){
+                                Long sameLabelcount = rsSameLabel.getLong(1);
+                                if(sameLabelcount >  0){
+                                    s_logger.error("There are untagged networks for which we need to add a physical network with Xen traffic label = 'xen.guest.network.device' config value, which is: "+xenGuestLabel);
+                                    s_logger.error("However already there are "+sameLabelcount+" physical networks setup with same traffic label, cannot upgrade");
+                                    throw new CloudRuntimeException("Cannot upgrade this setup since a physical network with same traffic label: "+xenGuestLabel+" already exists, Please check logs and contact Support.");
+                                }
+                            }
+                        }
+                        
                         //Create a physical network with guest traffic type and this tag
                         long physicalNetworkId = addPhysicalNetworkToZone(conn, zoneId, zoneName, networkType, null, domainId);
                         addTrafficType(conn, physicalNetworkId, "Guest", xenGuestLabel, null, null);
@@ -157,12 +174,19 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                         s_logger.error("Guest Vnet assignment is set wrongly . Cannot upgrade until that is corrected. Example- Vnet: "+ vnet +" has physical network id: " + vpid +" ,but the guest network: " +networkId+" that uses it has physical network id: " +npid );
                         
                         String message = "Cannot upgrade. Your setup has multiple Physical Networks and is using guest Vnet that is assigned wrongly. To upgrade, first correct the setup by doing the following: \n" +
-                        "1. Please rollback \n" +
-                        "2. Please stop all VMs through CloudStack and wait for all networks to shutdown. [Networks shutdown will be determined by network.gc.interval and network.gc.wait seconds] \n" +
-                        "3. Please ensure all networks are shutdown and all guest Vnet's are free." +
-                        "4. Run upgrade. This will allocate all your guest vnet range to first physical network.  \n" +
-                        "5. Reconfigure the vnet ranges for each physical network as desired by using updatePhysicalNetwork API \n" +
-                        "6. Start all your VMs";
+                        "1. Please rollback to your 2.2.14 setup\n" +
+                        "2. Please stop all VMs through CloudStack\n" +
+                        "3. Run following query to find if any networks still have nics allocated:\n\t"+
+                        "a) check if any virtual guest networks still have allocated nics by running:\n\t" +
+                        "SELECT  DISTINCT  op.id from `cloud`.`op_networks` op JOIN `cloud`.`networks` n WHERE  nics_count != 0 AND guest_type = 'Virtual';\n\t"+ 
+                        "b) If this returns any networkd ids, then ensure that all VMs are stopped, no new VM is being started, and then shutdown management server\n\t"+
+                        "c) Clean up the nics count for the 'virtual' network id's returned in step (a) by running this:\n\t"+
+                        "UPDATE `cloud`.`op_networks` SET nics_count = 0 WHERE  id = <enter id of virtual network>\n\t"+
+                        "d) Restart management server and wait for all networks to shutdown. [Networks shutdown will be determined by network.gc.interval and network.gc.wait seconds] \n"+
+                        "4. Please ensure all networks are shutdown and all guest Vnet's are free.\n" +
+                        "5. Run upgrade. This will allocate all your guest vnet range to first physical network.  \n" +
+                        "6. Reconfigure the vnet ranges for each physical network as desired by using updatePhysicalNetwork API \n" +
+                        "7. Start all your VMs";
                         
                         s_logger.error(message);
                         throw new CloudRuntimeException("Cannot upgrade this setup since Guest Vnet assignment to the multiple physical networks is incorrect. Please check the logs for details on how to proceed");
