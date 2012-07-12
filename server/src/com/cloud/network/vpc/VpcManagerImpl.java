@@ -674,7 +674,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("restartRequired", sb.entity().isRestartRequired(), SearchCriteria.Op.EQ);
-
+        sb.and("cidr", sb.entity().getCidr(), SearchCriteria.Op.EQ);
+        
         // now set the SC criteria...
         SearchCriteria<VpcVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);  
@@ -708,6 +709,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
         
         if (state != null) {
             sc.addAnd("state", SearchCriteria.Op.EQ, state);
+        }
+        
+        if (cidr != null) {
+            sc.addAnd("cidr", SearchCriteria.Op.EQ, cidr);
         }
         
         if (restartRequired != null) {
