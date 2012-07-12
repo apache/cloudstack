@@ -687,6 +687,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.EQ);
         sb.and("restartRequired", sb.entity().isRestartRequired(), SearchCriteria.Op.EQ);
+        sb.and("cidr", sb.entity().getCidr(), SearchCriteria.Op.EQ);
         
         if (tags != null && !tags.isEmpty()) {
             SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
@@ -743,6 +744,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
         
         if (state != null) {
             sc.addAnd("state", SearchCriteria.Op.EQ, state);
+        }
+        
+        if (cidr != null) {
+            sc.addAnd("cidr", SearchCriteria.Op.EQ, cidr);
         }
         
         if (restartRequired != null) {
