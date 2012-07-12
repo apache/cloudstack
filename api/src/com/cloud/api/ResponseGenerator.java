@@ -21,9 +21,13 @@ import com.cloud.api.ApiConstants.VMDetails;
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.AsyncJobResponse;
+import com.cloud.api.response.AutoScalePolicyResponse;
+import com.cloud.api.response.AutoScaleVmGroupResponse;
 import com.cloud.api.response.CapacityResponse;
 import com.cloud.api.response.ClusterResponse;
+import com.cloud.api.response.ConditionResponse;
 import com.cloud.api.response.ConfigurationResponse;
+import com.cloud.api.response.CounterResponse;
 import com.cloud.api.response.CreateCmdResponse;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.api.response.DomainResponse;
@@ -38,6 +42,7 @@ import com.cloud.api.response.IPAddressResponse;
 import com.cloud.api.response.InstanceGroupResponse;
 import com.cloud.api.response.IpForwardingRuleResponse;
 import com.cloud.api.response.LBStickinessResponse;
+import com.cloud.api.response.AutoScaleVmProfileResponse;
 import com.cloud.api.response.LDAPConfigResponse;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.LoadBalancerResponse;
@@ -106,12 +111,17 @@ import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VpnUser;
+import com.cloud.network.as.AutoScalePolicy;
+import com.cloud.network.as.AutoScaleVmGroup;
+import com.cloud.network.as.Condition;
+import com.cloud.network.as.Counter;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.StickinessPolicy;
+import com.cloud.network.as.AutoScaleVmProfile;
 import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupRules;
 import com.cloud.network.security.SecurityRule;
@@ -288,7 +298,8 @@ public interface ResponseGenerator {
     StorageNetworkIpRangeResponse createStorageNetworkIpRangeResponse(StorageNetworkIpRange result);
     
     /**
-     * @param tableName TODO
+     * @param tableName
+     *            TODO
      * @param token
      * @return
      */
@@ -336,4 +347,14 @@ public interface ResponseGenerator {
     Site2SiteCustomerGatewayResponse createSite2SiteCustomerGatewayResponse(Site2SiteCustomerGateway result);
 
     Site2SiteVpnConnectionResponse createSite2SiteVpnConnectionResponse(Site2SiteVpnConnection result);
+
+    CounterResponse createCounterResponse(Counter ctr);
+
+    ConditionResponse createConditionResponse(Condition cndn);
+
+    AutoScalePolicyResponse createAutoScalePolicyResponse(AutoScalePolicy policy);
+
+    AutoScaleVmProfileResponse createAutoScaleVmProfileResponse(AutoScaleVmProfile profile);
+
+    AutoScaleVmGroupResponse createAutoScaleVmGroupResponse(AutoScaleVmGroup vmGroup);
 }

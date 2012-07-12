@@ -37,6 +37,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkService;
 import com.cloud.network.StorageNetworkService;
 import com.cloud.network.VirtualNetworkApplianceService;
+import com.cloud.network.as.AutoScaleService;
 import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.firewall.NetworkACLService;
 import com.cloud.network.lb.LoadBalancingRulesService;
@@ -121,6 +122,7 @@ public abstract class BaseCmd {
     public static EntityManager _entityMgr;
     public static RulesService _rulesService;
     public static LoadBalancingRulesService _lbService;
+    public static AutoScaleService _autoScaleService;
     public static RemoteAccessVpnService _ravService;
     public static BareMetalVmService _bareMetalVmService;
     public static ProjectService _projectService;
@@ -151,6 +153,7 @@ public abstract class BaseCmd {
         _entityMgr = locator.getManager(EntityManager.class);
         _rulesService = locator.getManager(RulesService.class);
         _lbService = locator.getManager(LoadBalancingRulesService.class);
+        _autoScaleService = locator.getManager(AutoScaleService.class);
         _ravService = locator.getManager(RemoteAccessVpnService.class);
         _responseGenerator = generator;
         _bareMetalVmService = locator.getManager(BareMetalVmService.class);
@@ -198,9 +201,9 @@ public abstract class BaseCmd {
     }
 
     public ManagementService getMgmtServiceRef() {
-        return _mgr;
+    	return _mgr;
     }
-
+    
     public static String getDateString(Date date) {
         if (date == null) {
             return "";
@@ -512,8 +515,8 @@ public abstract class BaseCmd {
                 if (!enabledOnly || project.getState() == Project.State.Active) {
                     return project.getProjectAccountId();
                 } else {
-                    PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() + " as it's no longer active");
-                    ex.addProxyObject(project, projectId, "projectId");                    
+                	PermissionDeniedException ex = new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() + " as it's no longer active");
+                	ex.addProxyObject(project, projectId, "projectId");                    
                     throw ex;
                 }
             } else {

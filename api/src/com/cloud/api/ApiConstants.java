@@ -337,7 +337,8 @@ public class ApiConstants {
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_ID = "vsmdeviceid";
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_NAME = "vsmdevicename";
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_STATE = "vsmdevicestate";
-    // Would we need to have a capacity field for Cisco N1KV VSM? Max hosts managed by it perhaps? May remove this later.
+    // Would we need to have a capacity field for Cisco N1KV VSM? Max hosts managed by it perhaps? May remove this
+// later.
     public static final String EXTERNAL_SWITCH_MGMT_DEVICE_CAPACITY = "vsmdevicecapacity";
     public static final String CISCO_NEXUS_VSM_NAME = "vsmname";
     public static final String VSM_USERNAME = "vsmusername";
@@ -370,6 +371,29 @@ public class ApiConstants {
     public static final String ESP_POLICY = "esppolicy";
     public static final String LIFETIME = "lifetime";
     public static final String FOR_VPC = "forvpc";
+    public static final String SOURCE = "source";
+    public static final String COUNTER_ID = "counterid";
+    public static final String AGGR_OPERATOR = "aggroperator";
+    public static final String AGGR_FUNCTION = "aggrfunction";
+    public static final String AGGR_VALUE = "aggrvalue";
+    public static final String THRESHOLD = "threshold";
+    public static final String RELATIONAL_OPERATOR = "relationaloperator";
+    public static final String SNMP_COMMUNITY = "snmpcommunity";
+    public static final String SNMP_PORT = "snmpport";
+    public static final String OTHER_DEPLOY_PARAMS = "otherdeployparams";
+    public static final String MIN_MEMBERS = "minmembers";
+    public static final String MAX_MEMBERS = "maxmembers";
+    public static final String AUTOSCALE_VM_DESTROY_TIME = "destroyvmgraceperiod";
+    public static final String VMPROFILE_ID = "vmprofileid";
+    public static final String VMGROUP_ID = "vmgroupid";
+    public static final String SCALEUP_POLICY_IDS = "scaleuppolicyids";
+    public static final String SCALEDOWN_POLICY_IDS = "scaledownpolicyids";
+    public static final String INTERVAL = "interval";
+    public static final String QUIETTIME = "quiettime";
+    public static final String ACTION = "action";
+    public static final String CONDITION_ID = "conditionid";
+    public static final String CONDITION_IDS = "conditionids";
+    public static final String AUTOSCALE_USER_ID = "autoscaleuserid";
     
     public enum HostDetails {
         all, capacity, events, stats, min;
@@ -387,6 +411,5 @@ public class ApiConstants {
             return "ldap." + name();
         }
     }
-
 
 }

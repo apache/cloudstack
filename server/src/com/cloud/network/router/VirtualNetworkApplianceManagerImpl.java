@@ -2607,7 +2607,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
             List<LbStickinessPolicy> stickinessPolicies = rule.getStickinessPolicies();
-            LoadBalancerTO lb = new LoadBalancerTO(srcIp, srcPort, protocol, algorithm, revoked, false, destinations, stickinessPolicies);
+            LoadBalancerTO lb = new LoadBalancerTO(rule.getId(), srcIp, srcPort, protocol, algorithm, revoked, false, destinations, stickinessPolicies);
             lbs[i++] = lb;
         }
         String routerPublicIp = null;

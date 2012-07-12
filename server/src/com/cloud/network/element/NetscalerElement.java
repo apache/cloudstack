@@ -599,7 +599,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
             List<LbDestination> destinations = rule.getDestinations();
 
             if (destinations != null && !destinations.isEmpty()) {
-                LoadBalancerTO loadBalancer = new LoadBalancerTO(srcIp, srcPort, protocol, algorithm, revoked, false, destinations, rule.getStickinessPolicies());
+                LoadBalancerTO loadBalancer = new LoadBalancerTO(rule.getId(), srcIp, srcPort, protocol, algorithm, revoked, false, destinations, rule.getStickinessPolicies());
                 loadBalancersToApply.add(loadBalancer);
             }
         }

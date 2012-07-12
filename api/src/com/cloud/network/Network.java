@@ -161,6 +161,8 @@ public interface Network extends ControlledEntity {
         public static final Capability RedundantRouter = new Capability("RedundantRouter");
         public static final Capability ElasticIp = new Capability("ElasticIp");
         public static final Capability ElasticLb = new Capability("ElasticLb");
+        public static final Capability AutoScaleCounters = new Capability("AutoScaleCounters");
+
 
         private String name;
 

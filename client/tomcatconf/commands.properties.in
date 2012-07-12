@@ -134,6 +134,24 @@ listLoadBalancerRules=com.cloud.api.commands.ListLoadBalancerRulesCmd;15
 listLBStickinessPolicies=com.cloud.api.commands.ListLBStickinessPoliciesCmd;15
 listLoadBalancerRuleInstances=com.cloud.api.commands.ListLoadBalancerRuleInstancesCmd;15
 updateLoadBalancerRule=com.cloud.api.commands.UpdateLoadBalancerRuleCmd;15
+#### autoscale commands
+createCounter = com.cloud.api.commands.CreateCounterCmd;1
+createCondition = com.cloud.api.commands.CreateConditionCmd;15
+createAutoScalePolicy=com.cloud.api.commands.CreateAutoScalePolicyCmd;15
+createAutoScaleVmProfile=com.cloud.api.commands.CreateAutoScaleVmProfileCmd;15
+createAutoScaleVmGroup=com.cloud.api.commands.CreateAutoScaleVmGroupCmd;15
+deleteCounter = com.cloud.api.commands.DeleteCounterCmd;1
+deleteCondition = com.cloud.api.commands.DeleteConditionCmd;15
+deleteAutoScalePolicy=com.cloud.api.commands.DeleteAutoScalePolicyCmd;15
+deleteAutoScaleVmProfile=com.cloud.api.commands.DeleteAutoScaleVmProfileCmd;15
+deleteAutoScaleVmGroup=com.cloud.api.commands.DeleteAutoScaleVmGroupCmd;15
+listCounters = com.cloud.api.commands.ListCountersCmd;15
+listConditions = com.cloud.api.commands.ListConditionsCmd;15
+listAutoScalePolicies=com.cloud.api.commands.ListAutoScalePoliciesCmd;15
+listAutoScaleVmProfiles=com.cloud.api.commands.ListAutoScaleVmProfilesCmd;15
+listAutoScaleVmGroups=com.cloud.api.commands.ListAutoScaleVmGroupsCmd;15
+enableAutoScaleVmGroup=com.cloud.api.commands.EnableAutoScaleVmGroupCmd;15
+disableAutoScaleVmGroup=com.cloud.api.commands.DisableAutoScaleVmGroupCmd;15
 
 #### router commands
 startRouter=com.cloud.api.commands.StartRouterCmd;7

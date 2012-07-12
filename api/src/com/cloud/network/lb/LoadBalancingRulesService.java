@@ -59,6 +59,7 @@ public interface LoadBalancingRulesService {
     public boolean applyLBStickinessPolicy(CreateLBStickinessPolicyCmd cmd) throws ResourceUnavailableException;
     
     boolean deleteLBStickinessPolicy(long stickinessPolicyId, boolean apply);
+
     /**
      * Assign a virtual machine, or list of virtual machines, to a load balancer.
      */
@@ -100,5 +101,4 @@ public interface LoadBalancingRulesService {
     List<LoadBalancingRule> listByNetworkId(long networkId);
 
     LoadBalancer findById(long LoadBalancer);
-
 }

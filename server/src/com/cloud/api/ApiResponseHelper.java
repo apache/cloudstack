@@ -35,11 +35,16 @@ import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.api.response.AsyncJobResponse;
+import com.cloud.api.response.AutoScalePolicyResponse;
+import com.cloud.api.response.AutoScaleVmGroupResponse;
+import com.cloud.api.response.AutoScaleVmProfileResponse;
 import com.cloud.api.response.CapabilityResponse;
 import com.cloud.api.response.CapacityResponse;
 import com.cloud.api.response.ClusterResponse;
+import com.cloud.api.response.ConditionResponse;
 import com.cloud.api.response.ConfigurationResponse;
 import com.cloud.api.response.ControlledEntityResponse;
+import com.cloud.api.response.CounterResponse;
 import com.cloud.api.response.CreateCmdResponse;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.api.response.DomainResponse;
@@ -146,6 +151,12 @@ import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VpnUser;
+import com.cloud.network.as.AutoScalePolicy;
+import com.cloud.network.as.AutoScaleVmGroup;
+import com.cloud.network.as.AutoScaleVmProfile;
+import com.cloud.network.as.Condition;
+import com.cloud.network.as.ConditionVO;
+import com.cloud.network.as.Counter;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
@@ -775,7 +786,7 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // get account information
         if (ipAddr.getAllocatedToAccountId() != null) {
-            populateOwner(ipResponse, ipAddr);
+        populateOwner(ipResponse, ipAddr);
         }
 
         ipResponse.setForVirtualNetwork(forVirtualNetworks);
@@ -1153,7 +1164,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         boolean isExtractable = true;
         if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk dont have any template dependence.
             VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
-            if (template != null) { // For ISO based volumes template = null and we allow extraction of all ISO based volumes
+            if (template != null) { // For ISO based volumes template = null and we allow extraction of all ISO based
+                // volumes
                 isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;                
             }
         }
@@ -1401,7 +1413,6 @@ public class ApiResponseHelper implements ResponseGenerator {
                 userVmResponse.setInstanceName(userVm.getInstanceName());
             }
             
- 
             if (userVm.getPassword() != null) {
                 userVmResponse.setPassword(userVm.getPassword());
             }
@@ -3558,8 +3569,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             List<? extends StickinessPolicy> stickinessPolicies, LoadBalancer lb) {
         LBStickinessResponse spResponse = new LBStickinessResponse();
 
-        if (lb == null)
+        if (lb == null) {
             return spResponse;
+        }
         spResponse.setlbRuleId(lb.getId());
         Account account = ApiDBUtils.findAccountById(lb.getAccountId());
         if (account != null) {
@@ -3688,7 +3700,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
     
-    
     @Override
     public VpcResponse createVpcResponse(Vpc vpc) {
         VpcResponse response = new VpcResponse();
@@ -3769,7 +3780,72 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setState(result.getState().toString());
         
         response.setObjectName("privategateway");
+        return response;
+    }
+
+    @Override
+    public AutoScaleVmProfileResponse createAutoScaleVmProfileResponse(AutoScaleVmProfile profile) {
+        AutoScaleVmProfileResponse response = new AutoScaleVmProfileResponse();
+        response.setId(profile.getId());
+        response.setZoneId(profile.getZoneId());
+        response.setServiceOfferingId(profile.getServiceOfferingId());
+        response.setTemplateId(profile.getTemplateId());
+        response.setOtherDeployParams(profile.getOtherDeployParams());
+        response.setSnmpCommunity(profile.getSnmpCommunity());
+        response.setSnmpPort(profile.getSnmpPort());
+        response.setDestroyVmGraceperiod(profile.getDestroyVmGraceperiod());
+        response.setAutoscaleUserId(profile.getAutoScaleUserId());
+        // Populates the account information in the response
+        populateOwner(response, profile);
+        return response;
+    }
+
+    @Override
+    public AutoScalePolicyResponse createAutoScalePolicyResponse(AutoScalePolicy policy) {
+        AutoScalePolicyResponse response = new AutoScalePolicyResponse();
+        response.setId(policy.getId());
+        response.setDuration(policy.getDuration());
+        response.setQuietTime(policy.getQuietTime());
+        response.setAction(policy.getAction());
+        List<ConditionVO> vos = ApiDBUtils.getAutoScalePolicyConditions(policy.getId());
+        ArrayList<ConditionResponse> conditions = new ArrayList<ConditionResponse>(vos.size());
+        for (ConditionVO vo : vos) {
+            conditions.add(createConditionResponse(vo));
+        }
+        response.setConditions(conditions);
         
+        // Populates the account information in the response
+        populateOwner(response, policy);
+
+        return response;
+    }
+
+    @Override
+    public AutoScaleVmGroupResponse createAutoScaleVmGroupResponse(AutoScaleVmGroup vmGroup) {
+        AutoScaleVmGroupResponse response = new AutoScaleVmGroupResponse();
+        response.setId(vmGroup.getId());
+        response.setMinMembers(vmGroup.getMinMembers());
+        response.setMaxMembers(vmGroup.getMaxMembers());
+        response.setInterval(vmGroup.getInterval());
+        response.setProfileId(vmGroup.getProfileId());
+        response.setLoadBalancerId(vmGroup.getProfileId());
+
+        List<AutoScalePolicyResponse> scaleUpPoliciesResponse = new ArrayList<AutoScalePolicyResponse>();
+        List<AutoScalePolicyResponse> scaleDownPoliciesResponse = new ArrayList<AutoScalePolicyResponse>();
+        response.setScaleUpPolicies(scaleUpPoliciesResponse);
+        response.setScaleDownPolicies(scaleDownPoliciesResponse);
+
+        // Fetch policies for vmgroup
+        List<AutoScalePolicy> scaleUpPolicies = new ArrayList<AutoScalePolicy>();
+        List<AutoScalePolicy> scaleDownPolicies = new ArrayList<AutoScalePolicy>();
+        ApiDBUtils.getAutoScaleVmGroupPolicies(vmGroup.getId(), scaleUpPolicies, scaleDownPolicies);
+        // populate policies
+        for (AutoScalePolicy autoScalePolicy : scaleUpPolicies) {
+            scaleUpPoliciesResponse.add(createAutoScalePolicyResponse(autoScalePolicy));
+        }
+        for (AutoScalePolicy autoScalePolicy : scaleDownPolicies) {
+            scaleDownPoliciesResponse.add(createAutoScalePolicyResponse(autoScalePolicy));
+        }
         return response;
     }
     
@@ -3798,7 +3874,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setTags(tagResponses);
         response.setObjectName("staticroute");
-        
         return response;
     }
   
@@ -3867,6 +3942,89 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setCreated(result.getCreated());
         response.setRemoved(result.getRemoved());
         response.setObjectName("vpnconnection");
+        return response;
+    }
+
+    /*
+     * 
+     * @Override
+     * public CounterResponse createCounterResponse(Counter counter) {
+     * CounterResponse response = new CounterResponse();
+     * response.setId(counter.getId());
+     * response.setSource(counter.getSource().toString());
+     * response.setName(counter.getName());
+     * response.setValue(counter.getValue());
+     * response.setZoneId(counter.getZoneId());
+     * response.setObjectName("counter");
+     * 
+     * response.setVpnGatewayId(result.getVpnGatewayId());
+     * Long vpnGatewayId = result.getVpnGatewayId();
+     * if(vpnGatewayId != null) {
+     * Site2SiteVpnGatewayVO vpnGateway = ApiDBUtils.findVpnGatewayById(vpnGatewayId);
+     * 
+     * long ipId = vpnGateway.getAddrId();
+     * IPAddressVO ipObj = ApiDBUtils.findIpAddressById(ipId);
+     * response.setIp(ipObj.getAddress().addr());
+     * }
+     * 
+     * response.setCustomerGatewayId(result.getCustomerGatewayId());
+     * Long customerGatewayId = result.getCustomerGatewayId();
+     * if(customerGatewayId != null) {
+     * Site2SiteCustomerGatewayVO customerGateway = ApiDBUtils.findCustomerGatewayById(customerGatewayId);
+     * response.setGatewayIp(customerGateway.getGatewayIp());
+     * response.setGuestCidrList(customerGateway.getGuestCidrList());
+     * response.setIpsecPsk(customerGateway.getIpsecPsk());
+     * response.setIkePolicy(customerGateway.getIkePolicy());
+     * response.setEspPolicy(customerGateway.getEspPolicy());
+     * response.setLifetime(customerGateway.getLifetime());
+     * }
+     * 
+     * response.setCreated(result.getCreated());
+     * response.setRemoved(result.getRemoved());
+     * response.setObjectName("vpnconnection");
+     * return response;
+     * }
+     */
+
+    // @Override
+    // public ConditionResponse createConditionResponse(Condition condition) {
+    // ConditionResponse response = new ConditionResponse();
+    // response.setId(condition.getId());
+    // CounterResponse counter;
+    // counter = createCounterResponse(ApiDBUtils.getCounter(condition.getCounterid()));
+    // response.setCounter(counter);
+    // response.setRelationalOperator(condition.getRelationalOperator().toString());
+    // response.setThreshold(condition.getThreshold());
+    // Account account = ApiDBUtils.findAccountById(condition.getAccountId());
+    // response.setZoneId(condition.getZoneId());
+    // response.setObjectName("condition");
+    //
+    // populateOwner(response, condition);
+    // return response;
+    // }
+
+    @Override
+    public CounterResponse createCounterResponse(Counter counter) {
+        CounterResponse response = new CounterResponse();
+        response.setId(counter.getId());
+        response.setSource(counter.getSource().toString());
+        response.setName(counter.getName());
+        response.setValue(counter.getValue());
+        response.setObjectName("counter");
+        return response;
+    }
+
+    @Override
+    public ConditionResponse createConditionResponse(Condition condition) {
+        ConditionResponse response = new ConditionResponse();
+        response.setId(condition.getId());
+        CounterResponse counter;
+        counter = createCounterResponse(ApiDBUtils.getCounter(condition.getCounterid()));
+        response.setCounter(counter);
+        response.setRelationalOperator(condition.getRelationalOperator().toString());
+        response.setThreshold(condition.getThreshold());
+        response.setObjectName("condition");
+        populateOwner(response, condition);
         return response;
     }
 }
