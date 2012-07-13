@@ -2198,7 +2198,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject,
+    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> 
+    permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject,
             boolean listAll, boolean forProjectInvitation) {
         Long domainId = domainIdRecursiveListProject.first();
 
@@ -2224,6 +2225,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
 
             if (userAccount != null) {
+                checkAccess(caller, null, false, userAccount);
+                //check permissions
                 permittedAccounts.add(userAccount.getId());
             } else {
                 List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
