@@ -20,9 +20,12 @@ import java.util.List;
 
 import javax.ejb.Local;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -32,10 +35,13 @@ import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapcityException;
 import com.cloud.network.Network;
+import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -58,7 +64,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = NetworkGuru.class)
 public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
-
+    private static final Logger s_logger = Logger.getLogger(ExternalGuestNetworkGuru.class);
     @Inject
     NetworkManager _networkMgr;
     @Inject
@@ -68,7 +74,27 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     @Inject
     PortForwardingRulesDao _pfRulesDao;
 
-    //FIXME: why there is dependency on Ovs tunnel manager.
+    public ExternalGuestNetworkGuru() {
+        super();
+        _isolationMethods = new IsolationMethod[] { IsolationMethod.GRE, IsolationMethod.L3, IsolationMethod.VLAN };
+    }
+
+    protected boolean canHandle(NetworkOffering offering,
+            final NetworkType networkType, final PhysicalNetwork physicalNetwork) {
+        // This guru handles only Guest Isolated network that supports Source
+        // nat service
+        if (networkType == NetworkType.Advanced
+                && isMyTrafficType(offering.getTrafficType())
+                && offering.getGuestType() == Network.GuestType.Isolated
+                && isMyIsolationMethod(physicalNetwork)) {
+            return true;
+        } else {
+            s_logger.trace("We only take care of Guest networks of type   "
+                    + GuestType.Isolated + " in zone of type "
+                    + NetworkType.Advanced);
+            return false;
+        }
+    }    
     
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {

@@ -1230,9 +1230,28 @@
               },
               enableStaticNAT: {
                 label: 'label.action.enable.static.NAT',
+                
                 action: {
                   noAdd: true,
                   custom: cloudStack.uiCustom.enableStaticNAT({
+                    // VPC
+                    tierSelect: function(args) {
+                      args.$tierSelect.hide(); // Hidden by default
+                      
+                      // Determine if tiers are supported here
+                      var enableTiers = false;
+
+                      if (enableTiers) {
+                        args.$tierSelect.show();
+                        args.response.success({
+                          data: [
+                            { id: '1', description: 'VPC 1' },
+                            { id: '2', description: 'VPC 2' }
+                          ]
+                        });
+                      }
+                    },
+
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
                         dataProvider: function(args) {
@@ -1949,6 +1968,21 @@
                         }
                       }
                     }),
+                    headerFields: {
+                      tier: {
+                        label: 'Tier',
+                        select: function(args) {
+                          args.response.success({
+                            data: [
+                              { id: '', name: '', description: 'None' },
+                              { id: '1', name: 'tier1', description: 'tier1' },
+                              { id: '2', name: 'tier2', description: 'tier2' },
+                              { id: '3', name: 'tier3', description: 'tier3' }
+                            ]
+                          });
+                        }
+                      }
+                    },
                     multipleAdd: true,
                     fields: {
                       'name': { edit: true, label: 'label.name', isEditable: true },
@@ -1967,6 +2001,7 @@
                           });
                         }
                       },
+
                       'sticky': {
                         label: 'label.stickiness',
                         custom: {
@@ -2178,7 +2213,9 @@
                         }
                       }
                     },
-                    dataProvider: function(args) {   
+                    dataProvider: function(args) {
+                      var $multi = args.$multi;
+
                       $.ajax({
                         url: createURL('listLoadBalancerRules'),
 												data: {
@@ -2273,11 +2310,36 @@
                           });
                         }
                       });
+
+                      // Check if tiers are present; hide/show header drop-down
+                      var hasTiers = false;
+                      var $headerFields = $multi.find('.header-fields');
+
+                      if (hasTiers) {
+                        $headerFields.hide();
+                      } else {
+                        $headerFields.show();
+                      }
                     }
                   },
 
                   // Port forwarding rules
                   portForwarding: {
+                    headerFields: {
+                      tier: {
+                        label: 'Tier',
+                        select: function(args) {
+                          args.response.success({
+                            data: [
+                              { id: '', name: '', description: 'None' },
+                              { id: '1', name: 'tier1', description: 'tier1' },
+                              { id: '2', name: 'tier2', description: 'tier2' },
+                              { id: '3', name: 'tier3', description: 'tier3' }
+                            ]
+                          });
+                        }
+                      }
+                    },
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
                         dataProvider: function(args) {
@@ -2413,6 +2475,8 @@
                       }
                     },
                     dataProvider: function(args) {
+                      var $multi = args.$multi;
+                      
                       $.ajax({
                         url: createURL('listPortForwardingRules'),
                         data: {
@@ -2464,6 +2528,16 @@
                               }
                             });
                           });
+
+                          // Check if tiers are present; hide/show header drop-down
+                          var hasTiers = false;
+                          var $headerFields = $multi.find('.header-fields');
+
+                          if (hasTiers) {
+                            $headerFields.hide();
+                          } else {
+                            $headerFields.show();
+                          }
                         },
                         error: function(data) {
                           args.response.error(parseXMLHttpResponse(data));

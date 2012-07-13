@@ -689,12 +689,20 @@
       var $action = $('<div></div>')
             .addClass('action')
             .addClass(actionName)
-            .append($('<span>').addClass('icon'))
+            .append($('<span>').addClass('icon').html('&nbsp;'))
             .attr({
               alt: _l(action.label),
               title: _l(action.label)
             })
             .data('list-view-action-id', actionName);
+
+      if (action.textLabel) {
+        $action
+          .addClass('text')
+          .prepend(
+            $('<span>').addClass('label').html(_l(action.textLabel))
+          );
+      }
 
       // Disabled appearance/behavior for filtered actions
       if (allowedActions && $.inArray(actionName, allowedActions) == -1) {

@@ -987,4 +987,13 @@ public class ElasticLoadBalancerManagerImpl implements
 
         return VirtualMachineName.getSystemVmId(vmName);
     }
+
+
+	@Override
+	public boolean recreateNeeded(
+			VirtualMachineProfile<DomainRouterVO> profile, long hostId,
+			Commands cmds, ReservationContext context) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

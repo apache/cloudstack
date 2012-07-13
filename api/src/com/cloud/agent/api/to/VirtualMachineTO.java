@@ -42,6 +42,7 @@ public class VirtualMachineTO {
     String vncPassword;
     String vncAddr;
     Map<String, String> params;
+    String uuid;
 
     VolumeTO[] disks;
     NicTO[] nics;
@@ -208,4 +209,14 @@ public class VirtualMachineTO {
     public void setDetails(Map<String, String> params) {
     	this.params = params;
     }
+
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
+    }
+    
+    
 }
