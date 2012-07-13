@@ -2943,17 +2943,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (ntwkOff.getGuestType() == GuestType.Isolated) {
                 if (_networksDao.countByZoneAndUri(zoneId, uri) > 0) {
                     List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
-                    idList.add(new IdentityProxy("vlan", Long.valueOf(vlanId), "vlanId"));
                     idList.add(new IdentityProxy("data_center", zoneId, "zoneId"));
-                    throw new InvalidParameterValueException("Network with vlan of specified id already exists in zone with specified id", idList);
+                    throw new InvalidParameterValueException("Network with vlan id: " + vlanId + " already exists in zone with specified id", idList);
                 }
             } else {
                 //don't allow to create Shared network with Vlan that already exists in the zone for Isolated networks
                 List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
-                idList.add(new IdentityProxy("vlan", Long.valueOf(vlanId), "vlanId"));
                 idList.add(new IdentityProxy("data_center", zoneId, "zoneId"));
                 if (_networksDao.countByZoneUriAndGuestType(zoneId, uri, GuestType.Isolated) > 0) {
-                    throw new InvalidParameterValueException("Isolated network with vlan of specified id already exists " +
+                    throw new InvalidParameterValueException("Isolated network with vlan id: " + vlanId + " already exists " +
                             "in zone with specified id", idList);
                 }
             }
