@@ -381,6 +381,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
+    @DB
     public boolean enableStaticNat(long ipId, long vmId, long networkId, boolean isSystemVm) 
             throws NetworkRuleConflictException, ResourceUnavailableException {
         UserContext ctx = UserContext.current();
@@ -401,83 +402,97 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         // Verify input parameters
-        boolean setNetworkId = false;
-        Network network = _networkMgr.getNetwork(networkId);
-        if (network == null) {
-            throw new InvalidParameterValueException("Unable to find network by id", null);
-        }
-        
-        if (!isSystemVm) {
-            //associate ip address to network (if needed)
-            if (ipAddress.getAssociatedWithNetworkId() == null) {
-                boolean assignToVpcNtwk = network.getVpcId() != null 
-                        && ipAddress.getVpcId() != null && ipAddress.getVpcId().longValue() == network.getVpcId();
-                if (assignToVpcNtwk) {
-                    _networkMgr.checkIpForService(ipAddress, Service.StaticNat, networkId);
-                    
-                    s_logger.debug("The ip is not associated with the VPC network id="+ networkId + ", so assigning");
-                    try {
-                        ipAddress = _networkMgr.associateIPToGuestNetwork(ipId, networkId);
-                    } catch (Exception ex) {
-                        s_logger.warn("Failed to associate ip id=" + ipId + " to VPC network id=" + networkId + " as " +
-                                "a part of enable static nat");
-                        return false;
+        boolean performedIpAssoc = false;
+        boolean result = false;
+        try {
+            Network network = _networkMgr.getNetwork(networkId);
+            if (network == null) {
+                throw new InvalidParameterValueException("Unable to find network by id", null);
+            }
+            
+            // Check that vm has a nic in the network
+            Nic guestNic = _networkMgr.getNicInNetwork(vmId, networkId);
+            if (guestNic == null) {
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(vm, vmId, "vmId"));
+                throw new InvalidParameterValueException("Vm doesn't belong to the network with specified id", idList);
+            }
+
+            
+            if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(network, networkId, "networkId"));
+                throw new InvalidParameterValueException("Unable to create static nat rule; StaticNat service is not " +
+                        "supported in network with specified id", idList);
+            }
+ 
+            if (!isSystemVm) {
+                //associate ip address to network (if needed)
+                if (ipAddress.getAssociatedWithNetworkId() == null) {
+                    boolean assignToVpcNtwk = network.getVpcId() != null 
+                            && ipAddress.getVpcId() != null && ipAddress.getVpcId().longValue() == network.getVpcId();
+                    if (assignToVpcNtwk) {
+                        _networkMgr.checkIpForService(ipAddress, Service.StaticNat, networkId);
+                        
+                        s_logger.debug("The ip is not associated with the VPC network id="+ networkId + ", so assigning");
+                        try {
+                            ipAddress = _networkMgr.associateIPToGuestNetwork(ipId, networkId);
+                        } catch (Exception ex) {
+                            s_logger.warn("Failed to associate ip id=" + ipId + " to VPC network id=" + networkId + " as " +
+                                    "a part of enable static nat");
+                            return false;
+                        }
+                        performedIpAssoc = true;
                     }
-                    setNetworkId = true;
+                } else {
+                    _networkMgr.checkIpForService(ipAddress, Service.StaticNat, null);
+                }
+                
+                if (ipAddress.getAssociatedWithNetworkId() == null) { 
+                    throw new InvalidParameterValueException("Ip address " + ipAddress + " is not assigned to the network " + network);
+                }
+
+                // Check permissions
+                checkIpAndUserVm(ipAddress, vm, caller);
+                
+                // Verify ip address parameter
+                isIpReadyForStaticNat(vmId, ipAddress, caller, ctx.getCallerUserId());
+            }
+            
+            ipAddress.setOneToOneNat(true);
+            ipAddress.setAssociatedWithVmId(vmId);
+
+            if (_ipAddressDao.update(ipAddress.getId(), ipAddress)) {
+                // enable static nat on the backend
+                s_logger.trace("Enabling static nat for ip address " + ipAddress + " and vm id=" + vmId + " on the backend");
+                if (applyStaticNatForIp(ipId, false, caller, false)) {
+                    result = true;
+                } else {
+                    s_logger.warn("Failed to enable static nat rule for ip address " + ipId + " on the backend");
                 }
             } else {
-                _networkMgr.checkIpForService(ipAddress, Service.StaticNat, null);
+                s_logger.warn("Failed to update ip address " + ipAddress + " in the DB as a part of enableStaticNat");
+                
             }
-            
-            
-            if (ipAddress.getAssociatedWithNetworkId() == null) { 
-                throw new InvalidParameterValueException("Ip address " + ipAddress + " is not assigned to the network " + network);
-            }
-
-            // Check permissions
-            checkIpAndUserVm(ipAddress, vm, caller);
-        }
-
-        // Check that vm has a nic in the network
-        Nic guestNic = _networkMgr.getNicInNetwork(vmId, networkId);
-        if (guestNic == null) {
-            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
-            idList.add(new IdentityProxy(vm, vmId, "vmId"));
-            throw new InvalidParameterValueException("Vm doesn't belong to the network with specified id", idList);
-        }
-
-        
-        if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
-            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
-            idList.add(new IdentityProxy(network, networkId, "networkId"));
-            throw new InvalidParameterValueException("Unable to create static nat rule; StaticNat service is not " +
-                    "supported in network with specified id", idList);
-        }
-
-        // Verify ip address parameter
-        isIpReadyForStaticNat(vmId, ipAddress, caller, ctx.getCallerUserId());
-        ipAddress.setOneToOneNat(true);
-        ipAddress.setAssociatedWithVmId(vmId);
-
-        if (_ipAddressDao.update(ipAddress.getId(), ipAddress)) {
-            // enable static nat on the backend
-            s_logger.trace("Enabling static nat for ip address " + ipAddress + " and vm id=" + vmId + " on the backend");
-            if (applyStaticNatForIp(ipId, false, caller, false)) {
-                return true;
-            } else {
+        } finally {
+            if (!result) {
+                Transaction txn = Transaction.currentTxn();
+                txn.start();
                 ipAddress.setOneToOneNat(false);
                 ipAddress.setAssociatedWithVmId(null);
-                if (setNetworkId) {
-                    ipAddress.setAssociatedWithNetworkId(null);
-                }
                 _ipAddressDao.update(ipAddress.getId(), ipAddress);
-                s_logger.warn("Failed to enable static nat rule for ip address " + ipId + " on the backend");
-                return false;
+                if (performedIpAssoc) {
+                    //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
+                    IpAddress ip = _ipAddressDao.findById(ipAddress.getId());
+                    if (ip != null && ip.getVpcId() != null && _firewallDao.listByIp(ip.getId()).isEmpty()) {
+                        s_logger.debug("Releasing VPC ip address " + ip + " as PF rule failed to create");
+                        _networkMgr.unassignIPFromVpcNetwork(ip.getId());
+                    }
+                } 
+                txn.commit();
             }
-        } else {
-            s_logger.warn("Failed to update ip address " + ipAddress + " in the DB as a part of enableStaticNat");
-            return false;
         }
+        return result;
     }
 
     protected void isIpReadyForStaticNat(long vmId, IPAddressVO ipAddress, Account caller, long callerUserId) 
