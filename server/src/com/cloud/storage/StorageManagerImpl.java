@@ -3207,10 +3207,25 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                     } else {
                         if (assignedPool.getId() != vol.getPoolId()) {
                             if (s_logger.isDebugEnabled()) {
-                                s_logger.debug("Volume " + vol + " is not recreatable! Cannot recreate on storagepool: " + assignedPool);
+                                s_logger.debug("Mismatch in storage pool " + assignedPool + " assigned by deploymentPlanner and the one associated with volume " + vol);
                             }
-                            throw new StorageUnavailableException("Volume is not recreatable, Unable to create " + vol, Volume.class, vol.getId());
-                            // copy volume usecase - not yet developed.
+                            if (vm.getServiceOffering().getUseLocalStorage())
+                            {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Local volume " + vol + " will be recreated on storage pool " + assignedPool + " assigned by deploymentPlanner");
+                                }
+                                recreateVols.add(vol);
+                            } else {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Shared volume " + vol + " will be migrated on storage pool " + assignedPool + " assigned by deploymentPlanner");
+                                }
+                                try {
+                                    Volume migratedVol = migrateVolume(vol.getId(), assignedPool.getId());
+                                    vm.addDisk(new VolumeTO(migratedVol, assignedPool));
+                                } catch (ConcurrentOperationException e) {
+                                    throw new StorageUnavailableException("Volume migration failed for " + vol, Volume.class, vol.getId());
+                                }
+                            }
                         } else {
                             StoragePoolVO pool = _storagePoolDao.findById(vol.getPoolId());
                             vm.addDisk(new VolumeTO(vol, pool));
