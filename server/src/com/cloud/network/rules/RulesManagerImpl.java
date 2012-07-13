@@ -536,10 +536,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             if (!reassignStaticNat) {
                 List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
                 idList.add(new IdentityProxy(ipAddress, ipAddress.getId(), "ipId"));
-                idList.add(new IdentityProxy("user_vm", vmId, "vmId"));
                 idList.add(new IdentityProxy(oldIP, oldIP.getId(), "oldipId"));
                 throw new InvalidParameterValueException("Failed to enable static nat for the ip address with specified ipId" +
-                        " as vm with specified vmId is already associated with ip with specified oldipId", idList);
+                        " as vm with id: " + vmId + " is already associated with ip with specified oldipId", idList);
             }
             // unassign old static nat rule
             s_logger.debug("Disassociating static nat for ip " + oldIP);
