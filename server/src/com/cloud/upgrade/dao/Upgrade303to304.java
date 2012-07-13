@@ -175,10 +175,10 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
                         
                         String message = "Cannot upgrade. Your setup has multiple Physical Networks and is using guest Vnet that is assigned wrongly. To upgrade, first correct the setup by doing the following: \n" +
                         "1. Please rollback to your 2.2.14 setup\n" +
-                        "2. Please stop all VMs through CloudStack\n" +
+                        "2. Please stop all VMs using isolated(virtual) networks through CloudStack\n" +
                         "3. Run following query to find if any networks still have nics allocated:\n\t"+
                         "a) check if any virtual guest networks still have allocated nics by running:\n\t" +
-                        "SELECT  DISTINCT  op.id from `cloud`.`op_networks` op JOIN `cloud`.`networks` n WHERE  nics_count != 0 AND guest_type = 'Virtual';\n\t"+ 
+                        "SELECT DISTINCT op.id from `cloud`.`op_networks` op JOIN `cloud`.`networks` n on op.id=n.id WHERE nics_count != 0 AND guest_type = 'Virtual';\n\t"+ 
                         "b) If this returns any networkd ids, then ensure that all VMs are stopped, no new VM is being started, and then shutdown management server\n\t"+
                         "c) Clean up the nics count for the 'virtual' network id's returned in step (a) by running this:\n\t"+
                         "UPDATE `cloud`.`op_networks` SET nics_count = 0 WHERE  id = <enter id of virtual network>\n\t"+
