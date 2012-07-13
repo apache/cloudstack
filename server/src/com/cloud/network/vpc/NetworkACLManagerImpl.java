@@ -400,18 +400,26 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
     public boolean revokeAllNetworkACLsForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException {
 
         List<FirewallRuleVO> ACLs = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.NetworkACL);
+        
+        if (ACLs.isEmpty()) {
+            s_logger.debug("Found no network ACLs for network id=" + networkId);
+            return true;
+        }
+        
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Releasing " + ACLs.size() + " Network ACLs for network id=" + networkId);
         }
 
         for (FirewallRuleVO ACL : ACLs) {
-            // Mark all Firewall rules as Revoke, but don't revoke them yet - we have to revoke all rules for ip, no
+            // Mark all Network ACLs rules as Revoke, but don't revoke them yet - we have to revoke all rules for ip, no
             // need to send them one by one
             revokeNetworkACL(ACL.getId(), false, caller, Account.ACCOUNT_ID_SYSTEM);
         }
+        
+        List<FirewallRuleVO> ACLsToRevoke = _firewallDao.listByNetworkAndPurpose(networkId, Purpose.NetworkACL);
 
         // now send everything to the backend
-        boolean success = _firewallMgr.applyFirewallRules(ACLs, false, caller);
+        boolean success = _firewallMgr.applyFirewallRules(ACLsToRevoke, false, caller);
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Successfully released Network ACLs for network id=" + networkId + " and # of rules now = " + ACLs.size());

@@ -167,7 +167,7 @@
 
         $dialog.append($listView);
         $dialog.dialog({
-          title: 'VMs in this tier',
+          title: 'VMs in tier: ' + name,
           dialogClass: 'multi-edit-add-list panel configure-acl',
           width: 825,
           height: 600,
@@ -457,7 +457,7 @@
           context: context
         })
       ).dialog({
-        title: 'Configure ACL',
+        title: 'Configure ACL for tier: ' + $tier.find('.title').html(),
         dialogClass: 'configure-acl',
         width: 900,
         height: 600,

@@ -791,7 +791,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
         finalizeSshAndVersionOnStart(cmds, profile, router, controlNic);
         
-        
         //2) FORM PLUG NIC COMMANDS
         Map<Nic, Network> guestNics = new HashMap<Nic, Network>();
         Map<Nic, Network> publicNics = new HashMap<Nic, Network>();
@@ -908,14 +907,13 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             throw new CloudRuntimeException("Cannot find related provider of virtual router provider: " + vrProvider.getType().toString());
         }
 
-        List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
-        for (Long guestNetworkId : routerGuestNtwkIds) {
+        for (Nic nic : guestNics.keySet()) {
             if (reprogramGuestNtwks) {
-                finalizeIpAssocForNetwork(cmds, router, provider, guestNetworkId);
-                finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
+                finalizeIpAssocForNetwork(cmds, router, provider, nic.getNetworkId());
+                finalizeNetworkRulesForNetwork(cmds, router, provider, nic.getNetworkId());
             }
 
-            finalizeUserDataAndDhcpOnStart(cmds, router, provider, guestNetworkId);
+            finalizeUserDataAndDhcpOnStart(cmds, router, provider, nic.getNetworkId());
         }
   
         return true;

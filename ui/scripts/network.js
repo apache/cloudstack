@@ -1308,6 +1308,10 @@
                           if ($tierSelect.size() && $tierSelect.val() != '-1') {
                             data.networkid = $tierSelect.val();
                           }
+													else {
+													  args.response.success({ data: null });
+														return;
+													}
 
 													if('vpc' in args.context) {
 													  $.extend(data, {
