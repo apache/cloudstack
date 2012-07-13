@@ -48,8 +48,8 @@ public class EC2VolumeFilterSet {
 		filterTypes.put( "size",                             "integer"      );
 		filterTypes.put( "snapshot-id",                      "string"       );
 		filterTypes.put( "status",                           "set:creating|available|in-use|deleting|deleted|error" );
-		filterTypes.put( "tag-key",                          "null"         );
-		filterTypes.put( "tag-value",                        "null"         );
+		filterTypes.put( "tag-key",                          "string"         );
+		filterTypes.put( "tag-value",                        "string"         );
 		filterTypes.put( "volume-id",                        "string"       );	
 		//		filterTypes.put( "tag:*",                            "null" );
 	}
@@ -58,14 +58,15 @@ public class EC2VolumeFilterSet {
 	public void addFilter( EC2Filter param ) 
 	{	
 		String filterName = param.getName();
-		String value = (String) filterTypes.get( filterName );
+        if (!filterName.startsWith("tag:")) {
+            String value = (String) filterTypes.get( filterName );
 
-		if (null == value)
-			throw new EC2ServiceException( "Unsupported filter [" + filterName + "] - 1", 501 );
+            if (null == value)
+                throw new EC2ServiceException( "Unsupported filter [" + filterName + "] - 1", 501 );
 
-		if (null != value && value.equalsIgnoreCase( "null" ))
-			throw new EC2ServiceException( "Unsupported filter [" + filterName + "] - 2", 501 );
-
+            if (null != value && value.equalsIgnoreCase( "null" ))
+                throw new EC2ServiceException( "Unsupported filter [" + filterName + "] - 2", 501 );
+        }
 		// ToDo we could add checks to make sure the type of a filters value is correct (e.g., an integer)
 		filterSet.add( param );
 	}
@@ -135,7 +136,43 @@ public class EC2VolumeFilterSet {
 		else if (filterName.equalsIgnoreCase( "attachment.device" )) 
 			return containsDevice(vol.getDeviceId(), valueSet );	
 		else if (filterName.equalsIgnoreCase( "attachment.instance-id" )) 
-			return containsString(String.valueOf(vol.getInstanceId()), valueSet );		
+			return containsString(String.valueOf(vol.getInstanceId()), valueSet );
+        else if (filterName.equalsIgnoreCase("tag-key"))
+        {
+            EC2TagKeyValue[] tagSet = vol.getResourceTags();
+            for (EC2TagKeyValue tag : tagSet)
+                if (containsString(tag.getKey(), valueSet)) return true;
+            return false;
+        }
+        else if (filterName.equalsIgnoreCase("tag-value"))
+        {
+            EC2TagKeyValue[] tagSet = vol.getResourceTags();
+            for (EC2TagKeyValue tag : tagSet){
+                if (tag.getValue() == null) {
+                    if (containsEmptyValue(valueSet)) return true;
+                }
+                else {
+                    if (containsString(tag.getValue(), valueSet)) return true;
+                }
+            }
+            return false;
+        }
+        else if (filterName.startsWith("tag:"))
+        {
+            String key = filterName.split(":")[1];
+            EC2TagKeyValue[] tagSet = vol.getResourceTags();
+            for (EC2TagKeyValue tag : tagSet){
+                if (tag.getKey().equalsIgnoreCase(key)) {
+                    if (tag.getValue() == null) {
+                        if (containsEmptyValue(valueSet)) return true;
+                    }
+                    else {
+                        if (containsString(tag.getValue(), valueSet)) return true;
+                    }
+                }
+            }
+            return false;
+        }
 		else return false;
 	}
 
@@ -149,6 +186,12 @@ public class EC2VolumeFilterSet {
 		return false;
 	}
 
+    private boolean containsEmptyValue( String[] set )
+    {
+        for( int i=0; i < set.length; i++ )
+            if (set[i].isEmpty()) return true;
+        return false;
+    }
 
 	private boolean containsLong( long lookingFor, String[] set )
 	{
