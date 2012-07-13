@@ -641,10 +641,18 @@
               )
               .appendTo($action);
 
+        if (value.textLabel) {
+          $action
+            .addClass('single text')
+            .prepend(
+              $('<span>').addClass('label').html(_l(value.textLabel))
+            );
+        }
+
         return true;
       });
 
-      var $actionButtons = $actions.find('div.action');
+      var $actionButtons = $actions.find('div.action:not(.text)');
       if ($actionButtons.size() == 1)
         $actionButtons.addClass('single');
       else {
@@ -1091,8 +1099,8 @@
     }
 
     // Detail action
-    if ($target.closest('div.detail-view [detail-action]').size()) {
-      var $action = $target.closest('div.detail-view [detail-action]');
+    if ($target.closest('div.detail-view [detail-action], div.detail-view .action.text').size()) {
+      var $action = $target.closest('.action').find('[detail-action]');
       var actionName = $action.attr('detail-action');
       var actionCallback = $action.data('detail-view-action-callback');
       var detailViewArgs = $action.closest('div.detail-view').data('view-args');

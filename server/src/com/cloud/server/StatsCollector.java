@@ -168,6 +168,7 @@ public class StatsCollector {
 		        sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.SecondaryStorageVM.toString());
 		        sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.ExternalFirewall.toString());
 		        sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.ExternalLoadBalancer.toString());
+                sc.addAnd("type", SearchCriteria.Op.NEQ, Host.Type.L2Networking.toString());
 				ConcurrentHashMap<Long, HostStats> hostStats = new ConcurrentHashMap<Long, HostStats>();
 				List<HostVO> hosts = _hostDao.search(sc, null);
 				for (HostVO host : hosts)

@@ -1673,8 +1673,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         try {
             if (predefined == null
-                    || (offering.getTrafficType() != TrafficType.Guest && predefined.getCidr() == null 
-                    && predefined.getBroadcastUri() == null && predefined.getBroadcastDomainType() != BroadcastDomainType.Vlan)) {
+                    || (offering.getTrafficType() != TrafficType.Guest && predefined.getCidr() == null && predefined.getBroadcastUri() == null && 
+                    !(predefined.getBroadcastDomainType() == BroadcastDomainType.Vlan || predefined.getBroadcastDomainType() == BroadcastDomainType.Lswitch))) {
                 List<NetworkVO> configs = _networksDao.listBy(owner.getId(), offering.getId(), plan.getDataCenterId());
                 if (configs.size() > 0) {
                     if (s_logger.isDebugEnabled()) {
@@ -1977,6 +1977,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Integer networkRate = getNetworkRate(config.getId(), null);
         to.setNetworkRateMbps(networkRate);
         
+        to.setUuid(config.getUuid());
+
         return to;
     }
 

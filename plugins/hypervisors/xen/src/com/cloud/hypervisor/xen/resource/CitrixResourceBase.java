@@ -783,12 +783,17 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         		long vlan = Long.parseLong(broadcastUri.getHost());
         		return enableVlanNetwork(conn, vlan, network);
         	}
+        } else if (nic.getBroadcastType() == BroadcastDomainType.Lswitch) {
+            // Nicira Logical Switch
+            return network.getNetwork();
         }
 
         throw new CloudRuntimeException("Unable to support this type of network broadcast domain: " + nic.getBroadcastUri());
     }
 
     protected VIF createVif(Connection conn, String vmName, VM vm, NicTO nic) throws XmlRpcException, XenAPIException {
+        assert(nic.getUuid() != null) : "Nic should have a uuid value";
+        
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating VIF for " + vmName + " on nic " + nic);
         }
@@ -798,6 +803,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         vifr.device = Integer.toString(nic.getDeviceId());
         vifr.MAC = nic.getMac();
 
+        // Nicira needs these IDs to find the NIC 
+        vifr.otherConfig = new HashMap<String, String>();
+        vifr.otherConfig.put("nicira-iface-id", nic.getUuid());
+        vifr.otherConfig.put("nicira-vm-id", vm.getUuid(conn));
+        
         vifr.network = getNetwork(conn, nic);
 
         if (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) {

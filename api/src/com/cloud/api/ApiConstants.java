@@ -374,6 +374,9 @@ public class ApiConstants {
     public static final String ESP_POLICY = "esppolicy";
     public static final String LIFETIME = "lifetime";
     public static final String FOR_VPC = "forvpc";
+    public static final String NICIRA_NVP_DEVICE_ID = "nvpdeviceid";
+    public static final String NICIRA_NVP_TRANSPORT_ZONE_UUID = "transportzoneuuid";
+    public static final String NICIRA_NVP_DEVICE_NAME = "niciradevicename";
     
     public enum HostDetails {
         all, capacity, events, stats, min;

@@ -56,6 +56,7 @@ public interface Network extends ControlledEntity {
         public static final Service PortForwarding = new Service("PortForwarding");
         public static final Service SecurityGroup = new Service("SecurityGroup");
         public static final Service NetworkACL = new Service("NetworkACL", Capability.SupportedProtocols);
+        public static final Service Connectivity = new Service("Connectivity");
 
         private String name;
         private Capability[] caps;
@@ -119,6 +120,7 @@ public interface Network extends ControlledEntity {
         public static final Provider SecurityGroupProvider = new Provider("SecurityGroupProvider", false);
         public static final Provider VPCVirtualRouter = new Provider("VpcVirtualRouter", false);
         public static final Provider None = new Provider("None", false);
+        public static final Provider NiciraNvp = new Provider("NiciraNvp", true);
 
         private String name;
         private boolean isExternal;

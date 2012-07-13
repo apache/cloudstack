@@ -28,12 +28,18 @@ import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru {
 	
 	@Inject VMTemplateDetailsDao _templateDetailsDao;
+    @Inject NicDao _nicDao;
+    @Inject VMInstanceDao _virtualMachineDao;
 	
     protected HypervisorGuruBase() {
         super();
@@ -56,6 +62,10 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setIsolationuri(profile.getIsolationUri());
         to.setNetworkRateMbps(profile.getNetworkRate());
         to.setName(profile.getName());
+        
+        // Workaround to make sure the TO has the UUID we need for Niciri integration
+        NicVO nicVO = _nicDao.findById(profile.getId());
+        to.setUuid(nicVO.getUuid());
         return to;
     }
 
@@ -93,6 +103,11 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         	details.putAll(detailsInVm);
         }
         to.setDetails(details);
+        
+        // Workaround to make sure the TO has the UUID we need for Niciri integration
+        VMInstanceVO vmInstance = _virtualMachineDao.findById(to.getId());
+        to.setUuid(vmInstance.getUuid());
+        
         return to;
     }
 

@@ -1023,5 +1023,13 @@ public class ElasticLoadBalancerManagerImpl implements
             ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
         //not supported
         throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
+     }
+
+
+    @Override
+    public boolean recreateNeeded(
+        VirtualMachineProfile<DomainRouterVO> profile, long hostId, Commands cmds, ReservationContext context) {
+	// TODO Auto-generated method stub
+	return false;
     }
 }

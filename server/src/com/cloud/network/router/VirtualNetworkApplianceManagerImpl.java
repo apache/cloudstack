@@ -3200,6 +3200,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         throw new UnsupportedOperationException("Plug nic is not supported for vm of type " + vm.getType());
     }
 
+    
     @Override
     public boolean unplugNic(Network network, NicTO nic, VirtualMachineTO vm, ReservationContext context, DeployDestination dest)
             throws ConcurrentOperationException, ResourceUnavailableException {
@@ -3207,4 +3208,17 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
     }
     
+    
+	@Override
+	public boolean recreateNeeded(
+			VirtualMachineProfile<DomainRouterVO> profile, long hostId,
+			Commands cmds, ReservationContext context) {
+		//asssume that if failed to ssh into router, meaning router is crashed
+		CheckSshAnswer answer = (CheckSshAnswer) cmds.getAnswer("checkSsh");
+		if (answer == null || !answer.getResult()) {
+			return true;
+		}
+
+		return false;
+	}
 }
