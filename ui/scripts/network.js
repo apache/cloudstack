@@ -1271,7 +1271,8 @@
                           async: false,
                           data: {
                             vpcid: args.context.vpc[0].id,
-                            listAll: true
+                            listAll: true,
+														supportedservices: 'StaticNat'
                           },
                           success: function(json) {
                             var networks = json.listnetworksresponse.network;
@@ -2110,7 +2111,8 @@
                         select: function(args) {	
 													if('vpc' in args.context) {		
                             var data = {
-														  listAll: true
+														  listAll: true,
+															supportedservices: 'Lb'
 														};
 														if(args.context.ipAddresses[0].associatednetworkid == null) {
 														  $.extend(data, {
@@ -2121,7 +2123,7 @@
 														  $.extend(data, {
 															  id: args.context.ipAddresses[0].associatednetworkid
 															});
-														}			//???
+														}			
 													
 														$.ajax({
 															url: createURL("listNetworks"),															
@@ -2496,7 +2498,8 @@
                         select: function(args) {
 													if('vpc' in args.context) {		
                             var data = {
-														  listAll: true
+														  listAll: true,
+															supportedservices: 'PortForwarding'
 														};
 														if(args.context.ipAddresses[0].associatednetworkid == null) {
 														  $.extend(data, {
