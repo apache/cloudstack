@@ -129,6 +129,10 @@ public class XenServer56Resource extends CitrixResourceBase {
                                 + " due to "  + e.toString());
                     }
                 }
+                try {
+                    network.destroy(conn);
+                } catch (Exception e){
+                }
                 return;
             }
         } catch (XenAPIException e) {
