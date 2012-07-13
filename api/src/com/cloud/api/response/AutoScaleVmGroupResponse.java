@@ -23,7 +23,7 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "the autoscale vm group ID")
-    private IdentityProxy id = new IdentityProxy("autoscale_groups");
+    private IdentityProxy id = new IdentityProxy("autoscale_vmgroups");
 
     @SerializedName(ApiConstants.LBID)
     @Param(description = "the load balancer rule ID")

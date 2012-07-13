@@ -2409,6 +2409,7 @@ CREATE TABLE `cloud`.`autoscale_vmgroups` (
   `load_balancer_id` bigint unsigned NOT NULL,
   `min_members` int unsigned DEFAULT 1,
   `max_members` int unsigned NOT NULL,
+  `member_port` int unsigned NOT NULL,
   `interval` int unsigned NOT NULL,
   `profile_id` bigint unsigned NOT NULL,
   `state` varchar(255) NOT NULL COMMENT 'enabled or disabled, a vmgroup is disabled to stop autoscaling activity',

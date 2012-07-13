@@ -205,12 +205,13 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         sc.setParameters("ids", policyIds.toArray(new Object[0]));
         List<AutoScalePolicyVO> policies = _autoScalePolicyDao.search(sc, null);
 
-        Integer prevQuietTime = 0;
+        int prevQuietTime = 0;
 
         for (AutoScalePolicyVO policy : policies) {
-            Integer quietTime = policy.getQuietTime();
-            if (prevQuietTime == 0)
+            int quietTime = policy.getQuietTime();
+            if (prevQuietTime == 0) {
                 prevQuietTime = quietTime;
+            }
             Integer duration = policy.getDuration();
             if (interval != null && duration < interval) {
                 throw new InvalidParameterValueException("duration - " + duration + " specified in a policy cannot be less than vm group's interval - " + interval);
@@ -226,12 +227,12 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
 
             if (scaleUpPolicies) {
                 if (!isAutoScaleScaleUpPolicy(policy)) {
-                    throw new InvalidParameterValueException("Only provision policies can be specified in scaleuppolicyids");
+                    throw new InvalidParameterValueException("Only scaleup policies can be specified in scaleuppolicyids");
                 }
             }
             else {
                 if (isAutoScaleScaleUpPolicy(policy)) {
-                    throw new InvalidParameterValueException("Only de-provision policies can be specified in scaledownpolicyids");
+                    throw new InvalidParameterValueException("Only scaledown policies can be specified in scaledownpolicyids");
                 }
             }
             List<AutoScalePolicyConditionMapVO> policyConditionMapVOs = _autoScalePolicyConditionMapDao.listByAll(policy.getId(), null);
@@ -241,7 +242,6 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
                 Counter counter = _counterDao.findById(condition.getCounterid());
                 counters.add(counter);
             }
-            policies.add(policy);
         }
         return policies;
     }
@@ -424,7 +424,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
 
         action = action.toLowerCase();
         if (!NetUtils.isValidAutoScaleAction(action)) {
-            throw new InvalidParameterValueException("action is invalid, only 'provision' and 'de-provision' is supported");
+            throw new InvalidParameterValueException("action is invalid, only 'scaleup' and 'scaledown' is supported");
         }
 
         AutoScalePolicyVO policyVO = new AutoScalePolicyVO(cmd.getDomainId(), cmd.getAccountId(), duration, quietTime, action);
@@ -666,8 +666,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
-        if (success)
-            _autoScaleVmGroupDao.remove(id);
+        success = _autoScaleVmGroupDao.remove(id);
 
         if (success)
             success = _autoScaleVmGroupPolicyMapDao.removeByGroupId(id);

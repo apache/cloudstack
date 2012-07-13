@@ -81,6 +81,7 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup {
 
     public AutoScaleVmGroupVO(long lbRuleId, long zoneId, long domainId, long accountId, Integer minMembers, Integer maxMembers, Integer memberPort, Integer interval, long profileId, String state) {
         this.uuid = UUID.randomUUID().toString();
+        this.loadBalancerId = lbRuleId;
         this.minMembers = minMembers;
         this.maxMembers = maxMembers;
         this.memberPort = memberPort;
@@ -177,4 +178,7 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup {
         this.interval = interval;
     }
 
+    public void setLoadBalancerId(Long loadBalancerId) {
+        this.loadBalancerId = loadBalancerId;
+    }
 }
