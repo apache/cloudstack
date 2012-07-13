@@ -92,7 +92,7 @@ public class Upgrade302to303 implements DbUpgrade {
                     fetchF5NspStmt.close();
 
                     if (!hasF5Nsp) {
-                        f5DevicesStmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalLoadBalancer'");
+                        f5DevicesStmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalLoadBalancer' AND removed IS NULL");
                         f5DevicesStmt.setLong(1, zoneId);
                         f5DevicesResult = f5DevicesStmt.executeQuery();
 
@@ -111,7 +111,7 @@ public class Upgrade302to303 implements DbUpgrade {
                     fetchSRXNspStmt.close();
 
                     if (!hasSrxNsp) {
-                        srxDevicesStmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalFirewall'");
+                        srxDevicesStmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalFirewall' AND removed IS NULL");
                         srxDevicesStmt.setLong(1, zoneId);
                         srxDevicesResult = srxDevicesStmt.executeQuery();
 
@@ -165,7 +165,7 @@ public class Upgrade302to303 implements DbUpgrade {
             pstmtUpdate.setString(11, UUID.randomUUID().toString());
             pstmtUpdate.executeUpdate();
         }catch (SQLException e) {
-            throw new CloudRuntimeException("Exception while adding F5 load balancer due to: " + e.getMessage());
+            throw new CloudRuntimeException("Exception while adding F5 load balancer device" ,  e);
         } finally {
             if (pstmtUpdate != null) {
                 try {
@@ -195,7 +195,7 @@ public class Upgrade302to303 implements DbUpgrade {
             pstmtUpdate.setString(9, UUID.randomUUID().toString());
             pstmtUpdate.executeUpdate();
         }catch (SQLException e) {
-            throw new CloudRuntimeException("Exception while adding F5 load balancer due to: " + e.getMessage());
+            throw new CloudRuntimeException("Exception while adding SRX firewall device ",  e);
         } finally {
             if (pstmtUpdate != null) {
                 try {
@@ -223,7 +223,7 @@ public class Upgrade302to303 implements DbUpgrade {
             pstmtUpdate.setString(4, "Enabled");
             pstmtUpdate.executeUpdate();
         }catch (SQLException e) {
-            throw new CloudRuntimeException("Exception while adding PhysicalNetworkServiceProvider F5BigIp due to: " + e.getMessage());
+            throw new CloudRuntimeException("Exception while adding PhysicalNetworkServiceProvider F5BigIp", e);
         } finally {
             if (pstmtUpdate != null) {
                 try {
@@ -251,7 +251,7 @@ public class Upgrade302to303 implements DbUpgrade {
             pstmtUpdate.setString(4, "Enabled");
             pstmtUpdate.executeUpdate();
         }catch (SQLException e) {
-            throw new CloudRuntimeException("Exception while adding PhysicalNetworkServiceProvider JuniperSRX  due to: " + e.getMessage());
+            throw new CloudRuntimeException("Exception while adding PhysicalNetworkServiceProvider JuniperSRX" ,  e);
         } finally {
             if (pstmtUpdate != null) {
                 try {
