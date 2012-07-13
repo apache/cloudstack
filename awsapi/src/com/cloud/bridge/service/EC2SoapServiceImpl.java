@@ -33,6 +33,7 @@ import com.cloud.bridge.service.core.ec2.EC2CreateImage;
 import com.cloud.bridge.service.core.ec2.EC2CreateImageResponse;
 import com.cloud.bridge.service.core.ec2.EC2CreateKeyPair;
 import com.cloud.bridge.service.core.ec2.EC2CreateVolume;
+import com.cloud.bridge.service.core.ec2.EC2Tags;
 import com.cloud.bridge.service.core.ec2.EC2DeleteKeyPair;
 import com.cloud.bridge.service.core.ec2.EC2DescribeAddresses;
 import com.cloud.bridge.service.core.ec2.EC2DescribeAddressesResponse;
@@ -46,10 +47,13 @@ import com.cloud.bridge.service.core.ec2.EC2DescribeInstances;
 import com.cloud.bridge.service.core.ec2.EC2DescribeInstancesResponse;
 import com.cloud.bridge.service.core.ec2.EC2DescribeKeyPairs;
 import com.cloud.bridge.service.core.ec2.EC2DescribeKeyPairsResponse;
+import com.cloud.bridge.service.core.ec2.EC2ResourceTag;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSecurityGroups;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSecurityGroupsResponse;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSnapshots;
 import com.cloud.bridge.service.core.ec2.EC2DescribeSnapshotsResponse;
+import com.cloud.bridge.service.core.ec2.EC2DescribeTags;
+import com.cloud.bridge.service.core.ec2.EC2DescribeTagsResponse;
 import com.cloud.bridge.service.core.ec2.EC2DescribeVolumes;
 import com.cloud.bridge.service.core.ec2.EC2DescribeVolumesResponse;
 import com.cloud.bridge.service.core.ec2.EC2DisassociateAddress;
@@ -69,6 +73,8 @@ import com.cloud.bridge.service.core.ec2.EC2PasswordData;
 import com.cloud.bridge.service.core.ec2.EC2RebootInstances;
 import com.cloud.bridge.service.core.ec2.EC2RegisterImage;
 import com.cloud.bridge.service.core.ec2.EC2ReleaseAddress;
+import com.cloud.bridge.service.core.ec2.EC2TagKeyValue;
+import com.cloud.bridge.service.core.ec2.EC2TagTypeId;
 import com.cloud.bridge.service.core.ec2.EC2RunInstances;
 import com.cloud.bridge.service.core.ec2.EC2RunInstancesResponse;
 import com.cloud.bridge.service.core.ec2.EC2SSHKeyPair;
@@ -79,6 +85,7 @@ import com.cloud.bridge.service.core.ec2.EC2StartInstances;
 import com.cloud.bridge.service.core.ec2.EC2StartInstancesResponse;
 import com.cloud.bridge.service.core.ec2.EC2StopInstances;
 import com.cloud.bridge.service.core.ec2.EC2StopInstancesResponse;
+import com.cloud.bridge.service.core.ec2.EC2TagsFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2Volume;
 import com.cloud.bridge.service.core.ec2.EC2VolumeFilterSet;
 import com.cloud.bridge.service.exception.EC2ServiceException;
@@ -198,6 +205,89 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		request.setZoneName( cvt.getAvailabilityZone());
 		return toCreateVolumeResponse( engine.createVolume( request ));
 	}
+
+    public CreateTagsResponse createTags(CreateTags createTags) {
+        EC2Tags request = new EC2Tags();
+        CreateTagsType ctt = createTags.getCreateTags();
+
+        ResourceIdSetType resourceIds = ctt.getResourcesSet();
+        ResourceTagSetType resourceTags = ctt.getTagSet();
+        request = toResourceTypeAndIds(resourceIds);
+        //add resource tag's to the request
+        if (resourceTags != null) {
+            ResourceTagSetItemType[] items = resourceTags.getItem();
+            if (items != null) {
+                for( int i=0; i < items.length; i++ ) {
+                    EC2TagKeyValue param1 = new EC2TagKeyValue();
+                    param1.setKey(items[i].getKey());
+                    param1.setValue(items[i].getValue());
+                    request.addResourceTag(param1);
+                }
+            }
+        }
+        return toCreateTagsResponse( engine.modifyTags( request, "create"));
+    }
+
+    public DeleteTagsResponse deleteTags(DeleteTags deleteTags) {
+        EC2Tags request = new EC2Tags();
+        DeleteTagsType dtt = deleteTags.getDeleteTags();
+
+        ResourceIdSetType resourceIds = dtt.getResourcesSet();
+        DeleteTagsSetType resourceTags = dtt.getTagSet();
+        request = toResourceTypeAndIds(resourceIds);
+        //add resource tag's to the request
+        if (resourceTags != null) {
+            DeleteTagsSetItemType[] items = resourceTags.getItem();
+            if (items != null) {
+                for( int i=0; i < items.length; i++ ) {
+                    EC2TagKeyValue param1 = new EC2TagKeyValue();
+                    param1.setKey(items[i].getKey());
+                    if (items[i].getValue() != null)
+                        param1.setValue(items[i].getValue());
+                    request.addResourceTag(param1);
+                }
+            }
+        }
+        return toDeleteTagsResponse( engine.modifyTags( request, "delete"));
+    }
+
+    private EC2Tags toResourceTypeAndIds(ResourceIdSetType resourceIds) {
+        EC2Tags request = new EC2Tags();
+        //add resource-type and resource-id's to the request
+        if (resourceIds != null) {
+            ResourceIdSetItemType[] items = resourceIds.getItem();
+            List<String> resourceTypeList = new ArrayList<String>();
+            if (items != null) {
+                for( int i=0; i < items.length; i++ ) {
+                    String resourceType = items[i].getResourceId().split(":")[0];
+                    if (resourceTypeList.isEmpty())
+                        resourceTypeList.add(resourceType);
+                    else {
+                        Boolean existsInList = false;
+                        for (String addedResourceType : resourceTypeList) {
+                            if (addedResourceType.equalsIgnoreCase(resourceType)) {
+                                existsInList = true;
+                                break;
+                            }
+                        }
+                        if (!existsInList)
+                            resourceTypeList.add(resourceType);
+                    }
+                }
+                for (String resourceType : resourceTypeList){
+                    EC2TagTypeId param1 = new EC2TagTypeId();
+                    param1.setResourceType(resourceType);
+                    for( int i=0; i < items.length; i++ ) {
+                        String[] resourceTag = items[i].getResourceId().split(":");
+                        if (resourceType.equals(resourceTag[0]))
+                            param1.addResourceId(resourceTag[1]);
+                    }
+                    request.addResourceType(param1);
+                }
+            }
+        }
+        return request;
+    }
 
 	public DeleteSecurityGroupResponse deleteSecurityGroup(DeleteSecurityGroup deleteSecurityGroup) {
         DeleteSecurityGroupType sgt = deleteSecurityGroup.getDeleteSecurityGroup();
@@ -434,7 +524,18 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		return toDescribeSnapshotsResponse(engine.handleRequest(request));
 	}
 
-	
+    public DescribeTagsResponse describeTags(DescribeTags decsribeTags) {
+        EC2DescribeTags request = new EC2DescribeTags();
+        DescribeTagsType dtt = decsribeTags.getDescribeTags();
+
+        FilterSetType fst = dtt.getFilterSet();
+
+        if (fst != null)
+            request.setFilterSet( toTagsFilterSet( fst ));
+
+        return toDescribeTagsResponse(engine.describeTags(request));
+    }
+
 	public DescribeVolumesResponse describeVolumes(DescribeVolumes describeVolumes) 
 	{
 		EC2DescribeVolumes request = new EC2DescribeVolumes();
@@ -1094,8 +1195,28 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
         }
         return azfs;
     }
-	
-	
+
+    private EC2TagsFilterSet toTagsFilterSet( FilterSetType fst ) {
+        EC2TagsFilterSet tfs = new EC2TagsFilterSet();
+
+        FilterType[] items = fst.getItem();
+        if (items != null) {
+            for (FilterType item : items) {
+                EC2Filter oneFilter = new EC2Filter();
+                String filterName = item.getName();
+                oneFilter.setName( filterName );
+
+                ValueSetType vft = item.getValueSet();
+                ValueType[] valueItems = vft.getItem();
+                for (ValueType valueItem : valueItems) {
+                    oneFilter.addValueEncoded( valueItem.getValue());
+                }
+                tfs.addFilter( oneFilter );
+            }
+        }
+        return tfs;
+    }
+
 	// toMethods
 	public static DescribeVolumesResponse toDescribeVolumesResponse( EC2DescribeVolumesResponse engineResponse ) 
 	{
@@ -1931,7 +2052,48 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		response.setRevokeSecurityGroupIngressResponse( param1 );
         return response;
 	}
-	
+
+    public static CreateTagsResponse toCreateTagsResponse( boolean success ) {
+        CreateTagsResponse response = new CreateTagsResponse();
+        CreateTagsResponseType param1 = new CreateTagsResponseType();
+
+        param1.set_return(success);
+        param1.setRequestId( UUID.randomUUID().toString());
+        response.setCreateTagsResponse(param1);
+        return response;
+    }
+
+    public static DeleteTagsResponse toDeleteTagsResponse( boolean success ) {
+        DeleteTagsResponse response = new DeleteTagsResponse();
+        DeleteTagsResponseType param1 = new DeleteTagsResponseType();
+
+        param1.set_return(success);
+        param1.setRequestId( UUID.randomUUID().toString());
+        response.setDeleteTagsResponse(param1);
+        return response;
+    }
+
+    public static DescribeTagsResponse toDescribeTagsResponse( EC2DescribeTagsResponse engineResponse) {
+        DescribeTagsResponse response = new DescribeTagsResponse();
+        DescribeTagsResponseType param1 = new DescribeTagsResponseType();
+
+        EC2ResourceTag[] tags = engineResponse.getTagsSet();
+        TagSetType param2 = new TagSetType();
+        for (EC2ResourceTag tag : tags) {
+            TagSetItemType param3 = new TagSetItemType();
+            param3.setResourceId(tag.getResourceId());
+            param3.setResourceType(tag.getResourceType());
+            param3.setKey(tag.getKey());
+            if (tag.getValue() != null)
+                param3.setValue(tag.getValue());
+            param2.addItem(param3);
+        }
+        param1.setTagSet(param2);
+        param1.setRequestId( UUID.randomUUID().toString());
+        response.setDescribeTagsResponse(param1);
+        return response;
+    }
+
 	public DescribeKeyPairsResponse describeKeyPairs(DescribeKeyPairs describeKeyPairs) {
 		
 		EC2DescribeKeyPairs ec2Request = new EC2DescribeKeyPairs();
@@ -2116,10 +2278,6 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	public CreateSubnetResponse createSubnet(CreateSubnet createSubnet) {
 		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
 	}
-	
-	public CreateTagsResponse createTags(CreateTags createTags) {
-		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
-	}
 
 	public CreateVpcResponse createVpc(CreateVpc createVpc) {
 		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
@@ -2154,10 +2312,6 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	}
 
 	public DeleteSubnetResponse deleteSubnet(DeleteSubnet deleteSubnet) {
-		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
-	}
-		
-	public DeleteTagsResponse deleteTags(DeleteTags deleteTags) {
 		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
 	}
 
@@ -2226,10 +2380,6 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	}
 
 	public DescribeSubnetsResponse describeSubnets(DescribeSubnets describeSubnets) {
-		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
-	}
-	
-	public DescribeTagsResponse describeTags(DescribeTags describeTags) {
 		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
 	}
 	
