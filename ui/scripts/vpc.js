@@ -1094,7 +1094,620 @@
     },
 		
     tiers: {
-      detailView: {
+      detailView: { //duplicate from cloudStack.sections.network.sections.networks.listView.detailView (begin)			 
+				name: 'Guest network details',
+				viewAll: {
+					path: 'network.ipAddresses',
+					label: 'label.menu.ipaddresses',
+					preFilter: function(args) {					  
+						if (args.context.networks[0].state == 'Destroyed')
+							return false;
+
+						var services = args.context.networks[0].service;
+						if(services == null)
+							return false;
+
+						if(args.context.networks[0].type == "Isolated") {
+							for(var i=0; i < services.length; i++) {
+								var service = services[i];
+								if(service.name == "SourceNat") {
+									return true;
+								}
+							}
+						}
+						else if(args.context.networks[0].type == "Shared") {
+							var havingSecurityGroupService = false;
+							var havingElasticIpCapability = false;
+							var havingElasticLbCapability = false;
+
+							for(var i=0; i < services.length; i++) {
+								var service = services[i];
+								if(service.name == "SecurityGroup") {
+									havingSecurityGroupService = true;
+								}
+								else if(service.name == "StaticNat") {
+									$(service.capability).each(function(){
+										if(this.name == "ElasticIp" && this.value == "true") {
+											havingElasticIpCapability = true;
+											return false; //break $.each() loop
+										}
+									});
+								}
+								else if(service.name == "Lb") {
+									$(service.capability).each(function(){
+										if(this.name == "ElasticLb" && this.value == "true") {
+											havingElasticLbCapability = true;
+											return false; //break $.each() loop
+										}
+									});
+								}
+							}
+
+							if(havingSecurityGroupService == true && havingElasticIpCapability == true && havingElasticLbCapability == true)
+								return true;
+							else
+								return false;
+						}
+
+						return false;
+					}
+				},
+				actions: {
+					edit: {
+						label: 'label.edit',
+						messages: {
+							notification: function(args) {
+								return 'label.edit.network.details';
+							}
+						},
+						action: function(args) {
+							var array1 = [];
+							array1.push("&name=" + todb(args.data.name));
+							array1.push("&displaytext=" + todb(args.data.displaytext));
+
+							//args.data.networkdomain is null when networkdomain field is hidden
+							if(args.data.networkdomain != null && args.data.networkdomain != args.context.networks[0].networkdomain)
+								array1.push("&networkdomain=" + todb(args.data.networkdomain));
+
+							//args.data.networkofferingid is null when networkofferingid field is hidden
+							if(args.data.networkofferingid != null && args.data.networkofferingid != args.context.networks[0].networkofferingid) {
+								array1.push("&networkofferingid=" + todb(args.data.networkofferingid));
+
+								if(args.context.networks[0].type == "Isolated") { //Isolated network
+									cloudStack.dialog.confirm({
+										message: 'Do you want to keep the current guest network CIDR unchanged?',
+										action: function() { //"Yes"	button is clicked
+											array1.push("&changecidr=false");
+											$.ajax({
+												url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
+												dataType: "json",
+												success: function(json) {
+													var jid = json.updatenetworkresponse.jobid;
+													args.response.success(
+														{_custom:
+														 {jobId: jid,
+															getUpdatedItem: function(json) {
+																var item = json.queryasyncjobresultresponse.jobresult.network;
+																return {data: item};
+															}
+														 }
+														}
+													);
+												}
+											});
+										},
+										cancelAction: function() { //"Cancel" button is clicked
+											array1.push("&changecidr=true");
+											$.ajax({
+												url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
+												dataType: "json",
+												success: function(json) {
+													var jid = json.updatenetworkresponse.jobid;
+													args.response.success(
+														{_custom:
+														 {jobId: jid,
+															getUpdatedItem: function(json) {
+																var item = json.queryasyncjobresultresponse.jobresult.network;
+																return {data: item};
+															}
+														 }
+														}
+													);
+												}
+											});
+										}
+									});
+									return;
+								}
+							}
+
+							$.ajax({
+								url: createURL("updateNetwork&id=" + args.context.networks[0].id + array1.join("")),
+								dataType: "json",
+								success: function(json) {
+									var jid = json.updatenetworkresponse.jobid;
+									args.response.success(
+										{_custom:
+										 {jobId: jid,
+											getUpdatedItem: function(json) {
+												var item = json.queryasyncjobresultresponse.jobresult.network;
+												return {data: item};
+											}
+										 }
+										}
+									);
+								}
+							});
+						},
+						notification: {
+							poll: pollAsyncJobResult
+						}
+					},
+
+					'restart': {
+						label: 'label.restart.network',
+						createForm: {
+							title: 'label.restart.network',
+							desc: 'message.restart.network',
+							preFilter: function(args) {									  
+								var zoneObj;
+								$.ajax({
+									url: createURL("listZones&id=" + args.context.networks[0].zoneid),
+									dataType: "json",
+									async: false,
+									success: function(json){											  
+										zoneObj = json.listzonesresponse.zone[0];												
+									}
+								});																				
+								if(zoneObj.networktype == "Basic") {										  								
+									args.$form.find('.form-item[rel=cleanup]').find('input').removeAttr('checked'); //unchecked
+									args.$form.find('.form-item[rel=cleanup]').hide(); //hidden
+								}
+								else {										  												
+									args.$form.find('.form-item[rel=cleanup]').find('input').attr('checked', 'checked'); //checked											
+									args.$form.find('.form-item[rel=cleanup]').css('display', 'inline-block'); //shown
+								}											
+							},
+							fields: {
+								cleanup: {
+									label: 'label.clean.up',
+									isBoolean: true  
+								}
+							}
+						},
+						messages: {
+							notification: function(args) {
+								return 'label.restart.network';
+							}
+						},
+						action: function(args) {
+							var array1 = [];									
+							array1.push("&cleanup=" + (args.data.cleanup == "on"));
+							$.ajax({
+								url: createURL("restartNetwork&id=" + args.context.networks[0].id + array1.join("")),
+								dataType: "json",
+								async: true,
+								success: function(json) {
+									var jid = json.restartnetworkresponse.jobid;
+									args.response.success(
+										{_custom:
+										 {jobId: jid,
+											getUpdatedItem: function(json) {
+												return json.queryasyncjobresultresponse.jobresult.network;
+											}
+										 }
+										}
+									);
+								}
+							});
+						},
+						notification: {
+							poll: pollAsyncJobResult
+						}
+					},
+
+					remove: {
+						label: 'label.action.delete.network',
+						messages: {
+							confirm: function(args) {
+								return 'message.action.delete.network';
+							},
+							notification: function(args) {
+								return 'label.action.delete.network';
+							}
+						},
+						action: function(args) {
+							$.ajax({
+								url: createURL("deleteNetwork&id=" + args.context.networks[0].id),
+								dataType: "json",
+								async: true,
+								success: function(json) {
+									var jid = json.deletenetworkresponse.jobid;
+									args.response.success(
+										{_custom:
+										 {jobId: jid
+										 }
+										}
+									);
+								}
+							});
+						},
+						notification: {
+							poll: pollAsyncJobResult
+						}
+					}
+				},
+
+				tabFilter: function(args) {
+					var networkOfferingHavingELB = false;
+					$.ajax({
+						url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid),
+						dataType: "json",
+						async: false,
+						success: function(json) {
+							var networkoffering = json.listnetworkofferingsresponse.networkoffering[0];
+							$(networkoffering.service).each(function(){
+								var thisService = this;
+								if(thisService.name == "Lb") {
+									$(thisService.capability).each(function(){
+										if(this.name == "ElasticLb" && this.value == "true") {
+											networkOfferingHavingELB = true;
+											return false; //break $.each() loop
+										}
+									});
+									return false; //break $.each() loop
+								}
+							});
+						}
+					});
+
+					var hiddenTabs = [];
+					if(networkOfferingHavingELB == false)
+						hiddenTabs.push("addloadBalancer");
+					return hiddenTabs;
+				},
+
+				isMaximized: true,
+				tabs: {
+					details: {
+						title: 'label.details',
+						preFilter: function(args) {
+							var hiddenFields = [];
+							var zone;
+
+							$.ajax({
+								url: createURL('listZones'),
+								data: {
+									id: args.context.networks[0].zoneid
+								},
+								async: false,
+								success: function(json) {
+									zone = json.listzonesresponse.zone[0];
+								}
+							});
+
+							if(zone.networktype == "Basic") {
+								hiddenFields.push("account");
+								hiddenFields.push("gateway");
+								hiddenFields.push("vlan");
+								hiddenFields.push("cidr");
+								//hiddenFields.push("netmask");
+							}
+
+							if(args.context.networks[0].type == "Isolated") {
+								hiddenFields.push("networkofferingdisplaytext");
+								hiddenFields.push("networkdomaintext");
+								hiddenFields.push("gateway");
+								hiddenFields.push("networkofferingname");
+								//hiddenFields.push("netmask");
+							}
+							else { //selectedGuestNetworkObj.type == "Shared"
+								hiddenFields.push("networkofferingid");
+								hiddenFields.push("networkdomain");
+							}
+							return hiddenFields;
+						},
+						fields: [
+							{
+								name: {
+									label: 'label.name',
+									isEditable: true
+								}
+							},
+							{
+								id: { label: 'label.id' },
+								zonename: { label: 'label.zone' },
+								displaytext: {
+									label: 'label.description',
+									isEditable: true
+								},
+								type: {
+									label: 'label.type'
+								},
+								state: {
+									label: 'label.state'
+								},
+								restartrequired: {
+									label: 'label.restart.required',
+									converter: function(booleanValue) {
+										if(booleanValue == true)
+											return "<font color='red'>Yes</font>";
+										else if(booleanValue == false)
+											return "No";
+									}
+								},
+								vlan: { label: 'VLAN ID' },
+
+								networkofferingname: { label: 'label.network.offering' },
+
+								networkofferingid: {
+									label: 'label.network.offering',
+									isEditable: true,
+									select: function(args){
+										if (args.context.networks[0].state == 'Destroyed') {
+											args.response.success({ data: [] });
+											return;
+										}
+
+										var items = [];
+										$.ajax({
+											url: createURL("listNetworkOfferings&networkid=" + args.context.networks[0].id),
+											dataType: "json",
+											async: false,
+											success: function(json) {
+												var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+												$(networkOfferingObjs).each(function() {
+													items.push({id: this.id, description: this.displaytext});
+												});
+											}
+										});
+										$.ajax({
+											url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid),  //include currently selected network offeirng to dropdown
+											dataType: "json",
+											async: false,
+											success: function(json) {
+												var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+												$(networkOfferingObjs).each(function() {
+													items.push({id: this.id, description: this.displaytext});
+												});
+											}
+										});
+										args.response.success({data: items});
+									}
+								},
+
+								gateway: { label: 'label.gateway' },
+
+								//netmask: { label: 'Netmask' },
+								cidr: { label: 'CIDR' },
+
+								networkdomaintext: {
+									label: 'label.network.domain.text'
+								},
+								networkdomain: {
+									label: 'label.network.domain',
+									isEditable: true
+								},
+
+								domain: { label: 'label.domain' },
+								account: { label: 'label.account' }
+							}
+						],
+						dataProvider: function(args) {								 					
+							$.ajax({
+								url: createURL("listNetworks&id=" + args.context.networks[0].id + "&listAll=true"), //pass "&listAll=true" to "listNetworks&id=xxxxxxxx" for now before API gets fixed.
+								data: { listAll: true },
+								dataType: "json",
+								async: true,
+								success: function(json) {								  
+									var jsonObj = json.listnetworksresponse.network[0];   
+									args.response.success(
+										{
+											actionFilter: cloudStack.actionFilter.guestNetwork,
+											data: jsonObj
+										}
+									);		
+								}
+							});			
+						}
+					},
+
+					addloadBalancer: {
+						title: 'label.add.load.balancer',
+						custom: function(args) {
+							var context = args.context;
+
+							return $('<div>').multiEdit(
+								{
+									context: context,
+									listView: $.extend(true, {}, cloudStack.sections.instances, {
+										listView: {
+											dataProvider: function(args) {                           
+												var networkid;
+												if('vpc' in args.context) 
+													networkid = args.context.multiData.tier;														
+												else 
+													networkid = args.context.ipAddresses[0].associatednetworkid;
+												
+												var data = {
+													page: args.page,
+													pageSize: pageSize,
+													networkid: networkid,
+													listAll: true
+												};
+												
+												$.ajax({
+													url: createURL('listVirtualMachines'),
+													data: data,
+													dataType: 'json',
+													async: true,
+													success: function(data) {
+														args.response.success({
+															data: $.grep(
+																data.listvirtualmachinesresponse.virtualmachine ?
+																	data.listvirtualmachinesresponse.virtualmachine : [],
+																function(instance) {
+																	return $.inArray(instance.state, [
+																		'Destroyed'
+																	]) == -1;
+																}
+															)
+														});
+													},
+													error: function(data) {
+														args.response.error(parseXMLHttpResponse(data));
+													}
+												});
+											}
+										}
+									}),
+									multipleAdd: true,
+									fields: {
+										'name': { edit: true, label: 'label.name' },
+										'publicport': { edit: true, label: 'label.public.port' },
+										'privateport': { edit: true, label: 'label.private.port' },
+										'algorithm': {
+											label: 'label.algorithm',
+											select: function(args) {
+												args.response.success({
+													data: [
+														{ name: 'roundrobin', description: _l('label.round.robin') },
+														{ name: 'leastconn', description: _l('label.least.connections') },
+														{ name: 'source', description: _l('label.source') }
+													]
+												});
+											}
+										},
+										'sticky': {
+											label: 'label.stickiness',
+											custom: {
+												buttonLabel: 'label.configure',
+												action: cloudStack.lbStickyPolicy.dialog()
+											}
+										},
+										'add-vm': {
+											label: 'label.add.vms',
+											addButton: true
+										}
+									},
+									add: {
+										label: 'label.add.vms',
+										action: function(args) {                         
+											var data = {
+												algorithm: args.data.algorithm,
+												name: args.data.name,
+												privateport: args.data.privateport,
+												publicport: args.data.publicport,
+												openfirewall: false,
+												domainid: g_domainid,
+												account: g_account
+											};
+											
+											if('vpc' in args.context) { //from VPC section
+												if(args.data.tier == null) {													  
+													args.response.error('Tier is required');
+													return;
+												}			
+												$.extend(data, {
+													networkid: args.data.tier		
+												});	
+											}
+											else {  //from Guest Network section
+												$.extend(data, {
+													networkid: args.context.networks[0].id
+												});	
+											}
+											
+											var stickyData = $.extend(true, {}, args.data.sticky);
+										 
+											$.ajax({
+												url: createURL('createLoadBalancerRule'),
+												data: data,
+												dataType: 'json',
+												async: true,
+												success: function(data) {
+													var itemData = args.itemData;
+													var jobID = data.createloadbalancerruleresponse.jobid;
+
+													$.ajax({
+														url: createURL('assignToLoadBalancerRule'),
+														data: {
+															id: data.createloadbalancerruleresponse.id,
+															virtualmachineids: $.map(itemData, function(elem) {
+																return elem.id;
+															}).join(',')
+														},
+														dataType: 'json',
+														async: true,
+														success: function(data) {
+															var lbCreationComplete = false;
+
+															args.response.success({
+																_custom: {
+																	jobId: jobID
+																},
+																notification: {
+																	label: 'label.add.load.balancer',
+																	poll: function(args) {
+																		var complete = args.complete;
+																		var error = args.error;
+
+																		pollAsyncJobResult({
+																			_custom: args._custom,
+																			complete: function(args) {
+																				if (lbCreationComplete) {
+																					return;
+																				}
+
+																				lbCreationComplete = true;
+																				cloudStack.dialog.notice({
+																					message: _l('message.add.load.balancer.under.ip') +
+																						args.data.loadbalancer.publicip
+																				});
+
+																				if (stickyData &&
+																						stickyData.methodname &&
+																						stickyData.methodname != 'None') {
+																					cloudStack.lbStickyPolicy.actions.add(
+																						args.data.loadbalancer.id,
+																						stickyData,
+																						complete, // Complete
+																						complete // Error
+																					);
+																				} else {
+																					complete();
+																				}
+																			},
+																			error: error
+																		});
+																	}
+																}
+															});
+														},
+														error: function(data) {
+															args.response.error(parseXMLHttpResponse(data));
+														}
+													});
+												},
+												error: function(data) {
+													args.response.error(parseXMLHttpResponse(data));
+												}
+											});
+										}
+									},
+									dataProvider: function(args) {
+										args.response.success({ //no LB listing in AddLoadBalancer tab
+											data: []
+										});
+									}
+								}
+							);
+						}
+					}
+				}
+				//???
+			
+			  /*
         name: 'Tier details',
         tabs: {
           details: {
@@ -1113,7 +1726,9 @@
             }
           }
         }
-      },
+				*/				
+      }, //duplicate from cloudStack.sections.network.sections.networks.listView.detailView (begin)	
+			
       actionPreFilter: function(args) {
         var tier = args.context.networks[0];
         var state = tier.state;
