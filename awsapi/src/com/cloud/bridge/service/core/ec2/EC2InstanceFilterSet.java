@@ -49,6 +49,8 @@ public class EC2InstanceFilterSet {
         filterTypes.put( "group-id",             "string"  );
         filterTypes.put( "tag-key",              "string"  );
         filterTypes.put( "tag-value",            "string"  );
+        filterTypes.put( "tag-value",            "string"  );
+        filterTypes.put( "dns-name",             "string"  );
 	}
 	
 	
@@ -200,6 +202,10 @@ public class EC2InstanceFilterSet {
                 }
             }
             return false;
+        }
+        else if (filterName.equalsIgnoreCase( "dns-name" )) 
+        {
+            return containsString( vm.getName(), valueSet );   
         }
 	    else return false;
 	}
