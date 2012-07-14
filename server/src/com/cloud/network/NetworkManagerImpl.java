@@ -2825,7 +2825,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             networkDomain = vpc.getNetworkDomain();
         }
         //1) Validate if network can be created for VPC
-        _vpcMgr.validateGuestNtkwForVpc(_configMgr.getNetworkOffering(ntwkOffId), cidr, networkDomain, owner, vpc, null);
+        _vpcMgr.validateGuestNtkwForVpc(_configMgr.getNetworkOffering(ntwkOffId), cidr, networkDomain, owner, vpc, null, gateway);
 
         //2) Create network
         Network guestNetwork = createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, 
@@ -4654,7 +4654,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             //perform below validation if the network is vpc network
             if (network.getVpcId() != null) {
                 Vpc vpc = _vpcMgr.getVpc(network.getVpcId());
-                _vpcMgr.validateGuestNtkwForVpc(networkOffering, null, null, null,vpc, networkId);
+                _vpcMgr.validateGuestNtkwForVpc(networkOffering, null, null, null,vpc, networkId, null);
             }
 
             if (networkOfferingId != oldNetworkOfferingId) {

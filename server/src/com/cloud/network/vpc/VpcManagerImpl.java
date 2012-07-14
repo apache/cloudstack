@@ -898,11 +898,11 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @Override
     @DB
     public void validateGuestNtkwForVpc(NetworkOffering guestNtwkOff, String cidr, String networkDomain, 
-            Account networkOwner, Vpc vpc, Long networkId) {
+            Account networkOwner, Vpc vpc, Long networkId, String gateway) {
 
         if (networkId == null) {
             //1) Validate attributes that has to be passed in when create new guest network
-            validateNewVpcGuestNetwork(cidr, networkOwner, vpc, networkDomain); 
+            validateNewVpcGuestNetwork(cidr, gateway, networkOwner, vpc, networkDomain); 
         }
 
         //2) Only Isolated networks with Source nat service enabled can be added to vpc
@@ -958,7 +958,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
     }
 
-    protected void validateNewVpcGuestNetwork(String cidr, Account networkOwner, Vpc vpc, String networkDomain) {
+    protected void validateNewVpcGuestNetwork(String cidr, String gateway, Account networkOwner, Vpc vpc, String networkDomain) {
         Vpc locked = _vpcDao.acquireInLockTable(vpc.getId());
         if (locked == null) {
             throw new CloudRuntimeException("Unable to acquire lock on " + vpc);
@@ -1006,6 +1006,12 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 throw new InvalidParameterValueException("Network domain of the new network should match network" +
                         " domain of vpc with specified vpcId", idList);
             }
+            
+            //6) gateway should never be equal to the cidr subnet
+            if (NetUtils.getCidrSubNet(cidr).equalsIgnoreCase(gateway)) {
+                throw new InvalidParameterValueException("Invalid gateway specified. It should never be equal to the cidr subnet value");
+            }
+            
         } finally {
             s_logger.debug("Releasing lock for " + locked);
             _vpcDao.releaseFromLockTable(locked.getId());
