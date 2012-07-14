@@ -137,6 +137,9 @@ DROP TABLE IF EXISTS `cloud`.`op_dc_storage_network_ip_address`;
 DROP TABLE IF EXISTS `cloud`.`cluster_vsm_map`;
 DROP TABLE IF EXISTS `cloud`.`virtual_supervisor_module`;
 DROP TABLE IF EXISTS `cloud`.`port_profile`;
+DROP TABLE IF EXISTS `cloud`,`external_nicira_nvp_devices`;
+DROP TABLE IF EXISTS `cloud`,`nicira_nvp_nic_map`;
+
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -2151,5 +2154,25 @@ CREATE TABLE `cloud`.`resource_tags` (
   CONSTRAINT `uc_resource_tags__uuid` UNIQUE (`uuid`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
+CREATE TABLE `cloud`.`external_nicira_nvp_devices` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which nicira nvp device is added',
+  `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this nicira nvp device',
+  `device_name` varchar(255) NOT NULL COMMENT 'name of the nicira nvp device',
+  `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external nicira nvp device',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_external_nicira_nvp_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_external_nicira_nvp_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`nicira_nvp_nic_map` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `logicalswitch` varchar(255) NOT NULL COMMENT 'nicira uuid of logical switch this port is provisioned on',
+  `logicalswitchport` varchar(255) UNIQUE COMMENT 'nicira uuid of this logical switch port',
+  `nic` varchar(255) UNIQUE COMMENT 'cloudstack uuid of the nic connected to this logical switch port',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;

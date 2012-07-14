@@ -345,4 +345,12 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
     @Override 
     public void finalizeExpunge(ConsoleProxyVO proxy) {
     }
+
+	@Override
+	public boolean recreateNeeded(
+			VirtualMachineProfile<ConsoleProxyVO> profile, long hostId,
+			Commands cmds, ReservationContext context) {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

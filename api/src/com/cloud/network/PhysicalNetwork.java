@@ -31,7 +31,8 @@ public interface PhysicalNetwork {
     public enum IsolationMethod {
         VLAN,
         L3,
-        GRE;
+        GRE,
+        STT;
     }
 
     public enum BroadcastDomainRange {

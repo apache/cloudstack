@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.guru;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
@@ -46,9 +47,12 @@ import com.cloud.network.Network.State;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkProfile;
 import com.cloud.network.NetworkVO;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.IPAddressDao;
@@ -72,7 +76,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 
 @Local(value = NetworkGuru.class)
-public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
+public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     private static final Logger s_logger = Logger.getLogger(GuestNetworkGuru.class);
     @Inject
     protected NetworkManager _networkMgr;
@@ -93,12 +97,16 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     Random _rand = new Random(System.currentTimeMillis());
 
     private static final TrafficType[] _trafficTypes = {TrafficType.Guest};
-
+    
+    // Currently set to anything except STT for the Nicira integration.
+    protected IsolationMethod[] _isolationMethods;
+    
     String _defaultGateway;
     String _defaultCidr;
 
     protected GuestNetworkGuru() {
         super();
+        _isolationMethods = null;
     }
 
     @Override
@@ -115,21 +123,54 @@ public class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
     public TrafficType[] getSupportedTrafficType() {
         return _trafficTypes;
     }
+    
+    public boolean isMyIsolationMethod(PhysicalNetwork physicalNetwork) {
+        if (physicalNetwork == null) {
+            // Can't tell if there is no physical network
+            return false;
+        }
+        
+        List<String> methods = physicalNetwork.getIsolationMethods();
+        if (methods.isEmpty()) {
+            // The empty isolation method is assumed to be VLAN
+            s_logger.debug("Empty physical isolation type for physical network " + physicalNetwork.getUuid());
+            methods = new ArrayList<String>(1);
+            methods.add("VLAN");
+        }
+        
+        for (IsolationMethod m : _isolationMethods) {
+            if (methods.contains(m.toString())) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    public IsolationMethod[] getIsolationMethods() {
+        return _isolationMethods;
+    }
 
-    protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
+    protected abstract boolean canHandle(NetworkOffering offering, final NetworkType networkType, PhysicalNetwork physicalNetwork);
+/*    protected boolean canHandle(NetworkOffering offering, final NetworkType networkType, final List<String> isolationMethods) {
         // This guru handles only Guest Isolated network that supports Source nat service
-        if (dc.getNetworkType() == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && offering.getGuestType() == Network.GuestType.Isolated) {
+        if (networkType == NetworkType.Advanced 
+                && isMyTrafficType(offering.getTrafficType()) 
+                && offering.getGuestType() == Network.GuestType.Isolated
+                && isMyIsolationMethod(isolationMethods)) {
             return true;
         } else {
             s_logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
             return false;
         }
     }
-
+*/
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
-        if (!canHandle(offering, dc)) {
+        PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
+
+        if (!canHandle(offering, dc.getNetworkType(), physnet)) {
             return null;
         }
 

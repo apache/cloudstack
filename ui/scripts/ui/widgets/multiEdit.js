@@ -15,6 +15,10 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
+  var getMultiData = function($multi) {
+    return cloudStack.serializeForm($multi.find('form'));
+  };
+
   var _medit = cloudStack.ui.widgets.multiEdit = {
     /**
      * Append item to list
@@ -362,6 +366,7 @@
       var $listView;
       var instances = $.extend(true, {}, listView, {
         context: $.extend(true, {}, context, {
+          multiData: getMultiData($multi),
           multiRule: options.multiRule ? [options.multiRule] : null
         }),
         uiCustom: true
@@ -755,6 +760,25 @@
       }
     });
 
+    // Setup header fields
+    var showHeaderFields = args.headerFields ? true : false;
+    var headerForm = showHeaderFields ? cloudStack.dialog.createForm({
+      context: context,
+      noDialog: true,
+      form: {
+        fields: args.headerFields
+      },
+      after: function(args) {
+        // Form fields are handled by main 'add' action
+      }
+    }) : null;
+    var $headerFields = $('<div>').addClass('header-fields');
+
+    if (headerForm) {
+      $headerFields.append(headerForm.$formContainer)
+        .prependTo($multi);
+    }
+
     if (args.actions && !args.noHeaderActionsColumn) {
       $thead.append($('<th></th>').html(_l('label.actions')).addClass('multi-actions'));
       $inputForm.append($('<td></td>').addClass('multi-actions'));
@@ -772,7 +796,7 @@
       var addItem = function(itemData) {
         var data = {};
 
-        $.each(cloudStack.serializeForm($multiForm), function(key, value) {
+        $.each(getMultiData($multi), function(key, value) {
           if (value != '') {
             data[key] = value;
           }
@@ -873,6 +897,7 @@
     var getData = function() {
       dataProvider({
         context: context,
+        $multi: $multi,
         response: {
           success: function(args) {
             $multi.find('.data-item').remove();

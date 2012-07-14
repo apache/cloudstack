@@ -2972,4 +2972,17 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             
         return routerControlIpAddress;
     }
+
+	@Override
+	public boolean recreateNeeded(
+			VirtualMachineProfile<DomainRouterVO> profile, long hostId,
+			Commands cmds, ReservationContext context) {
+		//asssume that if failed to ssh into router, meaning router is crashed
+		CheckSshAnswer answer = (CheckSshAnswer) cmds.getAnswer("checkSsh");
+		if (answer == null || !answer.getResult()) {
+			return true;
+		}
+
+		return false;
+	}
 }
