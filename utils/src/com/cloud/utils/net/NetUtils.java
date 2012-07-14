@@ -728,6 +728,13 @@ public class NetUtils {
         return long2Ip(result);
     }
 
+    public static String getBroadcastIp(String ip, String netmask) {
+        long ipAddr = ip2Long(ip);
+        long subnet = ip2Long(netmask);
+        long result = ipAddr | (~subnet);
+        return long2Ip(result);
+    }
+    
     public static String getCidrSubNet(String ip, long cidrSize) {
         long numericNetmask = (0xffffffff >> (32 - cidrSize)) << (32 - cidrSize);
         String netmask = NetUtils.long2Ip(numericNetmask);
@@ -840,6 +847,31 @@ public class NetUtils {
         long numericNetmask = (0xffffffff >> (32 - cidrSizeNum)) << (32 - cidrSizeNum);
         String netmask = NetUtils.long2Ip(numericNetmask);
         return getSubNet(cidrAddress, netmask);
+    }
+    
+    public static String getCidrBroadcastIp(String cidr) {
+        if (cidr == null || cidr.isEmpty()) {
+            return null;
+        }
+        String[] cidrPair = cidr.split("\\/");
+        if (cidrPair.length != 2) {
+            return null;
+        }
+        String cidrAddress = cidrPair[0];
+        String cidrSize = cidrPair[1];
+        if (!isValidIp(cidrAddress)) {
+            return null;
+        }
+        int cidrSizeNum = -1;
+
+        try {
+            cidrSizeNum = Integer.parseInt(cidrSize);
+        } catch (Exception e) {
+            return null;
+        }
+        long numericNetmask = (0xffffffff >> (32 - cidrSizeNum)) << (32 - cidrSizeNum);
+        String netmask = NetUtils.long2Ip(numericNetmask);
+        return getBroadcastIp(cidrAddress, netmask);
     }
 
     public static String getCidrNetmask(long cidrSize) {

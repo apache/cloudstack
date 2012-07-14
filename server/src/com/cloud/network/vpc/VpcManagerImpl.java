@@ -1011,6 +1011,11 @@ public class VpcManagerImpl implements VpcManager, Manager{
             if (NetUtils.getCidrSubNet(cidr).equalsIgnoreCase(gateway)) {
                 throw new InvalidParameterValueException("Invalid gateway specified. It should never be equal to the cidr subnet value");
             }
+            //7) gateway should never be equal to the cidr broadcast ip
+            if (NetUtils.getCidrBroadcastIp(cidr).equalsIgnoreCase(gateway)) {
+                throw new InvalidParameterValueException("Invalid gateway specified. It should never be equal to the cidr broadcast ip");
+            }
+
             
         } finally {
             s_logger.debug("Releasing lock for " + locked);
