@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.acl.ControlledEntity.ACLType;
-import com.cloud.agent.api.to.NicTO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
@@ -55,7 +54,6 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;

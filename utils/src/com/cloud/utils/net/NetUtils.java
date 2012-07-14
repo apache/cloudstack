@@ -516,7 +516,6 @@ public class NetUtils {
             if (octetString.length() < 1 || octetString.length() > 3) {
                 return false;
             }
-
         }
 
         // IP is good, return true

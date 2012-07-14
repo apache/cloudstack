@@ -68,10 +68,11 @@ public interface VpcManager extends VpcService{
      * @param networkOwner
      * @param vpc TODO
      * @param networkId TODO
+     * @param gateway TODO
      * @return
      */
     void validateGuestNtkwForVpc(NetworkOffering guestNtwkOff, String cidr, String networkDomain, Account networkOwner, 
-            Vpc vpc, Long networkId);
+            Vpc vpc, Long networkId, String gateway);
 
     /**
      * @return
