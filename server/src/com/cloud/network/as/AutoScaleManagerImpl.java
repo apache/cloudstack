@@ -976,7 +976,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_COUNTER_DELETE, eventDescription = "condition")
+    @ActionEvent(eventType = EventTypes.EVENT_CONDITION_DELETE, eventDescription = "condition")
     public boolean deleteCondition(long conditionId) throws ResourceInUseException {
         /* Check if entity is in database */
         ConditionVO condition = getEntityInDatabase("Condition", conditionId, _conditionDao);
