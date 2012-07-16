@@ -557,7 +557,8 @@
 										$.ajax({
 											url: createURL('listPrivateGateways'),
 											data: {
-												id: args.context.vpcGateways[0].id
+												id: args.context.vpcGateways[0].id,
+												listAll: true
 											},
 											success: function(json) {
 												var item = json.listprivategatewaysresponse.privategateway[0];
