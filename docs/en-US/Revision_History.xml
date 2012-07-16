@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE appendix PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<appendix id="appe-cloudstack-Revision_History">
+	<title>Revision History</title>
+	<simpara>
+		<revhistory>
+			<revision>
+				<revnumber>0-0</revnumber>
+				<date>Tue May 29 2012</date>
+				<author>
+					<firstname>Jessica</firstname>
+					<surname>Tomechak</surname>
+					<email/>
+				</author>
+				<revdescription>
+					<simplelist>
+						<member>Initial creation of book by publican</member>
+					</simplelist>
+				</revdescription>
+			</revision>
+		</revhistory>
+	</simpara>
+</appendix>
+

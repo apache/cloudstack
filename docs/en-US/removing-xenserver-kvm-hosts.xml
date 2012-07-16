@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="removing-xenserver-kvm-hosts">
+    <title>Removing XenServer and KVM Hosts</title>
+    <para>A node cannot be removed from a cluster until it has been placed in maintenance mode.  This will ensure that all of the VMs on it have been migrated to other Hosts.  To remove a Host from the cloud:</para>
+    <orderedlist>
+        <listitem><para>Place the node in maintenance mode.</para><para> See <xref linkend="scheduled-maintenance-maintenance-mode-hosts"/>.</para></listitem>
+        <listitem><para>For KVM, stop the cloud-agent service.</para></listitem>
+        <listitem><para>Use the UI option to remove the node.</para><para>Then you may power down the Host, re-use its IP address, re-install it, etc</para></listitem>
+       </orderedlist>
+    
+</section>

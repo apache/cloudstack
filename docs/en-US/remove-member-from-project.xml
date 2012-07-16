@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="remove-member-from-project">
+    <title>Removing a Member From a Project</title>
+    <para>When a member is removed from a project, the member’s resources continue to be owned by the project. The former project member cannot create any new resources within the project or use any of the project’s existing resources.</para>
+    <para>A member of a project can be removed by the project administrator, the domain administrator of the domain the project belongs to or of its parent domain, or the CloudPlatform root administrator.</para>
+    <orderedlist>
+      <listitem><para>Log in to the CloudPlatform UI.</para></listitem>
+      <listitem><para>In the left navigation, click Projects.</para></listitem>
+      <listitem><para>In Select View, choose Projects.</para></listitem>
+        <listitem><para>Click the name of the project.</para></listitem>
+        <listitem><para>Click the Accounts tab.</para></listitem>
+        <listitem><para>Click the name of the member.</para></listitem>
+        <listitem><para>Click the Delete button.<inlinemediaobject>
+            <imageobject>
+                <imagedata fileref="./images/delete-button.png" />
+            </imageobject>
+            <textobject><phrase>deletebutton.png: Removes a member</phrase></textobject>
+        </inlinemediaobject></para></listitem>
+   </orderedlist>
+   </section>
+      

@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="troubleshooting-alerts">
+    <title>Alerts</title>
+    <para>The following is the list of alert type numbers.</para>
+    <programlisting>
+MEMORY = 0
+CPU = 1
+STORAGE =2
+STORAGE_ALLOCATED = 3
+PUBLIC_IP = 4
+PRIVATE_IP = 5
+HOST = 6
+USERVM = 7
+DOMAIN_ROUTER = 8
+CONSOLE_PROXY = 9
+ROUTING = 10// lost connection to default route (to the gateway)
+STORAGE_MISC = 11 // lost connection to default route (to the gateway)
+USAGE_SERVER = 12 // lost connection to default route (to the gateway)
+MANAGMENT_NODE = 13 // lost connection to default route (to the gateway)
+DOMAIN_ROUTER_MIGRATE = 14
+CONSOLE_PROXY_MIGRATE = 15
+USERVM_MIGRATE = 16
+VLAN = 17
+SSVM = 18
+USAGE_SERVER_RESULT = 19
+STORAGE_DELETE = 20;
+UPDATE_RESOURCE_COUNT = 21; //Generated when we fail to update the resource count
+USAGE_SANITY_RESULT = 22;
+DIRECT_ATTACHED_PUBLIC_IP = 23;
+LOCAL_STORAGE = 24;
+RESOURCE_LIMIT_EXCEEDED = 25; //Generated when the resource limit exceeds the limit. Currently used for recurring snapshots only
+
+    </programlisting>
+    </section>
+      

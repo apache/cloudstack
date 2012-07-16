@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="create-template-from-snapshot">
+    <title>Creating a Template from a Snapshot</title>
+    <note><para>Not supported by Oracle VM</para></note>
+    <para>If you do not want to stop the VM in order to use the Create Template menu item (as described in <xref linkend="create-template-from-existing-vm"/>), you can create a template directly from any snapshot through the CloudPlatform UI.</para>
+		
+</section>

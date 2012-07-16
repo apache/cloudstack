@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="disable-enable-zones-pods-clusters">
+    <title>Disabling and Enabling Zones, Pods, and Clusters</title>
+    <para>You can enable or disable a zone, pod, or cluster without permanently removing it from the cloud. This is useful for maintenance or when there are problems that make a portion of the cloud infrastructure unreliable. No new allocations will be made to a disabled zone, pod, or cluster until its state is returned to Enabled. When a zone, pod, or cluster is first added to the cloud, it is Disabled by default.</para>
+    <para>To disable and enable a zone, pod, or cluster:</para>
+    <orderedlist>
+        <listitem><para>Log in to the CloudPlatform UI as administrator</para></listitem>
+        <listitem><para>In the left navigation bar, click Infrastructure.</para>
+        </listitem>
+        <listitem><para>In Zones, click View More.</para>
+           </listitem>
+        <listitem><para>If you are disabling or enabling a zone, find the name of the zone in the list, and click the Enable/Disable button.<inlinemediaobject>
+            <imageobject>
+                <imagedata fileref="./images/enable-disable.png" />
+            </imageobject>
+            <textobject><phrase>enable-disable.png: button to enable or disable zone, pod, or cluster.</phrase></textobject>
+        </inlinemediaobject>
+        </para></listitem>        
+        <listitem><para>If you are disabling or enabling a pod or cluster, click the name of the zone that contains the pod or cluster.</para></listitem>
+        <listitem><para>Click the Compute tab.</para>
+        </listitem>
+        <listitem><para>In the Pods or Clusters node of the diagram, click View All.</para>
+        </listitem>
+        <listitem><para>Click the pod or cluster name in the list.</para></listitem>
+        <listitem><para>Click the Enable/Disable button.
+            <inlinemediaobject><imageobject>
+                <imagedata fileref="./images/enable-disable.png" />
+            </imageobject></inlinemediaobject></para></listitem>         
+    </orderedlist>
+    </section>

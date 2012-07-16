@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="troubleshooting-unable-to-power-on-vm">
+    <title>Unable to power on virtual machine on VMware</title>
+    <formalpara>
+        <title>Symptom</title>
+        <para>Virtual machine does not power on. You might see errors like: </para>
+    </formalpara>
+    <itemizedlist>
+        <listitem><para>Unable to open Swap File</para></listitem>
+        <listitem><para>Unable to access a file since it is locked</para></listitem>
+        <listitem><para>	Unable to access Virtual machine configuration</para></listitem>
+    </itemizedlist>
+    <formalpara>
+        <title>Cause</title>
+        <para>A known issue on VMware machines. ESX hosts lock certain critical virtual machine files and file systems to prevent concurrent changes. Sometimes the files are not unlocked when the virtual machine is powered off. When a virtual machine attempts to power on, it can not access these critical files, and the virtual machine is unable to power on.</para>
+    </formalpara>
+    <formalpara>
+        <title>Solution</title>
+        <para>See the following:</para>
+    </formalpara>
+    <para><ulink url="http://kb.vmware.com/selfservice/microsites/search.do?language=en_US&amp;cmd=displayKC&amp;externalId=10051/">VMware Knowledge Base Article</ulink></para>                
+</section>
+      

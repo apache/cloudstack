@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="create-new-projects">
+    <title>Creating a New Project</title>
+    <para>CloudPlatform administrators and domain administrators can create projects. If the global configuration parameter allow.user.create.projects is set to true, end users can also create projects.</para>
+    <orderedlist>
+        <listitem><para>Log in as administrator to the CloudPlatform UI.</para></listitem>
+        <listitem><para>In the left navigation, click Projects.</para></listitem>
+        <listitem><para>In Select view, click Projects.</para></listitem>
+        <listitem><para>Click New Project.</para></listitem>
+        <listitem><para>Give the project a name and description for display to users, then click Create Project.</para></listitem>
+        <listitem><para>A screen appears where you can immediately add more members to the project. This is optional. Click Next when you are ready to move on.</para></listitem>
+        <listitem><para>Click Save.</para></listitem>
+    </orderedlist>
+   </section>
+      

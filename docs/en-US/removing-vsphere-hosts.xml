@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="removing-vsphere-hosts">
+    <title>Removing vSphere Hosts</title>
+    <para>To remove this type of host, first place it in maintenance mode, as described in <xref linkend="scheduled-maintenance-maintenance-mode-hosts"/>. Then use CloudPlatform to remove the host. CloudPlatform will not direct commands to a host that has been removed using CloudPlatform. However, the host may still exist in the vCenter cluster.</para>
+    </section>

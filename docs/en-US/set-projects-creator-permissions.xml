@@ -1,0 +1,30 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="set-projects-creator-permissions">
+    <title>Setting Project Creator Permissions</title>
+    <para>You can configure CloudPlatform to allow any user to create a new project, or you can restrict that ability to just CloudPlatform administrators.</para>
+    <orderedlist>
+        <listitem><para>Log in as administrator to the CloudPlatform UI.</para></listitem>
+        <listitem><para>In the left navigation, click Global Settings.</para></listitem>
+        <listitem><para>In the search box, type allow.user.create.projects.</para></listitem>
+        <listitem><para>Click the edit button to set the parameter. <inlinemediaobject>
+            <imageobject>
+                <imagedata fileref="./images/edit-icon.png" />
+            </imageobject>
+            <textobject><phrase>editbutton.png: Edits parameters</phrase></textobject>
+        </inlinemediaobject></para><informaltable>
+            <tgroup cols="2" align="left" colsep="1" rowsep="1">
+                <tbody>
+                    <row>
+                        <entry><para>allow.user.create.projects</para></entry>
+                        <entry><para>Set to true to allow end users to create projects. Set to false if you want only the CloudPlatform root administrator and domain administrators to create projects.</para></entry>
+                                                
+                    </row>
+                </tbody></tgroup></informaltable></listitem>
+        <listitem><para>Restart the Management Server.</para><programlisting># service cloud-management restart</programlisting></listitem>
+    </orderedlist>
+   </section>
+      

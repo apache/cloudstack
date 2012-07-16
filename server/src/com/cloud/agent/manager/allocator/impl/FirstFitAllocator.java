@@ -81,6 +81,7 @@ public class FirstFitAllocator implements HostAllocator {
     @Inject VMInstanceDao _vmInstanceDao = null;
     @Inject ResourceManager _resourceMgr;
     float _factor = 1;
+    boolean _checkHvm = true;
     protected String _allocationAlgorithm = "random";
     @Inject CapacityManager _capacityMgr;
     
@@ -343,6 +344,9 @@ public class FirstFitAllocator implements HostAllocator {
     }
     
     protected boolean hostSupportsHVM(HostVO host) {
+        if ( !_checkHvm ) {
+            return true;
+        }
     	// Determine host capabilities
 		String caps = host.getCapabilities();
 		
@@ -411,6 +415,8 @@ public class FirstFitAllocator implements HostAllocator {
             if (allocationAlgorithm != null) {
             	_allocationAlgorithm = allocationAlgorithm;
             }
+            String value = configs.get("xen.check.hvm");
+            _checkHvm = value == null ? true : Boolean.parseBoolean(value);
         }
         return true;
     }

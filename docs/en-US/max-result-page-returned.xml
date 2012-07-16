@@ -1,0 +1,14 @@
+	<section id="max-result-page-returned">
+		<title>Maximum Result Pages Returned</title>
+		<para>
+			For each cloud, there is a default upper limit on the number of results that any API command will return in a single page. This is to help prevent overloading the cloud servers and prevent DOS attacks. For example, if the page size limit is 500 and a command returns 10,000 results, the command will return 20 pages.
+		</para>
+		<para>The default page size limit can be different for each cloud. It is set in the global configuration parameter default.page.size. If your cloud has many users with lots of VMs, you might need to increase the value of this parameter. At the same time, be careful not to set it so high that your site can be taken down by an enormous return from an API call. For more information about how to set global configuration parameters, see "Describe Your Deployment" in the Installation Guide.</para>
+		<para>To decrease the page size limit for an individual API command, override the global setting with the page and pagesize parameters, which are available in any list* command (listCapabilities, listDiskOfferings, etc.).</para>
+		<itemizedlist>
+			<listitem><para>Both parameters must be specified together.</para></listitem>
+			<listitem><para>The value of the pagesize parameter must be smaller than the value of default.page.size. That is, you can not increase the number of possible items in a result page, only decrease it.</para></listitem>
+		</itemizedlist>
+		<para>For syntax information on the list* commands, see the API Reference.</para>
+	</section>
+

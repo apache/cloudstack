@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="create-bare-metal-template">
+	<title>Creating a Bare Metal Template</title>
+	<note><para><emphasis role="bold">Beta feature. Untested in	CloudPlatform 3.0.3. Provided without guarantee of performance</emphasis>.</para></note>
+	<para>Before you can create a bare metal template, you must have performed several other installation and setup steps to create a bare metal cluster and environment. See Bare Metal Installation in the Installation Guide. It is assumed you already have a directory named "win7_64bit" on your CIFS server, containing the image for the bare metal instance. This directory and image are set up as part of the Bare Metal Installation procedure.</para>
+	<orderedlist>
+		<listitem><para>Log in to the CloudPlatform UI as an administrator or end user.</para></listitem>
+		<listitem><para>In the left navigation bar, click Templates.</para></listitem>
+		<listitem><para>Click Create Template.</para></listitem>
+		<listitem><para>In the dialog box, enter the following values.</para>
+		<itemizedlist>
+			<listitem><para><emphasis role="bold">Name</emphasis>. Short name for the template.</para></listitem>
+			<listitem><para><emphasis role="bold">Display Text</emphasis>. Description of the template.</para></listitem>
+			<listitem><para><emphasis role="bold">URL</emphasis>. The directory name which contains image file on your
+						CIFS server. For example, win7_64bit.</para></listitem>
+			<listitem><para><emphasis role="bold">Zone</emphasis>. All Zones.</para></listitem>			
+			<listitem><para><emphasis role="bold">OS Type</emphasis>. Select the OS type of the ISO image. Choose other if
+						the OS Type of the ISO is not listed or if the ISO is not bootable.</para></listitem>
+			<listitem><para><emphasis role="bold">Hypervisor</emphasis>. BareMetal.</para></listitem>
+			<listitem><para><emphasis role="bold">Format</emphasis>. BareMetal.</para></listitem>
+			<listitem><para><emphasis role="bold">Password Enabled</emphasis>. No.</para></listitem>
+			<listitem><para><emphasis role="bold">Public</emphasis>. No.</para></listitem>
+			<listitem><para><emphasis role="bold">Featured</emphasis>. Choose Yes if you would like this template to be
+						more prominent for users to select. Only administrators may make templates
+						featured.</para></listitem>
+		</itemizedlist></listitem></orderedlist>
+	</section>

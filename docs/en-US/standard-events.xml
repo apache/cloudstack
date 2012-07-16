@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="standard-events">
+    <title>Standard Events</title>
+    <para>The events log records three types of standard events.</para>
+    <itemizedlist>
+        <listitem><para>INFO. This event is generated when an operation has been successfully performed.</para></listitem>
+        <listitem><para>WARN. This event is generated in the following circumstances.</para>
+        <itemizedlist>
+            <listitem><para>When a network is disconnected while monitoring a template download.</para></listitem>
+            <listitem><para>When a template download is abandoned.</para></listitem>
+            <listitem><para>When an issue on the storage server causes the volumes to fail over to the mirror storage server.</para></listitem>
+        </itemizedlist>          
+        </listitem>
+        <listitem><para>ERROR. This event is generated when an operation has not been successfully performed</para></listitem>
+    </itemizedlist>
+ 
+	</section>
+

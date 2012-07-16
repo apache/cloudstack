@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="volume-status">
+	<title>Volume Status</title>
+	<para>When a snapshot operation is triggered by means of a recurring snapshot policy, a snapshot is skipped if a volume has remained inactive since its last snapshot was taken. A volume is considered to be inactive if it is either detached or attached to a VM that is not running. CloudPlatform ensures that at least one snapshot is taken since the volume last became inactive.</para>
+	<para>When a snapshot is taken manually, a snapshot is always created regardless of whether a volume has been active or not.</para>
+	</section>

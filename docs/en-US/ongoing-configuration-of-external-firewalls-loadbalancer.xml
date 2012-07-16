@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="ongoing-configuration-of-external-firewalls-loadbalancer">
+    <title>Ongoing Configuration of External Firewalls and Load Balancers</title>
+    <para>Additional user actions (e.g. setting a port forward) will cause further programming of the firewall and load balancer.  A user may request additional public IP addresses and forward traffic received at these IPs to specific VMs. This is accomplished by enabling static NAT for a public IP address, assigning the IP to a VM, and specifying a set of protocols and port ranges to open. When a static NAT rule is created, CloudPlatform programs the zone's external firewall with the following objects:</para>
+    <itemizedlist>
+        <listitem><para>A static NAT rule that maps the public IP address to the private IP address of a VM.</para></listitem>
+        <listitem><para>A security policy that allows traffic within the set of protocols and port ranges that are specified.</para></listitem>
+        <listitem><para>A firewall filter counter that measures the number of bytes of incoming traffic to the public IP.</para></listitem>
+    </itemizedlist>
+    <para>The number of incoming and outgoing bytes through source NAT, static NAT, and load balancing rules is measured and saved on each external element. This data is collected on a regular basis and stored in the CloudPlatform database.</para>
+</section>

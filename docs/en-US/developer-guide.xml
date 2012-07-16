@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<chapter id="developer-guide">
+	<title>Using the API</title>
+	<xi:include href="developer-introduction.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="whats-new.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="making-api-request.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="enabling-api-call-expiration.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="signing-api-requests.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="responses.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="asynchronous-commands.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="working-with-usage-data.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="event-types.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="alerts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="time-zones.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="contacting-support.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>

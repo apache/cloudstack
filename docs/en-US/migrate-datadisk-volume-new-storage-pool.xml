@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="migrate-datadisk-volume-new-storage-pool">
+	<title>Migrating a Data Disk Volume to a New Storage Pool</title>
+			<orderedlist>
+				<listitem><para>Log in to the CloudPlatform UI as a user or admin.</para></listitem>
+				<listitem><para>Detach the data disk from the VM. See Detaching and Moving Volumes <xref linkend="detach-move-volumes"/>  (but skip the “reattach” step at the end. You will do that after migrating to new storage).</para></listitem>
+				<listitem><para>Call the CloudPlatform API command migrateVolume and pass in the volume ID and the ID of any storage pool in the zone.</para></listitem>
+				<listitem><para>Watch for the volume status to change to Migrating, then back to Ready.</para></listitem>
+				<listitem><para>Attach the volume to any desired VM running in the same cluster as the new storage server. See Attaching a Volume <xref linkend="attaching-volume"/> </para></listitem>
+			</orderedlist>
+	</section>
+

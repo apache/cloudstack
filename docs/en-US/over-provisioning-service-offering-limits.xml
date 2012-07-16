@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="over-provisioning-service-offering-limits">
+    <title>Over-Provisioning and Service Offering Limits</title>
+    <para>CloudPlatform performs CPU over-provisioning based on an over-provisioning ratio configured by the administrator.  This is defined by the cpu.overprovisioning.factor global configuration variable.</para>
+    <para>CloudPlatform performs CPU over-provisioning based on an over-provisioning ratio configured by the administrator.  This is defined by the cpu.overprovisioning.factor global configuration variable</para>
+    <para>Service offerings limits (e.g. 1 GHz, 1 core) are strictly enforced for core count.  For example, a guest with a service offering of one core will have only one core available to it regardless of other activity on the Host.  </para>
+    <para>Service offering limits for gigahertz are enforced only in the presence of contention for CPU resources.  For example, suppose that a guest was created with a service offering of 1 GHz on a Host that has 2 GHz cores, and that guest is the only guest running on the Host.  The guest will have the full 2 GHz available to it.  When multiple guests are attempting to use the CPU a weighting factor is used to schedule CPU resources.  The weight is based on the clock speed in the service offering.  Guests receive a CPU allocation that is proportionate to the GHz in the service offering.   For example, a guest created from a 2 GHz service offering will receive twice the CPU allocation as a guest created from a 1 GHz service offering. CloudPlatform does not perform memory over-provisioning.</para>
+    </section>     

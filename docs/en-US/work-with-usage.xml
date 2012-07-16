@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="change-database-config">
+    <title>Changing the Database Configuration</title>
+    <para>The CloudPlatform Management Server stores database configuration information (e.g., hostname, port, credentials) in the file /etc/cloud/management/db.properties.  To effect a change, edit this file on each Management Server, then restart the Management Server.</para> 
+</section>

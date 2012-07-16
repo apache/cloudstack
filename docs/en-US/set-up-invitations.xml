@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="set-up-invitations">
+    <title>Setting Up Invitations</title>
+    <para>CloudPlatform can be set up either so that project administrators can add people directly to a project, or so that it is necessary to send an invitation which the recipient must accept. The invitation can be sent by email or through the user’s CloudPlatform account. If you want administrators to use invitations to add members to projects, turn on and set up the invitations feature in CloudPlatform..</para>
+    <itemizedlist>
+        <listitem><para>Log in as administrator to the CloudPlatform UI.</para></listitem>
+        <listitem><para>In the left navigation, click Global Settings.</para></listitem>
+        <listitem><para>In the search box, type project and click the search button.</para></listitem>
+        <listitem><para>In the search box, type project and click the search button.<inlinemediaobject>
+            <imageobject>
+                <imagedata fileref="./images/search-button.png" />
+            </imageobject>
+            <textobject><phrase>searchbutton.png: Searches projects</phrase></textobject>
+        </inlinemediaobject></para></listitem>
+        <listitem><para>5.	In the search results, you will see a few other parameters you need to set to control how invitations behave. The table below shows global configuration parameters related to project invitations. Click the edit button to set each parameter</para>
+            <informaltable>
+                <tgroup cols="2" align="left" colsep="1" rowsep="1">
+                    <thead>
+                        <row>
+                            <entry><para>Configuration Parameters</para></entry>
+                            <entry><para>Description</para></entry>
+                            
+                            
+                        </row>
+                        </thead>
+                        <tbody>
+                        <row>
+                            <entry><para>project.invite.required</para></entry>
+                            <entry><para>Set to true to turn on the invitations feature.</para></entry>
+                            
+                            
+                        </row>
+                        <row>
+                            <entry><para>project.email.sender</para></entry>
+                            <entry><para>The email address to show in the From field of invitation emails.</para></entry>
+                            
+                        </row>
+                        <row>
+                            <entry><para>project.invite.timeout</para></entry>
+                            <entry><para>Amount of time to allow for a new member to respond to the invitation.</para></entry>
+                            
+                        </row>
+                        <row>
+                            <entry><para>project.smtp.host</para></entry>
+                            <entry><para>Name of the host that acts as an email server to handle invitations.</para></entry>
+                            
+                        </row>
+                        <row>
+                            <entry><para>project.smtp.password</para></entry>
+                            <entry><para>(Optional) Password required by the SMTP server. You must also set project.smtp.username and set project.smtp.useAuth to true.</para></entry>
+                                
+                            </row>
+                            <row>
+                                <entry><para>project.smtp.port</para></entry>
+                                <entry><para>SMTP server’s listening port.</para></entry>
+                                
+                            </row>
+                            <row>
+                                <entry><para>project.smtp.useAuth</para></entry>
+                                <entry><para>Set to true if the SMTP server requires a username and password.</para></entry>
+                            </row>
+                            <row>
+                                <entry><para>project.smtp.username</para></entry>
+                                <entry><para>(Optional) User name required by the SMTP server for authentication. You must also set project.smtp.password and set project.smtp.useAuth to true..</para></entry>
+                            </row>                             
+                    </tbody>
+                </tgroup>
+            </informaltable>
+        </listitem>
+        <listitem><para>Restart the Management Server</para>
+        <programlisting>service cloud-management restart</programlisting></listitem>
+    </itemizedlist>
+    
+</section>
+      

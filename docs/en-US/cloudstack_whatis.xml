@@ -1,0 +1,25 @@
+	<section id="cloudstack_whatis">
+		<title>What Is CloudStack?</title>
+		<para>
+			Who Should Read This
+		</para>
+		<para>
+			If you are new to CloudStack or you want to learn more about concepts before installing and running CloudStack, read this overview. 
+			If you just want to get started, you can skip to Overview of Installation Steps.
+			
+		</para>
+		<para>
+			CloudStack is an open source software platform that pools computing resources to build public, private, and hybrid Infrastructure as a Service (IaaS) clouds. CloudStack manages the network, storage, and compute nodes that make up a cloud infrastructure. Use CloudStack to deploy, manage, and configure cloud computing environments.
+			Typical users are service providers and enterprises. With CloudStack, you can:
+			<itemizedlist>
+				<listitem>
+			<para>Set up an on-demand, elastic cloud computing service. Service providers can sell self service virtual machine instances, storage volumes, and networking configurations over the Internet.
+			</para></listitem>
+				<listitem>
+				<para>Set up an on-premise private cloud for use by employees. Rather than managing virtual machines in the same way as physical machines, with CloudStack an enterprise can offer self-service virtual machines to users without involving IT departments.
+				</para></listitem>
+			</itemizedlist>
+			
+		</para>
+	</section>
+

@@ -18,9 +18,8 @@ http://cloudstack.org/download.html
 * XCP
 
 ## Mailing lists
-[Announcement Mailing List](https://lists.sourceforge.net/lists/listinfo/cloudstack-announce)
-[Development Mailing List](https://lists.sourceforge.net/mailman/listinfo/cloudstack-devel)
-[Users Mailing list](https://lists.sourceforge.net/mailman/listinfo/cloudstack-users)
-[Commits mailing list](https://lists.sourceforge.net/mailman/listinfo/cloudstack-commits)
+[Development Mailing List](mailto:cloudstack-dev-subscribe@incubator.apache.org)
+[Users Mailing list](mailto:cloudstack-users-subscribe@incubator.apache.org)
+[Commits mailing list](mailto:cloudstack-commits-subscribe@incubator.apache.org)
 
 

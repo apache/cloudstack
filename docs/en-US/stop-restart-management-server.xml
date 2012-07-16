@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="stop-restart-management-server">
+    <title>Stopping and Restarting the Management Server</title>
+    <para>The root administrator will need to stop and restart the Management Server from time to time.</para>
+    <para>For example, after changing a global configuration parameter, a restart is required. If you have multiple Management Server nodes, restart all of them to put the new parameter value into effect consistently throughout the cloud..</para>
+    <para>To stop the Management Server, issue the following command at the operating system prompt on the Management Server node:</para>
+    <programlisting># service cloud-management stop</programlisting>
+    <para>To start the Management Server:</para>
+    <programlisting># service cloud-management start</programlisting>
+    <para>To stop the Management Server:</para>
+    <programlisting># service cloud-management stop</programlisting>
+</section>

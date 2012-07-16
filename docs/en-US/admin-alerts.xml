@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="admin-alerts">
+    <title>Administrator Alerts</title>
+    <para>The system provides alerts and events to help with the management of the cloud. Alerts are notices to an administrator, generally delivered by e-mail, notifying the administrator that an error has occurred in the cloud. Alert behavior is configurable.</para>
+    <para>Events track all of the user and administrator actions in the cloud. For example, every guest VM start creates an associated event. Events are stored in the Management Server’s database.</para>
+    <para>Emails will be sent to administrators under the following circumstances:</para>
+    <itemizedlist>
+        <listitem><para>The Management Server cluster runs low on CPU, memory, or storage resources</para></listitem>
+        <listitem><para>The Management Server loses heartbeat from a Host for more than 3 minutes</para></listitem>
+        <listitem><para>The Host cluster runs low on CPU, memory, or storage resources</para></listitem>
+        </itemizedlist>
+    
+</section>
