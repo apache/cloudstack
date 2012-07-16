@@ -405,7 +405,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         Integer quietTime = cmd.getQuietTime();
         String action = cmd.getAction();
 
-        if (quietTime != null) {
+        if (quietTime == null) {
             quietTime = NetUtils.DEFAULT_AUTOSCALE_POLICY_QUIET_TIME;
         }
 
