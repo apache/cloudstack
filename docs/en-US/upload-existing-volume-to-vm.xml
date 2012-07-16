@@ -1,0 +1,57 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="upload-existing-volume-to-vm">
+	<title>Uploading an Existing Volume to a Virtual Machine</title>
+			<para>Existing data can be made accessible to a virtual machine. This is called uploading a volume to the VM. For example, this is useful to upload data from a local file system and attach it to a VM. Root administrators, domain administrators, and end users can all upload existing volumes to VMs.</para>
+			<para>The upload is performed using HTTP. The uploaded volume is placed in the zone's secondary storage</para>
+			<para>You cannot upload a volume if the preconfigured volume limit has already been reached. The default limit for the cloud is set in the global configuration parameter max.account.volumes, but administrators can also set per-domain limits that are different from the global default. See Setting Usage Limits </para>
+			<para>To upload a volume:</para>	
+			<orderedlist>
+				<listitem><para>(Optional) Create an MD5 hash (checksum) of the disk image file that you are going to upload. After uploading the data disk, CloudPlatform will use this value to verify that no data corruption has occurred.</para></listitem>
+				<listitem><para>Log in to the CloudPlatform UI as an administrator or user</para></listitem>
+				<listitem><para>In the left navigation bar, click Storage.</para></listitem>
+				<listitem><para>Click Upload Volume.</para></listitem>
+				<listitem><para>Provide the following:</para>
+				<itemizedlist>
+					<listitem><para>Name and Description. Any desired name and a brief description that can be shown in the UI.</para></listitem>
+					<listitem><para>Availability Zone. Choose the zone where you want to store the volume. VMs running on hosts in this zone can attach the volume.</para></listitem>
+					<listitem><para>Format. Choose one of the following to indicate the disk image format of the volume.</para>
+					<informaltable>
+						<tgroup cols="2" align="left" colsep="1" rowsep="1">
+							
+							<thead>
+								<row>
+									<entry><para>Hypervisor</para></entry>
+									<entry><para>Disk Image Format</para></entry>
+								</row>									
+							</thead>
+							<tbody>
+								<row>
+									<entry><para>XenServer</para></entry>
+									<entry><para>VHD</para></entry>
+								</row>
+								<row>
+									<entry><para>VMware</para></entry>
+									<entry><para>OVA</para></entry>
+								</row>
+								<row>
+									<entry><para>KVM</para></entry>
+									<entry><para>QCOW2</para></entry>
+								</row>
+								<row>
+									<entry><para>OVM</para></entry>
+									<entry><para>RAW</para></entry>
+								</row>
+							</tbody>
+						</tgroup>
+					</informaltable></listitem>								
+					<listitem><para>URL. The secure HTTP or HTTPS URL that CloudPlatform can use to access your disk. The type of file at the URL must match the value chosen in Format. For example, if Format is VHD, the URL might look like the following:</para>
+						<para>http://yourFileServerIP/userdata/myDataDisk.vhd</para></listitem>
+					<listitem><para>MD5 checksum. (Optional) Use the hash that you created in step 1.</para></listitem></itemizedlist></listitem>
+					<listitem><para>Wait until the status of the volume shows that the upload is complete. Click Instances - Volumes, find the name you specified in step 5, and make sure the status is Uploaded.</para></listitem>
+			</orderedlist>
+	</section>
+

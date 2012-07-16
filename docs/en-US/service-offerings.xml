@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="service-offerings">
+    <title>Service Offerings</title>
+    <para><xref linkend="set-up-network-for-users" />vCenter Maintenance Mode</para>
+    <para><xref linkend="about-virtual-networks" />XenServer and Maintenance Mode</para>
+    <para><xref linkend="customizing-dns" />vCenter Maintenance Mode</para>
+    <para><xref linkend="stop-start-management-server" />XenServer and Maintenance Mode</para>
+   </section>

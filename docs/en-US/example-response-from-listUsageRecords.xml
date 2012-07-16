@@ -1,0 +1,32 @@
+	<section id="example-response-from-listUsageRecords">
+		<title>Example response from listUsageRecords</title>
+		<para>
+			All CloudStack API requests are submitted in the form of a HTTP GET/POST with an associated command and any parameters.  A request is composed of the following whether in HTTP or HTTPS:</para>
+		
+		<programlisting>
+			&lt;listusagerecordsresponse&gt;
+  				&lt;count>1816&lt;/count&gt;
+ 		    	&lt;usagerecord&gt;
+    				&lt;account&gt;user5&lt;/account&gt;
+    				&lt;accountid&gt;10004&lt;/accountid&gt;
+    				&lt;domainid&gt;1&lt;/domainid&gt;
+    				&lt;zoneid&gt;1&lt;/zoneid&gt;
+  	  				&lt;description&gt;i-3-4-WC running time (ServiceOffering: 1) (Template: 3)&lt;/description&gt;
+    				&lt;usage&gt;2.95288 Hrs&lt;/usage&gt;
+   					&lt;usagetype&gt;1&lt;/usagetype&gt;
+    				&lt;rawusage&gt;2.95288&lt;/rawusage&gt;
+   					&lt;virtualmachineid&gt;4&lt;/virtualmachineid&gt;
+    				&lt;name&gt;i-3-4-WC&lt;/name&gt;
+   					&lt;offeringid&gt;1&lt;/offeringid&gt;
+    				&lt;templateid&gt;3&lt;/templateid&gt;
+    				&lt;usageid&gt;245554&lt;/usageid&gt;
+    				&lt;type&gt;XenServer&lt;/type&gt;
+    				&lt;startdate&gt;2009-09-15T00:00:00-0700&lt;/startdate&gt;
+    				&lt;enddate&gt;2009-09-18T16:14:26-0700&lt;/enddate&gt;
+  				&lt;/usagerecord&gt;
+
+  			 … (1,815 more usage records)
+			&lt;/listusagerecordsresponse&gt;
+		</programlisting>
+	</section>
+

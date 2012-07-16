@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="troubleshooting-lb-rules-fails">
+    <title>Load balancer rules fail after changing network offering</title>
+    <formalpara>
+        <title>Symptom</title>
+        <para>After changing the network offering on a network, load balancer rules stop working.</para>
+    </formalpara>
+    <formalpara>
+        <title>Cause</title>
+        <para>Load balancing rules were created while using a network service offering that includes an external load balancer device such as NetScaler, and later the network service offering changed to one that uses the CloudPlatform virtual router.</para>
+    </formalpara>
+    <formalpara>
+        <title>Solution</title>
+        <para>Create a firewall rule on the virtual router for each of your existing load balancing rules so that they continue to function.</para>
+    </formalpara>
+             
+</section>
+      

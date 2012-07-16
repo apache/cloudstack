@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="best-practices-primary-storage">
+		<title>Best Practices for Primary Storage</title>
+		<itemizedlist>
+			<listitem><para>The speed of primary storage will impact guest performance. If possible, choose smaller, higher RPM drives for primary storage.</para></listitem>
+			<listitem><para>Ensure that nothing is stored on the server. Adding the server to CloudPlatform will destroy any existing data</para></listitem>			
+		</itemizedlist>
+	</section>
+

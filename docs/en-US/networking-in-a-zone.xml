@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="networking-in-a-zone">
+	<title>Networking in a Zone</title>
+	<para>Figure 3 illustrates the network setup within a single zone.</para>
+	<mediaobject>
+		<imageobject>
+			<imagedata fileref="./images/.png" />
+		</imageobject>
+		<textobject><phrase>ReleaseIPButton.png: Depicts network setup in a single zone</phrase></textobject>
+	</mediaobject>
+	<para>A firewall for management traffic operates in the NAT mode. The network typically is assigned IP addresses in the 192.168.0.0/16 Class B private address space. Each pod is assigned IP addresses in the 192.168.*.0/24 Class C private address space.</para>
+	<para>Each zone has its own set of public IP addresses. Public IP addresses from different zones do not overlap.</para>
+						
+	</section>

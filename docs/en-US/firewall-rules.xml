@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="firewall-rules">
+	<title>Firewall Rules</title>
+	<para>By default, all incoming traffic to the public IP address is rejected by the firewall. To allow external traffic, you can open firewall ports by specifying firewall rules.  You can optionally specify one or more CIDRs to filter the source IPs. This is useful when you want to allow only incoming requests from certain IP addresses.</para>
+	<para>You cannot use firewall rules to open ports for an elastic IP address. When elastic IP is used, outside access is instead controlled through the use of security groups. See <xref linkend="add-security-group"/>.</para>
+	<para>Firewall rules can be created using the Firewall tab in the Management Server UI. This tab is not displayed by default when CloudPlatform is installed. To display the Firewall tab, the CloudPlatform administrator must set the global configuration parameter firewall.rule.ui.enabled to "true."</para>
+	<para>To create a firewall rule:</para>
+	<orderedlist>
+		<listitem><para>Log in to the CloudPlatform UI as an administrator or end user. </para></listitem>
+		<listitem><para>In the left navigation, choose Network.</para></listitem>
+		<listitem><para>Click the name of the network where you want to work with.</para></listitem>
+		<listitem><para>Click View IP Addresses.</para></listitem>
+		<listitem><para>Click the IP address you want to work with.</para>
+		</listitem>
+		<listitem><para>Click the Configuration tab and fill in the following values.</para>
+		<itemizedlist>
+			<listitem><para><emphasis role="bold">Source CIDR</emphasis>. (Optional) To accept only traffic from IP
+						addresses within a particular address block, enter a CIDR or a
+						comma-separated list of CIDRs. Example: 192.168.0.0/22. Leave empty to allow
+						all CIDRs.</para></listitem>
+			<listitem><para><emphasis role="bold">Protocol</emphasis>. The communication protocol in use on the opened
+						port(s).</para></listitem>
+			<listitem><para><emphasis role="bold">Start Port and End Port</emphasis>. The port(s) you want to open on the
+						firewall. If you are opening a single port, use the same number in both
+						fields</para></listitem>
+			<listitem><para><emphasis role="bold">ICMP Type and ICMP Code</emphasis>. Used only if Protocol is set to
+						ICMP. Provide the type and code required by the ICMP protocol to fill out
+						the ICMP header. Refer to ICMP documentation for more details if you are not
+						sure what to enter</para></listitem>
+		</itemizedlist></listitem>
+		<listitem><para>Click Add</para></listitem>		
+	</orderedlist>
+</section>

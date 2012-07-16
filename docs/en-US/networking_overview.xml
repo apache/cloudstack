@@ -1,0 +1,12 @@
+	<section id="networking_overview">
+		<title>Networking Overview</title>
+		<para>
+			CloudStack offers two types of networking scenario:
+		</para>
+		<itemizedlist>
+			<listitem><para>Basic. For AWS-style networking. Provides a single network where guest isolation can be provided through layer-3 means such as security groups (IP address source filtering).</para></listitem>
+			<listitem><para>Advanced. For more sophisticated network topologies. This network model provides the most flexibility in defining guest networks.</para></listitem>
+		</itemizedlist>
+		<para>For more details, see Network Setup.</para>
+	</section>
+

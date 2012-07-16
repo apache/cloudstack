@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="search-user-bind-dn">
+	<title>Search User Bind DN</title>
+	<para>The bind DN is the user on the external LDAP server permitted to search the LDAP directory within the defined search base. When the DN is returned, the DN and passed password are used to authenticate the CloudPlatform user with an LDAP bind. A full discussion of bind DNs is outside the scope of our documentation. The following table shows some examples of bind DNs.</para>
+							<informaltable>
+							<tgroup cols="2" align="left" colsep="1" rowsep="1">
+							<thead>
+									<row>
+										<entry><para>LDAP Server</para></entry>
+										<entry><para>Example Bind DN</para></entry>																	
+									</row>
+								</thead>
+								<tbody>
+									<row>
+										<entry><para>ApacheDS</para></entry>
+										<entry><para>cn=Administrator,dc=testing,ou=project,ou=org</para></entry>									
+									</row>
+									<row>
+										<entry><para>Active Directory</para></entry>
+										<entry><para>CN=Administrator, OU=testing, DC=company, DC=com</para></entry></row>
+								</tbody>
+							</tgroup>
+						</informaltable>
+	</section>

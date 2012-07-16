@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="add-members-to-projects">
+    <title>Adding Members to a Project</title>
+    <para>New members can be added to a project by the project’s administrator, the domain administrator of the domain where the project resides or any parent domain, or the CloudPlatform root administrator. There are two ways to add members in CloudPlatform, but only one way is enabled at a time:</para>
+    <itemizedlist>
+        <listitem><para>If invitations have been enabled, you can send invitations to new members.</para></listitem>
+        <listitem><para>If invitations are not enabled, you can add members directly through the UI.</para></listitem>
+    </itemizedlist>
+   </section>
+      

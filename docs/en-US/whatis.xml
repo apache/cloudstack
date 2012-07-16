@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="whatis">
+	<title>What Is &PRODUCT;?</title>
+	<para>
+		&PRODUCT; is an open source software platform that pools computing resources to build public, private, and hybrid Infrastructure as a Service (IaaS) clouds. &PRODUCT; manages the network, storage, and compute nodes that make up a cloud infrastructure. Use &PRODUCT; to deploy, manage, and configure cloud computing environments.
+	</para>
+	<para>Typical users are service providers and enterprises. With &PRODUCT;, you can:</para>
+	<itemizedlist>
+		<listitem>
+			<para>Set up an on-demand, elastic cloud computing service. Service providers can sell self service virtual machine instances, storage volumes, and networking configurations over the Internet.
+			</para></listitem>
+		<listitem>
+			<para>Set up an on-premise private cloud for use by employees. Rather than managing virtual machines in the same way as physical machines, with &PRODUCT; an enterprise can offer self-service virtual machines to users without involving IT departments.
+			</para></listitem>
+	</itemizedlist>
+	<mediaobject>
+		<imageobject>
+			<imagedata fileref="./images/1000-foot-view.png" />
+		</imageobject>
+		<textobject><phrase>1000-foot-view.png: Overview of &PRODUCT;</phrase></textobject>
+	</mediaobject>
+</section>

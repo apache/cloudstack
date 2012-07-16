@@ -1,0 +1,41 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="install-management-server">
+	<title>Install the Management Server on the First Host</title>
+	<para>The first step in installation, whether you are installing the Management Server on one host or many, is to
+		install the software on a single node.
+	</para>
+	<note><para>If you are planning to install the Management Server on multiple nodes
+		for high availability, do not proceed to the additional nodes yet. That step will come later.</para></note>
+	<orderedlist>
+		<listitem><para>Download the Management Server onto the host where it will run.
+			Get the software from the following link.</para>
+			<para><ulink url="https://www.citrix.com/English/ss/downloads/">https://www.citrix.com/English/ss/downloads/</ulink></para>
+			<para>You will need a <ulink url="http://www.citrix.com/lang/English/publicindex.asp?destURL=%2FEnglish%2FmyCitrix%2Findex.asp%3F">MyCitrix account</ulink>.</para>
+		</listitem>
+		<listitem><para>Install the  packages. You should have a file in the form of “&PRODUCT;-VERSION-N-OSVERSION.tar.gz”. Untar the file and then run the install.sh script inside it. Replace the file and directory names below with those you are using:</para>
+			<programlisting>
+# tar xzf &PRODUCT;-VERSION-N-OSVERSION.tar.gz
+# cd &PRODUCT;-VERSION-N-OSVERSION
+# ./install.sh
+			</programlisting>
+			<para>You should see a few messages as the installer prepares, followed by a list of choices.</para>
+		</listitem>
+		<listitem><para>Choose M to install the Management Server software.</para>
+			<programlisting>  > M</programlisting>
+		</listitem>
+		<listitem><para>Wait for a message like “Complete! Done,” which indicates that the software was installed successfully.</para>
+		</listitem>
+		<listitem><para>(RHEL or CentOS) When the installation is finished, run the following commands to start essential services  (the commands might be different depending on your OS):</para>
+			<programlisting>
+# service rpcbind start
+# service nfs start
+# chkconfig nfs on
+# chkconfig rpcbind on
+			</programlisting>
+		</listitem>
+	</orderedlist>
+</section>

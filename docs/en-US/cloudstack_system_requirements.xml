@@ -1,0 +1,45 @@
+	<section id="cloudstack_system_requirements">
+		<title>Minimum System Requirements</title>
+		<para>
+			The machines that will run the Management Server and MySQL database must meet the following requirements. The same machines can also be used to provide primary and secondary storage, such as via localdisk or NFS. The Management Server may be placed on a virtual machine.
+		</para>
+		<itemizedlist>
+			<listitem><para>Operating system:</para>
+				<itemizedlist>
+					<listitem><para>Commercial users: Preferred: RHEL 6.2+ 64-bit (https://access.redhat.com/downloads) or CentOS 6.2+ 64-bit (http://isoredirect.centos.org/centos/6/isos/x86_64/). Also supported (v3.0.3 and greater): RHEL and CentOS 5.4-5.x 64-bit</para></listitem>
+					<listitem><para>Open-source community users: RHEL 5.4-5.x 64-bit or 6.2+ 64-bit; CentOS 5.4-5.x 64-bit or 6.2+ 64-bit; Ubuntu 10.04 LTS</para></listitem>
+				</itemizedlist>
+			</listitem>
+			<listitem><para>64-bit x86 CPU (more cores results in better performance)</para></listitem>
+			<listitem><para>4 GB of memory</para></listitem>
+			<listitem><para>250 GB of local disk (more results in better capability; 500 GB recommended)</para></listitem>
+			<listitem><para>At least 1 NIC</para></listitem>
+			<listitem><para>Statically allocated IP address</para></listitem>
+			<listitem><para>Fully qualified domain name as returned by the hostname command</para></listitem>
+		</itemizedlist>
+		<para>The host is where the cloud services run in the form of guest virtual machines. Each host is one machine that meets the following requirements:</para>
+		<itemizedlist>
+			<listitem><para>Must be 64-bit and must support HVM (Intel-VT or AMD-V enabled).</para></listitem> 
+			<listitem><para>64-bit x86 CPU (more cores results in better performance)</para></listitem>
+			<listitem><para>Hardware virtualization support required</para></listitem>
+			<listitem><para>4 GB of memory</para></listitem>
+			<listitem><para>36 GB of local disk</para></listitem>
+			<listitem><para>At least 1 NIC</para></listitem>
+			<listitem><para>Statically allocated IP Address</para></listitem>
+			<listitem><para>Latest hotfixes applied to hypervisor software</para></listitem>
+			<listitem><para>When you deploy CloudStack, the hypervisor host must not have any VMs already running</para></listitem>
+		</itemizedlist>
+		<para>Hosts have additional requirements depending on the hypervisor. See the requirements listed at the top of the Installation section for your chosen hypervisor:</para>
+		<itemizedlist>
+			<listitem><para>Citrix XenServer Installation for CloudStack</para></listitem>
+			<listitem><para>VMware vSphere Installation and Configuration</para></listitem>
+			<listitem><para>KVM Installation and Configuration</para></listitem>
+			<listitem><para>Oracle VM (OVM) Installation and Configuration</para></listitem>
+		</itemizedlist>
+		<warning>
+			<para>
+				Be sure you fulfill the additional hypervisor requirements and installation steps provided in this Guide. Hypervisor hosts must be properly prepared to work with CloudStack. For example, the requirements for XenServer are listed under Citrix XenServer Installation for CloudStack.
+			</para>
+		</warning>
+	</section>
+

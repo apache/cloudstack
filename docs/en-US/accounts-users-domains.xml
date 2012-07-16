@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="accounts-users-domains">
+    <title>Accounts, Users, and Domains</title>
+    <formalpara>
+        <title>Accounts</title>
+        <para>An account typically represents a customer of the service provider or a department in a large organization. Multiple users can exist in an account.</para>
+    </formalpara>
+    <formalpara>
+        <title>Domains</title>
+        <para>Accounts are grouped by domains. Domains usually contain multiple accounts that have some logical relationship to each other and a set of delegated administrators with some authority over the domain and its subdomains. For example, a service provider with several resellers could create a domain for each reseller.</para>
+    </formalpara>      
+    <para>For each account created, the Cloud installation creates three different types of user accounts: root administrator, domain administrator, and user.</para>
+    <formalpara>
+        <title>Users</title>
+        <para>Users are like aliases in the account. Users in the same account are not isolated from each other, but they are isolated from users in other accounts. Most installations need not surface the notion of users; they just have one user per account. The same user cannot belong to multiple accounts.</para>
+    </formalpara>
+    <para>Username is unique in a domain across accounts in that domain. The same username can exist in other domains, including sub-domains. Domain name can repeat only if the full pathname from root is unique. For example, you can create  root/d1, as well as root/foo/d1, and root/sales/d1.</para>
+    <para>Administrators are accounts with special privileges in the system. There may be multiple administrators in the system. Administrators can create or delete other administrators, and change the password for any user in the system.</para>   
+    <formalpara>
+        <title>Domain Administrators</title>
+        <para>Domain administrators can perform administrative operations for users who belong to that domain. Domain administrators do not have visibility into physical servers or other domains.</para>
+    </formalpara>
+    <formalpara>
+        <title>Root Administrator</title>
+        <para>Root administrators have complete access to the system, including managing templates, service offerings, customer care administrators, and domains</para>
+    </formalpara>
+    <para>The resources belong to the account, not individual users in that account. For example,
+        billing, resource limits, and so on are maintained by the account, not the users. A user can
+        operate on any resource in the account provided the user has privileges for that operation.
+        The privileges are determined by the role.</para>
+</section>

@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="secondary-storage-vm">
+     <title>Secondary Storage VM</title>
+        <para>In addition to the hosts, CloudPlatform’s Secondary Storage VM mounts and writes to secondary storage.</para>
+        <para>Submissions to secondary storage go through the Secondary Storage VM.  The Secondary Storage VM can retrieve templates and ISO images from URLs using a variety of protocols.</para>
+   <para> The secondary storage VM provides a background task that takes care of a variety of secondary storage activities: downloading a new template to a Zone, copying templates between Zones, and snapshot backups.</para>
+    <para>The administrator can log in to the secondary storage VM if needed. </para>
+    
+  	</section>
+

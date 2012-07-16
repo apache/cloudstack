@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="delete-templates">
+	<title>Deleting Templates</title>
+	<para>Templates may be deleted. In general, when a template spans multiple Zones, only the copy that is selected for deletion will be deleted; the same template in other Zones will not be deleted. The provided CentOS template is an exception to this.  If the provided CentOS template is deleted, it will be deleted from all Zones.</para>
+	<para>When templates are deleted, the VMs instantiated from them will continue to run. However, new VMs cannot be created based on the deleted template.</para>
+</section>

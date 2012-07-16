@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="troubleshooting-unable-to-deploy-vms">
+    <title>Unable to deploy VMs from uploaded vSphere template</title>
+    <formalpara>
+        <title>Symptom</title>
+        <para>When attempting to create a VM, the VM will not deploy. </para>
+    </formalpara>
+    <formalpara>
+        <title>Cause</title>
+        <para>If the template was created by uploading an OVA file that was created using vSphere Client, it is possible the OVA contained an ISO image. If it does, the deployment of VMs from the template will fail.</para>
+    </formalpara>
+    <formalpara>
+        <title>Solution</title>
+        <para>Remove the ISO and re-upload the template.</para>
+    </formalpara>
+    </section>
+      

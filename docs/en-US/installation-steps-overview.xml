@@ -1,0 +1,64 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="installation-steps-overview">
+	<title>Overview of Installation Steps</title>
+	<para>
+		For anything more than a simple trial installation, you will need guidance for a variety of configuration choices. It is strongly recommended that you read the following:
+	</para>
+	<itemizedlist>
+		<listitem><para>Choosing a Deployment Architecture</para></listitem>
+		<listitem><para>Choosing a Hypervisor: Supported Features</para></listitem>
+		<listitem><para>Network Setup</para></listitem>
+		<listitem><para>Storage Setup</para></listitem>
+		<listitem><para>Best Practices</para></listitem>
+	</itemizedlist>
+	<para>
+		<emphasis role="bold">Prepare</emphasis>
+	</para>
+	<para>
+		1.	Make sure you have the required hardware ready
+	</para>
+	<para>
+		2.	(Optional) Fill out the preparation checklists
+	</para>
+	<para>
+		<emphasis role="bold">Install the &PRODUCT; software</emphasis>
+	</para>
+	<para>
+		3.	Install the Management Server (choose single-node or multi-node)
+	</para>
+	<para>
+		4.	Log in to the UI
+	</para>
+	<para>
+		<emphasis role="bold">Provision your cloud infrastructure</emphasis>
+	</para>
+	<para>
+		5.	Add a zone. Includes the first pod, cluster, and host
+	</para>
+	<para>
+		6.	Add more pods
+	</para>
+	<para>
+		7.	Add more clusters
+	</para>
+	<para>
+		8.	Add more hosts
+	</para>
+	<para>
+		9.	Add more primary storage
+	</para>
+	<para>
+		10.	Add more secondary storage
+	</para>
+	<para>
+		<emphasis role="bold">Try using the cloud</emphasis>
+	</para>
+	<para>
+		11.	Initialization and testing
+	</para>
+	
+</section>

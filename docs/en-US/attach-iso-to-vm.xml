@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="attach-iso-to-vm">
+	<title>Attaching an ISO to a VM</title>
+	<orderedlist>
+		<listitem><para>In the left navigation, click Instances.</para></listitem>
+		<listitem><para>Choose the virtual machine you want to work with.</para></listitem>
+		<listitem><para>Click the Attach ISO button <inlinemediaobject>
+			<imageobject>
+				<imagedata fileref="./images/iso-icon.png" />
+			</imageobject>
+			<textobject><phrase>iso.png: Depicts adding an iso image</phrase></textobject>
+		</inlinemediaobject></para></listitem>
+		<listitem><para>In the Attach ISO dialog box, select the desired ISO.</para></listitem>
+		<listitem><para>Click OK</para></listitem>
+	</orderedlist>
+</section>

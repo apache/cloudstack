@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="volume-deletion-garbage-collection">
+	<title>Volume Deletion and Garbage Collection</title>
+	<para>The deletion of a volume does not delete the snapshots that have been created from the volume</para>
+	<para>When a VM is destroyed, data disk volumes that are attached to the VM are not deleted.</para>
+	<para>Volumes are permanently destroyed using a garbage collection process.  The global configuration variables expunge.delay and expunge.interval determine when the physical deletion of volumes will occur.</para>
+	<itemizedlist>
+		<listitem><para>expunge.delay: determines how old the volume must be before it is destroyed, in seconds</para></listitem>
+		<listitem><para>expunge.interval: determines how often to run the garbage collection check</para></listitem>
+	</itemizedlist>
+	<para>Administrators should adjust these values depending on site policies around data retention.</para>
+	</section>
+

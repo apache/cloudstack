@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="security-groups">
+    <xi:include href="add-security-group.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="enable-security-groups.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="add-ingress-egress-rules.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+</section>

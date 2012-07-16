@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="isolated-networks">
+    <title>Isolated Networks</title>
+    <para>An isolated network can be accessed only by virtual machines of a single account. Isolated networks have the following properties.</para>
+    <itemizedlist>
+        <listitem><para>Resources such as VLAN are allocated and garbage collected dynamically</para></listitem>
+        <listitem><para>There is one network offering for the entire network</para></listitem>
+        <listitem><para>The network offering can be upgraded or downgraded but it is for the entire network</para></listitem>
+        </itemizedlist>
+    
+    
+</section>
