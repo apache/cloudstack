@@ -3595,7 +3595,12 @@
                     );
                   }
                 });								
-              }					
+              },
+             
+							notification: {
+                poll: pollAsyncJobResult
+              }							
+							
             },
             configureVpc: {
               label: 'Configure VPC',
