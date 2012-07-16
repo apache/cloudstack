@@ -26,13 +26,10 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.AutoScaleVmProfileResponse;
 import com.cloud.async.AsyncJob;
-import com.cloud.dc.DataCenter;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.as.AutoScaleVmProfile;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
@@ -226,22 +223,6 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-
-        DataCenter zone = _configService.getZone(zoneId);
-        if (zone == null) {
-            throw new InvalidParameterValueException("Unable to find zone by id=" + zoneId);
-        }
-
-        ServiceOffering serviceOffering = _configService.getServiceOffering(serviceOfferingId);
-        if (serviceOffering == null) {
-            throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
-        }
-
-        VirtualMachineTemplate template = _templateService.getTemplate(templateId);
-        // Make sure a valid template ID was specified
-        if (template == null) {
-            throw new InvalidParameterValueException("Unable to use template " + templateId);
-        }
 
         AutoScaleVmProfile result = _autoScaleService.createAutoScaleVmProfile(this);
         if (result != null) {

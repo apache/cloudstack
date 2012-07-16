@@ -43,7 +43,7 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
     private Long id;
 
     @Override
-    public void execute() throws ServerApiException {
+    public void execute() {
         UserContext.current().setEventDetails("AutoScale Policy Id: " + getId());
         AutoScalePolicy result = _autoScaleService.updateAutoScalePolicy(this);
         if (result != null) {

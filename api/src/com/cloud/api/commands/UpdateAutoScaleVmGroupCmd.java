@@ -71,7 +71,7 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ServerApiException {
+    public void execute() {
         UserContext.current().setEventDetails("AutoScale Vm Group Id: " + getId());
         AutoScaleVmGroup result = _autoScaleService.updateAutoScaleVmGroup(this);
         if (result != null) {

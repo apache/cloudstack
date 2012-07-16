@@ -25,7 +25,6 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.net.NetUtils;
 
 @Entity
 @Table(name = "autoscale_vmgroups")
@@ -62,7 +61,7 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup {
     private int memberPort;
 
     @Column(name = "interval")
-    private Integer interval = NetUtils.DEFAULT_AUTOSCALE_POLICY_INTERVAL_TIME;
+    private int interval;
 
     @Column(name = "profile_id")
     private long profileId;
@@ -79,7 +78,7 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup {
     public AutoScaleVmGroupVO() {
     }
 
-    public AutoScaleVmGroupVO(long lbRuleId, long zoneId, long domainId, long accountId, Integer minMembers, Integer maxMembers, Integer memberPort, Integer interval, long profileId, String state) {
+    public AutoScaleVmGroupVO(long lbRuleId, long zoneId, long domainId, long accountId, int minMembers, int maxMembers, int memberPort, int interval, long profileId, String state) {
         this.uuid = UUID.randomUUID().toString();
         this.loadBalancerId = lbRuleId;
         this.minMembers = minMembers;
@@ -90,9 +89,7 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup {
         this.domainId = domainId;
         this.zoneId = zoneId;
         this.state = state;
-        if (interval != null) {
-            this.interval = interval;
-        }
+        this.interval = interval;
     }
 
     @Override

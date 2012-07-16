@@ -59,7 +59,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
     // ///////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ServerApiException {
+    public void execute() {
         UserContext.current().setEventDetails("AutoScale Policy Id: " + getId());
         AutoScaleVmProfile result = _autoScaleService.updateAutoScaleVmProfile(this);
         if (result != null) {

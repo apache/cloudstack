@@ -40,7 +40,7 @@ public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
     // ///////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.DURATION, type = CommandType.INTEGER, required = true, description = "the duration for which the conditions have to be true before action is taken")
-    private Integer duration;
+    private int duration;
 
     @Parameter(name = ApiConstants.QUIETTIME, type = CommandType.INTEGER, description = "the cool down period for which the policy should not be evaluated after the action has been taken")
     private Integer quietTime;
@@ -64,7 +64,7 @@ public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
         return "autoscale_policies";
     }
 
-    public Integer getDuration() {
+    public int getDuration() {
         return duration;
     }
 

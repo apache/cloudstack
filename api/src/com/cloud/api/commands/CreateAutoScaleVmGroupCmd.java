@@ -43,7 +43,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
 
     @IdentityMapper(entityTableName="firewall_rules")
     @Parameter(name = ApiConstants.LBID, type = CommandType.LONG, required = true, description = "the ID of the load balancer rule")
-    private Long lbRuleId;
+    private long lbRuleId;
 
     @Parameter(name=ApiConstants.MIN_MEMBERS, type=CommandType.INTEGER, required=true, description="the minimum number of members in the vmgroup, the number of instances in the vm group will be equal to or more than this number.")
     private int minMembers;
@@ -64,7 +64,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
 
     @IdentityMapper(entityTableName="autoscale_vmprofiles")
     @Parameter(name=ApiConstants.VMPROFILE_ID, type=CommandType.LONG, required=true, description="the autoscale profile that contains information about the vms in the vm group.")
-    private Long profileId;
+    private long profileId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -88,7 +88,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
         return interval;
     }
 
-    public Long getProfileId() {
+    public long getProfileId() {
         return profileId;
     }
 
@@ -100,7 +100,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
         return scaleDownPolicyIds;
     }
 
-    public Long getLbRuleId() {
+    public long getLbRuleId() {
         return lbRuleId;
     }
 
@@ -161,9 +161,6 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
         AutoScaleVmGroup result = _autoScaleService.createAutoScaleVmGroup(this);
         if (result != null) {
             this.setEntityId(result.getId());
-            AutoScaleVmGroupResponse response = _responseGenerator.createAutoScaleVmGroupResponse(result);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create Autoscale Vm Group");
         }
@@ -176,15 +173,20 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
         try
         {
             //            success = _autoScaleService.configureAutoScaleVmGroup(this);
-            vmGroup = _entityMgr.findById(AutoScaleVmGroup.class, getEntityId());
-            AutoScaleVmGroupResponse responseObject = _responseGenerator.createAutoScaleVmGroupResponse(vmGroup);
-            setResponseObject(responseObject);
-            responseObject.setResponseName(getCommandName());
+            // TODO, this will be removed later, when above line is uncommented
+            success = true;
+            if(success) {
+                vmGroup = _entityMgr.findById(AutoScaleVmGroup.class, getEntityId());
+                AutoScaleVmGroupResponse responseObject = _responseGenerator.createAutoScaleVmGroupResponse(vmGroup);
+                setResponseObject(responseObject);
+                responseObject.setResponseName(getCommandName());
+            }
         } catch (Exception ex) {
             //TODO what will happen if Resource Layer fails in a step inbetween
             s_logger.warn("Failed to create autoscale vm group", ex);
         } finally {
             if(!success || vmGroup == null)     {
+                _autoScaleService.deleteAutoScaleVmGroup(getEntityId());
                 throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create Autoscale Vm Group");
             }
         }

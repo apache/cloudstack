@@ -25,7 +25,6 @@ import javax.persistence.InheritanceType;
 import javax.persistence.Table;
 
 import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.net.NetUtils;
 
 @Entity
 @Table(name = "autoscale_policies")
@@ -47,10 +46,10 @@ public class AutoScalePolicyVO implements AutoScalePolicy {
     private long accountId;
 
     @Column(name = "duration")
-    private Integer duration;
+    private int duration;
 
     @Column(name = "quiet_time", updatable = true, nullable = false)
-    private Integer quietTime = NetUtils.DEFAULT_AUTOSCALE_POLICY_QUIET_TIME;
+    private int quietTime;
 
     @Column(name = "action", updatable = false, nullable = false)
     private String action;
@@ -64,14 +63,12 @@ public class AutoScalePolicyVO implements AutoScalePolicy {
     public AutoScalePolicyVO() {
     }
 
-    public AutoScalePolicyVO(long domainId, long accountId, Integer duration, Integer quietTime, String action) {
+    public AutoScalePolicyVO(long domainId, long accountId, int duration, int quietTime, String action) {
         this.uuid = UUID.randomUUID().toString();
         this.domainId = domainId;
         this.accountId = accountId;
         this.duration = duration;
-        if (quietTime != null) {
-            this.quietTime = quietTime;
-        }
+        this.quietTime = quietTime;
         this.action = action;
     }
 
@@ -100,12 +97,12 @@ public class AutoScalePolicyVO implements AutoScalePolicy {
     }
 
     @Override
-    public Integer getDuration() {
+    public int getDuration() {
         return duration;
     }
 
     @Override
-    public Integer getQuietTime() {
+    public int getQuietTime() {
         return quietTime;
     }
 

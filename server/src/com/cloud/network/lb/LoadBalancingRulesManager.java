@@ -42,5 +42,5 @@ public interface LoadBalancingRulesManager extends LoadBalancingRulesService {
 
     boolean applyLoadBalancersForNetwork(long networkId) throws ResourceUnavailableException;
     String getLBCapability(long networkid, String capabilityName);
-    boolean configureLbAutoScaleVmGroup(long vmGroupid, boolean vmGroupCreation);
+    boolean configureLbAutoScaleVmGroup(long vmGroupid);
 }
