@@ -74,7 +74,10 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByHost;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByAccount;
     protected SearchBuilder<VMInstanceVO> NetworkTypeSearch;
+    protected GenericSearchBuilder<VMInstanceVO, String> DistinctHostNameSearch;
+    
     ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
+    NicDao _nicDao = ComponentLocator.inject(NicDaoImpl.class);
 
     protected final Attribute _updateTimeAttr;
     
@@ -94,6 +97,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected final HostDaoImpl _hostDao = ComponentLocator.inject(HostDaoImpl.class);
     
     protected VMInstanceDaoImpl() {
+
         IdStatesSearch = createSearchBuilder();
         IdStatesSearch.and("id", IdStatesSearch.entity().getId(), Op.EQ);
         IdStatesSearch.and("states", IdStatesSearch.entity().getState(), Op.IN);
@@ -529,7 +533,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     @Override
     public List<VMInstanceVO> listNonRemovedVmsByTypeAndNetwork(long networkId, VirtualMachine.Type... types) {
         if (NetworkTypeSearch == null) {
-            NicDao _nicDao = ComponentLocator.getLocator("management-server").getDao(NicDao.class);
+            
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
 
@@ -548,6 +552,34 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         sc.setJoinParameters("nicSearch", "networkId", networkId);
 
         return listBy(sc);
+    }
+    
+    
+    
+    @Override
+    public List<String> listDistinctHostNames(long networkId, VirtualMachine.Type... types) {
+        if (DistinctHostNameSearch == null) {
+            
+            SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
+            nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+
+            DistinctHostNameSearch = createSearchBuilder(String.class);
+            DistinctHostNameSearch.selectField(DistinctHostNameSearch.entity().getHostName());
+            
+            DistinctHostNameSearch.and("types", DistinctHostNameSearch.entity().getType(), SearchCriteria.Op.IN);
+            DistinctHostNameSearch.and("removed", DistinctHostNameSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+            DistinctHostNameSearch.join("nicSearch", nicSearch, DistinctHostNameSearch.entity().getId(), 
+                    nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+            DistinctHostNameSearch.done();
+        }
+
+        SearchCriteria<String> sc = DistinctHostNameSearch.create();
+        if (types != null && types.length != 0) {
+            sc.setParameters("types", (Object[]) types);
+        }        
+        sc.setJoinParameters("nicSearch", "networkId", networkId);
+
+        return  customSearch(sc, null);
     }
     
     @Override
