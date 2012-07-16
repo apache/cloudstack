@@ -167,7 +167,12 @@
   <target name="deploy-server" depends="deploy-common, deploy-ovm, deploy-awsapi" >
       <copy todir="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/vms" file="${dist.dir}/systemvm.iso" />
   </target>
-
+	
+  <target name="deploy-server-encrypt" depends="deploy-server" >
+  	<move file="${server.deploy.to.dir}/conf/db-enc.properties" tofile="${server.deploy.to.dir}/conf/db.properties" overwrite="true"/>
+  	<echo file="/etc/cloud/management/key" append="false">password</echo>
+  </target>
+	
   <target name="deploy-common" > 
     <condition property="zip.uptodate">
       <available file="${deploy.work.dir}/client.zip" type="file"/>
