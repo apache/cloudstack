@@ -35,4 +35,6 @@ public interface AutoScaleVmProfile extends ControlledEntity {
     public Integer getDestroyVmGraceperiod();
 
     public long getAutoScaleUserId();
+
+    public String getCsUrl();
 }

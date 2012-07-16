@@ -62,6 +62,9 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
     @Column(name = "other_deploy_params", updatable = true, length = 1024)
     private String otherDeployParams;
 
+    @Column(name = "cs_url")
+    private String csUrl;
+
     @Column(name = "destroy_vm_grace_period", updatable = true)
     private Integer destroyVmGraceperiod = NetUtils.DEFAULT_AUTOSCALE_VM_DESTROY_TIME;
 
@@ -81,7 +84,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
     }
 
     public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId, String otherDeployParams, String snmpCommunity, Integer snmpPort, Integer destroyVmGraceperiod,
-            long autoscaleUserId) {
+            long autoscaleUserId, String csUrl) {
         this.uuid = UUID.randomUUID().toString();
         setZoneId(zoneId);
         setDomainId(domainId);
@@ -90,6 +93,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
         setTemplateId(templateId);
         setOtherDeployParams(otherDeployParams);
         setAutoscaleUserId(autoscaleUserId);
+        setCsUrl(csUrl);
         if (destroyVmGraceperiod != null) {
             setDestroyVmGraceperiod(destroyVmGraceperiod);
         }
@@ -136,6 +140,14 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
     @Override
     public String getSnmpCommunity() {
         return snmpCommunity;
+    }
+
+    public String getCsUrl() {
+        return csUrl;
+    }
+
+    public void setCsUrl(String csUrl) {
+        this.csUrl = csUrl;
     }
 
     public void setSnmpCommunity(String snmpCommunity) {

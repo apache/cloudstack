@@ -72,6 +72,9 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.AUTOSCALE_USER_ID, type = CommandType.LONG, description = "the ID of the user used to launch and destroy the VMs")
     private Long autoscaleUserId;
 
+    @Parameter(name = ApiConstants.CS_URL, type = CommandType.STRING, description = "the URL including port of the CloudStack Management Server example: http://server.cloud.com:8080")
+    private String csUrl;
+
     private Map<String, String> otherDeployParamMap;
 
     // ///////////////////////////////////////////////////
@@ -117,8 +120,12 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         return otherDeployParams;
     }
 
+    public String getCsUrl() {
+        return csUrl;
+    }
+
     public Long getAutoscaleUserId() {
-        if(autoscaleUserId != null) {
+        if (autoscaleUserId != null) {
             return autoscaleUserId;
         } else {
             return UserContext.current().getCaller().getId();
@@ -130,11 +137,11 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
     }
 
     public long getAccountId() {
-        if(accountId != null) {
+        if (accountId != null) {
             return accountId;
         }
         Account account = null;
-        if(autoscaleUserId != null) {
+        if (autoscaleUserId != null) {
             User user = _entityMgr.findById(User.class, autoscaleUserId);
             account = _entityMgr.findById(Account.class, user.getAccountId());
         } else {

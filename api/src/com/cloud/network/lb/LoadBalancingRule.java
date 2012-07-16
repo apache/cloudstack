@@ -23,7 +23,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.utils.Pair;
 
-public class LoadBalancingRule implements FirewallRule, LoadBalancer{
+public class LoadBalancingRule implements FirewallRule, LoadBalancer {
     private final LoadBalancer lb;
     private final List<LbDestination> destinations;
     private final List<LbStickinessPolicy> stickinessPolicies;
@@ -127,11 +127,13 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
         return stickinessPolicies;
     }
 
-
     public interface Destination {
         String getIpAddress();
+
         int getDestinationPortStart();
+
         int getDestinationPortEnd();
+
         boolean isRevoked();
     }
 
@@ -182,10 +184,12 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
         public String getIpAddress() {
             return ip;
         }
+
         @Override
         public int getDestinationPortStart() {
             return portStart;
         }
+
         @Override
         public int getDestinationPortEnd() {
             return portEnd;
@@ -243,17 +247,19 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
         this.autoScaleVmGroup = autoScaleVmGroup;
     }
 
-
     public static class LbCondition {
         private final Condition condition;
         private final Counter counter;
+
         public LbCondition(Counter counter, Condition condition) {
             this.condition = condition;
             this.counter = counter;
         }
+
         public Condition getCondition() {
             return condition;
         }
+
         public Counter getCounter() {
             return counter;
         }
@@ -263,14 +269,17 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
         private final List<LbCondition> conditions;
         private final AutoScalePolicy policy;
         private boolean revoked;
+
         public LbAutoScalePolicy(AutoScalePolicy policy, List<LbCondition> conditions)
         {
             this.policy = policy;
             this.conditions = conditions;
         }
+
         public List<LbCondition> getConditions() {
             return conditions;
         }
+
         public AutoScalePolicy getPolicy() {
             return policy;
         }
@@ -278,6 +287,7 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
         public boolean isRevoked() {
             return revoked;
         }
+
         public void setRevoked(boolean revoked) {
             this.revoked = revoked;
         }
@@ -285,25 +295,23 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
 
     public static class LbAutoScaleVmProfile {
         AutoScaleVmProfile profile;
-        private final String cloudStackApiUrl;
         private final String autoScaleUserApiKey;
         private final String autoScaleUserSecretKey;
 
-        public LbAutoScaleVmProfile(AutoScaleVmProfile profile, String cloudStackApiUrl, String autoScaleUserApiKey, String  autoScaleUserSecretKey) {
+        public LbAutoScaleVmProfile(AutoScaleVmProfile profile, String autoScaleUserApiKey, String autoScaleUserSecretKey) {
             this.profile = profile;
-            this.cloudStackApiUrl = cloudStackApiUrl;
             this.autoScaleUserApiKey = autoScaleUserApiKey;
             this.autoScaleUserSecretKey = autoScaleUserSecretKey;
         }
+
         public AutoScaleVmProfile getProfile() {
             return profile;
         }
-        public String getCloudStackApiUrl() {
-            return cloudStackApiUrl;
-        }
+
         public String getAutoScaleUserApiKey() {
             return autoScaleUserApiKey;
         }
+
         public String getAutoScaleUserSecretKey() {
             return autoScaleUserSecretKey;
         }
@@ -332,112 +340,4 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
             return profile;
         }
     }
-    //public static class LbCounter{
-        //private String name;
-    //private String source;
-    //private String value;
-    //
-    //public LbCounter(String name, String source, String value)
-    //{
-    //    this.name = name;
-    //    this.source = source;
-    //    this.value = value;
-    //}
-    //
-    //public String getName() {
-    //    return name;
-    //}
-    //public String getSource() {
-    //    return source;
-    //}
-    //public String getValue() {
-    //    return value;
-    //}
-    //}
-    //
-    //public static class LbCondition{
-    //private long threshold;
-    //private String relationalOperator;
-    //private LbCounter counter;
-    //public LbCondition(int threshold, String relationalOperator, LbCounter counter)
-    //{
-    //    this.threshold = threshold;
-    //    this.relationalOperator = relationalOperator;
-    //    this.counter = counter;
-    //}
-    //public long getThreshold() {
-    //    return threshold;
-    //}
-    //public String getRelationalOperator() {
-    //    return relationalOperator;
-    //}
-    //public LbCounter getCounter() {
-    //    return counter;
-    //}
-    //}
-    //
-    //public static class AutoScaleVmGroup {
-    //private int minMembers;
-    //private int maxMembers;
-    //private List<AutoscalePolicy> scaleUpPolicies;
-    //private List<AutoscalePolicy> scaleDownPolicies;
-    //private List<AutoScaleVmProfile> profile;
-    //private boolean revoked;
-    //
-    //public boolean isRevoked() {
-    //  return revoked;
-    //}
-    //
-    //public void setRevoked(boolean revoked) {
-    //  this.revoked = revoked;
-    //}
-    //}
-    //
-    //public static class AutoScaleVmProfile {
-    //private Long zoneId;
-    //private long domainId;
-    //private long accountId;
-    //private Long serviceOfferingId;
-    //private Long templateId;
-    //private String otherDeployParams;
-    //private String snmpCommunity;
-    //private Integer snmpPort;
-    //
-    //}
-    //
-    //public static class AutoscalePolicy {
-    //private int interval;
-    //
-    //private int duration;
-    //private int quietTime;
-    //private String action;
-    //private List<LbCondition> conditions;
-    //
-    //public AutoscalePolicy(int interval, int duration, int quietTime, String action, List<LbCondition> conditions) {
-    //  this.interval = interval;
-    //  this.duration = duration;
-    //  this.quietTime = quietTime;
-    //  this.conditions = conditions;
-    //}
-    //
-    //public int getInterval() {
-    //    return interval;
-    //}
-    //
-    //public int getDuration() {
-    //    return duration;
-    //}
-    //
-    //public int getQuietTime() {
-    //    return quietTime;
-    //}
-    //
-    //public String getAction() {
-    //    return action;
-    //}
-    //
-    //public List<LbCondition> getConditions() {
-    //    return conditions;
-    //}
-    //}
 }

@@ -25,7 +25,6 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.net.UnknownHostException;
 import java.security.SecureRandom;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -110,8 +109,9 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.encoding.Base64;
-import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.uuididentity.dao.IdentityDao;
+import com.cloud.utils.exception.CSExceptionErrorCode;
+
 
 public class ApiServer implements HttpRequestHandler {
     private static final Logger s_logger = Logger.getLogger(ApiServer.class.getName());
@@ -130,8 +130,6 @@ public class ApiServer implements HttpRequestHandler {
     private AsyncJobManager _asyncMgr = null;
     private Account _systemAccount = null;
     private User _systemUser = null;
-    private String serverIpAddress = null;
-    private String serverPort = null;
 
     private static int _workerCount = 0;
 
@@ -172,14 +170,6 @@ public class ApiServer implements HttpRequestHandler {
 
     public Properties get_apiCommands() {
         return _apiCommands;
-    }
-
-    public String getServerIpAddress() {
-        return serverIpAddress;
-    }
-
-    public String getServerPort() {
-        return serverPort;
     }
 
     public static boolean isPluggableServiceCommand(String cmdClassName) {
@@ -305,9 +295,6 @@ public class ApiServer implements HttpRequestHandler {
 
         if (apiPort != null) {
             ListenerThread listenerThread = new ListenerThread(this, apiPort);
-
-            serverIpAddress = listenerThread.getServerIpAddress();
-            serverPort = listenerThread.getServerPort();
             listenerThread.start();
         }
     }
@@ -967,29 +954,6 @@ public class ApiServer implements HttpRequestHandler {
             _httpService = new HttpService(httpproc, new NoConnectionReuseStrategy(), new DefaultHttpResponseFactory());
             _httpService.setParams(_params);
             _httpService.setHandlerResolver(reqistry);
-        }
-
-        public String getServerIpAddress() {
-            String hostName;
-            InetAddress addrs[] = null;
-            try {
-                hostName = InetAddress.getLocalHost().getHostName();
-                addrs = InetAddress.getAllByName(hostName);
-            } catch (UnknownHostException e) {
-                e.printStackTrace();
-            }
-            String myIp = "UNKNOWN";
-            for (InetAddress addr : addrs) {
-                if (!addr.isLoopbackAddress() && addr.isSiteLocalAddress()) {
-                    myIp = addr.getHostAddress();
-                    break;
-                }
-            }
-            return myIp;
-        }
-
-        public String getServerPort() {
-            return _serverSocket.getLocalPort() + "";
         }
 
         @Override
