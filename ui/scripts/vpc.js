@@ -561,7 +561,16 @@
 											},
 											success: function(json) {
 												var item = json.listprivategatewaysresponse.privategateway[0];
-												args.response.success({ data: item });									
+												args.response.success({ 
+												  data: item,
+                          actionFilter: function(args) {
+														var allowedActions = [];
+														if(isAdmin()) {
+															allowedActions.push("remove");															
+														}														
+														return allowedActions;														
+                          }													
+												});									
 											}
 										});	
                   }
