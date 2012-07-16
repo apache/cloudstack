@@ -423,12 +423,12 @@ else
 fi
 
 %post client
-if [ "$1" == "1" ] ; then
+#if [ "$1" == "1" ] ; then
     /sbin/chkconfig --add %{name}-management > /dev/null 2>&1 || true
     /sbin/chkconfig --level 345 %{name}-management on > /dev/null 2>&1 || true
-fi
+#fi
 
-if [ "$1" == "1" ] ; then
+#if [ "$1" == "1" ] ; then
     root=/usr/share/cloud/bridge
     target=/usr/share/cloud/management/
 
@@ -448,7 +448,7 @@ if [ "$1" == "1" ] ; then
     do
         cp -f $root/conf/$c $target/conf
     done
-fi
+#fi
 
 %files utils
 %defattr(0644,root,root,0755)
