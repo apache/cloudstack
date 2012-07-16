@@ -45,12 +45,11 @@ file except in compliance with the License. Citrix Systems, Inc. -->
 
     <target name="install-marvin" depends="package-marvin" description="installs marvin on the local machine">
         <echo message="Uninstalling Marvin" />
-        <exec dir="${marvin.dist.dir}" executable="sudo">
-            <arg line="pip uninstall -y marvin"/>
+        <exec dir="${marvin.dist.dir}" executable="pip">
+            <arg line="uninstall -y marvin"/>
         </exec>
         <echo message="Installing Marvin" />
-        <exec dir="${marvin.dist.dir}" executable="sudo">
-            <arg value="pip" />
+        <exec dir="${marvin.dist.dir}" executable="pip">
             <arg value="install" />
             <arg value="Marvin-0.1.0.tar.gz" />
         </exec>

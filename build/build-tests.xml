@@ -34,8 +34,9 @@
   <property name="testclient.jar" value="cloud-test.jar" />
 
   <property name="simulator.setup.dir" value="${base.dir}/setup/db/" />
-  <property name="simulator.tests.dir" value="${base.dir}/test/" />
-
+  <property name="marvin.sandbox.dir" value="${base.dir}/tools/marvin/marvin/sandbox/" />
+  <property name="marvin.config" value="${base.dir}/tools/marvin/marvin/sandbox/demo/simulator/simulator.cfg" />
+  <property name="marvin.config.abspath" location="${marvin.config}" />
 
   <!-- =================== Agent Simulator ==================== -->
   <path id="agent-simulator.classpath">
@@ -85,14 +86,13 @@
     <copy todir="${agent-simulator.dist.dir}/conf">
       <fileset dir="${agent.dir}/conf">
         <include name="log4j-cloud.xml" />
-        <include name="simulator.properties" />
       </fileset>
     </copy>
   </target>
   <!-- =================== Agent Simulator ==================== -->
 
   <!-- Run Simulator Tests  -->
-  <target name="setup-simulator-tests"  depends="clean-all, install-marvin">
+  <target name="setup-simulator"  depends="clean-all">
       <mkdir dir="${simulator.setup.dir}/override">
       </mkdir>
       <copy overwrite="true" file="${simulator.setup.dir}/templates.simulator.sql" tofile="${simulator.setup.dir}/override/templates.sql" />
@@ -101,15 +101,15 @@
       </mkdir>
       <copy overwrite="true" file="${build.dir}/replace.properties" tofile="${build.dir}/override/replace.properties" />
       <!-- Replace the COMPONENT-SPEC for components-simulator.xml -->
-      <copy overwrite="true" file="${simulator.tests.dir}/integration/smoke-simulator/simulator.properties" tofile="${build.dir}/override/replace.properties" />
+      <copy overwrite="true" file="${build.dir}/simulator.properties" tofile="${build.dir}/override/replace.properties" />
   </target>
 
-  <target name="run-simulator" depends="setup-simulator-tests, build-all-with-simulator, deploy-server, deploydb-simulator, debug">
+  <target name="run-simulator" depends="setup-simulator, build-all-with-simulator, deploy-server, deploydb-simulator, debug">
   </target>
 
-  <target name="run-simulator-tests">
-      <exec dir="test/" executable="bash">
-          <arg line="setup.sh -b ${base.dir}/test -t integration/smoke-simulator/ -c integration/smoke-simulator/simulator-smoke.cfg -d localhost -m localhost" />
+  <target name="run-marvin" depends="install-marvin">
+      <exec dir="${marvin.sandbox.dir}/" executable="bash">
+          <arg line="run-marvin.sh -d localhost -m localhost -c ${marvin.config.abspath}" />
       </exec>
   </target>
   <!--   -->
