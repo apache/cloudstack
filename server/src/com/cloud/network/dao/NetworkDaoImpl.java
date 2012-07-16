@@ -71,8 +71,9 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     private final GenericSearchBuilder<NetworkVO, Integer> NetworksCount;
     final SearchBuilder<NetworkVO> SourceNATSearch;
     final GenericSearchBuilder<NetworkVO, Long>  CountByZoneAndURI;
+    
+    
     ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
-
     NetworkAccountDaoImpl _accountsDao = ComponentLocator.inject(NetworkAccountDaoImpl.class);
     NetworkDomainDaoImpl _domainsDao = ComponentLocator.inject(NetworkDomainDaoImpl.class);
     NetworkOpDaoImpl _opDao = ComponentLocator.inject(NetworkOpDaoImpl.class);
