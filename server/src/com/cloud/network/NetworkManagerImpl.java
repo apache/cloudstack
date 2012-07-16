@@ -7230,7 +7230,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
             
             if (network.getVpcId() != null) {
-                throw new InvalidParameterValueException("Specify vpcId to associate ip address to VPC");
+                throw new InvalidParameterValueException("Can't assign ip to the network directly when network belongs" +
+                		" to VPC.Specify vpcId to associate ip address to VPC");
             }
             return associateIPToGuestNetwork(ipId, networkId);
         }

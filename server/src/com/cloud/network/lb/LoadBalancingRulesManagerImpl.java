@@ -718,15 +718,9 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         IPAddressVO ipVO = null;
         if (ipAddrId != null) {
             ipVO = _ipAddressDao.findById(ipAddrId);
-
-            // Validate ip address
-            if (ipVO == null) {
-                throw new InvalidParameterValueException("Unable to create load balance rule; ip id=" + ipAddrId + "" +
-                		" doesn't exist in the system");
-            } else if (ipVO.isOneToOneNat()) {
-                throw new NetworkRuleConflictException("Can't do load balance on ip address: " + ipVO.getAddress());
-            }
         }
+        
+        Network network = _networkMgr.getNetwork(lb.getNetworkId());
 
         // FIXME: breaking the dependency on ELB manager. This breaks functionality of ELB using virtual router
         // Bug CS-15411 opened to document this
@@ -734,32 +728,36 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         LoadBalancer result = null;
         if (result == null) {
             IpAddress systemIp = null;
-            Network guestNetwork = _networkMgr.getNetwork(lb.getNetworkId());
-            NetworkOffering off = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
-            if (off.getElasticLb() && ipVO == null) {
+            NetworkOffering off = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
+            if (off.getElasticLb() && ipVO == null && network.getVpcId() == null) {
                 systemIp = _networkMgr.assignSystemIp(lb.getNetworkId(), lbOwner, true, false);
                 lb.setSourceIpAddressId(systemIp.getId());
+                ipVO = _ipAddressDao.findById(systemIp.getId());
+            }
+            
+            // Validate ip address
+            if (ipVO == null) {
+                throw new InvalidParameterValueException("Unable to create load balance rule; can't find/allocate source IP");
+            } else if (ipVO.isOneToOneNat()) {
+                throw new NetworkRuleConflictException("Can't do load balance on ip address: " + ipVO.getAddress());
             }
              
             boolean performedIpAssoc = false;
             try {
-                Network network = _networkMgr.getNetwork(lb.getNetworkId());
-                if (ipVO != null) {
-                    if (ipVO.getAssociatedWithNetworkId() == null) {
-                        boolean assignToVpcNtwk = network.getVpcId() != null 
-                                && ipVO.getVpcId() != null && ipVO.getVpcId().longValue() == network.getVpcId();
-                        if (assignToVpcNtwk) {
-                            //set networkId just for verification purposes
-                            ipVO.setAssociatedWithNetworkId(lb.getNetworkId());
-                            _networkMgr.checkIpForService(ipVO, Service.Lb, lb.getNetworkId());
+                if (ipVO.getAssociatedWithNetworkId() == null) {
+                    boolean assignToVpcNtwk = network.getVpcId() != null 
+                            && ipVO.getVpcId() != null && ipVO.getVpcId().longValue() == network.getVpcId();
+                    if (assignToVpcNtwk) {
+                        //set networkId just for verification purposes
+                        ipVO.setAssociatedWithNetworkId(lb.getNetworkId());
+                        _networkMgr.checkIpForService(ipVO, Service.Lb, lb.getNetworkId());
 
-                            s_logger.debug("The ip is not associated with the VPC network id="+ lb.getNetworkId() + " so assigning");
-                            ipVO = _networkMgr.associateIPToGuestNetwork(ipAddrId, lb.getNetworkId());
-                            performedIpAssoc = true;
-                        }
-                    } else {
-                        _networkMgr.checkIpForService(ipVO, Service.Lb, null);
-                    } 
+                        s_logger.debug("The ip is not associated with the VPC network id="+ lb.getNetworkId() + " so assigning");
+                        ipVO = _networkMgr.associateIPToGuestNetwork(ipAddrId, lb.getNetworkId());
+                        performedIpAssoc = true;
+                    }
+                } else {
+                    _networkMgr.checkIpForService(ipVO, Service.Lb, null);
                 }
                 
                 if (ipVO.getAssociatedWithNetworkId() == null) { 
