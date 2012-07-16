@@ -1086,8 +1086,9 @@
 										
 										/*
 										when service(s) has VPC Virtual Router as provider:
-                    (1) Conserve mode is set to unchecked and grayed out.	
-                    (2) Redundant router capability checkbox is set to unchecked and grayed out.										
+                    (1) conserve mode is set to unchecked and grayed out.	
+                    (2) redundant router capability checkbox is set to unchecked and grayed out.	
+                    (3) remove Firewall service, SecurityGroup service. 									
                     */										
                     var havingVpcVirtualRouterForAtLeastOneService = false;									
 										$(serviceCheckboxNames).each(function(){										  
@@ -1112,12 +1113,10 @@
                       $conservemode.find("input[type=checkbox]").removeAttr("disabled"); 
                       $serviceSourceNatRedundantRouterCapabilityCheckbox.find("input[type=checkbox]").removeAttr("disabled"); 									
 										}
-										
-										
+																				
 	                  $(':ui-dialog').dialog('option', 'position', 'center');
-
 										
-										//hide/show service fields upon guestIpType(Shared/Isolated) and zoneType(Advanced/Basic) ***** (begin) *****						
+										//hide/show service fields upon guestIpType(Shared/Isolated), zoneType(Advanced/Basic), having VpcVirtualRouter or not ***** (begin) *****						
 										var serviceFieldsToHide = [];										
 										if($guestTypeField.val() == 'Shared') { //Shared network offering
 										  serviceFieldsToHide = [
@@ -1125,12 +1124,34 @@
 												'service.PortForwarding.isEnabled',													
 												'service.Firewall.isEnabled', 
 												'service.Vpn.isEnabled' 
-											];		
+											];	                      
+											if(havingVpcVirtualRouterForAtLeastOneService == true) { //add SecurityGroup to to-hide-list
+											  serviceFieldsToHide.push('service.SecurityGroup.isEnabled');
+											}
+											else { //remove SecurityGroup from to-hide-list										 
+											  var temp = $.map(serviceFieldsToHide, function(item) {												  
+													if (item != 'service.SecurityGroup.isEnabled') {
+													  return item;
+													}
+												});		
+												serviceFieldsToHide = temp;
+											}		
 										}
 										else { //Isolated network offering 
 										  serviceFieldsToHide = [
 											  'service.SecurityGroup.isEnabled'
-											];
+											];											
+											if(havingVpcVirtualRouterForAtLeastOneService == true) { //add firewall to to-hide-list
+											  serviceFieldsToHide.push('service.Firewall.isEnabled');
+											}
+											else { //remove firewall from to-hide-list									 
+											  var temp = $.map(serviceFieldsToHide, function(item) {												  
+													if (item != 'service.Firewall.isEnabled') {
+													  return item;
+													}
+												});		
+												serviceFieldsToHide = temp;
+											}
 										}
                      											
 										//hide service fields that are included in serviceFieldsToHide
@@ -1160,7 +1181,7 @@
                         }													
 											}											
 										}
-										//hide/show service fields upon guestIpType(Shared/Isolated) and zoneType(Advanced/Basic) ***** (end) *****
+										//hide/show service fields upon guestIpType(Shared/Isolated), zoneType(Advanced/Basic), having VpcVirtualRouter or not ***** (end) *****			
 																				
 										
 										//show LB Isolation dropdown only when (1)LB Service is checked (2)Service Provider is Netscaler OR F5 (3)Guest IP Type is Isolated 									
