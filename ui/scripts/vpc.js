@@ -439,7 +439,12 @@
 									  return true;
 									else
 									  return false;
-								},															
+								},
+								messages: {									
+									notification: function(args) {
+										return 'Add new gateway';
+									}
+								},               					
                 createForm: {
                   title: 'Add new gateway',
                   desc: 'Please specify the information to add a new gateway to this VPC.',
@@ -476,10 +481,10 @@
                       args.response.error(parseXMLHttpResponse(json));
                     }										
 									});		
-                },
-                messages: {
-                  notification: function() { return 'Add gateway to VPC'; }
-                }
+                },    
+								notification: {
+									poll: pollAsyncJobResult
+								}								
               }
             },
             dataProvider: function(args) {						 
