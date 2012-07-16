@@ -851,8 +851,10 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         txn.start();
         VMTemplateVO template = createForUpdate();
         template.setRemoved(new Date());
-        if (template != null) {
-            if (template.getFormat() == ImageFormat.ISO) {
+        
+        VMTemplateVO vo = findById(id);
+        if (vo != null) {
+            if (vo.getFormat() == ImageFormat.ISO) {
                 _tagsDao.removeByIdAndType(id, TaggedResourceType.ISO);
             } else {
                 _tagsDao.removeByIdAndType(id, TaggedResourceType.Template);
