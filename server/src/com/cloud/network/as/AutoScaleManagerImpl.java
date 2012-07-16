@@ -49,18 +49,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network.Capability;
-import com.cloud.network.as.AutoScalePolicy;
-import com.cloud.network.as.AutoScalePolicyConditionMapVO;
-import com.cloud.network.as.AutoScalePolicyVO;
-import com.cloud.network.as.AutoScaleVmGroup;
-import com.cloud.network.as.AutoScaleVmGroupPolicyMapVO;
-import com.cloud.network.as.AutoScaleVmGroupVO;
-import com.cloud.network.as.AutoScaleVmProfile;
-import com.cloud.network.as.AutoScaleVmProfileVO;
-import com.cloud.network.as.Condition;
-import com.cloud.network.as.ConditionVO;
-import com.cloud.network.as.Counter;
-import com.cloud.network.as.CounterVO;
 import com.cloud.network.as.dao.AutoScalePolicyConditionMapDao;
 import com.cloud.network.as.dao.AutoScalePolicyDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupDao;
@@ -93,7 +81,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
 
-@Local(value = {  AutoScaleService.class })
+@Local(value = { AutoScaleService.class })
 public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
     private static final Logger s_logger = Logger.getLogger(AutoScaleManagerImpl.class);
 
@@ -170,11 +158,10 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         for (Counter counter : counters) {
             if (!supportedCounters.contains(counter.getSource())) {
                 throw new InvalidParameterException("AutoScale counter with source='" + counter.getSource() + "' is not supported " +
-                "in the network where lb is configured");
+                        "in the network where lb is configured");
             }
         }
     }
-
 
     private <VO extends ControlledEntity> VO getEntityInDatabase(String paramName, Long id, GenericDao<VO, Long> dao)
     {
@@ -329,7 +316,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         AutoScaleVmProfileVO vmProfile = getEntityInDatabase("Auto Scale Vm Profile", profileId, _autoScaleVmProfileDao);
         AutoScaleVmProfileVO bakUpProfile = getEntityInDatabase("Auto Scale Vm Profile", profileId, _autoScaleVmProfileDao);
 
-        if(templateId == null && otherDeployParams == null) {
+        if (templateId == null && otherDeployParams == null) {
             throw new InvalidParameterValueException("Atleast one parameter should be passed for update");
         }
 
@@ -492,7 +479,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
             Account caller = UserContext.current().getCaller();
 
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
-            ListProjectResourcesCriteria>(domainId, isRecursive, null);
+                    ListProjectResourcesCriteria>(domainId, isRecursive, null);
             _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject,
                     listAll, false);
             domainId = domainIdRecursiveListProject.first();
@@ -556,7 +543,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         AutoScalePolicyVO policy = getEntityInDatabase("Auto Scale Policy", policyId, _autoScalePolicyDao);
         AutoScalePolicyVO bakUpPolicy = getEntityInDatabase("Auto Scale Policy", policyId, _autoScalePolicyDao);
 
-        if(duration == null && quietTime == null && conditionIds == null) {
+        if (duration == null && quietTime == null && conditionIds == null) {
             throw new InvalidParameterValueException("Atleast one parameter should be passed for update");
         }
 
@@ -574,10 +561,10 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
             if (!vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
                 throw new InvalidParameterValueException("The AutoScale Policy can be updated only if the Vm Group it is associated with is disabled in state");
             }
-            if(vmGroupVO.getInterval() < duration) {
+            if (vmGroupVO.getInterval() < duration) {
                 throw new InvalidParameterValueException("duration is less than the associated AutoScaleVmGroup's interval");
             }
-            if(vmGroupVO.getInterval() < quietTime) {
+            if (vmGroupVO.getInterval() < quietTime) {
                 throw new InvalidParameterValueException("quietTime is less than the associated AutoScaleVmGroup's interval");
             }
         }
@@ -603,11 +590,8 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         int maxMembers = cmd.getMaxMembers();
         Integer interval = cmd.getInterval();
 
-
-
-        if(interval == null)
+        if (interval == null)
             interval = NetUtils.DEFAULT_AUTOSCALE_POLICY_INTERVAL_TIME;
-
 
         LoadBalancerVO loadBalancer = getEntityInDatabase(ApiConstants.LBID, cmd.getLbRuleId(), _lbDao);
 
@@ -617,8 +601,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
 
         Long zoneId = _ipAddressDao.findById(loadBalancer.getSourceIpAddressId()).getDataCenterId();
 
-
-        if(_autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancer.getId())) {
+        if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancer.getId())) {
             throw new InvalidParameterValueException("an AutoScaleVmGroup is already attached to the lb rule, the existing vm group has to be first deleted");
         }
 
@@ -646,7 +629,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
     public boolean configureAutoScaleVmGroup(long vmGroupid, boolean vmGroupCreation) {
         AutoScaleVmGroup vmGroup = _autoScaleVmGroupDao.findById(vmGroupid);
 
-        if(isLoadBalancerBasedAutoScaleVmGroup(vmGroup))
+        if (isLoadBalancerBasedAutoScaleVmGroup(vmGroup))
             return _lbRulesMgr.configureLbAutoScaleVmGroup(vmGroupid, true);
 
         // This should never happen, because today loadbalancerruleid is manadatory for AutoScaleVmGroup.
@@ -741,11 +724,11 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
             throw new InvalidParameterValueException("interval is an invalid value: " + interval);
         }
 
-        if(scaleUpPolicyIds != null) {
+        if (scaleUpPolicyIds != null) {
             policies.addAll(getAutoScalePolicies("scaleuppolicyid", scaleUpPolicyIds, counters, interval, true));
         }
 
-        if(scaleDownPolicyIds != null) {
+        if (scaleDownPolicyIds != null) {
             policies.addAll(getAutoScalePolicies("scaledownpolicyid", scaleDownPolicyIds, counters, interval, false));
         }
 
@@ -782,7 +765,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         List<Long> scaleUpPolicyIds = cmd.getScaleUpPolicyIds();
         List<Long> scaleDownPolicyIds = cmd.getScaleDownPolicyIds();
 
-        if(minMembers == null && maxMembers == null && interval == null && scaleUpPolicyIds == null && scaleDownPolicyIds == null) {
+        if (minMembers == null && maxMembers == null && interval == null && scaleUpPolicyIds == null && scaleDownPolicyIds == null) {
             throw new InvalidParameterValueException("Atleast one parameter should be passed for update");
         }
 
@@ -921,7 +904,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         CounterVO counter = _counterDao.findById(cid);
 
         if (counter == null) {
-            throw new InvalidParameterValueException("Unable to find condition - " + cid);
+            throw new InvalidParameterValueException("Unable to find counter");
         }
         ConditionVO condition = null;
 
@@ -937,7 +920,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         String name = cmd.getName();
         Long id = cmd.getId();
         String source = cmd.getSource();
-        if(source != null )
+        if (source != null)
             source = source.toLowerCase();
 
         Filter searchFilter = new Filter(CounterVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
