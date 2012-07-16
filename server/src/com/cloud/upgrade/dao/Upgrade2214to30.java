@@ -142,7 +142,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
             String vmwarePrivateLabel = getNetworkLabelFromConfig(conn, "vmware.private.vswitch");
             String vmwareGuestLabel = getNetworkLabelFromConfig(conn, "vmware.guest.vswitch");
 
-            pstmt = conn.prepareStatement("SELECT id, domain_id, networktype, vnet, name FROM `cloud`.`data_center` WHERE removed IS NULL");
+            pstmt = conn.prepareStatement("SELECT id, domain_id, networktype, vnet, name, removed FROM `cloud`.`data_center`");
             rs = pstmt.executeQuery();
             while (rs.next()) {
                 long zoneId = rs.getLong(1);
@@ -150,6 +150,7 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                 String networkType = rs.getString(3);
                 String vnet = rs.getString(4);
                 String zoneName = rs.getString(5);
+                String removed = rs.getString(6);
                 
                 //set uuid for the zone
                 String uuid = UUID.randomUUID().toString();
@@ -314,6 +315,15 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
                     pstmtUpdate = conn.prepareStatement(updateNet);
                     pstmtUpdate.executeUpdate();
                     pstmtUpdate.close();
+                    
+                    
+                    //mark this physical network as removed if the zone is removed.
+                    if(removed != null){
+                        pstmtUpdate = conn.prepareStatement("UPDATE `cloud`.`physical_network` SET removed = now() WHERE id = ?");
+                        pstmtUpdate.setLong(1, physicalNetworkId);
+                        pstmtUpdate.executeUpdate();
+                        pstmtUpdate.close();
+                    }
                 }
 
             }
