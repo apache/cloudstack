@@ -40,16 +40,21 @@ enable_iptable() {
   sudo iptables -A INPUT -i $outIf -p udp -m udp --dport 500 -j ACCEPT
   for net in $rightnets
   do
-    sudo iptables -A PREROUTING -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
+    sudo iptables -A FORWARD -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
+    sudo iptables -A OUTPUT -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
   done
+  # Prevent NAT on "marked" VPN traffic, so need to be the first one on POSTROUTING chain
+  sudo iptables -t nat -I POSTROUTING -t nat -o $outIf -m mark --mark $vpnoutmark -j ACCEPT
 }
 
 disable_iptable() {
   sudo iptables -D INPUT -i $outIf -p udp -m udp --dport 500 -j ACCEPT
   for net in $rightnets
   do
-    sudo iptables -D PREROUTING -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
+    sudo iptables -D FORWARD -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
+    sudo iptables -D OUTPUT -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
   done
+  sudo iptables -t nat -D POSTROUTING -t nat -o $outIf -m mark --mark $vpnoutmark -j ACCEPT
 }
 
 ipsec_tunnel_del() {
@@ -107,10 +112,6 @@ ipsec_tunnel_add() {
     sudo ipsec auto --rereadall
     sudo ipsec auto --add vpn-$rightpeer
     sudo ipsec auto --up vpn-$rightpeer
-    # Prevent NAT on "marked" VPN traffic
-    sudo iptables -D POSTROUTING -t nat -o $outIf -j SNAT --to-source $outIp
-    sudo iptables -D POSTROUTING -t nat -o $outIf -m mark ! --mark $vpnoutmark -j SNAT --to-source $outIp
-    sudo iptables -A POSTROUTING -t nat -o $outIf -m mark ! --mark $vpnoutmark -j SNAT --to-source $outIp
 
   logger -t cloud "$(basename $0): done ipsec tunnel entry for right peer=$rightpeer right networks=$rightnets"
 
