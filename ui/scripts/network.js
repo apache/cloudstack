@@ -2543,14 +2543,15 @@
 										  $.ajax({
 												url: createURL('listPublicIpAddresses'),
 												data: {                      
-													id: args.context.ipAddresses[0].id
+													id: args.context.ipAddresses[0].id,
+													listAll: true
 												},
 												success: function(json) {												  
 													var item = json.listpublicipaddressesresponse.publicipaddress[0];													
 													args.context.ipAddresses.shift(); //remove the first element in args.context.ipAddresses										
 													args.context.ipAddresses.push(item);
 																										
-													var $headerFields = $multi.find('.header-fields');													
+													var $headerFields = $multi.find('.header-fields');	                       												
 													if ('vpc' in args.context) {
 														if(args.context.ipAddresses[0].associatednetworkid == null) {
 															$headerFields.show();
@@ -2816,11 +2817,12 @@
                           });
                  							
 													// Check if tiers are present; hide/show header drop-down (begin) ***   
-													//dataProvider() is called when a LB rule is added in multiEdit. However, adding a LB rule might change parent object (IP Address object). So, we have to force to refresh args.context.ipAddresses[0] here
+													//dataProvider() is called when a PF rule is added in multiEdit. However, adding a LB rule might change parent object (IP Address object). So, we have to force to refresh args.context.ipAddresses[0] here
 													$.ajax({
 														url: createURL('listPublicIpAddresses'),
 														data: {                      
-															id: args.context.ipAddresses[0].id
+															id: args.context.ipAddresses[0].id,
+															listAll: true
 														},
 														success: function(json) {												  
 															var item = json.listpublicipaddressesresponse.publicipaddress[0];													

@@ -768,7 +768,8 @@
       }
     }) : null;
     var $headerFields = $('<div>').addClass('header-fields');
-
+    $headerFields.hide();
+		
     if (headerForm) {
       $headerFields.append(headerForm.$formContainer)
         .prependTo($multi);
