@@ -1163,7 +1163,7 @@
       var showAdd = listViewData.actions.add.preFilter ?
             listViewData.actions.add.preFilter({
               context: listViewData.context ?
-                listViewData.context : cloudStack.context
+                listViewData.context : args.context
             }) : true;
 
       if (showAdd) {

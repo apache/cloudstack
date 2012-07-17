@@ -2424,13 +2424,42 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         String instanceName = VirtualMachineName.getVmName(id, owner.getId(), _instance);
 
         String uuidName = UUID.randomUUID().toString();
+        
+        //verify hostname information
         if (hostName == null) {
             hostName = uuidName;
         } else {
-            // verify hostName (hostname doesn't have to be unique)
+            //1) check is hostName is RFC complient
             if (!NetUtils.verifyDomainNameLabel(hostName, true)) {
                 throw new InvalidParameterValueException("Invalid name. Vm name can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
                         + "and the hyphen ('-'), must be between 1 and 63 characters long, and can't start or end with \"-\" and can't start with digit", null);
+            }
+            //2) hostName has to be unique in the network domain
+            Map<String, List<Long>> ntwkDomains = new HashMap<String, List<Long>>();
+            for (NetworkVO network : networkList) {
+                String ntwkDomain = network.getNetworkDomain();
+                if (!ntwkDomains.containsKey(ntwkDomain)) {
+                    List<Long> ntwkIds = new ArrayList<Long>();
+                    ntwkIds.add(network.getId());
+                    ntwkDomains.put(ntwkDomain, ntwkIds);
+                } else {
+                    List<Long> ntwkIds = ntwkDomains.get(ntwkDomain);
+                    ntwkIds.add(network.getId());
+                    ntwkDomains.put(ntwkDomain, ntwkIds);
+                }
+            } 
+            
+            for (String ntwkDomain : ntwkDomains.keySet()) {
+                for (Long ntwkId : ntwkDomains.get(ntwkDomain)) {
+                  //* get all vms hostNames in the network
+                    List<String> hostNames = _vmInstanceDao.listDistinctHostNames(ntwkId);
+                    //* verify that there are no duplicates
+                    if (hostNames.contains(hostName)) {
+                        throw new InvalidParameterValueException("The vm with hostName " + hostName
+                                + " already exists in the network domain: " + ntwkDomain + "; network=" 
+                                + _networkMgr.getNetwork(ntwkId));
+                    }
+                }
             }
         }
 
