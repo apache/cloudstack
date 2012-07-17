@@ -71,9 +71,6 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
 
         if (condition != null) {
             this.setEntityId(condition.getId());
-            ConditionResponse response = _responseGenerator.createConditionResponse(condition);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create condition.");
         }
@@ -81,6 +78,10 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
+        Condition condition  = _entityMgr.findById(Condition.class, getEntityId());
+        ConditionResponse response = _responseGenerator.createConditionResponse(condition);
+        response.setResponseName(getCommandName());
+        this.setResponseObject(response);
     }
 
     // /////////////////////////////////////////////////
@@ -101,10 +102,17 @@ public class CreateConditionCmd extends BaseAsyncCreateCmd {
     }
 
     public String getAccountName() {
+        if (accountName == null) {
+            return UserContext.current().getCaller().getAccountName();
+        }
+
         return accountName;
     }
 
     public Long getDomainId() {
+        if (domainId == null) {
+            return UserContext.current().getCaller().getDomainId();
+        }
         return domainId;
     }
 

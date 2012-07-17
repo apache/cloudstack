@@ -13,6 +13,8 @@
 package com.cloud.api.response;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.Parameter;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.serializer.Param;
 import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
@@ -40,8 +42,25 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     @Param(description = "parameters other than zoneId/serviceOfferringId/templateId to be used while deploying a virtual machine")
     private String otherDeployParams;
 
-    @SerializedName(ApiConstants.CS_URL)
-    @Param(description = "the URL including port of the CloudStack Management Server example: http://server.cloud.com:8080")
+    /* Parameters related to destroying a virtual machine */
+    @SerializedName(ApiConstants.AUTOSCALE_VM_DESTROY_TIME)
+    @Param(description = "the time allowed for existing connections to get closed before a vm is destroyed")
+    private Integer destroyVmGraceperiod;
+
+    /* Parameters related to a running virtual machine - monitoring aspects */
+    @SerializedName(ApiConstants.SNMP_COMMUNITY)
+    @Param(description = "snmp community string to be used to contact a virtual machine deployed by this profile")
+    private String snmpCommunity;
+
+    @SerializedName(ApiConstants.SNMP_PORT)
+    @Param(description = "port at which the snmp agent is listening in a virtual machine deployed by this profile")
+    private Integer snmpPort;
+
+    @SerializedName(ApiConstants.AUTOSCALE_USER_ID)
+    @Param(description = "the ID of the user used to launch and destroy the VMs")
+    private IdentityProxy autoscaleUserId = new IdentityProxy("user");
+
+    @Parameter(name = ApiConstants.CS_URL, type = CommandType.STRING, description = "the API URL including port of the CloudStack Management Server example: http://server.cloud.com:8080/client/api?")
     private String csUrl;
 
     @SerializedName(ApiConstants.ACCOUNT)
@@ -63,24 +82,6 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the domain name of the vm profile")
     private String domainName;
-
-    /* Parameters related to destroying a virtual machine */
-    @SerializedName(ApiConstants.AUTOSCALE_VM_DESTROY_TIME)
-    @Param(description = "the time allowed for existing connections to get closed before a vm is destroyed")
-    private Integer destroyVmGraceperiod;
-
-    /* Parameters related to a running virtual machine - monitoring aspects */
-    @SerializedName(ApiConstants.SNMP_COMMUNITY)
-    @Param(description = "snmp community string to be used to contact a virtual machine deployed by this profile")
-    private String snmpCommunity;
-
-    @SerializedName(ApiConstants.SNMP_PORT)
-    @Param(description = "port at which the snmp agent is listening in a virtual machine deployed by this profile")
-    private Integer snmpPort;
-
-    @SerializedName(ApiConstants.AUTOSCALE_USER_ID)
-    @Param(description = "the ID of the user used to launch and destroy the VMs")
-    private IdentityProxy autoscaleUserId = new IdentityProxy("user");
 
     public AutoScaleVmProfileResponse() {
 
@@ -114,10 +115,6 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
         this.snmpPort = snmpPort;
     }
 
-    public void setCsUrl(String csUrl) {
-        this.csUrl = csUrl;
-    }
-
     @Override
     public void setAccountName(String accountName) {
         this.accountName = accountName;
@@ -149,5 +146,9 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
 
     public void setDestroyVmGraceperiod(Integer destroyVmGraceperiod) {
         this.destroyVmGraceperiod = destroyVmGraceperiod;
+    }
+
+    public void setCsUrl(String csUrl) {
+        this.csUrl = csUrl;
     }
 }

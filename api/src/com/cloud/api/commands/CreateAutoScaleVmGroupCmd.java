@@ -55,11 +55,11 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
     private Integer interval;
 
     @IdentityMapper(entityTableName="autoscale_policies")
-    @Parameter(name=ApiConstants.SCALEUP_POLICY_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, required=true, description="list of provision autoscale policies")
+    @Parameter(name=ApiConstants.SCALEUP_POLICY_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, required=true, description="list of scaleup autoscale policies")
     private List<Long> scaleUpPolicyIds;
 
     @IdentityMapper(entityTableName="autoscale_policies")
-    @Parameter(name=ApiConstants.SCALEDOWN_POLICY_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, required=true, description="list of de-provision autoscale policies")
+    @Parameter(name=ApiConstants.SCALEDOWN_POLICY_IDS, type=CommandType.LIST, collectionType=CommandType.LONG, required=true, description="list of scaledown autoscale policies")
     private List<Long> scaleDownPolicyIds;
 
     @IdentityMapper(entityTableName="autoscale_vmprofiles")
@@ -72,7 +72,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEntityTable() {
-        return "autoscale_vm_groups";
+        return "autoscale_vmgroups";
     }
 
     public int getMinMembers() {
@@ -172,9 +172,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
         AutoScaleVmGroup vmGroup = null;
         try
         {
-            //            success = _autoScaleService.configureAutoScaleVmGroup(this);
-            // TODO, this will be removed later, when above line is uncommented
-            success = true;
+            success = _autoScaleService.configureAutoScaleVmGroup(this);
             if(success) {
                 vmGroup = _entityMgr.findById(AutoScaleVmGroup.class, getEntityId());
                 AutoScaleVmGroupResponse responseObject = _responseGenerator.createAutoScaleVmGroupResponse(vmGroup);

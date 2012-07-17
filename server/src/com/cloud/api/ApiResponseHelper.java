@@ -3796,6 +3796,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setDestroyVmGraceperiod(profile.getDestroyVmGraceperiod());
         response.setAutoscaleUserId(profile.getAutoScaleUserId());
         response.setCsUrl(profile.getCsUrl());
+        response.setObjectName("autoscalevmprofile");
+
         // Populates the account information in the response
         populateOwner(response, profile);
         return response;
@@ -3814,6 +3816,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             conditions.add(createConditionResponse(vo));
         }
         response.setConditions(conditions);
+        response.setObjectName("autoscalepolicy");
 
         // Populates the account information in the response
         populateOwner(response, policy);
@@ -3836,6 +3839,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<AutoScalePolicyResponse> scaleDownPoliciesResponse = new ArrayList<AutoScalePolicyResponse>();
         response.setScaleUpPolicies(scaleUpPoliciesResponse);
         response.setScaleDownPolicies(scaleDownPoliciesResponse);
+        response.setObjectName("autoscalevmgroup");
 
         // Fetch policies for vmgroup
         List<AutoScalePolicy> scaleUpPolicies = new ArrayList<AutoScalePolicy>();
@@ -3848,6 +3852,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         for (AutoScalePolicy autoScalePolicy : scaleDownPolicies) {
             scaleDownPoliciesResponse.add(createAutoScalePolicyResponse(autoScalePolicy));
         }
+
         return response;
     }
 
@@ -3946,64 +3951,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setObjectName("vpnconnection");
         return response;
     }
-
-    /*
-     * 
-     * @Override
-     * public CounterResponse createCounterResponse(Counter counter) {
-     * CounterResponse response = new CounterResponse();
-     * response.setId(counter.getId());
-     * response.setSource(counter.getSource().toString());
-     * response.setName(counter.getName());
-     * response.setValue(counter.getValue());
-     * response.setZoneId(counter.getZoneId());
-     * response.setObjectName("counter");
-     * 
-     * response.setVpnGatewayId(result.getVpnGatewayId());
-     * Long vpnGatewayId = result.getVpnGatewayId();
-     * if(vpnGatewayId != null) {
-     * Site2SiteVpnGatewayVO vpnGateway = ApiDBUtils.findVpnGatewayById(vpnGatewayId);
-     * 
-     * long ipId = vpnGateway.getAddrId();
-     * IPAddressVO ipObj = ApiDBUtils.findIpAddressById(ipId);
-     * response.setIp(ipObj.getAddress().addr());
-     * }
-     * 
-     * response.setCustomerGatewayId(result.getCustomerGatewayId());
-     * Long customerGatewayId = result.getCustomerGatewayId();
-     * if(customerGatewayId != null) {
-     * Site2SiteCustomerGatewayVO customerGateway = ApiDBUtils.findCustomerGatewayById(customerGatewayId);
-     * response.setGatewayIp(customerGateway.getGatewayIp());
-     * response.setGuestCidrList(customerGateway.getGuestCidrList());
-     * response.setIpsecPsk(customerGateway.getIpsecPsk());
-     * response.setIkePolicy(customerGateway.getIkePolicy());
-     * response.setEspPolicy(customerGateway.getEspPolicy());
-     * response.setLifetime(customerGateway.getLifetime());
-     * }
-     * 
-     * response.setCreated(result.getCreated());
-     * response.setRemoved(result.getRemoved());
-     * response.setObjectName("vpnconnection");
-     * return response;
-     * }
-     */
-
-    // @Override
-    // public ConditionResponse createConditionResponse(Condition condition) {
-    // ConditionResponse response = new ConditionResponse();
-    // response.setId(condition.getId());
-    // CounterResponse counter;
-    // counter = createCounterResponse(ApiDBUtils.getCounter(condition.getCounterid()));
-    // response.setCounter(counter);
-    // response.setRelationalOperator(condition.getRelationalOperator().toString());
-    // response.setThreshold(condition.getThreshold());
-    // Account account = ApiDBUtils.findAccountById(condition.getAccountId());
-    // response.setZoneId(condition.getZoneId());
-    // response.setObjectName("condition");
-    //
-    // populateOwner(response, condition);
-    // return response;
-    // }
 
     @Override
     public CounterResponse createCounterResponse(Counter counter) {

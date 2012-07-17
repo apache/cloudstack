@@ -33,28 +33,28 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
     @Param(description = "the autoscale profile that contains information about the vms in the vm group.")
     private IdentityProxy profileId = new IdentityProxy("autoscale_vmprofiles");
 
-    @SerializedName(ApiConstants.DURATION)
-    @Param(description = "the duration for which the conditions have to be true before action is taken")
-    private Integer minMembers;
+    @SerializedName(ApiConstants.MIN_MEMBERS)
+    @Param(description = "the minimum number of members in the vmgroup, the number of instances in the vm group will be equal to or more than this number.")
+    private int minMembers;
+
+    @SerializedName(ApiConstants.MAX_MEMBERS)
+    @Param(description = "the maximum number of members in the vmgroup, The number of instances in the vm group will be equal to or less than this number.")
+    private int maxMembers;
 
     @SerializedName(ApiConstants.INTERVAL)
     @Param(description = "the frequency at which the conditions have to be evaluated")
-    private Integer maxMembers;
+    private int interval;
 
-    @SerializedName(ApiConstants.INTERVAL)
-    @Param(description = "the frequency at which the conditions have to be evaluated")
-    private Integer interval;
-
-    @SerializedName(ApiConstants.INTERVAL)
+    @SerializedName(ApiConstants.STATE)
     @Param(description = "the current state of the AutoScale Vm Group")
     private String state;
 
-    @SerializedName(ApiConstants.SCALEUP_POLICY_IDS)
-    @Param(description = "list of provision autoscale policies")
+    @SerializedName(ApiConstants.SCALEUP_POLICIES)
+    @Param(description = "list of scaleup autoscale policies")
     private List<AutoScalePolicyResponse> scaleUpPolicies;
 
-    @SerializedName(ApiConstants.SCALEDOWN_POLICY_IDS)
-    @Param(description = "list of de-provision autoscale policies")
+    @SerializedName(ApiConstants.SCALEDOWN_POLICIES)
+    @Param(description = "list of scaledown autoscale policies")
     private List<AutoScalePolicyResponse> scaleDownPolicies;
 
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the account owning the instance group")
@@ -88,11 +88,11 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
         this.profileId.setValue(profileId);
     }
 
-    public void setMinMembers(Integer minMembers) {
+    public void setMinMembers(int minMembers) {
         this.minMembers = minMembers;
     }
 
-    public void setMaxMembers(Integer maxMembers) {
+    public void setMaxMembers(int maxMembers) {
         this.maxMembers = maxMembers;
     }
 
@@ -100,7 +100,7 @@ public class AutoScaleVmGroupResponse extends BaseResponse implements Controlled
         this.state = state;
     }
 
-    public void setInterval(Integer interval) {
+    public void setInterval(int interval) {
         this.interval = interval;
     }
 

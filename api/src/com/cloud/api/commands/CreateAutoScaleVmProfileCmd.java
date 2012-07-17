@@ -59,7 +59,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.OTHER_DEPLOY_PARAMS, type = CommandType.STRING, description = "parameters other than zoneId/serviceOfferringId/templateId of the auto deployed virtual machine")
     private String otherDeployParams;
 
-    @Parameter(name = ApiConstants.AUTOSCALE_VM_DESTROY_TIME, type = CommandType.INTEGER, required = true, description = "the time allowed for existing connections to get closed before a vm is destroyed")
+    @Parameter(name = ApiConstants.AUTOSCALE_VM_DESTROY_TIME, type = CommandType.INTEGER, description = "the time allowed for existing connections to get closed before a vm is destroyed")
     private Integer destroyVmGraceperiod;
 
     @Parameter(name = ApiConstants.SNMP_COMMUNITY, type = CommandType.STRING, description = "snmp community string to be used to contact a virtual machine deployed by this profile")
@@ -72,7 +72,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.AUTOSCALE_USER_ID, type = CommandType.LONG, description = "the ID of the user used to launch and destroy the VMs")
     private Long autoscaleUserId;
 
-    @Parameter(name = ApiConstants.CS_URL, type = CommandType.STRING, description = "the URL including port of the CloudStack Management Server example: http://server.cloud.com:8080")
+    @Parameter(name = ApiConstants.CS_URL, type = CommandType.STRING, description = "the API URL including port of the CloudStack Management Server example: http://server.cloud.com:8080/client/api?")
     private String csUrl;
 
     private Map<String, String> otherDeployParamMap;
@@ -226,6 +226,10 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
+        AutoScaleVmProfile result = _entityMgr.findById(AutoScaleVmProfile.class, getEntityId());
+        AutoScaleVmProfileResponse response = _responseGenerator.createAutoScaleVmProfileResponse(result);
+        response.setResponseName(getCommandName());
+        this.setResponseObject(response);
     }
 
     @Override
@@ -234,9 +238,6 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         AutoScaleVmProfile result = _autoScaleService.createAutoScaleVmProfile(this);
         if (result != null) {
             this.setEntityId(result.getId());
-            AutoScaleVmProfileResponse response = _responseGenerator.createAutoScaleVmProfileResponse(result);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create Autoscale Vm Profile");
         }

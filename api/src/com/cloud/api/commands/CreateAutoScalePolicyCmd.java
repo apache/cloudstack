@@ -39,14 +39,14 @@ public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
+    @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, required = true, description = "the action to be executed if all the conditions evaluate to true for the specified duration.")
+    private String action;
+
     @Parameter(name = ApiConstants.DURATION, type = CommandType.INTEGER, required = true, description = "the duration for which the conditions have to be true before action is taken")
     private int duration;
 
     @Parameter(name = ApiConstants.QUIETTIME, type = CommandType.INTEGER, description = "the cool down period for which the policy should not be evaluated after the action has been taken")
     private Integer quietTime;
-
-    @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, required = true, description = "the action to be executed if all the conditions evaluate to true for the specified duration.")
-    private String action;
 
     @IdentityMapper(entityTableName = "conditions")
     @Parameter(name = ApiConstants.CONDITION_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, required = true, description = "the list of IDs of the conditions that are being evaluated on every interval")
@@ -139,6 +139,10 @@ public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
+        AutoScalePolicy result = _entityMgr.findById(AutoScalePolicy.class, getEntityId());
+        AutoScalePolicyResponse response = _responseGenerator.createAutoScalePolicyResponse(result);
+        response.setResponseName(getCommandName());
+        this.setResponseObject(response);
     }
 
     @Override
@@ -146,9 +150,6 @@ public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
         AutoScalePolicy result = _autoScaleService.createAutoScalePolicy(this);
         if (result != null) {
             this.setEntityId(result.getId());
-            AutoScalePolicyResponse response = _responseGenerator.createAutoScalePolicyResponse(result);
-            response.setResponseName(getCommandName());
-            this.setResponseObject(response);
         } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to create AutoScale Policy");
         }

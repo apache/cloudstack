@@ -186,7 +186,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
             throw new InvalidParameterValueException("Unable to find " + paramName);
         }
 
-        _accountMgr.checkAccess(caller, null, true, (ControlledEntity) vo);
+        _accountMgr.checkAccess(caller, null, false, (ControlledEntity) vo);
 
         return vo;
     }
@@ -301,9 +301,9 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         if (csUrl == null) {
             String mgmtIP = _configDao.getValue(Config.ManagementHostIPAdr.key());
             csUrl = "http://" + mgmtIP + ":8080/client/api?";
-        }
-        else {
-            csUrl += "/client/api?";
+        } else {
+            if(!csUrl.endsWith("?"))
+                csUrl += "?";
         }
 
         AutoScaleVmProfileVO profileVO = new AutoScaleVmProfileVO(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getServiceOfferingId(), cmd.getTemplateId(), cmd.getOtherDeployParams(),
@@ -390,8 +390,8 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
     }
 
     private AutoScalePolicyVO checkValidityAndPersist(AutoScalePolicyVO autoScalePolicyVO, List<Long> conditionIds) {
-        Integer duration = autoScalePolicyVO.getDuration();
-        Integer quietTime = autoScalePolicyVO.getQuietTime();
+        int duration = autoScalePolicyVO.getDuration();
+        int quietTime = autoScalePolicyVO.getQuietTime();
 
         if (duration < 0) {
             throw new InvalidParameterValueException("duration is an invalid value: " + duration);
@@ -447,7 +447,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEPOLICY_CREATE, eventDescription = "creating autoscale policy")
     public AutoScalePolicy createAutoScalePolicy(CreateAutoScalePolicyCmd cmd) {
 
-        Integer duration = cmd.getDuration();
+        int duration = cmd.getDuration();
         Integer quietTime = cmd.getQuietTime();
         String action = cmd.getAction();
 
@@ -503,7 +503,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         if (owner == null) {
             throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
         }
-        _accountMgr.checkAccess(caller, null, true, owner);
+        _accountMgr.checkAccess(caller, null, false, owner);
     }
 
     private class SearchWrapper<VO extends ControlledEntity> {
@@ -611,10 +611,10 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
             if (!vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
                 throw new InvalidParameterValueException("The AutoScale Policy can be updated only if the Vm Group it is associated with is disabled in state");
             }
-            if(vmGroupVO.getInterval() < duration) {
+            if(vmGroupVO.getInterval() < policy.getDuration()) {
                 throw new InvalidParameterValueException("duration is less than the associated AutoScaleVmGroup's interval");
             }
-            if(vmGroupVO.getInterval() < quietTime) {
+            if(vmGroupVO.getInterval() < policy.getQuietTime()) {
                 throw new InvalidParameterValueException("quietTime is less than the associated AutoScaleVmGroup's interval");
             }
         }
@@ -673,6 +673,11 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
 
     public boolean configureAutoScaleVmGroup(long vmGroupid) {
         AutoScaleVmGroup vmGroup = _autoScaleVmGroupDao.findById(vmGroupid);
+
+        /* TODO remove later */
+        if(true) {
+            return true;
+        }
 
         if(isLoadBalancerBasedAutoScaleVmGroup(vmGroup)) {
             return _lbRulesMgr.configureLbAutoScaleVmGroup(vmGroupid);
