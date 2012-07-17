@@ -974,8 +974,8 @@
     if (!options) options = {};
     var context = options.context;
     var reorder = options.reorder;
-
     var $tbody = $table.find('tbody');
+
     if (!loadArgs) loadArgs = {
       page: 1,
       filterBy: {
@@ -1262,6 +1262,7 @@
     });
 
     var search = function() {
+      page = 1;
       loadBody(
         $table,
         listViewData.dataProvider,
@@ -1269,7 +1270,7 @@
         listViewData.fields,
         false,
         {
-          page: 1,
+          page: page,
           filterBy: {
             kind: $listView.find('select[id=filterBy]').val(),
             search: {
@@ -1316,7 +1317,8 @@
         var context = $listView.data('view-args').context;
 
         if (loadMoreData) {
-          page = page + 1;					
+          page = page + 1;
+
           loadBody($table, listViewData.dataProvider, listViewData.preFilter, listViewData.fields, true, {
             context: context,
             page: page,
