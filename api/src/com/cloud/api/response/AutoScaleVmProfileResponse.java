@@ -40,6 +40,10 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     @Param(description = "parameters other than zoneId/serviceOfferringId/templateId to be used while deploying a virtual machine")
     private String otherDeployParams;
 
+    @SerializedName(ApiConstants.CS_URL)
+    @Param(description = "the URL including port of the CloudStack Management Server example: http://server.cloud.com:8080")
+    private String csUrl;
+
     @SerializedName(ApiConstants.ACCOUNT)
     @Param(description = "the account owning the instance group")
     private String accountName;
@@ -108,6 +112,10 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
 
     public void setSnmpPort(Integer snmpPort) {
         this.snmpPort = snmpPort;
+    }
+
+    public void setCsUrl(String csUrl) {
+        this.csUrl = csUrl;
     }
 
     @Override
