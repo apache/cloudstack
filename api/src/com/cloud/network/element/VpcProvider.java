@@ -23,6 +23,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcGateway;
 import com.cloud.vm.ReservationContext;
 
 /**

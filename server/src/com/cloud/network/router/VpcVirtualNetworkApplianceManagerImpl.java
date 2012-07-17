@@ -72,12 +72,15 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.Site2SiteCustomerGatewayVO;
 import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.PrivateGateway;
@@ -134,6 +137,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     VpcManager _vpcMgr;
     @Inject
     PrivateIpDao _privateIpDao;
+    @Inject
+    IPAddressDao _ipAddrDao;
+    @Inject
+    Site2SiteVpnGatewayDao _vpnGatewayDao;
     
     @Override
     public List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner, 

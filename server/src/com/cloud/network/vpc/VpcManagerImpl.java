@@ -54,9 +54,12 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.vpc.VpcOffering.State;
 import com.cloud.network.vpc.Dao.PrivateIpDao;
@@ -141,6 +144,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
     PhysicalNetworkDao _pNtwkDao;
     @Inject
     ResourceTagDao _resourceTagDao;
+    @Inject
+    Site2SiteVpnGatewayDao _vpnGatewayDao;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
 

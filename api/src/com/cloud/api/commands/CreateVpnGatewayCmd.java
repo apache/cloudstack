@@ -23,9 +23,9 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.Site2SiteVpnGatewayResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.IpAddress;
 import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Creates site to site vpn local gateway", responseObject=Site2SiteVpnGatewayResponse.class)
 public class CreateVpnGatewayCmd extends BaseAsyncCmd {
@@ -36,9 +36,9 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
-    @IdentityMapper(entityTableName="user_ip_address")
-    @Parameter(name=ApiConstants.PUBLIC_IP_ID, type=CommandType.LONG, required=true, description="public ip address id of the vpn gateway")
-    private Long publicIpId;
+    @IdentityMapper(entityTableName="vpc")
+    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, required=true, description="public ip address id of the vpn gateway")
+    private Long vpcId;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the connection. Must be used with the domainId parameter.")
     private String accountName;
@@ -53,11 +53,11 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     public String getEntityTable() {
-        return "user_ip_address";
+        return "s2s_vpn_gateway";
     }
 
-    public Long getPublicIpId() {
-        return publicIpId;
+    public Long getVpcId() {
+        return vpcId;
     }
 
     public String getAccountName() {
@@ -80,18 +80,20 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        IpAddress ip = _networkService.getIp(publicIpId);
-
-        if (ip == null) {
-            throw new InvalidParameterValueException("Unable to find ip address by id", null);
+        Long accountId = finalyzeAccountId(accountName, domainId, null, true);
+        if (accountId == null) {
+            accountId = UserContext.current().getCaller().getId();
         }
-
-        return ip.getAccountId();
+        
+        if (accountId == null) {
+            accountId = Account.ACCOUNT_ID_SYSTEM;
+        }
+        return accountId;
     }
 
     @Override
     public String getEventDescription() {
-        return "Create site-to-site VPN gateway for account " + getEntityOwnerId() + " using public ip id=" + publicIpId;
+        return "Create site-to-site VPN gateway for account " + getEntityOwnerId();
     }
 
     @Override
@@ -101,7 +103,8 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
 
     @Override
     public void execute(){
-        Site2SiteVpnGateway result = _s2sVpnService.createVpnGateway(this);
+        Site2SiteVpnGateway result;
+        result = _s2sVpnService.createVpnGateway(this);
         if (result != null) {
             Site2SiteVpnGatewayResponse response = _responseGenerator.createSite2SiteVpnGatewayResponse(result);
             response.setResponseName(getCommandName());
@@ -118,14 +121,6 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
 
     @Override
     public Long getSyncObjId() {
-        return getIp().getVpcId();
-    }
-
-    private IpAddress getIp() {
-        IpAddress ip = _networkService.getIp(publicIpId);
-        if (ip == null) {
-            throw new InvalidParameterValueException("Unable to find ip address by id", null);
-        }
-        return ip;
+        return getVpcId();
     }
 }

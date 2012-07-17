@@ -16,16 +16,13 @@ import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCmd;
-import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
-import com.cloud.api.response.Site2SiteVpnGatewayResponse;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
-import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -100,7 +97,8 @@ public class DeleteVpnGatewayCmd extends BaseAsyncCmd {
 	
     @Override
     public void execute(){
-        boolean result = _s2sVpnService.deleteVpnGateway(this);
+        boolean result = false;
+        result = _s2sVpnService.deleteVpnGateway(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

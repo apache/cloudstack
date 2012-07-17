@@ -24,6 +24,7 @@ import com.cloud.domain.Domain;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Site2SiteCustomerGateway;
@@ -38,9 +39,13 @@ import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteVpnConnectionDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.element.Site2SiteVpnServiceProvider;
+import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.Dao.VpcDao;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Local(value = Site2SiteVpnService.class)
@@ -53,6 +58,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
     @Inject NetworkManager _networkMgr;
     @Inject VpcDao _vpcDao;
     @Inject IPAddressDao _ipAddressDao;
+    @Inject AccountDao _accountDao;
+    @Inject VpcManager _vpcMgr;
     
     String _name;
     
@@ -79,17 +86,13 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
 
     @Override
     public Site2SiteVpnGateway createVpnGateway(CreateVpnGatewayCmd cmd) {
-        Long ipId = cmd.getPublicIpId();
-	    IpAddress ip = _networkMgr.getIp(ipId);
-	    Long vpcId = ip.getVpcId();
-	    if (ip.getVpcId() == null) {
-            throw new InvalidParameterValueException("The VPN gateway cannot create with ip not belong to VPC");
-	    }
-        if (_vpnGatewayDao.findByIpAddrId(ipId) != null) {
-            throw new InvalidParameterValueException("The VPN gateway with ip ID " + ipId + " already existed!");
+	    Long vpcId = cmd.getVpcId();
+        VpcVO vpc = _vpcDao.findById(vpcId);
+        if (vpc == null) {
+            throw new InvalidParameterValueException("Invalid VPC " + vpcId + " for site to site vpn gateway creation!");
         }
-        List<Site2SiteVpnGatewayVO> gws = _vpnGatewayDao.listByVpcId(vpcId);
-        if (gws != null && gws.size() != 0) {
+        Site2SiteVpnGatewayVO gws = _vpnGatewayDao.findByVpcId(vpcId);
+        if (gws != null) {
             throw new InvalidParameterValueException("The VPN gateway of VPC " + vpcId + " already existed!");
         }
         Long accountId = cmd.getEntityOwnerId();
@@ -97,7 +100,13 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
         if (domainId == null) {
             domainId = Domain.ROOT_DOMAIN;
         }
-        Site2SiteVpnGatewayVO gw = new Site2SiteVpnGatewayVO(accountId, domainId, ipId);
+        //Use source NAT ip for VPC
+        List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpcId, true);
+        if (ips.size() != 1) {
+            throw new CloudRuntimeException("Cannot found source nat ip of vpc " + vpcId);
+        }
+        
+        Site2SiteVpnGatewayVO gw = new Site2SiteVpnGatewayVO(accountId, domainId, ips.get(0).getId(), vpcId);
         _vpnGatewayDao.persist(gw);
         return gw;
     }
@@ -155,8 +164,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
         if (vpnGateway == null) {
             throw new InvalidParameterValueException("Unable to found specified Site to Site VPN gateway " + vpnGatewayId + " !");
         }
-        if (_vpnConnectionDao.findByCustomerGatewayId(customerGatewayId) != null ||
-                _vpnConnectionDao.findByVpnGatewayId(vpnGatewayId) != null) {
+        if (_vpnConnectionDao.findByVpnGatewayIdAndCustomerGatewayId(vpnGatewayId, customerGatewayId) != null) {
             throw new InvalidParameterValueException("The vpn connection with customer gateway id " + customerGatewayId + " or vpn gateway id " 
                     + vpnGatewayId + " already existed!");
         }
@@ -210,6 +218,10 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
         if (customerGateway == null) {
             throw new InvalidParameterValueException("Fail to find customer gateway with " + id + " !");
         }
+        List<Site2SiteVpnConnectionVO> vpnConnections = _vpnConnectionDao.listByCustomerGatewayId(id);
+        if (vpnConnections != null && vpnConnections.size() != 0) {
+            throw new InvalidParameterValueException("Unable to delete VPN customer gateway " + id + " because there is still related VPN connections!");
+        }
         _customerGatewayDao.remove(id);
         return true;
     }
@@ -220,6 +232,10 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
         Site2SiteVpnGateway vpnGateway = _vpnGatewayDao.findById(id);
         if (vpnGateway == null) {
             throw new InvalidParameterValueException("Fail to find vpn gateway with " + id + " !");
+        }
+        List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByVpnGatewayId(id);
+        if (conns != null && conns.size() != 0) {
+            throw new InvalidParameterValueException("Unable to delete VPN gateway " + id + " because there is still related VPN connections!");
         }
         _vpnGatewayDao.remove(id);
         return true;
@@ -232,10 +248,13 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
         if (gw == null) {
             throw new InvalidParameterValueException("Find to find customer gateway with id " + id);
         }
-        Site2SiteVpnConnection conn = _vpnConnectionDao.findByCustomerGatewayId(id);
-        if (conn != null && (conn.getState() != State.Disconnected || conn.getState() != State.Error)) {
-            throw new InvalidParameterValueException("Unable to update customer gateway because there is the correlate VPN connection " + conn.getId()
-                    + " still active!");
+        List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByCustomerGatewayId(id);
+        if (conns != null) {
+            for (Site2SiteVpnConnection conn : conns) {
+                if (conn.getState() != State.Disconnected || conn.getState() != State.Error) {
+                    throw new InvalidParameterValueException("Unable to update customer gateway because there is active VPN connection " + conn.getId());
+                }
+            }
         }
         String gatewayIp = cmd.getGatewayIp();
         if (!NetUtils.isValidIp(gatewayIp)) {
@@ -314,6 +333,9 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
         if (conn == null) {
             throw new InvalidParameterValueException("Fail to find site to site VPN connection " + id + " to reset!");
         }
+        if (conn.getState() == State.Pending) {
+            throw new InvalidParameterValueException("VPN connection " + id + " cannot be reseted when state is Pending!");
+        }
         if (conn.getState() == State.Connected || conn.getState() == State.Error) {
             stopVpnConnection(id);
         }
@@ -342,7 +364,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
         if (id != null) {
             results.add(_vpnGatewayDao.findById(cmd.getId()));
         } else if (vpcId != null) {
-            results.addAll(_vpnGatewayDao.listByVpcId(vpcId));
+            results.add(_vpnGatewayDao.findByVpcId(vpcId));
         } else { //id == null && vpcId == null
             results.addAll(_vpnGatewayDao.listAll());
         }

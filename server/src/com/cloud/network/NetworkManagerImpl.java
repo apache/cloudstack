@@ -512,7 +512,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             ipToReturn = new PublicIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()), 
                     NetUtils.createSequenceBasedMacAddress(sourceNatIp.getMacAddress()));
         } else {
-            ipToReturn = assignSourceNatIpAddress(owner, null, vpc.getId(), dcId);
+            ipToReturn = assignDedicateIpAddress(owner, null, vpc.getId(), dcId, true);
         }
 
         return ipToReturn;
@@ -532,14 +532,20 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             ipToReturn = new PublicIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()), 
                     NetUtils.createSequenceBasedMacAddress(sourceNatIp.getMacAddress()));
         } else {
-            ipToReturn = assignSourceNatIpAddress(owner, guestNetwork.getId(), null, dcId);
+            ipToReturn = assignDedicateIpAddress(owner, guestNetwork.getId(), null, dcId, true);
         }
 
         return ipToReturn;
     }
+    
+    @Override
+    public PublicIp assignVpnGatewayIpAddress(long dcId, Account owner, long vpcId) throws InsufficientAddressCapacityException, ConcurrentOperationException {
+        return assignDedicateIpAddress(owner, null, vpcId, dcId, false);
+    }
+    
 
     @DB
-    public PublicIp assignSourceNatIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId) 
+    public PublicIp assignDedicateIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId, boolean isSourceNat) 
             throws ConcurrentOperationException, InsufficientAddressCapacityException {
 
         long ownerId = owner.getId();
@@ -580,11 +586,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             ip = fetchNewPublicIp(dcId, null, vlanId, owner, VlanType.VirtualNetwork, guestNtwkId, 
-                    true, false, null, false, vpcId);
-            IPAddressVO sourceNatIp = ip.ip();
+                    isSourceNat, false, null, false, vpcId);
+            IPAddressVO publicIp = ip.ip();
 
-            markPublicIpAsAllocated(sourceNatIp);
-            _ipAddressDao.update(sourceNatIp.getId(), sourceNatIp);
+            markPublicIpAsAllocated(publicIp);
+            _ipAddressDao.update(publicIp.getId(), publicIp);
 
             txn.commit();
             return ip;
@@ -746,7 +752,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     }
                     purposes.add(Purpose.StaticNat);
                 }
-                //TODO Need to check site 2 site vpn ip assignment
                 if (purposes == null || purposes.isEmpty()) {
                     // since no active rules are there check if any rules are applied on the public IP but are in
 // revoking state
