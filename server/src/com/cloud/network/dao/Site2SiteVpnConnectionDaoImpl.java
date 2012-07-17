@@ -25,7 +25,6 @@ public class Site2SiteVpnConnectionDaoImpl extends GenericDaoBase<Site2SiteVpnCo
     private final SearchBuilder<Site2SiteVpnConnectionVO> AllFieldsSearch;
     private final SearchBuilder<Site2SiteVpnConnectionVO> VpcSearch;
     private final SearchBuilder<Site2SiteVpnGatewayVO> VpnGatewaySearch;
-    private final SearchBuilder<IPAddressVO> AddrSearch;
 
     protected Site2SiteVpnConnectionDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -34,32 +33,38 @@ public class Site2SiteVpnConnectionDaoImpl extends GenericDaoBase<Site2SiteVpnCo
         AllFieldsSearch.done();
         
         VpcSearch = createSearchBuilder();
-        AddrSearch = _addrDao.createSearchBuilder();
-        AddrSearch.and("vpcId", AddrSearch.entity().getVpcId(), SearchCriteria.Op.EQ);
         VpnGatewaySearch = _vpnGatewayDao.createSearchBuilder();
-        VpnGatewaySearch.join("addrSearch", AddrSearch, AddrSearch.entity().getId(), VpnGatewaySearch.entity().getAddrId(), JoinType.INNER);
+        VpnGatewaySearch.and("vpcId", VpnGatewaySearch.entity().getVpcId(), SearchCriteria.Op.EQ);
         VpcSearch.join("vpnGatewaySearch", VpnGatewaySearch, VpnGatewaySearch.entity().getId(), VpcSearch.entity().getVpnGatewayId(), JoinType.INNER);
         VpcSearch.done();
     }
     
     @Override
-    public Site2SiteVpnConnectionVO findByCustomerGatewayId(long id) {
+    public List<Site2SiteVpnConnectionVO> listByCustomerGatewayId(long id) {
         SearchCriteria<Site2SiteVpnConnectionVO> sc = AllFieldsSearch.create();
         sc.setParameters("customerGatewayId", id);
-        return findOneBy(sc);
+        return listBy(sc);
     }
     
     @Override
-    public Site2SiteVpnConnectionVO findByVpnGatewayId(long id) {
+    public List<Site2SiteVpnConnectionVO> listByVpnGatewayId(long id) {
         SearchCriteria<Site2SiteVpnConnectionVO> sc = AllFieldsSearch.create();
         sc.setParameters("vpnGatewayId", id);
-        return findOneBy(sc);
+        return listBy(sc);
     }
 
     @Override
     public List<Site2SiteVpnConnectionVO> listByVpcId(long vpcId) {
         SearchCriteria<Site2SiteVpnConnectionVO> sc = VpcSearch.create();
-        sc.setJoinParameters("addrSearch", "vpcId", vpcId);
+        sc.setJoinParameters("vpnGatewaySearch", "vpcId", vpcId);
         return listBy(sc);
+    }
+
+    @Override
+    public Site2SiteVpnConnectionVO findByVpnGatewayIdAndCustomerGatewayId(long vpnId, long customerId) {
+        SearchCriteria<Site2SiteVpnConnectionVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vpnGatewayId", vpnId);
+        sc.setParameters("customerGatewayId", customerId);
+        return findOneBy(sc);
     }
 }

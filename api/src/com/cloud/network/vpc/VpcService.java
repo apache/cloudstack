@@ -30,6 +30,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Site2SiteVpnGateway;
 
 public interface VpcService {
     
@@ -220,5 +221,4 @@ public interface VpcService {
      * @return
      */
     VpcGateway getVpcGateway(long id);
-
 }

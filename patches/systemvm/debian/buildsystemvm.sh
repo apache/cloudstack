@@ -63,16 +63,11 @@ EOF
   fi
 
   cat > etc/apt/sources.list << EOF
-deb http://ftp.us.debian.org/debian/ squeeze main non-free
-deb-src http://ftp.us.debian.org/debian/ squeeze main non-free
+deb http://ftp.us.debian.org/debian/ squeeze main contrib non-free
+deb-src http://ftp.us.debian.org/debian/ squeeze main contrib non-free
 
 deb http://security.debian.org/ squeeze/updates main
 deb-src http://security.debian.org/ squeeze/updates main
-
-deb http://volatile.debian.org/debian-volatile squeeze/volatile main
-deb-src http://volatile.debian.org/debian-volatile squeeze/volatile main
-
-deb http://ftp.us.debian.org/debian testing main contrib non-free
 EOF
 
   cat >> etc/apt/apt.conf << EOF
@@ -83,10 +78,6 @@ EOF
 Package: *
 Pin: release o=Debian,a=stable
 Pin-Priority: 900
-
-Package: *
-Pin: release o=Debian,a=testing
-Pin-Priority: 400
 EOF
 
   #apt-key exportall | chroot . apt-key add - &&
