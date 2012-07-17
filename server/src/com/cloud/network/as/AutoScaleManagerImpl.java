@@ -1038,11 +1038,11 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         SearchCriteria<ConditionVO> sc = searchWrapper.buildSearchCriteria();
 
         if (id != null) {
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.setParameters("id", id);
         }
 
         if (counterId != null) {
-            sc.addAnd("counterId", SearchCriteria.Op.EQ, counterId);
+            sc.setParameters("counterId", counterId);
         }
 
         return searchWrapper.search();

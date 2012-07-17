@@ -45,6 +45,7 @@ public class ListConditionsCmd extends BaseListAccountResourcesCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = false, description = "ID of the Condition.")
     private Long id;
 
+    @IdentityMapper(entityTableName = "counter")
     @Parameter(name = ApiConstants.COUNTER_ID, type = CommandType.LONG, required = false, description = "Counter-id of the condition.")
     private Long counterId;
 
