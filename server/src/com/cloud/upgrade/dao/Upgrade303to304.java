@@ -49,7 +49,89 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
+        correctVRProviders(conn);
         correctMultiplePhysicaNetworkSetups(conn);
+    }
+
+    private void correctVRProviders(Connection conn) {
+        PreparedStatement pstmtVR = null;
+        ResultSet rsVR = null;
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        
+        try{
+            pstmtVR = conn.prepareStatement("SELECT id, nsp_id FROM `cloud`.`virtual_router_providers` where type = 'VirtualRouter' AND removed IS NULL");
+            rsVR = pstmtVR.executeQuery();
+            while (rsVR.next()) {
+                long vrId = rsVR.getLong(1);
+                long nspId = rsVR.getLong(2);
+                
+                //check that this nspId points to a VR provider.
+                pstmt = conn.prepareStatement("SELECT  physical_network_id, provider_name FROM `cloud`.`physical_network_service_providers` where id = ?");
+                pstmt.setLong(1, nspId);
+                rs = pstmt.executeQuery();
+                if(rs.next()){
+                    long physicalNetworkId = rs.getLong(1);
+                    String providerName = rs.getString(2);
+                    if(!providerName.equalsIgnoreCase("VirtualRouter")){
+                        //mismatch, correct the nsp_id in VR
+                        PreparedStatement pstmt1 = null;
+                        ResultSet rs1 = null;
+                        pstmt1 = conn.prepareStatement("SELECT  id FROM `cloud`.`physical_network_service_providers` where physical_network_id = ? AND provider_name = ? AND removed IS NULL");
+                        pstmt1.setLong(1, physicalNetworkId);
+                        pstmt1.setString(2, "VirtualRouter");
+                        rs1 = pstmt1.executeQuery();
+                        if(rs1.next()){
+                            long correctNSPId = rs1.getLong(1);
+                            
+                            //update VR entry
+                            PreparedStatement pstmtUpdate = null;
+                            String updateNSPId = "UPDATE `cloud`.`virtual_router_providers` SET nsp_id = ? WHERE id = ?";
+                            pstmtUpdate = conn.prepareStatement(updateNSPId);
+                            pstmtUpdate.setLong(1, correctNSPId);
+                            pstmtUpdate.setLong(2, vrId);
+                            pstmtUpdate.executeUpdate();
+                            pstmtUpdate.close();
+                        }
+                        rs1.close();
+                        pstmt1.close();
+                    }
+                }
+                rs.close();
+                pstmt.close();
+            }
+        }catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while correcting Virtual Router Entries", e);
+        } finally {
+            if (rsVR != null) {
+                try {
+                    rsVR.close();
+                }catch (SQLException e) {
+                }
+            }
+            
+            if (pstmtVR != null) {
+                try {
+                    pstmtVR.close();
+                } catch (SQLException e) {
+                }
+            }
+            
+            if (rs != null) {
+                try {
+                    rs.close();
+                }catch (SQLException e) {
+                }
+            }
+            
+            if (pstmt != null) {
+                try {
+                    pstmt.close();
+                } catch (SQLException e) {
+                }
+            }
+        }
+        
     }
 
     private void correctMultiplePhysicaNetworkSetups(Connection conn) {
