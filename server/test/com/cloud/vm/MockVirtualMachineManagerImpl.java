@@ -16,12 +16,15 @@
 // under the License.
 package com.cloud.vm;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.to.NicTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.exception.AgentUnavailableException;
@@ -241,19 +244,37 @@ public class MockVirtualMachineManagerImpl implements VirtualMachineManager {
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.vm.VirtualMachineManager#addVmToNetwork(com.cloud.vm.VirtualMachine, com.cloud.network.Network)
+     * @see com.cloud.vm.VirtualMachineManager#toNicTO(com.cloud.vm.NicProfile, com.cloud.hypervisor.Hypervisor.HypervisorType)
+     */
+    @Override
+    public NicTO toNicTO(NicProfile nic, HypervisorType hypervisorType) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.vm.VirtualMachineManager#toVmTO(com.cloud.vm.VirtualMachineProfile)
+     */
+    @Override
+    public VirtualMachineTO toVmTO(VirtualMachineProfile<? extends VMInstanceVO> profile) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.vm.VirtualMachineManager#addVmToNetwork(com.cloud.vm.VirtualMachine, com.cloud.network.Network, com.cloud.vm.NicProfile)
      */
     @Override
     public NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         // TODO Auto-generated method stub
-        return false;
+        return null;
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.vm.VirtualMachineManager#removeVmFromNetwork(com.cloud.vm.VirtualMachine, com.cloud.network.Network)
+     * @see com.cloud.vm.VirtualMachineManager#removeVmFromNetwork(com.cloud.vm.VirtualMachine, com.cloud.network.Network, java.net.URI)
      */
     @Override
-    public boolean removeVmFromNetwork(VirtualMachine vm, Network network, URI broadcastUri) {
+    public boolean removeVmFromNetwork(VirtualMachine vm, Network network, URI broadcastUri) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return false;
     }
