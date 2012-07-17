@@ -2547,7 +2547,9 @@
 													listAll: true
 												},
 												success: function(json) {												  
-													var item = json.listpublicipaddressesresponse.publicipaddress[0];													
+													//var item = json.listpublicipaddressesresponse.publicipaddress[0];	//uncomment this line and delete the following line when "listPublicIpAddresses&id=N" is fixed to return a record.	
+                          var item = args.context.ipAddresses[0];
+													
 													args.context.ipAddresses.shift(); //remove the first element in args.context.ipAddresses										
 													args.context.ipAddresses.push(item);
 																										
@@ -2825,7 +2827,9 @@
 															listAll: true
 														},
 														success: function(json) {												  
-															var item = json.listpublicipaddressesresponse.publicipaddress[0];													
+															//var item = json.listpublicipaddressesresponse.publicipaddress[0];	//uncomment this line and delete the following line when "listPublicIpAddresses&id=N" is fixed to return a record.	
+                              var item = args.context.ipAddresses[0];
+													
 															args.context.ipAddresses.shift(); //remove the first element in args.context.ipAddresses										
 															args.context.ipAddresses.push(item);
 																												
