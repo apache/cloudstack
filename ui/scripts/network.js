@@ -1693,7 +1693,7 @@
                     var havingLbService = false;
 										var havingVpnService = false;		
 										
-                    if('networks' in args.context) { //from Guest Network section
+                    if('networks' in args.context && args.context.networks[0].vpcid == null) { //a non-VPC network from Guest Network section
 											$.ajax({
 												url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid),
 												dataType: "json",
@@ -1714,7 +1714,7 @@
 												}
 											});
 										}
-										else { //from VPC section
+										else { //a VPC network from Guest Network section or from VPC section
 										  havingFirewallService = false;  //firewall is not supported in IP from VPC section (because ACL has already supported in tier from VPC section)
 											havingVpnService = false; //VPN is not supported in IP from VPC section
 										
