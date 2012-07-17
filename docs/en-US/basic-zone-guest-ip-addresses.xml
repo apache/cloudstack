@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="basic-zone-guest-ip-addresses">
+    <title>Basic Zone Guest IP Addresses</title>
+    <para>When basic networking is used, CloudPlatform will assign IP addresses in the CIDR of the pod to the guests in that pod.  The administrator must add a Direct IP range on the pod for this purpose.  These IPs are in the same VLAN as the hosts.</para>
+</section>

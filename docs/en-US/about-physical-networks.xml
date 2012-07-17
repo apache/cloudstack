@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="about-physical-networks">
+	<title>About Physical Networks</title>
+    <para>Part of adding a zone is setting up the physical network. One or (in an advanced zone) more physical networks can be associated with each zone. The network corresponds to a NIC on the hypervisor host. Each physical network can carry one or more types of network traffic. The choices of traffic type for each network vary depending on whether you are creating a zone with basic networking or advanced networking.</para>
+    <para>A physical network is the actual network hardware and wiring in a zone. A zone can have multiple physical networks. An administrator can:</para>
+    <itemizedlist>
+        <listitem><para>Add/Remove/Update physical networks in a zone</para></listitem>
+        <listitem><para>Configure VLANs on the physical network</para></listitem>
+        <listitem><para>Configure a name so the network can be recognized by hypervisors</para></listitem>
+        <listitem><para>Configure the service providers (firewalls, load balancers, etc.) available on a physical network</para></listitem>
+        <listitem><para>Configure the IP addresses trunked to a physical network</para></listitem>
+        <listitem><para>Specify what type of traffic is carried on the physical network, as well as other properties like network speed</para></listitem>
+    </itemizedlist>
+    <xi:include href="physical-network-configuration-settings.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />  
+    <xi:include href="basic-zone-network-traffic-types.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="basic-zone-guest-ip-addresses.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="advanced-zone-network-traffic-types.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="advanced-zone-guest-ip-addresses.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="advanced-zone-public-ip-addresses.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+</section>
