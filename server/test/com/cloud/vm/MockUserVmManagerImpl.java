@@ -435,4 +435,13 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
         return false;
     }
 
+    /* (non-Javadoc)
+     * @see com.cloud.vm.VirtualMachineGuru#prepareStop(com.cloud.vm.VirtualMachineProfile)
+     */
+    @Override
+    public void prepareStop(VirtualMachineProfile<UserVmVO> profile) {
+        // TODO Auto-generated method stub
+        
+    }
+
 }
