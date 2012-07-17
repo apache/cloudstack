@@ -75,6 +75,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Local(value = { RulesManager.class, RulesService.class })
 public class RulesManagerImpl implements RulesManager, RulesService, Manager {
@@ -91,6 +92,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     IPAddressDao _ipAddressDao;
     @Inject
     UserVmDao _vmDao;
+    @Inject
+    VMInstanceDao _vmInstanceDao;
     @Inject
     AccountManager _accountMgr;
     @Inject
@@ -237,7 +240,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 checkRuleAndUserVm(rule, vm, caller);
             }
 
-
             // Verify that vm has nic in the network
             Ip dstIp = rule.getDestinationIpAddress();
             Nic guestNic = _networkMgr.getNicInNetwork(vmId, networkId);
@@ -293,9 +295,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
                 IpAddress ip = _ipAddressDao.findById(ipAddress.getId());
                 _networkMgr.unassignIPFromVpcNetwork(ip.getId(), networkId);  
+                }
             }
         }
-    }
 
     @Override
     @DB
@@ -380,14 +382,25 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             throws NetworkRuleConflictException, ResourceUnavailableException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
+        Object vmIdentity = null;
 
         // Verify input parameters
-        UserVmVO vm = _vmDao.findById(vmId);
-        if (vm == null) {
+        UserVmVO vm = null;
+
+        if (isSystemVm) { // Work around by Deepak Garg, for CS-15556
+            vmIdentity = _vmInstanceDao.findById(vmId);
+        }
+        else {
+            vm = _vmDao.findById(vmId);
+            vmIdentity = vm;
+        }
+
+        if (vmIdentity == null) {
             List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
             idList.add(new IdentityProxy("user_ip_address", ipId, "ipId"));
             throw new InvalidParameterValueException("Can't enable static nat for the address with specified ipId " +
                     ", invalid virtual machine id specified", idList);
+
         }
 
         IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
@@ -408,11 +421,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             Nic guestNic = _networkMgr.getNicInNetwork(vmId, networkId);
             if (guestNic == null) {
                 List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
-                idList.add(new IdentityProxy(vm, vmId, "vmId"));
+                idList.add(new IdentityProxy(vmIdentity, vmId, "vmId"));
                 throw new InvalidParameterValueException("Vm doesn't belong to the network with specified id", idList);
             }
 
-            
             if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.StaticNat)) {
                 List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
                 idList.add(new IdentityProxy(network, networkId, "networkId"));
@@ -472,15 +484,15 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             if (!result) {
                 ipAddress.setOneToOneNat(false);
                 ipAddress.setAssociatedWithVmId(null);
-                _ipAddressDao.update(ipAddress.getId(), ipAddress);  
+                _ipAddressDao.update(ipAddress.getId(), ipAddress);
                 
                 if (performedIpAssoc) {
                     //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
                     IpAddress ip = _ipAddressDao.findById(ipAddress.getId());
                     _networkMgr.unassignIPFromVpcNetwork(ip.getId(), networkId);
-                }
+                    }
+                } 
             }
-        }
         return result;
     }
 
@@ -728,7 +740,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             sb.groupBy(sb.entity().getId());
             sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
         }
-
 
         SearchCriteria<PortForwardingRuleVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
