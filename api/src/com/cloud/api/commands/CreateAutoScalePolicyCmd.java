@@ -24,10 +24,12 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.AutoScalePolicyResponse;
 import com.cloud.async.AsyncJob;
+import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.network.as.Condition;
+import com.cloud.user.Account;
 
 @Implementation(description = "Creates an autoscale policy for a provision or deprovision action, the action is taken when the all the conditions evaluates to true for the specified duration. The policy is in effect once it is attached to a autscale vm group.", responseObject = AutoScalePolicyResponse.class)
 public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
@@ -116,8 +118,14 @@ public class CreateAutoScalePolicyCmd extends BaseAsyncCreateCmd {
         }
         long conditionId = getConditionIds().get(0);
         Condition condition = _entityMgr.findById(Condition.class, conditionId);
-        conditionDomainId = condition.getDomainId();
-        conditionAccountId = condition.getAccountId();
+        if(condition == null) {
+            // it is an invalid condition, return system acccount, error will be thrown later.
+            conditionDomainId = Domain.ROOT_DOMAIN;
+            conditionAccountId = Account.ACCOUNT_ID_SYSTEM;
+        } else {
+            conditionDomainId = condition.getDomainId();
+            conditionAccountId = condition.getAccountId();
+        }
 
         return conditionAccountId;
     }

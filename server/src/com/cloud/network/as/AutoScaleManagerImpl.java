@@ -421,7 +421,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
 
             if (conditionIds.size() != conditions.size()) {
                 // TODO report the condition id which could not be found
-                throw new InvalidParameterValueException("Unable to find a condition specified");
+                throw new InvalidParameterValueException("Unable to find the condition specified");
             }
 
             ArrayList<Long> counterIds = new ArrayList<Long>();
