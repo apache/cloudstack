@@ -1618,12 +1618,13 @@
                   $.ajax({
                     url: createURL('listPublicIpAddresses'),
                     data: {                      
-                      id: args.context.ipAddresses[0].id
+                      id: args.context.ipAddresses[0].id,
+											listAll: true
                     },
                     dataType: "json",
                     async: true,
                     success: function(json) {
-                      var ipObj = items[0];	
+                      var ipObj = items[0];	//because json.listpublicipaddressesresponse.publicipaddress is null (API bug). Use old info here until API is fixed.
 											
 											if('networks' in args.context) { //from Guest Network section		
 											  //get ipObj.networkOfferingConserveMode and ipObj.networkOfferingHavingVpnService from guest network's network offering
@@ -2537,19 +2538,33 @@
                         }
                       });
 
-                      // Check if tiers are present; hide/show header drop-down                     
-											var $headerFields = $multi.find('.header-fields');													
-											if ('vpc' in args.context) {
-												if(args.context.ipAddresses[0].associatednetworkid == null) {
-													$headerFields.show();
+                      // Check if tiers are present; hide/show header drop-down (begin) ***   
+                      //dataProvider() is called when a LB rule is added in multiEdit. However, adding a LB rule might change parent object (IP Address object). So, we have to force to refresh args.context.ipAddresses[0] here
+										  $.ajax({
+												url: createURL('listPublicIpAddresses'),
+												data: {                      
+													id: args.context.ipAddresses[0].id
+												},
+												success: function(json) {												  
+													var item = json.listpublicipaddressesresponse.publicipaddress[0];													
+													args.context.ipAddresses.shift(); //remove the first element in args.context.ipAddresses										
+													args.context.ipAddresses.push(item);
+																										
+													var $headerFields = $multi.find('.header-fields');													
+													if ('vpc' in args.context) {
+														if(args.context.ipAddresses[0].associatednetworkid == null) {
+															$headerFields.show();
+														}
+														else {
+															$headerFields.hide();
+														}
+													} 
+													else if('networks' in args.context){
+														$headerFields.hide();
+													}																								
 												}
-												else {
-													$headerFields.hide();
-												}
-											} 
-											else if('networks' in args.context){
-												$headerFields.hide();
-											}													
+											});											
+                      // Check if tiers are present; hide/show header drop-down (end) ***   											
                     }
                   },
 
