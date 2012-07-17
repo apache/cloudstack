@@ -548,10 +548,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		}
 
 		_routerProxyPath = Script.findScript("scripts/network/domr/",
-				"routerProxy.sh");
+				"router_proxy.sh");
 		if (_routerProxyPath == null) {
 			throw new ConfigurationException(
-					"Unable to find the routerProxy.sh");
+					"Unable to find the router_proxy.sh");
 		}
 
 		String value = (String) params.get("developer");
