@@ -1464,7 +1464,18 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks) == null) {
             offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
                     "Offering for Isolated VPC networks with Source Nat service enabled", TrafficType.Guest,
-                    null, false, Availability.Required, null, defaultVPCOffProviders,
+                    null, false, Availability.Optional, null, defaultVPCOffProviders,
+                    true, Network.GuestType.Isolated, false, null, false, null, false);
+            offering.setState(NetworkOffering.State.Enabled);
+            _networkOfferingDao.update(offering.getId(), offering);
+        }
+        
+        if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksNoLB) == null) {
+            //remove LB service
+            defaultVPCOffProviders.remove(Service.Lb);
+            offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksNoLB,
+                    "Offering for Isolated VPC networks with Source Nat service enabled and LB service disabled", TrafficType.Guest,
+                    null, false, Availability.Optional, null, defaultVPCOffProviders,
                     true, Network.GuestType.Isolated, false, null, false, null, false);
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);

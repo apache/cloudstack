@@ -3211,49 +3211,53 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             }
         }
 
-        Map<Capability, String> lbServiceCapabilityMap = serviceCapabilityMap.get(Service.Lb);
+        
         boolean dedicatedLb = false;
         boolean elasticLb = false;
-        if ((lbServiceCapabilityMap != null) && (!lbServiceCapabilityMap.isEmpty())) {
-            String isolationCapability = lbServiceCapabilityMap.get(Capability.SupportedLBIsolation);
-            if (isolationCapability != null) {
-                _networkMgr.checkCapabilityForProvider(serviceProviderMap.get(Service.Lb), Service.Lb, Capability.SupportedLBIsolation, isolationCapability);
-                dedicatedLb = isolationCapability.contains("dedicated");
-            } else {
-                dedicatedLb = true;
-            }
-
-            String param = lbServiceCapabilityMap.get(Capability.ElasticLb);
-            if (param != null) {
-                elasticLb = param.contains("true");
-            }
-        }
-
-        Map<Capability, String> sourceNatServiceCapabilityMap = serviceCapabilityMap.get(Service.SourceNat);
         boolean sharedSourceNat = false;
         boolean redundantRouter = false;
-        if ((sourceNatServiceCapabilityMap != null) && (!sourceNatServiceCapabilityMap.isEmpty())) {
-            String sourceNatType = sourceNatServiceCapabilityMap.get(Capability.SupportedSourceNatTypes);
-            if (sourceNatType != null) {
-                _networkMgr.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, 
-                        Capability.SupportedSourceNatTypes, sourceNatType);
-                sharedSourceNat = sourceNatType.contains("perzone");
-            }
-
-            String param = sourceNatServiceCapabilityMap.get(Capability.RedundantRouter);
-            if (param != null) {
-                _networkMgr.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, 
-                        Capability.RedundantRouter, param);
-                redundantRouter = param.contains("true");
-            }
-        }
-
-        Map<Capability, String> staticNatServiceCapabilityMap = serviceCapabilityMap.get(Service.StaticNat);
         boolean elasticIp = false;
-        if ((staticNatServiceCapabilityMap != null) && (!staticNatServiceCapabilityMap.isEmpty())) {
-            String param = staticNatServiceCapabilityMap.get(Capability.ElasticIp);
-            if (param != null) {
-                elasticIp = param.contains("true");
+        if (serviceCapabilityMap != null && !serviceCapabilityMap.isEmpty()) {
+            Map<Capability, String> lbServiceCapabilityMap = serviceCapabilityMap.get(Service.Lb);
+            
+            if ((lbServiceCapabilityMap != null) && (!lbServiceCapabilityMap.isEmpty())) {
+                String isolationCapability = lbServiceCapabilityMap.get(Capability.SupportedLBIsolation);
+                if (isolationCapability != null) {
+                    _networkMgr.checkCapabilityForProvider(serviceProviderMap.get(Service.Lb), Service.Lb, Capability.SupportedLBIsolation, isolationCapability);
+                    dedicatedLb = isolationCapability.contains("dedicated");
+                } else {
+                    dedicatedLb = true;
+                }
+
+                String param = lbServiceCapabilityMap.get(Capability.ElasticLb);
+                if (param != null) {
+                    elasticLb = param.contains("true");
+                }
+            }
+
+            Map<Capability, String> sourceNatServiceCapabilityMap = serviceCapabilityMap.get(Service.SourceNat);
+            if ((sourceNatServiceCapabilityMap != null) && (!sourceNatServiceCapabilityMap.isEmpty())) {
+                String sourceNatType = sourceNatServiceCapabilityMap.get(Capability.SupportedSourceNatTypes);
+                if (sourceNatType != null) {
+                    _networkMgr.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, 
+                            Capability.SupportedSourceNatTypes, sourceNatType);
+                    sharedSourceNat = sourceNatType.contains("perzone");
+                }
+
+                String param = sourceNatServiceCapabilityMap.get(Capability.RedundantRouter);
+                if (param != null) {
+                    _networkMgr.checkCapabilityForProvider(serviceProviderMap.get(Service.SourceNat), Service.SourceNat, 
+                            Capability.RedundantRouter, param);
+                    redundantRouter = param.contains("true");
+                }
+            }
+
+            Map<Capability, String> staticNatServiceCapabilityMap = serviceCapabilityMap.get(Service.StaticNat);
+            if ((staticNatServiceCapabilityMap != null) && (!staticNatServiceCapabilityMap.isEmpty())) {
+                String param = staticNatServiceCapabilityMap.get(Capability.ElasticIp);
+                if (param != null) {
+                    elasticIp = param.contains("true");
+                }
             }
         }
 
