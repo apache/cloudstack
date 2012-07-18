@@ -145,6 +145,10 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         
         nic.deallocate();
         
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Released nic: " + nic);
+        }
+        
         return true;
     }
 

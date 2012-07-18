@@ -167,9 +167,15 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         	DataCenterVO dcVo = _dcDao.findById(dcId);
         	if(dcVo.getNetworkType() != NetworkType.Basic) {
 	        	super.release(nic, vm, reservationId);
+	        	if (s_logger.isDebugEnabled()) {
+	                s_logger.debug("Released nic: " + nic);
+	            }
 	        	return true;
         	} else {
                 nic.deallocate();
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Released nic: " + nic);
+                }
         		return true;
         	}
         }
@@ -177,6 +183,9 @@ public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
         _dcDao.releaseLinkLocalIpAddress(nic.getId(), reservationId);
         
         nic.deallocate();
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Released nic: " + nic);
+        }
         
         return true;
     }
