@@ -51,8 +51,18 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.LONG, description = "the template of the auto deployed virtual machine")
     private Long templateId;
 
-    @Parameter(name = ApiConstants.OTHER_DEPLOY_PARAMS, type = CommandType.STRING, description = "parameters other than zoneId/serviceOfferringId/templateId of the auto deployed virtual machine")
-    private String otherDeployParams;
+    @Parameter(name = ApiConstants.AUTOSCALE_VM_DESTROY_TIME, type = CommandType.INTEGER, description = "the time allowed for existing connections to get closed before a vm is destroyed")
+    private Integer destroyVmGraceperiod;
+
+    @Parameter(name = ApiConstants.SNMP_COMMUNITY, type = CommandType.STRING, description = "snmp community string to be used to contact a virtual machine deployed by this profile")
+    private String snmpCommunity;
+
+    @Parameter(name = ApiConstants.SNMP_PORT, type = CommandType.INTEGER, description = "port at which snmp agent is listening in a virtual machine deployed by this profile")
+    private Integer snmpPort;
+
+    @IdentityMapper(entityTableName = "user")
+    @Parameter(name = ApiConstants.AUTOSCALE_USER_ID, type = CommandType.LONG, description = "the ID of the user used to launch and destroy the VMs")
+    private Long autoscaleUserId;
 
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
@@ -83,8 +93,20 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
         return templateId;
     }
 
-    public String getOtherDeployParams() {
-        return otherDeployParams;
+    public Integer getSnmpPort() {
+        return snmpPort;
+    }
+
+    public String getSnmpCommunity() {
+        return snmpCommunity;
+    }
+
+    public Long getAutoscaleUserId() {
+        return autoscaleUserId;
+    }
+
+    public Integer getDestroyVmGraceperiod() {
+        return destroyVmGraceperiod;
     }
 
     @Override
