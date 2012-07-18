@@ -801,7 +801,17 @@
                     },
 
                     domain: { label: 'label.domain' },
-                    account: { label: 'label.account' }
+                    account: { label: 'label.account' },
+										
+										vpcid: { 
+										  label: 'VPC ID',	
+                      converter: function(args) {											  
+                        if(args != null)
+												  return args;
+												else
+												  return 'N/A';
+                      }											
+										}
                   }
                 ],
                 dataProvider: function(args) {								 					
