@@ -1527,18 +1527,19 @@ div.list-view td.state.off span {
 }
 
 .detail-view .button.cancel {
-  background-position: 0px -795px;
+  background: none;
   left: 85px;
-  color: #808080;
-  /*+text-shadow:0px -1px 2px #000000;*/
-  -moz-text-shadow: 0px -1px 2px #000000;
-  -webkit-text-shadow: 0px -1px 2px #000000;
-  -o-text-shadow: 0px -1px 2px #000000;
-  text-shadow: 0px -1px 2px #000000;
-  -moz-text-shadow: 0px -1px 2px #CCCCCC;
-  -webkit-text-shadow: 0px -1px 2px #CCCCCC;
-  -o-text-shadow: 0px -1px 2px #CCCCCC;
-  text-shadow: 0px -1px 2px #CCCCCC;
+  color: #ADADAD;
+  /*+text-shadow:none;*/
+  -moz-text-shadow: none;
+  -webkit-text-shadow: none;
+  -o-text-shadow: none;
+  text-shadow: none;
+  /*+box-shadow:none;*/
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  -o-box-shadow: none;
+  box-shadow: none;
 }
 
 .detail-view .button.done:hover {
@@ -1551,7 +1552,7 @@ div.list-view td.state.off span {
 }
 
 .detail-view .button.cancel:hover {
-  background-position: 0px -834px;
+  color: #595151;
 }
 
 div.group-multiple div.detail-group table {
