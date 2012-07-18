@@ -45,21 +45,21 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.MIN_MEMBERS, type = CommandType.INTEGER, required = true, description = "the minimum number of members in the vmgroup, the number of instances in the vm group will be equal to or more than this number.")
-    private int minMembers;
+    @Parameter(name = ApiConstants.MIN_MEMBERS, type = CommandType.INTEGER, description = "the minimum number of members in the vmgroup, the number of instances in the vm group will be equal to or more than this number.")
+    private Integer minMembers;
 
-    @Parameter(name = ApiConstants.MAX_MEMBERS, type = CommandType.INTEGER, required = true, description = "the maximum number of members in the vmgroup, The number of instances in the vm group will be equal to or less than this number.")
-    private int maxMembers;
+    @Parameter(name = ApiConstants.MAX_MEMBERS, type = CommandType.INTEGER, description = "the maximum number of members in the vmgroup, The number of instances in the vm group will be equal to or less than this number.")
+    private Integer maxMembers;
 
     @Parameter(name=ApiConstants.INTERVAL, type=CommandType.INTEGER, description="the frequency at which the conditions have to be evaluated")
     private Integer interval;
 
     @IdentityMapper(entityTableName = "autoscale_policies")
-    @Parameter(name = ApiConstants.SCALEUP_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, description = "list of provision autoscale policies")
+    @Parameter(name = ApiConstants.SCALEUP_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, description = "list of scaleup autoscale policies")
     private List<Long> scaleUpPolicyIds;
 
     @IdentityMapper(entityTableName = "autoscale_policies")
-    @Parameter(name = ApiConstants.SCALEDOWN_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, description = "list of de-provision autoscale policies")
+    @Parameter(name = ApiConstants.SCALEDOWN_POLICY_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, description = "list of scaledown autoscale policies")
     private List<Long> scaleDownPolicyIds;
 
     @IdentityMapper(entityTableName = "autoscale_vmgroups")
@@ -91,11 +91,11 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
         return id;
     }
 
-    public int getMinMembers() {
+    public Integer getMinMembers() {
         return minMembers;
     }
 
-    public int getMaxMembers() {
+    public Integer getMaxMembers() {
         return maxMembers;
     }
 

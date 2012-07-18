@@ -152,6 +152,9 @@ listAutoScaleVmProfiles=com.cloud.api.commands.ListAutoScaleVmProfilesCmd;15
 listAutoScaleVmGroups=com.cloud.api.commands.ListAutoScaleVmGroupsCmd;15
 enableAutoScaleVmGroup=com.cloud.api.commands.EnableAutoScaleVmGroupCmd;15
 disableAutoScaleVmGroup=com.cloud.api.commands.DisableAutoScaleVmGroupCmd;15
+updateAutoScalePolicy=com.cloud.api.commands.UpdateAutoScalePolicyCmd;15
+updateAutoScaleVmProfile=com.cloud.api.commands.UpdateAutoScaleVmProfileCmd;15
+updateAutoScaleVmGroup=com.cloud.api.commands.UpdateAutoScaleVmGroupCmd;15
 
 #### router commands
 startRouter=com.cloud.api.commands.StartRouterCmd;7

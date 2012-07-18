@@ -35,7 +35,7 @@ public class UpdateAutoScalePolicyCmd extends BaseAsyncCmd {
     private Integer quietTime;
 
     @IdentityMapper(entityTableName = "conditions")
-    @Parameter(name = ApiConstants.CONDITION_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, required = true, description = "the list of IDs of the conditions that are being evaluated on every interval")
+    @Parameter(name = ApiConstants.CONDITION_IDS, type = CommandType.LIST, collectionType = CommandType.LONG, description = "the list of IDs of the conditions that are being evaluated on every interval")
     private List<Long> conditionIds;
 
     @IdentityMapper(entityTableName = "autoscale_policies")
