@@ -62,9 +62,6 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
     @Column(name = "other_deploy_params", updatable = true, length = 1024)
     private String otherDeployParams;
 
-    @Column(name = "cs_url")
-    private String csUrl;
-
     @Column(name = "destroy_vm_grace_period", updatable = true)
     private Integer destroyVmGraceperiod = NetUtils.DEFAULT_AUTOSCALE_VM_DESTROY_TIME;
 
@@ -84,24 +81,23 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
     }
 
     public AutoScaleVmProfileVO(long zoneId, long domainId, long accountId, long serviceOfferingId, long templateId, String otherDeployParams, String snmpCommunity, Integer snmpPort, Integer destroyVmGraceperiod,
-            long autoscaleUserId, String csUrl) {
+            long autoscaleUserId) {
         this.uuid = UUID.randomUUID().toString();
-        setZoneId(zoneId);
-        setDomainId(domainId);
-        setAccountId(accountId);
-        setServiceOfferingId(serviceOfferingId);
-        setTemplateId(templateId);
-        setOtherDeployParams(otherDeployParams);
-        setAutoscaleUserId(autoscaleUserId);
-        setCsUrl(csUrl);
+        this.zoneId = zoneId;
+        this.domainId = domainId;
+        this.accountId = accountId;
+        this.serviceOfferingId = serviceOfferingId;
+        this.templateId = templateId;
+        this.otherDeployParams = otherDeployParams;
+        this.autoscaleUserId = autoscaleUserId;
         if (destroyVmGraceperiod != null) {
-            setDestroyVmGraceperiod(destroyVmGraceperiod);
+            this.destroyVmGraceperiod = destroyVmGraceperiod;
         }
         if (snmpCommunity != null) {
-            setSnmpCommunity(snmpCommunity);
+            this.snmpCommunity = snmpCommunity;
         }
         if (snmpPort != null) {
-            setSnmpPort(snmpPort);
+            this.snmpPort = snmpPort;
         }
     }
 
@@ -124,10 +120,6 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
         return serviceOfferingId;
     }
 
-    public void setServiceOfferingId(Long serviceOfferingId) {
-        this.serviceOfferingId = serviceOfferingId;
-    }
-
     @Override
     public String getOtherDeployParams() {
         return otherDeployParams;
@@ -140,14 +132,6 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
     @Override
     public String getSnmpCommunity() {
         return snmpCommunity;
-    }
-
-    public String getCsUrl() {
-        return csUrl;
-    }
-
-    public void setCsUrl(String csUrl) {
-        this.csUrl = csUrl;
     }
 
     public void setSnmpCommunity(String snmpCommunity) {
@@ -168,14 +152,6 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
         return uuid;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
-    public void setZoneId(long zoneId) {
-        this.zoneId = zoneId;
-    }
-
     public void setAutoscaleUserId(long autoscaleUserId) {
         this.autoscaleUserId = autoscaleUserId;
     }
@@ -185,17 +161,9 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
         return zoneId;
     }
 
-    public void setAccountId(long accountId) {
-        this.accountId = accountId;
-    }
-
     @Override
     public long getAccountId() {
         return accountId;
-    }
-
-    public void setDomainId(Long domainId) {
-        this.domainId = domainId;
     }
 
     @Override

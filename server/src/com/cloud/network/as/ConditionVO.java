@@ -92,10 +92,6 @@ public class ConditionVO implements Condition, Identity {
         return new StringBuilder("Condition[").append("id-").append(id).append("]").toString();
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
     @Override
     public long getCounterid() {
         return counterid;

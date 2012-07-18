@@ -36,7 +36,7 @@ public class ConditionResponse extends BaseResponse implements ControlledEntityR
     @Param(description = "Relational Operator to be used with threshold.")
     private String relationalOperator;
 
-    @SerializedName(value = ApiConstants.COUNTER_ID)
+    @SerializedName("counter")
     @Param(description = "Details of the Counter.")
     private CounterResponse counter;
 

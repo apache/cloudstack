@@ -100,10 +100,6 @@ public class CounterVO implements Counter, Identity {
         return this.uuid;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
     public Date getRemoved() {
         return removed;
     }

@@ -43,9 +43,7 @@ import com.cloud.api.commands.ListCountersCmd;
 import com.cloud.api.commands.UpdateAutoScalePolicyCmd;
 import com.cloud.api.commands.UpdateAutoScaleVmGroupCmd;
 import com.cloud.api.commands.UpdateAutoScaleVmProfileCmd;
-import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEvent;
@@ -130,8 +128,6 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
     UserDao _userDao;
     @Inject
     IPAddressDao _ipAddressDao;
-    @Inject
-    ConfigurationDao _configDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -247,7 +243,6 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         return policies;
     }
 
-    @DB
     protected AutoScaleVmProfileVO checkValidityAndPersist(AutoScaleVmProfileVO vmProfile) {
         long templateId = vmProfile.getTemplateId();
         long autoscaleUserId = vmProfile.getAutoScaleUserId();
@@ -274,7 +269,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMPROFILE_CREATE, eventDescription = "creating autoscale vm profile")
+    @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMPROFILE_CREATE, eventDescription = "creating autoscale vm profile", create = true)
     public AutoScaleVmProfile createAutoScaleVmProfile(CreateAutoScaleVmProfileCmd cmd) {
 
         Account owner = _accountDao.findById(cmd.getAccountId());
@@ -309,17 +304,8 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
             autoscaleUserId = UserContext.current().getCallerUserId();
         }
 
-        String csUrl = cmd.getCsUrl();
-        if (csUrl == null) {
-            String mgmtIP = _configDao.getValue(Config.ManagementHostIPAdr.key());
-            csUrl = "http://" + mgmtIP + ":8080/client/api?";
-        } else {
-            if(!csUrl.endsWith("?"))
-                csUrl += "?";
-        }
-
         AutoScaleVmProfileVO profileVO = new AutoScaleVmProfileVO(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getServiceOfferingId(), cmd.getTemplateId(), cmd.getOtherDeployParams(),
-                cmd.getSnmpCommunity(), cmd.getSnmpPort(), cmd.getDestroyVmGraceperiod(), autoscaleUserId, csUrl);
+                cmd.getSnmpCommunity(), cmd.getSnmpPort(), cmd.getDestroyVmGraceperiod(), autoscaleUserId);
         profileVO = checkValidityAndPersist(profileVO);
         s_logger.info("Successfully create AutoScale Vm Profile with Id: " + profileVO.getId());
 
@@ -372,7 +358,6 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
     }
 
     @Override
-    @DB
     @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMPROFILE_DELETE, eventDescription = "deleting autoscale vm profile")
     public boolean deleteAutoScaleVmProfile(long id) {
         /* Check if entity is in database */
@@ -414,7 +399,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
     }
 
     @DB
-    private AutoScalePolicyVO checkValidityAndPersist(AutoScalePolicyVO autoScalePolicyVO, List<Long> conditionIds) {
+    protected AutoScalePolicyVO checkValidityAndPersist(AutoScalePolicyVO autoScalePolicyVO, List<Long> conditionIds) {
         int duration = autoScalePolicyVO.getDuration();
         int quietTime = autoScalePolicyVO.getQuietTime();
 
@@ -471,7 +456,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEPOLICY_CREATE, eventDescription = "creating autoscale policy")
+    @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEPOLICY_CREATE, eventDescription = "creating autoscale policy", create = true)
     public AutoScalePolicy createAutoScalePolicy(CreateAutoScalePolicyCmd cmd) {
 
         int duration = cmd.getDuration();
@@ -647,7 +632,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMGROUP_CREATE, eventDescription = "creating autoscale vm group")
+    @ActionEvent(eventType = EventTypes.EVENT_AUTOSCALEVMGROUP_CREATE, eventDescription = "creating autoscale vm group", create = true)
     public AutoScaleVmGroup createAutoScaleVmGroup(CreateAutoScaleVmGroupCmd cmd) {
         int minMembers = cmd.getMinMembers();
         int maxMembers = cmd.getMaxMembers();
@@ -973,7 +958,6 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_CONDITION_CREATE, eventDescription = "Condition", create = true)
-    @DB
     public Condition createCondition(CreateConditionCmd cmd) {
         checkCallerAccess(cmd.getAccountName(), cmd.getDomainId());
         String opr = cmd.getRelationalOperator().toUpperCase();

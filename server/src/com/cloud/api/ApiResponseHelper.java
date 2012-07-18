@@ -3795,7 +3795,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setSnmpPort(profile.getSnmpPort());
         response.setDestroyVmGraceperiod(profile.getDestroyVmGraceperiod());
         response.setAutoscaleUserId(profile.getAutoScaleUserId());
-        response.setCsUrl(profile.getCsUrl());
         response.setObjectName("autoscalevmprofile");
 
         // Populates the account information in the response

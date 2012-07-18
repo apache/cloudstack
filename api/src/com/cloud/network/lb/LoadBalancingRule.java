@@ -297,11 +297,13 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer {
         AutoScaleVmProfile profile;
         private final String autoScaleUserApiKey;
         private final String autoScaleUserSecretKey;
+        private final String csUrl;
 
-        public LbAutoScaleVmProfile(AutoScaleVmProfile profile, String autoScaleUserApiKey, String autoScaleUserSecretKey) {
+        public LbAutoScaleVmProfile(AutoScaleVmProfile profile, String autoScaleUserApiKey, String autoScaleUserSecretKey, String csUrl) {
             this.profile = profile;
             this.autoScaleUserApiKey = autoScaleUserApiKey;
             this.autoScaleUserSecretKey = autoScaleUserSecretKey;
+            this.csUrl = csUrl;
         }
 
         public AutoScaleVmProfile getProfile() {
@@ -314,6 +316,9 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer {
 
         public String getAutoScaleUserSecretKey() {
             return autoScaleUserSecretKey;
+        }
+        public String getCsUrl() {
+            return csUrl;
         }
     }
 

@@ -418,7 +418,7 @@ public class LoadBalancerTO {
         LbAutoScaleVmProfile lbAutoScaleVmProfile = lbAutoScaleVmGroup.getProfile();
         AutoScaleVmProfile autoScaleVmProfile = lbAutoScaleVmProfile.getProfile();
         AutoScaleVmProfileTO autoScaleVmProfileTO = new AutoScaleVmProfileTO(autoScaleVmProfile.getZoneId(), autoScaleVmProfile.getDomainId(),
-                lbAutoScaleVmProfile.getAutoScaleUserApiKey(), lbAutoScaleVmProfile.getAutoScaleUserSecretKey(), autoScaleVmProfile.getCsUrl(),
+                lbAutoScaleVmProfile.getAutoScaleUserApiKey(), lbAutoScaleVmProfile.getAutoScaleUserSecretKey(), lbAutoScaleVmProfile.getCsUrl(),
                 autoScaleVmProfile.getServiceOfferingId(), autoScaleVmProfile.getTemplateId(), autoScaleVmProfile.getOtherDeployParams(),
                 autoScaleVmProfile.getSnmpCommunity(), autoScaleVmProfile.getSnmpPort(), autoScaleVmProfile.getDestroyVmGraceperiod());
 

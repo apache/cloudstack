@@ -72,9 +72,6 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.AUTOSCALE_USER_ID, type = CommandType.LONG, description = "the ID of the user used to launch and destroy the VMs")
     private Long autoscaleUserId;
 
-    @Parameter(name = ApiConstants.CS_URL, type = CommandType.STRING, description = "the API URL including port of the CloudStack Management Server example: http://server.cloud.com:8080/client/api?")
-    private String csUrl;
-
     private Map<String, String> otherDeployParamMap;
 
     // ///////////////////////////////////////////////////
@@ -118,10 +115,6 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
 
     public String getOtherDeployParams() {
         return otherDeployParams;
-    }
-
-    public String getCsUrl() {
-        return csUrl;
     }
 
     public Long getAutoscaleUserId() {
