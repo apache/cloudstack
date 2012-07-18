@@ -767,8 +767,7 @@
         // Form fields are handled by main 'add' action
       }
     }) : null;
-    var $headerFields = $('<div>').addClass('header-fields');
-    //$headerFields.hide();
+    var $headerFields = $('<div>').addClass('header-fields').hide(); //make headerFields hidden as default
 		
     if (headerForm) {
       $headerFields.append(headerForm.$formContainer)
