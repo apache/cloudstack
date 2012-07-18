@@ -16,13 +16,46 @@
       return function(args) {
         var success = args.response.success;
         var context = args.context;
-        var network = args.context.networks[0];
+								
+				var network;
+				if('vpc' in args.context) {	//from VPC section
+					var data = {
+						listAll: true,
+						supportedservices: 'Lb'
+					};
+					if(args.context.ipAddresses[0].associatednetworkid == null) {
+						$.extend(data, {
+							vpcid: args.context.vpc[0].id
+						});
+					}
+					else {
+						$.extend(data, {
+							id: args.context.ipAddresses[0].associatednetworkid
+						});
+					}			
+				
+					$.ajax({
+						url: createURL("listNetworks"),		//check whether the VPC has a network including Lb service													
+						data: data,						
+            async: false,						
+						success: function(json) {	          					
+							var items = json.listnetworksresponse.network;	
+							if(items != null && items.length > 0) {
+                network = items[0];
+              }							
+						}
+					});	 
+				}				
+				else { //from Guest Network section				
+          network = args.context.networks[0];
+				}
+		
         var $item = args.$item;
 
         var lbService = $.grep(network.service, function(service) {
           return service.name == 'Lb';
         })[0];
-        
+       
         var stickinessCapabilities = JSON.parse($.grep(
           lbService.capability,
           function(capability) {
