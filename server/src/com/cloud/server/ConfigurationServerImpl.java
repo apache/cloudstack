@@ -1020,7 +1020,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworks,
                 "Offering for Isolated Vpc networks with Source Nat service enabled",
                 TrafficType.Guest,
-                false, false, null, null, true, Availability.Required,
+                false, false, null, null, true, Availability.Optional,
                 null, Network.GuestType.Isolated, false, false);
 
         defaultNetworkOfferingForVpcNetworks.setState(NetworkOffering.State.Enabled);
@@ -1044,6 +1044,37 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
+        
+        // Offering #7
+        NetworkOfferingVO defaultNetworkOfferingForVpcNetworksNoLB = new NetworkOfferingVO(
+                NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksNoLB,
+                "Offering for Isolated Vpc networks with Source Nat service enabled and LB service Disabled",
+                TrafficType.Guest,
+                false, false, null, null, true, Availability.Optional,
+                null, Network.GuestType.Isolated, false, false);
+
+        defaultNetworkOfferingForVpcNetworksNoLB.setState(NetworkOffering.State.Enabled);
+        defaultNetworkOfferingForVpcNetworksNoLB = _networkOfferingDao.persistDefaultNetworkOffering(defaultNetworkOfferingForVpcNetworksNoLB);
+        
+        Map<Network.Service, Network.Provider> defaultVpcNetworkOfferingProvidersNoLB = new HashMap<Network.Service, Network.Provider>();
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.Dhcp, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.Dns, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.UserData, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.NetworkACL, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.Gateway, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.SourceNat, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.StaticNat, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.PortForwarding, Provider.VPCVirtualRouter);
+        defaultVpcNetworkOfferingProvidersNoLB.put(Service.Vpn, Provider.VPCVirtualRouter);
+        
+        for (Service service : defaultVpcNetworkOfferingProvidersNoLB.keySet()) {
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
+                    (defaultNetworkOfferingForVpcNetworksNoLB.getId(), service, defaultVpcNetworkOfferingProvidersNoLB.get(service));
+            _ntwkOfferingServiceMapDao.persist(offService);
+            s_logger.trace("Added service for the network offering: " + offService);
+        }
+        
+        
         
         txn.commit();
     }
