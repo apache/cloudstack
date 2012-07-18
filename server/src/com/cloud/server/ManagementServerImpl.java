@@ -227,6 +227,7 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
@@ -1782,8 +1783,18 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         // don't show SSVM/CPVM ips
+        boolean omitSystemVmIps = false;
         if (vlanType == VlanType.VirtualNetwork && (allocatedOnly) && vpcId == null) {
-            sb.and("associatedNetworkId", sb.entity().getAssociatedWithNetworkId(), SearchCriteria.Op.NNULL);
+            
+            SearchBuilder<NicVO> nonSystemVmSearch = _nicDao.createSearchBuilder();
+            nonSystemVmSearch.and().op("vmTypeNnull", nonSystemVmSearch.entity().getVmType(), Op.NULL);
+            nonSystemVmSearch.or("vmType", nonSystemVmSearch.entity().getVmType(), Op.NOTIN);
+            nonSystemVmSearch.cp();
+            sb.join("nonSystemVms", nonSystemVmSearch, sb.entity().getAddress(), 
+                    nonSystemVmSearch.entity().getIp4Address(), JoinType.LEFTOUTER);
+//            sb.and().join("nonSystemVms", nonSystemVmSearch, sb.entity().getSourceNetworkId(), 
+//                    nonSystemVmSearch.entity().getNetworkId(), JoinType.INNER);
+            omitSystemVmIps = true;
         }
 
         SearchCriteria<IPAddressVO> sc = sb.create();
@@ -1799,6 +1810,10 @@ public class ManagementServerImpl implements ManagementServer {
                 sc.setJoinParameters("tagSearch", "value" + String.valueOf(count), tags.get(key));
                 count++;
             }
+        }
+         
+        if (omitSystemVmIps) {
+            sc.setJoinParameters("nonSystemVms", "vmType", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         }
 
         if (zone != null) {
