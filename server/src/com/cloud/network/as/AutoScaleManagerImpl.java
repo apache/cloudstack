@@ -358,11 +358,6 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         AutoScaleVmProfileVO vmProfile = getEntityInDatabase(UserContext.current().getCaller(), "Auto Scale Vm Profile", profileId, _autoScaleVmProfileDao);
         AutoScaleVmProfileVO bakUpProfile = getEntityInDatabase(UserContext.current().getCaller(), "Auto Scale Vm Profile", profileId, _autoScaleVmProfileDao);
 
-        if(templateId == null && otherDeployParams == null) {
-            //"Atleast one parameter should be passed for update"
-            return vmProfile;
-        }
-
         if (templateId != null) {
             vmProfile.setTemplateId(templateId);
         }
@@ -594,11 +589,6 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         Integer quietTime = cmd.getQuietTime();
         List<Long> conditionIds = cmd.getConditionIds();
         AutoScalePolicyVO policy = getEntityInDatabase(UserContext.current().getCaller(), "Auto Scale Policy", policyId, _autoScalePolicyDao);
-
-        if(duration == null && quietTime == null && conditionIds == null) {
-            //"Atleast one parameter should be passed for update"
-            return policy;
-        }
 
         if (duration != null) {
             policy.setDuration(duration);
@@ -862,11 +852,6 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
 
 
         AutoScaleVmGroupVO vmGroupVO = getEntityInDatabase(UserContext.current().getCaller(), "AutoScale Vm Group", vmGroupId, _autoScaleVmGroupDao);
-
-        if(minMembers == null && maxMembers == null && interval == null && scaleUpPolicyIds == null && scaleDownPolicyIds == null) {
-            //"Atleast one parameter should be passed for update"
-            return vmGroupVO;
-        }
 
         if (!vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
             throw new InvalidParameterValueException("An AutoScale Vm Group can be updated only when it is in disabled state");
