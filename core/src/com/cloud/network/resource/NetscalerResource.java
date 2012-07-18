@@ -37,6 +37,7 @@ import com.citrix.netscaler.nitro.resource.config.network.vlan_nsip_binding;
 import com.citrix.netscaler.nitro.resource.config.ns.nsconfig;
 import com.citrix.netscaler.nitro.resource.config.ns.nshardware;
 import com.citrix.netscaler.nitro.resource.config.ns.nsip;
+import com.citrix.netscaler.nitro.resource.config.autoscale.*;
 import com.citrix.netscaler.nitro.resource.stat.lb.lbvserver_stats;
 import com.citrix.netscaler.nitro.service.nitro_service;
 import com.citrix.netscaler.nitro.util.filtervalue;
@@ -850,13 +851,10 @@ public class NetscalerResource implements ServerResource {
                         }
                     }
 
-                    // formatter.format("SYS.CUR_VSERVER.METRIC_TABLE(%s).AVG_VAL.%s(%ld)",counterName, operator,
-                    // threshold);
                     boolean newMetric = !snmpMetrics.containsKey(counterName);
                     if(newMetric) {
                         snmpMetrics.put(counterName, snmpCounterNumber++);
                     }
-                    formatter.format("SYS.VSERVER.SNMP_TABLE(%d).AVG_VAL.%s(%d)",snmpMetrics.get(counterName), operator, threshold);
 
                     if(newMetric)
                     {
@@ -885,10 +883,14 @@ public class NetscalerResource implements ServerResource {
                             throw e;
                         }
                     }
+                    // SYS.VSERVER("abcd").SNMP_TABLE(0).AVERAGE_VALUE.GT(80)
+                    int counterIndex = snmpMetrics.get(counterName); // TODO: temporary fix. later on counter name will be added as a param to SNMP_TABLE.
+                    formatter.format("SYS.VSERVER(%s).SNMP_TABLE(%d).AVERAGE_VALUE.%s(%d)",nsVirtualServerName, counterIndex, operator, threshold);
                 }
                 else if (counterTO.getSource().equals("netscaler"))
                 {
-                    formatter.format("SYS.VSERVER(%s).%s.AVG_VAL.%s(%d)",nsVirtualServerName, counterName, operator, threshold);
+                    //SYS.VSERVER("abcd").RESPTIME.GT(10)
+                    formatter.format("SYS.VSERVER(%s).%s.%s(%d)",nsVirtualServerName, counterTO.getValue(), operator, threshold);
                 }
                 if(policyExpression.length() != 0) {
                     policyExpression += " && ";
@@ -915,7 +917,9 @@ public class NetscalerResource implements ServerResource {
                 }
 
                 // bind timer policy
+                // For now it is bound globally.
                 // bind timer trigger lb_astimer -policyName lb_policy_scaleUp -vserver lb -priority 1 -samplesize 5
+                // TODO: later bind to lbvserver. bind timer trigger lb_astimer -policyName lb_policy_scaleUp -vserver lb -priority 1 -samplesize 5
                 // -thresholdsize 5
                 com.citrix.netscaler.nitro.resource.config.timer.timertrigger_timerpolicy_binding timer_policy_binding = new com.citrix.netscaler.nitro.resource.config.timer.timertrigger_timerpolicy_binding();
                 int sampleSize = autoScalePolicyTO.getDuration()/interval;
@@ -923,7 +927,8 @@ public class NetscalerResource implements ServerResource {
                 try {
                     timer_policy_binding.set_name(timerName);
                     timer_policy_binding.set_policyname(policyName);
-                    timer_policy_binding.set_vserver(nsVirtualServerName);
+                    // timer_policy_binding.set_vserver(nsVirtualServerName);
+                    timer_policy_binding.set_global("GLOBAL_DEFAULT"); // vserver name is present at the expression
                     timer_policy_binding.set_samplesize(sampleSize);
                     timer_policy_binding.set_thresholdsize(sampleSize); // We are not exposing this parameter as of now.
                     // i.e. n(m) is not exposed to CS user. So thresholdSize == sampleSize
@@ -941,6 +946,9 @@ public class NetscalerResource implements ServerResource {
 
     private synchronized void applyAutoScaleConfig(LoadBalancerTO loadBalancer) throws Exception, ExecutionException {
         AutoScaleVmGroupTO vmGroupTO = loadBalancer.getAutoScaleVmGroupTO();
+        if(!isAutoScaleSupportedInNetScaler()) {
+
+        }
         if(vmGroupTO.getState().equals("New")) {
             assert !loadBalancer.isRevoked();
             createAutoScaleConfig(loadBalancer);
@@ -956,6 +964,21 @@ public class NetscalerResource implements ServerResource {
             assert !loadBalancer.isRevoked();
             disableAutoScaleConfig(loadBalancer);
         }
+    }
+
+    private boolean isAutoScaleSupportedInNetScaler() throws ExecutionException {
+        autoscaleprofile autoscaleProfile = new autoscaleprofile();
+        try {
+            autoscaleProfile.get(_netscalerService);
+        } catch (Exception ex) {
+            // Looks like autoscale is not supported in this netscaler.
+            // TODO: Config team has introduce a new command to check
+            // the list of entities supported in a NetScaler. Can use that
+            // once it is present in AutoScale branch.
+            throw new ExecutionException("AutoScale is not supported in NetScaler");
+        }
+        // TODO Auto-generated method stub
+        return false;
     }
 
     private synchronized Answer execute(LoadBalancerConfigCommand cmd, int numRetries) {

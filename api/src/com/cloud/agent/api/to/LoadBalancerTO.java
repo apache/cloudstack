@@ -42,6 +42,9 @@ public class LoadBalancerTO {
     final static int MAX_STICKINESS_POLICIES = 1;
 
     public LoadBalancerTO(Long id, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, List<LbDestination> destinations) {
+        if(destinations == null) { // for autoscaleconfig destinations will be null;
+            destinations = new ArrayList<LbDestination>();
+        }
         this.id = id;
         this.srcIp = srcIp;
         this.srcPort = srcPort;
