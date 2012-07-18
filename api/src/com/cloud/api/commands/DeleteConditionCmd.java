@@ -61,7 +61,6 @@ public class DeleteConditionCmd extends BaseAsyncCmd {
         }
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            s_logger.info("Successfully deleted condition id : " + getId());
             this.setResponseObject(response);
         } else {
             s_logger.warn("Failed to delete condition " + getId());

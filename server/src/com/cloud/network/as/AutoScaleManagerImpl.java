@@ -321,6 +321,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         AutoScaleVmProfileVO profileVO = new AutoScaleVmProfileVO(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getServiceOfferingId(), cmd.getTemplateId(), cmd.getOtherDeployParams(),
                 cmd.getSnmpCommunity(), cmd.getSnmpPort(), cmd.getDestroyVmGraceperiod(), autoscaleUserId, csUrl);
         profileVO = checkValidityAndPersist(profileVO);
+        s_logger.info("Successfully create AutoScale Vm Profile with Id: " + profileVO.getId());
 
         return profileVO;
     }
@@ -366,7 +367,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         }
 
         vmProfile = checkValidityAndPersist(vmProfile);
-        s_logger.debug("Updated Auto Scale Vm Profile id:" + vmProfile.getId());
+        s_logger.info("Updated Auto Scale Vm Profile id:" + vmProfile.getId());
 
         return vmProfile;
     }
@@ -380,7 +381,9 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         if (_autoScaleVmGroupDao.isProfileInUse(id)) {
             throw new InvalidParameterValueException("Cannot delete AutoScale Vm Profile when it is in use by one more vm groups");
         }
-        return _autoScaleVmProfileDao.remove(id);
+        boolean success = _autoScaleVmProfileDao.remove(id);
+        s_logger.info("Successfully deleted AutoScale Vm Profile with Id: " + id);
+        return success;
     }
 
     @Override
@@ -486,7 +489,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         AutoScalePolicyVO policyVO = new AutoScalePolicyVO(cmd.getDomainId(), cmd.getAccountId(), duration, quietTime, action);
 
         policyVO = checkValidityAndPersist(policyVO, cmd.getConditionIds());
-
+        s_logger.info("Successfully created AutoScale Policy with Id: " + policyVO.getId());
         return policyVO;
     }
 
@@ -516,6 +519,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
             return false;
         }
         txn.commit();
+        s_logger.info("Successfully deleted autoscale policy id : " + id);
         return success; // successful
     }
 
@@ -638,8 +642,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         }
 
         policy = checkValidityAndPersist(policy, conditionIds);
-
-        s_logger.debug("Updated Auto Scale Policy id:" + policyId);
+        s_logger.info("Successfully updated Auto Scale Policy id:" + policyId);
 
         return policy;
     }
@@ -1003,8 +1006,8 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         }
         ConditionVO condition = null;
 
-        s_logger.debug("Adding Condition ");
         condition = _conditionDao.persist(new ConditionVO(cid, threshold, cmd.getEntityOwnerId(), cmd.getDomainId(), op));
+        s_logger.info("Successfully created condition with Id: " + condition.getId());
 
         UserContext.current().setEventDetails(" Id: " + condition.getId());
         return condition;
@@ -1066,8 +1069,10 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
             throw new ResourceInUseException("Counter is in use.");
         }
 
-        s_logger.debug("Deleting Counter " + counter.getName());
-        return _counterDao.remove(counterId);
+        boolean success = _counterDao.remove(counterId);
+        s_logger.info("Successfully deleted counter with Id: " + counterId);
+
+        return success;
     }
 
     @Override
@@ -1084,8 +1089,8 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
             s_logger.info("Cannot delete condition " + conditionId + " as it is being used in a condition.");
             throw new ResourceInUseException("Cannot delete Condition when it is in use by one or more AutoScale Policies.");
         }
-        s_logger.debug("Deleting Condition " + condition.getId());
-        return _conditionDao.remove(conditionId);
+        boolean success = _conditionDao.remove(conditionId);
+        s_logger.info("Successfully deleted condition " + condition.getId());
     }
 
 }

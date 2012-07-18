@@ -28,30 +28,29 @@ import com.cloud.network.as.AutoScalePolicy;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
-@Implementation(description="Deletes a autoscale policy.", responseObject=SuccessResponse.class)
+@Implementation(description = "Deletes a autoscale policy.", responseObject = SuccessResponse.class)
 public class DeleteAutoScalePolicyCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteAutoScalePolicyCmd.class.getName());
     private static final String s_name = "deleteautoscalepolicyresponse";
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ////////////// API parameters /////////////////////
+    // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName="autoscale_policies")
-    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the autoscale policy")
+    @IdentityMapper(entityTableName = "autoscale_policies")
+    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, required = true, description = "the ID of the autoscale policy")
     private Long id;
 
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////////// Accessors ///////////////////////
+    // ///////////////////////////////////////////////////
 
     public Long getId() {
         return id;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
+    // ///////////////////////////////////////////////////
+    // ///////////// API Implementation///////////////////
+    // ///////////////////////////////////////////////////
 
     @Override
     public String getCommandName() {
@@ -65,7 +64,8 @@ public class DeleteAutoScalePolicyCmd extends BaseAsyncCmd {
             return autoScalePolicy.getAccountId();
         }
 
-        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are
+// tracked
     }
 
     @Override
@@ -75,17 +75,16 @@ public class DeleteAutoScalePolicyCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "deleting AutoScale Policy: " + getId();
+        return "deleting AutoScale Policy: " + getId();
     }
 
     @Override
-    public void execute(){
-        UserContext.current().setEventDetails("AutoScale Policy Id: "+getId());
+    public void execute() {
+        UserContext.current().setEventDetails("AutoScale Policy Id: " + getId());
         boolean result = _autoScaleService.deleteAutoScalePolicy(id);
 
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
-            s_logger.info("Successfully deleted autoscale policy id : " + getId());
             this.setResponseObject(response);
         } else {
             s_logger.warn("Failed to delete autoscale policy " + getId());
