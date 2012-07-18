@@ -18,6 +18,7 @@ import java.util.Set;
 
 import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteProfile;
+import com.cloud.utils.net.NetUtils;
 
 /**
  * @author Alena Prokharchyk
@@ -49,7 +50,10 @@ public class SetStaticRouteCommand extends NetworkElementCommand{
             /*  example  :  ip:gateway:cidr,
              */
             if( route.getState() == StaticRoute.State.Active || route.getState() == StaticRoute.State.Add ) {
-                String entry = route.getIp4Address()+ ":" + route.getGateway() + ":" + route.getCidr();
+                String cidr = route.getCidr();
+                String subnet = NetUtils.getCidrSubNet(cidr);
+                String cidrSize =  cidr.split("\\/")[1];
+                String entry = route.getIp4Address()+ ":" + route.getGateway() + ":" + subnet + "/" + cidrSize;
                 toAdd.add(entry);
             }
         }
