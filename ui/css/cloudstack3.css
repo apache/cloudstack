@@ -8951,6 +8951,89 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   background: #DFE1E3;
 }
 
+/*Tagger*/
+.tagger {
+  overflow: hidden;
+  width: 95%;
+  background: #000000;
+}
+
+.tagger input {
+  overflow: hidden;
+  position: absolute;
+  border: 1px solid #B2B2B2;
+  background: #FFFFFF;
+  height: 15px;
+  padding: 2px;
+  border-left: none;
+}
+
+.tagger ul {
+  height: 19px;
+  border: 1px solid #B2B2B2;
+  border-right: none;
+  display: block;
+  position: absolute;
+  top: 2px;
+  left: 13px;
+  background: #FFFFFF;
+  overflow: hidden;
+}
+
+.tagger ul li {
+  background: #DFDFDF 0px 4px;
+  height: 15px;
+  padding: 0px 18px 0 7px;
+  display: inline-block;
+  float: left;
+  margin-right: 2px;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  /*+placement:shift 0px 2px;*/
+  position: relative;
+  left: 0px;
+  top: 2px;
+}
+
+.tagger ul li span {
+  width: auto !important;
+  top: 2px !important;
+  left: 5px !important;
+  color: #000000;
+}
+
+.tagger ul li span.label {
+  display: none;
+  /*+placement:shift 12px 2px;*/
+  position: relative !important;
+  left: 12px !important;
+  top: 2px !important;
+}
+
+.tagger ul li span.remove {
+  width: 15px !important;
+  overflow: hidden !important;
+  height: 11px !important;
+  background: #DFDFDF url(../images/sprites.png) no-repeat -595px -1183px;
+  display: block;
+  top: 0px !important;
+  left: -3px !important;
+  text-indent: 4px;
+  padding: 4px 0px 0px 8px;
+  font-size: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  position: absolute !important;
+  color: #5B5B5B;
+}
+
+.tagger ul li span.remove:hover {
+  color: #000000;
+}
+
 /*VPC / vApps*/
 .vpc-chart {
   width: 100%;

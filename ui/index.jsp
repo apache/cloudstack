@@ -1614,6 +1614,7 @@
     <script type="text/javascript" src="scripts/ui/widgets/cloudBrowser.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui/widgets/listView.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui/widgets/detailView.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui/widgets/tagger.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui/widgets/treeView.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui/widgets/notifications.js?t=<%=now%>"></script> 
     

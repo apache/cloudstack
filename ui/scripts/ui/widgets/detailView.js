@@ -487,6 +487,10 @@
               value: data
 			      }).data('original-value', data)
           );
+
+          if ($value.closest('tr').data('detail-view-is-tagged')) {
+            $value.find('input').tagger();
+          }
         }
 		    
 		    if (rules && rules.required) {
@@ -757,6 +761,10 @@
 
         // Set up validation metadata
         $value.data('validation-rules', value.validation);
+
+        if (value.isTag) {
+          $detail.data('detail-view-is-tagged', true);
+        }
 
         // Set up editable metadata				
 				if(typeof(value.isEditable) == 'function')
