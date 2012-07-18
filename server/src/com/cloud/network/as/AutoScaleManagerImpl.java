@@ -676,6 +676,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
                 loadBalancer.getDefaultPortStart(), interval, cmd.getProfileId(), AutoScaleVmGroup.State_New);
 
         vmGroupVO = checkValidityAndPersist(vmGroupVO, cmd.getScaleUpPolicyIds(), cmd.getScaleDownPolicyIds());
+        s_logger.info("Successfully created Autoscale Vm Group with Id: " + vmGroupVO.getId());
 
         return vmGroupVO;
     }
@@ -747,6 +748,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         }
 
         txn.commit();
+        s_logger.info("Successfully deleted autoscale vm group id : " + id);
         return success; // Successfull
     }
 
@@ -923,6 +925,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
                 s_logger.warn("Failed to enable AutoScale Vm Group id : " + id);
                 return null;
             }
+            s_logger.info("Successfully enabled AutoScale Vm Group with Id:" + id);
         }
         return vmGroup;
     }
@@ -940,7 +943,6 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         try {
             vmGroup.setState(AutoScaleVmGroup.State_Disabled);
             vmGroup = _autoScaleVmGroupDao.persist(vmGroup);
-
             success = configureAutoScaleVmGroup(id);
         } finally {
             if (!success) {
@@ -949,6 +951,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
                 s_logger.warn("Failed to disable AutoScale Vm Group id : " + id);
                 return null;
             }
+            s_logger.info("Successfully disabled AutoScale Vm Group with Id:" + id);
         }
         return vmGroup;
     }
