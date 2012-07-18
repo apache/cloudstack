@@ -1024,13 +1024,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args += " -N ";
 	        args += cmd.getPeerGuestCidrList();
             args += " -e ";
-	        args += cmd.getEspPolicy();
+	        args += "\"" + cmd.getEspPolicy() + "\"";
             args += " -i ";
-	        args += cmd.getIkePolicy();
+	        args += "\"" + cmd.getIkePolicy() + "\"";
             args += " -t ";
 	        args += Long.toString(cmd.getLifetime());
             args += " -s ";
-	        args += cmd.getIpsecPsk();
+	        args += "\"" + cmd.getIpsecPsk() + "\"";
         } else {
             args += " -D";
             args += " -r ";
