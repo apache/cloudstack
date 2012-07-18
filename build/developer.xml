@@ -310,6 +310,7 @@
         </fileset>
         <fileset dir="${server.test.dir}">
           <include name="**/*Test.java"/>
+          <exclude name="**/upgrade/*Test.java"/>
         </fileset>
       </batchtest>
     </junit>
