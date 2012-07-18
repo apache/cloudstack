@@ -190,6 +190,8 @@ do
   esac
 done
 
+logger -t cloud "$(basename $0): parameters $*"
+
 # get interface for public ip
 ip link|grep BROADCAST|grep -v eth0|cut -d ":" -f 2 > /tmp/iflist
 while read i
