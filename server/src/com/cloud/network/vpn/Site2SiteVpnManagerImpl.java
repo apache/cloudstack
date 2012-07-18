@@ -48,7 +48,7 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
-@Local(value = Site2SiteVpnManager.class)
+@Local(value = { Site2SiteVpnManager.class, Site2SiteVpnService.class } )
 public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     private static final Logger s_logger = Logger.getLogger(Site2SiteVpnManagerImpl.class);
 
