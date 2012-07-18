@@ -48,8 +48,8 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
-@Local(value = Site2SiteVpnService.class)
-public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
+@Local(value = Site2SiteVpnManager.class)
+public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     private static final Logger s_logger = Logger.getLogger(Site2SiteVpnManagerImpl.class);
 
     @Inject Site2SiteCustomerGatewayDao _customerGatewayDao;
@@ -226,9 +226,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
         return true;
     }
 
-    @Override
-    public boolean deleteVpnGateway(DeleteVpnGatewayCmd cmd) {
-        Long id = cmd.getId();
+    protected void doDeleteVpnGateway(long id) {
         Site2SiteVpnGateway vpnGateway = _vpnGatewayDao.findById(id);
         if (vpnGateway == null) {
             throw new InvalidParameterValueException("Fail to find vpn gateway with " + id + " !");
@@ -238,6 +236,12 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
             throw new InvalidParameterValueException("Unable to delete VPN gateway " + id + " because there is still related VPN connections!");
         }
         _vpnGatewayDao.remove(id);
+    }
+    
+    @Override
+    public boolean deleteVpnGateway(DeleteVpnGatewayCmd cmd) {
+        Long id = cmd.getId();
+        doDeleteVpnGateway(id);
         return true;
     }
 
@@ -385,5 +389,24 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnService, Manager {
             results.addAll(_vpnConnectionDao.listAll());
         }
         return results;
+    }
+
+    @Override
+    public boolean cleanupVpnConnectionByVpc(long vpcId) {
+        List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByVpcId(vpcId);
+        for (Site2SiteVpnConnection conn : conns) {
+            _vpnConnectionDao.remove(conn.getId());
+        }
+        return true;
+    }
+
+    @Override
+    public boolean cleanupVpnGatewayByVpc(long vpcId) {
+        Site2SiteVpnGatewayVO gw = _vpnGatewayDao.findByVpcId(vpcId);
+        if (gw == null) {
+            return true;
+        }
+        doDeleteVpnGateway(gw.getId());
+        return true;
     }
 }
