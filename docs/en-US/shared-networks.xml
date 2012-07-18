@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="shared-networks">
+    <title>Shared Networks</title>
+    <para>A shared network can be accessed by virtual machines that belong to many different accounts. Network Isolation on shared networks is accomplished using techniques such as security groups (supported only in basic zones in CloudPlatform 3.0.3).</para>
+    <itemizedlist>
+        <listitem><para>Shared Networks are created by the administrator</para></listitem>
+        <listitem><para>Shared Networks can be designated to a certain domain</para></listitem>
+        <listitem><para>Shared Network resources such as VLAN and physical network that it maps to are designated by the administrator</para></listitem>
+        <listitem><para>Shared Networks are isolated by security groups</para></listitem>
+        <listitem><para>Public Network is a shared network that is not shown to the end users</para></listitem>
+        </itemizedlist>
+    
+    
+</section>

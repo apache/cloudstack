@@ -1,0 +1,19 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="system-vm-template">
+    <title>The System VM Template</title>
+    <para>The System VMs come from a single template.  The System VM has the following characteristics:</para>
+    <itemizedlist>
+        <listitem><para>Debian 6.0 ("Squeeze"), 2.6.32 kernel with the latest security patches from the Debian security APT repository</para></listitem>
+        <listitem><para>Has a minimal set of packages installed thereby reducing the attack surface</para></listitem>
+        <listitem><para>32-bit for enhanced performance on Xen/VMWare</para></listitem>
+        <listitem><para>pvops kernel with Xen PV drivers, KVM virtio drivers, and VMware tools for optimum performance on all hypervisors</para></listitem>
+        <listitem><para>Xen tools inclusion allows performance monitoring</para></listitem>
+        <listitem><para>Latest versions of HAProxy, iptables, IPsec, and Apache from debian repository ensures improved security and speed</para></listitem>
+        <listitem><para>Latest version of JRE from Sun/Oracle ensures improved security and speed</para></listitem>
+        </itemizedlist>
+    
+</section>

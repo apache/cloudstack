@@ -1,0 +1,54 @@
+# management server clustering parameters, change cluster.node.IP to the machine IP address
+# in which the management server(Tomcat) is running
+cluster.node.IP=127.0.0.1
+cluster.servlet.port=9090
+
+# CloudStack database settings
+db.cloud.username=@DBUSER@
+db.cloud.password=@DBPW@
+db.cloud.host=@DBHOST@
+db.cloud.port=3306
+db.cloud.name=cloud
+
+# CloudStack database tuning parameters
+db.cloud.maxActive=250
+db.cloud.maxIdle=30
+db.cloud.maxWait=10000
+db.cloud.autoReconnect=true
+db.cloud.validationQuery=SELECT 1
+db.cloud.testOnBorrow=true
+db.cloud.testWhileIdle=true
+db.cloud.timeBetweenEvictionRunsMillis=40000
+db.cloud.minEvictableIdleTimeMillis=240000
+db.cloud.removeAbandoned=false
+db.cloud.removeAbandonedTimeout=300
+db.cloud.logAbandoned=true
+db.cloud.poolPreparedStatements=false
+db.cloud.url.params=prepStmtCacheSize=517&cachePrepStmts=true
+
+# CloudStack database SSL settings
+db.cloud.useSSL=false
+db.cloud.keyStore=
+db.cloud.keyStorePassword=
+db.cloud.trustStore=
+db.cloud.trustStorePassword=
+
+# Encryption Settings
+db.cloud.encryption.type=file
+db.cloud.encrypt.secret=password
+
+# usage database settings
+db.usage.username=@DBUSER@
+db.usage.password=@DBPW@
+db.usage.host=@DBHOST@
+db.usage.port=3306
+db.usage.name=cloud_usage
+
+# usage database tuning parameters
+db.usage.maxActive=100
+db.usage.maxIdle=30
+db.usage.maxWait=10000
+db.usage.autoReconnect=true
+
+# awsapi database settings
+db.awsapi.name=cloudbridge

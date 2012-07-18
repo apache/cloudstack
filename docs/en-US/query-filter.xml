@@ -1,0 +1,42 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="query-filter">
+	<title>Query Filter</title>
+	<para>The query filter is used to find a mapped user in the external LDAP server. The query filter should uniquely map the CloudPlatform user to LDAP user for a meaningful authentication. For more information about query filter syntax, consult the documentation for your LDAP server.</para>
+	<para>The CloudPlatform query filter wildcards are:</para>	
+						<informaltable>
+							<tgroup cols="2" align="left" colsep="1" rowsep="1">
+							<thead>
+									<row>
+										<entry><para>Query Filter Wildcard</para></entry>
+										<entry><para>Description</para></entry>																	
+									</row>
+								</thead>
+								<tbody>
+									<row>
+										<entry><para>%u</para></entry>
+										<entry><para>User name</para></entry>									
+									</row>
+									<row>
+										<entry><para>%e</para></entry>
+										<entry><para>Email address</para></entry>
+									</row>
+									<row>
+										<entry><para>%n</para></entry>
+										<entry><para>First and last name</para></entry>
+									</row>
+								</tbody>
+							</tgroup>
+						</informaltable>
+	<para>The following examples assume you are using Active Directory, and refer to user attributes from the Active Directory schema.</para>
+	<para>If the CloudPlatform user name is the same as the LDAP user ID:</para>
+	<programlisting>(uid=%u)</programlisting>
+	<para>If the CloudPlatform user name is the LDAP display name:</para>
+	<programlisting>(displayName=%u)</programlisting>
+	<para>To find a user by email address:	
+	</para>
+	<programlisting>(mail=%e)</programlisting>
+</section>

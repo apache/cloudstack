@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="using-vpn-with-windows">
+	<title>Using VPN with Windows</title>
+	<para>The procedure to use VPN varies by Windows version.  Generally, the user must edit the VPN properties and make sure that the default route is not the VPN. The following steps are for Windows L2TP clients on Windows Vista. The commands should be similar for other Windows versions.</para>
+	<orderedlist>
+		<listitem><para>Log in to the CloudPlatform UI and click on the source NAT IP for the account. The VPN tab should display the IPsec preshared key. Make a note of this and the source NAT IP. The UI also lists one or more users and their passwords. Choose one of these users, or, if none exists, add a user and password.</para></listitem>
+		<listitem><para>On the Windows box, go to Control Panel, then select Network and Sharing center. Click Setup a connection or network.</para></listitem>
+		<listitem><para>In the next dialog, select No, create a new connection.</para></listitem>
+		<listitem><para>In the next dialog, select Use my Internet Connection (VPN).</para></listitem>			
+		<listitem><para>In the next dialog, enter the source NAT IP from step 1 and give the connection a name. Check Don't connect now.</para></listitem>
+		<listitem><para>In the next dialog, enter the user name and password selected in step 1.</para></listitem>
+		<listitem><para>Click Create.</para></listitem>
+		<listitem><para>Go back to the Control Panel and click Network Connections to see the new connection. The connection is not active yet.</para></listitem>
+		<listitem><para>Right-click the new connection and select Properties. In the Properties dialog, select the Networking tab.</para></listitem>
+		<listitem><para>In Type of VPN, choose L2TP IPsec VPN, then click IPsec settings. Select Use preshared key. Enter the preshared key from Step 1.</para></listitem>
+		<listitem><para>The connection is ready for activation. Go back to Control Panel -> Network Connections and double-click the created connection.</para></listitem>
+		<listitem><para>Enter the user name and password from Step 1.</para></listitem>
+		</orderedlist>	
+</section>

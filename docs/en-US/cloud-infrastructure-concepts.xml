@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="cloud-infrastructure-concepts">
+	<title>Cloud Infrastructure Concepts</title>
+    <xi:include href="about-pods.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+</section>

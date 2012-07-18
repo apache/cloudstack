@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="compute-disk-service-offerings">
+    <title>Compute and Disk Service Offerings</title>
+    <para>A service offering is a set of virtual hardware features such as CPU core count and speed, memory, and disk size. The CloudPlatform administrator can set up various offerings, and then end users choose from the available offerings when they create a new VM. A service offering includes the following elements:</para>
+     <itemizedlist>
+         <listitem><para>CPU, memory, and network resource guarantees</para></listitem>
+         <listitem><para>How resources are metered</para></listitem>
+         <listitem><para>How the resource usage is charged</para></listitem>
+         <listitem><para>How often the charges are generated</para></listitem>
+        </itemizedlist>
+    <para>For example,  one service offering might allow users to create a virtual machine instance that is equivalent to a 1 GHz Intel® Core™ 2 CPU, with 1 GB memory at $0.20/hour, with network traffic metered at $0.10/GB. Based on the user’s selected offering, CloudPlatform emits usage records that can be integrated with billing systems. CloudPlatform separates service offerings into compute offerings and disk offerings. The computing service offering specifies:</para>
+    <itemizedlist>
+        <listitem><para>Guest CPU</para></listitem>
+        <listitem><para>Guest RAM</para></listitem>
+        <listitem><para>Guest Networking type (virtual or direct)</para></listitem>
+        <listitem><para>Tags on the root disk</para></listitem>
+    </itemizedlist>
+    <para>The disk offering specifies:</para>
+    <itemizedlist>
+        <listitem><para>Disk size (optional).  An offering without a disk size will allow users to pick their own</para></listitem>
+        <listitem><para>Tags on the data disk</para></listitem>
+    </itemizedlist>
+</section>
+
+    

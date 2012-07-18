@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="external-firewalls-and-load-balancers">
+    <title>External Firewalls and Load Balancers</title>
+    <para>CloudPlatform is capable of replacing its Virtual Router with an external Juniper SRX device and an optional external NetScaler or F5 load balancer for gateway and load balancing services.  In this case, the VMs use the SRX as their gateway.</para>
+    
+					
+	</section>

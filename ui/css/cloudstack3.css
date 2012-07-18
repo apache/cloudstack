@@ -1671,6 +1671,37 @@ div.detail-group.actions td {
   height: 26px;
 }
 
+.detail-group table td.detail-actions .action.text {
+  padding: 0px 6px 0px 0px;
+  cursor: pointer;
+  display: inline-block;
+  float: right;
+  margin-right: 8px;
+  border: 1px solid #C2C2C2;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  background: url(../images/bg-gradients.png) repeat-x 0px -83px;
+}
+
+.detail-group table td.detail-actions .action.text .label {
+  font-size: 12px;
+  /*+placement:shift -1px 8px;*/
+  position: relative;
+  left: -1px;
+  top: 8px;
+}
+
+.detail-group table td.detail-actions .action.text:hover {
+  /*+box-shadow:inset 0px 1px 3px #171717;*/
+  -moz-box-shadow: inset 0px 1px 3px #171717;
+  -webkit-box-shadow: inset 0px 1px 3px #171717;
+  -o-box-shadow: inset 0px 1px 3px #171717;
+  box-shadow: inset 0px 1px 3px #171717;
+}
+
 .detail-group table td.detail-actions div.buttons {
   /*+placement:shift 6px 0px;*/
   position: relative;
@@ -1715,6 +1746,10 @@ div.detail-group.actions td {
   height: 26px;
   background: url(../images/buttons.png);
   background-position: -414px -625px;
+}
+
+.detail-group table td.detail-actions div.action.text a {
+  background: none;
 }
 
 .detail-group table td.detail-actions div.action.single a:hover {
@@ -2815,6 +2850,34 @@ table tr.odd td.actions .action.disabled .icon {
 
 table tr.even td.actions .action.disabled .icon {
   background-color: #DFE1E3;
+}
+
+table tr td.actions .action.text {
+  cursor: pointer;
+  display: inline-block;
+  border: 1px solid #C2C2C2;
+  /*+border-radius:4px;*/
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  -khtml-border-radius: 4px;
+  border-radius: 4px;
+  background: url(../images/bg-gradients.png) repeat-x 0px -83px;
+}
+
+table tr td.actions .action.text:hover {
+  /*+box-shadow:inset 0px 1px 3px #171717;*/
+  -moz-box-shadow: inset 0px 1px 3px #171717;
+  -webkit-box-shadow: inset 0px 1px 3px #171717;
+  -o-box-shadow: inset 0px 1px 3px #171717;
+  box-shadow: inset 0px 1px 3px #171717;
+}
+
+table tr td.actions .action.text .label {
+  padding: 4px 0 0 4px;
+}
+
+table tr td.actions .action.text .icon {
+  padding-bottom: 4px;
 }
 
 table tr.selected td.actions .action.disabled .icon {

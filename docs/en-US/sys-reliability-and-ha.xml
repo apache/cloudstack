@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="sys-reliability-and-ha">
+    <title>System Reliability and High Availability</title>
+    <para><xref linkend="ha-management-server" />vCenter Maintenance Mode</para>
+    <para><xref linkend="ha-enabled-vm" />XenServer and Maintenance Mode</para>
+    <para><xref linkend="ha-for-hosts" />vCenter Maintenance Mode</para>
+    <para><xref linkend="dedicated-ha-hosts" />XenServer and Maintenance Mode</para>
+   </section>

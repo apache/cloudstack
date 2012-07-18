@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="set-usage-limit">
+    <title>Setting Usage Limits</title>
+    <para>CloudPlatform provides several administrator control points for capping resource usage by users. Some of these limits are global configuration parameters. Others are applied at the ROOT domain and may be overridden on a per-account basis.</para>
+    <para>Aggregate limits may be set on a per-domain basis.  For example, you may limit a domain and all subdomains to the creation of 100 VMs.</para>
+    <para>This section covers the following topics:</para>
+    <para><xref linkend="globally-configured-limit" />Globally Configured Limits</para>
+    <para><xref linkend="default-account-resource-limit" />Default Account Resource Limits</para>
+    <para><xref linkend="per-domain-limits" />Per Domain Limits</para>
+   </section>

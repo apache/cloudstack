@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="creating-new-volumes">
+	<title>Creating a New Volume</title>
+	<para>You can add more data disk volumes to a guest VM at any time, up to the limits of your storage capacity. Both CloudPlatform administrators and users can add volumes to VM instances. When you create a new volume, it is stored as an entity in CloudPlatform, but the actual storage resources are not allocated on the physical storage device until you attach the volume. This optimization allows the CloudPlatform to provision the volume nearest to the guest that will use it when the first attachment is made.</para>
+				<orderedlist>
+				<listitem><para>Log in to the CloudPlatform UI as a user or admin.</para></listitem>
+				<listitem><para>In the left navigation bar, click Storage.</para></listitem>
+				<listitem><para>In Select View, choose Volumes.</para></listitem>
+				<listitem><para>To create a new volume, click Add Volume, provide the following details, and click OK.</para>
+				<itemizedlist>
+					<listitem><para>Name. Give the volume a unique name so you can find it later.</para></listitem>
+					<listitem><para>Availability Zone. Where do you want the storage to reside? This should be close to the VM that will use the volume.</para></listitem>
+					<listitem><para>Disk Offering. Choose the characteristics of the storage.</para></listitem>
+				</itemizedlist>
+				<para>The new volume appears in the list of volumes with the state “Allocated.” The volume data is stored in CloudPlatform, but the volume is not yet ready for use</para></listitem>
+				<listitem><para>To start using the volume, continue to Attaching a Volume </para></listitem>
+			</orderedlist>
+	</section>
+

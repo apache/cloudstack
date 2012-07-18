@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>	
+<section id="making-api-request">
+		<title>Making API Requests</title>
+		<para>
+			All CloudStack API requests are submitted in the form of a HTTP GET/POST with an associated command and any parameters.  A request is composed of the following whether in HTTP or HTTPS:
+		</para>
+		<itemizedlist>
+			<listitem><para>CloudStack API URL: This is the web services API entry point(for example, http://www.cloud.com:8080/client/api)</para></listitem> 
+			<listitem><para>Command: The web services command you wish to execute, such as start a virtual machine or create a disk volume</para></listitem>
+			<listitem><para>Parameters: Any additional required or optional parameters for the command</para></listitem>
+		</itemizedlist>
+		<para>A sample API GET request looks like the following:</para>
+		<programlisting>http://localhost:8080/client/api?command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D
+		</programlisting>
+		<para>Or in a more readable format:</para>
+		<programlisting>
+1. http://localhost:8080/client/api
+2. ?command=deployVirtualMachine
+3. &amp;serviceOfferingId=1
+4. &amp;diskOfferingId=1
+5. &amp;templateId=2
+6. &amp;zoneId=4
+7. &amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXqjB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ
+8. &amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D
+		</programlisting>
+		<para>The first line is the CloudStack API URL. This is the Cloud instance you wish to interact with.</para>
+		<para>The second line refers to the command you wish to execute.  In our example, we are attempting to deploy a fresh new virtual machine.  It is preceded by a (?) to separate itself from the CloudStack API URL.</para>
+		<para>Lines 3-6 are the parameters for this given command.  To see the command and its request parameters, please refer to the appropriate section in the CloudStack API documentation.  Each parameter field-value pair (field=value) is preceded by an ampersand character (&amp;).</para>
+		<para>Line 7 is the user API Key that uniquely identifies the account.  See Signing API Requests on page 7.</para>
+		<para>Line 8 is the signature hash created to authenticate the user account executing the API command.  See Signing API Requests on page 7.</para>			
+	</section>
+

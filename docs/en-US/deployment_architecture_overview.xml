@@ -1,0 +1,22 @@
+	<section id="deployment_architecture_overview">
+		<title>Deployment Architecture Overview</title>
+		
+		<para>
+			A CloudStack installation consists of two parts: the Management Server and the cloud infrastructure that it manages. When you set up and manage a CloudStack cloud, you provision resources such as hosts, storage devices, and IP addresses into the Management Server, and the Management Server manages those resources.
+		</para>
+		<para>
+			The minimum installation consists of one machine running the CloudStack Management Server and another machine to act as the cloud infrastructure (in this case, a very simple infrastructure consisting of one host running hypervisor software).
+		</para>
+		<mediaobject>
+			<imageobject>
+				<imagedata fileref="./images/basic_deployment.png" />
+			</imageobject>
+			<textobject><phrase>basic_deployment.png: Basic two-machine CloudStack deployment</phrase></textobject>
+		</mediaobject>
+		<para>A more full-featured installation consists of a highly-available multi-node Management Server installation and up to thousands of hosts using any of several advanced networking setups. For information about deployment options, see Choosing a Deployment Architecture.
+		</para>
+		<xi:include href="management_server_overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+		<xi:include href="cloud_infrastructure_overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+		<xi:include href="networking_overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+	</section>
+

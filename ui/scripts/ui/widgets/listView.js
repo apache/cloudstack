@@ -689,12 +689,20 @@
       var $action = $('<div></div>')
             .addClass('action')
             .addClass(actionName)
-            .append($('<span>').addClass('icon'))
+            .append($('<span>').addClass('icon').html('&nbsp;'))
             .attr({
               alt: _l(action.label),
               title: _l(action.label)
             })
             .data('list-view-action-id', actionName);
+
+      if (action.textLabel) {
+        $action
+          .addClass('text')
+          .prepend(
+            $('<span>').addClass('label').html(_l(action.textLabel))
+          );
+      }
 
       // Disabled appearance/behavior for filtered actions
       if (allowedActions && $.inArray(actionName, allowedActions) == -1) {
@@ -966,8 +974,8 @@
     if (!options) options = {};
     var context = options.context;
     var reorder = options.reorder;
-
     var $tbody = $table.find('tbody');
+
     if (!loadArgs) loadArgs = {
       page: 1,
       filterBy: {
@@ -1254,6 +1262,7 @@
     });
 
     var search = function() {
+      page = 1;
       loadBody(
         $table,
         listViewData.dataProvider,
@@ -1261,7 +1270,7 @@
         listViewData.fields,
         false,
         {
-          page: 1,
+          page: page,
           filterBy: {
             kind: $listView.find('select[id=filterBy]').val(),
             search: {
@@ -1308,7 +1317,8 @@
         var context = $listView.data('view-args').context;
 
         if (loadMoreData) {
-          page = page + 1;					
+          page = page + 1;
+
           loadBody($table, listViewData.dataProvider, listViewData.preFilter, listViewData.fields, true, {
             context: context,
             page: page,

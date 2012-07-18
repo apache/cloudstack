@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="networking-overview">
+		<title>Networking Overview</title>
+		<para>
+			&PRODUCT; offers two types of networking scenario:
+		</para>
+		<itemizedlist>
+			<listitem><para>Basic. For AWS-style networking. Provides a single network where guest isolation can be provided through layer-3 means such as security groups (IP address source filtering).</para></listitem>
+			<listitem><para>Advanced. For more sophisticated network topologies. This network model provides the most flexibility in defining guest networks.</para></listitem>
+		</itemizedlist>
+		<para>For more details, see Network Setup.</para>
+	</section>
+

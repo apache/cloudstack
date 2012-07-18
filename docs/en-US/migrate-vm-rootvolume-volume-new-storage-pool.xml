@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="migrate-vm-rootvolume-volume-new-storage-pool">
+	<title>Migrating a VM Root Volume to a New Storage Pool</title>
+	<para>When migrating the root disk volume, the VM must first be stopped, and users can not access the VM. After migration is complete, the VM can be restarted.</para>
+			<orderedlist>
+				<listitem><para>Log in to the CloudPlatform UI as a user or admin.</para></listitem>
+				<listitem><para>Detach the data disk from the VM. See Detaching and Moving Volumes <xref linkend="detach-move-volumes"/>  (but skip the “reattach” step at the end. You will do that after migrating to new storage).</para></listitem>
+				<listitem><para>Stop the VM.</para></listitem>
+				<listitem><para>Call the CloudPlatform API command migrateVirtualMachine with the ID of the VM to migrate and the IDs of a destination host and destination storage pool in the same zone.</para></listitem>
+				<listitem><para>Watch for the VM status to change to Migrating, then back to Stopped.</para></listitem>
+				<listitem><para>Restart the VM.</para></listitem>
+			</orderedlist>
+	</section>
+

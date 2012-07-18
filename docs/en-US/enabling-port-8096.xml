@@ -1,0 +1,13 @@
+	<section id="enabling-port-8096">
+		<title>Enabling Port 8096</title>
+		<para>
+			Port 8096, which allows API calls without authentication, is closed and disabled by default on any fresh 3.0.1 installations. You can enable 8096 (or another port) for this purpose as follows:
+		</para>
+		<orderedlist>
+			<listitem><para>Ensure that the first Management Server is installed and running.</para></listitem>
+			<listitem><para>Set the global configuration parameter integration.api.port to the desired port.</para></listitem>
+			<listitem><para>Restart the Management Server.</para></listitem>
+			<listitem><para>On the Management Server host machine, create an iptables rule allowing access to that port.</para></listitem>
+		</orderedlist>
+	</section>
+
