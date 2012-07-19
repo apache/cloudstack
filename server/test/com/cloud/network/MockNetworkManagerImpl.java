@@ -1080,4 +1080,13 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         // TODO Auto-generated method stub
         
     }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#assignVpnGatewayIpAddress(long, com.cloud.user.Account, long)
+     */
+    @Override
+    public PublicIp assignVpnGatewayIpAddress(long dcId, Account owner, long vpcId) throws InsufficientAddressCapacityException, ConcurrentOperationException {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }
