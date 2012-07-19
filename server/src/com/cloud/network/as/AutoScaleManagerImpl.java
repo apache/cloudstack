@@ -615,6 +615,12 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         List<AutoScaleVmGroupPolicyMapVO> vmGroupPolicyList = _autoScaleVmGroupPolicyMapDao.listByPolicyId(policyId);
         for (AutoScaleVmGroupPolicyMapVO vmGroupPolicy : vmGroupPolicyList) {
             AutoScaleVmGroupVO vmGroupVO = _autoScaleVmGroupDao.findById(vmGroupPolicy.getVmGroupId());
+            if(vmGroupVO == null) {
+                s_logger.warn("Stale database entry! There is an entry in VmGroupPolicyMap but the vmGroup is missing:" + vmGroupPolicy.getVmGroupId());
+
+                continue;
+
+            }
             if (!vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
                 throw new InvalidParameterValueException("The AutoScale Policy can be updated only if the Vm Group it is associated with is disabled in state");
             }

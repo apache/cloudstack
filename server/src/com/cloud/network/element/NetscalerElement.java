@@ -600,7 +600,7 @@ StaticNatServiceProvider {
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
 
-            if (destinations != null && !destinations.isEmpty() || rule.isAutoScaleConfig()) {
+            if ((destinations != null && !destinations.isEmpty()) || rule.isAutoScaleConfig()) {
                 LoadBalancerTO loadBalancer = new LoadBalancerTO(rule.getId(), srcIp, srcPort, protocol, algorithm, revoked, false, destinations, rule.getStickinessPolicies());
                 if(rule.isAutoScaleConfig()) {
                     loadBalancer.setAutoScaleVmGroup(rule.getAutoScaleVmGroup());
