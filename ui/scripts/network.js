@@ -3895,6 +3895,42 @@
 										
 					detailView: {
             name: 'label.details',
+						
+						actions: {						  
+							remove: {
+                label: 'delete VPN Customer Gateway',
+                messages: {
+                  confirm: function(args) {
+                    return 'Please confirm that you want to delete this VPN Customer Gateway';
+                  },
+                  notification: function(args) {
+                    return 'delete VPN Customer Gateway';
+                  }
+                },
+                action: function(args) {								  
+                  $.ajax({
+                    url: createURL("deleteVpnCustomerGateway"),
+                    data: {
+										  id: args.context.vpnCustomerGateway[0].id
+										},                  
+                    success: function(json) {
+                      var jid = json.deletecustomergatewayresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+													  jobId: jid
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              }							
+						},
+						
             tabs: {
               details: {
                 title: 'label.details',
