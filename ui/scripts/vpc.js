@@ -713,6 +713,40 @@
 						},
 						detailView: {
 							name: 'label.details',
+							actions: {							 
+								remove: {
+									label: 'delete VPN Gateway',
+									messages: {
+										confirm: function(args) {
+											return 'Please confirm that you want to delete this VPN Gateway';
+										},
+										notification: function(args) {
+											return 'delete VPN Gateway';
+										}
+									},
+									action: function(args) {		
+										$.ajax({
+											url: createURL("deleteVpnGateway"),
+											data: {
+												id: args.context.vpnGateway[0].id
+											},                  
+											success: function(json) {
+												var jid = json.deletevpngatewayresponse.jobid;
+												args.response.success(
+													{_custom:
+														{
+															jobId: jid
+														}
+													}
+												);
+											}
+										});
+									},
+									notification: {
+										poll: pollAsyncJobResult
+									}
+								}		
+							},
 							tabs: {
 								details: {
 									title: 'label.details',
