@@ -1664,16 +1664,15 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         set_vms.addAll(_vmDao.listLHByClusterId(clusterId));
 
         for (VMInstanceVO vm : set_vms) {
-            if (vm.isRemoved() || vm.getState() == State.Destroyed  || vm.getState() == State.Expunging) continue;
             AgentVmInfo info =  infos.remove(vm.getId());
             VMInstanceVO castedVm = null;
-            if ((info == null && (vm.getState() == State.Running || vm.getState() == State.Starting))  
-            		||  (info != null && (info.state == State.Running && vm.getState() == State.Starting))) 
+            if ((info == null && (vm.getState() == State.Running || vm.getState() == State.Starting))
+                    || (info != null && (info.state == State.Running && vm.getState() == State.Starting)))
             {
-            	s_logger.info("Found vm " + vm.getInstanceName() + " in inconsistent state. " + vm.getState() + " on CS while " +  (info == null ? "Stopped" : "Running") + " on agent");
+                s_logger.info("Found vm " + vm.getInstanceName() + " in inconsistent state. " + vm.getState() + " on CS while " +  (info == null ? "Stopped" : "Running") + " on agent");
                 info = new AgentVmInfo(vm.getInstanceName(), getVmGuru(vm), vm, State.Stopped);
-           		vm.setState(State.Running); // set it as running and let HA take care of it
-           		_vmDao.persist(vm);
+                vm.setState(State.Running); // set it as running and let HA take care of it
+                _vmDao.persist(vm);
                 castedVm = info.guru.findById(vm.getId());
                 try {
                     Host host = _hostDao.findByGuid(info.getHostUuid());
@@ -1691,23 +1690,26 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     e.printStackTrace();
                 }
             }
-            else if (info != null && (vm.getState() == State.Stopped || vm.getState() == State.Stopping)) {
-            	 Host host = _hostDao.findByGuid(info.getHostUuid());
-                 if (host != null){
-                    s_logger.warn("Stopping a VM which is stopped/stopping state " + info.name);
-                    vm.setState(State.Stopped); // set it as stop and clear it from host
-                    vm.setHostId(null);
-                    _vmDao.persist(vm);
-                     try {
-	                     Answer answer = _agentMgr.send(host.getId(), cleanup(info.name));
-	                     if (!answer.getResult()) {
-	                         s_logger.warn("Unable to stop a VM due to " + answer.getDetails());
-	                     }
-                     }
-                     catch (Exception e) {
-                         s_logger.warn("Unable to stop a VM due to " + e.getMessage());
-                     }
-                 }
+            else if (info != null && (vm.getState() == State.Stopped || vm.getState() == State.Stopping
+                    || vm.isRemoved() || vm.getState() == State.Destroyed || vm.getState() == State.Expunging)) {
+                Host host = _hostDao.findByGuid(info.getHostUuid());
+                if (host != null) {
+                    s_logger.warn("Stopping a VM which is stopped/destroyed/expunging " + info.name);
+                    if (vm.getState() == State.Stopped || vm.getState() == State.Stopping) {
+                        vm.setState(State.Stopped); // set it as stop and clear it from host
+                        vm.setHostId(null);
+                        _vmDao.persist(vm);
+                    }
+                    try {
+	                    Answer answer = _agentMgr.send(host.getId(), cleanup(info.name));
+	                    if (!answer.getResult()) {
+	                        s_logger.warn("Unable to stop a VM due to " + answer.getDetails());
+	                    }
+                    }
+                    catch (Exception e) {
+                        s_logger.warn("Unable to stop a VM due to " + e.getMessage());
+                    }
+                }
             }
             else 
             // host id can change
@@ -1727,7 +1729,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
 
         for (final AgentVmInfo left : infos.values()) {
-        	if (VirtualMachineName.isValidVmName(left.name)) continue;  // if the vm follows cloudstack naming ignore it for stopping
             try {
                 Host host = _hostDao.findByGuid(left.getHostUuid());
                 if (host != null){
