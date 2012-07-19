@@ -199,7 +199,10 @@
         $tier.addClass('placeholder');
         $title.html('Create Tier');
       } else {
-        $title.html(name);
+        $title.html(
+          cloudStack.concat(name, 8)
+        );
+        $title.attr('title', name);
         $cidr.html(cidr);
         $vmCount.append(
           $('<span>').addClass('total').html(virtualMachines != null? virtualMachines.length: 0),
@@ -457,7 +460,7 @@
           context: context
         })
       ).dialog({
-        title: 'Configure ACL for tier: ' + $tier.find('.title').html(),
+        title: 'Configure ACL for tier: ' + $tier.find('.title').attr('title'),
         dialogClass: 'configure-acl',
         width: 900,
         height: 600,
