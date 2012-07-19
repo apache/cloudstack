@@ -44,7 +44,7 @@
           item.issystem == true ) {
         return [];
       }
-				
+			
 			if(item.networkOfferingConserveMode == false) {			 
 				/*
 				(1) If IP is SourceNat, no StaticNat/VPN/PortForwarding/LoadBalancer can be enabled/added. 
@@ -1177,14 +1177,10 @@
               async: true,
               success: function(json) {
                 var items = json.listpublicipaddressesresponse.publicipaddress;
-                var processedItems = 0;
-
-                if (!items) {
-                  args.response.success({
-                    data: []
-                  });
-                  return;
-                }
+                
+								$(items).each(function() {								  
+								  getExtaPropertiesForIpObj(this, args);
+								});                            
 
                 args.response.success({
                   actionFilter: actionFilters.ipAddress,
@@ -1634,51 +1630,9 @@
                     dataType: "json",
                     async: true,
                     success: function(json) {										  
-                      var ipObj = json.listpublicipaddressesresponse.publicipaddress[0];	
-											
-											if('networks' in args.context) { //from Guest Network section		
-											  //get ipObj.networkOfferingConserveMode and ipObj.networkOfferingHavingVpnService from guest network's network offering
-												$.ajax({
-													url: createURL('listNetworkOfferings'), 
-													data: {
-														id: args.context.networks[0].networkofferingid  
-													},													
-													async: false,
-													success: function(json) {		
-														var networkOfferingObj = json.listnetworkofferingsresponse.networkoffering[0];
-														ipObj.networkOfferingConserveMode = networkOfferingObj.conservemode; 
-																												
-														$(networkOfferingObj.service).each(function(){
-															var thisService = this;
-															if(thisService.name == "Vpn")
-																ipObj.networkOfferingHavingVpnService = true;                          
-														});
-																												
-														if(ipObj.networkOfferingHavingVpnService == true) {														 
-															$.ajax({
-																url: createURL('listRemoteAccessVpns'), 
-																data: {
-																	listAll: true,
-																	publicipid: ipObj.id
-																},												
-																async: false,
-																success: function(vpnResponse) {
-																	var isVPNEnabled = vpnResponse.listremoteaccessvpnsresponse.count;
-																	if (isVPNEnabled) {
-																		ipObj.vpnenabled = true;
-																		ipObj.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
-																	};													
-																}
-															});																	
-														}																
-													}
-												});														
-                      }											
-											else { //from VPC section 											  
-											  ipObj.networkOfferingConserveMode = false; //conserve mode of IP in VPC is always off, so hardcode it as false											
-												ipObj.networkOfferingHavingVpnService = false; //VPN is not supported in IP in VPC, so hardcode it as false													
-											}			
-
+                      var ipObj = json.listpublicipaddressesresponse.publicipaddress[0];	                      									
+											getExtaPropertiesForIpObj(ipObj, args);	
+								
                       args.response.success({
 												actionFilter: actionFilters.ipAddress,
 												data: ipObj
@@ -1694,7 +1648,7 @@
               ipRules: { //Configuration tab
                 title: 'label.configuration',
                 custom: cloudStack.ipRules({
-                  preFilter: function(args) {
+                  preFilter: function(args) {							
                     var disallowedActions = [];
                     if (args.context.ipAddresses[0].isstaticnat)
                       disallowedActions.push("nonStaticNATChart");  //tell ipRules widget to show staticNAT chart instead of non-staticNAT chart.
@@ -1981,11 +1935,12 @@
                       },
                       dataType: 'json',
                       async: true,
-                      success: function(data) {
-                        var ipAddress = data.listpublicipaddressesresponse.publicipaddress[0];
-
+                      success: function(data) {											
+                        var ipObj = data.listpublicipaddressesresponse.publicipaddress[0];
+                        getExtaPropertiesForIpObj(ipObj, args);
+												
                         args.response.success({
-                          data: ipAddress
+                          data: ipObj
                         });
                       },
                       error: function(data) {
@@ -2557,12 +2512,13 @@
 													id: args.context.ipAddresses[0].id,
 													listAll: true
 												},
-												success: function(json) {												  
-													var item = json.listpublicipaddressesresponse.publicipaddress[0];	
-													
+												success: function(json) {		                         											
+													var ipObj = json.listpublicipaddressesresponse.publicipaddress[0];	
+													getExtaPropertiesForIpObj(ipObj, args);
+												
 													args.context.ipAddresses.shift(); //remove the first element in args.context.ipAddresses										
-													args.context.ipAddresses.push(item);
-																										
+													args.context.ipAddresses.push(ipObj);
+																							
 													var $headerFields = $multi.find('.header-fields');	                       												
 													if ('vpc' in args.context) {
 														if(args.context.ipAddresses[0].associatednetworkid == null) {
@@ -2837,11 +2793,12 @@
 															listAll: true
 														},
 														success: function(json) {												  
-															var item = json.listpublicipaddressesresponse.publicipaddress[0];	
+															var ipObj = json.listpublicipaddressesresponse.publicipaddress[0];														 
+											        getExtaPropertiesForIpObj(ipObj, args);													 
 													
 															args.context.ipAddresses.shift(); //remove the first element in args.context.ipAddresses										
-															args.context.ipAddresses.push(item);
-																												
+															args.context.ipAddresses.push(ipObj);
+																									
 															var $headerFields = $multi.find('.header-fields');													
 															if ('vpc' in args.context) {
 																if(args.context.ipAddresses[0].associatednetworkid == null) {
@@ -3809,5 +3766,50 @@
       }			
     }
   };
-		
+	
+  function getExtaPropertiesForIpObj(ipObj, args){	  
+		if('networks' in args.context) { //from Guest Network section		
+			//get ipObj.networkOfferingConserveMode and ipObj.networkOfferingHavingVpnService from guest network's network offering
+			$.ajax({
+				url: createURL('listNetworkOfferings'), 
+				data: {
+					id: args.context.networks[0].networkofferingid  
+				},													
+				async: false,
+				success: function(json) {		
+					var networkOfferingObj = json.listnetworkofferingsresponse.networkoffering[0];
+					ipObj.networkOfferingConserveMode = networkOfferingObj.conservemode; 
+																			
+					$(networkOfferingObj.service).each(function(){
+						var thisService = this;
+						if(thisService.name == "Vpn")
+							ipObj.networkOfferingHavingVpnService = true;                          
+					});
+																			
+					if(ipObj.networkOfferingHavingVpnService == true) {														 
+						$.ajax({
+							url: createURL('listRemoteAccessVpns'), 
+							data: {
+								listAll: true,
+								publicipid: ipObj.id
+							},												
+							async: false,
+							success: function(vpnResponse) {
+								var isVPNEnabled = vpnResponse.listremoteaccessvpnsresponse.count;
+								if (isVPNEnabled) {
+									ipObj.vpnenabled = true;
+									ipObj.remoteaccessvpn = vpnResponse.listremoteaccessvpnsresponse.remoteaccessvpn[0];
+								};													
+							}
+						});																	
+					}																
+				}
+			});														
+		}											
+		else { //from VPC section 											  
+			ipObj.networkOfferingConserveMode = false; //conserve mode of IP in VPC is always off, so hardcode it as false											
+			ipObj.networkOfferingHavingVpnService = false; //VPN is not supported in IP in VPC, so hardcode it as false													
+		}		
+	}
+	
 })(cloudStack, jQuery);
