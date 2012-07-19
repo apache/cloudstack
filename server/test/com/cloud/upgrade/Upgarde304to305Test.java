@@ -29,6 +29,7 @@ public class Upgarde304to305Test extends TestCase{
     @Override
     @Before
     public void setUp() throws Exception {
+        //DbTestUtils.executeScript("PreviousDatabaseSchema/304/cloud_304.sql", false, true);
     }
 
     @Override
