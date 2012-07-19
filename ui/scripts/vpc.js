@@ -669,18 +669,18 @@
 			id: 'siteToSiteVpn',
 			sectionSelect: {
 				preFilter: function(args) {
-					return ["vpnCustomerGateway", "vpnConnection"];			
+					return ["vpnGateway", "vpnConnection"];			
           //return ["vpnConnection"];							
 				},
 				label: 'label.select-view'
 			},
 			sections: {	
 				
-				vpnCustomerGateway: {
+				vpnGateway: {
 					type: 'select',
-					title: 'Customer Gateway',
+					title: 'VPN Gateway',
 					listView: {
-						id: 'vpnCustomerGateway',
+						id: 'vpnGateway',
 						label: 'Customer Gateway',
 						fields: {
 							publicip: { label: 'label.ip.address' },				
@@ -721,16 +721,16 @@
 											publicip: { label: 'label.ip.address' }
                     },
                     {											
-											account: { label: 'label.account' },
+											id: { label: 'label.id' },
 											domain: { label: 'label.domain' },
-											id: { label: 'label.id' }
+											account: { label: 'label.account' }											
 										}
 									],
 									dataProvider: function(args) {		
 										$.ajax({
 											url: createURL("listVpnGateways"),
 											data: {
-											  id: args.context.vpnCustomerGateway[0].id
+											  id: args.context.vpnGateway[0].id
 											},
 											async: true,
 											success: function(json) {											 
@@ -744,11 +744,7 @@
 						}
 					}
 				},
-				
-				
-			  //???
-			
-				vpnConnection: {					
+				vpnConnection: {	//???				
 					type: 'select',
 					title: 'VPN Connection',
 					listView: {

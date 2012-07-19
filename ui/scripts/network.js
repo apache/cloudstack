@@ -174,7 +174,7 @@
           }
         });
 
-        var sectionsToShow = ['networks', 'vpc'];
+        var sectionsToShow = ['networks', 'vpc', 'vpnCustomerGateway'];
         if(havingSecurityGroupNetwork == true)
           sectionsToShow.push('securityGroups');
 
@@ -3763,7 +3763,76 @@
             }
           }								
         }
-      }			
+      },	
+      
+			vpnCustomerGateway: {
+        type: 'select',
+        title: 'VPN Customer Gateway',
+        listView: {
+          id: 'vpnCustomerGateway',
+          label: 'VPN Customer Gateway',
+          fields: {
+            gateway: { label: 'label.gateway' },
+            cidrlist: { label: 'CIDR list' },
+						ipsecpsk: { label: 'IPsec Preshared-Key' }
+          },
+          dataProvider: function(args) {					  
+						var array1 = [];  
+						if(args.filterBy != null) {          
+							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+								switch(args.filterBy.search.by) {
+								case "name":
+									if(args.filterBy.search.value.length > 0)
+										array1.push("&keyword=" + args.filterBy.search.value);
+									break;
+								}
+							}
+						}
+						
+            $.ajax({
+              url: createURL("listVpnCustomerGateways&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+              dataType: "json",
+              async: true,
+              success: function(json) {							  
+                var items = json.listvpncustomergatewaysresponse.vpncustomergateway;
+                args.response.success({data: items});
+              }
+            });
+          },
+					detailView: {
+            name: 'label.details',
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {
+                    gateway: { label: 'label.gateway' }
+									},
+									{
+										cidrlist: { label: 'CIDR list' },
+										ipsecpsk: { label: 'IPsec Preshared-Key' }, 										
+										id: { label: 'label.id' },										
+										domain: { label: 'label.domain' },
+										account: { label: 'label.account' }												
+                  }
+                ],
+                dataProvider: function(args) {		
+									$.ajax({
+										url: createURL("listVpnCustomerGateways"),
+										data: {
+										  id: args.context.vpnCustomerGateway[0].id
+										},										
+										success: function(json) {
+											var item = json.listvpncustomergatewaysresponse.vpncustomergateway[0];
+											args.response.success({data: item});
+										}
+									});									
+								}
+              }
+            }
+          }
+        }
+      }
     }
   };
 	
