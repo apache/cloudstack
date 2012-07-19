@@ -58,8 +58,6 @@ class TestCaseExecuteEngine(object):
         if self.format == "xml"  and (xmlDir is not None):
             self.xmlDir = xmlDir
             
-            
-            
     def loadTestsFromDir(self, testDirectory):
         """ Load the test suites from a package with multiple test files """
         self.suite = self.loader.discover(testDirectory)

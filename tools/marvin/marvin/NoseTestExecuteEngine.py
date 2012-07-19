@@ -29,12 +29,13 @@ from nose.plugins.xunit import Xunit
 from nose.plugins.attrib import AttributeSelector
 from nose.plugins.multiprocess import MultiProcessTestRunner
 
+
 class NoseTestExecuteEngine(object):
     """
     Runs the CloudStack tests using nose as the execution engine
     """
     
-    def __init__(self, testclient=None, workingdir=None, filename=None, clientLog=None, resultLog=None, format="text"):
+    def __init__(self, testclient=None, workingdir=None, filename=None, clientLog=None, resultLog=None, format="text", xmlDir='xml-reports'):
         self.testclient = testclient
         self.logformat = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
         self.suite = []
@@ -57,15 +58,15 @@ class NoseTestExecuteEngine(object):
             self.testResultLogFile = sys.stderr
  
         if workingdir is not None:
-            self.loader = NoseCloudStackTestLoader()
-            self.loader.setClient(self.testclient)
-            self.loader.setClientLog(self.logfile)
-            self.suite = self.loader.loadTestsFromDir(workingdir)
+            self.workingdir = workingdir
+            self.test_picker = MarvinPlugin()
+            self.test_picker.setClient(self.testclient)
+            self.test_picker.setClientLog(self.logfile)
         elif filename is not None:
-            self.loader = NoseCloudStackTestLoader()
-            self.loader.setClient(self.testclient)
-            self.loader.setClientLog(self.logfile)
-            self.suite = self.loader.loadTestsFromFile(filename)
+            self.test_picker = MarvinPlugin()
+            self.test_picker.setClient(self.testclient)
+            self.test_picker.setClientLog(self.logfile)
+            self.filename = filename
         else:
             raise EnvironmentError("Need to give either a test directory or a test file")
         
@@ -78,9 +79,11 @@ class NoseTestExecuteEngine(object):
         self.cfg.plugins = plug_mgr
         
         if format == "text":
-            self.runner = nose.core.TextTestRunner(stream=self.testResultLogFile, descriptions=1, verbosity=2, config=None)
+            self.runner = \
+            nose.core.TextTestRunner(stream=self.testResultLogFile,
+                                     descriptions=1, verbosity=2, config=self.cfg)
         else:
-            self.runner = xmlrunner.XMLTestRunner(output='xml-reports', verbose=True)
+            self.runner = xmlrunner.XMLTestRunner(output=xmlDir, verbose=True)
             
     def runTests(self):
          options = ["--process-timeout=3600", "--with-xunit", "-a tags=advanced", "--processes=5"] #TODO: Add support for giving nose args
