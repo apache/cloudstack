@@ -1,4 +1,3 @@
-from functools import partial
 import unittest
 import nose
 import nose.core
@@ -7,59 +6,16 @@ import sys
 import logging
 import xmlrunner
 from cloudstackTestCase import cloudstackTestCase
+from marvinPlugin import MarvinPlugin
+from nose.plugins.xunit import Xunit
 
-def testCaseLogger(message, logger=None):
-    if logger is not None:
-        logger.debug(message)
-        
-class NoseCloudStackTestLoader(nose.loader.TestLoader):
-    """
-    Custom test loader for the cloudstackTestCase to be loaded into nose
-    """
-    
-    def loadTestsFromTestCase(self, testCaseClass):
-        if issubclass(testCaseClass, cloudstackTestCase):
-            testCaseNames = self.getTestCaseNames(testCaseClass)
-            tests = []
-            for testCaseName in testCaseNames:
-                testCase = testCaseClass(testCaseName)
-                self._injectClients(testCase)
-                tests.append(testCase)
-            return self.suiteClass(tests)
-        else:
-            return super(NoseCloudStackTestLoader, self).loadTestsFromTestCase(testCaseClass)
-    
-    def loadTestsFromName(self, name, module=None, discovered=False):
-        return nose.loader.TestLoader.loadTestsFromName(self, name, module=module, discovered=discovered)
-    
-    def loadTestsFromNames(self, names, module=None):
-        return nose.loader.TestLoader.loadTestsFromNames(self, names, module=module)
-
-    def setClient(self, client):
-        self.testclient = client
-
-    def setClientLog(self, clientlog):
-        self.log = clientlog
-
-    def _injectClients(self, test):
-        testcaselogger = logging.getLogger("testclient.testcase.%s"%test.__class__.__name__)
-        fh = logging.FileHandler(self.log) 
-        fh.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s"))
-        testcaselogger.addHandler(fh)
-        testcaselogger.setLevel(logging.DEBUG)
-        
-        setattr(test, "testClient", self.testclient)
-        setattr(test, "debug", partial(testCaseLogger, logger=testcaselogger))
-        setattr(test.__class__, "clstestclient", self.testclient)
-        if hasattr(test, "UserName"):
-            self.testclient.createNewApiClient(test.UserName, test.DomainName, test.AcctType)           
 
 class NoseTestExecuteEngine(object):
     """
     Runs the CloudStack tests using nose as the execution engine
     """
     
-    def __init__(self, testclient=None, workingdir=None, filename=None, clientLog=None, resultLog=None, format="text"):
+    def __init__(self, testclient=None, workingdir=None, filename=None, clientLog=None, resultLog=None, format="text", xmlDir='xml-reports'):
         self.testclient = testclient
         self.logformat = logging.Formatter("%(asctime)s - %(levelname)s - %(name)s - %(message)s")
         self.suite = []
@@ -82,24 +38,43 @@ class NoseTestExecuteEngine(object):
             self.testResultLogFile = sys.stderr
  
         if workingdir is not None:
-            self.loader = NoseCloudStackTestLoader()
-            self.loader.setClient(self.testclient)
-            self.loader.setClientLog(self.logfile)
-            self.suite = self.loader.loadTestsFromDir(workingdir)
+            self.workingdir = workingdir
+            self.test_picker = MarvinPlugin()
+            self.test_picker.setClient(self.testclient)
+            self.test_picker.setClientLog(self.logfile)
         elif filename is not None:
-            self.loader = NoseCloudStackTestLoader()
-            self.loader.setClient(self.testclient)
-            self.loader.setClientLog(self.logfile)
-            self.suite = self.loader.loadTestsFromFile(filename)
+            self.test_picker = MarvinPlugin()
+            self.test_picker.setClient(self.testclient)
+            self.test_picker.setClientLog(self.logfile)
+            self.filename = filename
         else:
             raise EnvironmentError("Need to give either a test directory or a test file")
         
+        plug_mgr = nose.plugins.manager.PluginManager()
+        plug_mgr.addPlugin(self.test_picker)
+        self.cfg = nose.config.Config()
+        self.cfg.plugins = plug_mgr
+        
         if format == "text":
-            self.runner = nose.core.TextTestRunner(stream=self.testResultLogFile, descriptions=1, verbosity=2, config=None)
+            self.runner = \
+            nose.core.TextTestRunner(stream=self.testResultLogFile,
+                                     descriptions=1, verbosity=2, config=self.cfg)
         else:
-            self.runner = xmlrunner.XMLTestRunner(output='xml-reports', verbose=True)
+            self.runner = xmlrunner.XMLTestRunner(output=xmlDir, verbose=True)
             
     def runTests(self):
-         #nose.core.TestProgram(argv=["--process-timeout=3600"], testRunner=self.runner, testLoader=self.loader)
-         nose.core.TestProgram(argv=["--process-timeout=3600"], \
-                               testRunner=self.runner, suite=self.suite)
+         #options = ["--process-timeout=3600", "--with-xunit", "-a tags=advanced"] #TODO: Add support for giving nose args
+         #DEBUG
+#         options = ["--process-timeout=3600", "--with-xunit", "--collect-only"]
+         #DEBUG
+         options = ["--process-timeout=3600"]
+         options.append("-w%s" %self.workingdir)
+         
+         if self.workingdir is not None:
+             nose.core.TestProgram(argv=options, testRunner=self.runner,
+                                   config=self.cfg)
+         elif self.filename is not None:
+             tests = self.loader.loadTestsFromFile(self.filename)
+             nose.core.TestProgram(argv=options, testRunner=self.runner,
+                                   config=self.cfg)
+         
