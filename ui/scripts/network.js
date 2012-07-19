@@ -3799,6 +3799,100 @@
               }
             });
           },
+										
+					actions: {
+						add: {
+							label: 'add VPN Customer Gateway',
+							messages: {                
+								notification: function(args) {
+									return 'add VPN Customer Gateway';
+								}
+							},
+							createForm: {
+								title: 'add VPN Customer Gateway',
+								fields: {										
+									gateway: { 
+										label: 'label.gateway',
+										validation: { required: true }
+									}, 
+									cidrlist: { 
+										label: 'CIDR list',
+										validation: { required: true }
+									},
+									ipsecpsk: { 
+										label: 'IPsec Preshared-Key',
+										validation: { required: true }
+									},
+									ikepolicy: { 
+										label: 'IKE policy',
+										select: function(args) {
+											var items = [];
+											items.push({id: '3des-md5', description: '3des-md5'});
+											items.push({id: 'aes-md5', description: 'aes-md5'});
+											items.push({id: 'aes128-md5', description: 'aes128-md5'});
+											items.push({id: 'des-md5', description: 'des-md5'});											
+											items.push({id: '3des-sha1', description: '3des-sha1'});
+											items.push({id: 'aes-sha1', description: 'aes-sha1'});
+											items.push({id: 'aes128-sha1', description: 'aes128-sha1'});
+											items.push({id: 'des-sha1', description: 'des-sha1'});
+											args.response.success({data: items});
+										}
+									},
+									esppolicy: { 
+										label: 'ESP policy',
+										select: function(args) {
+											var items = [];
+											items.push({id: '3des-md5', description: '3des-md5'});
+											items.push({id: 'aes-md5', description: 'aes-md5'});
+											items.push({id: 'aes128-md5', description: 'aes128-md5'});
+											items.push({id: 'des-md5', description: 'des-md5'});											
+											items.push({id: '3des-sha1', description: '3des-sha1'});
+											items.push({id: 'aes-sha1', description: 'aes-sha1'});
+											items.push({id: 'aes128-sha1', description: 'aes128-sha1'});
+											items.push({id: 'des-sha1', description: 'des-sha1'});
+											args.response.success({data: items});
+										}
+									},
+									lifetime: { 
+										label: 'Lifetime (second)',
+										defaultValue: '86400',
+										validation: { required: false, number: true }
+									}		
+								}
+							},
+							action: function(args) {										 
+								$.ajax({
+									url: createURL('createVpnCustomerGateway'),
+									data: {
+										gateway: args.data.gateway,
+										cidrlist: args.data.cidrlist,
+										ipsecpsk: args.data.ipsecpsk,
+										ikepolicy: args.data.ikepolicy,
+										esppolicy: args.data.esppolicy,
+										lifetime: args.data.lifetime
+									},
+									dataType: 'json',									
+									success: function(json) {
+										var jid = json.createvpncustomergatewayresponse.jobid;    
+										args.response.success(
+											{_custom:
+												{
+													jobId: jid,
+													getUpdatedItem: function(json) {														  
+														return json.queryasyncjobresultresponse.jobresult.vpncustomergateway;
+													}									 
+												}
+											}
+										);
+									}
+								});									
+							},
+							notification: {
+								poll: pollAsyncJobResult
+							}
+						}
+					},
+										
 					detailView: {
             name: 'label.details',
             tabs: {
