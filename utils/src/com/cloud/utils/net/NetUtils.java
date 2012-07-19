@@ -1069,25 +1069,32 @@ public class NetUtils {
             if (policy.isEmpty()) {
                 return false;
             }
-            String cipherHash = policy.split(";")[0];
+            //String cipherHash = policy.split(";")[0];
+            String cipherHash = policy;
             if (cipherHash.isEmpty()) {
                 return false;
             }
-            String pfsGroup = null;
-            if (!policy.equals(cipherHash)) {
-                pfsGroup = policy.split(";")[1];
+            String[] list = cipherHash.split("-");
+            if (list.length != 2) {
+                return false;
             }
-            String cipher = cipherHash.split("-")[0];
-            String hash = cipherHash.split("-")[1];
+            String cipher = list[0];
+            String hash = list[1];
             if (!cipher.matches("des|3des|aes|aes128|aes256")) {
                 return false;
             }
             if (!hash.matches("md5|sha1")) {
                 return false;
             }
+            /*  Disable pfsGroup support, see CS-15511
+            String pfsGroup = null;
+            if (!policy.equals(cipherHash)) {
+                pfsGroup = policy.split(";")[1];
+            }
             if (pfsGroup != null && !pfsGroup.matches("modp1024|modp1536")) {
                 return false;
             }
+            */
         }
         return true;
     }
