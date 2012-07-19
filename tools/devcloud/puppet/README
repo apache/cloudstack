@@ -1,0 +1,12 @@
+To use:
+
+Preconfiguration phase - 
+- [setup your box in vagrant and place the contents of tools/devcloud/puppet into the box's folder]
+- vagrant up; vagrant ssh
+- sudo bash
+- ln -s /vagrant/puppet-devcloudinitial /etc/puppet/modules/puppet-devcloudinitial
+- cd /vagrant
+- puppet apply --fsconfig fileserver.conf --debug --verbose -e "include puppet-devcloudinitial"
+
+Postconfiguration phase - 
+TODO
