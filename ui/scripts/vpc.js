@@ -1096,13 +1096,13 @@
 								},
 														
 								remove: {
-									label: 'delete site-to-site VPN',
+									label: 'delete VPN connection',
 									messages: {
 										confirm: function(args) {
-											return 'Please confirm that you want to delete this site-to-site VPN';
+											return 'Please confirm that you want to delete VPN connection';
 										},
 										notification: function(args) {
-											return 'delete site-to-site VPN';
+											return 'delete VPN connection';
 										}
 									},
 									action: function(args) {
@@ -1114,74 +1114,23 @@
 											},
 											async: true,
 											success: function(json) {		
-												var jid = json.deletevpnconnectionresponse.jobid;										
-												var deleteVpnConnectionIntervalID = setInterval(function() { 	
-													$.ajax({
-														url: createURL("queryAsyncJobResult&jobId=" + jid),
-														dataType: "json",
-														success: function(json) {
-															var result = json.queryasyncjobresultresponse;
-															if (result.jobstatus == 0) {
-																return; //Job has not completed
-															}
-															else {
-																clearInterval(deleteVpnConnectionIntervalID); 
-																if (result.jobstatus == 1) {																
-																	$.ajax({
-																		url: createURL("deleteVpnCustomerGateway"),
-																		dataType: "json",
-																		data: {
-																			id: args.context.vpnConnection[0].s2scustomergatewayid
-																		},
-																		async: true,
-																		success: function(json) {	
-																			var jid = json.deletecustomergatewayresponse.jobid;			
-																			var deleteVpnCustomerGatewayIntervalID = setInterval(function() { 	
-																				$.ajax({
-																					url: createURL("queryAsyncJobResult&jobId=" + jid),
-																					dataType: "json",
-																					success: function(json) {
-																						var result = json.queryasyncjobresultresponse;
-																						if (result.jobstatus == 0) {
-																							return; //Job has not completed
-																						}
-																						else {
-																							clearInterval(deleteVpnCustomerGatewayIntervalID); 
-																							if (result.jobstatus == 1) {	
-																								$("div.detail-view div.loading-overlay").remove();
-																								cloudStack.dialog.notice({ message: "site-to-site VPN has been deleted." });																															
-																								$.removeDetailViewAndTableRow();																														
-																							}
-																							else if (result.jobstatus == 2) {
-																								$("div.detail-view div.loading-overlay").remove();
-																								cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });																										
-																							}
-																						}
-																					},
-																					error: function(XMLHttpResponse) {
-																						$("div.detail-view div.loading-overlay").remove();
-																						cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });																												
-																					}
-																				});
-																			}, 3000);		
-																		}
-																	});										
-																}
-																else if (result.jobstatus == 2) {
-																	$("div.detail-view div.loading-overlay").remove();
-																	cloudStack.dialog.notice({ message: _s(result.jobresult.errortext) });	
-																}
-															}
-														},
-														error: function(XMLHttpResponse) {
-															$("div.detail-view div.loading-overlay").remove();
-															cloudStack.dialog.notice({ message: parseXMLHttpResponse(XMLHttpResponse) });	
+												var jid = json.deletevpnconnectionresponse.jobid;		
+												args.response.success(
+													{_custom:
+														{
+															jobId: jid,
+															getUpdatedItem: function(json) {														  
+																return json.queryasyncjobresultresponse.jobresult.vpnconnection;
+															}									 
 														}
-													});
-												}, 3000);		
+													}
+												);
 											}
 										});										
-									}								
+									},
+                  notification: {
+										poll: pollAsyncJobResult
+									}
 								}									
 							}							
 						}
