@@ -2629,11 +2629,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             LoadBalancerTO lb = new LoadBalancerTO(srcIp, srcPort, protocol, algorithm, revoked, false, destinations, stickinessPolicies);
             lbs[i++] = lb;
         }
-        String RouterPublicIp = null;
+        String routerPublicIp = null;
 
         if (router instanceof DomainRouterVO) {
-            DomainRouterVO domr = (DomainRouterVO)router;
-            RouterPublicIp = domr.getPublicIpAddress();
+            DomainRouterVO domr = _routerDao.findById(router.getId());
+            routerPublicIp = domr.getPublicIpAddress();
         }
         
         Network guestNetwork = _networkMgr.getNetwork(guestNetworkId);
@@ -2643,7 +2643,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 _networkMgr.isSecurityGroupSupportedInNetwork(guestNetwork), 
                 _networkMgr.getNetworkTag(router.getHypervisorType(), guestNetwork));
 
-        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs,RouterPublicIp, 
+        LoadBalancerConfigCommand cmd = new LoadBalancerConfigCommand(lbs,routerPublicIp, 
                 getRouterIpInNetwork(guestNetworkId, router.getId()),router.getPrivateIpAddress(), 
                 _itMgr.toNicTO(nicProfile, router.getHypervisorType()), router.getVpcId());
 
