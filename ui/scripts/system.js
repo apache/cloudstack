@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 (function($, cloudStack) { 
 
   var zoneObjs, podObjs, clusterObjs, domainObjs, networkOfferingObjs, physicalNetworkObjs;
@@ -1913,26 +1914,13 @@
 										supportedServices: { label: 'label.supported.services' }
                   }
                 ],
-                dataProvider: function(args) { 					 
-									$.ajax({
-										url: createURL("listNetworkServiceProviders&id=" + nspMap["virtualRouter"].id),
-										dataType: "json",
-										async: true,
-										success: function(json) {										  
-											var items = json.listnetworkserviceprovidersresponse.networkserviceprovider;											
-											for(var i = 0; i < items.length; i++) {
-												if(items[i].name == "VirtualRouter" ) {
-												  nspMap["virtualRouter"] = items[i];													
-													args.response.success({
-														actionFilter: virtualRouterProviderActionFilter,
-														data: $.extend(nspMap["virtualRouter"], {
-															supportedServices: nspMap["virtualRouter"].servicelist.join(', ')
-														})
-													});													
-													break;
-												}
-											}													
-										}
+                dataProvider: function(args) { 		
+                  refreshNspData("VirtualRouter"); 								  
+									args.response.success({
+										actionFilter: virtualRouterProviderActionFilter,
+										data: $.extend(nspMap["virtualRouter"], {
+											supportedServices: nspMap["virtualRouter"].servicelist.join(', ')
+										})
 									});		
                 }
               },
@@ -1974,6 +1962,9 @@
                     $.ajax({
                       url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                       dataType: 'json',
+											data: {
+											  forvpc: false
+											},
                       async: true,
                       success: function(json) {
                         var items = json.listroutersresponse.router;
@@ -1988,6 +1979,9 @@
                     $.ajax({
                       url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
                       dataType: 'json',
+                      data: {
+											  forvpc: false
+											},
                       async: true,
                       success: function(json) {
                         var items = json.listroutersresponse.router;
@@ -2112,64 +2106,7 @@
 													poll: pollAsyncJobResult
 												}
 											},
-
-                      /*
-                      changeService: {
-                        label: 'label.change.service.offering',
-                        createForm: {
-                          title: 'label.change.service.offering',
-                          desc: '',
-                          fields: {
-                            serviceOfferingId: {
-                              label: 'label.compute.offering',
-                              select: function(args) {
-                                $.ajax({
-                                  url: createURL("listServiceOfferings&issystem=true&systemvmtype=domainrouter"),
-                                  dataType: "json",
-                                  async: true,
-                                  success: function(json) {
-                                    var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
-                                    var items = [];
-                                    $(serviceofferings).each(function() {
-                                      if(this.id != args.context.routers[0].serviceofferingid) {
-                                        items.push({id: this.id, description: this.displaytext});
-                                      }
-                                    });
-                                    args.response.success({data: items});
-                                  }
-                                });
-                              }
-                            }
-                          }
-                        },
-												messages: {
-                          notification: function(args) {
-                            return 'label.change.service.offering';
-                          }
-                        },
-                        action: function(args) {
-                          $.ajax({
-                            url: createURL("changeServiceForRouter&id=" + args.context.routers[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
-                            dataType: "json",
-                            async: true,
-                            success: function(json) {
-                              var jsonObj = json.changeserviceforrouterresponse.domainrouter;
-                              args.response.success({data: jsonObj});
-                            },
-                            error: function(XMLHttpResponse) {
-                              var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-                              args.response.error(errorMsg);
-                            }
-                          });
-                        },
-                        notification: {
-                          poll: function(args) {
-                            args.complete();
-                          }
-                        }
-                      },
-											*/
-
+                      
                       migrate: {
                         label: 'label.action.migrate.router',
                         createForm: {
@@ -2385,7 +2322,441 @@
               }
             }
           },
+			
+					vpcVirtualRouter: {
+            id: 'vpcVirtualRouterProviders',
+            label: 'VPC Virtual Router',
+            isMaximized: true,
+            type: 'detailView',
+            fields: {
+              name: { label: 'label.name' },
+              ipaddress: { label: 'label.ip.address' },
+              state: { label: 'label.status', indicator: { 'Enabled': 'on' } }
+            },
+            tabs: {
+              network: {
+                title: 'label.network',
+                fields: [
+                  {
+                    name: { label: 'label.name' }
+                  },
+                  {
+                    id: { label: 'label.id' },
+                    state: { label: 'label.state' },
+                    physicalnetworkid: { label: 'label.physical.network.ID' },
+                    destinationphysicalnetworkid: { label: 'label.destination.physical.network.id' },
+										supportedServices: { label: 'label.supported.services' }
+                  }
+                ],
+                dataProvider: function(args) { 			
+									refreshNspData("VpcVirtualRouter"); 								  
+									args.response.success({
+										actionFilter: virtualRouterProviderActionFilter,
+										data: $.extend(nspMap["vpcVirtualRouter"], {
+											supportedServices: nspMap["vpcVirtualRouter"].servicelist.join(', ')
+										})
+									});											
+                }
+              },
 
+              instances: {
+                title: 'label.instances',
+                listView: {
+                  label: 'label.virtual.appliances',
+                  id: 'routers',
+                  fields: {
+                    name: { label: 'label.name' },
+                    zonename: { label: 'label.zone' },
+                    state: {
+                      converter: function(str) {
+                        // For localization
+                        return str;
+                      },
+                      label: 'label.status',
+                      indicator: {
+                        'Running': 'on',
+                        'Stopped': 'off',
+                        'Error': 'off'
+                      }
+                    }
+                  },
+                  dataProvider: function(args) {
+									  var array1 = [];
+										if(args.filterBy != null) {
+											if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+												switch(args.filterBy.search.by) {
+												case "name":
+													if(args.filterBy.search.value.length > 0)
+														array1.push("&keyword=" + args.filterBy.search.value);
+													break;
+												}
+											}
+										}
+
+                    $.ajax({
+                      url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                      dataType: 'json',
+											data: {
+											  forvpc: true
+											},
+                      async: true,
+                      success: function(json) {
+                        var items = json.listroutersresponse.router;
+                        args.response.success({
+                          actionFilter: routerActionfilter,
+                          data: items
+                        });
+                      }
+                    });
+
+                    // Get project routers
+                    $.ajax({
+                      url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                      dataType: 'json',
+											data: {
+											  forvpc: true
+											},
+                      async: true,
+                      success: function(json) {
+                        var items = json.listroutersresponse.router;
+                        args.response.success({
+                          actionFilter: routerActionfilter,
+                          data: items
+                        });
+                      }
+                    });
+                  },
+                  detailView: {
+                    name: 'Virtual applicance details',
+                    actions: {
+                      start: {
+                        label: 'label.action.start.router',
+                        messages: {
+                          confirm: function(args) {
+                            return 'message.action.start.router';
+                          },
+                          notification: function(args) {
+                            return 'label.action.start.router';
+                          }
+                        },
+                        action: function(args) {
+                          $.ajax({
+                            url: createURL('startRouter&id=' + args.context.routers[0].id),
+                            dataType: 'json',
+                            async: true,
+                            success: function(json) {
+                              var jid = json.startrouterresponse.jobid;
+                              args.response.success({
+                                _custom: {
+                                  jobId: jid,
+                                  getUpdatedItem: function(json) {
+                                    return json.queryasyncjobresultresponse.jobresult.domainrouter;
+                                  },
+                                  getActionFilter: function() {
+                                    return routerActionfilter;
+                                  }
+                                }
+                              });
+                            }
+                          });
+                        },
+                        notification: {
+                          poll: pollAsyncJobResult
+                        }
+                      },
+
+                      stop: {
+                        label: 'label.action.stop.router',
+												createForm: {
+													title: 'label.action.stop.router',
+													desc: 'message.action.stop.router',
+													fields: {
+														forced: {
+															label: 'force.stop',
+															isBoolean: true,
+															isChecked: false
+														}
+													}
+												},
+                        messages: {
+                          notification: function(args) {
+                            return 'label.action.stop.router';
+                          }
+                        },
+                        action: function(args) {
+												  var array1 = [];
+													array1.push("&forced=" + (args.data.forced == "on"));
+                          $.ajax({
+                            url: createURL('stopRouter&id=' + args.context.routers[0].id + array1.join("")),
+                            dataType: 'json',
+                            async: true,
+                            success: function(json) {
+                              var jid = json.stoprouterresponse.jobid;
+                              args.response.success({
+                                _custom: {
+                                  jobId: jid,
+                                  getUpdatedItem: function(json) {
+                                    return json.queryasyncjobresultresponse.jobresult.domainrouter;
+                                  },
+                                  getActionFilter: function() {
+                                    return routerActionfilter;
+                                  }
+                                }
+                              });
+                            }
+                          });
+                        },
+                        notification: {
+                          poll: pollAsyncJobResult
+                        }
+                      },
+
+											'remove': {
+												label: 'label.destroy.router',
+												messages: {
+													confirm: function(args) {
+														return 'message.confirm.destroy.router';
+													},
+													notification: function(args) {
+														return 'label.destroy.router';
+													}
+												},
+												action: function(args) {
+													$.ajax({
+														url: createURL("destroyRouter&id=" + args.context.routers[0].id),
+														dataType: "json",
+														async: true,
+														success: function(json) {
+															var jid = json.destroyrouterresponse.jobid;
+															args.response.success({
+																_custom: {
+																	jobId: jid
+																}
+															});
+														}
+													});
+												},
+												notification: {
+													poll: pollAsyncJobResult
+												}
+											},
+                      
+                      migrate: {
+                        label: 'label.action.migrate.router',
+                        createForm: {
+                          title: 'label.action.migrate.router',
+                          desc: '',
+                          fields: {
+                            hostId: {
+                              label: 'label.host',
+                              validation: { required: true },
+                              select: function(args) {
+                                $.ajax({
+                                  url: createURL("listHosts&VirtualMachineId=" + args.context.routers[0].id),
+                                  //url: createURL("listHosts"),	//for testing only, comment it out before checking in.
+                                  dataType: "json",
+                                  async: true,
+                                  success: function(json) {
+                                    var hostObjs = json.listhostsresponse.host;
+                                    var items = [];
+                                    $(hostObjs).each(function() {
+                                      items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))});
+                                    });
+                                    args.response.success({data: items});
+                                  }
+                                });
+                              },
+                              error: function(XMLHttpResponse) {
+                                var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                args.response.error(errorMsg);
+                              }
+                            }
+                          }
+                        },
+												messages: {
+                          notification: function(args) {
+                            return 'label.action.migrate.router';
+                          }
+                        },
+                        action: function(args) {
+                          $.ajax({
+                            url: createURL("migrateSystemVm&hostid=" + args.data.hostId + "&virtualmachineid=" + args.context.routers[0].id),
+                            dataType: "json",
+                            async: true,
+                            success: function(json) {
+                              var jid = json.migratesystemvmresponse.jobid;
+                              args.response.success({
+                                _custom: {
+                                  jobId: jid,
+                                  getUpdatedItem: function(json) {
+                                    //return json.queryasyncjobresultresponse.jobresult.systemvminstance;    //not all properties returned in systemvminstance
+                                    $.ajax({
+                                      url: createURL("listRouters&id=" + json.queryasyncjobresultresponse.jobresult.systemvminstance.id),
+                                      dataType: "json",
+                                      async: false,
+                                      success: function(json) {
+                                        var items = json.listroutersresponse.router;
+                                        if(items != null && items.length > 0) {
+                                          return items[0];
+                                        }
+                                      }
+                                    });
+                                  },
+                                  getActionFilter: function() {
+                                    return routerActionfilter;
+                                  }
+                                }
+                              });
+                            }
+                          });
+                        },
+                        notification: {
+                          poll: pollAsyncJobResult
+                        }
+                      },
+
+                      viewConsole: {
+                        label: 'label.view.console',
+                        action: {
+                          externalLink: {
+                            url: function(args) {
+                              return clientConsoleUrl + '?cmd=access&vm=' + args.context.routers[0].id;
+                            },
+                            title: function(args) {
+															return args.context.routers[0].id.substr(0,8);  //title in window.open() can't have space nor longer than 8 characters. Otherwise, IE browser will have error.
+														},
+                            width: 820,
+                            height: 640
+                          }
+                        }
+                      }
+                    },
+                    tabs: {
+                      details: {
+                        title: 'label.details',
+                        preFilter: function(args) {
+												  var hiddenFields = [];
+                          if (!args.context.routers[0].project) {
+													  hiddenFields.push('project');
+														hiddenFields.push('projectid');
+                          }
+													if(selectedZoneObj.networktype == 'Basic') {
+													  hiddenFields.push('publicip'); //In Basic zone, guest IP is public IP. So, publicip is not returned by listRouters API. Only guestipaddress is returned by listRouters API.
+											    }
+                          return hiddenFields;
+                        },
+                        fields: [
+                          {
+                            name: { label: 'label.name' },
+                            project: { label: 'label.project' }
+                          },
+                          {
+                            id: { label: 'label.id' },
+                            projectid: { label: 'label.project.id' },
+                            state: { label: 'label.state' },
+                            publicip: { label: 'label.public.ip' },
+                            guestipaddress: { label: 'label.guest.ip' },
+                            linklocalip: { label: 'label.linklocal.ip' },
+                            hostname: { label: 'label.host' },
+                            serviceofferingname: { label: 'label.compute.offering' },
+                            networkdomain: { label: 'label.network.domain' },
+                            domain: { label: 'label.domain' },
+                            account: { label: 'label.account' },
+                            created: { label: 'label.created', converter: cloudStack.converters.toLocalDate },
+                            isredundantrouter: {
+                              label: 'label.redundant.router',
+                              converter: cloudStack.converters.toBooleanText
+                            },
+                            redundantRouterState: { label: 'label.redundant.state' }
+                          }
+                        ],
+                        dataProvider: function(args) {												  
+													$.ajax({
+														url: createURL("listRouters&id=" + args.context.routers[0].id),
+														dataType: 'json',
+														async: true,
+														success: function(json) {
+															var jsonObj = json.listroutersresponse.router[0];													
+															addExtraPropertiesToRouterInstanceObject(jsonObj);															
+															args.response.success({
+																actionFilter: routerActionfilter,
+																data: jsonObj
+															});
+														}
+													});		
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            actions: {
+              enable: {
+                label: 'label.enable.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["vpcVirtualRouter"].id + "&state=Enabled"),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+											args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+														getUpdatedItem: function(json) {
+															$(window).trigger('cloudStack.fullRefresh');
+														}
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                messages: {
+								  confirm: function(args) {
+									  return 'message.confirm.enable.provider';
+									},
+                  notification: function() {
+									  return 'label.enable.provider';
+									}
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+              disable: {
+                label: 'label.disable.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["vpcVirtualRouter"].id + "&state=Disabled"),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+											args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+														getUpdatedItem: function(json) {
+															$(window).trigger('cloudStack.fullRefresh');
+														}
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                messages: {
+								  confirm: function(args) {
+									  return 'message.confirm.disable.provider';
+									},
+                  notification: function() {
+									  return 'label.disable.provider';
+									}
+                },
+                notification: { poll: pollAsyncJobResult }
+              }
+            }
+          },
+										
           // NetScaler provider detail view
           netscaler: {
             type: 'detailView',
@@ -9178,6 +9549,9 @@
 							case "VirtualRouter":
 								nspMap["virtualRouter"] = items[i];
 								break;
+							case "VpcVirtualRouter":
+							  nspMap["vpcVirtualRouter"] = items[i];
+							  break;
 							case "Netscaler":
 								nspMap["netscaler"] = items[i];
 								break;
@@ -9219,6 +9593,13 @@
 			);
 		}
 		else if(selectedZoneObj.networktype == "Advanced"){
+		  nspHardcodingArray.push(
+				{
+					id: 'vpcVirtualRouter',
+					name: 'VPC Virtual Router',
+					state: nspMap.vpcVirtualRouter ? nspMap.vpcVirtualRouter.state : 'Disabled'
+				}
+			);		
 			nspHardcodingArray.push(
 				{
 					id: 'f5',
