@@ -8,7 +8,8 @@ import xmlrunner
 from cloudstackTestCase import cloudstackTestCase
 from marvinPlugin import MarvinPlugin
 from nose.plugins.xunit import Xunit
-
+from nose.plugins.attrib import AttributeSelector
+from nose.plugins.multiprocess import MultiProcessTestRunner
 
 class NoseTestExecuteEngine(object):
     """
@@ -52,6 +53,9 @@ class NoseTestExecuteEngine(object):
         
         plug_mgr = nose.plugins.manager.PluginManager()
         plug_mgr.addPlugin(self.test_picker)
+        plug_mgr.addPlugin(Xunit())
+        plug_mgr.addPlugin(AttributeSelector())
+        plug_mgr.addPlugin(MultiProcessTestRunner())
         self.cfg = nose.config.Config()
         self.cfg.plugins = plug_mgr
         
@@ -63,11 +67,11 @@ class NoseTestExecuteEngine(object):
             self.runner = xmlrunner.XMLTestRunner(output=xmlDir, verbose=True)
             
     def runTests(self):
-         #options = ["--process-timeout=3600", "--with-xunit", "-a tags=advanced"] #TODO: Add support for giving nose args
+         options = ["--process-timeout=3600", "--with-xunit", "-a tags=advanced", "--processes=5"] #TODO: Add support for giving nose args
          #DEBUG
 #         options = ["--process-timeout=3600", "--with-xunit", "--collect-only"]
          #DEBUG
-         options = ["--process-timeout=3600"]
+#         options = ["--process-timeout=3600"]
          options.append("-w%s" %self.workingdir)
          
          if self.workingdir is not None:
