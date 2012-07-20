@@ -804,15 +804,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#removeNic(com.cloud.vm.VirtualMachineProfile, com.cloud.network.Network)
-     */
-    @Override
-    public void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, Network network) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#listPublicIpsAssignedToAccount(long, long, java.lang.Boolean)
      */
     @Override
@@ -919,15 +910,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     public IpAddress assignSystemIp(long networkId, Account owner, boolean forElasticLb, boolean forElasticIp) throws InsufficientAddressCapacityException {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#handleSystemIpRelease(com.cloud.network.IpAddress)
-     */
-    @Override
-    public boolean handleSystemIpRelease(IpAddress ip) {
-        // TODO Auto-generated method stub
-        return false;
     }
 
     /* (non-Javadoc)
@@ -1137,5 +1119,23 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     public boolean ipUsedInVpc(IpAddress ip) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#handleSystemIpRelease(com.cloud.network.IpAddress)
+     */
+    @Override
+    public boolean handleSystemIpRelease(IpAddress ip) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#removeNic(com.cloud.vm.VirtualMachineProfile, com.cloud.vm.Nic)
+     */
+    @Override
+    public void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, Nic nic) {
+        // TODO Auto-generated method stub
+        
     }
 }

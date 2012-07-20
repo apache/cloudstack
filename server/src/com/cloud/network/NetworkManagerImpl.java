@@ -2501,9 +2501,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, Network network) {
-        NicVO nic = _nicDao.findByInstanceIdAndNetworkId(network.getId(), vm.getVirtualMachine().getId());
-        removeNic(vm, nic);
+    public void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, Nic nic) {
+        removeNic(vm, _nicDao.findById(nic.getId()));
     }
 
     protected void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, NicVO nic) {
