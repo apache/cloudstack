@@ -292,14 +292,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             if (performedIpAssoc) {
                 //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
                 IpAddress ip = _ipAddressDao.findById(ipAddress.getId());
-                if (ip != null && ip.getVpcId() != null && _firewallDao.listByIp(ip.getId()).isEmpty()) {
-                    s_logger.debug("Releasing VPC ip address " + ip + " as PF rule failed to create");
-                    _networkMgr.unassignIPFromVpcNetwork(ip.getId());
-                }
+                _networkMgr.unassignIPFromVpcNetwork(ip.getId(), networkId);  
             }
         }
-
-
     }
 
     @Override
@@ -381,7 +376,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    @DB
     public boolean enableStaticNat(long ipId, long vmId, long networkId, boolean isSystemVm) 
             throws NetworkRuleConflictException, ResourceUnavailableException {
         UserContext ctx = UserContext.current();
@@ -476,20 +470,15 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             }
         } finally {
             if (!result) {
-                Transaction txn = Transaction.currentTxn();
-                txn.start();
                 ipAddress.setOneToOneNat(false);
                 ipAddress.setAssociatedWithVmId(null);
-                _ipAddressDao.update(ipAddress.getId(), ipAddress);
+                _ipAddressDao.update(ipAddress.getId(), ipAddress);  
+                
                 if (performedIpAssoc) {
                     //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
                     IpAddress ip = _ipAddressDao.findById(ipAddress.getId());
-                    if (ip != null && ip.getVpcId() != null && _firewallDao.listByIp(ip.getId()).isEmpty()) {
-                        s_logger.debug("Releasing VPC ip address " + ip + " as PF rule failed to create");
-                        _networkMgr.unassignIPFromVpcNetwork(ip.getId());
-                    }
-                } 
-                txn.commit();
+                    _networkMgr.unassignIPFromVpcNetwork(ip.getId(), networkId);
+                }
             }
         }
         return result;
@@ -1202,12 +1191,12 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
-    @DB
     public boolean disableStaticNat(long ipId, Account caller, long callerUserId, boolean releaseIpIfElastic) throws ResourceUnavailableException {
         boolean success = true;
 
         IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
         checkIpAndUserVm(ipAddress, null, caller);
+        long networkId = ipAddress.getAssociatedWithNetworkId();
 
         if (!ipAddress.isOneToOneNat()) {
             List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
@@ -1233,8 +1222,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
 
         if (success) {
-            Transaction txn = Transaction.currentTxn();
-            txn.start();
             boolean isIpSystem = ipAddress.getSystem();
             ipAddress.setOneToOneNat(false);
             ipAddress.setAssociatedWithVmId(null);
@@ -1242,8 +1229,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 ipAddress.setSystem(false);
             }
             _ipAddressDao.update(ipAddress.getId(), ipAddress);
-            _networkMgr.unassignIPFromVpcNetwork(ipAddress.getId());
-            txn.commit();
+            _networkMgr.unassignIPFromVpcNetwork(ipAddress.getId(), networkId);
 
             if (isIpSystem && releaseIpIfElastic && !_networkMgr.handleSystemIpRelease(ipAddress)) {
                 s_logger.warn("Failed to release system ip address " + ipAddress);
@@ -1394,17 +1380,12 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         }
     }
 
-    @DB
     protected void removePFRule(PortForwardingRuleVO rule) {
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        
         _portForwardingDao.remove(rule.getId());
+        
         //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
         IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
-        if (ip != null && ip.getVpcId() != null && _firewallDao.listByIp(ip.getId()).isEmpty()) {
-            _networkMgr.unassignIPFromVpcNetwork(ip.getId());
-        }
-
-        txn.commit();
+        _networkMgr.unassignIPFromVpcNetwork(ip.getId(), rule.getNetworkId());   
     }
 }

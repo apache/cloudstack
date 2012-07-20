@@ -404,8 +404,9 @@ public interface NetworkManager extends NetworkService {
 
     /**
      * @param ipId
+     * @param networkId TODO
      */
-    void unassignIPFromVpcNetwork(long ipId);
+    void unassignIPFromVpcNetwork(long ipId, long networkId);
 
 
     /**
@@ -467,5 +468,12 @@ public interface NetworkManager extends NetworkService {
 
 
     PublicIp assignVpnGatewayIpAddress(long dcId, Account owner, long vpcId) throws InsufficientAddressCapacityException, ConcurrentOperationException;
+
+
+    /**
+     * @param ip
+     * @return
+     */
+    boolean ipUsedInVpc(IpAddress ip);
 
 }

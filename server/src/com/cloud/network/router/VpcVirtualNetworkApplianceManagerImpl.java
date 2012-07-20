@@ -77,6 +77,7 @@ import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
@@ -140,6 +141,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     IPAddressDao _ipAddrDao;
     @Inject
     Site2SiteVpnGatewayDao _vpnGatewayDao;
+    @Inject
+    FirewallRulesDao _firewallDao;
     
     @Override
     public List<DomainRouterVO> deployVirtualRouterInVpc(Vpc vpc, DeployDestination dest, Account owner, 
@@ -290,108 +293,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         return result;
     }
     
-    protected boolean addPublicIpToVpc(VirtualRouter router, Network publicNetwork, PublicIp ipAddress) 
-            throws ConcurrentOperationException,ResourceUnavailableException, InsufficientCapacityException {
-        
-        if (publicNetwork.getTrafficType() != TrafficType.Public) {
-            s_logger.warn("Network " + publicNetwork + " is not of type " + TrafficType.Public);
-            return false;
-        }
-        
-        //Add router to the Public network
-        boolean result = true;
-        try {
-            NicProfile defaultNic = new NicProfile();
-            if (ipAddress.isSourceNat()) {
-                defaultNic.setDefaultNic(true);
-            }
-            defaultNic.setIp4Address(ipAddress.getAddress().addr());
-            defaultNic.setGateway(ipAddress.getGateway());
-            defaultNic.setNetmask(ipAddress.getNetmask());
-            defaultNic.setMacAddress(ipAddress.getMacAddress());
-            defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
-            defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ipAddress.getVlanTag()));
-            defaultNic.setIsolationUri(IsolationType.Vlan.toUri(ipAddress.getVlanTag()));
-            
-            NicProfile publicNic = _itMgr.addVmToNetwork(router, publicNetwork, defaultNic);
-            //setup public network
-            if (publicNic != null) {
-                if (ipAddress.isSourceNat()) {
-                    if (router.getPublicIpAddress() == null) {
-                        DomainRouterVO routerVO = _routerDao.findById(router.getId());
-                        routerVO.setPublicIpAddress(ipAddress.getAddress().toString());
-                        routerVO.setPublicNetmask(ipAddress.getNetmask());
-                        routerVO.setPublicMacAddress(ipAddress.getMacAddress());
-                        _routerDao.update(routerVO.getId(), routerVO);
-                    }
-                }
-                publicNic.setDefaultNic(true);
-                if (ipAddress != null) {
-                    IPAddressVO ipVO = _ipAddressDao.findById(ipAddress.getId());
-                    PublicIp publicIp = new PublicIp(ipVO, _vlanDao.findById(ipVO.getVlanId()), 
-                            NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress()));
-                    result = associtePublicIpInVpc(publicNetwork, router, false, publicIp);
-                }
-            } else {
-                result = false;
-                s_logger.warn("Failed to add public ip " + ipAddress + " to VPC router " + router);
-            }
-        } catch (Exception ex) {
-            s_logger.warn("Failed to add ip address " + ipAddress + " from the public network " + publicNetwork + 
-                    " to VPC router " + router + " due to ", ex);
-            result = false;
-        }
-        
-        return result;
-    }
-    
-    
-    protected boolean removePublicIpFromVpcRouter(VirtualRouter router, Network publicNetwork, PublicIp ipAddress) 
-            throws ConcurrentOperationException, ResourceUnavailableException {
-        
-        if (publicNetwork.getTrafficType() != TrafficType.Public) {
-            s_logger.warn("Network " + publicNetwork + " is not of type " + TrafficType.Public);
-            return false;
-        }
-                        
-        boolean result = true;
-        IPAddressVO ipVO = _ipAddressDao.findById(ipAddress.getId());
-        _networkMgr.markIpAsUnavailable(ipVO.getId());
-        PublicIp publicIp = new PublicIp(ipVO, _vlanDao.findById(ipVO.getVlanId()), 
-                NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress()));
-        result = associtePublicIpInVpc(publicNetwork, router, false, publicIp);
-        
-        if (!result) {
-            s_logger.warn("Failed to disassociate public ip " + ipAddress  + " from router " + router);
-            return false;
-        }
-        
-        URI broadcastUri = BroadcastDomainType.Vlan.toUri(ipAddress.getVlanTag());
-        if (_itMgr.removeVmFromNetwork(router, publicNetwork, broadcastUri)) {
-            s_logger.debug("Successfully removed router " + router + " from vlan " + ipAddress.getVlanTag() +" of public network " + publicNetwork);
-            return true;
-        } else {
-            s_logger.warn("Failed to remove router " + router + " from vlan " + ipAddress.getVlanTag() +" of public network " + publicNetwork);
-            return false;
-        }
-    }
-    
-    protected boolean associtePublicIpInVpc(Network network, VirtualRouter router, boolean add, PublicIp ipAddress) 
-            throws ConcurrentOperationException, ResourceUnavailableException{
-        
-        List<PublicIp> publicIps = new ArrayList<PublicIp>(1);
-        publicIps.add(ipAddress);
-        Commands cmds = new Commands(OnError.Stop);
-        createVpcAssociatePublicIPCommands(router, publicIps, cmds);
-        
-        if (sendCommandsToRouter(router, cmds)) {
-            s_logger.debug("Successfully applied ip association for ip " + ipAddress + " in vpc network " + network);
-            return true;
-        } else {
-            s_logger.warn("Failed to associate ip address " + ipAddress + " in vpc network " + network);
-            return false;
-        }
-    }
     
     protected DomainRouterVO deployVpcRouter(Account owner, DeployDestination dest, DeploymentPlan plan, Map<Param, Object> params,
             boolean isRedundant, VirtualRouterProvider vrProvider, long svcOffId,
@@ -614,64 +515,107 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     protected NicTO getNicTO(final VirtualRouter router, Long guestNetworkId) {
-        VirtualMachine vm = _vmDao.findById(router.getId());
         NicProfile nicProfile = _networkMgr.getNicProfile(router, guestNetworkId);
         
         return _itMgr.toNicTO(nicProfile, router.getHypervisorType());
     }
     
     @Override
-    public boolean associateIP(Network network, final List<? extends PublicIpAddress> ipAddress, List<? extends VirtualRouter> routers)
+    public boolean associatePublicIP(Network network, final List<? extends PublicIpAddress> ipAddress,
+            List<? extends VirtualRouter> routers)
             throws ResourceUnavailableException {
         if (ipAddress == null || ipAddress.isEmpty()) {
             s_logger.debug("No ip association rules to be applied for network " + network.getId());
             return true;
         }
         
-        //1) check which nics need to be plugged and plug them
+        //only one router is supported in VPC now
+        VirtualRouter router = routers.get(0);
+        
+        //1) check which nics need to be plugged/unplugged and plug/unplug them
+        Map<String, PublicIpAddress> nicsToPlug = new HashMap<String, PublicIpAddress>();
+        Map<String, PublicIpAddress> nicsToUnPlug = new HashMap<String, PublicIpAddress>();
+        
+        //find out nics to unplug
         for (PublicIpAddress ip : ipAddress) {
-            for (VirtualRouter router : routers) {
-                URI broadcastUri = BroadcastDomainType.Vlan.toUri(ip.getVlanTag());
-                Nic nic = _nicDao.findByInstanceIdNetworkIdAndBroadcastUri(network.getId(), router.getId(), 
-                        broadcastUri.toString());
+            long publicNtwkId = ip.getNetworkId();
+            
+            //if ip is not associated to any network, and there are no firewall rules, release it on the backend
+            if (!_networkMgr.ipUsedInVpc(ip)) {
+                ip.setState(IpAddress.State.Releasing);
+            }
+                         
+            if (ip.getState() == IpAddress.State.Releasing) {
+                Nic nic = _nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, router.getId(), ip.getAddress().addr());
                 if (nic != null) {
-                    //have to plug the nic(s)
-                    NicProfile defaultNic = new NicProfile();
-                    if (ip.isSourceNat()) {
-                        defaultNic.setDefaultNic(true);
-                    }
-                    defaultNic.setIp4Address(ip.getAddress().addr());
-                    defaultNic.setGateway(ip.getGateway());
-                    defaultNic.setNetmask(ip.getNetmask());
-                    defaultNic.setMacAddress(ip.getMacAddress());
-                    defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
-                    defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
-                    defaultNic.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
-                    
-                    NicProfile publicNic = null;
-                    Network publicNtwk = null;
-                    try {
-                        publicNtwk = _networkMgr.getNetwork(ip.getNetworkId());
-                        publicNic = _itMgr.addVmToNetwork(router, publicNtwk, defaultNic);
-                    } catch (ConcurrentOperationException e) {
-                        s_logger.warn("Failed to add router " + router + " to vlan " + ip.getVlanTag() + 
-                                " in public network " + publicNtwk + " due to ", e);
-                    } catch (InsufficientCapacityException e) {
-                        s_logger.warn("Failed to add router " + router + " to vlan " + ip.getVlanTag() + 
-                                " in public network " + publicNtwk + " due to ", e);
-                    } finally {
-                        if (publicNic == null) {
-                            s_logger.warn("Failed to add router " + router + " to vlan " + ip.getVlanTag() + 
-                                    " in public network " + publicNtwk);
-                            return false;
-                        }
-                    }
+                    nicsToUnPlug.put(ip.getVlanTag(), ip);
+                    s_logger.debug("Need to unplug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + 
+                            " in public network id =" + publicNtwkId);
                 }
             }
         }
         
-        //2) apply the ips
-        return applyRules(network, routers, "vpc ip association", false, null, false, new RuleApplier() {
+        //find out nics to plug
+        for (PublicIpAddress ip : ipAddress) {
+            URI broadcastUri = BroadcastDomainType.Vlan.toUri(ip.getVlanTag());
+            long publicNtwkId = ip.getNetworkId();
+            
+            //if ip is not associated to any network, and there are no firewall rules, release it on the backend
+            if (!_networkMgr.ipUsedInVpc(ip)) {
+                ip.setState(IpAddress.State.Releasing);
+            }
+                         
+            if (ip.getState() == IpAddress.State.Allocated || ip.getState() == IpAddress.State.Allocating) {
+                //nic has to be plugged only when there are no nics for this vlan tag exist on VR
+                Nic nic = _nicDao.findByInstanceIdNetworkIdAndBroadcastUri(publicNtwkId, router.getId(), 
+                        broadcastUri.toString());
+                
+                if ((nic == null && nicsToPlug.get(ip.getVlanTag()) == null) || nicsToUnPlug.get(ip.getVlanTag()) != null) {
+                    nicsToPlug.put(ip.getVlanTag(), ip);
+                    s_logger.debug("Need to plug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + 
+                            " in public network id =" + publicNtwkId);
+                }
+            }
+        }
+        
+        //2) Plug the nics
+        for (String vlanTag : nicsToPlug.keySet()) {
+            PublicIpAddress ip = nicsToPlug.get(vlanTag);
+            //have to plug the nic(s)
+            NicProfile defaultNic = new NicProfile();
+            if (ip.isSourceNat()) {
+                defaultNic.setDefaultNic(true);
+            }
+            defaultNic.setIp4Address(ip.getAddress().addr());
+            defaultNic.setGateway(ip.getGateway());
+            defaultNic.setNetmask(ip.getNetmask());
+            defaultNic.setMacAddress(ip.getMacAddress());
+            defaultNic.setBroadcastType(BroadcastDomainType.Vlan);
+            defaultNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
+            defaultNic.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
+            
+            NicProfile publicNic = null;
+            Network publicNtwk = null;
+            try {
+                publicNtwk = _networkMgr.getNetwork(ip.getNetworkId());
+                publicNic = _itMgr.addVmToNetwork(router, publicNtwk, defaultNic);
+            } catch (ConcurrentOperationException e) {
+                s_logger.warn("Failed to add router " + router + " to vlan " + vlanTag + 
+                        " in public network " + publicNtwk + " due to ", e);
+            } catch (InsufficientCapacityException e) {
+                s_logger.warn("Failed to add router " + router + " to vlan " + vlanTag + 
+                        " in public network " + publicNtwk + " due to ", e);
+            } finally {
+                if (publicNic == null) {
+                    s_logger.warn("Failed to add router " + router + " to vlan " + vlanTag + 
+                            " in public network " + publicNtwk);
+                    return false;
+                }
+            }
+        }
+        
+        //3) apply the ips
+        boolean result = applyRules(network, routers, "vpc ip association", false, null, false, new RuleApplier() {
             @Override
             public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
                 Commands cmds = new Commands(OnError.Continue);
@@ -679,6 +623,22 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 return sendCommandsToRouter(router, cmds);
             }
         });
+        
+        //4) Unplug the nics
+        for (String vlanTag : nicsToUnPlug.keySet()) {
+            Network publicNtwk = null;
+            try {
+                publicNtwk = _networkMgr.getNetwork(nicsToUnPlug.get(vlanTag).getNetworkId());
+                URI broadcastUri = BroadcastDomainType.Vlan.toUri(vlanTag);
+                _itMgr.removeVmFromNetwork(router, publicNtwk, broadcastUri);
+            } catch (ConcurrentOperationException e) {
+                s_logger.warn("Failed to remove router " + router + " from vlan " + vlanTag + 
+                        " in public network " + publicNtwk + " due to ", e);
+                return false;
+            }
+        }
+        
+        return result;
     }
     
     
@@ -980,7 +940,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
      * @param add
      * @param privateNic
      * @return
-     * @throws ResourceUnavailableException TODO
+     * @throws ResourceUnavailableException
      */
     protected boolean setupVpcPrivateNetwork(VirtualRouter router, boolean add, NicProfile privateNic) 
             throws ResourceUnavailableException {

@@ -956,7 +956,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      * @see com.cloud.network.NetworkManager#unassignIPFromVpcNetwork(long)
      */
     @Override
-    public void unassignIPFromVpcNetwork(long ipId) {
+    public void unassignIPFromVpcNetwork(long ipId, long networkId) {
         // TODO Auto-generated method stub
         
     }

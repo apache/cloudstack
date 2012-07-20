@@ -176,5 +176,13 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         sc.setParameters("broadcastUri", broadcastUri);
         return findOneBy(sc);
     }
-
+    
+    @Override
+    public NicVO findByIp4AddressAndNetworkIdAndInstanceId(long networkId, long instanceId, String ip4Address) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("instance", instanceId);
+        sc.setParameters("address", ip4Address);
+        return findOneBy(sc);
+    }
 }
