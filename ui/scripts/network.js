@@ -3845,11 +3845,10 @@
 											items.push({id: '3des-md5', description: '3des-md5'});
 											items.push({id: 'aes-md5', description: 'aes-md5'});
 											items.push({id: 'aes128-md5', description: 'aes128-md5'});
-											items.push({id: 'des-md5', description: 'des-md5'});											
+																						
 											items.push({id: '3des-sha1', description: '3des-sha1'});
 											items.push({id: 'aes-sha1', description: 'aes-sha1'});
-											items.push({id: 'aes128-sha1', description: 'aes128-sha1'});
-											items.push({id: 'des-sha1', description: 'des-sha1'});
+											items.push({id: 'aes128-sha1', description: 'aes128-sha1'});											
 											args.response.success({data: items});
 										}
 									},
@@ -3894,9 +3893,116 @@
 					},
 										
 					detailView: {
-            name: 'label.details',
-						
-						actions: {						  
+            name: 'label.details',						
+						actions: {	              
+							add: {
+                addRow: 'false',
+                label: 'Create VPN Connection',
+                messages: {
+                  confirm: function(args) {
+                    return 'Are you sure you want to create VPN connection ?';
+                  },
+                  notification: function(args) {
+                    return 'Create VPN Connection';
+                  }
+                },
+                createForm: {
+                  title: 'Create VPN Connection',                 
+                  fields: {                    
+										zoneid: {
+											label: 'Zone',
+											validation: { required: true },
+											select: function(args) {												
+												$.ajax({
+													url: createURL('listZones'),
+													data: {
+													  available: true
+													},
+													success: function(json) {
+														var zones = json.listzonesresponse.zone;
+														args.response.success({
+															data: $.map(zones, function(zone) {
+																return {
+																	id: zone.id,
+																	description: zone.name
+																};
+															})
+														});
+													}
+												});
+											}
+										},										
+										vpcid: {
+											label: 'VPC',
+											validation: { required: true },
+											dependsOn: 'zoneid',
+											select: function(args) {		                        						
+												$.ajax({
+												  url: createURL('listVPCs'),
+													data: {
+													  zoneid: args.zoneid,
+													  listAll: true
+													},
+													success: function(json) {													  
+														var items = json.listvpcsresponse.vpc;
+														var data;
+														if(items != null && items.length > 0) {
+														  data = $.map(items, function(item) {															  
+															  return {
+																  id: item.id,
+																	description: item.name
+																}
+															});															
+														}		
+														args.response.success({ data: data });
+													}
+												});	
+											}
+										}										
+                  }
+                },
+                action: function(args) {								 
+									var vpngatewayid;
+									$.ajax({
+										url: createURL('listVpnGateways'),
+										data: {
+											vpcid: args.data.vpcid
+										},
+										async: false,
+										success: function(json) {								  
+											var items = json.listvpngatewaysresponse.vpngateway;
+											if(items != null && items.length > 0) {
+												vpngatewayid = items[0].id;
+											}
+											else {
+											  cloudStack.dialog.notice({ message: 'The selected VPC does not have a VPN gateway. Please create a VPN gateway for the VPC first.' });
+												return;
+											}
+										}
+									});																		
+                  $.ajax({
+                    url: createURL('createVpnConnection'),
+                    data: {
+											s2svpngatewayid: vpngatewayid,
+											s2scustomergatewayid: args.context.vpnCustomerGateway[0].id
+										},                    
+                    success: function(json) {
+                      var jid = json.createvpnconnectionresponse.jobid; 
+                      args.response.success(
+                        {_custom:
+                          {
+													  jobId: jid
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },							
+					  
 							remove: {
                 label: 'delete VPN Customer Gateway',
                 messages: {
