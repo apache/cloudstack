@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License. 
+
 (function($, cloudStack) {
   var zoneObjs, hypervisorObjs, featuredTemplateObjs, communityTemplateObjs, myTemplateObjs, featuredIsoObjs, community
   var selectedZoneObj, selectedTemplateObj, selectedHypervisor, selectedDiskOfferingObj; 
@@ -32,7 +33,18 @@
         async: false,
         success: function(json) {
           zoneObjs = json.listzonesresponse.zone;
-          args.response.success({ data: {zones: zoneObjs}});
+										
+					var items;
+					if(args.initArgs.pluginForm != null && args.initArgs.pluginForm.name == "vpcTierInstanceWizard") { //from VPC Tier chart
+					  items = $.grep(zoneObjs, function(zoneObj) {						  
+							return zoneObj.networktype == 'Advanced';
+						});
+					}
+			    else { //from Instance page 
+            items = zoneObjs;
+          }		         			
+					
+          args.response.success({ data: {zones: items}});
         }
       });
     },
@@ -237,8 +249,22 @@
         }
       }
 
-      if (selectedZoneObj.networktype == "Advanced") {  //Advanced zone. Show network list.
-        step5ContainerType = 'select-network';
+      if (selectedZoneObj.networktype == "Advanced") {  //Advanced zone. Show network list.	 
+				var $networkStep = $(".step.network:visible .nothing-to-select");		
+				if(args.initArgs.pluginForm != null && args.initArgs.pluginForm.name == "vpcTierInstanceWizard") { //from VPC Tier chart
+				  step5ContainerType = 'nothing-to-select'; 					
+					$networkStep.find("#from_instance_page_1").hide();		
+          $networkStep.find("#from_instance_page_2").hide();					
+					$networkStep.find("#from_vpc_tier").text("tier " + args.context.networks[0].name);					
+					$networkStep.find("#from_vpc_tier").show();					
+				}
+			  else { //from Instance page 
+          step5ContainerType = 'select-network';
+					$networkStep.find("#from_instance_page_1").show();		
+          $networkStep.find("#from_instance_page_2").show();
+					$networkStep.find("#from_vpc_tier").text("");			
+					$networkStep.find("#from_vpc_tier").hide();
+				}
       }
       else { //Basic zone. Show securigy group list or nothing(when no SecurityGroup service in guest network)
         var includingSecurityGroupService = false;
@@ -292,15 +318,18 @@
             networkObjs = json.listnetworksresponse.network ? json.listnetworksresponse.network : [];
           }
         });
-
-
-        var apiCmd = "listNetworkOfferings&guestiptype=Isolated&supportedServices=sourceNat&state=Enabled&specifyvlan=false&zoneid=" + args.currentData.zoneid ; 
-        var array1 = [];
-        var guestTrafficTypeTotal = 0;
-
+                  
         $.ajax({
-          url: createURL(apiCmd + array1.join("")), //get the network offering for isolated network with sourceNat
+          url: createURL("listNetworkOfferings"), 
           dataType: "json",
+					data: {
+						forvpc: false, 
+						zoneid: args.currentData.zoneid,
+						guestiptype: 'Isolated',
+						supportedServices: 'SourceNat',
+						specifyvlan: false,
+						state: 'Enabled'
+					},
           async: false,
           success: function(json) {
             networkOfferingObjs  = json.listnetworkofferingsresponse.networkoffering;
@@ -373,14 +402,6 @@
     }
     ],
     action: function(args) {
-/*
-var isValid = true;
-isValid &= validateString("Name", $thisPopup.find("#wizard_vm_name"), $thisPopup.find("#wizard_vm_name_errormsg"), true);   //optional
-isValid &= validateString("Group", $thisPopup.find("#wizard_vm_group"), $thisPopup.find("#wizard_vm_group_errormsg"), true); //optional
-if (!isValid)
-return;
-*/
-
       // Create a new VM!!!!
       var array1 = [];
 
@@ -473,7 +494,11 @@ return;
         if(checkedSecurityGroupIdArray.length > 0)
           array1.push("&securitygroupids=" + checkedSecurityGroupIdArray.join(","));
       }
-
+      else if (step5ContainerType == 'nothing-to-select') {		
+				if(args.context.networks != null) //from VPC tier
+				  array1.push("&networkIds=" + args.context.networks[0].id);
+			}
+			
       var displayname = args.data.displayname;
       if(displayname != null && displayname.length > 0) {
         array1.push("&displayname="+todb(displayname));

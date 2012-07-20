@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 (function($, cloudStack) {
   /**
    * Instance wizard
@@ -166,7 +167,9 @@
         var dataProvider = function(step, providerArgs, callback) {
           // Call appropriate data provider
           args.steps[step - 1]($.extend(providerArgs, {
-            currentData: cloudStack.serializeForm($form)
+            currentData: cloudStack.serializeForm($form),
+						initArgs: args,
+						context: context
           }));
         };
 
