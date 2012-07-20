@@ -2553,7 +2553,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         s_logger.debug("Successfully released nic " + nic +  "for vm " + vm);
         
         //3) Remove the nic
-        _networkMgr.removeNic(vmProfile, network);
+        _networkMgr.removeNic(vmProfile, nic);
         return result;
     }
    

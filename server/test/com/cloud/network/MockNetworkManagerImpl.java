@@ -938,7 +938,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      * @see com.cloud.network.NetworkManager#removeNic(com.cloud.vm.VirtualMachineProfile, com.cloud.network.Network)
      */
     @Override
-    public void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, Network network) {
+    public void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, Nic nic) {
         // TODO Auto-generated method stub
         
     }

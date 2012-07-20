@@ -380,9 +380,9 @@ public interface NetworkManager extends NetworkService {
 
     /**
      * @param vm
-     * @param network
+     * @param nic TODO
      */
-    void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, Network network);
+    void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, Nic nic);
 
 
     /**
