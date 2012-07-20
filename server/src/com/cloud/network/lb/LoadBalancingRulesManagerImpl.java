@@ -749,11 +749,10 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                             && ipVO.getVpcId() != null && ipVO.getVpcId().longValue() == network.getVpcId();
                     if (assignToVpcNtwk) {
                         //set networkId just for verification purposes
-                        ipVO.setAssociatedWithNetworkId(lb.getNetworkId());
                         _networkMgr.checkIpForService(ipVO, Service.Lb, lb.getNetworkId());
 
                         s_logger.debug("The ip is not associated with the VPC network id="+ lb.getNetworkId() + " so assigning");
-                        ipVO = _networkMgr.associateIPToGuestNetwork(ipAddrId, lb.getNetworkId());
+                        ipVO = _networkMgr.associateIPToGuestNetwork(ipAddrId, lb.getNetworkId(), false);
                         performedIpAssoc = true;
                     }
                 } else {

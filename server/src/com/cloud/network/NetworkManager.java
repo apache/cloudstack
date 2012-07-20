@@ -403,8 +403,9 @@ public interface NetworkManager extends NetworkService {
     /**
      * @param ipAddrId
      * @param networkId
+     * @param releaseOnFailure TODO
      */
-    IPAddressVO associateIPToGuestNetwork(long ipAddrId, long networkId) throws ResourceAllocationException, ResourceUnavailableException, 
+    IPAddressVO associateIPToGuestNetwork(long ipAddrId, long networkId, boolean releaseOnFailure) throws ResourceAllocationException, ResourceUnavailableException, 
         InsufficientAddressCapacityException, ConcurrentOperationException;
 
 

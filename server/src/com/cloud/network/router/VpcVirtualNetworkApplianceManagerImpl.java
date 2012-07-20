@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 
 import javax.ejb.Local;
 
@@ -97,6 +98,7 @@ import com.cloud.network.vpc.Dao.PrivateIpDao;
 import com.cloud.network.vpc.Dao.StaticRouteDao;
 import com.cloud.network.vpc.Dao.VpcDao;
 import com.cloud.network.vpc.Dao.VpcOfferingDao;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
@@ -529,9 +531,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         //only one router is supported in VPC now
         VirtualRouter router = routers.get(0);
         
-        //1) check which nics need to be plugged/unplugged and plug/unplug them
-        Map<String, PublicIpAddress> nicsToPlug = new HashMap<String, PublicIpAddress>();
-        Map<String, PublicIpAddress> nicsToUnPlug = new HashMap<String, PublicIpAddress>();
+        Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>> nicsToChange = getNicsToChangeOnRouter(ipAddress, router);
+        Map<String, PublicIpAddress> nicsToPlug = nicsToChange.first();
+        Map<String, PublicIpAddress> nicsToUnplug = nicsToChange.second();
+        
         
         //find out nics to unplug
         for (PublicIpAddress ip : ipAddress) {
@@ -545,7 +548,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             if (ip.getState() == IpAddress.State.Releasing) {
                 Nic nic = _nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, router.getId(), ip.getAddress().addr());
                 if (nic != null) {
-                    nicsToUnPlug.put(ip.getVlanTag(), ip);
+                    nicsToUnplug.put(ip.getVlanTag(), ip);
                     s_logger.debug("Need to unplug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + 
                             " in public network id =" + publicNtwkId);
                 }
@@ -567,7 +570,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 Nic nic = _nicDao.findByInstanceIdNetworkIdAndBroadcastUri(publicNtwkId, router.getId(), 
                         broadcastUri.toString());
                 
-                if ((nic == null && nicsToPlug.get(ip.getVlanTag()) == null) || nicsToUnPlug.get(ip.getVlanTag()) != null) {
+                if ((nic == null && nicsToPlug.get(ip.getVlanTag()) == null) || nicsToUnplug.get(ip.getVlanTag()) != null) {
                     nicsToPlug.put(ip.getVlanTag(), ip);
                     s_logger.debug("Need to plug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + 
                             " in public network id =" + publicNtwkId);
@@ -622,10 +625,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         });
         
         //4) Unplug the nics
-        for (String vlanTag : nicsToUnPlug.keySet()) {
+        for (String vlanTag : nicsToUnplug.keySet()) {
             Network publicNtwk = null;
             try {
-                publicNtwk = _networkMgr.getNetwork(nicsToUnPlug.get(vlanTag).getNetworkId());
+                publicNtwk = _networkMgr.getNetwork(nicsToUnplug.get(vlanTag).getNetworkId());
                 URI broadcastUri = BroadcastDomainType.Vlan.toUri(vlanTag);
                 _itMgr.removeVmFromNetwork(router, publicNtwk, broadcastUri);
             } catch (ConcurrentOperationException e) {
@@ -1143,13 +1146,18 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     
     
     protected List<Pair<NetworkVO, NicProfile>> createVpcRouterNetworks(Account owner, boolean isRedundant, 
-            DeploymentPlan plan, Pair<Boolean, PublicIp> publicNetwork, long vpcId) throws ConcurrentOperationException,
+            DeploymentPlan plan, Pair<Boolean, PublicIp> sourceNatIp, long vpcId) throws ConcurrentOperationException,
             InsufficientAddressCapacityException {
 
         List<Pair<NetworkVO, NicProfile>> networks = new ArrayList<Pair<NetworkVO, NicProfile>>(4);
-        networks = super.createRouterNetworks(owner, isRedundant, plan, null, publicNetwork);
         
-        //1) allocate nic for private gateway if needed
+        TreeSet<String> publicVlans = new TreeSet<String>();
+        publicVlans.add(sourceNatIp.second().getVlanTag());
+        
+        //1) allocate nic for control and source nat public ip
+        networks = super.createRouterNetworks(owner, isRedundant, plan, null, sourceNatIp);
+
+        //2) allocate nic for private gateway if needed
         VpcGateway privateGateway = _vpcMgr.getPrivateGatewayForVpc(vpcId);
         if (privateGateway != null) {
             NicProfile privateNic = createPrivateNicProfileForGateway(privateGateway);
@@ -1157,12 +1165,36 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) privateNetwork, privateNic));
         }
         
-        //2) allocate nic for guest gateway if needed
+        //3) allocate nic for guest gateway if needed
         List<? extends Network> guestNetworks = _vpcMgr.getVpcNetworks(vpcId);
         for (Network guestNetwork : guestNetworks) {
             if (guestNetwork.getState() == Network.State.Implemented) {
                 NicProfile guestNic = createGuestNicProfileForVpcRouter(guestNetwork);
                 networks.add(new Pair<NetworkVO, NicProfile>((NetworkVO) guestNetwork, guestNic));
+            }
+        }
+        
+        //4) allocate nic for additional public network(s)
+        List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpcId, false);
+        for (IPAddressVO ip : ips) {
+            PublicIp publicIp = new PublicIp(ip, _vlanDao.findById(ip.getVlanId()), 
+                    NetUtils.createSequenceBasedMacAddress(ip.getMacAddress()));
+            if ((ip.getState() == IpAddress.State.Allocated || ip.getState() == IpAddress.State.Allocating) 
+                    && _networkMgr.ipUsedInVpc(ip)&& !publicVlans.contains(publicIp.getVlanTag())) {
+                s_logger.debug("Allocating nic for router in vlan " + publicIp.getVlanTag());
+                NicProfile publicNic = new NicProfile();
+                publicNic.setDefaultNic(false);
+                publicNic.setIp4Address(publicIp.getAddress().addr());
+                publicNic.setGateway(publicIp.getGateway());
+                publicNic.setNetmask(publicIp.getNetmask());
+                publicNic.setMacAddress(publicIp.getMacAddress());
+                publicNic.setBroadcastType(BroadcastDomainType.Vlan);
+                publicNic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(publicIp.getVlanTag()));
+                publicNic.setIsolationUri(IsolationType.Vlan.toUri(publicIp.getVlanTag()));
+                NetworkOfferingVO publicOffering = _networkMgr.getSystemAccountNetworkOfferings(NetworkOfferingVO.SystemPublicNetwork).get(0);
+                List<NetworkVO> publicNetworks = _networkMgr.setupNetwork(_systemAcct, publicOffering, plan, null, null, false);
+                networks.add(new Pair<NetworkVO, NicProfile>(publicNetworks.get(0), publicNic));
+                publicVlans.add(publicIp.getVlanTag());
             }
         }
         
@@ -1202,5 +1234,60 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         guestNic.setNetmask(NetUtils.getCidrNetmask(gatewayCidr));
         
         return guestNic;
+    }
+    
+    protected Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>> getNicsToChangeOnRouter 
+    (final List<? extends PublicIpAddress> publicIps, VirtualRouter router) {
+        //1) check which nics need to be plugged/unplugged and plug/unplug them
+        
+        Map<String, PublicIpAddress> nicsToPlug = new HashMap<String, PublicIpAddress>();
+        Map<String, PublicIpAddress> nicsToUnplug = new HashMap<String, PublicIpAddress>();
+
+        
+        //find out nics to unplug
+        for (PublicIpAddress ip : publicIps) {
+            long publicNtwkId = ip.getNetworkId();
+            
+            //if ip is not associated to any network, and there are no firewall rules, release it on the backend
+            if (!_networkMgr.ipUsedInVpc(ip)) {
+                ip.setState(IpAddress.State.Releasing);
+            }
+                         
+            if (ip.getState() == IpAddress.State.Releasing) {
+                Nic nic = _nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, router.getId(), ip.getAddress().addr());
+                if (nic != null) {
+                    nicsToUnplug.put(ip.getVlanTag(), ip);
+                    s_logger.debug("Need to unplug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + 
+                            " in public network id =" + publicNtwkId);
+                }
+            }
+        }
+        
+        //find out nics to plug
+        for (PublicIpAddress ip : publicIps) {
+            URI broadcastUri = BroadcastDomainType.Vlan.toUri(ip.getVlanTag());
+            long publicNtwkId = ip.getNetworkId();
+            
+            //if ip is not associated to any network, and there are no firewall rules, release it on the backend
+            if (!_networkMgr.ipUsedInVpc(ip)) {
+                ip.setState(IpAddress.State.Releasing);
+            }
+                         
+            if (ip.getState() == IpAddress.State.Allocated || ip.getState() == IpAddress.State.Allocating) {
+                //nic has to be plugged only when there are no nics for this vlan tag exist on VR
+                Nic nic = _nicDao.findByInstanceIdNetworkIdAndBroadcastUri(publicNtwkId, router.getId(), 
+                        broadcastUri.toString());
+                
+                if ((nic == null && nicsToPlug.get(ip.getVlanTag()) == null) || nicsToUnplug.get(ip.getVlanTag()) != null) {
+                    nicsToPlug.put(ip.getVlanTag(), ip);
+                    s_logger.debug("Need to plug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + 
+                            " in public network id =" + publicNtwkId);
+                }
+            }
+        }
+        
+        Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>> nicsToChange = 
+                new Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>>(nicsToPlug, nicsToUnplug);
+        return nicsToChange;
     }
 }

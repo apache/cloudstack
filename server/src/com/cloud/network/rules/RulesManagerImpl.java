@@ -194,7 +194,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
                 s_logger.debug("The ip is not associated with the VPC network id="+ networkId + ", so assigning");
                 try {
-                    ipAddress = _networkMgr.associateIPToGuestNetwork(ipAddrId, networkId);
+                    ipAddress = _networkMgr.associateIPToGuestNetwork(ipAddrId, networkId, false);
                     performedIpAssoc = true;
                 } catch (Exception ex) {
                     throw new CloudRuntimeException("Failed to associate ip to VPC network as " +
@@ -420,7 +420,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                         
                         s_logger.debug("The ip is not associated with the VPC network id="+ networkId + ", so assigning");
                         try {
-                            ipAddress = _networkMgr.associateIPToGuestNetwork(ipId, networkId);
+                            ipAddress = _networkMgr.associateIPToGuestNetwork(ipId, networkId, false);
                         } catch (Exception ex) {
                             s_logger.warn("Failed to associate ip id=" + ipId + " to VPC network id=" + networkId + " as " +
                                     "a part of enable static nat");
