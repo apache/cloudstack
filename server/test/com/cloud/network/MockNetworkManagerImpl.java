@@ -822,15 +822,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#unassignIPFromVpcNetwork(long)
-     */
-    @Override
-    public void unassignIPFromVpcNetwork(long ipId) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.network.NetworkService#allocateIP(com.cloud.user.Account, boolean, long)
      */
     @Override
@@ -955,15 +946,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     public void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, Nic nic) throws ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#getDefaultManagementTrafficLabel(long, com.cloud.hypervisor.Hypervisor.HypervisorType)
-     */
-    @Override
-    public String getDefaultManagementTrafficLabel(long zoneId, HypervisorType hypervisorType) {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     /* (non-Javadoc)
@@ -1128,5 +1110,32 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
             throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#getDefaultManagementTrafficLabel(long, com.cloud.hypervisor.Hypervisor.HypervisorType)
+     */
+    @Override
+    public String getDefaultManagementTrafficLabel(long zoneId, HypervisorType hypervisorType) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#unassignIPFromVpcNetwork(long, long)
+     */
+    @Override
+    public void unassignIPFromVpcNetwork(long ipId, long networkId) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#ipUsedInVpc(com.cloud.network.IpAddress)
+     */
+    @Override
+    public boolean ipUsedInVpc(IpAddress ip) {
+        // TODO Auto-generated method stub
+        return false;
     }
 }

@@ -780,12 +780,9 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 }
                 // release ip address if ipassoc was perfored
                 if (performedIpAssoc) {
-                    //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
                     ipVO = _ipAddressDao.findById(ipVO.getId());
-                    if (ipVO != null && ipVO.getVpcId() != null && _firewallDao.listByIp(ipVO.getId()).isEmpty()) {
-                        s_logger.debug("Releasing VPC ip address " + ipVO + " as LB rule failed to create");
-                        _networkMgr.unassignIPFromVpcNetwork(ipVO.getId());
-                    }
+                    _networkMgr.unassignIPFromVpcNetwork(ipVO.getId(), lb.getNetworkId());
+                    
                 }
             }
         }
@@ -1348,17 +1345,13 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         return _lbDao.findById(lbId);
     }
 
-    @DB
     protected void removeLBRule(LoadBalancerVO rule) {
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        
+        //remove the rule
         _lbDao.remove(rule.getId());
+        
         //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
         IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
-        if (ip != null && ip.getVpcId() != null && _firewallDao.listByIp(ip.getId()).isEmpty()) {
-            _networkMgr.unassignIPFromVpcNetwork(ip.getId());
-        }
-        
-        txn.commit();
+        _networkMgr.unassignIPFromVpcNetwork(ip.getId(), rule.getNetworkId());
     }
 }

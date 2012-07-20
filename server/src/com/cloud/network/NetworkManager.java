@@ -410,8 +410,9 @@ public interface NetworkManager extends NetworkService {
 
     /**
      * @param ipId
+     * @param networkId TODO
      */
-    void unassignIPFromVpcNetwork(long ipId);
+    void unassignIPFromVpcNetwork(long ipId, long networkId);
 
 
     /**
@@ -471,5 +472,12 @@ public interface NetworkManager extends NetworkService {
     NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context, VirtualMachineProfileImpl<VMInstanceVO> vmProfile, boolean prepare) throws InsufficientVirtualNetworkCapcityException,
             InsufficientAddressCapacityException, ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
     
+
+
+    /**
+     * @param ip
+     * @return
+     */
+    boolean ipUsedInVpc(IpAddress ip);
 
 }

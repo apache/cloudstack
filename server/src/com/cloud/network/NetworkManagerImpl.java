@@ -2413,21 +2413,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         boolean success = disassociatePublicIpAddress(ipAddressId, userId, caller);
-        
-        Long networkId = ipVO.getAssociatedWithNetworkId();
-        if (success && networkId != null) {
-            Network guestNetwork = getNetwork(networkId);
-            NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
-            Long vmId = ipVO.getAssociatedWithVmId();
-            if (offering.getElasticIp() && vmId != null) {
-                _rulesMgr.getSystemIpAndEnableStaticNatForVm(_userVmDao.findById(vmId), true);
-                return true;
+
+        if (success) {
+            Long networkId = ipVO.getAssociatedWithNetworkId();
+            if (networkId != null) {
+                Network guestNetwork = getNetwork(networkId);
+                NetworkOffering offering = _configMgr.getNetworkOffering(guestNetwork.getNetworkOfferingId());
+                Long vmId = ipVO.getAssociatedWithVmId();
+                if (offering.getElasticIp() && vmId != null) {
+                    _rulesMgr.getSystemIpAndEnableStaticNatForVm(_userVmDao.findById(vmId), true);
+                    return true;
+                }
             }
-            return true;
         } else {
             s_logger.warn("Failed to release public ip address id=" + ipAddressId);
-            return false;
         }
+        return success;
     }
 
     @Deprecated
@@ -6062,7 +6063,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 IPAddressVO ip = markIpAsUnavailable(ipToRelease.getId());
                 assert (ip != null) : "Unable to mark the ip address id=" + ipToRelease.getId() + " as unavailable.";
             } else {
-                unassignIPFromVpcNetwork(ipToRelease.getId());
+                unassignIPFromVpcNetwork(ipToRelease.getId(), network.getId());
             }
         }
 
@@ -7252,17 +7253,44 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     
     @Override
-    public void unassignIPFromVpcNetwork(long ipId) {
+    public void unassignIPFromVpcNetwork(long ipId, long networkId) {
         IPAddressVO ip = _ipAddressDao.findById(ipId);
-        Long vpcId = ip.getVpcId();
-        
-        if (vpcId == null) {
+
+        if (ipUsedInVpc(ip)) {
             return;
         }
         
-        ip.setAssociatedWithNetworkId(null);
-        _ipAddressDao.update(ipId, ip);
-        s_logger.debug("IP address " + ip + " is no longer associated with the network inside vpc id=" + vpcId);
+        if (ip == null || ip.getVpcId() == null) {
+            return;
+        }
+        
+        s_logger.debug("Releasing VPC ip address " + ip + " from vpc network id=" + networkId);
+
+        long  vpcId = ip.getVpcId();
+        boolean success = false;
+        try {
+            //unassign ip from the VPC router
+            success = applyIpAssociations(getNetwork(networkId), true);
+        } catch (ResourceUnavailableException ex) {
+            throw new CloudRuntimeException("Failed to apply ip associations for network id=" + networkId + 
+                    " as a part of unassigning ip " + ipId + " from vpc", ex);
+        }
+
+        if (success) {
+            ip.setAssociatedWithNetworkId(null);
+            _ipAddressDao.update(ipId, ip);
+            s_logger.debug("IP address " + ip + " is no longer associated with the network inside vpc id=" + vpcId);
+        } else {
+            throw new CloudRuntimeException("Failed to apply ip associations for network id=" + networkId + 
+                    " as a part of unassigning ip " + ipId + " from vpc");
+        }
+        s_logger.debug("Successfully released VPC ip address " + ip + " back to VPC pool ");
+    }
+
+    @Override
+    public boolean ipUsedInVpc(IpAddress ip) {
+        return (ip != null && ip.getVpcId() != null && 
+                (ip.isOneToOneNat() || !_firewallDao.listByIp(ip.getId()).isEmpty()));
     }
 
     @Override @DB
@@ -7435,4 +7463,5 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         return nic;
     }
+    
 }
