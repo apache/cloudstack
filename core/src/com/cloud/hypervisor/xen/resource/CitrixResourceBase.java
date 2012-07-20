@@ -4276,32 +4276,22 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             _host.publicNetwork = publicNic.getNetworkRecord(conn).uuid;
 
             XsLocalNetwork storageNic1 = null;
-            if (_storageNetworkName1 != null && !_storageNetworkName1.equals(_guestNetworkName)) {
+            if (_storageNetworkName1 != null ) {
                 storageNic1 = getNetworkByName(conn, _storageNetworkName1);
+                _host.storageNetwork1 = storageNic1.getNetworkRecord(conn).uuid;
+                _host.storagePif1 = storageNic1.getPifRecord(conn).uuid;
             }
-            if (storageNic1 == null) {
-                storageNic1 = guestNic;
-                _storageNetworkName1 = _guestNetworkName;
-            }
-            _host.storageNetwork1 = storageNic1.getNetworkRecord(conn).uuid;
-            _host.storagePif1 = storageNic1.getPifRecord(conn).uuid;
 
             XsLocalNetwork storageNic2 = null;
-            if (_storageNetworkName2 != null && !_storageNetworkName2.equals(_guestNetworkName)) {
+            if (_storageNetworkName2 != null) {
                 storageNic2 = getNetworkByName(conn, _storageNetworkName2);
+                _host.storageNetwork2 = storageNic2.getNetworkRecord(conn).uuid;
+                _host.storagePif2 = storageNic2.getPifRecord(conn).uuid;
             }
-            if (storageNic2 == null) {
-                storageNic2 = guestNic;
-                _storageNetworkName2 = _guestNetworkName;
-            }
-            _host.storageNetwork2 = storageNic2.getNetworkRecord(conn).uuid;
-            _host.storagePif2 = storageNic2.getPifRecord(conn).uuid;
 
             s_logger.info("Private Network is " + _privateNetworkName + " for host " + _host.ip);
             s_logger.info("Guest Network is " + _guestNetworkName + " for host " + _host.ip);
             s_logger.info("Public Network is " + _publicNetworkName + " for host " + _host.ip);
-            s_logger.info("Storage Network 1 is " + _storageNetworkName1 + " for host " + _host.ip);
-            s_logger.info("Storage Network 2 is " + _storageNetworkName2 + " for host " + _host.ip);
 
             return true;
         } catch (XenAPIException e) {
@@ -5377,12 +5367,22 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 throw new CloudRuntimeException(msg);
             }
 
-            pif = PIF.getByUuid(conn, _host.storagePif1);
+            pif = PIF.getByUuid(conn, _host.publicPif);
             pifr = pif.getRecord(conn);
             if (pifr.IP != null && pifr.IP.length() > 0) {
-                cmd.setStorageIpAddress(pifr.IP);
-                cmd.setStorageMacAddress(pifr.MAC);
-                cmd.setStorageNetmask(pifr.netmask);
+                cmd.setPublicIpAddress(pifr.IP);
+                cmd.setPublicMacAddress(pifr.MAC);
+                cmd.setPublicNetmask(pifr.netmask);
+            }
+
+            if (_host.storagePif1 != null) {
+                pif = PIF.getByUuid(conn, _host.storagePif1);
+                pifr = pif.getRecord(conn);
+                if (pifr.IP != null && pifr.IP.length() > 0) {
+                    cmd.setStorageIpAddress(pifr.IP);
+                    cmd.setStorageMacAddress(pifr.MAC);
+                    cmd.setStorageNetmask(pifr.netmask);
+                }
             }
 
             if (_host.storagePif2 != null) {
