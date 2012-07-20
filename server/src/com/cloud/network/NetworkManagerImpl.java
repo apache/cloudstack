@@ -1141,7 +1141,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @DB
     @Override
-    public IPAddressVO associateIPToGuestNetwork(long ipId, long networkId) throws ResourceAllocationException, ResourceUnavailableException, 
+    public IPAddressVO associateIPToGuestNetwork(long ipId, long networkId, boolean releaseOnFailure) 
+            throws ResourceAllocationException, ResourceUnavailableException, 
     InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
         Account owner = null;
@@ -1219,14 +1220,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 s_logger.warn("Failed to associate ip address " + ip.getAddress().addr() + " to network " + network);
             }
             return ip;
-        } catch (ResourceUnavailableException e) {
-            s_logger.error("Unable to associate ip address due to resource unavailable exception", e);
-            return null;
         } finally {
-            if (!success) {
+            if (!success && releaseOnFailure) {
                 if (ip != null) {
                     try {
-                        s_logger.warn("Failed to associate ip address " + ip);
+                        s_logger.warn("Failed to associate ip address, so releasing ip from the database " + ip);
                         _ipAddressDao.markAsUnavailable(ip.getId());
                         if (!applyIpAssociations(network, true)) {
                             // if fail to apply ip assciations again, unassign ip address without updating resource
@@ -7210,7 +7208,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Can't assign ip to the network directly when network belongs" +
                 		" to VPC.Specify vpcId to associate ip address to VPC", null);
             }
-            return associateIPToGuestNetwork(ipId, networkId);
+            return associateIPToGuestNetwork(ipId, networkId, true);
         }
 
         return null;
