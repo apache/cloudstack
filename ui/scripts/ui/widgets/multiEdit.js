@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 (function($, cloudStack) {
   var getMultiData = function($multi) {
     return cloudStack.serializeForm($multi.find('form'));
@@ -556,7 +557,6 @@
           });
         });
 
-
         if (itemActions) {
           var $itemActions = $('<td>').addClass('actions item-actions');
 
@@ -772,8 +772,8 @@
         // Form fields are handled by main 'add' action
       }
     }) : null;
-    var $headerFields = $('<div>').addClass('header-fields');
-
+    var $headerFields = $('<div>').addClass('header-fields').hide(); //make headerFields hidden as default
+		
     if (headerForm) {
       $headerFields.append(headerForm.$formContainer)
         .prependTo($multi);
