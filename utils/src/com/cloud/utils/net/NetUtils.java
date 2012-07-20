@@ -1080,7 +1080,7 @@ public class NetUtils {
             }
             String cipher = list[0];
             String hash = list[1];
-            if (!cipher.matches("des|3des|aes|aes128|aes256")) {
+            if (!cipher.matches("3des|aes|aes128|aes256")) {
                 return false;
             }
             if (!hash.matches("md5|sha1")) {
