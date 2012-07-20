@@ -669,24 +669,63 @@
 			id: 'siteToSiteVpn',
 			sectionSelect: {
 				preFilter: function(args) {
-					return ["vpnGateway", "vpnConnection"];			
-          //return ["vpnConnection"];							
+					return ["vpnGateway", "vpnConnection"];		
 				},
 				label: 'label.select-view'
 			},
-			sections: {	
-				
+			sections: {					
 				vpnGateway: {
 					type: 'select',
 					title: 'VPN Gateway',
 					listView: {
 						id: 'vpnGateway',
-						label: 'Customer Gateway',
+						label: 'VPN Gateway',
 						fields: {
 							publicip: { label: 'label.ip.address' },				
 							account: { label: 'label.account' },
 							domain: { label: 'label.domain' }
 						},
+						
+						actions: {						 
+							add: {
+                label: 'Add VPN Gateway',
+                messages: {                  
+                  notification: function(args) {
+                    return 'Add VPN Gateway';
+                  }
+                },
+								createForm: {
+									title: 'Add VPN Gateway',
+									desc: 'Please confirm that you want to add a VPN Gateway',
+									fields: {}
+								},	
+                action: function(args) {                  
+                  $.ajax({
+                    url: createURL("createVpnGateway"),
+                    data: {
+										  vpcid: args.context.vpc[0].id
+										},                    
+                    success: function(json) {                     					
+											var jid = json.createvpngatewayresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          { 
+													  jobId: jid,
+                            getUpdatedItem: function(json) {
+                              return json.queryasyncjobresultresponse.jobresult.vpngateway;
+                            }
+                          }
+                        }
+                      );																
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult                 
+                }
+              }		
+						},
+						
 						dataProvider: function(args) {					  
 							var array1 = [];  
 							if(args.filterBy != null) {          
