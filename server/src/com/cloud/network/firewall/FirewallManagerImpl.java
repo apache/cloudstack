@@ -456,22 +456,15 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         return success;
     }
 
-    @DB
     @Override
     public void removeRule(FirewallRule rule) {
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
         //remove the rule
         _firewallDao.remove(rule.getId());
-
+        
         //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
         IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
-        if (ip != null && ip.getVpcId() != null && _firewallDao.listByIp(ip.getId()).isEmpty()) {
-            _networkMgr.unassignIPFromVpcNetwork(ip.getId());
-        }
-
-        txn.commit();
+        _networkMgr.unassignIPFromVpcNetwork(ip.getId(), rule.getNetworkId());
     }
 
     @Override

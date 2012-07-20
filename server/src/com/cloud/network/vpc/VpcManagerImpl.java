@@ -45,6 +45,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.network.IPAddressVO;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
@@ -54,13 +55,10 @@ import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
-import com.cloud.network.Site2SiteVpnGateway;
-import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.Site2SiteVpnConnectionDao;
-import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.vpc.VpcOffering.State;
 import com.cloud.network.vpc.Dao.PrivateIpDao;
@@ -148,6 +146,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
     ResourceTagDao _resourceTagDao;
     @Inject
     Site2SiteVpnManager _s2sVpnMgr;
+    @Inject
+    FirewallRulesDao _firewallDao;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
 
@@ -1672,4 +1672,5 @@ public class VpcManagerImpl implements VpcManager, Manager{
     public VpcGateway getPrivateGatewayForVpc(long vpcId) {
         return _vpcGatewayDao.getPrivateGatewayForVpc(vpcId);
     }
+    
 }

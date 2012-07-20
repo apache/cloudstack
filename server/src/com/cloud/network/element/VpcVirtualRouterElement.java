@@ -388,7 +388,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 return true;
             }
 
-            return _vpcRouterMgr.associateIP(network, ipAddress, routers);
+            return _vpcRouterMgr.associatePublicIP(network, ipAddress, routers);
         } else {
             return false;
         }

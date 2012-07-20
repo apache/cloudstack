@@ -3962,7 +3962,7 @@
                   }
                 },
                 action: function(args) {								 
-									var vpngatewayid;
+									var vpngatewayid = null;
 									$.ajax({
 										url: createURL('listVpnGateways'),
 										data: {
@@ -3973,30 +3973,32 @@
 											var items = json.listvpngatewaysresponse.vpngateway;
 											if(items != null && items.length > 0) {
 												vpngatewayid = items[0].id;
-											}
-											else {
-											  cloudStack.dialog.notice({ message: 'The selected VPC does not have a VPN gateway. Please create a VPN gateway for the VPC first.' });
-												return;
-											}
+											}											
 										}
-									});																		
-                  $.ajax({
-                    url: createURL('createVpnConnection'),
-                    data: {
+									});		
+
+                  if(vpngatewayid == null) {									  
+										args.response.error('The selected VPC does not have a VPN gateway. Please create a VPN gateway for the VPC first.');
+										return;
+									}
+																	
+									$.ajax({
+										url: createURL('createVpnConnection'),
+										data: {
 											s2svpngatewayid: vpngatewayid,
 											s2scustomergatewayid: args.context.vpnCustomerGateway[0].id
 										},                    
-                    success: function(json) {
-                      var jid = json.createvpnconnectionresponse.jobid; 
-                      args.response.success(
-                        {_custom:
-                          {
-													  jobId: jid
-                          }
-                        }
-                      );
-                    }
-                  });
+										success: function(json) {
+											var jid = json.createvpnconnectionresponse.jobid; 
+											args.response.success(
+												{_custom:
+													{
+														jobId: jid
+													}
+												}
+											);
+										}
+									});									
                 },
                 notification: {
                   poll: pollAsyncJobResult

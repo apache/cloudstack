@@ -437,7 +437,7 @@ LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServ
                 return true;
             }
 
-            return _routerMgr.associateIP(network, ipAddress, routers);
+            return _routerMgr.associatePublicIP(network, ipAddress, routers);
         } else {
             return false;
         }
