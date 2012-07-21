@@ -49,7 +49,7 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
 			cmd.add("-h", _hostIP);
 			cmd.add("-r");
 			cmd.add("-t",
-					String.valueOf((_heartBeatUpdateFreq + _heartBeatUpdateTimeout) / 1000 * 2));
+					String.valueOf(_heartBeatUpdateFreq/1000));
 			OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
 			String result = cmd.execute(parser);
 			s_logger.debug("pool: " + pool._poolIp);
