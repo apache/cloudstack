@@ -68,8 +68,13 @@ public class ListVpnCustomerGatewaysCmd extends BaseListProjectAndAccountResourc
         ListResponse<Site2SiteCustomerGatewayResponse> response = new ListResponse<Site2SiteCustomerGatewayResponse>();
         List<Site2SiteCustomerGatewayResponse> gwResponses = new ArrayList<Site2SiteCustomerGatewayResponse>();
         if (gws != null && !gws.isEmpty()) {
-            for (Site2SiteCustomerGateway gw : gws) {
-                gwResponses.add(_responseGenerator.createSite2SiteCustomerGatewayResponse(gw));
+        	for (Site2SiteCustomerGateway gw : gws) {
+                if (gw == null) {
+                    continue;
+                }
+            	Site2SiteCustomerGatewayResponse site2SiteCustomerGatewayRes = _responseGenerator.createSite2SiteCustomerGatewayResponse(gw);
+            	site2SiteCustomerGatewayRes.setObjectName("vpncustomergateway");
+                gwResponses.add(site2SiteCustomerGatewayRes);
             }
         }
         response.setResponses(gwResponses);
