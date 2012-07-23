@@ -56,13 +56,13 @@
 
       return $form;
     },
-    tagItem: function(title, onRemove) {
+    tagItem: function(title, onRemove, data) {
       var $li = $('<li>');
       var $label = $('<span>').addClass('label').html(title);
       var $remove = $('<span>').addClass('remove').html('X');
 
       $remove.click(function() {
-        if (onRemove) onRemove($li);
+        if (onRemove) onRemove($li, data);
       });
 
       $li.append($remove, $label);
@@ -90,10 +90,12 @@
       var $title = elems.info('Tags').addClass('title');
       var $loading = $('<div>').addClass('loading-overlay');
 
-      var onRemoveItem = function($item) {
+      var onRemoveItem = function($item, data) {
         $loading.appendTo($container);
         actions.remove({
-          context: context,
+          context: $.extend(true, {}, context, {
+            tagItems: [data]
+          }),
           response: {
             success: function(args) {
               var notification = $.extend(true, {} , args.notification, {
@@ -133,6 +135,7 @@
 
           $loading.appendTo($container);
           actions.add({
+            data: data,
             context: context,
             response: {
               success: function(args) {
@@ -147,7 +150,7 @@
                   // Success
                   function() {
                     $loading.remove();
-                    elems.tagItem(title, onRemoveItem).appendTo($tagArea);
+                    elems.tagItem(title, onRemoveItem, data).appendTo($tagArea);
                     success();  
                   }, {},
 
@@ -182,8 +185,9 @@
             $(data).map(function(index, item) {
               var key = item.key;
               var value = item.value;
+              var data = { key: key, value: value };
 
-              elems.tagItem(key + ' = ' + value, onRemoveItem).appendTo($tagArea);
+              elems.tagItem(key + ' = ' + value, onRemoveItem, data).appendTo($tagArea);
             });
           },
           error: function(message) {
