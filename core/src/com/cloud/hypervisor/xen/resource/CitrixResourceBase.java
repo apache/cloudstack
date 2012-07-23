@@ -567,12 +567,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return new XsLocalNetwork(Network.getByUuid(conn, _host.privateNetwork), null, PIF.getByUuid(conn, _host.privatePif), null);
         } else if (type == TrafficType.Public) {
             return new XsLocalNetwork(Network.getByUuid(conn, _host.publicNetwork), null, PIF.getByUuid(conn, _host.publicPif), null);
-        }
-        /*   TrafficType.Storage is for secondary storage, while storageNetwork1 is for primary storage, we need better name here
-        else if (type == TrafficType.Storage) {
+         } else if (type == TrafficType.Storage) {
+            /*   TrafficType.Storage is for secondary storage, while storageNetwork1 is for primary storage, we need better name here */
             return new XsLocalNetwork(Network.getByUuid(conn, _host.storageNetwork1), null, PIF.getByUuid(conn, _host.storagePif1), null);
         }
-        */
+
 
         throw new CloudRuntimeException("Unsupported network type: " + type);
     }
@@ -4277,13 +4276,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             _host.publicPif = publicNic.getPifRecord(conn).uuid;
             _host.publicNetwork = publicNic.getNetworkRecord(conn).uuid;
-
-            XsLocalNetwork storageNic1 = null;
-            if (_storageNetworkName1 != null ) {
-                storageNic1 = getNetworkByName(conn, _storageNetworkName1);
-                _host.storageNetwork1 = storageNic1.getNetworkRecord(conn).uuid;
-                _host.storagePif1 = storageNic1.getPifRecord(conn).uuid;
+            if (_storageNetworkName1 == null ) {
+                _storageNetworkName1 = _guestNetworkName;
             }
+            XsLocalNetwork storageNic1 = null;
+            storageNic1 = getNetworkByName(conn, _storageNetworkName1);
+            _host.storageNetwork1 = storageNic1.getNetworkRecord(conn).uuid;
+            _host.storagePif1 = storageNic1.getPifRecord(conn).uuid;
 
             XsLocalNetwork storageNic2 = null;
             if (_storageNetworkName2 != null) {
