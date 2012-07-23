@@ -17,6 +17,7 @@
 
 import urllib2
 import urllib
+import httplib
 import base64
 import hmac
 import hashlib
@@ -76,7 +77,7 @@ class cloudConnection(object):
                 self.logging.critical("failed to reach %s because of %s"%(self.mgtSvr, e.reason))
             elif hasattr(e, 'code'):
                 self.logging.critical("server returned %d error code"%e.code)
-        except HTTPException, h:
+        except httplib.HTTPException, h:
             self.logging.debug("encountered http Exception %s"%h.args)
             if self.retries > 0:
                 self.retries = self.retries - 1
