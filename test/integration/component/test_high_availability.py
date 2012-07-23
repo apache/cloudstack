@@ -172,11 +172,11 @@ class TestHighAvailability(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_host_maintenance_mode(self):
         """Test host maintenance mode
         """
 
-        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. Create Vms. Acquire IP. Create port forwarding & load balancing
@@ -572,11 +572,11 @@ class TestHighAvailability(cloudstackTestCase):
                       )
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_02_host_maintenance_mode_with_activities(self):
         """Test host maintenance mode with activities
         """
 
-        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. Create Vms. Acquire IP. Create port forwarding & load balancing
