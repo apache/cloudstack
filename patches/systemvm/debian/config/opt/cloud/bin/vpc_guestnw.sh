@@ -78,18 +78,6 @@ setup_dnsmasq() {
   # setup static 
   sed -i -e "/^[#]*dhcp-range=interface:$dev/d" /etc/dnsmasq.d/cloud.conf
   echo "dhcp-range=interface:$dev,set:interface-$dev,$ip,static" >> /etc/dnsmasq.d/cloud.conf
-  # setup gateway
-  sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,option:router.*$/d" /etc/dnsmasq.d/cloud.conf
-  if [ -n "$gw" ]
-  then
-    echo "dhcp-option=tag:interface-$dev,option:router,$gw" >> /etc/dnsmasq.d/cloud.conf
-  fi
-  # setup DNS
-  sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,6.*$/d" /etc/dnsmasq.d/cloud.conf
-  if [ -n "$gw" ]
-  then
-    echo "dhcp-option=tag:interface-$dev,6,$gw" >> /etc/dnsmasq.d/cloud.conf
-  fi
   # setup DOMAIN
   [ -z $DOMAIN ] && DOMAIN="cloudnine.internal"
 
