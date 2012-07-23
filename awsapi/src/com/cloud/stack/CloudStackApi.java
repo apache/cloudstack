@@ -314,7 +314,7 @@ public class CloudStackApi {
 	 */
     public List<CloudStackUserVm> listVirtualMachines(String account, String accountId, Boolean listAll, Boolean forVirtualNetwork, String groupId, String hostId,
 			String hypervisor, String id, Boolean isRecursive, String keyWord, String name, String networkId, String podId, String state, String storageId, 
-			String zoneId) throws Exception {
+            String zoneId, List<CloudStackKeyValue> resourceTags) throws Exception {
 		CloudStackCommand cmd = new CloudStackCommand(ApiConstants.LIST_VIRTUAL_MACHINES);
 		if (cmd != null) {
 			if (account != null) cmd.setParam(ApiConstants.ACCOUNT, account);
@@ -333,6 +333,8 @@ public class CloudStackApi {
 			if (state != null) cmd.setParam(ApiConstants.STATE, state);
 			if (storageId != null) cmd.setParam(ApiConstants.STORAGE_ID, storageId);
 			if (zoneId != null) cmd.setParam(ApiConstants.ZONE_ID, zoneId);
+            if (resourceTags != null && resourceTags.size() > 0)
+                cmd = setParams(cmd, null, null, resourceTags);
 		}
 		return _client.listCall(cmd, apiKey, secretKey, ApiConstants.LIST_VIRTUAL_MACHINES_RESPONSE, ApiConstants.VIRTUAL_MACHINE, 
 				new TypeToken<List<CloudStackUserVm>>() {}.getType());
@@ -935,7 +937,7 @@ public class CloudStackApi {
 	 * @throws Exception
 	 */
 	public List<CloudStackVolume> listVolumes(String account, String domainId, String hostId, String id, Boolean isRecursive, String keyWord, String name,
-			String podId, String type, String virtualMachineId, String zoneId) throws Exception {
+            String podId, String type, String virtualMachineId, String zoneId, List<CloudStackKeyValue> resourceTags) throws Exception {
 		CloudStackCommand cmd = new CloudStackCommand(ApiConstants.LIST_VOLUMES);
 		if (cmd != null) {
 			if (account != null) cmd.setParam(ApiConstants.ACCOUNT, account);
@@ -949,6 +951,8 @@ public class CloudStackApi {
 			if (type != null) cmd.setParam(ApiConstants.TYPE, type);
 			if (virtualMachineId != null) cmd.setParam(ApiConstants.VIRTUAL_MACHINE_ID, virtualMachineId);
 			if (zoneId != null) cmd.setParam(ApiConstants.ZONE_ID, zoneId);
+            if (resourceTags != null && resourceTags.size() > 0)
+                cmd = setParams(cmd, null, null, resourceTags);
 		}
 		return _client.listCall(cmd, apiKey, secretKey, ApiConstants.LIST_VOLUMES_RESPONSE, ApiConstants.VOLUME, 
 				new TypeToken<List<CloudStackVolume>>() {}.getType());
@@ -1029,7 +1033,8 @@ public class CloudStackApi {
     private CloudStackCommand setParams(CloudStackCommand cmd, String resourceType, List<String>resourceIds,
             List<CloudStackKeyValue> resourceTags) {
         if (cmd != null) {
-            cmd.setParam(ApiConstants.RESOURCE_TYPE, resourceType);
+            if (resourceType != null)
+                cmd.setParam(ApiConstants.RESOURCE_TYPE, resourceType);
             if (resourceIds != null && resourceIds.size() > 0) {
                 String resourceIdList = resourceIds.get(0);
                 for (int i=1 ; i<resourceIds.size(); i++)
@@ -1243,7 +1248,7 @@ public class CloudStackApi {
 	 * @throws Exception
 	 */
 	public List<CloudStackSnapshot> listSnapshots(String account, String domainId, String id, String intervalType, Boolean isRecursive,
-			String keyWord, String name, String snapshotType, String volumeId) throws Exception {
+			String keyWord, String name, String snapshotType, String volumeId, List<CloudStackKeyValue> resourceTags) throws Exception {
 		CloudStackCommand cmd = new CloudStackCommand(ApiConstants.LIST_SNAPSHOTS);
 		if (cmd != null) {
 			if (account != null) cmd.setParam(ApiConstants.ACCOUNT, account);
@@ -1255,6 +1260,8 @@ public class CloudStackApi {
 			if (name != null) cmd.setParam(ApiConstants.NAME, name);
 			if (snapshotType != null) cmd.setParam(ApiConstants.SNAPSHOT_TYPE, snapshotType);
 			if (volumeId != null) cmd.setParam(ApiConstants.VOLUME_ID, volumeId);
+			if (resourceTags != null && resourceTags.size() > 0)
+				cmd = setParams(cmd, null, null, resourceTags);			
 		}
 		return _client.listCall(cmd, apiKey, secretKey, ApiConstants.LIST_SNAPSHOTS_RESPONSE, ApiConstants.SNAPSHOT, 
 				new TypeToken<List<CloudStackSnapshot>>() {}.getType());

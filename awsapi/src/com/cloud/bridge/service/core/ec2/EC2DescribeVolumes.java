@@ -23,6 +23,7 @@ public class EC2DescribeVolumes {
 
 	private List<String> volumeSet = new ArrayList<String>();    // a list of strings identifying volume ids
 	private EC2VolumeFilterSet vfs = null;
+    private List<EC2TagKeyValue> resourceTagSet = new ArrayList<EC2TagKeyValue>();
 
 	public EC2DescribeVolumes() {
 	}
@@ -42,4 +43,12 @@ public class EC2DescribeVolumes {
 	public void setFilterSet( EC2VolumeFilterSet param ) {
 		vfs = param;
 	}
+
+    public void addResourceTag( EC2TagKeyValue param ) {
+        resourceTagSet.add( param );
+    }
+
+    public EC2TagKeyValue[] getResourceTagSet() {
+        return resourceTagSet.toArray(new EC2TagKeyValue[0]);
+    }
 }

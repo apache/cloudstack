@@ -23,6 +23,7 @@ public class EC2DescribeSnapshots {
 
 	private List<String> snapshotSet = new ArrayList<String>();    // a list of strings identifying snapshots
 	private EC2SnapshotFilterSet sfs = null;
+    private List<EC2TagKeyValue> resourceTagSet = new ArrayList<EC2TagKeyValue>();
 
 	public EC2DescribeSnapshots() {
 	}
@@ -42,4 +43,12 @@ public class EC2DescribeSnapshots {
 	public void setFilterSet( EC2SnapshotFilterSet param ) {
 		sfs = param;
 	}
+
+    public void addResourceTag( EC2TagKeyValue param ) {
+        resourceTagSet.add( param );
+    }
+
+    public EC2TagKeyValue[] getResourceTagSet() {
+        return resourceTagSet.toArray(new EC2TagKeyValue[0]);
+    }
 }

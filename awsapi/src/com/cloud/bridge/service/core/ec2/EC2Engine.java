@@ -418,20 +418,22 @@ public class EC2Engine {
 	 * @param request
 	 * @return
 	 */
-	public EC2DescribeSnapshotsResponse handleRequest( EC2DescribeSnapshots request ) 
+    public EC2DescribeSnapshotsResponse handleRequest( EC2DescribeSnapshots request ) 
 	{
 		EC2DescribeVolumesResponse volumes = new EC2DescribeVolumesResponse();
 		EC2SnapshotFilterSet sfs = request.getFilterSet();
+        EC2TagKeyValue[] tagKeyValueSet = request.getResourceTagSet();
 
 		try { 
 			// -> query to get the volume size for each snapshot
-			EC2DescribeSnapshotsResponse response = listSnapshots( request.getSnapshotSet());
+            EC2DescribeSnapshotsResponse response = listSnapshots( request.getSnapshotSet(),
+                    getResourceTags(tagKeyValueSet));
 			if (response == null) {
 				return new EC2DescribeSnapshotsResponse();
 			}
 			EC2Snapshot[] snapshots = response.getSnapshotSet();
 			for (EC2Snapshot snap : snapshots) {
-				volumes = listVolumes(snap.getVolumeId(), null, volumes);
+				volumes = listVolumes(snap.getVolumeId(), null, volumes, null);
 				EC2Volume[] volSet = volumes.getVolumeSet();
 				if (0 < volSet.length) snap.setVolumeSize(volSet[0].getSize());
 				volumes.reset();
@@ -473,7 +475,7 @@ public class EC2Engine {
 			ec2Snapshot.setCreated(snap.getCreated());
 			ec2Snapshot.setVolumeId(snap.getVolumeId());
 			
-			List<CloudStackVolume> vols = getApi().listVolumes(null, null, null, snap.getVolumeId(), null, null, null, null, null, null, null);
+			List<CloudStackVolume> vols = getApi().listVolumes(null, null, null, snap.getVolumeId(), null, null, null, null, null, null, null, null);
 
 			if(vols.size() > 0) {
 				assert(vols.get(0).getSize() != null);
@@ -630,17 +632,18 @@ public class EC2Engine {
 	 * 
 	 * @param interestedShots - can be null, should be a subset of all snapshots
 	 */
-	private EC2DescribeSnapshotsResponse listSnapshots( String[] interestedShots ) throws Exception {
+    private EC2DescribeSnapshotsResponse listSnapshots( String[] interestedShots, List<CloudStackKeyValue> resourceTagSet ) throws Exception {
 		EC2DescribeSnapshotsResponse snapshots = new EC2DescribeSnapshotsResponse();
 
 		List<CloudStackSnapshot> cloudSnaps;
 		if (interestedShots == null || interestedShots.length == 0) {
-			cloudSnaps = getApi().listSnapshots(null, null, null, null, null, null, null, null, null);
+            cloudSnaps = getApi().listSnapshots(null, null, null, null, null, null, null, null, null, resourceTagSet);
 		} else {
 			cloudSnaps = new ArrayList<CloudStackSnapshot>();
 
 			for(String id : interestedShots) {
-				List<CloudStackSnapshot> tmpList = getApi().listSnapshots(null, null, id, null, null, null, null, null, null);
+                List<CloudStackSnapshot> tmpList = getApi().listSnapshots(null, null, id, null, null, null, null,
+                    null, null, resourceTagSet);
 				cloudSnaps.addAll(tmpList);
 			}
 		}
@@ -880,7 +883,7 @@ public class EC2Engine {
 	public boolean associateAddress( EC2AssociateAddress request ) {
 		try {
 			CloudStackIpAddress cloudIp = getApi().listPublicIpAddresses(null, null, null, null, null, request.getPublicIp(), null, null, null).get(0);
-	        CloudStackUserVm cloudVm = getApi().listVirtualMachines(null, null, true, null, null, null, null, request.getInstanceId(), null, null, null, null, null, null, null, null).get(0);
+	        CloudStackUserVm cloudVm = getApi().listVirtualMachines(null, null, true, null, null, null, null, request.getInstanceId(), null, null, null, null, null, null, null, null, null).get(0);
 
 			CloudStackInfoResponse resp = getApi().enableStaticNat(cloudIp.getId(), cloudVm.getId());
 			if (resp != null) {
@@ -1005,7 +1008,7 @@ public class EC2Engine {
 			// [A] Creating a template from a VM volume should be from the ROOT volume
 			//     Also for this to work the VM must be in a Stopped state so we 'reboot' it if its not
 			EC2DescribeVolumesResponse volumes = new EC2DescribeVolumesResponse();
-			volumes = listVolumes( null, request.getInstanceId(), volumes );
+			volumes = listVolumes( null, request.getInstanceId(), volumes, null );
 			EC2Volume[] volSet = volumes.getVolumeSet();
 			for (EC2Volume vol : volSet) {
 				if (vol.getType().equalsIgnoreCase( "ROOT" )) {
@@ -1022,7 +1025,7 @@ public class EC2Engine {
 
 			// [B] The parameters must be in sorted order for proper signature generation
 			EC2DescribeInstancesResponse instances = new EC2DescribeInstancesResponse();
-			instances = lookupInstances( request.getInstanceId(), instances );
+			instances = lookupInstances( request.getInstanceId(), instances, null );
 			EC2Instance[] instanceSet = instances.getInstanceSet();
 			String templateId = instanceSet[0].getTemplateId();
 
@@ -1116,7 +1119,9 @@ public class EC2Engine {
 	 */
 	public EC2DescribeInstancesResponse describeInstances(EC2DescribeInstances request ) {
 		try {
-			return listVirtualMachines( request.getInstancesSet(), request.getFilterSet()); 
+            EC2TagKeyValue[] tagKeyValueSet = request.getResourceTagSet();
+            return listVirtualMachines( request.getInstancesSet(), request.getFilterSet(),
+                    getResourceTags(tagKeyValueSet));
 		} catch( Exception e ) {
 			logger.error( "EC2 DescribeInstances - " ,e);
 			throw new EC2ServiceException(ServerError.InternalError, e.getMessage() != null ? e.getMessage() : "An unexpected error occurred.");
@@ -1160,14 +1165,14 @@ public class EC2Engine {
 	public EC2DescribeVolumesResponse handleRequest( EC2DescribeVolumes request ) {
 		EC2DescribeVolumesResponse volumes = new EC2DescribeVolumesResponse();
 		EC2VolumeFilterSet vfs = request.getFilterSet();
-
+        EC2TagKeyValue[] tagKeyValueSet = request.getResourceTagSet();
 		try {   
 			String[] volumeIds = request.getVolumeSet();
 			if ( 0 == volumeIds.length ){
-				volumes = listVolumes( null, null, volumes );
+                volumes = listVolumes( null, null, volumes, getResourceTags(tagKeyValueSet) );
 			} else {     
 				for (String s : volumeIds) 
-					volumes = listVolumes(s, null, volumes );
+                    volumes = listVolumes(s, null, volumes, getResourceTags(tagKeyValueSet) );
 			}
 
 			if ( null == vfs )
@@ -1408,7 +1413,7 @@ public class EC2Engine {
 		// -> reboot is not allowed on destroyed (i.e., terminated) instances
 		try {   
 			String[] instanceSet = request.getInstancesSet();
-			EC2DescribeInstancesResponse previousState = listVirtualMachines( instanceSet, null );
+			EC2DescribeInstancesResponse previousState = listVirtualMachines( instanceSet, null, null );
 			vms = previousState.getInstanceSet();
 
 			// -> send reboot requests for each found VM
@@ -1545,7 +1550,7 @@ public class EC2Engine {
 
 		// -> first determine the current state of each VM (becomes it previous state)
 		try {
-			EC2DescribeInstancesResponse previousState = listVirtualMachines( request.getInstancesSet(), null );
+			EC2DescribeInstancesResponse previousState = listVirtualMachines( request.getInstancesSet(), null, null );
 			vms = previousState.getInstanceSet();
 
 			// -> send start requests for each item 
@@ -1587,7 +1592,7 @@ public class EC2Engine {
 		try {   
 			String[] instanceSet = request.getInstancesSet();
 
-			EC2DescribeInstancesResponse previousState = listVirtualMachines( instanceSet, null );
+			EC2DescribeInstancesResponse previousState = listVirtualMachines( instanceSet, null, null );
 			virtualMachines = previousState.getInstanceSet();
 
 			// -> send stop requests for each item 
@@ -1654,7 +1659,7 @@ public class EC2Engine {
 			if (maxAllowed == -1) 
 				return -1;   // no limit
 
-			EC2DescribeInstancesResponse existingVMS = listVirtualMachines( null, null );
+			EC2DescribeInstancesResponse existingVMS = listVirtualMachines( null, null, null );
 			EC2Instance[] vmsList = existingVMS.getInstanceSet();
 			return (maxAllowed - vmsList.length);
 		} else {
@@ -1668,15 +1673,16 @@ public class EC2Engine {
 	 * @param virtualMachineIds - an array of instances we are interested in getting information on
 	 * @param ifs - filter out unwanted instances
 	 */
-	private EC2DescribeInstancesResponse listVirtualMachines( String[] virtualMachineIds, EC2InstanceFilterSet ifs ) throws Exception 
+	private EC2DescribeInstancesResponse listVirtualMachines( String[] virtualMachineIds, EC2InstanceFilterSet ifs,
+            List<CloudStackKeyValue> resourceTags ) throws Exception 
 	{
 		EC2DescribeInstancesResponse instances = new EC2DescribeInstancesResponse();
 
 		if (null == virtualMachineIds || 0 == virtualMachineIds.length) {
-			instances = lookupInstances( null, instances );
+            instances = lookupInstances( null, instances, resourceTags );
 		} else {
 			for( int i=0; i <  virtualMachineIds.length; i++ ) {
-				instances = lookupInstances( virtualMachineIds[i], instances );
+                instances = lookupInstances( virtualMachineIds[i], instances, resourceTags );
 			}
 		}
 
@@ -1691,9 +1697,11 @@ public class EC2Engine {
 	 * @param volumeId   - if interested in one specific volume, null if want to list all volumes
 	 * @param instanceId - if interested in volumes for a specific instance, null if instance is not important
 	 */
-	private EC2DescribeVolumesResponse listVolumes(String volumeId, String instanceId, EC2DescribeVolumesResponse volumes)throws Exception {
+	private EC2DescribeVolumesResponse listVolumes(String volumeId, String instanceId, EC2DescribeVolumesResponse volumes,
+            List<CloudStackKeyValue> resourceTagSet)throws Exception {
 
-		List<CloudStackVolume> vols = getApi().listVolumes(null, null, null, volumeId, null, null, null, null, null, instanceId, null);
+        List<CloudStackVolume> vols = getApi().listVolumes(null, null, null, volumeId, null, null, null, null, null,
+                instanceId, null, resourceTagSet);
 		if(vols != null && vols.size() > 0) {
 			for(CloudStackVolume vol : vols) {
 				EC2Volume ec2Vol = new EC2Volume();
@@ -1872,12 +1880,13 @@ public class EC2Engine {
 	 * @return the same object passed in as the "instances" parameter modified with one or more
 	 *         EC2Instance objects loaded.
 	 */
-	private EC2DescribeInstancesResponse lookupInstances( String instanceId, EC2DescribeInstancesResponse instances ) 
+	private EC2DescribeInstancesResponse lookupInstances( String instanceId, EC2DescribeInstancesResponse instances,
+            List<CloudStackKeyValue> resourceTagSet )
 			throws Exception {
 
 		String instId = instanceId != null ? instanceId : null;
         List<CloudStackUserVm> vms = getApi().listVirtualMachines(null, null, true, null, null, null, null,
-				instId, null, null, null, null, null, null, null, null);
+            instId, null, null, null, null, null, null, null, null, resourceTagSet);
 		
 		if(vms != null && vms.size() > 0) {
     		for(CloudStackUserVm cloudVm : vms) {
@@ -2439,4 +2448,15 @@ public class EC2Engine {
         }
         return elementList.toString();
     }
+
+    private List<CloudStackKeyValue> getResourceTags(EC2TagKeyValue[] tagKeyValueSet) {
+        List<CloudStackKeyValue> resourceTags = new ArrayList<CloudStackKeyValue>();
+        for (EC2TagKeyValue tagKeyValue : tagKeyValueSet) {
+            CloudStackKeyValue resourceTag = new CloudStackKeyValue();
+            resourceTag.setKeyValue(tagKeyValue.getKey(), tagKeyValue.getValue());
+            resourceTags.add(resourceTag);
+        }
+        return resourceTags;
+    }
+
 }

@@ -413,11 +413,10 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		if (null != items) {  // -> can be empty
 			for( int i=0; i < items.length; i++ ) request.addInstanceId( items[i].getInstanceId());
 		}
-		
-		if (null != fst) {
-			request.setFilterSet( toInstanceFilterSet( fst ));
-		}
-		
+
+        if (null != fst)
+            request = toInstanceFilterSet( request, fst );
+
 		return toDescribeInstancesResponse( engine.describeInstances( request ), engine );
 	}
 
@@ -518,7 +517,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		{
 			String[] timeFilters = new String[1];
 			timeFilters[0] = new String( "start-time" );
-			request.setFilterSet( toSnapshotFilterSet( fst, timeFilters ));
+            request = toSnapshotFilterSet( request, fst, timeFilters );
 		}
 
 		return toDescribeSnapshotsResponse(engine.handleRequest(request));
@@ -557,7 +556,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 			String[] timeFilters = new String[2];
 			timeFilters[0] = new String( "attachment.attach-time" );
 			timeFilters[1] = new String( "create-time"            );
-			request.setFilterSet( toVolumeFilterSet( fst, timeFilters ));
+            request = toVolumeFilterSet( request, fst, timeFilters );
 		}
 		
 		return toDescribeVolumesResponse( engine.handleRequest( request ));
@@ -1045,8 +1044,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		return vfs;
 	}
 
-	
-	private EC2VolumeFilterSet toVolumeFilterSet( FilterSetType fst, String[] timeStrs )
+    private EC2DescribeVolumes toVolumeFilterSet( EC2DescribeVolumes request, FilterSetType fst, String[] timeStrs )
 	{
 		EC2VolumeFilterSet vfs = new EC2VolumeFilterSet();
 		boolean timeFilter = false;
@@ -1057,73 +1055,94 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 			// -> each filter can have one or more values associated with it
 			for( int j=0; j < items.length; j++ )
 			{
-				EC2Filter oneFilter = new EC2Filter();
-				String filterName = items[j].getName();
-				oneFilter.setName( filterName );
-				
-				// -> is the filter one of the xsd:dateTime filters?
-				timeFilter = false;
-				for( int m=0; m < timeStrs.length; m++ )
-				{
-					 timeFilter = filterName.equalsIgnoreCase( timeStrs[m] );
-					 if (timeFilter) break;
-				}
-				
-				ValueSetType vst = items[j].getValueSet();
-				ValueType[] valueItems = vst.getItem();
-				for( int k=0; k < valueItems.length; k++ ) 
-				{
-					// -> time values are not encoded as regexes
-					if ( timeFilter )
-					     oneFilter.addValue( valueItems[k].getValue());
-					else oneFilter.addValueEncoded( valueItems[k].getValue());
-				}
-				vfs.addFilter( oneFilter );
-			}
-		}		
-		return vfs;
-	}
+                String filterName = items[j].getName();
+                ValueSetType vst = items[j].getValueSet();
+                ValueType[] valueItems = vst.getItem();
 
-	
-	private EC2SnapshotFilterSet toSnapshotFilterSet( FilterSetType fst, String[] timeStrs )
-	{
-		EC2SnapshotFilterSet vfs = new EC2SnapshotFilterSet();
+                if (filterName.startsWith("tag:")) {
+                    String key= filterName.split(":")[1];
+                    for (ValueType valueItem : valueItems) {
+                        EC2TagKeyValue tag = new EC2TagKeyValue();
+                        tag.setKey(key);
+                        tag.setValue(valueItem.getValue());
+                        request.addResourceTag(tag);
+                    }
+                } else {
+                    EC2Filter oneFilter = new EC2Filter();
+                    oneFilter.setName( filterName );
+
+                    // -> is the filter one of the xsd:dateTime filters?
+                    timeFilter = false;
+                    for( int m=0; m < timeStrs.length; m++ ) {
+                        timeFilter = filterName.equalsIgnoreCase( timeStrs[m] );
+                        if (timeFilter) break;
+                    }
+
+                    for( int k=0; k < valueItems.length; k++ ) {
+                        // -> time values are not encoded as regexes
+                        if ( timeFilter )
+                            oneFilter.addValue( valueItems[k].getValue());
+                        else
+                            oneFilter.addValueEncoded( valueItems[k].getValue());
+                    }
+                    vfs.addFilter( oneFilter );
+                }
+            }
+            request.setFilterSet(vfs);
+        }
+        return request;
+    }
+
+    private EC2DescribeSnapshots toSnapshotFilterSet( EC2DescribeSnapshots request, FilterSetType fst, String[] timeStrs )
+    {
+        EC2SnapshotFilterSet sfs = new EC2SnapshotFilterSet();
 		boolean timeFilter = false;
-		
+
 		FilterType[] items = fst.getItem();
 		if (null != items) 
 		{
 			// -> each filter can have one or more values associated with it
 			for( int j=0; j < items.length; j++ )
 			{
-				EC2Filter oneFilter = new EC2Filter();
-				String filterName = items[j].getName();
-				oneFilter.setName( filterName );
-				
-				// -> is the filter one of the xsd:dateTime filters?
-				timeFilter = false;
-				for( int m=0; m < timeStrs.length; m++ )
-				{
-					 timeFilter = filterName.equalsIgnoreCase( timeStrs[m] );
-					 if (timeFilter) break;
-				}
-				
-				ValueSetType vst = items[j].getValueSet();
-				ValueType[] valueItems = vst.getItem();
-				for( int k=0; k < valueItems.length; k++ ) 
-				{
-					// -> time values are not encoded as regexes
-					if ( timeFilter )
-					     oneFilter.addValue( valueItems[k].getValue());
-					else oneFilter.addValueEncoded( valueItems[k].getValue());
-				}
-				vfs.addFilter( oneFilter );
-			}
-		}		
-		return vfs;
-	}
+                String filterName = items[j].getName();
+                ValueSetType vst = items[j].getValueSet();
+                ValueType[] valueItems = vst.getItem();
 
-	
+                if (filterName.startsWith("tag:")) {
+                    String key= filterName.split(":")[1];
+                    for (ValueType valueItem : valueItems) {
+                        EC2TagKeyValue tag = new EC2TagKeyValue();
+                        tag.setKey(key);
+                        tag.setValue(valueItem.getValue());
+                        request.addResourceTag(tag);
+                    }
+                }
+                else {
+                    EC2Filter oneFilter = new EC2Filter();
+                    oneFilter.setName( filterName );
+
+                    // -> is the filter one of the xsd:dateTime filters?
+                    timeFilter = false;
+                    for( int m=0; m < timeStrs.length; m++ ) {
+                        timeFilter = filterName.equalsIgnoreCase( timeStrs[m] );
+                        if (timeFilter) break;
+                    }
+
+                    for( int k=0; k < valueItems.length; k++ ) {
+                        // -> time values are not encoded as regexes
+                        if ( timeFilter )
+                            oneFilter.addValue( valueItems[k].getValue());
+                        else
+                            oneFilter.addValueEncoded( valueItems[k].getValue());
+                    }
+                    sfs.addFilter( oneFilter );
+                }
+            }
+            request.setFilterSet(sfs);
+        }
+        return request;
+    }
+
 	// TODO make these filter set functions use generics 
 	private EC2GroupFilterSet toGroupFilterSet( FilterSetType fst )
 	{
@@ -1151,8 +1170,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		return gfs;
 	}
 
-	
-	private EC2InstanceFilterSet toInstanceFilterSet( FilterSetType fst )
+    private EC2DescribeInstances toInstanceFilterSet( EC2DescribeInstances request, FilterSetType fst )
 	{
 		EC2InstanceFilterSet ifs = new EC2InstanceFilterSet();
 		
@@ -1162,22 +1180,30 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 			// -> each filter can have one or more values associated with it
 			for( int j=0; j < items.length; j++ )
 			{
-				EC2Filter oneFilter = new EC2Filter();
-				String filterName = items[j].getName();
-				oneFilter.setName( filterName );
-				
-				ValueSetType vst = items[j].getValueSet();
-				ValueType[] valueItems = vst.getItem();
-				for( int k=0; k < valueItems.length; k++ ) 
-				{
-					oneFilter.addValueEncoded( valueItems[k].getValue());
-				}
-				ifs.addFilter( oneFilter );
-			}
-		}		
-		return ifs;
-	}
+                String filterName = items[j].getName();
+                ValueSetType vst = items[j].getValueSet();
+                ValueType[] valueItems = vst.getItem();
 
+                if (filterName.startsWith("tag:")) {
+                    String key= filterName.split(":")[1];
+                    for (ValueType valueItem : valueItems) {
+                        EC2TagKeyValue tag = new EC2TagKeyValue();
+                        tag.setKey(key);
+                        tag.setValue(valueItem.getValue());
+                        request.addResourceTag(tag);
+                    }
+                } else {
+                    EC2Filter oneFilter = new EC2Filter();
+                    oneFilter.setName( filterName );
+                    for( int k=0; k < valueItems.length; k++ )
+                        oneFilter.addValueEncoded( valueItems[k].getValue());
+                    ifs.addFilter( oneFilter );
+                }
+            }
+            request.setFilterSet(ifs);
+        }
+        return request;
+    }
 
     private EC2AvailabilityZonesFilterSet toAvailabiltyZonesFilterSet( FilterSetType fst )	{
         EC2AvailabilityZonesFilterSet azfs = new EC2AvailabilityZonesFilterSet();
