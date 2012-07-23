@@ -170,3 +170,113 @@ ALTER TABLE `cloud`.`domain_router` ADD CONSTRAINT `fk_domain_router__vpc_id` FO
 ALTER TABLE `cloud`.`physical_network_service_providers` ADD COLUMN `networkacl_service_provided` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is Network ACL service provided';
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vpc.cleanup.interval', '3600', 'The interval (in seconds) between cleanup for Inactive VPCs');
+
+CREATE TABLE `cloud`.`counter` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
+  `source` varchar(255) NOT NULL COMMENT 'source e.g. netscaler, snmp',
+  `name` varchar(255) NOT NULL COMMENT 'Counter name',
+  `value` varchar(255) NOT NULL COMMENT 'Value in case of source=snmp',
+  `removed` datetime COMMENT 'date removed if not null',
+  `created` datetime NOT NULL COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `uc_counter__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`conditions` (
+  `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
+  `counter_id` bigint unsigned NOT NULL COMMENT 'Counter Id',
+  `threshold` bigint unsigned NOT NULL COMMENT 'threshold value for the given counter',
+  `relational_operator` char(2) COMMENT 'relational operator to be used upon the counter and condition',
+  `domain_id` bigint unsigned NOT NULL COMMENT 'domain the Condition belongs to',
+  `account_id` bigint unsigned NOT NULL COMMENT 'owner of this Condition',
+  `removed` datetime COMMENT 'date removed if not null',
+  `created` datetime NOT NULL COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_conditions__counter_id` FOREIGN KEY `fk_condition__counter_id`(`counter_id`) REFERENCES `counter`(`id`),
+  CONSTRAINT `fk_conditions__account_id` FOREIGN KEY `fk_condition__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_conditions__domain_id` FOREIGN KEY `fk_condition__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_conditions__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`autoscale_vmprofiles` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `uuid` varchar(40),
+  `zone_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  `autoscale_user_id` bigint unsigned NOT NULL,
+  `service_offering_id` bigint unsigned NOT NULL,
+  `template_id` bigint unsigned NOT NULL,
+  `other_deploy_params` varchar(1024) COMMENT 'other deployment parameters that is in addition to zoneid,serviceofferingid,domainid',
+  `destroy_vm_grace_period` int unsigned COMMENT 'the time allowed for existing connections to get closed before a vm is destroyed',
+  `snmp_community` varchar(255) COMMENT 'the community string to be used to reach out to the VM deployed by this profile',
+  `snmp_port` int unsigned COMMENT 'the snmp port to be used to reach out to the VM deployed by this profile',
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_vmprofiles__domain_id` FOREIGN KEY `fk_autoscale_vmprofiles__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmprofiles__account_id` FOREIGN KEY `fk_autoscale_vmprofiles__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmprofiles__autoscale_user_id` FOREIGN KEY `fk_autoscale_vmprofiles__autoscale_user_id` (`autoscale_user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_autoscale_vmprofiles__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`autoscale_policies` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `uuid` varchar(40),
+  `domain_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  `duration` int unsigned NOT NULL,
+  `quiet_time` int unsigned NOT NULL,
+  `action` varchar(15),
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_policies__domain_id` FOREIGN KEY `fk_autoscale_policies__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_policies__account_id` FOREIGN KEY `fk_autoscale_policies__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `uc_autoscale_policies__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`autoscale_vmgroups` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `uuid` varchar(40),
+  `zone_id` bigint unsigned NOT NULL,
+  `domain_id` bigint unsigned NOT NULL,
+  `account_id` bigint unsigned NOT NULL,
+  `load_balancer_id` bigint unsigned NOT NULL,
+  `min_members` int unsigned DEFAULT 1,
+  `max_members` int unsigned NOT NULL,
+  `member_port` int unsigned NOT NULL,
+  `interval` int unsigned NOT NULL,
+  `profile_id` bigint unsigned NOT NULL,
+  `state` varchar(255) NOT NULL COMMENT 'enabled or disabled, a vmgroup is disabled to stop autoscaling activity',
+  `created` datetime NOT NULL COMMENT 'date created',
+  `removed` datetime COMMENT 'date removed if not null',
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_vmgroup__autoscale_vmprofile_id` FOREIGN KEY(`profile_id`) REFERENCES `autoscale_vmprofiles`(`id`),
+  CONSTRAINT `fk_autoscale_vmgroup__load_balancer_id` FOREIGN KEY(`load_balancer_id`) REFERENCES `load_balancing_rules`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmgroups__domain_id` FOREIGN KEY `fk_autoscale_vmgroups__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmgroups__account_id` FOREIGN KEY `fk_autoscale_vmgroups__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmgroups__zone_id` FOREIGN KEY `fk_autoscale_vmgroups__zone_id`(`zone_id`) REFERENCES `data_center`(`id`),
+  CONSTRAINT `uc_autoscale_vmgroups__uuid` UNIQUE (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`autoscale_policy_condition_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `policy_id` bigint unsigned NOT NULL,
+  `condition_id` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_policy_condition_map__policy_id` FOREIGN KEY `fk_autoscale_policy_condition_map__policy_id` (`policy_id`) REFERENCES `autoscale_policies` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_policy_condition_map__condition_id` FOREIGN KEY `fk_autoscale_policy_condition_map__condition_id` (`condition_id`) REFERENCES `conditions` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`autoscale_vmgroup_policy_map` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `vmgroup_id` bigint unsigned NOT NULL,
+  `policy_id` bigint unsigned NOT NULL,
+  PRIMARY KEY  (`id`),
+  CONSTRAINT `fk_autoscale_vmgroup_policy_map__vmgroup_id` FOREIGN KEY `fk_autoscale_vmgroup_policy_map__vmgroup_id` (`vmgroup_id`) REFERENCES `autoscale_vmgroups` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_autoscale_vmgroup_policy_map__policy_id` FOREIGN KEY `fk_autoscale_vmgroup_policy_map__policy_id` (`policy_id`) REFERENCES `autoscale_policies` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
