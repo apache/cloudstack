@@ -1,90 +1,197 @@
-(function($) {
+(function($, cloudStack) {
   var elems = {
+    inputArea: function(args) {
+      var $form = $('<form>').addClass('tag-input');
+      var $keyField = $('<div>').addClass('field key');
+      var $keyLabel = $('<label>').attr('for', 'key').html('Key:');
+      var $key = $('<input>').addClass('key required').attr('name', 'key');
+      var $valueField = $('<div>').addClass('field value');
+      var $valueLabel = $('<label>').attr('for', 'value').html('Value:');
+      var $value = $('<input>').addClass('value required').attr('name', 'value');
+      var $submit = $('<input>').attr('type', 'submit').val('Add');
+
+      $keyField.append($keyLabel, $key);
+      $valueField.append($valueLabel, $value);
+      $form.append(
+        $keyField, $valueField,
+        $submit
+      );
+
+      $form.validate({ onfocusout: false });
+
+      $form.submit(
+        args.onSubmit ?
+          function() {
+            if (!$form.valid()) return false;
+            
+            args.onSubmit({
+              data: cloudStack.serializeForm($form),
+              response: {
+                success: function() {
+                  // Restore editing of input
+                  $key.attr('disabled', false);
+                  $value.attr('disabled', false);
+
+                  // Clear out old data
+                  $key.val(''); $value.val('');
+                  $key.focus();
+                },
+                error: function() {
+                  // Restore editing of input
+                  $key.attr('disabled', false);
+                  $value.attr('disabled', false);
+                  $key.focus();
+                }
+              }
+            });
+            
+            // Prevent input during submission
+            $key.attr('disabled', 'disabled');
+            $value.attr('disabled', 'disabled');
+            
+            return false;
+          } :
+        function() { return false; }
+      );
+
+      return $form;
+    },
     tagItem: function(title, onRemove) {
       var $li = $('<li>');
       var $label = $('<span>').addClass('label').html(title);
       var $remove = $('<span>').addClass('remove').html('X');
 
       $remove.click(function() {
-        $li.remove();
-        
-        if (onRemove) onRemove();
+        if (onRemove) onRemove($li);
       });
 
       $li.append($remove, $label);
       
       return $li;
+    },
+
+    info: function(text) {
+      var $info = $('<div>').addClass('tag-info');
+      var $text = $('<span>').html(text);
+
+      $text.appendTo($info);
+
+      return $info;
     }
   };
   
   $.widget('cloudStack.tagger', {
-    _init: function() {
-      var $container = $('<div>').addClass('tagger');
+    _init: function(args) {
+      var context = this.options.context;
+      var dataProvider = this.options.dataProvider;
+      var actions = this.options.actions;
+      var $container = this.element.addClass('tagger');
       var $tagArea = $('<ul>').addClass('tags');
-      var $originalInput = this.element;
-      var $input = $('<input>').attr('type', 'text');
+      var $title = elems.info('Tags').addClass('title');
+      var $loading = $('<div>').addClass('loading-overlay');
 
-      $originalInput.hide();
-      $originalInput.after($container);
-      $container.append($tagArea, $input);
+      var onRemoveItem = function($item) {
+        $loading.appendTo($container);
+        actions.remove({
+          context: context,
+          response: {
+            success: function(args) {
+              var notification = $.extend(true, {} , args.notification, {
+                interval: 500,
+                _custom: args._custom
+              });
+              
+              cloudStack.ui.notifications.add(
+                notification,
 
-      // Reposition input to fit tag list
-      var relayout = function() {
-        $input.width(
-          $container.width() - $tagArea.width() - 25
-        );
-        $input.css({
-          left: $tagArea.width(),
-          top: $tagArea.position().top
+                // Success
+                function() {
+                  $loading.remove();
+                  $item.remove();
+                }, {},
+
+                // Error
+                function() {
+                  $loading.remove();
+                }, {}
+              );
+            },
+            error: function(message) {
+              $loading.remove();
+              cloudStack.dialog.notice({ message: message });
+            }
+          }
         });
       };
+      
+      var $inputArea = elems.inputArea({
+        onSubmit: function(args) {
+          var data = args.data;
+          var success = args.response.success;
+          var error = args.response.error;
+          var title = data.key + ' = ' + data.value;
 
-      var onRemove = function() {
-        syncInputs(true);
-        relayout();
-      };
+          $loading.appendTo($container);
+          actions.add({
+            context: context,
+            response: {
+              success: function(args) {
+                var notification = $.extend(true, {} , args.notification, {
+                  interval: 500,
+                  _custom: args._custom
+                });
 
-      // sync original input box and tag list values
-      //
-      // flag == true: Sync tags->text
-      // flag == false: Sync text->tags
-      var syncInputs = function(flag) {
-         if (flag) {
-           $originalInput.val(
-             $tagArea.find('li').map(function(index, tag) {
-               return $(tag).find('span.label').html();
-             }).toArray().join(',')
-           );
-         } else if ($originalInput.val()) {
-           $($originalInput.val().split(',')).map(function(index, tag) {
-             elems.tagItem(tag, onRemove).appendTo($tagArea);
-           });
+                cloudStack.ui.notifications.add(
+                  notification,
 
-           $tagArea.show();
-           relayout();
-         }
-      };
+                  // Success
+                  function() {
+                    $loading.remove();
+                    elems.tagItem(title, onRemoveItem).appendTo($tagArea);
+                    success();  
+                  }, {},
 
-      // Tag detection (comma-delimited)
-      $input.keypress(function(event) {
-        var tagCode = 44; // Symbol used to indicate a new tag
-
-        if (event.which == tagCode) {
-          $tagArea.show();
-          elems.tagItem($input.val(), onRemove).appendTo($tagArea);
-          $input.val('');
-          relayout();
-          syncInputs(true);
-
-          return false; // Don't allow delineator to be added to input box
+                  // Error
+                  function() {
+                    $loading.remove();
+                    error();
+                  }, {}
+                );                
+              },
+              error: function(message) {
+                $loading.remove();
+                error();
+                cloudStack.dialog.notice({ message: message });
+              }
+            }
+          });
         }
-
-        return true;
       });
 
-      $tagArea.hide();
-      relayout();
-      syncInputs(false);
+      $container.append($title, $inputArea, $tagArea);
+
+      // Get data
+      $loading.appendTo($container);
+      dataProvider({
+        context: context,
+        response: {
+          success: function(args) {
+            var data = args.data;
+            
+            $loading.remove();
+            $(data).map(function(index, item) {
+              var key = item.key;
+              var value = item.value;
+
+              elems.tagItem(key + ' = ' + value, onRemoveItem).appendTo($tagArea);
+            });
+          },
+          error: function(message) {
+            $loading.remove();
+            $container.find('ul').html(message);
+          }
+        }
+      });
     }
   });
-}(jQuery));
+}(jQuery, cloudStack));

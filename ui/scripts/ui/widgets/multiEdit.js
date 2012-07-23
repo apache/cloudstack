@@ -328,10 +328,16 @@
                   after: function(args) {
                     var $loading = $('<div>').addClass('loading-overlay').prependTo($dataItem);
                     performAction({ data: args.data, complete: function() {
-                      $multi.multiEdit('refresh');
+                      $multi.trigger('refresh');
                     } });
                   }
                 });
+
+                if (options.tags) {
+                  $(':ui-dialog').append(
+                    $('<div>').addClass('multi-edit-tags').tagger(options.tags)
+                  );
+                }
               }
             })
         );
@@ -647,6 +653,7 @@
   $.fn.multiEdit = function(args) {
     var dataProvider = args.dataProvider;
     var multipleAdd = args.multipleAdd;
+    var tags = args.tags;
     var $multi = $('<div>').addClass('multi-edit').appendTo(this);
     var $multiForm = $('<form>').appendTo($multi);
     var $inputTable = $('<table>').addClass('multi-edit').appendTo($multiForm);
@@ -913,7 +920,8 @@
                   context: $.extend(true, {}, context, this._context),
                   ignoreEmptyFields: ignoreEmptyFields,
                   preFilter: actionPreFilter,
-                  listView: listView
+                  listView: listView,
+                  tags: tags
                 }
               ).appendTo($dataBody);
             });
