@@ -2454,7 +2454,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     public NicProfile addVmToNetwork(VirtualMachine vm, Network network, NicProfile requested) throws ConcurrentOperationException, 
                                                     ResourceUnavailableException, InsufficientCapacityException {
         
-        s_logger.debug("Adding vm " + vm + " to network " + network);
+        s_logger.debug("Adding vm " + vm + " to network " + network + "; requested nic profile " + requested);
         VMInstanceVO vmVO = _vmDao.findById(vm.getId());
         ReservationContext context = new ReservationContextImpl(null, null, _accountMgr.getActiveUser(User.UID_SYSTEM), 
                 _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM));
