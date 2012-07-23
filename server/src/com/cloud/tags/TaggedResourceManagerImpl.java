@@ -231,7 +231,7 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
         Transaction txn = Transaction.currentTxn();
         txn.start();
         
-        for (String tag : tags.keySet()) {
+        for (String key : tags.keySet()) {
             for (String resourceId : resourceIds) {
                 Long id = getResourceId(resourceId, resourceType);
                 String resourceUuid = getUuid(resourceId, resourceType);
@@ -252,10 +252,16 @@ public class TaggedResourceManagerImpl implements TaggedResourceService, Manager
                     _accountMgr.checkAccess(caller, _domainMgr.getDomain(domainId));
                 } else {
                     throw new PermissionDeniedException("Account " + caller + " doesn't have permissions to create tags" +
-                    		" for resource " + tag);
+                    		" for resource " + key);
+                }
+                
+                String value = tags.get(key);
+                
+                if (value == null || value.isEmpty()) {
+                    throw new InvalidParameterValueException("Value for the key " + key + " is either null or empty");
                 }
                
-                ResourceTagVO resourceTag = new ResourceTagVO(tag, tags.get(tag), accountDomainPair.first(),
+                ResourceTagVO resourceTag = new ResourceTagVO(key, value, accountDomainPair.first(),
                         accountDomainPair.second(), 
                         id, resourceType, customer, resourceUuid);
                 resourceTag = _resourceTagDao.persist(resourceTag);
