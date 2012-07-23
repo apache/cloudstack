@@ -965,7 +965,7 @@
               $.extend(true, {}, tabs.tags, {
                 context: $detailView.data('view-args').context
               })
-            ).appendTo($tabContent).addClass('readonly');
+            ).appendTo($detailView.find('.main-groups')).addClass('readonly');
           }
 
           return true;
