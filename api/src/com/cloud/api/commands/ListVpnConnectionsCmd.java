@@ -68,8 +68,13 @@ public class ListVpnConnectionsCmd extends BaseListProjectAndAccountResourcesCmd
         ListResponse<Site2SiteVpnConnectionResponse> response = new ListResponse<Site2SiteVpnConnectionResponse>();
         List<Site2SiteVpnConnectionResponse> connResponses = new ArrayList<Site2SiteVpnConnectionResponse>();
         if (conns != null && !conns.isEmpty()) {
-            for (Site2SiteVpnConnection conn : conns) {
-                connResponses.add(_responseGenerator.createSite2SiteVpnConnectionResponse(conn));
+        	for (Site2SiteVpnConnection conn : conns) {
+                if (conn == null) {
+                    continue;
+                }
+            	Site2SiteVpnConnectionResponse site2SiteVpnConnectonRes = _responseGenerator.createSite2SiteVpnConnectionResponse(conn);
+            	site2SiteVpnConnectonRes.setObjectName("vpnconnection");
+                connResponses.add(site2SiteVpnConnectonRes);
             }
         }
         response.setResponses(connResponses);

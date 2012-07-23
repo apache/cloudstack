@@ -3793,6 +3793,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setCustomerGatewayId(result.getCustomerGatewayId());
         response.setCreated(result.getCreated());
         response.setRemoved(result.getRemoved());
+        response.setObjectName("vpnconnection");
         return response;
     }
 }
