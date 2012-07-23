@@ -287,10 +287,14 @@
      * @param callback
      */
     edit: function($detailView, args) {
+      $detailView.addClass('edit-mode');
+
       if ($detailView.find('.button.done').size()) return false;
 
       // Convert value TDs
-      var $inputs = $detailView.find('input, select');
+      var $inputs = $detailView.find('input, select').filter(function() {
+        return !$(this).closest('.tagger').size() && !$(this).attr('type') == 'submit';
+      });
       var action = args.actions[args.actionName];
       var id = $detailView.data('view-args').id;
       var $editButton = $('<div>').addClass('button done').html(_l('label.apply')).hide();
@@ -302,9 +306,14 @@
           $detailView.find('.ui-tabs-panel .detail-group.actions')
         ).fadeIn();
 
+      $detailView.find('.tagger').removeClass('readonly');
+      $detailView.find('.tagger').find('input[type=text]').val('');
+
       var convertInputs = function($inputs) {
         // Save and turn back into labels
         $inputs.each(function() {
+          if ($(this).closest('.tagger').size()) return true;
+          
           var $input = $(this);
           var $value = $input.closest('td.value span');
 
@@ -328,8 +337,12 @@
       };
 	    
 	    var removeEditForm = function() {
+        $detailView.removeClass('edit-mode');
+        
 		    // Remove Edit form
-		    var $form = $detailView.find('form');
+		    var $form = $detailView.find('form').filter(function() {
+          return !$(this).closest('.tagger').size();
+        });
 		    if ($form.size()) {
 			    var $mainGroups = $form.find('div.main-groups').detach();
 			    $form.parent('div').append($mainGroups);
@@ -337,11 +350,15 @@
 		    }
 		    //Remove required labels
 		    $detailView.find('span.field-required').remove();
-	    }
+        $detailView.find('.tagger').addClass('readonly');
+
+	    };
 
       // Put in original values
       var cancelEdits = function($inputs, $editButton) {
         $inputs.each(function() {
+          if ($(this).closest('.tagger').size()) return true;
+
           var $input = $(this);
           var $value = $input.closest('td.value span');
           var originalValue = $input.data('original-value');
@@ -424,8 +441,12 @@
       };
 
 	    $editButton.click(function() {
-        var $inputs = $detailView.find('input, select'),
-			      $form = $detailView.find('form');
+        var $inputs = $detailView.find('input, select').filter(function() {
+          return !$(this).closest('.tagger').size();
+        });
+			  var $form = $detailView.find('form').filter(function() {
+          return !$(this).closest('.tagger').size();
+        });
 
         if ($(this).hasClass('done')) {
 			    if (!$form.valid()) {
@@ -438,6 +459,8 @@
         } else { // Cancel
           cancelEdits($inputs, $editButton);
         }
+
+        return true;
       });
 	    
 	    $detailView.find('td.value span').each(function() {
@@ -511,8 +534,11 @@
 		  }
 	    
 		  // Setup form validation
-		  $detailView.find('form').validate();
-		  $detailView.find('form').find('input, select').each(function() {
+      var $form = $detailView.find('form').filter(function() {
+        return !$(this).closest('.tagger').size();
+      });
+		  $form.validate();
+		  $form.find('input, select').each(function() {
 			  var data = $(this).parent('span').data('validation-rules');
 			  if (data) {
 				  $(this).rules('add', data);
@@ -933,6 +959,14 @@
             isFirstPanel: isFirstPanel,
             actionFilter: actionFilter
           }).appendTo($tabContent);
+
+          if (tabs.tags) {
+            $('<div>').tagger(
+              $.extend(true, {}, tabs.tags, {
+                context: $detailView.data('view-args').context
+              })
+            ).appendTo($tabContent).addClass('readonly');
+          }
 
           return true;
         },
