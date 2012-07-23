@@ -639,5 +639,83 @@ cloudStack.api = {
         }
       }
     }
+  },
+
+  tags: function(args) {
+    var resourceType = args.resourceType;
+    var contextId = args.contextId;
+    
+    return {
+      actions: {
+        add: function(args) {
+          var data = args.data;
+          var resourceId = args.context[contextId][0].id;
+
+          $.ajax({
+            url: createURL(
+              'createTags&tags[0].key=' + data.key + '&tags[0].value=' + data.value
+            ),
+            data: {
+              resourceIds: resourceId,
+              resourceType: resourceType
+            },
+            success: function(json) {
+              args.response.success({
+                _custom: { jobId: json.createtagsresponse.jobid },
+                notification: {
+                  desc: 'Add tag for instance',
+                  poll: pollAsyncJobResult
+                }
+              });
+            }
+          });
+        },
+
+        remove: function(args) {
+          var data = args.context.tagItems[0];
+          var resourceId = args.context[contextId][0].id;
+
+          $.ajax({
+            url: createURL(
+              'deleteTags&tags[0].key=' + data.key + '&tags[0].value=' + data.value
+            ),
+            data: {
+              resourceIds: resourceId,
+              resourceType: resourceType
+            },
+            success: function(json) {
+              args.response.success({
+                _custom: { jobId: json.deletetagsresponse.jobid },
+                notification: {
+                  desc: 'Remove tag for instance',
+                  poll: pollAsyncJobResult
+                }
+              });
+            }
+          });
+        }
+      },
+      dataProvider: function(args) {
+        var resourceId = args.context[contextId][0].id;
+        
+        $.ajax({
+          url: createURL('listTags'),
+          data: {
+            listAll: true,
+            resourceId: resourceId,
+            resourceType: resourceType
+          },
+          success: function(json) {
+            args.response.success({
+              data: json.listtagsresponse ?
+                json.listtagsresponse.tag : []
+            });
+          },
+          error: function(json) {
+            args.response.error(parseXMLHttpResponse(json));
+          }
+        });
+      }
+    };
   }
 };
