@@ -567,9 +567,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return new XsLocalNetwork(Network.getByUuid(conn, _host.privateNetwork), null, PIF.getByUuid(conn, _host.privatePif), null);
         } else if (type == TrafficType.Public) {
             return new XsLocalNetwork(Network.getByUuid(conn, _host.publicNetwork), null, PIF.getByUuid(conn, _host.publicPif), null);
-        } else if (type == TrafficType.Storage) {
+        }
+        /*   TrafficType.Storage is for secondary storage, while storageNetwork1 is for primary storage, we need better name here
+        else if (type == TrafficType.Storage) {
             return new XsLocalNetwork(Network.getByUuid(conn, _host.storageNetwork1), null, PIF.getByUuid(conn, _host.storagePif1), null);
         }
+        */
 
         throw new CloudRuntimeException("Unsupported network type: " + type);
     }
