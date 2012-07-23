@@ -752,6 +752,7 @@
                 }
               }
             },
+
             tabFilter: function(args) {
               var project = args.context.projects[0];
               var projectOwner = project.account;
@@ -787,6 +788,9 @@
                     state: { label: 'label.state' }
                   }
                 ],
+
+                tags: cloudStack.api.tags({ resourceType: 'Project', contextId: 'projects' }),
+
                 dataProvider: function(args) {
                   var projectID = args.context.projects[0].id;
 
