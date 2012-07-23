@@ -296,7 +296,8 @@ public class NicProfile {
 
     @Override
     public String toString() {
-        return new StringBuilder("NicProfile[").append(id).append("-").append(vmId).append("-").append(reservationId).toString();
+        return new StringBuilder("NicProfile[").append(id).append("-").append(vmId).append("-").
+                append(reservationId).append("-").append(ip4Address).append("-").append(broadcastUri).toString();
     }
 
 }

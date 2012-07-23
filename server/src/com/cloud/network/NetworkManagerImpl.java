@@ -1871,7 +1871,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             InsufficientAddressCapacityException, ConcurrentOperationException{
         
         NetworkVO ntwkVO = _networksDao.findById(network.getId());
-        s_logger.debug("Allocating nic for vm " + vm.getVirtualMachine() + " in network " + network);
+        s_logger.debug("Allocating nic for vm " + vm.getVirtualMachine() + " in network " + network + " with requested profile " + requested);
         NetworkGuru guru = _networkGurus.get(ntwkVO.getGuruName());
 
         if (requested != null && requested.getMode() == null) {
@@ -7427,7 +7427,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         
         //1) allocate nic (if needed)
         if (nic == null) {
-            s_logger.debug("Allocating nic for the " + vm + " in network " + network);
             int deviceId = _nicDao.countNics(vm.getId());
             
             nic = allocateNic(requested, network, false, 
@@ -7453,9 +7452,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NicProfile nic = null;
         if (requested != null && requested.getBroadCastUri() != null) {
             String broadcastUri = requested.getBroadCastUri().toString();
+            String ipAddress = requested.getIp4Address();
             NicVO nicVO = _nicDao.findByInstanceIdNetworkIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri);
             if (nicVO != null) {
-                nic = getNicProfile(vm, network.getId());
+                if (ipAddress == null || nicVO.getIp4Address().equals(ipAddress)) {
+                    nic = getNicProfile(vm, network.getId());
+                }
             }
         } else {
             NicVO nicVO = _nicDao.findByInstanceIdAndNetworkId(network.getId(), vm.getId());

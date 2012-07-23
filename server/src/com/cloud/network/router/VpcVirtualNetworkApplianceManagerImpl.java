@@ -538,46 +538,17 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         Map<String, PublicIpAddress> nicsToPlug = nicsToChange.first();
         Map<String, PublicIpAddress> nicsToUnplug = nicsToChange.second();
         
-        
-        //find out nics to unplug
-        for (PublicIpAddress ip : ipAddress) {
-            long publicNtwkId = ip.getNetworkId();
-            
-            //if ip is not associated to any network, and there are no firewall rules, release it on the backend
-            if (!_networkMgr.ipUsedInVpc(ip)) {
-                ip.setState(IpAddress.State.Releasing);
-            }
-                         
-            if (ip.getState() == IpAddress.State.Releasing) {
-                Nic nic = _nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, router.getId(), ip.getAddress().addr());
-                if (nic != null) {
-                    nicsToUnplug.put(ip.getVlanTag(), ip);
-                    s_logger.debug("Need to unplug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + 
-                            " in public network id =" + publicNtwkId);
-                }
-            }
-        }
-        
-        //find out nics to plug
-        for (PublicIpAddress ip : ipAddress) {
-            URI broadcastUri = BroadcastDomainType.Vlan.toUri(ip.getVlanTag());
-            long publicNtwkId = ip.getNetworkId();
-            
-            //if ip is not associated to any network, and there are no firewall rules, release it on the backend
-            if (!_networkMgr.ipUsedInVpc(ip)) {
-                ip.setState(IpAddress.State.Releasing);
-            }
-                         
-            if (ip.getState() == IpAddress.State.Allocated || ip.getState() == IpAddress.State.Allocating) {
-                //nic has to be plugged only when there are no nics for this vlan tag exist on VR
-                Nic nic = _nicDao.findByInstanceIdNetworkIdAndBroadcastUri(publicNtwkId, router.getId(), 
-                        broadcastUri.toString());
-                
-                if ((nic == null && nicsToPlug.get(ip.getVlanTag()) == null) || nicsToUnplug.get(ip.getVlanTag()) != null) {
-                    nicsToPlug.put(ip.getVlanTag(), ip);
-                    s_logger.debug("Need to plug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + 
-                            " in public network id =" + publicNtwkId);
-                }
+        //1) Unplug the nics
+        for (String vlanTag : nicsToUnplug.keySet()) {
+            Network publicNtwk = null;
+            try {
+                publicNtwk = _networkMgr.getNetwork(nicsToUnplug.get(vlanTag).getNetworkId());
+                URI broadcastUri = BroadcastDomainType.Vlan.toUri(vlanTag);
+                _itMgr.removeVmFromNetwork(router, publicNtwk, broadcastUri);
+            } catch (ConcurrentOperationException e) {
+                s_logger.warn("Failed to remove router " + router + " from vlan " + vlanTag + 
+                        " in public network " + publicNtwk + " due to ", e);
+                return false;
             }
         }
         
@@ -627,20 +598,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             }
         });
         
-        //4) Unplug the nics
-        for (String vlanTag : nicsToUnplug.keySet()) {
-            Network publicNtwk = null;
-            try {
-                publicNtwk = _networkMgr.getNetwork(nicsToUnplug.get(vlanTag).getNetworkId());
-                URI broadcastUri = BroadcastDomainType.Vlan.toUri(vlanTag);
-                _itMgr.removeVmFromNetwork(router, publicNtwk, broadcastUri);
-            } catch (ConcurrentOperationException e) {
-                s_logger.warn("Failed to remove router " + router + " from vlan " + vlanTag + 
-                        " in public network " + publicNtwk + " due to ", e);
-                return false;
-            }
-        }
-        
         return result;
     }
     
@@ -662,7 +619,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                         defaultDns1 = nic.getDns1();
                         defaultDns2 = nic.getDns2();
                     }
-                    s_logger.debug("Removing nic of type " + nic.getTrafficType() + " from the nics passed on vm start. " +
+                    s_logger.debug("Removing nic " + nic + " of type " + nic.getTrafficType() + " from the nics passed on vm start. " +
                             "The nic will be plugged later");
                     it.remove();
                 }
