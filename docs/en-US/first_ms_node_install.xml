@@ -1,0 +1,34 @@
+	<section id="first_ms_node_install">
+		<title>Install the First Management Server</title>
+			<orderedlist>
+				<listitem><para>Download the CloudStack Management Server onto the host where it will run from one of the following links. If your operating system is CentOS, use the download file for RHEL.</para>
+					<itemizedlist>
+						<listitem><para>Open-source community: <ulink url="http://sourceforge.net/projects/cloudstack/files/CloudStack Acton/">http://sourceforge.net/projects/cloudstack/files/CloudStack Acton/</ulink></para></listitem>
+						<listitem><para>Commercial customers: <ulink url="https://www.citrix.com/English/ss/downloads/">https://www.citrix.com/English/ss/downloads/</ulink>.
+							Commercial customers will need a <ulink url="http://www.citrix.com/lang/English/publicindex.asp?destURL=%2FEnglish%2FmyCitrix%2Findex.asp%3F">MyCitrix account</ulink>.</para>
+						</listitem>
+					</itemizedlist>
+				</listitem>
+				<listitem><para>Install the CloudStack packages. You should have a file in the form of “CloudStack-VERSION-N-OSVERSION.tar.gz”. Untar the file and then run the install.sh script inside it. Replace the file and directory names below with those you are using:</para>
+					<programlisting># tar xzf CloudStack-VERSION-N-OSVERSION.tar.gz
+# cd CloudStack-VERSION-N-OSVERSION
+# ./install.sh
+</programlisting>
+					<para>You should see a few messages as the installer prepares, followed by a list of choices.</para>
+				</listitem>
+				<listitem><para>Choose M to install the Management Server software.</para>
+					<programlisting>  > M</programlisting>
+				</listitem>
+				<listitem><para>Wait for a message like “Complete! Done,” which indicates that the software was installed successfully.</para>
+				</listitem>
+				<listitem><para>(RHEL or CentOS) When the installation is finished, run the following commands to start essential services  (the commands might be different depending on your OS):</para>
+					<programlisting># service rpcbind start
+# service nfs start
+# chkconfig nfs on
+# chkconfig rpcbind on
+							</programlisting>
+				</listitem>
+				<listitem><para>Continue to Install and Configure the Database.</para>
+				</listitem>
+			</orderedlist>
+	</section>

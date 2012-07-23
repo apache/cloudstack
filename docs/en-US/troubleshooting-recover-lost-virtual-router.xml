@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="troubleshooting-recover-lost-virtual-router">
+    <title>Recovering a Lost Virtual Router </title>
+    <formalpara>
+        <title>Symptom</title>
+        <para>A virtual router is running, but the host is disconnected. A virtual router no longer functions as expected.</para> 
+    </formalpara>
+    <formalpara>
+        <title>Cause</title>
+        <para>The Virtual router is lost or down.</para>
+    </formalpara>
+    <formalpara>
+        <title>Solution</title>
+        <para>If you are sure that a virtual router is down forever, or no longer functions as expected, destroy it. You must create one afresh while keeping the backup router up and running (it is assumed this is in a redundant router setup):</para>
+    </formalpara>
+    <itemizedlist>
+        <listitem><para>Force stop the router. Use the stopRouter API with forced=true parameter to do so.</para></listitem>
+        <listitem><para>Before you continue with destroying this router, ensure that the backup router is running. Otherwise the network connection will be lost.</para></listitem>
+        <listitem><para>Destroy the router by using the destroyRouter API.</para></listitem>
+       </itemizedlist>
+    <para>Recreate the missing router by using the restartNetwork API with cleanup=false parameter. For more information about redundant router setup, see Creating a New Network Offering.</para>
+    <para>For more information about the API syntax, see the API Reference at <ulink url="http://docs.cloudstack.org/CloudStack_Documentation/API_Reference%3A_CloudStack"></ulink>API Reference.</para>
+    
+    
+    
+</section>
+      

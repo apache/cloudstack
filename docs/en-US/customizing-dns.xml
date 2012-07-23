@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="customizing-dns">
+    <title>Customizing the Network Domain Name</title>
+    <para>The root administrator can optionally assign a custom DNS suffix at the level of a network, account, domain, zone, or entire CloudPlatform installation, and a domain administrator can do so within their own domain. To specify a custom domain name and put it into effect, follow these steps.</para>
+    <orderedlist>
+        <listitem><para>Set the DNS suffix at the desired scope</para>
+        <itemizedlist>
+            <listitem><para>At the network level, the DNS suffix can be assigned through the UI when creating a new network, as described in <xref linkend="add-additional-guest-network"/> or with the updateNetwork command in the CloudPlatform API.</para></listitem>
+            <listitem><para>At the account, domain, or zone level, the DNS suffix can be assigned with the appropriate CloudPlatform API commands: createAccount, editAccount, createDomain, editDomain, createZone, or editZone.</para></listitem>
+            <listitem><para>At the global level, use the configuration parameter guest.domain.suffix. You can also use the CloudPlatform API command updateConfiguration. After modifying this global configuration, restart the Management Server to put the new setting into effect.</para></listitem>
+        </itemizedlist></listitem>
+        <listitem><para>To make the new DNS suffix take effect for an existing network, call the CloudPlatform API command updateNetwork. This step is not necessary when the DNS suffix was specified while creating a new network.</para></listitem>
+        </orderedlist>
+    <para>The source of the network domain that is used depends on the following rules.</para>
+    <itemizedlist>
+        <listitem><para>For all networks, if a network domain is specified as part of a network's own configuration, that value is used.</para></listitem>
+        <listitem><para>For an account-specific network, the network domain specified for the account is used. If none is specified, the system looks for a value in the domain, zone, and global configuration, in that order.</para></listitem>
+        <listitem><para>For a domain-specific network, the network domain specified for the domain is used. If none is specified, the system looks for a value in the zone and global configuration, in that order.</para></listitem>
+        <listitem><para>For a zone-specific network, the network domain specified for the zone is used. If none is specified, the system looks for a value in the global configuration.</para></listitem>
+    </itemizedlist>
+    
+</section>

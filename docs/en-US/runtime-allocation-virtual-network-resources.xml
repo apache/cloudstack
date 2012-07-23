@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="runtime-allocation-virtual-network-resources">
+    <title>Runtime Allocation of Virtual Network Resources</title>
+    <para>When you define a new virtual network, all your settings for that network are stored in CloudPlatform. The actual network resources are activated only when the first virtual machine starts in the network.  When all virtual machines have left the virtual network, the network resources are garbage collected so they can be allocated again. This helps to conserve network resources..</para>
+</section>

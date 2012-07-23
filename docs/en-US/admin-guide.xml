@@ -1,0 +1,73 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<chapter id="admin-guide">
+	<title>Administrator Guide</title>
+    <xi:include href="whats-in-this-adminguide.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="user-services-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="about-working-with-vms.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="creating-vms.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="vm-lifecycle.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="accessing-vms.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="stopping-and-starting-vms.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="changing-vm-name-os-group.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="changing-service-offering-for-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="manual-live-migration.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="deleting-vms.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="primary-storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="best-practices-primary-storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="runtime-behavior-of-primary-storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="hypervisor-support-for-primarystorage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="storage-tags.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="maintenance-mode-for-primary-storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="secondary-storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="best-practices-secondary-storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="secondary-storage-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="changing-secondary-storage-ip.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="changing-secondary-storage-servers.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="using-swift-for-secondary-storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="working-with-volumes.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="creating-new-volumes.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="upload-existing-volume-to-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="upload-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="private-public-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="attaching-volume.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="detach-move-volumes.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="resizing-volumes.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="volume-deletion-garbage-collection.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="incremental-snapshots-backup.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="volume-status.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="snapshot-restore.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="guest-network.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="guest-traffic.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="using-multiple-guest-networks.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="add-additional-guest-network.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="change-network-offering-on-guest-network.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="about-virtual-networks.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="isolated-networks.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="shared-networks.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="add-ingress-egress-rules.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="runtime-allocation-virtual-network-resources.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="creating-network-offerings.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="enable-security-groups.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="add-security-group.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="add-load-balancer-rule.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="sticky-session-policies-for-lb-rules.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="guest-ip-ranges.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="acquire-new-ip-address.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="release-ip-address.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="static-nat.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="enable-disable-static-nat.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="ip-forwarding-firewalling.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="firewall-rules.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="port-forwarding.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="ip-load-balancing.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="dns-dhcp.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="vpn.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="add-password-management-to-templates.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="configure-vpn.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="tuning.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="cloudplatform-api.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+   </chapter>

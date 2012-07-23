@@ -1,0 +1,143 @@
+	<section id="added-API-commands">
+		<title>Added API commands</title>
+			<para>Added in 3.0.3:</para>
+			<itemizedlist>
+				<listitem><para>enableCiscoNexusVSM (Enables Nexus 1000v dvSwitch in CloudPlatform.)</para></listitem>
+				<listitem><para>disableCiscoNexusVSM (Disables Nexus 1000v dvSwitch in CloudPlatform.)</para></listitem>
+				<listitem><para>deleteCiscoNexusVSM (Deletes Nexus 1000v dvSwitch in CloudPlatform.)</para></listitem>
+				<listitem><para>listCiscoNexusVSMs (Lists the control VLAN ID, packet VLAN ID, and data VLAN ID, as well as the IP address of the Nexus 1000v dvSwitch.)</para></listitem>
+			</itemizedlist>
+			<para>Added in 3.0.2:</para>
+			<itemizedlist>
+				<listitem><para>changeServiceForSystemVm</para>
+					<para>Changes the service offering for a system VM (console proxy or secondary storage). The system VM must be in a "Stopped" state for this command to take effect.</para>
+				</listitem>
+			</itemizedlist>
+			<para>Added in 3.0.1:</para>
+			<itemizedlist>
+				<listitem><para>changeServiceForSystemVm</para>
+				<para>Changes the service offering for a system VM (console proxy or secondary storage). The system VM must be in a "Stopped" state for this command to take effect.</para>
+				</listitem>	
+			</itemizedlist>
+				<para>Added in 3.0.0:</para>
+		<informaltable frame="all">
+			<tgroup cols="3" align="left" colsep="1" rowsep="1">
+				<colspec colname="c1" />
+				<colspec colname="c2" />
+				<colspec colname="c3" />
+				<tbody>
+					<row>
+						<entry><para>assignVirtualMachine (Move a user VM to another user under same domain.)</para></entry>
+						<entry><para>restoreVirtualMachine (Restore a VM to original template or specific snapshot)</para></entry>
+						<entry><para>createLBStickinessPolicy (Creates a Load Balancer stickiness policy )</para></entry>
+					</row>
+					<row>
+						<entry><para>deleteLBStickinessPolicy (Deletes a LB stickiness policy.)</para></entry>
+						<entry><para>listLBStickinessPolicies (Lists LBStickiness policies.)</para></entry>
+						<entry><para>ldapConfig (Configure the LDAP context for this site.)</para></entry>
+					</row>
+					<row>
+						<entry><para>addSwift (Adds Swift.)</para></entry>
+						<entry><para>listSwifts (List Swift.)</para></entry>
+						<entry><para>migrateVolume (Migrate volume)</para></entry>
+					</row>
+					<row>
+						<entry><para>updateStoragePool (Updates a storage pool.)</para></entry>
+						<entry><para>authorizeSecurityGroupEgress (Authorizes a particular egress rule for this security group)</para></entry>
+						<entry><para>revokeSecurityGroupEgress (Deletes a particular egress rule from this security group)</para></entry>
+					</row>
+					<row>
+						<entry><para>createNetworkOffering (Creates a network offering.)</para></entry>
+						<entry><para>deleteNetworkOffering (Deletes a network offering.)</para></entry>
+						<entry><para>createProject (Creates a project)</para></entry>
+					</row>
+					<row>
+						<entry><para>deleteProject (Deletes a project)</para></entry>
+						<entry><para>updateProject (Updates a project)</para></entry>
+						<entry><para>activateProject (Activates a project)</para></entry>
+					</row>
+					<row>
+						<entry><para>suspendProject (Suspends a project)</para></entry>
+						<entry><para>listProjects (Lists projects and provides detailed information for listed projects)</para></entry>
+						<entry><para>addAccountToProject (Adds acoount to a project)</para></entry>
+					</row>
+					<row>
+						<entry><para>deleteAccountFromProject (Deletes account from the project)</para></entry>
+						<entry><para>listProjectAccounts (Lists project's accounts)</para></entry>
+						<entry><para>listProjectInvitations (Lists an account's invitations to join projects)</para></entry>
+					</row>
+					<row>
+						<entry><para>updateProjectInvitation (Accepts or declines project invitation)</para></entry>
+						<entry><para>deleteProjectInvitation (Deletes a project invitation)</para></entry>
+						<entry><para>updateHypervisorCapabilities (Updates a hypervisor capabilities.)</para></entry>
+					</row>
+					<row>
+						<entry><para>listHypervisorCapabilities (Lists all hypervisor capabilities.)</para></entry>
+						<entry><para>createPhysicalNetwork (Creates a physical network)</para></entry>
+						<entry><para>deletePhysicalNetwork (Deletes a Physical Network.)</para></entry>
+					</row>
+					<row>
+						<entry><para>listPhysicalNetworks (Lists physical networks)</para></entry>
+						<entry><para>updatePhysicalNetwork (Updates a physical network)</para></entry>
+						<entry><para>listSupportedNetworkServices (Lists all network services provided by CloudPlatform or for the given Provider.)</para></entry>
+					</row>
+					<row>
+						<entry><para>addNetworkServiceProvider (Adds a network serviceProvider to a physical network)</para></entry>
+						<entry><para>deleteNetworkServiceProvider (Deletes a Network Service Provider.)</para></entry>
+						<entry><para>listNetworkServiceProviders (Lists network serviceproviders for a given physical network.)</para></entry>
+					</row>
+					<row>
+						<entry><para>updateNetworkServiceProvider (Updates a network serviceProvider of a physical network)</para></entry>
+						<entry><para>addTrafficType (Adds traffic type to a physical network)</para></entry>
+						<entry><para>deleteTrafficType (Deletes traffic type of a physical network)</para></entry>
+					</row>
+					<row>
+						<entry><para>listTrafficTypes (Lists traffic types of a given physical network.)</para></entry>
+						<entry><para>updateTrafficType (Updates traffic type of a physical network)</para></entry>
+						<entry><para>listTrafficTypeImplementors (Lists implementors of implementor of a network traffic type or implementors of all network traffic types)</para></entry>
+					</row>
+					<row>
+						<entry><para>createStorageNetworkIpRange (Creates a Storage network IP range.)</para></entry>
+						<entry><para>deleteStorageNetworkIpRange (Deletes a storage network IP Range.)</para></entry>
+						<entry><para>listStorageNetworkIpRange (List a storage network IP range.)</para></entry>
+					</row>
+					<row>
+						<entry><para>updateStorageNetworkIpRange (Update a Storage network IP range, only allowed when no IPs in this range have been allocated.)</para></entry>
+						<entry><para>listUsageTypes (List Usage Types)</para></entry>
+						<entry><para>addF5LoadBalancer (Adds a F5 BigIP load balancer device)</para></entry>
+					</row>
+					<row>
+						<entry><para>configureF5LoadBalancer (configures a F5 load balancer device)</para></entry>
+						<entry><para>deleteF5LoadBalancer ( delete a F5 load balancer device)</para></entry>
+						<entry><para>listF5LoadBalancers (lists F5 load balancer devices)</para></entry>
+					</row>
+					<row>
+						<entry><para>listF5LoadBalancerNetworks (lists network that are using a F5 load balancer device)</para></entry>
+						<entry><para>addSrxFirewall (Adds a SRX firewall device)</para></entry>
+						<entry><para>deleteSrxFirewall ( delete a SRX firewall device)</para></entry>
+					</row>
+					<row>
+						<entry><para>listSrxFirewalls (lists SRX firewall devices in a physical network)</para></entry>
+						<entry><para>listSrxFirewallNetworks (lists network that are using SRX firewall device)</para></entry>
+						<entry><para>addNetscalerLoadBalancer (Adds a netscaler load balancer device)</para></entry>
+					</row>
+					<row>
+						<entry><para>deleteNetscalerLoadBalancer ( delete a netscaler load balancer device)</para></entry>
+						<entry><para>configureNetscalerLoadBalancer (configures a netscaler load balancer device)</para></entry>
+						<entry><para>listNetscalerLoadBalancers (lists netscaler load balancer devices)</para></entry>
+					</row>
+					<row>
+						<entry><para>listNetscalerLoadBalancerNetworks (lists network that are using a netscaler load balancer device)</para></entry>
+						<entry><para>createVirtualRouterElement (Create a virtual router element.)</para></entry>
+						<entry><para>configureVirtualRouterElement (Configures a virtual router element.)</para></entry>
+					</row>
+					<row>
+						<entry><para>listVirtualRouterElements (Lists all available virtual router elements.)</para></entry>
+						<entry><para></para></entry>
+						<entry><para></para></entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</informaltable>
+	</section>
+

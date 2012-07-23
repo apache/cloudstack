@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="create-templates-overview">
+	<title>Creating Templates: Overview</title>
+	<para>CloudPlatform ships with a default template for the CentOS operating system. There are a variety of ways to add more templates. Administrators and end users can add templates. The typical sequence of events is:</para>
+	<orderedlist>
+		<listitem><para>Launch a VM instance that has the operating system you want. Make any other desired configuration changes to the VM.</para></listitem>
+		<listitem><para>Stop the VM.</para></listitem>
+		<listitem><para>Convert the volume into a template.</para></listitem>
+	</orderedlist>
+	<para>There are other ways to add templates to CloudPlatform. For example, you can take a snapshot of the VM's volume and create a template from the snapshot, or import a VHD from another system into CloudPlatform</para>
+	<para>The various techniques for creating templates are described in the next few sections.</para>
+	
+</section>

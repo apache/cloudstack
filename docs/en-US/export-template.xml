@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="export-template">
+	<title>Exporting Templates</title>
+	<para>End users and Administrators may export templates from the CloudPlatform.  Navigate to the template in the UI and choose the Download function from the Actions menu.</para>
+
+</section>

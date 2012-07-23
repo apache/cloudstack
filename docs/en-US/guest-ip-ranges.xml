@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="guest-ip-ranges">
+	<title>Guest IP Ranges</title>
+	<para>The IP ranges for guest network traffic are set on a per-account basis by the user.  This allows the users to configure their network in a fashion that will enable VPN linking between their guest network and their clients.</para>
+</section>

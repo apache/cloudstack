@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<chapter id="management_server_multi_node_install">
+	<title>Management Server Multi-Node Installation</title>
+		<xi:include href="multi_node_overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+		<xi:include href="prepare_os.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+		<xi:include href="first_ms_node_install.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+</chapter>

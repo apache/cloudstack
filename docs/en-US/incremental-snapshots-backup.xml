@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="incremental-snapshots-backup">
+	<title>Incremental Snapshots and Backup </title>
+	<para>Snapshots are created on primary storage where a disk resides. After a snapshot is created, it is immediately backed up to secondary storage and removed from primary storage for optimal utilization of space on primary storage.</para>
+	<para>CloudPlatform does incremental backups for some hypervisors. When incremental backups are supported, every N backup is a full backup.</para>
+	<informaltable>
+		<tgroup cols="4" align="left" colsep="1" rowsep="1">
+			
+			<thead>
+				<row>
+					<entry></entry>
+					<entry><para>VMware vSphere</para></entry>
+					<entry><para>Citrix XenServer</para></entry>
+					<entry><para>KVM</para></entry>
+				</row>									
+			</thead>
+			<tbody>
+				<row>
+					<entry><para>Support incremental backup</para></entry>
+					<entry><para>N</para></entry>
+					<entry><para>Y</para></entry>
+					<entry><para>N</para></entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</informaltable>
+	
+	</section>

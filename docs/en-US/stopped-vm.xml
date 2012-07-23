@@ -1,0 +1,12 @@
+	<section id="stopped-vm">
+		<title>Stopped VM</title>
+		<para>CloudPlatform now supports creating a VM without starting it. You can determine whether the VM needs to be started as part of the VM deployment. A VM can now be deployed in two ways: create and start a VM (the default method); or create a VM and leave it in the stopped state.</para>
+		<para>A new request parameter, startVM, is introduced in the deployVm API to support the stopped VM feature.</para>
+		<para>The possible values are:</para>
+		<itemizedlist>
+			<listitem><para>true - The VM starts as a part of the VM deployment.</para></listitem>
+			<listitem><para>false - The VM is left in the stopped state at the end of the VM deployment.</para></listitem>
+		</itemizedlist>
+		<para>The default value is true.</para>
+	</section>
+

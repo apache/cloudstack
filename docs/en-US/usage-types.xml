@@ -1,0 +1,101 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="usage-types">
+		<title>Usage Types</title>
+		<para>The following table shows all usage types.</para>
+	<informaltable>
+		<tgroup cols="3">
+			<colspec colname="c1" colnum="1" colwidth="4cm" />
+			<colspec colname="c2" colnum="2" colwidth="8cm" />
+			<colspec colname="c3" colnum="3" colwidth="5cm" />
+			<thead>
+				<row>
+					<entry>Type ID</entry>
+					<entry>Type Name</entry>
+					<entry>Description</entry>
+				</row>
+			</thead>
+			<tbody>
+				<row>
+					<entry>1</entry>
+					<entry>RUNNING_VM</entry>
+					<entry>Tracks the total running time of a VM per usage record period.  If the VM is upgraded during the usage period, you will get a separate Usage Record for the new upgraded VM.</entry>
+				</row>
+				<row>
+					<entry><para>2</para></entry>
+					<entry><para>ALLOCATED_VM</para></entry>
+					<entry><para>Tracks the total time the VM has been created to the time when it has been destroyed.  This usage type is also useful in determining usage for specific templates such as Windows-based templates.</para></entry>
+				</row>
+				
+				<row>
+					<entry><para>3</para></entry>
+					<entry><para>IP_ADDRESS</para></entry>
+					<entry><para>Tracks the public IP address owned by the account.</para></entry>
+				</row>
+				
+				<row>
+					<entry><para>4</para></entry>
+					<entry><para>NETWORK_BYTES_SENT</para></entry>
+					<entry><para>Tracks the total number of bytes sent by all the VMs for an account.  Cloud.com does not currently track network traffic per VM.</para></entry>
+				</row>
+				
+				<row>
+					<entry><para>5</para></entry>
+					<entry><para>NETWORK_BYTES_RECEIVED</para></entry>
+					<entry><para>Tracks the total number of bytes received by all the VMs for an account.  Cloud.com does not currently track network traffic per VM.</para></entry>
+				</row>
+				
+				<row>
+					<entry><para>6</para></entry>
+					<entry><para>VOLUME</para></entry>
+					<entry><para>Tracks the total time a disk volume has been created to the time when it has been destroyed.</para></entry>
+				</row>
+				
+				<row>
+					<entry><para>7</para></entry>
+					<entry><para>TEMPLATE</para></entry>
+					<entry><para>Tracks the total time a template (either created from a snapshot or uploaded to the cloud) has been created to the time it has been destroyed.  The size of the template is also returned.</para></entry>
+				</row>
+				
+				<row>
+					<entry><para>8</para></entry>
+					<entry><para>ISO</para></entry>
+					<entry><para>Tracks the total time an ISO has been uploaded to the time it has been removed from the cloud.  The size of the ISO is also returned.</para></entry>
+				</row>
+				
+				<row>
+					<entry><para>9</para></entry>
+					<entry><para>SNAPSHOT</para></entry>
+					<entry><para>Tracks the total time from when a snapshot has been created to the time it have been destroyed.</para></entry>
+				</row>
+				
+				<row>
+					<entry><para>11</para></entry>
+					<entry><para>LOAD_BALANCER_POLICY</para></entry>
+					<entry><para>Tracks the total time a load balancer policy has been created to the time it has been removed.  Cloud.com does not track whether a VM has been assigned to a policy.</para></entry>
+				</row>
+				
+				<row>
+					<entry><para>12</para></entry>
+					<entry><para>PORT_FORWARDING_RULE</para></entry>
+					<entry><para>Tracks the time from when a port forwarding rule was created until the time it was removed.</para></entry>
+				</row>
+				
+				<row>
+					<entry><para>13</para></entry>
+					<entry><para>NETWORK_OFFERING</para></entry>
+					<entry><para>The time from when a network offering was assigned to a VM until it is removed.</para></entry>
+				</row>
+				
+				<row>
+					<entry><para>14</para></entry>
+					<entry><para>VPN_USERS</para></entry>
+					<entry><para>The time from when a VPN user is created until it is removed.</para></entry>
+				</row>
+			</tbody>
+		</tgroup>
+	</informaltable> 
+	</section>

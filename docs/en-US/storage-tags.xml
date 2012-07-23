@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="storage-tags">
+	<title>Storage Tags</title>
+	<para>Storage may be "tagged".  A tag is a text string attribute associated with primary storage, a Disk Offering, or a Service Offering.  Tags allow administrators to provide additional information about the storage.  For example, that is a "SSD" or it is "slow".  Tags are not interpreted by CloudPlatform.  They are matched against tags placed on service and disk offerings.  CloudPlatform requires all tags on service and disk offerings to exist on the primary storage before it allocates root or data disks on the primary storage. Service and disk offering tags are used to identify the requirements of the storage that those offerings have.   For example, the high end service offering may require "fast" for its root disk volume.</para>
+	<para>The interaction between tags, allocation, and volume copying across clusters and pods can be complex. To simplify the situation, use the same set of tags on the primary storage for all clusters in a pod. Even if different devices are used to present those tags, the set of exposed tags can be the same.</para>
+	
+	</section>

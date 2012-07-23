@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="vlan-provisioning">
+    <title>VLAN Provisioning</title>
+    <para>CloudPlatform automatically creates and destroys interfaces bridged to VLANs on the hosts.  In general the administrator does not need to manage this process.</para>
+    <para>CloudPlatform manages VLANs differently based on hypervisor type.  For XenServer or KVM, the VLANs are created on only the hosts where they will be used and then they are destroyed when all guests that require them have been terminated or moved to another host.   .</para>
+    <para>For vSphere the VLANs are provisioned on all hosts in the cluster even if there is no guest running on a particular Host that requires the VLAN.  This allows the administrator to perform live migration and other functions in vCenter without having to create the VLAN on the destination Host.  Additionally, the VLANs are not removed from the Hosts when they are no longer needed. </para>
+    </section>     

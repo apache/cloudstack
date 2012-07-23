@@ -1,0 +1,17 @@
+<section id="loadbalancer-policy-port-forwarding-rule-usage-record-format">
+	<title>Load Balancer Policy or Port Forwarding Rule Usage Record Format</title>
+	<itemizedlist>
+			<listitem><para>account – name of the account</para></listitem>
+			<listitem><para>accountid – ID of the account</para></listitem>
+			<listitem><para>domainid – ID of the domain in which this account resides</para></listitem>
+			<listitem><para>zoneid – Zone where the usage occurred</para></listitem>
+			<listitem><para>description – A string describing what the usage record is tracking</para></listitem>
+			<listitem><para>usage – String representation of the usage, including the units of usage (e.g. 'Hrs' for hours)</para></listitem>
+			<listitem><para>usagetype – A number representing the usage type (see Usage Types)</para></listitem>
+			<listitem><para>rawusage – A number representing the actual usage in hours</para></listitem>
+			<listitem><para>usageid – ID of the load balancer policy or port forwarding rule</para></listitem>
+			<listitem><para>usagetype – A number representing the usage type (see Usage Types)</para></listitem>
+			<listitem><para>startdate, enddate – The range of time for which the usage is aggregated; see Dates in the Usage Record</para></listitem>
+		</itemizedlist>
+	</section>
+

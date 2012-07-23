@@ -177,7 +177,7 @@
           }
         });
 
-        var sectionsToShow = ['networks', 'vpc'];
+        var sectionsToShow = ['networks'];
         if(havingSecurityGroupNetwork == true)
           sectionsToShow.push('securityGroups');
 
@@ -3175,91 +3175,6 @@
                     });
                   }
                 }
-              }
-            }
-          }
-        }
-      },
-      vpc: {
-        type: 'select',
-        title: 'VPC',
-        id: 'vpc',
-        listView: {
-          id: 'vpc',
-          label: 'VPC',
-          fields: {
-            name: { label: 'Name' },
-            zone: { label: 'Zone' },
-            cidr: { label: 'CIDR' }
-          },
-          dataProvider: function(args) {
-            args.response.success({
-              data: [
-                {
-                  name: 'VPC 1',
-                  zone: 'San Jose',
-                  cidr: '0.0.0.0/0',
-                  networkdomain: 'testdomain',
-                  accountdomain: 'testdomain'
-                },
-                {
-                  name: 'VPC 2',
-                  zone: 'San Jose',
-                  cidr: '0.0.0.0/0',
-                  networkdomain: 'testdomain',
-                  accountdomain: 'testdomain'
-                },
-                {
-                  name: 'VPC 3',
-                  zone: 'Cupertino',
-                  cidr: '0.0.0.0/0',
-                  networkdomain: 'testdomain',
-                  accountdomain: 'testdomain'
-                },
-                {
-                  name: 'VPC 4',
-                  zone: 'San Jose',
-                  cidr: '0.0.0.0/0',
-                  networkdomain: 'testdomain',
-                  accountdomain: 'testdomain'
-                }
-              ]
-            });
-          },
-          actions: {
-            add: {
-              label: 'Add VPC',
-              createForm: {
-                title: 'Add new VPC',
-                fields: {
-                  name: { label: 'Name', validation: { required: true } },
-                  zone: {
-                    label: 'Zone',
-                    validation: { required: true },
-                    select: function(args) {
-                      args.response.success({
-                        data: [
-                          { id: 'zone1', description: 'Zone 1' },
-                          { id: 'zone2', description: 'Zone 2' },
-                          { id: 'zone3', description: 'Zone 3' }
-                        ]
-                      });
-                    }
-                  }
-                }
-              },
-              messages: {
-                notification: function(args) { return 'Add new VPC'; }
-              },
-              action: function(args) {
-                args.response.success();
-              },
-              notification: { poll: function(args) { args.complete(); } }
-            },
-            editVpc: {
-              label: 'Edit VPC',
-              action: {
-                custom: cloudStack.uiCustom.vpc(cloudStack.vpc)
               }
             }
           }

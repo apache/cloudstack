@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="configure-xenserver-dom0-memory">
+    <title>Configure XenServer dom0 Memory</title>
+    <para>Configure the XenServer dom0 settings to allocate more memory to dom0. This can enable XenServer to handle larger numbers of virtual machines. We recommend 2940 MB of RAM for XenServer dom0.  For instructions on how to do this, see  <ulink url="http://support.citrix.com/article/CTX126531">Citrix Knowledgebase Article</ulink>.The article refers to XenServer 5.6, but the same information applies to XenServer 6</para>
+</section>
+      

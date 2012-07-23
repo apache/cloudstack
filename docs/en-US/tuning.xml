@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="tuning">
+    <title>Tuning</title>
+    <para>This section provides tips on how to improve the performance of your cloud.</para>
+    <xi:include href="performance-monitoring.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="increase-management-server-max-memory.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="set-database-buffer-pool-size.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="set-monitor-total-vm-limits-per-host.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="configure-xenserver-dom0-memory.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </section>
+      

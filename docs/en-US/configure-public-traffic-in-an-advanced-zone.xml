@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="configure-public-traffic-in-an-advanced-zone">
+    <title>Configure Public Traffic in an Advanced Zone</title>
+    <para>In a zone that uses advanced networking, you need to configure at least one range of IP addresses for Internet traffic.</para>
+					
+	</section>

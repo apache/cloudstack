@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<chapter id="installation">
+	<title>Installation</title>
+	<xi:include href="who-should-read-installation.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+	<xi:include href="installation-steps-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+	<xi:include href="minimum-system-requirements.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+	<xi:include href="management-server-install-flow.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>	
+</chapter>

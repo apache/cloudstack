@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="troubleshooting-working-with-server-logs">
+    <title>Working with Server Logs</title>
+    <para>The CloudPlatform Management Server logs all web site, middle tier, and database activities for diagnostics purposes in /var/log/cloud/management/.  The CloudPlatform logs a variety of error messages.  We recommend this command to find the problematic output in the Management Server log:.</para>
+    <note><para>When copying and pasting a command, be sure the command has pasted as a single line before executing. Some document viewers may introduce unwanted line breaks in copied text.</para></note>
+    <programlisting>
+        grep -i -E 'exception|unable|fail|invalid|leak|warn|error' /var/log/cloud/management/management-server.log
+    </programlisting>
+    <para>The CloudPlatform processes requests with a Job ID.  If you find an error in the logs and you are interested in debugging the issue you can grep for this job ID in the management server log.   For example, suppose that you find the following ERROR message:</para>
+    <programlisting>
+        2010-10-04 13:49:32,595 ERROR [cloud.vm.UserVmManagerImpl] (Job-Executor-11:job-1076) Unable to find any host for [User|i-8-42-VM-untagged]
+    </programlisting>
+    <para>Note that the job ID is 1076.  You can track back the events relating to job 1076 with the following grep:</para>
+    <programlisting>
+        grep "job-1076)" management-server.log
+    </programlisting>
+    <para>The CloudPlatform Agent Server logs its activities in /var/log/cloud/agent/.</para>
+    </section>
+      

@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="troubleshooting">
+    <para><xref linkend="appendix-a-time-zones" />IP Load Balancing</para>
+    <para><xref linkend="troubleshooting-alerts" />DNS and DHCP</para>
+    <para><xref linkend="troubleshooting-working-with-server-logs" />VPN</para>
+    <para><xref linkend="troubleshooting-dataloss-on-exported-primary-storage" />Configuring VPN</para>
+    <para><xref linkend="troubleshooting-recover-lost-virtual-router" />Using VPN with Windows</para>
+    <para><xref linkend="troubleshooting-maintenance-mode-not-working-on-vCenter" />Using VPN with Mac</para>
+    <para><xref linkend="troubleshooting-unable-to-deploy-vms" />Templates</para>
+    <para><xref linkend="troubleshooting-unable-to-power-on-vm" />Events</para>
+    <para><xref linkend="troubleshooting-lb-rules-fails" />Templates</para>
+  
+	
+</section>

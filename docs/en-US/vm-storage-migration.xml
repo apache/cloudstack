@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="vm-storage-migration">
+    <title>VM Storage Migration</title>
+	<para>Supported in XenServer, KVM, and VMware.</para>
+    <note><para>This procedure is different from moving disk volumes from one VM to another. See Detaching and Moving Volumes <xref linkend="detach-move-volumes" />.</para></note>
+	<para>You can migrate a virtual machine’s root disk volume or any additional data disk volume from one storage pool to another in the same zone.</para>
+	<para>You can use the storage migration feature to achieve some commonly desired administration goals, such as balancing the load on storage pools and increasing the reliability of virtual machines by moving them away from any storage  pool that is experiencing  issues.</para>
+    <xi:include href="migrate-datadisk-volume-new-storage-pool.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="migrate-vm-rootvolume-volume-new-storage-pool.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+	</section>
+

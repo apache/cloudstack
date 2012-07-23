@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="runtime-behavior-of-primary-storage">
+		<title>Runtime Behavior of Primary Storage</title>
+		<para>Root volumes are created automatically when a virtual machine is created. Root volumes are deleted when the VM is destroyed. Data volumes can be created and dynamically attached to VMs (although, when the Oracle VM hypervisor is used, the VM must be stopped before an additional volume can be attached). Data volumes are not deleted when VMs are destroyed.</para>
+		<para>Administrators should monitor the capacity of primary storage devices and add additional primary storage as needed.  See the Advanced Installation Guide.</para>			
+		<para>Administrators add primary storage to the system by creating a CloudPlatform storage pool. Each storage pool is associated with a cluster.</para>
+	</section>
+

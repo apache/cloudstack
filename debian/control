@@ -73,15 +73,6 @@ Description: CloudStack agent scripts
  will participate in your cloud -- this is a requirement for the CloudStack
  agent.
 
-Package: cloud-daemonize
-Provides: vmops-daemonize
-Conflicts: vmops-daemonize
-Replaces: vmops-daemonize
-Architecture: any
-Description: CloudStack daemonization utility
- This package contains a program that daemonizes the specified
- process.  The CloudStack Cloud Stack uses this to start the agent
- as a service.
 
 Package: cloud-core
 Provides: vmops-core
@@ -93,16 +84,6 @@ Description: CloudStack core library
  The CloudStack core libraries provide a set of Java classes used
  in the CloudStack Cloud Stack.
 
-Package: cloud-test
-Provides: vmops-test
-Conflicts: vmops-test
-Replaces: vmops-test
-Architecture: any
-Depends: openjdk-6-jre, wget, cloud-utils (= ${source:Version}), cloud-deps (= ${source:Version})
-Description: CloudStack test suite
- The CloudStack test package contains a suite of automated tests
- that the very much appreciated QA team at CloudStack constantly
- uses to help increase the quality of the Cloud Stack.
 
 Package: cloud-client
 Provides: vmops-client
@@ -142,7 +123,7 @@ Provides: vmops-agent
 Conflicts: vmops-agent
 Replaces: vmops-agent
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, libvirt0, cloud-daemonize, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin,  uuid-runtime, rsync, grep, iproute, ebtables, vlan, libcglib-java, libcommons-httpclient-java, libservlet2.5-java, liblog4j1.2-java, libjna-java, wget
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, libvirt0, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin,  uuid-runtime, rsync, grep, iproute, ebtables, vlan, libcglib-java, libcommons-httpclient-java, libservlet2.5-java, liblog4j1.2-java, libjna-java, wget
 Description: CloudStack agent
  The CloudStack agent is in charge of managing shared computing resources in
  a CloudStack Cloud Stack-powered cloud.  Install this package if this computer
@@ -160,7 +141,7 @@ Provides: vmops-usage
 Conflicts: vmops-usage
 Replaces: vmops-usage
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-server (= ${source:Version}), cloud-daemonize (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-client (= ${source:Version})
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-server (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-client (= ${source:Version})
 Description: CloudStack usage monitor
  The CloudStack usage monitor provides usage accounting across the entire cloud for
  cloud operators to charge based on usage parameters.
@@ -168,6 +149,6 @@ Description: CloudStack usage monitor
 Package: cloud-cli
 Provides: cloud-cli
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-server (= ${source:Version}), cloud-daemonize (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-client (= ${source:Version})
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-server (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-client (= ${source:Version})
 Description: CloudStack commandline tool
  The CloudStack commandline tool for invoking APi

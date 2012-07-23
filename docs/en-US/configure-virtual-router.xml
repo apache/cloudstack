@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="configure-virtual-router">
+    <title>Configuring the Virtual Router</title>
+    <para>You can set the following:</para>
+    <itemizedlist>
+        <listitem><para>IP range</para></listitem>
+        <listitem><para>Supported network services</para></listitem>
+        <listitem><para>Default domain name for the network serviced by the virtual router</para></listitem>
+        <listitem><para>Gateway IP address</para></listitem>
+        <listitem><para>How often CloudPlatform fetches network usage statistics from CloudPlatform virtual routers. If you want to collect traffic metering data from the virtual router, set the global configuration parameter router.stats.interval. If you are not using the virtual router to gather network usage statistics, set it to 0.</para></listitem>
+    </itemizedlist>
+    
+</section>

@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="port-forwarding">
+	<title>Port Forwarding</title>
+	<para>A port forward service is a set of port forwarding rules that define a policy. A port forward service is then applied to one or more guest VMs. The guest VM then has its inbound network access managed according to the policy defined by the port forwarding service.  You can optionally specify one or more CIDRs to filter the source IPs. This is useful when you want to allow only incoming requests from certain IP addresses to be forwarded.</para>
+	<para>A guest VM can be in any number of port forward services. Port forward services can be defined but have no members. If a guest VM is part of more than one network, port forwarding rules will function only if they are defined on the default network</para>
+	<para>You cannot use port forwarding to open ports for an elastic IP address. When elastic IP is used, outside access is instead controlled through the use of security groups. See Security Groups.</para>
+	<para>To set up port forwarding:</para>
+	<orderedlist>
+		<listitem><para>Log in to the CloudPlatform UI as an administrator or end user.</para></listitem>
+		<listitem><para>If you have not already done so, add a public IP address range to a zone in CloudPlatform. See Adding a Zone and Pod in the Installation Guide.</para></listitem>
+		<listitem><para>Add one or more VM instances to CloudPlatform.</para></listitem>
+		<listitem><para>In the left navigation bar, click Network.</para></listitem>
+		<listitem><para>Click the name of the guest network where the VMs are running.</para>
+		</listitem>
+		<listitem><para>Choose an existing IP address or acquire a new IP address. (See Acquiring a New IP Address on page 73.) Click the name of the IP address in the list.</para></listitem>
+		<listitem><para>Click the Configuration tab.</para></listitem>
+		<listitem><para>In the Port Forwarding node of the diagram, click View All.</para></listitem>
+		<listitem><para>Fill in the following:</para>
+		<itemizedlist>
+			<listitem><para><emphasis role="bold">Public Port</emphasis>. The port to which public traffic will be
+						addressed on the IP address you acquired in the previous step.</para></listitem>
+			<listitem><para><emphasis role="bold">Private Port</emphasis>. The port on which the instance is listening for
+						forwarded public traffic.</para></listitem>
+			<listitem><para><emphasis role="bold">Protocol</emphasis>. The communication protocol in use between the two
+						ports</para></listitem>
+		</itemizedlist></listitem>
+		<listitem><para>Click Add</para></listitem>		
+	</orderedlist>
+</section>

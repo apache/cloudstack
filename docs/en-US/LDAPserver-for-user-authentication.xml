@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="LDAPserver-for-user-authentication">
+    <title>Using an LDAP Server for User Authentication</title>
+    <para>You can use an external LDAP server such as Microsoft Active Directory or ApacheDS to authenticate CloudPlatform end-users. Just map CloudPlatform accounts to the corresponding LDAP accounts using a query filter. The query filter is written using the query syntax of the particular LDAP server, and can include special wildcard characters provided by CloudPlatform for matching common values such as the user’s email address and name. CloudPlatform will search the external LDAP directory tree starting at a specified base directory and return the distinguished name (DN) and password of the matching user. This information along with the given password is used to authenticate the user..</para>
+    <para>To set up LDAP authentication in CloudPlatform, call the CloudPlatform API command ldapConfig and provide the following:</para>
+    <itemizedlist>
+        <listitem><para>Hostname or IP address and listening port of the LDAP server</para></listitem>
+        <listitem> <para>Base directory and query filter</para></listitem>
+        <listitem><para>Search user DN credentials, which give CloudPlatform permission to search on the LDAP server</para></listitem>
+        <listitem><para>SSL keystore and password, if SSL is used</para></listitem>     
+    </itemizedlist>
+    <xi:include href="example-LDAP-configuration-commands.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="search-base.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="query-filter.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="search-user-bind-dn.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="SSL-keystore-path-and-password.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />    
+    </section>

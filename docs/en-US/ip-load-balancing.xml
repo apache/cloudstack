@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="ip-load-balancing">
+	<title>IP Load Balancing</title>
+	<para>The user may choose to associate the same public IP for multiple guests. CloudPlatform implements a TCP-level load balancer with the following policies.</para>
+	<itemizedlist>
+		<listitem><para>Round-robin</para></listitem>
+		<listitem><para>Least connection</para></listitem>
+		<listitem><para>Source IP</para></listitem>
+	</itemizedlist>
+	<para>This is similar to port forwarding but the destination may be multiple IP addresses.</para>
+</section>

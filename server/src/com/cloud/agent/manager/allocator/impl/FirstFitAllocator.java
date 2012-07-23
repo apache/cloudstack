@@ -81,6 +81,7 @@ public class FirstFitAllocator implements HostAllocator {
     @Inject VMInstanceDao _vmInstanceDao = null;
     @Inject ResourceManager _resourceMgr;
     float _factor = 1;
+    boolean _checkHvm = true;
     protected String _allocationAlgorithm = "random";
     @Inject CapacityManager _capacityMgr;
     
@@ -285,6 +286,7 @@ public class FirstFitAllocator implements HostAllocator {
     	String templateGuestOSCategory = getTemplateGuestOSCategory(template);
     	
     	List<HostVO> prioritizedHosts = new ArrayList<HostVO>();
+	List<HostVO> noHvmHosts = new ArrayList<HostVO>();
     	
     	// If a template requires HVM and a host doesn't support HVM, remove it from consideration
     	List<HostVO> hostsToCheck = new ArrayList<HostVO>();
@@ -292,12 +294,19 @@ public class FirstFitAllocator implements HostAllocator {
     		for (HostVO host : hosts) {
     			if (hostSupportsHVM(host)) {
     				hostsToCheck.add(host);
+			} else {
+				noHvmHosts.add(host);
     			}
     		}
     	} else {
     		hostsToCheck.addAll(hosts);
     	}
     	
+	if (s_logger.isDebugEnabled()) {
+		if (noHvmHosts.size() > 0) {
+			s_logger.debug("Not considering hosts: "  + noHvmHosts + "  to deploy template: " + template +" as they are not HVM enabled");
+		}
+	}
     	// If a host is tagged with the same guest OS category as the template, move it to a high priority list
     	// If a host is tagged with a different guest OS category than the template, move it to a low priority list
     	List<HostVO> highPriorityHosts = new ArrayList<HostVO>();
@@ -335,6 +344,9 @@ public class FirstFitAllocator implements HostAllocator {
     }
     
     protected boolean hostSupportsHVM(HostVO host) {
+        if ( !_checkHvm ) {
+            return true;
+        }
     	// Determine host capabilities
 		String caps = host.getCapabilities();
 		
@@ -403,6 +415,8 @@ public class FirstFitAllocator implements HostAllocator {
             if (allocationAlgorithm != null) {
             	_allocationAlgorithm = allocationAlgorithm;
             }
+            String value = configs.get("xen.check.hvm");
+            _checkHvm = value == null ? true : Boolean.parseBoolean(value);
         }
         return true;
     }

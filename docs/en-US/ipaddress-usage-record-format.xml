@@ -1,0 +1,19 @@
+<section id="ipaddress-usage-record-format">
+	<title>IP Address Usage Record Format</title>
+	<para>For IP address usage the following fields exist in a usage record.</para>
+	<itemizedlist>
+			<listitem><para>account – name of the account</para></listitem>
+			<listitem><para>accountid – ID of the account</para></listitem>
+			<listitem><para>domainid – ID of the domain in which this account resides</para></listitem>
+			<listitem><para>zoneid – Zone where the usage occurred</para></listitem>
+			<listitem><para>description – A string describing what the usage record is tracking</para></listitem>
+			<listitem><para>usage – String representation of the usage, including the units of usage</para></listitem>
+			<listitem><para>usagetype – A number representing the usage type (see Usage Types)</para></listitem>
+			<listitem><para>rawusage – A number representing the actual usage in hours</para></listitem>
+			<listitem><para>usageid – IP address ID</para></listitem>
+			<listitem><para>startdate, enddate – The range of time for which the usage is aggregated; see Dates in the Usage Record</para></listitem>
+			<listitem><para>issourcenat – Whether source NAT is enabled for the IP address</para></listitem>
+			<listitem><para>iselastic - True if the IP address is elastic.</para></listitem>
+		</itemizedlist>
+	</section>
+

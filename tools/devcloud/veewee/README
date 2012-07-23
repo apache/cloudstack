@@ -1,0 +1,5 @@
+Install DevCloud Base system:
+1. get code from https://github.com/jedi4ever/veewee, and install
+2. veewee vbox define devcloud ubuntu-12.04-server-i386
+3. put these two files(definition.rb and preseed.cfg) under ./definition/devcloud/
+3. veewee vbox build devcloud

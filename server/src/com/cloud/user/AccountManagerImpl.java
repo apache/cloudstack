@@ -2146,7 +2146,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject,
+    public void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> 
+    permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject,
             boolean listAll, boolean forProjectInvitation) {
         Long domainId = domainIdRecursiveListProject.first();
 
@@ -2172,6 +2173,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
 
             if (userAccount != null) {
+                checkAccess(caller, null, false, userAccount);
+                //check permissions
                 permittedAccounts.add(userAccount.getId());
             } else {
                 throw new InvalidParameterValueException("could not find account " + accountName + " in domain " + domainId);
@@ -2222,4 +2225,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         }
     }
+
+	@Override
+	public UserAccount getUserByApiKey(String apiKey) {
+		return _userAccountDao.getUserByApiKey(apiKey);
+	}
 }

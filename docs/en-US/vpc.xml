@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="vpc">
+    <title>Virtual Private Cloud</title>
+    <para></para>
+    <para>To add a Virtual Private Cloud (VPC):</para>
+    <orderedlist>
+        <listitem><para>Log in to the CloudPlatform UI as an administrator or end user. </para></listitem>
+        <listitem><para>In the left navigation, choose Network</para></listitem>
+        <listitem><para>In the Select view, select VPC.</para></listitem>
+        <listitem><para>Click Add VPC. Provide the following information:</para>
+            <itemizedlist>
+                <listitem><para><emphasis role="bold">Name</emphasis>: A short name for the VPC that you are creating.</para></listitem>
+                <listitem><para><emphasis role="bold">Description</emphasis>: A brief description of the VPC.</para></listitem>
+                <listitem><para><emphasis role="bold">Zone</emphasis>: Choose the zone where you want the VPC to be available.</para></listitem>
+                <listitem><para><emphasis role="bold">CIDR</emphasis>: To accept the traffic only from the IP addresses within a particular address block, enter a CIDR or a comma-separated list of CIDRs. The CIDR is the base IP address of the incoming traffic. For example, 192.168.0.0/22. To allow all CIDRs, set to 0.0.0.0/0.</para></listitem>
+                <listitem><para><emphasis role="bold">Network Domain</emphasis>: If you want to assign a special domain name to this network, specify the DNS suffix.</para></listitem>
+            </itemizedlist></listitem>
+                     
+    </orderedlist>
+    
+</section>

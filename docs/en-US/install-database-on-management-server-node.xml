@@ -1,0 +1,82 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="install-database-on-management-server-node">
+	<title>Install the Database on the Management Server Node</title>
+	<para>This section describes how to install MySQL on the same machine with the Management Server.
+		This technique is intended for a simple deployment that has a single Management Server node.
+		If you have a multi-node Management Server deployment, you will typically use a separate node for MySQL.
+		See <xref linkend="install-database-on-separate-node" />.
+	</para>
+	<orderedlist>
+		<listitem><para>If you already have a version of MySQL installed on the Management Server node, make one of the following choices, depending on what version of MySQL it is. The most recent version tested is 5.1.58.</para>
+			<itemizedlist>
+				<listitem><para>If you already have installed MySQL version 5.1.58 or later, skip to step 4.</para>
+				</listitem>
+				<listitem><para>If you have installed a version of MySQL earlier than 5.1.58, you can either skip to step 4 or uninstall MySQL and proceed to step 2 to install a more recent version.</para></listitem>
+			</itemizedlist>
+			<warning><para>It is important that you choose the right database version. Never downgrade a MySQL installation.</para></warning>
+		</listitem>
+		<listitem><para>On the same computer where you installed the Management Server, re-run install.sh.</para>
+			<programlisting># ./install.sh</programlisting>
+			<para>You should see a few messages as the installer prepares, followed by a list of choices.</para>
+		</listitem>
+		<listitem><para>Choose D to install the MySQL server from the distribution’s repo.</para>
+			<programlisting>  > D</programlisting>
+			<para>Troubleshooting: If you do not see the D option, you already have MySQL installed. Please go back to step 1.</para>
+		</listitem>
+		<listitem><para>Edit the MySQL configuration (/etc/my.cnf or /etc/mysql/my.cnf, depending on your OS) and insert the following lines in the [mysqld] section. You can put these lines below the datadir line. The max_connections parameter should be set to 350 multiplied by the number of Management Servers you are deploying. This example assumes one Management Server.</para>
+			<programlisting>
+innodb_rollback_on_timeout=1
+innodb_lock_wait_timeout=600
+max_connections=350
+log-bin=mysql-bin
+binlog-format = 'ROW'
+			</programlisting>
+			<note><para>The binlog-format variable is supported in MySQL versions 5.1 and greater. It is not supported in MySQL 5.0. In some versions of MySQL, an underscore character is used in place of the hyphen in the variable name. For the exact syntax and spelling of each variable, consult the documentation for your version of MySQL.</para></note>
+		</listitem>
+		<listitem><para>Restart the MySQL service, then invoke MySQL as the root user.</para>
+			<programlisting>
+# service mysqld restart
+# mysql -u root
+			</programlisting>
+		</listitem>
+		<listitem><para>Best Practice: On RHEL and CentOS, MySQL does not set a root password by default. It is very strongly recommended that you set a root password as a security precaution. Run the following commands, and substitute your own desired root password.</para>
+		<programlisting>mysql> SET PASSWORD = PASSWORD('password');</programlisting>
+			<para>From now on, start MySQL with mysql -p so it will prompt you for the password.</para>
+		</listitem>
+		<listitem><para>To grant access privileges to remote users, perform the following steps.</para>
+			<orderedlist numeration="loweralpha">
+				<listitem><para>Run the following commands from the mysql prompt:</para>
+					<programlisting>
+mysql> GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION; 
+mysql> exit
+					</programlisting>
+				</listitem>
+				<listitem><para>Restart the MySQL service.</para>
+					<programlisting># service mysqld restart</programlisting></listitem>
+				<listitem><para>Open the MySQL server port (3306) in the firewall to allow remote clients to connect.</para>
+					<programlisting># iptables -I INPUT -p tcp --dport 3306 -j ACCEPT</programlisting></listitem>
+				<listitem><para>Edit the /etc/sysconfig/iptables file and add the following line at the beginning of the INPUT chain.</para>
+					<programlisting> -A INPUT -p tcp --dport 3306 -j ACCEPT</programlisting></listitem>
+			</orderedlist>
+		</listitem>
+		<listitem><para>Set up the database. The following command creates the cloud user on the database.</para>
+			<itemizedlist>
+				<listitem><para>In dbpassword, specify the password to be assigned to the cloud user. You can choose to provide no password.</para></listitem>
+				<listitem><para>In deploy-as, specify the username and password of the user deploying the database. In the following command, it is assumed the root user is deploying the database and creating the cloud user.</para></listitem>
+				<listitem><para>(Optional) For encryption_type, use file or web to indicate the technique used to pass in the database encryption password. Default: file. See About Password and Key Encryption.</para></listitem>
+				<listitem><para>(Optional) For management_server_key, substitute the default key that is used to encrypt confidential parameters in the &PRODUCT; properties file. Default: password. It is highly recommended that you replace this with a more secure value. See About Password and Key Encryption.</para></listitem>
+				<listitem><para>(Optional) For database_key, substitute the default key that is used to encrypt confidential parameters in the &PRODUCT; database. Default: password. It is highly recommended that you replace this with a more secure value. See About Password and Key Encryption.</para></listitem>
+			</itemizedlist>
+			<programlisting># cloud-setup-databases cloud:&lt;dbpassword&gt;@localhost --deploy-as=root:&lt;password&gt; -e &lt;encryption_type&gt; -m &lt;management_server_key&gt; -k &lt;database_key&gt;</programlisting>
+			<para>When this script is finished, you should see a message like “Successfully initialized the database.”</para>
+		</listitem>
+		<listitem><para>Now that the database is set up, you can finish configuring the OS for the Management Server. This command will set up iptables, sudoers, and start the Management Server.</para>
+			<programlisting># cloud-setup-management</programlisting>
+			<para>You should see the message “Management Server setup is done.”</para>
+		</listitem>
+	</orderedlist>
+</section>

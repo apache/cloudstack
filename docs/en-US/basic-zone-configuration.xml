@@ -1,0 +1,128 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="basic-zone-configuration">
+	<title>Basic Zone Configuration</title>
+    <orderedlist>
+        <listitem><para>After you select Basic in the Add Zone wizard and click Next, you will be asked to enter the following details. Then click Next.</para>
+            <itemizedlist>
+                <listitem><para><emphasis role="bold">Name.</emphasis> A name for the zone.</para></listitem>
+                <listitem><para><emphasis role="bold">DNS 1 and 2.</emphasis> These are DNS servers for use by guest VMs in the zone. These DNS servers will be accessed via the public network you will add later. The public IP addresses for the zone must have a route to the DNS server named here.</para></listitem>
+                <listitem><para><emphasis role="bold">Internal DNS 1 and Internal DNS 2.</emphasis> These are DNS servers for use by system VMs in the zone (these are VMs used by &PRODUCT; itself, such as virtual routers, console proxies, and Secondary Storage VMs.) These DNS servers will be accessed via the management traffic network interface of the System VMs. The private IP address you provide for the pods must have a route to the internal DNS server named here.</para></listitem>
+                <listitem><para><emphasis role="bold">Hypervisor.</emphasis> (Introduced in version 3.0.1) Choose the hypervisor for the first cluster in the zone. You can add clusters with different hypervisors later, after you finish adding the zone.</para></listitem>
+                <listitem><para><emphasis role="bold">Network Offering.</emphasis> Your choice here determines what network services will be available on the network for guest VMs.</para>
+                    <informaltable frame="all">
+                        <tgroup cols="2" align="left" colsep="1" rowsep="1">
+                            <colspec colname="c1" />
+                            <colspec colname="c2" />
+                            <thead>
+                                <row>
+                                    <entry><para>Network Offering</para></entry>
+                                    <entry><para>Description</para></entry>
+                                </row>
+                            </thead>
+                            <tbody>
+                                <row>
+                                    <entry><para>DefaultSharedNetworkOfferingWithSGService</para></entry>
+                                    <entry><para>If you want to enable security groups for guest traffic isolation, choose this. (See Using Security Groups to Control Traffic to VMs.)</para></entry>
+                                </row>
+                                <row>
+                                    <entry><para>DefaultSharedNetworkOffering</para></entry>
+                                    <entry><para>If you do not need security groups, choose this.</para></entry>
+                                </row>                                
+                                <row>
+                                    <entry><para>DefaultSharedNetscalerEIPandELBNetworkOffering</para></entry>
+                                    <entry><para>If you have installed a Citrix NetScaler appliance as part of your zone network, and you will be using its Elastic IP and Elastic Load Balancing features, choose this. With the EIP and ELB features, a basic zone with security groups enabled can offer 1:1 static NAT and load balancing.</para></entry>
+                                </row>
+                            </tbody>
+                        </tgroup>
+                    </informaltable>
+                </listitem>
+                <listitem><para><emphasis role="bold">Network Domain.</emphasis> (Optional) If you want to assign a special domain name to the guest VM network, specify the DNS suffix.</para></listitem>
+                <listitem><para><emphasis role="bold">Public.</emphasis> A public zone is available to all users. A zone that is not public will be assigned to a particular domain.  Only users in that domain will be allowed to create guest VMs in this zone.</para></listitem>
+            </itemizedlist>
+        </listitem>
+        <listitem><para>Choose which traffic types will be carried by the physical network.</para>
+            <para>The traffic types are management, public, guest, and storage traffic. For more information about the types, roll over the icons to display their tool tips, or see Basic Zone Network Traffic Types. This screen starts out with some traffic types already assigned. To add more, drag and drop traffic types onto the network. You can also change the network name if desired.</para>
+        </listitem>
+        <listitem><para>3.	(Introduced in version 3.0.1) Assign a network traffic label to each traffic type on the physical network. These labels must match the labels you have already defined on the hypervisor host. To assign each label, click the Edit button under the traffic type icon. A popup dialog appears where you can type the label, then click OK.</para>
+            <para>These traffic labels will be defined only for the hypervisor selected for the first cluster. For all other hypervisors, the labels can be configured after the zone is created.</para>
+            <para>(VMware only) If you have enabled Nexus dvSwitch in the environment, you must specify the corresponding Ethernet port profile names as network traffic label for each traffic type on the physical network. For more information on Nexus dvSwitch, see Configuring a vSphere Cluster with Nexus 1000v Virtual Switch.</para>
+        </listitem>
+        <listitem><para>Click Next.</para></listitem>
+        <listitem><para>(NetScaler only) If you chose the network offering for NetScaler, you have an additional screen to fill out. Provide the requested details to set up the NetScaler, then click Next.</para>
+            <itemizedlist>
+                <listitem><para><emphasis role="bold">IP address.</emphasis> The NSIP (NetScaler IP) address of the NetScaler device.</para></listitem>
+                <listitem><para><emphasis role="bold">Username/Password.</emphasis> The authentication credentials to access the device. &PRODUCT; uses these credentials to access the device.</para></listitem>
+                <listitem><para><emphasis role="bold">Type.</emphasis> NetScaler device type that is being added. It could be NetScaler VPX, NetScaler MPX, or NetScaler SDX. For a comparison of the types, see About Using a NetScaler Load Balancer.</para></listitem>
+                <listitem><para><emphasis role="bold">Public interface.</emphasis> Interface of NetScaler that is configured to be part of the public network.</para></listitem>
+                <listitem><para><emphasis role="bold">Private interface.</emphasis> Interface of NetScaler that is configured to be part of the private network.</para></listitem>
+                <listitem><para><emphasis role="bold">Number of retries.</emphasis> Number of times to attempt a command on the device before considering the operation failed. Default is 2.</para></listitem>
+                <listitem><para><emphasis role="bold">Capacity.</emphasis> Number of guest networks/accounts that will share this NetScaler device.</para></listitem>
+                <listitem><para><emphasis role="bold">Dedicated.</emphasis> When marked as dedicated, this device will be dedicated to a single account. When Dedicated is checked, the value in the Capacity field has no significance – implicitly, its value is 1.</para></listitem>
+            </itemizedlist>
+        </listitem>
+        <listitem><para>(NetScaler only) Configure the IP range for public traffic. The IPs in this range will be used for the static NAT capability which you enabled by selecting the network offering for NetScaler with EIP and ELB. Enter the following details, then click Add. If desired, you can repeat this step to add more IP ranges. When done, click Next.</para>
+            <itemizedlist>
+                <listitem><para><emphasis role="bold">Gateway.</emphasis> The gateway in use for these IP addresses.</para></listitem>
+                <listitem><para><emphasis role="bold">Netmask.</emphasis> The netmask associated with this IP range.</para></listitem>
+                <listitem><para><emphasis role="bold">VLAN.</emphasis> The VLAN that will be used for public traffic.</para></listitem>
+                <listitem><para><emphasis role="bold">Start IP/End IP.</emphasis> A range of IP addresses that are assumed to be accessible from the Internet and will be allocated for access to guest VMs.</para></listitem>
+            </itemizedlist>
+        </listitem>
+        <listitem><para>In a new zone, &PRODUCT; adds the first pod for you. You can always add more pods later. For an overview of what a pod is, see <xref linkend="about-pods" />.</para>
+            <para>To configure the first pod, enter the following, then click Next:</para>
+            <itemizedlist>
+                <listitem><para><emphasis role="bold">Pod Name.</emphasis> A name for the pod.</para></listitem>
+                <listitem><para><emphasis role="bold">Reserved system gateway.</emphasis> The gateway for the hosts in that pod.</para></listitem>
+                <listitem><para><emphasis role="bold">Reserved system netmask.</emphasis> The network prefix that defines the pod's subnet. Use CIDR notation.</para></listitem>
+                <listitem><para><emphasis role="bold">Start/End Reserved System IP.</emphasis> The IP range in the management network that &PRODUCT; uses to manage various system VMs, such as Secondary Storage VMs, Console Proxy VMs, and DHCP. For more information, see System Reserved IP Addresses.</para></listitem>
+            </itemizedlist>
+        </listitem>
+        <listitem><para>Configure the network for guest traffic. Provide the following, then click Next:</para>
+            <itemizedlist>
+                <listitem><para><emphasis role="bold">Guest gateway.</emphasis> The gateway that the guests should use.</para></listitem>
+                <listitem><para><emphasis role="bold">Guest netmask.</emphasis> The netmask in use on the subnet the guests will use.</para></listitem>
+                <listitem><para><emphasis role="bold">Guest start IP/End IP.</emphasis> Enter the first and last IP addresses that define a range that &PRODUCT; can assign to guests.</para>
+                    <itemizedlist>
+                        <listitem><para>We strongly recommend the use of multiple NICs. If multiple NICs are used, they may be in a different subnet.</para></listitem>
+                        <listitem><para>If one NIC is used, these IPs should be in the same CIDR as the pod CIDR.</para></listitem>
+                    </itemizedlist>
+                </listitem>
+            </itemizedlist>
+        </listitem>
+        <listitem><para>In a new pod, &PRODUCT; adds the first cluster for you. You can always add more clusters later. For an overview of what a cluster is, see About Clusters.</para>
+            <para>To configure the first cluster, enter the following, then click Next:</para>
+            <itemizedlist>
+                <listitem><para><emphasis role="bold">Hypervisor.</emphasis> (Version 3.0.0 only; in 3.0.1, this field is read only) Choose the type of hypervisor software that all hosts in this cluster will run. If you choose VMware, additional fields appear so you can give information about a vSphere cluster. For vSphere servers, we recommend creating the cluster of hosts in vCenter and then adding the entire cluster to &PRODUCT;. See Add Cluster: vSphere.</para></listitem>
+                <listitem><para><emphasis role="bold">Cluster name.</emphasis> Enter a name for the cluster.  This can be text of your choosing and is not used by &PRODUCT;.</para></listitem>
+            </itemizedlist>
+        </listitem>
+        <listitem><para>In a new cluster, &PRODUCT; adds the first host for you. You can always add more hosts later. For an overview of what a host is, see About Hosts.</para>
+            <note><para>When you add a hypervisor host to &PRODUCT;, the host must not have any VMs already running.</para></note>
+            <para>Before you can configure the host, you need to install the hypervisor software on the host. You will need to know which version of the hypervisor software version is supported by &PRODUCT; and what additional configuration is required to ensure the host will work with &PRODUCT;. To find these installation details, see:</para>
+            <itemizedlist>
+                <listitem><para>Citrix XenServer Installation and Configuration</para></listitem>
+                <listitem><para>VMware vSphere Installation and Configuration</para></listitem>
+                <listitem><para>KVM vSphere Installation and Configuration</para></listitem>
+                <listitem><para>Oracle VM (OVM) Installation and Configuration</para></listitem>
+            </itemizedlist>
+            <para>To configure the first host, enter the following, then click Next:</para>
+            <itemizedlist>
+                <listitem><para><emphasis role="bold">Host Name.</emphasis> The DNS name or IP address of the host.</para></listitem>
+                <listitem><para><emphasis role="bold">Username.</emphasis> The username is root.</para></listitem>
+                <listitem><para><emphasis role="bold">Password.</emphasis> This is the password for the user named above (from your XenServer or KVM install).</para></listitem>
+                <listitem><para><emphasis role="bold">Host Tags.</emphasis> (Optional) Any labels that you use to categorize hosts for ease of maintenance. For example, you can set this to the cloud's HA tag (set in the ha.tag global configuration parameter) if you want this host to be used only for VMs with the "high availability" feature enabled. For more information, see HA-Enabled Virtual Machines as well as HA for Hosts.</para></listitem>
+            </itemizedlist>
+        </listitem>
+        <listitem><para>In a new cluster, CloudPlatform adds the first primary storage server for you. You can always add more servers later. For an overview of what primary storage is, see About Primary Storage.</para>
+            <para>To configure the first primary storage server, enter the following, then click Next:</para>
+            <itemizedlist>
+                <listitem><para><emphasis role="bold">Name.</emphasis> The name of the storage device.</para></listitem>
+                <listitem><para><emphasis role="bold">Protocol.</emphasis> For XenServer, choose either NFS, iSCSI, or PreSetup.  For KVM, choose NFS or SharedMountPoint.  For vSphere choose either VMFS (iSCSI or FiberChannel) or NFS. The remaining fields in the screen vary depending on what you choose here.</para></listitem>
+            </itemizedlist>
+        </listitem>
+    </orderedlist>
+</section>

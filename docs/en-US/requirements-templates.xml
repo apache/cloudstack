@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="requirements-templates">
+	<title>Requirements for Templates</title>
+	<itemizedlist>
+		<listitem><para>For XenServer, install PV drivers / Xen tools on each template that you create.  This will enable live migration and clean guest shutdown.</para></listitem>
+		<listitem><para>For vSphere, install VMware Tools on each template that you create.  This will enable console view to work properly.</para></listitem>
+</itemizedlist>
+</section>

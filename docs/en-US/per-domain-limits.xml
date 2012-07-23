@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="per-domain-limits">
+    <title>Per-Domain Limits</title>
+    <para>CloudPlatform allows the configuration of limits on a domain basis.   With a domain limit in place, all users still have their account limits.  They are additionally limited, as a group, to not exceed the resource limits set on their domain.  Domain limits aggregate the usage of all accounts in the domain as well as all accounts in all subdomains of that domain. Limits set at the root domain level apply to the sum of resource usage by the accounts in all domains and sub-domains below that root domain.</para>
+    <para>To set a domain limit:</para>
+    <orderedlist>
+        <listitem><para>Log in to the CloudPlatform UI.</para></listitem>
+        <listitem><para>In the left navigation tree, click Domains.</para></listitem>
+        <listitem><para>3.	Select the domain you want to modify. The current domain limits are displayed. A value of -1 shows that there is no limit in place.</para></listitem>
+        <listitem><para>Click the Edit button<inlinemediaobject>
+            <imageobject>
+                <imagedata fileref="./images/edit-icon.png" />
+            </imageobject>
+            <textobject><phrase>editbutton.png: edits the settings.</phrase></textobject>
+        </inlinemediaobject></para></listitem>
+    </orderedlist>    
+</section>

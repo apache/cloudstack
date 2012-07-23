@@ -1,0 +1,8 @@
+	<section id="removed-API-commands">
+		<title>Removed API commands</title>
+			<itemizedlist>
+			<listitem><para>createConfiguration (Adds configuration value)</para></listitem>
+			<listitem><para>configureSimulator (Configures simulator)</para></listitem>
+			</itemizedlist>
+	</section>
+

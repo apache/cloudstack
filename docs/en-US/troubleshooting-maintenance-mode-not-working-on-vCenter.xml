@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="troubleshooting-maintenance-mode-not-working-on-vCenter">
+    <title>Maintenance mode not working on vCenter</title>
+    <formalpara>
+        <title>Symptom</title>
+        <para>Host was placed in maintenance mode, but still appears live in vCenter. </para>
+    </formalpara>
+    <formalpara>
+        <title>Cause</title>
+        <para>The CloudPlatform administrator UI was used to place the host in scheduled maintenance mode. This mode is separate from vCenter's maintenance mode.</para>
+    </formalpara>
+    <formalpara>
+        <title>Solution</title>
+        <para>Use vCenter to place the host in maintenance mode.</para>
+    </formalpara>
+    <formalpara>
+        <title>More Information</title>
+        <para>See <xref linkend="scheduled-maintenance-maintenance-mode-hosts"/></para>
+    </formalpara>
+   
+</section>
+      

@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="working-with-iso">
+	<title>Working with ISOs</title>
+	<para>CloudPlatform supports ISOs and their attachment to guest VMs. An ISO is a read-only file that has an ISO/CD-ROM style file system. Users can upload their own ISOs and mount them on their guest VMs.</para>
+	<para>ISOs are uploaded based on a URL. HTTP is the supported protocol. Once the ISO is available via HTTP specify an upload URL such as http://my.web.server/filename.iso.</para>
+	<para>ISOs may be public or private, like templates.ISOs are not hypervisor-specific.  That is, a guest on vSphere can mount the exact same image that a guest on KVM can mount.</para>
+	<para>ISO images may be stored in the system and made available with a privacy level similar to templates. ISO images are classified as either bootable or not bootable. A bootable ISO image is one that contains an OS image. CloudPlatform allows a user to boot a guest VM off of an ISO image. Users can also attach ISO images to guest VMs. For example, this enables installing PV drivers into Windows.  ISO images are not hypervisor-specific.</para>
+    <xi:include href="add-iso.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="attach-iso-to-vm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />	
+</section>

@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="who-should-read-installation">
+	<title>Who Should Read This</title>
+	<para>
+		For those who have already gone through a design phase and planned a more sophisticated deployment, 
+		or those who are ready to start scaling up a trial installation.
+		With the following procedures, you can start using the more powerful features of &PRODUCT;, 
+		such as advanced VLAN networking, high availability, additional network elements such as load balancers and firewalls, 
+		and support for multiple hypervisors including Citrix XenServer, KVM, and VMware vSphere.
+	</para>
+</section>
