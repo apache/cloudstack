@@ -200,6 +200,10 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             txn.commit();
         }
         nic.deallocate();
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Deallocated nic: " + nic);
+        }
     }
 
     @Override

@@ -2245,4 +2245,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
         }
     }
+
+	@Override
+	public UserAccount getUserByApiKey(String apiKey) {
+		return _userAccountDao.getUserByApiKey(apiKey);
+	}
 }
