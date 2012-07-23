@@ -114,4 +114,18 @@ public class SecurityGroupDaoImpl extends GenericDaoBase<SecurityGroupVO, Long> 
         txn.commit();
         return result;
     }
+	
+	@Override
+    @DB
+    public boolean expunge(Long id) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        SecurityGroupVO entry = findById(id);
+        if (entry != null) {
+            _tagsDao.removeByIdAndType(id, TaggedResourceType.SecurityGroup);
+        }
+        boolean result = super.expunge(id);
+        txn.commit();
+        return result;
+    }
 }
