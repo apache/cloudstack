@@ -660,6 +660,15 @@ public class EC2Engine {
 			shot.setAccountName(cloudSnapshot.getAccountName());
 			shot.setDomainId(cloudSnapshot.getDomainId());
 
+            List<CloudStackKeyValue> resourceTags = cloudSnapshot.getTags();
+            for(CloudStackKeyValue resourceTag : resourceTags) {
+                EC2TagKeyValue param = new EC2TagKeyValue();
+                param.setKey(resourceTag.getKey());
+                if (resourceTag.getValue() != null)
+                    param.setValue(resourceTag.getValue());
+                shot.addResourceTag(param);
+            }
+
 			snapshots.addSnapshot(shot);
 		}
 		return snapshots;
@@ -1710,6 +1719,15 @@ public class EC2Engine {
 					ec2Vol.setVMState(vol.getVirtualMachineState());
 				ec2Vol.setZoneName(vol.getZoneName());
 
+                List<CloudStackKeyValue> resourceTags = vol.getTags();
+                for(CloudStackKeyValue resourceTag : resourceTags) {
+                    EC2TagKeyValue param = new EC2TagKeyValue();
+                    param.setKey(resourceTag.getKey());
+                    if (resourceTag.getValue() != null)
+                        param.setValue(resourceTag.getValue());
+                    ec2Vol.addResourceTag(param);
+                }
+
 				volumes.addVolume(ec2Vol);
 			}
 		}
@@ -1887,7 +1905,16 @@ public class EC2Engine {
     					break;
     				}
     			}
-    			
+
+                List<CloudStackKeyValue> resourceTags = cloudVm.getTags();
+                for(CloudStackKeyValue resourceTag : resourceTags) {
+                    EC2TagKeyValue param = new EC2TagKeyValue();
+                    param.setKey(resourceTag.getKey());
+                    if (resourceTag.getValue() != null)
+                        param.setValue(resourceTag.getValue());
+                    ec2Vm.addResourceTag(param);
+                }
+
                 if (cloudVm.getSecurityGroupList() != null && cloudVm.getSecurityGroupList().size() > 0) {
                     // TODO, we have a list of security groups, just return the first one?
                     List<CloudStackSecurityGroup> securityGroupList = cloudVm.getSecurityGroupList();
@@ -1960,6 +1987,14 @@ public class EC2Engine {
     				ec2Image.setIsPublic(temp.getIsPublic());
     				ec2Image.setIsReady(temp.getIsReady());
     				ec2Image.setDomainId(temp.getDomainId());
+                    List<CloudStackKeyValue> resourceTags = temp.getTags();
+                    for(CloudStackKeyValue resourceTag : resourceTags) {
+                        EC2TagKeyValue param = new EC2TagKeyValue();
+                        param.setKey(resourceTag.getKey());
+                        if (resourceTag.getValue() != null)
+                            param.setValue(resourceTag.getValue());
+                        ec2Image.addResourceTag(param);
+                    }
     				images.addImage(ec2Image);
     			}
             }
