@@ -777,7 +777,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         ipResponse.setIsSystem(ipAddr.getSystem());
 
         // get account information
-        populateOwner(ipResponse, ipAddr);
+        if (ipAddr.getAllocatedToAccountId() != null) {
+            populateOwner(ipResponse, ipAddr);
+        }
 
         ipResponse.setForVirtualNetwork(forVirtualNetworks);
         ipResponse.setStaticNat(ipAddr.isOneToOneNat());

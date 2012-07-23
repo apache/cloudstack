@@ -1714,23 +1714,30 @@ public class ManagementServerImpl implements ManagementServer {
         Long vpcId = cmd.getVpcId();
         Map<String, String> tags = cmd.getTags();
 
-        Account caller = UserContext.current().getCaller();
-        List<Long> permittedAccounts = new ArrayList<Long>();
 
         Boolean isAllocated = cmd.isAllocatedOnly();
         if (isAllocated == null) {
             isAllocated = Boolean.TRUE;
         }
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-        _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
-        Long domainId = domainIdRecursiveListProject.first();
-        Boolean isRecursive = domainIdRecursiveListProject.second();
-        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-
         Filter searchFilter = new Filter(IPAddressVO.class, "address", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
+        Long domainId = null;
+        Boolean isRecursive = null;
+        List<Long> permittedAccounts = new ArrayList<Long>();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = null;
+        if (isAllocated) {
+            Account caller = UserContext.current().getCaller();
+
+            Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = 
+                    new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+            _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), 
+                    permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
+            domainId = domainIdRecursiveListProject.first();
+            isRecursive = domainIdRecursiveListProject.second();
+            listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        }      
 
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("address", sb.entity().getAddress(), SearchCriteria.Op.EQ);
@@ -1798,7 +1805,9 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         SearchCriteria<IPAddressVO> sc = sb.create();
+        if (isAllocated) {
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+        }
 
         sc.setJoinParameters("vlanSearch", "vlanType", vlanType);
 

@@ -14,41 +14,31 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package com.cloud.bridge.service.core.ec2;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class EC2DescribeInstances {
+public class EC2Tags {
 
-	private List<String> instancesSet = new ArrayList<String>();    // a list of strings identifying instances
-	private EC2InstanceFilterSet ifs = null;
+    private List<EC2TagTypeId> resourceTypeSet = new ArrayList<EC2TagTypeId>();
     private List<EC2TagKeyValue> resourceTagSet = new ArrayList<EC2TagKeyValue>();
 
-	public EC2DescribeInstances() {
-	}
+    public void addResourceType( EC2TagTypeId param ) {
+        resourceTypeSet.add( param );
+    }
 
-	public void addInstanceId( String param ) {
-		instancesSet.add( param );
-	}
-	
-	public String[] getInstancesSet() {
-		return instancesSet.toArray(new String[0]);
-	}
-	
-	public EC2InstanceFilterSet getFilterSet() {
-		return ifs;
-	}
-	
-	public void setFilterSet( EC2InstanceFilterSet param ) {
-		ifs = param;
-	}
+    public EC2TagTypeId[] getResourceTypeSet() {
+        return resourceTypeSet.toArray(new EC2TagTypeId[0]);
+    }
 
     public void addResourceTag( EC2TagKeyValue param ) {
         resourceTagSet.add( param );
     }
 
-    public EC2TagKeyValue[] getResourceTagSet() {
+    public EC2TagKeyValue[] getResourceTags() {
         return resourceTagSet.toArray(new EC2TagKeyValue[0]);
     }
 }
+

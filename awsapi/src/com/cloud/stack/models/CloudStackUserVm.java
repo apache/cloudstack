@@ -103,6 +103,8 @@ public class CloudStackUserVm {
     private List<CloudStackNic> nics;
     @SerializedName(ApiConstants.SECURITY_GROUP)
     private List<CloudStackSecurityGroup> securityGroupList;
+    @SerializedName(ApiConstants.TAGS)
+    private List<CloudStackKeyValue> tags;
     
 	public CloudStackUserVm() {
 	}
@@ -393,6 +395,13 @@ public class CloudStackUserVm {
 	public List<CloudStackSecurityGroup> getSecurityGroupList() {
 		return securityGroupList;
 	}
+
+    /**
+     * @return all tags
+     */
+    public List<CloudStackKeyValue> getTags() {
+        return tags;
+    }
 
 }
 
