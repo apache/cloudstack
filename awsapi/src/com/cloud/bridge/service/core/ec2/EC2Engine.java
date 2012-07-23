@@ -1068,9 +1068,8 @@ public class EC2Engine {
 	{
 		try {
 		    CloudStackAccount caller = getCurrentAccount();
-			if (null == request.getFormat()   || null == request.getName() || null == request.getOsTypeName() ||
-					null == request.getLocation() || null == request.getZoneName())
-				throw new EC2ServiceException(ServerError.InternalError, "Missing parameter - location/architecture/name");
+            if (null == request.getName())
+                throw new EC2ServiceException(ClientError.Unsupported, "Missing parameter - name");
 
 			List<CloudStackTemplate> templates = getApi().registerTemplate((request.getDescription() == null ? request.getName() : request.getDescription()), 
 					request.getFormat(), request.getHypervisor(), request.getName(), toOSTypeId(request.getOsTypeName()), request.getLocation(), 
