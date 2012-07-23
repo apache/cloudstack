@@ -179,11 +179,11 @@ class TestSnapshots(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_volume_from_snapshot(self):
         """TS_BUG_001-Test Creating snapshot from volume having spaces in name(KVM)
         """
 
-        tags = ["advanced", "advancedns"]
 
         # Validate the following
         #1. Create a virtual machine and data volume
@@ -451,11 +451,11 @@ class TestTemplate(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["advanced", "advancedns", "basic", "sg"])
     def test_01_create_template(self):
         """TS_BUG_002-Test to create and deploy VM using password enabled template
         """
 
-        tags = ["advanced", "advancedns", "basic", "sg"]
 
         # Validate the following:
         #1. Create a password enabled template
@@ -596,10 +596,10 @@ class TestNATRules(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
+    @attr(tags = ["advanced"])
     def test_01_firewall_rules_port_fw(self):
         """"Checking firewall rules deletion after static NAT disable"""
 
-        tags = ["advanced"]
 
         # Validate the following:
         #1. Enable static NAT for a VM
@@ -797,11 +797,11 @@ class TestRouters(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_list_routers_admin(self):
         """TS_BUG_007-Check listRouters() using Admin User
         """
 
-        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. PreReq: have rounters that are owned by other account
@@ -907,11 +907,11 @@ class TestRouterRestart(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "advancedns", "eip"])
     def test_01_restart_network_cleanup(self):
         """TS_BUG_008-Test restart network
         """
 
-        tags = ["advanced", "basic", "sg", "advancedns", "eip"]
 
         # Validate the following
         # 1. When cleanup = true, router is destroyed and a new one created
@@ -1068,11 +1068,11 @@ class TestTemplates(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["advanced", "advancedns", "basic", "sg", "eip"])
     def test_01_check_template_size(self):
         """TS_BUG_009-Test the size of template created from root disk
         """
 
-        tags = ["advanced", "advancedns", "basic", "sg", "eip"]
 
         # Validate the following:
         # 1. Deploy new VM using the template created from Volume
@@ -1095,11 +1095,11 @@ class TestTemplates(cloudstackTestCase):
                              )
         return
 
+    @attr(tags = ["advanced", "advancedns", "basic", "sg", "eip"])
     def test_02_check_size_snapshotTemplate(self):
         """TS_BUG_010-Test check size of snapshot and template
         """
 
-        tags = ["advanced", "advancedns", "basic", "sg", "eip"]
 
         # Validate the following
         # 1. Deploy VM using default template, small service offering
@@ -1175,11 +1175,11 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "basic", "sg", "eip"])
     def test_03_resuse_template_name(self):
         """TS_BUG_011-Test Reusing deleted template name
         """
 
-        tags = ["advanced", "advancedns", "basic", "sg", "eip"]
 
         # Validate the following
         # 1. Deploy VM using default template, small service offering

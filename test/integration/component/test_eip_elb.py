@@ -177,11 +177,13 @@ class TestEIP(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
     
+
+    @attr(tags = ["eip"])
+    @unittest.skip("skipped")
     def test_01_eip_by_deploying_instance(self):
         """Test EIP by deploying an instance
         """
 
-        tags = ["eip"]
 
         # Validate the following
         # 1. Instance gets an IP from GUEST IP range.
@@ -344,11 +346,12 @@ class TestEIP(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["eip"])
+    @unittest.skip("skipped")
     def test_02_acquire_ip_enable_static_nat(self):
         """Test associate new IP and enable static NAT for new IP and the VM
         """
 
-        tags = ["eip"]
 
         # Validate the following
         # 1. user_ip_address.is_system = 0 & user_ip_address.one_to_one_nat=1
@@ -488,11 +491,12 @@ class TestEIP(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["eip"])
+    @unittest.skip("skipped")
     def test_03_disable_static_nat(self):
         """Test disable static NAT and release EIP acquired
         """
 
-        tags = ["eip"]
 
         # Validate the following
         # 1. Disable static NAT. Disables one-to-one NAT and releases EIP
@@ -687,11 +691,12 @@ class TestEIP(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["eip"])
+    @unittest.skip("skipped")
     def test_04_disable_static_nat_system(self):
         """Test disable static NAT with system = True
         """
 
-        tags = ["eip"]
 
         # Validate the following
         # 1. Try to disassociate/disable static NAT on EIP where is_system=1
@@ -756,11 +761,12 @@ class TestEIP(cloudstackTestCase):
         self.debug("Disassociate system IP failed")
         return
 
+    @attr(tags = ["eip"])
+    @unittest.skip("skipped")
     def test_05_destroy_instance(self):
         """Test EIO after destroying instance
         """
 
-        tags = ["eip"]
 
         # Validate the following
         # 1. Destroy instance. Destroy should result in is_system=0 for EIP
@@ -994,11 +1000,11 @@ class TestELB(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
     
+    @attr(tags = ["eip"])
     def test_01_elb_create(self):
         """Test ELB by creating a LB rule
         """
 
-        tags = ["eip"]
 
         # Validate the following
         # 1. Deploy 2 instances
@@ -1168,11 +1174,11 @@ class TestELB(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
     
+    @attr(tags = ["eip"])
     def test_02_elb_acquire_and_create(self):
         """Test ELB by acquiring IP and then creating a LB rule
         """
 
-        tags = ["eip"]
 
         # Validate the following
         # 1. Deploy 2 instances
@@ -1318,11 +1324,11 @@ class TestELB(cloudstackTestCase):
         return
 
     
+    @attr(tags = ["eip"])
     def test_03_elb_delete_lb_system(self):
         """Test delete LB rule generated with public IP with is_system = 1
         """
 
-        tags = ["eip"]
 
         # Validate the following
         # 1. Deleting LB rule should release EIP where is_system=1
@@ -1396,11 +1402,12 @@ class TestELB(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
     
+    @attr(tags = ["eip"])
+    @unittest.skip("valid bug : http://bugs.cloudstack.org/browse/CS-15077 : ListPublicIPAddress failing")
     def test_04_delete_lb_on_eip(self):
         """Test delete LB rule generated on EIP
         """
 
-        tags = ["eip"]
 
         # Validate the following
         # 1. Deleting LB rule won't release EIP where is_system=0
