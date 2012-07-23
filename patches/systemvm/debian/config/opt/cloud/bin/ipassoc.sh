@@ -150,7 +150,7 @@ add_routing() {
   local tableNo=$(echo $ethDev | awk -F'eth' '{print $2}')
   if [ "$tablePresent" == "" ]
   then
-     if [ "$tableNo" == ""] 
+     if [ "$tableNo" == "" ] 
      then
        return 0;
      fi
