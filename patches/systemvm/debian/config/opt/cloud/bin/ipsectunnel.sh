@@ -137,6 +137,7 @@ ipsec_tunnel_add() {
     sudo echo "  type=tunnel" >> $vpnconffile &&
     sudo echo "  authby=secret" >> $vpnconffile &&
     sudo echo "  keyexchange=ike" >> $vpnconffile &&
+    sudo echo "  pfs=no" >> $vpnconffile &&
     sudo echo "  esp=$esppolicy" >> $vpnconffile &&
     sudo echo "  salifetime=${time}s" >> $vpnconffile &&
     sudo echo "  ike=$ikepolicy" >> $vpnconffile &&
