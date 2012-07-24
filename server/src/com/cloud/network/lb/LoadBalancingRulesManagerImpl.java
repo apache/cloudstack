@@ -223,7 +223,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 serviceResponse.setName(service.getName());
                 if ("Lb".equalsIgnoreCase(service.getName())) {
                     Map<Capability, String> serviceCapabilities = serviceCapabilitiesMap
-                            .get(service);
+                    .get(service);
                     if (serviceCapabilities != null) {
                         for (Capability capability : serviceCapabilities
                                 .keySet()) {
@@ -910,7 +910,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             try {
                 if (ipVO.getAssociatedWithNetworkId() == null) {
                     boolean assignToVpcNtwk = network.getVpcId() != null
-                            && ipVO.getVpcId() != null && ipVO.getVpcId().longValue() == network.getVpcId();
+                    && ipVO.getVpcId() != null && ipVO.getVpcId().longValue() == network.getVpcId();
                     if (assignToVpcNtwk) {
                         // set networkId just for verification purposes
                         _networkMgr.checkIpForService(ipVO, Service.Lb, lb.getNetworkId());
@@ -945,10 +945,10 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 if (performedIpAssoc) {
                     ipVO = _ipAddressDao.findById(ipVO.getId());
                     _networkMgr.unassignIPFromVpcNetwork(ipVO.getId(), lb.getNetworkId());
-                    
-                    }
+
                 }
             }
+        }
 
         if (result == null) {
             throw new CloudRuntimeException("Failed to create load balancer rule: " + lb.getName());
@@ -1225,24 +1225,6 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             dstList.add(lbDst);
         }
         return dstList;
-    }
-
-    public List<LbCondition> getExistingPolicyConditions(long policyId) {
-        List<LbCondition> conditionList = new ArrayList<LbCondition>();
-        return conditionList;
-        // List<LoadBalancerVMMapVO> lbVmMaps = _lb2VmMapDao.listByLoadBalancerId(lbId);
-        // LoadBalancerVO lb = _lbDao.findById(lbId);
-        //
-        // String dstIp = null;
-        // for (LoadBalancerVMMapVO lbVmMap : lbVmMaps) {
-        // UserVm vm = _vmDao.findById(lbVmMap.getInstanceId());
-        // Nic nic = _nicDao.findByInstanceIdAndNetworkIdIncludingRemoved(lb.getNetworkId(), vm.getId());
-        // dstIp = nic.getIp4Address();
-        // LbDestination lbDst = new LbDestination(lb.getDefaultPortStart(), lb.getDefaultPortEnd(), dstIp,
-        // lbVmMap.isRevoke());
-        // dstList.add(lbDst);
-        // }
-        // return dstList;
     }
 
     @Override
@@ -1540,10 +1522,10 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
     }
 
     protected void removeLBRule(LoadBalancerVO rule) {
-        
+
         //remove the rule
         _lbDao.remove(rule.getId());
-        
+
         // if the rule is the last one for the ip address assigned to VPC, unassign it from the network
         IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
         _networkMgr.unassignIPFromVpcNetwork(ip.getId(), rule.getNetworkId());
