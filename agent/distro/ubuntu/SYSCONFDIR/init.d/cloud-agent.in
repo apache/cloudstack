@@ -36,14 +36,14 @@ whatami=cloud-agent
 # set environment variables
 
 SHORTNAME="$whatami"
-PIDFILE=/var/run/"$whatami".pid
-LOCKFILE=/var/lock/subsys/"$SHORTNAME"
-LOGFILE=/var/log/cloud/agent/agent.log
+PIDFILE=@PIDDIR@/"$whatami".pid
+LOCKFILE=@LOCKDIR@/"$SHORTNAME"
+LOGFILE=@AGENTLOG@
 PROGNAME="Cloud Agent"
 CLASS="com.cloud.agent.AgentShell"
 
 unset OPTIONS
-[ -r /etc/default/"$SHORTNAME" ] && source /etc/default/"$SHORTNAME"
+[ -r @SYSCONFDIR@/default/"$SHORTNAME" ] && source @SYSCONFDIR@/default/"$SHORTNAME"
 
 # The first existing directory is used for JAVA_HOME (if JAVA_HOME is not defined in $DEFAULT)
 JDK_DIRS="/usr/lib/jvm/java-6-openjdk /usr/lib/jvm/java-6-openjdk-i386 /usr/lib/jvm/java-6-openjdk-amd64 /usr/lib/jvm/java-6-sun /usr/lib/jvm/java-1.5.0-sun /usr/lib/j2sdk1.5-sun /usr/lib/j2sdk1.5-ibm"
