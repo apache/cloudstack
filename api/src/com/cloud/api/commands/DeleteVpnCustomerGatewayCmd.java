@@ -25,7 +25,6 @@ import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.user.Account;
-import com.cloud.user.UserContext;
 
 @Implementation(description="Delete site to site vpn customer gateway", responseObject=SuccessResponse.class)
 public class DeleteVpnCustomerGatewayCmd extends BaseAsyncCmd {
@@ -40,27 +39,12 @@ public class DeleteVpnCustomerGatewayCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of customer gateway")
     private Long id;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for gateway. Must be used with domainId.")
-    private String accountName;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId fo: gateway. If the account parameter is used, domainId must also be used.")
-    private Long domainId;
-    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public String getEntityTable() {
     	return "s2s_customer_gateway";
-    }
-    
-    public Long getDomainId() {
-        return domainId;
-    }
-    
-    public Long getAccountId() {
-        return getEntityOwnerId();
     }
     
     public Long getId() {
@@ -79,9 +63,9 @@ public class DeleteVpnCustomerGatewayCmd extends BaseAsyncCmd {
 
 	@Override
 	public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, null, true);
-        if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+        Site2SiteCustomerGateway gw = _entityMgr.findById(Site2SiteCustomerGateway.class, getId());
+        if (gw != null) {
+            return gw.getAccountId();
         }
         return Account.ACCOUNT_ID_SYSTEM;
     }
@@ -93,7 +77,7 @@ public class DeleteVpnCustomerGatewayCmd extends BaseAsyncCmd {
 
 	@Override
 	public String getEventType() {
-		return EventTypes.EVENT_S2S_CUSTOMER_GATEWAY_DELETE;
+		return EventTypes.EVENT_S2S_VPN_CUSTOMER_GATEWAY_DELETE;
 	}
 	
     @Override

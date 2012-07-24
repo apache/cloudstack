@@ -95,7 +95,7 @@ public class ResetVpnConnectionCmd extends BaseAsyncCmd {
 
 	@Override
 	public String getEventType() {
-		return EventTypes.EVENT_S2S_CONNECTION_RESET;
+		return EventTypes.EVENT_S2S_VPN_CONNECTION_RESET;
 	}
 	
     @Override

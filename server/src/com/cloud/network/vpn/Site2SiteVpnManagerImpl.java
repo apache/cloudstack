@@ -21,6 +21,8 @@ import com.cloud.api.commands.ListVpnGatewaysCmd;
 import com.cloud.api.commands.ResetVpnConnectionCmd;
 import com.cloud.api.commands.UpdateVpnCustomerGatewayCmd;
 import com.cloud.domain.Domain;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -42,6 +44,9 @@ import com.cloud.network.element.Site2SiteVpnServiceProvider;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.Dao.VpcDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -60,6 +65,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     @Inject IPAddressDao _ipAddressDao;
     @Inject AccountDao _accountDao;
     @Inject VpcManager _vpcMgr;
+    @Inject AccountManager _accountMgr;
     
     String _name;
     
@@ -85,7 +91,14 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_GATEWAY_CREATE, eventDescription = "creating s2s vpn gateway", create=true)
     public Site2SiteVpnGateway createVpnGateway(CreateVpnGatewayCmd cmd) {
+        Account caller = UserContext.current().getCaller();
+        Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
+
+        //Verify that caller can perform actions in behalf of vpc owner
+        _accountMgr.checkAccess(caller, null, false, owner);
+
 	    Long vpcId = cmd.getVpcId();
         VpcVO vpc = _vpcDao.findById(vpcId);
         if (vpc == null) {
@@ -112,7 +125,14 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CUSTOMER_GATEWAY_CREATE, eventDescription = "creating s2s customer gateway", create=true)
     public Site2SiteCustomerGateway createCustomerGateway(CreateVpnCustomerGatewayCmd cmd) {
+        Account caller = UserContext.current().getCaller();
+        Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
+
+        //Verify that caller can perform actions in behalf of vpc owner
+        _accountMgr.checkAccess(caller, null, false, owner);
+
         String name = cmd.getName();
         String gatewayIp = cmd.getGatewayIp();
         if (!NetUtils.isValidIp(gatewayIp)) {
@@ -160,17 +180,28 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CONNECTION_CREATE, eventDescription = "creating s2s vpn connection", create=true)
     public Site2SiteVpnConnection createVpnConnection(CreateVpnConnectionCmd cmd) throws NetworkRuleConflictException {
+        Account caller = UserContext.current().getCaller();
+        Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
+
+        //Verify that caller can perform actions in behalf of vpc owner
+        _accountMgr.checkAccess(caller, null, false, owner);
+
         Long customerGatewayId = cmd.getCustomerGatewayId();
         Site2SiteCustomerGateway customerGateway = _customerGatewayDao.findById(customerGatewayId);
         if (customerGateway == null) {
             throw new InvalidParameterValueException("Unable to found specified Site to Site VPN customer gateway " + customerGatewayId + " !");
         }
+        _accountMgr.checkAccess(caller, null, false, customerGateway);
+        
         Long vpnGatewayId = cmd.getVpnGatewayId();
         Site2SiteVpnGateway vpnGateway = _vpnGatewayDao.findById(vpnGatewayId);
         if (vpnGateway == null) {
             throw new InvalidParameterValueException("Unable to found specified Site to Site VPN gateway " + vpnGatewayId + " !");
         }
+        _accountMgr.checkAccess(caller, null, false, vpnGateway);
+        
         if (_vpnConnectionDao.findByVpnGatewayIdAndCustomerGatewayId(vpnGatewayId, customerGatewayId) != null) {
             throw new InvalidParameterValueException("The vpn connection with customer gateway id " + customerGatewayId + " or vpn gateway id " 
                     + vpnGatewayId + " already existed!");
@@ -219,12 +250,18 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CUSTOMER_GATEWAY_DELETE, eventDescription = "deleting s2s vpn customer gateway", create=true)
     public boolean deleteCustomerGateway(DeleteVpnCustomerGatewayCmd cmd) {
+        UserContext.current().setEventDetails(" Id: " + cmd.getId());
+        Account caller = UserContext.current().getCaller();
+
         Long id = cmd.getId();
         Site2SiteCustomerGateway customerGateway = _customerGatewayDao.findById(id);
         if (customerGateway == null) {
             throw new InvalidParameterValueException("Fail to find customer gateway with " + id + " !");
         }
+        _accountMgr.checkAccess(caller, null, false, customerGateway);
+        
         List<Site2SiteVpnConnectionVO> vpnConnections = _vpnConnectionDao.listByCustomerGatewayId(id);
         if (vpnConnections != null && vpnConnections.size() != 0) {
             throw new InvalidParameterValueException("Unable to delete VPN customer gateway " + id + " because there is still related VPN connections!");
@@ -233,32 +270,45 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         return true;
     }
 
-    protected void doDeleteVpnGateway(long id) {
+    protected void doDeleteVpnGateway(Site2SiteVpnGateway gw) {
+        List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByVpnGatewayId(gw.getId());
+        if (conns != null && conns.size() != 0) {
+            throw new InvalidParameterValueException("Unable to delete VPN gateway " + gw.getId() + " because there is still related VPN connections!");
+        }
+        _vpnGatewayDao.remove(gw.getId());
+    }
+    
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_GATEWAY_DELETE, eventDescription = "deleting s2s vpn gateway", create=true)
+    public boolean deleteVpnGateway(DeleteVpnGatewayCmd cmd) {
+        UserContext.current().setEventDetails(" Id: " + cmd.getId());
+        Account caller = UserContext.current().getCaller();
+
+        Long id = cmd.getId();
         Site2SiteVpnGateway vpnGateway = _vpnGatewayDao.findById(id);
         if (vpnGateway == null) {
             throw new InvalidParameterValueException("Fail to find vpn gateway with " + id + " !");
         }
-        List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByVpnGatewayId(id);
-        if (conns != null && conns.size() != 0) {
-            throw new InvalidParameterValueException("Unable to delete VPN gateway " + id + " because there is still related VPN connections!");
-        }
-        _vpnGatewayDao.remove(id);
-    }
-    
-    @Override
-    public boolean deleteVpnGateway(DeleteVpnGatewayCmd cmd) {
-        Long id = cmd.getId();
-        doDeleteVpnGateway(id);
+        
+        _accountMgr.checkAccess(caller, null, false, vpnGateway);
+
+        doDeleteVpnGateway(vpnGateway);
         return true;
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CUSTOMER_GATEWAY_UPDATE, eventDescription = "update s2s vpn customer gateway", create=true)
     public Site2SiteCustomerGateway updateCustomerGateway(UpdateVpnCustomerGatewayCmd cmd) {
+        UserContext.current().setEventDetails(" Id: " + cmd.getId());
+        Account caller = UserContext.current().getCaller();
+
         Long id = cmd.getId();
         Site2SiteCustomerGatewayVO gw = _customerGatewayDao.findById(id);
         if (gw == null) {
             throw new InvalidParameterValueException("Find to find customer gateway with id " + id);
         }
+        _accountMgr.checkAccess(caller, null, false, gw);
+
         List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByCustomerGatewayId(id);
         if (conns != null) {
             for (Site2SiteVpnConnection conn : conns) {
@@ -303,12 +353,19 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CONNECTION_DELETE, eventDescription = "deleting s2s vpn connection", create=true)
     public boolean deleteVpnConnection(DeleteVpnConnectionCmd cmd) throws ResourceUnavailableException {
+        UserContext.current().setEventDetails(" Id: " + cmd.getId());
+        Account caller = UserContext.current().getCaller();
+
         Long id = cmd.getId();
         Site2SiteVpnConnectionVO conn = _vpnConnectionDao.findById(id);
         if (conn == null) {
             throw new InvalidParameterValueException("Fail to find site to site VPN connection " + id + " to delete!");
         }
+        
+        _accountMgr.checkAccess(caller, null, false, conn);
+
         if (conn.getState() == State.Connected) {
             stopVpnConnection(id);
         }
@@ -338,12 +395,18 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CONNECTION_RESET, eventDescription = "reseting s2s vpn connection", create=true)
     public Site2SiteVpnConnection resetVpnConnection(ResetVpnConnectionCmd cmd) throws ResourceUnavailableException {
+        UserContext.current().setEventDetails(" Id: " + cmd.getId());
+        Account caller = UserContext.current().getCaller();
+
         Long id = cmd.getId();
         Site2SiteVpnConnectionVO conn = _vpnConnectionDao.findById(id);
         if (conn == null) {
             throw new InvalidParameterValueException("Fail to find site to site VPN connection " + id + " to reset!");
         }
+        _accountMgr.checkAccess(caller, null, false, conn);
+
         if (conn.getState() == State.Pending) {
             throw new InvalidParameterValueException("VPN connection " + id + " cannot be reseted when state is Pending!");
         }
@@ -414,7 +477,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         if (gw == null) {
             return true;
         }
-        doDeleteVpnGateway(gw.getId());
+        doDeleteVpnGateway(gw);
         return true;
     }
     

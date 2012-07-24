@@ -41,27 +41,12 @@ public class DeleteVpnConnectionCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of vpn connection")
     private Long id;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="an optional account for connection. Must be used with domainId.")
-    private String accountName;
-
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="an optional domainId for connection. If the account parameter is used, domainId must also be used.")
-    private Long domainId;
-    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public String getEntityTable() {
     	return "s2s_vpn_connection";
-    }
-    
-    public Long getDomainId() {
-        return domainId;
-    }
-    
-    public Long getAccountId() {
-        return getEntityOwnerId();
     }
     
     public Long getId() {
@@ -80,9 +65,9 @@ public class DeleteVpnConnectionCmd extends BaseAsyncCmd {
 
 	@Override
 	public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, null, true);
-        if (accountId == null) {
-            return UserContext.current().getCaller().getId();
+        Site2SiteVpnConnection conn = _entityMgr.findById(Site2SiteVpnConnection.class, getId());
+        if (conn != null) {
+            return conn.getAccountId();
         }
         return Account.ACCOUNT_ID_SYSTEM;
     }
@@ -94,7 +79,7 @@ public class DeleteVpnConnectionCmd extends BaseAsyncCmd {
 
 	@Override
 	public String getEventType() {
-		return EventTypes.EVENT_S2S_CONNECTION_DELETE;
+		return EventTypes.EVENT_S2S_VPN_CONNECTION_DELETE;
 	}
 	
     @Override

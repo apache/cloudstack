@@ -388,14 +388,14 @@ deleteStaticRoute=com.cloud.api.commands.DeleteStaticRouteCmd;15
 listStaticRoutes=com.cloud.api.commands.ListStaticRoutesCmd;15
 
 ### Site-to-site VPN commands
-createVpnCustomerGateway=com.cloud.api.commands.CreateVpnCustomerGatewayCmd;1
-createVpnGateway=com.cloud.api.commands.CreateVpnGatewayCmd;1
-createVpnConnection=com.cloud.api.commands.CreateVpnConnectionCmd;1
-deleteVpnCustomerGateway=com.cloud.api.commands.DeleteVpnCustomerGatewayCmd;1
-deleteVpnGateway=com.cloud.api.commands.DeleteVpnGatewayCmd;1
-deleteVpnConnection=com.cloud.api.commands.DeleteVpnConnectionCmd;1
-updateVpnCustomerGateway=com.cloud.api.commands.UpdateVpnCustomerGatewayCmd;1
-resetVpnConnection=com.cloud.api.commands.ResetVpnConnectionCmd;1
+createVpnCustomerGateway=com.cloud.api.commands.CreateVpnCustomerGatewayCmd;15
+createVpnGateway=com.cloud.api.commands.CreateVpnGatewayCmd;15
+createVpnConnection=com.cloud.api.commands.CreateVpnConnectionCmd;15
+deleteVpnCustomerGateway=com.cloud.api.commands.DeleteVpnCustomerGatewayCmd;15
+deleteVpnGateway=com.cloud.api.commands.DeleteVpnGatewayCmd;15
+deleteVpnConnection=com.cloud.api.commands.DeleteVpnConnectionCmd;15
+updateVpnCustomerGateway=com.cloud.api.commands.UpdateVpnCustomerGatewayCmd;15
+resetVpnConnection=com.cloud.api.commands.ResetVpnConnectionCmd;15
 listVpnCustomerGateways=com.cloud.api.commands.ListVpnCustomerGatewaysCmd;15
 listVpnGateways=com.cloud.api.commands.ListVpnGatewaysCmd;15
 listVpnConnections=com.cloud.api.commands.ListVpnConnectionsCmd;15

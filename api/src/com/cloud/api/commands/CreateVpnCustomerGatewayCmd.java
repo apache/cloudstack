@@ -125,10 +125,6 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
         if (accountId == null) {
             accountId = UserContext.current().getCaller().getId();
         }
-        
-        if (accountId == null) {
-            accountId = Account.ACCOUNT_ID_SYSTEM;
-        }
         return accountId;
     }
 
@@ -139,7 +135,7 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
 
 	@Override
 	public String getEventType() {
-		return EventTypes.EVENT_S2S_CUSTOMER_GATEWAY_CREATE;
+		return EventTypes.EVENT_S2S_VPN_CUSTOMER_GATEWAY_CREATE;
 	}
 	
     @Override

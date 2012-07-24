@@ -84,10 +84,6 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
         if (accountId == null) {
             accountId = UserContext.current().getCaller().getId();
         }
-        
-        if (accountId == null) {
-            accountId = Account.ACCOUNT_ID_SYSTEM;
-        }
         return accountId;
     }
 
