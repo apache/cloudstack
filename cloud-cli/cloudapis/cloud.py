@@ -167,7 +167,7 @@ def load_dynamic_methods():
         code = """
         def %s(%s):
             %s
-            parms = locals()
+            parms = dict(locals())
             del parms["self"]
             for arg in %r:
                 if locals()[arg] is None:
