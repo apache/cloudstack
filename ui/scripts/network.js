@@ -3764,6 +3764,9 @@
                     id: { label: 'label.id' }										
                   }
                 ],
+
+                tags: cloudStack.api.tags({ resourceType: 'Vpc', contextId: 'vpc' }),
+
                 dataProvider: function(args) {		
 									$.ajax({
 										url: createURL("listVPCs"),
