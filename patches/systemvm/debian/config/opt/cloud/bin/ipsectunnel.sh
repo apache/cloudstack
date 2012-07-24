@@ -29,36 +29,69 @@ usage() {
 #set -x
 
 start_ipsec() {
-    service ipsec status > /dev/null
-    if [ $? -ne 0 ]
-    then
-        service ipsec start > /dev/null
-    fi
+  service ipsec status > /dev/null
+  if [ $? -ne 0 ]
+  then
+    service ipsec start > /dev/null
+    #Wait until ipsec started, 5 seconds at most
+    for i in {1..5}
+    do
+      logger -t cloud "$(basename $0): waiting ipsec start..."
+      service ipsec status > /dev/null
+      result=$?
+      if [ $result -eq 0 ]
+      then
+          break
+      fi
+      sleep 1
+    done
+  fi
+  service ipsec status > /dev/null
+  return $?
 }
 
-enable_iptable() {
-  sudo iptables -A INPUT -i $outIf -p udp -m udp --dport 500 -j ACCEPT
+enable_iptables_subnets() {
   for net in $rightnets
   do
     sudo iptables -A FORWARD -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
     sudo iptables -A OUTPUT -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
   done
-  # Prevent NAT on "marked" VPN traffic, so need to be the first one on POSTROUTING chain
-  sudo iptables -t nat -I POSTROUTING -t nat -o $outIf -m mark --mark $vpnoutmark -j ACCEPT
+  return 0
 }
 
-disable_iptable() {
-  sudo iptables -D INPUT -i $outIf -p udp -m udp --dport 500 -j ACCEPT
+check_and_enable_iptables() {
+  sudo iptables-save | grep "A INPUT -i $outIf -p udp -m udp --dport 500 -j ACCEPT"
+  if [ $? -ne 0 ]
+  then
+      sudo iptables -A INPUT -i $outIf -p udp -m udp --dport 500 -j ACCEPT
+      # Prevent NAT on "marked" VPN traffic, so need to be the first one on POSTROUTING chain
+      sudo iptables -t nat -I POSTROUTING -t nat -o $outIf -m mark --mark $vpnoutmark -j ACCEPT
+  fi
+  return 0
+}
+
+disable_iptables_subnets() {
   for net in $rightnets
   do
     sudo iptables -D FORWARD -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
     sudo iptables -D OUTPUT -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
   done
-  sudo iptables -t nat -D POSTROUTING -t nat -o $outIf -m mark --mark $vpnoutmark -j ACCEPT
+  return 0
+}
+
+check_and_disable_iptables() {
+  find $vpnconfdir -name "ipsec.vpn*.conf" | grep ipsec
+  if [ $? -ne 0 ]
+  then
+    #Nobody else use s2s vpn now, so delete the iptables rules
+    sudo iptables -D INPUT -i $outIf -p udp -m udp --dport 500 -j ACCEPT
+    sudo iptables -t nat -D POSTROUTING -t nat -o $outIf -m mark --mark $vpnoutmark -j ACCEPT
+  fi
+  return 0
 }
 
 ipsec_tunnel_del() {
-  disable_iptable
+  disable_iptables_subnets
   sudo ipsec auto --down vpn-$rightpeer
   sudo ipsec auto --delete vpn-$rightpeer
   outIp=$leftpeer
@@ -68,11 +101,19 @@ ipsec_tunnel_del() {
   sudo rm -f $vpnconffile
   sudo rm -f $vpnsecretsfile
   sudo ipsec auto --rereadall
+  check_and_disable_iptables
+  return 0
 }
 
 ipsec_tunnel_add() {
   #need to unify with remote access VPN
   start_ipsec
+
+  if [ $? -ne 0 ]
+  then
+      logger -t cloud "$(basename $0): Failed to start ipsec service!"
+      return 1
+  fi
 
   outIp=$leftpeer
   sudo mkdir -p $vpnconfdir
@@ -83,7 +124,10 @@ ipsec_tunnel_add() {
     left net=$leftnet left gateway=$leftgw right peer=$rightpeer right network=$rightnets phase1 policy=$ikepolicy \
     phase2 policy=$esppolicy lifetime=$time secret=$secret"
 
-  [ "$op" == "-A" ] && ipsec_tunnel_del $rightpeer $rightnets "-D"
+  [ "$op" == "-A" ] && ipsec_tunnel_del
+
+  check_and_enable_iptables
+
     sudo echo "conn vpn-$rightpeer" > $vpnconffile &&
     sudo echo "  left=$leftpeer" >> $vpnconffile &&
     sudo echo "  leftsubnet=$leftnet" >> $vpnconffile &&
@@ -93,7 +137,6 @@ ipsec_tunnel_add() {
     sudo echo "  type=tunnel" >> $vpnconffile &&
     sudo echo "  authby=secret" >> $vpnconffile &&
     sudo echo "  keyexchange=ike" >> $vpnconffile &&
-    sudo echo "  pfs=no" >> $vpnconffile &&
     sudo echo "  esp=$esppolicy" >> $vpnconffile &&
     sudo echo "  salifetime=${time}s" >> $vpnconffile &&
     sudo echo "  ike=$ikepolicy" >> $vpnconffile &&
@@ -107,7 +150,7 @@ ipsec_tunnel_add() {
 
     sudo chmod 0400 $vpnsecretsfile
 
-    enable_iptable
+    enable_iptables_subnets
 
     sudo ipsec auto --rereadall
     sudo ipsec auto --add vpn-$rightpeer
