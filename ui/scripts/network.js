@@ -757,6 +757,10 @@
                     account: { label: 'label.account' }
                   }
                 ],
+
+                tags: cloudStack.api.tags({ resourceType: 'Network', contextId: 'networks' }),
+
+                
                 dataProvider: function(args) {								 					
 								  $.ajax({
 										url: createURL("listNetworks&id=" + args.context.networks[0].id + "&listAll=true"), //pass "&listAll=true" to "listNetworks&id=xxxxxxxx" for now before API gets fixed.
@@ -1472,6 +1476,8 @@
                     vlanname: { label: 'label.vlan' }
                   }
                 ],
+ 
+                tags: cloudStack.api.tags({ resourceType: 'PublicIpAddress', contextId: 'ipAddresses' }),
 
                 dataProvider: function(args) {
                   var items = args.context.ipAddresses;
@@ -2781,6 +2787,9 @@
                     account: { label: 'label.account' }
                   }
                 ],
+
+                tags: cloudStack.api.tags({ resourceType: 'SecurityGroup', contextId: 'securityGroups' }),
+
 
                 dataProvider: function(args) {
                   $.ajax({
