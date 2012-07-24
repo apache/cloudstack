@@ -2014,6 +2014,9 @@
                         addButton: true
                       }
                     },
+
+                    tags: cloudStack.api.tags({ resourceType: 'LoadBalancer', contextId: 'multiRule' }),
+
                     add: {
                       label: 'label.add.vms',
                       action: function(args) {
