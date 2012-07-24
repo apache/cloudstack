@@ -1274,6 +1274,9 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         super.finalizeStop(profile, answer);
         //Mark VPN connections as Disconnected
         DomainRouterVO router = profile.getVirtualMachine();
-        _s2sVpnMgr.markDisconnectVpnConnByVpc(router.getVpcId());
+        Long vpcId = router.getVpcId();
+        if (vpcId != null) {
+            _s2sVpnMgr.markDisconnectVpnConnByVpc(vpcId);
+        }
     }
 }
