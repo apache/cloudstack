@@ -28,7 +28,16 @@ public class UsageServer {
      * @param args
      */
     public static void main(String[] args) {
-        // TODO: do we need to communicate with mgmt server?
+        UsageServer usage = new UsageServer();
+        usage.init(args);
+        usage.start();
+    }
+
+    public void init(String[] args) {
+
+    }
+
+    public void start() {
         final ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
         UsageManager mgr = _locator.getManager(UsageManager.class);
         if (mgr != null) {
@@ -36,5 +45,13 @@ public class UsageServer {
                 s_logger.info("UsageServer ready...");
             }
         }
+    }
+
+    public void stop() {
+
+    }
+
+    public void destroy() {
+
     }
 }
