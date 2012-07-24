@@ -13,7 +13,6 @@
 package com.cloud.network.resource;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Formatter;
 import java.util.HashMap;
 import java.util.List;
@@ -282,7 +281,7 @@ public class NetscalerResource implements ServerResource {
             return;
         }
         try {
-            String[] features = _netscalerService.get_enabled_features();
+            String[] features = login_get_service(true).get_enabled_features();
             if (features != null) {
                 for (String feature : features) {
                     if (feature.equalsIgnoreCase("LB")) {
@@ -294,7 +293,7 @@ public class NetscalerResource implements ServerResource {
             // enable load balancing on the device
             String[] feature = new String[1];
             feature[0] = "LB";
-            apiCallResult = _netscalerService.enable_features(feature);
+            apiCallResult = login_get_service(true).enable_features(feature);
             if (apiCallResult.errorcode != 0) {
                 throw new ExecutionException("Enabling load balancing feature on the device failed.");
             }
@@ -466,18 +465,31 @@ public class NetscalerResource implements ServerResource {
         return autoScalePolicyTO.getAction().equals("scaledown");
     }
 
-    private long allocateNextAvailablePriority(List<Long> priorities) {
-        long cur_prirotiy = 1;
-        Collections.sort(priorities);
-        for (Long priority : priorities) {
-            if(cur_prirotiy != priority) {
-                priorities.add(cur_prirotiy);
-                return cur_prirotiy;
-            }
-            cur_prirotiy++;
+    private void removeAutoScalePolicy(String timerName, String policyName) throws Exception {
+        // unbind timer policy
+        // unbbind timer trigger lb_astimer -policyName lb_policy_scaleUp
+        com.citrix.netscaler.nitro.resource.config.timer.timertrigger_timerpolicy_binding timer_policy_binding = new com.citrix.netscaler.nitro.resource.config.timer.timertrigger_timerpolicy_binding();
+        try {
+            timer_policy_binding.set_name(timerName);
+            timer_policy_binding.set_policyname(policyName);
+            timer_policy_binding.set_global("DEFAULT");
+            timer_policy_binding.delete(login_get_service(true), timer_policy_binding);
+        } catch (Exception e) {
+            // Ignore Exception
+            throw e;
         }
-        priorities.add(cur_prirotiy);;
-        return cur_prirotiy;
+
+        // Removing Timer policy
+        // rm timer policy lb_policy_scaleUp_cpu_mem
+        com.citrix.netscaler.nitro.resource.config.timer.timerpolicy timerPolicy = new com.citrix.netscaler.nitro.resource.config.timer.timerpolicy();
+        try {
+            timerPolicy.set_name(policyName);
+            timerPolicy.delete(login_get_service(true), timerPolicy);
+        } catch (Exception e) {
+            // Ignore Exception
+            throw e;
+        }
+
     }
 
     @SuppressWarnings("static-access")
@@ -542,8 +554,17 @@ public class NetscalerResource implements ServerResource {
         String scaleUpActionName = generateAutoScaleScaleUpActionName(srcIp, srcPort);
         String mtName = generateSnmpMetricTableName(srcIp, srcPort);
         String monitorName = generateSnmpMonitorName(srcIp, srcPort);
+        String serviceGroupName  = generateAutoScaleServiceGroupName(srcIp, srcPort);
         AutoScaleVmGroupTO vmGroupTO = loadBalancerTO.getAutoScaleVmGroupTO();
         List<AutoScalePolicyTO> policies = vmGroupTO.getPolicies();
+
+        /* Delete min/max member policies */
+        String minMemberPolicyName = generateAutoScaleMinPolicyName(srcIp, srcPort);
+
+        removeAutoScalePolicy(timerName, minMemberPolicyName);
+
+        String maxMemberPolicyName = generateAutoScaleMaxPolicyName(srcIp, srcPort);
+        removeAutoScalePolicy(timerName, maxMemberPolicyName);
 
         boolean isSnmp = false;
         /* Create Counters */
@@ -558,27 +579,9 @@ public class NetscalerResource implements ServerResource {
             }
             String policyId = Long.toString(autoScalePolicyTO.getId());
             String policyName = generateAutoScalePolicyName(srcIp, srcPort,policyId);
-            // unbind timer policy
-            // unbbind timer trigger lb_astimer -policyName lb_policy_scaleUp
-            com.citrix.netscaler.nitro.resource.config.timer.timertrigger_timerpolicy_binding timer_policy_binding = new com.citrix.netscaler.nitro.resource.config.timer.timertrigger_timerpolicy_binding();
-            try {
-                timer_policy_binding.set_name(timerName);
-                timer_policy_binding.set_policyname(policyName);
-                timer_policy_binding.delete(login_get_service(true), timer_policy_binding);
-            } catch (Exception e) {
-                // Ignore Exception
-                throw e;
-            }
+
             // Removing Timer policy
-            // rm timer policy lb_policy_scaleUp_cpu_mem
-            com.citrix.netscaler.nitro.resource.config.timer.timerpolicy timerPolicy = new com.citrix.netscaler.nitro.resource.config.timer.timerpolicy();
-            try {
-                timerPolicy.set_name(policyName);
-                timerPolicy.delete(login_get_service(true), timerPolicy);
-            } catch (Exception e) {
-                // Ignore Exception
-                throw e;
-            }
+            removeAutoScalePolicy(timerName, policyName);
         }
 
         /* Delete AutoScale Config */
@@ -623,11 +626,22 @@ public class NetscalerResource implements ServerResource {
         }
 
         if(isSnmp) {
+            com.citrix.netscaler.nitro.resource.config.lb.lbmonitor_servicegroup_binding monitor_servicegroup_binding = new com.citrix.netscaler.nitro.resource.config.lb.lbmonitor_servicegroup_binding();
+            try {
+                monitor_servicegroup_binding.set_monitorname(monitorName);
+                monitor_servicegroup_binding.set_servicegroupname(serviceGroupName);
+                monitor_servicegroup_binding.delete(login_get_service(true), monitor_servicegroup_binding);
+            } catch (Exception e) {
+                // Ignore Exception
+                throw e;
+            }
+
             // Delete Monitor
             // rm lb monitor lb_metric_table_mon
             com.citrix.netscaler.nitro.resource.config.lb.lbmonitor monitor = new com.citrix.netscaler.nitro.resource.config.lb.lbmonitor();
             try {
                 monitor.set_monitorname(monitorName);
+                monitor.set_type("LOAD");
                 monitor.delete(login_get_service(true), monitor);
             } catch (Exception e) {
                 // Ignore Exception
@@ -637,7 +651,7 @@ public class NetscalerResource implements ServerResource {
             // Delete Metric Table
             com.citrix.netscaler.nitro.resource.config.lb.lbmetrictable metricTable = new com.citrix.netscaler.nitro.resource.config.lb.lbmetrictable();
             try {
-                metricTable.set_metric(mtName);
+                metricTable.set_metrictable(mtName);
                 metricTable.delete(login_get_service(true), metricTable);
             } catch (Exception e) {
                 // Ignore Exception
@@ -715,13 +729,11 @@ public class NetscalerResource implements ServerResource {
         int interval = vmGroupTO.getInterval();
         int snmpPort = profileTO.getSnmpPort();
         String snmpCommunity = profileTO.getSnmpCommunity();
-        ArrayList<Long> priorities = new ArrayList<Long>();
         long cur_prirotiy = 1;
 
 
         // Set min and max autoscale members;
         // add lb vserver lb  http 10.102.31.100 80 -minAutoscaleMinMembers 3 -maxAutoscaleMembers 10
-        /*
         int minAutoScaleMembers = vmGroupTO.getMinMembers();
         int maxAutoScaleMembers = vmGroupTO.getMaxMembers();
         com.citrix.netscaler.nitro.resource.config.lb.lbvserver lbvserver = new com.citrix.netscaler.nitro.resource.config.lb.lbvserver();
@@ -734,7 +746,6 @@ public class NetscalerResource implements ServerResource {
             // Ignore Exception
             throw e;
         }
-         */
 
         /* AutoScale Config */
         // Add AutoScale Profile
@@ -755,7 +766,7 @@ public class NetscalerResource implements ServerResource {
         } catch (Exception e) {
             // Ignore Exception
 
-            //            throw e;
+            throw e;
         }
 
         // Add Timer
@@ -841,7 +852,7 @@ public class NetscalerResource implements ServerResource {
                 interval, interval);
 
         /* Create max member policy */
-        String maxMemberPolicyName = generateAutoScaleMinPolicyName(srcIp, srcPort);
+        String maxMemberPolicyName = generateAutoScaleMaxPolicyName(srcIp, srcPort);
         String maxMemberPolicyExp = "SYS.VSERVER(\"" + nsVirtualServerName + "\").ACTIVESERVICES.GT(SYS.VSERVER(\"" + nsVirtualServerName + "\").MAXAUTOSCALEMEMBERS)";
         addAutoScalePolicy(timerName, maxMemberPolicyName, cur_prirotiy++, maxMemberPolicyExp, scaleDownActionName,
                 interval, interval);
@@ -2023,14 +2034,6 @@ public class NetscalerResource implements ServerResource {
                     vserver.set_persistencetype("NONE");
                 }
             }
-            if(vmGroupTO != null) {
-                vserver.set_minautoscalemembers(vmGroupTO.getMinMembers());
-                vserver.set_maxautoscalemembers(vmGroupTO.getMaxMembers());
-                vserver.set_mysqlcharacterset(null);
-                vserver.set_mysqlprotocolversion(null);
-                vserver.set_mysqlservercapabilities(null);
-                vserver.set_mssqlserverversion(null);
-            }
 
             if (vserverExisis) {
                 apiCallResult = lbvserver.update(login_get_service(vmGroupTO != null),vserver);
@@ -2250,5 +2253,8 @@ public class NetscalerResource implements ServerResource {
     public void disconnected() {
         return;
     }
+
+
+
 
 }

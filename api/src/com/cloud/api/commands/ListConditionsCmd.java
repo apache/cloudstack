@@ -49,6 +49,9 @@ public class ListConditionsCmd extends BaseListAccountResourcesCmd {
     @Parameter(name = ApiConstants.COUNTER_ID, type = CommandType.LONG, required = false, description = "Counter-id of the condition.")
     private Long counterId;
 
+    @IdentityMapper(entityTableName="autoscale_policies")
+    @Parameter(name = ApiConstants.POLICY_ID, type = CommandType.LONG, description = "the ID of the policy")
+    private Long policyId;
     // ///////////////////////////////////////////////////
     // ///////////// API Implementation///////////////////
     // ///////////////////////////////////////////////////
@@ -79,6 +82,10 @@ public class ListConditionsCmd extends BaseListAccountResourcesCmd {
 
     public Long getCounterId() {
         return counterId;
+    }
+
+    public Long getPolicyId() {
+        return policyId;
     }
 
     @Override
