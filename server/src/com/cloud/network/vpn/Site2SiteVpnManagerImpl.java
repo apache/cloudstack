@@ -351,6 +351,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
             stopVpnConnection(id);
         }
         startVpnConnection(id);
+        conn = _vpnConnectionDao.findById(id);
         return conn;
     }
 
