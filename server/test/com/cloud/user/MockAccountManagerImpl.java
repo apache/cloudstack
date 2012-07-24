@@ -336,4 +336,13 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
         // TODO Auto-generated method stub
     }
 
+    /* (non-Javadoc)
+     * @see com.cloud.user.AccountService#getUserByApiKey(java.lang.String)
+     */
+    @Override
+    public UserAccount getUserByApiKey(String apiKey) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
 }

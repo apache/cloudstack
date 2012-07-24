@@ -40,11 +40,29 @@ PIDFILE=@PIDDIR@/"$whatami".pid
 LOCKFILE=@LOCKDIR@/"$SHORTNAME"
 LOGFILE=@AGENTLOG@
 PROGNAME="Cloud Agent"
+CLASS="com.cloud.agent.AgentShell"
 
 unset OPTIONS
 [ -r @SYSCONFDIR@/default/"$SHORTNAME" ] && source @SYSCONFDIR@/default/"$SHORTNAME"
-DAEMONIZE=@BINDIR@/@PACKAGE@-daemonize
-PROG=@LIBEXECDIR@/agent-runner
+
+# The first existing directory is used for JAVA_HOME (if JAVA_HOME is not defined in $DEFAULT)
+JDK_DIRS="/usr/lib/jvm/java-6-openjdk /usr/lib/jvm/java-6-openjdk-i386 /usr/lib/jvm/java-6-openjdk-amd64 /usr/lib/jvm/java-6-sun /usr/lib/jvm/java-1.5.0-sun /usr/lib/j2sdk1.5-sun /usr/lib/j2sdk1.5-ibm"
+
+for jdir in $JDK_DIRS; do
+    if [ -r "$jdir/bin/java" -a -z "${JAVA_HOME}" ]; then
+        JAVA_HOME="$jdir"
+    fi
+done
+export JAVA_HOME
+
+SCP="@SYSTEMCLASSPATH@"
+DCP="@DEPSCLASSPATH@"
+ACP="@AGENTCLASSPATH@"
+JCP="/usr/share/java/commons-daemon.jar"
+
+# We need to append the JSVC daemon JAR to the classpath
+# AgentShell implements the JSVC daemon methods
+export CLASSPATH="$SCP:$DCP:$ACP:$JCP:@AGENTSYSCONFDIR@"
 
 wait_for_network() {
     i=1
@@ -79,9 +97,7 @@ start() {
 
         wait_for_network
 
-	if start-stop-daemon --start --quiet \
-		--pidfile "$PIDFILE" \
-		--exec "$DAEMONIZE" -- -n "$SHORTNAME" -p "$PIDFILE" -l "$LOGFILE" "$PROG" $OPTIONS
+	if jsvc -cp "$CLASSPATH" -pidfile "$PIDFILE" $CLASS
 		RETVAL=$?
 	    then
 		rc=0
@@ -107,11 +123,11 @@ stop() {
     count="0"
 
     echo -n $"Stopping $PROGNAME" "$SHORTNAME"
-    start-stop-daemon --stop --quiet --oknodo --pidfile "$PIDFILE"
+    jsvc -pidfile "$PIDFILE" -stop $CLASS
 
     until [ "$count" -gt "$SHUTDOWN_WAIT" ]
     do
-        agentPid=`ps aux|grep [j]ava|grep cloud-agent`
+        agentPid=`ps aux|grep [j]svc|grep cloud-agent`
         if [ "$?" -gt "0" ];then
             break
         fi
@@ -119,16 +135,16 @@ stop() {
         let count="${count}+1"
     done
 
-    agentPid=`ps aux|grep [j]ava|grep cloud-agent`
+    agentPid=`ps aux|grep [j]svc|grep cloud-agent`
     if [ "$?" -eq "0" ]; then
-         agentPid=`ps aux|grep [j]ava|awk '{print $2}'`
+         agentPid=`ps aux|grep [j]svc|awk '{print $2}'`
          if [ "$agentPid" != "" ]; then
               kill -9 $agentPid
          fi
     fi
 
-	log_end_msg $?
-	rm -f "$PIDFILE"
+    log_end_msg $?
+    rm -f "$PIDFILE"
 }
 
 

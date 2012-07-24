@@ -18,11 +18,29 @@ LOCKFILE=@LOCKDIR@/"$SHORTNAME"
 LOGFILE=@USAGELOG@
 PROGNAME="CloudStack Usage Monitor"
 USER=@MSUSER@
+CLASS="com.cloud.usage.UsageServer"
 
 unset OPTIONS
 [ -r @SYSCONFDIR@/default/"$SHORTNAME" ] && source @SYSCONFDIR@/default/"$SHORTNAME"
-DAEMONIZE=@BINDIR@/@PACKAGE@-daemonize
-PROG=@LIBEXECDIR@/usage-runner
+
+# The first existing directory is used for JAVA_HOME (if JAVA_HOME is not defined in $DEFAULT)
+JDK_DIRS="/usr/lib/jvm/java-6-openjdk /usr/lib/jvm/java-6-openjdk-i386 /usr/lib/jvm/java-6-openjdk-amd64 /usr/lib/jvm/java-6-sun /usr/lib/jvm/java-1.5.0-sun /usr/lib/j2sdk1.5-sun /usr/lib/j2sdk1.5-ibm"
+
+for jdir in $JDK_DIRS; do
+    if [ -r "$jdir/bin/java" -a -z "${JAVA_HOME}" ]; then
+        JAVA_HOME="$jdir"
+    fi
+done
+export JAVA_HOME
+
+SCP="@SYSTEMCLASSPATH@"
+DCP="@DEPSCLASSPATH@"
+UCP="@USAGECLASSPATH@"
+JCP="/usr/share/java/commons-daemon.jar"
+
+# We need to append the JSVC daemon JAR to the classpath
+# AgentShell implements the JSVC daemon methods
+export CLASSPATH="$SCP:$DCP:$UCP:$JCP:@USAGESYSCONFDIR@"
 
 start() {
         log_daemon_msg $"Starting $PROGNAME" "$SHORTNAME"
@@ -39,9 +57,7 @@ start() {
 		exit 1
 	fi
 
-	if start-stop-daemon --start --quiet \
-		--pidfile "$PIDFILE" \
-		--exec "$DAEMONIZE" -- -n "$SHORTNAME" -p "$PIDFILE" -l "$LOGFILE" -u "$USER" "$PROG" $OPTIONS
+        if jsvc -cp "$CLASSPATH" -pidfile "$PIDFILE" -user "$USER" $CLASS
 		RETVAL=$?
 	    then
 		rc=0
@@ -64,7 +80,7 @@ start() {
 
 stop() {
 	echo -n $"Stopping $PROGNAME" "$SHORTNAME"
-	start-stop-daemon --stop --quiet --oknodo --pidfile "$PIDFILE"
+        jsvc -pidfile "$PIDFILE" -stop $CLASS
 	log_end_msg $?
 	rm -f "$PIDFILE"
 }

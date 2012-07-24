@@ -24,19 +24,41 @@
    <!-- Preserve messages in a local file -->
    <!-- ================================= -->
 
-   <!-- A time/date based rolling appender -->
-   <appender name="FILE" class="org.apache.log4j.rolling.RollingFileAppender">
+    <appender name="FILE1" class="org.apache.log4j.RollingFileAppender">
+      <param name="File" value="/var/log/cloud.log"/>
       <param name="Append" value="true"/>
-      <param name="Threshold" value="DEBUG"/>
-      <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
-        <param name="FileNamePattern" value="/var/log/cloud/cloud.log.%d{yyyy-MM-dd}{GMT}.gz"/>
-        <param name="ActiveFileName" value="/var/log/cloud/cloud.log"/>
-      </rollingPolicy>
+      <param name="MaxFileSize" value="10000KB"/>
+      <param name="MaxBackupIndex" value="4"/>
+     
+     <layout class="org.apache.log4j.EnhancedPatternLayout">
+      <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p
+[%c{3}] (%t:%x) %m%n"/>
+     </layout>
+    </appender>
 
-      <layout class="org.apache.log4j.EnhancedPatternLayout">
-         <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
-      </layout>
-   </appender>
+    <appender name="FILE2" class="org.apache.log4j.RollingFileAppender">
+       <param name="File" value="/var/log/cloud/cloud.out"/>
+       <param name="Append" value="true"/>
+       <param name="MaxFileSize" value="10000KB"/>
+       <param name="MaxBackupIndex" value="4"/>
+    
+    <layout class="org.apache.log4j.EnhancedPatternLayout">
+     <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p
+[%c{3}] (%t:%x) %m%n"/>
+    </layout>
+    </appender>
+
+     <appender name="FILE3" class="org.apache.log4j.rolling.RollingFileAppender">
+       <param name="File" value="/usr/local/cloud/systemvm/cloud.log"/>
+       <param name="Append" value="true"/>
+       <param name="MaxFileSize" value="10000KB"/>
+       <param name="MaxBackupIndex" value="4"/>
+      
+     <layout class="org.apache.log4j.EnhancedPatternLayout">
+     <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p
+[%c{3}] (%t:%x) %m%n"/>
+     </layout>
+    </appender>
    
    <appender name="APISERVER" class="org.apache.log4j.rolling.RollingFileAppender">
       <param name="Append" value="true"/>
@@ -101,7 +123,9 @@
    <root>
       <level value="INFO"/>
       <appender-ref ref="CONSOLE"/>
-      <appender-ref ref="FILE"/>
+      <appender-ref ref="FILE1"/>
+      <appender-ref ref="FILE2"/>
+      <appender-ref ref="FILE3"/>
    </root>
 
 </log4j:configuration>
