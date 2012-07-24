@@ -716,6 +716,8 @@ public class NetscalerResource implements ServerResource {
         int snmpPort = profileTO.getSnmpPort();
         String snmpCommunity = profileTO.getSnmpCommunity();
         ArrayList<Long> priorities = new ArrayList<Long>();
+        long cur_prirotiy = 1;
+
 
         // Set min and max autoscale members;
         // add lb vserver lb  http 10.102.31.100 80 -minAutoscaleMinMembers 3 -maxAutoscaleMembers 10
@@ -805,7 +807,7 @@ public class NetscalerResource implements ServerResource {
             ApiConstants.SERVICE_OFFERING_ID + "=" + profileTO.getServiceOfferingId()+ "&" +
             ApiConstants.TEMPLATE_ID + "=" + profileTO.getTemplateId()+ "&" +
             ((profileTO.getOtherDeployParams() == null)? "" : (profileTO.getOtherDeployParams() + "&")) +
-            "lbRuleId=" + loadBalancerTO.getId();
+            "lbruleid=" + loadBalancerTO.getId();
             scaleUpAction.set_parameters(scaleUpParameters);
             scaleUpAction.add(login_get_service(true), scaleUpAction);
         } catch (Exception e) {
@@ -823,7 +825,7 @@ public class NetscalerResource implements ServerResource {
             scaleDownAction.set_profilename(profileName);
             scaleDownAction.set_quiettime(scaleDownQuietTime);
             String scaleDownParameters = "command=destroyVirtualMachine" + "&" +
-            "lbRuleId=" + loadBalancerTO.getId();
+            "lbruleid=" + loadBalancerTO.getId();
             scaleDownAction.set_parameters(scaleDownParameters);
             scaleDownAction.set_vmdestroygraceperiod(destroyVmGracePeriod);
             scaleDownAction.add(login_get_service(true), scaleDownAction);
@@ -832,10 +834,21 @@ public class NetscalerResource implements ServerResource {
             throw e;
         }
 
+        /* Create min member policy */
+        String minMemberPolicyName = generateAutoScaleMinPolicyName(srcIp, srcPort);
+        String minMemberPolicyExp = "SYS.VSERVER(\"" + nsVirtualServerName + "\").ACTIVESERVICES.LT(SYS.VSERVER(\"" + nsVirtualServerName + "\").MINAUTOSCALEMEMBERS)";
+        addAutoScalePolicy(timerName, minMemberPolicyName, cur_prirotiy++, minMemberPolicyExp, scaleUpActionName,
+                interval, interval);
+
+        /* Create max member policy */
+        String maxMemberPolicyName = generateAutoScaleMinPolicyName(srcIp, srcPort);
+        String maxMemberPolicyExp = "SYS.VSERVER(\"" + nsVirtualServerName + "\").ACTIVESERVICES.GT(SYS.VSERVER(\"" + nsVirtualServerName + "\").MAXAUTOSCALEMEMBERS)";
+        addAutoScalePolicy(timerName, maxMemberPolicyName, cur_prirotiy++, maxMemberPolicyExp, scaleDownActionName,
+                interval, interval);
+
         /* Create Counters */
         HashMap<String, Integer> snmpMetrics = new HashMap<String, Integer>();
         for (AutoScalePolicyTO autoScalePolicyTO : policies) {
-            boolean isPolicyRevoked = autoScalePolicyTO.isRevoked();
             List<ConditionTO> conditions = autoScalePolicyTO.getConditions();
             String policyExpression = "";
             int snmpCounterNumber = 0;
@@ -944,50 +957,65 @@ public class NetscalerResource implements ServerResource {
             policyExpression = "(" + policyExpression + ")";
 
             String policyId = Long.toString(autoScalePolicyTO.getId());
-            String policyName = generateAutoScalePolicyName(srcIp, srcPort,policyId);
-            if(!isPolicyRevoked) {
-                // Adding a autoscale policy
-                // add timer policy lb_policy_scaleUp_cpu_mem -rule - (SYS.CUR_VSERVER.METRIC_TABLE(cpu).AVG_VAL.GT(80)-
-                // -action lb_scaleUpAction
-                com.citrix.netscaler.nitro.resource.config.timer.timerpolicy timerPolicy = new com.citrix.netscaler.nitro.resource.config.timer.timerpolicy();
-                try {
-                    timerPolicy.set_name(policyName);
-                    timerPolicy.set_action((isScaleUpPolicy(autoScalePolicyTO))? scaleUpActionName : scaleDownActionName);
-                    timerPolicy.set_rule(policyExpression);
-                    timerPolicy.add(login_get_service(true), timerPolicy);
-                } catch (Exception e) {
-                    // Ignore Exception
-                    throw e;
-                }
-
-                // bind timer policy
-                // For now it is bound globally.
-                // bind timer trigger lb_astimer -policyName lb_policy_scaleUp -vserver lb -priority 1 -samplesize 5
-                // TODO: later bind to lbvserver. bind timer trigger lb_astimer -policyName lb_policy_scaleUp -vserver lb -priority 1 -samplesize 5
-                // -thresholdsize 5
-                com.citrix.netscaler.nitro.resource.config.timer.timertrigger_timerpolicy_binding timer_policy_binding = new com.citrix.netscaler.nitro.resource.config.timer.timertrigger_timerpolicy_binding();
-                int sampleSize = autoScalePolicyTO.getDuration()/interval;
-                long priority = allocateNextAvailablePriority(priorities);
-                try {
-                    timer_policy_binding.set_name(timerName);
-                    timer_policy_binding.set_policyname(policyName);
-                    // timer_policy_binding.set_vserver(nsVirtualServerName);
-                    timer_policy_binding.set_global("DEFAULT"); // vserver name is present at the expression
-                    timer_policy_binding.set_samplesize(sampleSize);
-                    timer_policy_binding.set_thresholdsize(sampleSize); // We are not exposing this parameter as of now.
-                    // i.e. n(m) is not exposed to CS user. So thresholdSize == sampleSize
-                    timer_policy_binding.set_priority(priority);
-                    timer_policy_binding.add(login_get_service(true), timer_policy_binding);
-                } catch (Exception e) {
-                    // Ignore Exception
-                    throw e;
-                }
+            String policyName = generateAutoScalePolicyName(srcIp, srcPort, policyId);
+            String action = null;
+            if(isScaleUpPolicy(autoScalePolicyTO)) {
+                action = scaleUpActionName;
+                String scaleUpCondition = "SYS.VSERVER(\"" + nsVirtualServerName + "\").ACTIVESERVICES.LT(SYS.VSERVER(\"" + nsVirtualServerName + "\").MAXAUTOSCALEMEMBERS)";
+                policyExpression = scaleUpCondition + " && " + policyExpression;
+            } else {
+                action = scaleDownActionName;
+                String scaleDownCondition = "SYS.VSERVER(\"" + nsVirtualServerName + "\").ACTIVESERVICES.GT(SYS.VSERVER(\"" + nsVirtualServerName + "\").MINAUTOSCALEMEMBERS)";
+                policyExpression = scaleDownCondition + " && " + policyExpression;
             }
+
+            addAutoScalePolicy(timerName, policyName, cur_prirotiy++, policyExpression, action,
+                    autoScalePolicyTO.getDuration(), interval);
+
         }
 
         return true;
     }
 
+
+    private synchronized void addAutoScalePolicy(String timerName,String policyName,  long priority, String policyExpression, String action,
+            int duration, int interval) throws Exception {
+        // Adding a autoscale policy
+        // add timer policy lb_policy_scaleUp_cpu_mem -rule - (SYS.CUR_VSERVER.METRIC_TABLE(cpu).AVG_VAL.GT(80)-
+        // -action lb_scaleUpAction
+        com.citrix.netscaler.nitro.resource.config.timer.timerpolicy timerPolicy = new com.citrix.netscaler.nitro.resource.config.timer.timerpolicy();
+        try {
+            timerPolicy.set_name(policyName);
+            timerPolicy.set_action(action);
+            timerPolicy.set_rule(policyExpression);
+            timerPolicy.add(login_get_service(true), timerPolicy);
+        } catch (Exception e) {
+            // Ignore Exception
+            throw e;
+        }
+
+        // bind timer policy
+        // For now it is bound globally.
+        // bind timer trigger lb_astimer -policyName lb_policy_scaleUp -vserver lb -priority 1 -samplesize 5
+        // TODO: later bind to lbvserver. bind timer trigger lb_astimer -policyName lb_policy_scaleUp -vserver lb -priority 1 -samplesize 5
+        // -thresholdsize 5
+        com.citrix.netscaler.nitro.resource.config.timer.timertrigger_timerpolicy_binding timer_policy_binding = new com.citrix.netscaler.nitro.resource.config.timer.timertrigger_timerpolicy_binding();
+        int sampleSize = duration/interval;
+        try {
+            timer_policy_binding.set_name(timerName);
+            timer_policy_binding.set_policyname(policyName);
+            // timer_policy_binding.set_vserver(nsVirtualServerName);
+            timer_policy_binding.set_global("DEFAULT"); // vserver name is present at the expression
+            timer_policy_binding.set_samplesize(sampleSize);
+            timer_policy_binding.set_thresholdsize(sampleSize); // We are not exposing this parameter as of now.
+            // i.e. n(m) is not exposed to CS user. So thresholdSize == sampleSize
+            timer_policy_binding.set_priority(priority);
+            timer_policy_binding.add(login_get_service(true), timer_policy_binding);
+        } catch (Exception e) {
+            // Ignore Exception
+            throw e;
+        }
+    }
     public synchronized void applyAutoScaleConfig(LoadBalancerTO loadBalancer) throws Exception, ExecutionException {
 
         AutoScaleVmGroupTO vmGroupTO = loadBalancer.getAutoScaleVmGroupTO();
@@ -2142,6 +2170,14 @@ public class NetscalerResource implements ServerResource {
 
     private String generateAutoScalePolicyName(String srcIp, long srcPort, String poilcyId) {
         return genObjectName("Cloud-AutoScale-Policy",  srcIp, srcPort, poilcyId);
+    }
+
+    private String generateAutoScaleMinPolicyName(String srcIp, long srcPort) {
+        return genObjectName("Cloud-AutoScale-Policy-Min",  srcIp, srcPort);
+    }
+
+    private String generateAutoScaleMaxPolicyName(String srcIp, long srcPort) {
+        return genObjectName("Cloud-AutoScale-Policy-Max",  srcIp, srcPort);
     }
 
     private String generateSnmpMetricTableName(String srcIp, long srcPort) {
