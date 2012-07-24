@@ -8966,7 +8966,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .tagger .field {
-  width: 179px;
+  width: 35%;
   float: left;
   position: relative;
 }
@@ -8995,7 +8995,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .tagger form label {
   display: block;
   float: left;
-  width: 28px;
+  width: 25px;
   text-align: right;
   font-size: 10px;
   color: #394552;
@@ -9025,6 +9025,11 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   border-radius: 4px;
 }
 
+.tagger form input {
+  width: 45%;
+  margin-left: 9px;
+}
+
 .tagger form input[type=submit] {
   background: url(../images/bg-gradients.png) repeat-x 0px -220px;
   cursor: pointer;
@@ -9042,6 +9047,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   border-radius: 4px;
   padding: 7px 25px 7px 26px;
   margin-left: 16px;
+  width: auto;
 }
 
 .tagger form input[type=submit]:hover {
