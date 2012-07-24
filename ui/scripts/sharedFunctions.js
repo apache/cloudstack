@@ -663,7 +663,7 @@ cloudStack.api = {
               args.response.success({
                 _custom: { jobId: json.createtagsresponse.jobid },
                 notification: {
-                  desc: 'Add tag for instance',
+                  desc: 'Add tag for ' + resourceType,
                   poll: pollAsyncJobResult
                 }
               });
@@ -687,7 +687,7 @@ cloudStack.api = {
               args.response.success({
                 _custom: { jobId: json.deletetagsresponse.jobid },
                 notification: {
-                  desc: 'Remove tag for instance',
+                  desc: 'Remove tag for ' + resourceType,
                   poll: pollAsyncJobResult
                 }
               });
