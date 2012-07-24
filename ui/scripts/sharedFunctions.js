@@ -663,7 +663,7 @@ cloudStack.api = {
               args.response.success({
                 _custom: { jobId: json.createtagsresponse.jobid },
                 notification: {
-                  desc: 'Add tag for instance',
+                  desc: 'Add tag for ' + resourceType,
                   poll: pollAsyncJobResult
                 }
               });
@@ -687,7 +687,7 @@ cloudStack.api = {
               args.response.success({
                 _custom: { jobId: json.deletetagsresponse.jobid },
                 notification: {
-                  desc: 'Remove tag for instance',
+                  desc: 'Remove tag for ' + resourceType,
                   poll: pollAsyncJobResult
                 }
               });
@@ -697,14 +697,18 @@ cloudStack.api = {
       },
       dataProvider: function(args) {
         var resourceId = args.context[contextId][0].id;
+        var data = {
+          resourceId: resourceId,
+          resourceType: resourceType
+        };
+
+        if (args.context.projects) {
+          data.projectid=args.context.projects[0].id;
+        }
         
         $.ajax({
           url: createURL('listTags'),
-          data: {
-            listAll: true,
-            resourceId: resourceId,
-            resourceType: resourceType
-          },
+          data: data,
           success: function(json) {
             args.response.success({
               data: json.listtagsresponse ?

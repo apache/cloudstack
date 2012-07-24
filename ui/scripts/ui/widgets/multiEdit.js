@@ -334,8 +334,12 @@
                 });
 
                 if (options.tags) {
-                  $(':ui-dialog').append(
-                    $('<div>').addClass('multi-edit-tags').tagger(options.tags)
+                  $(':ui-dialog:last').append(
+                    $('<div>').addClass('multi-edit-tags').tagger($.extend(true, {}, options.tags, {
+                      context: $.extend(true, {}, options.context, {
+                        multiRule: [multiRule]
+                      })
+                    }))
                   );
                 }
               }

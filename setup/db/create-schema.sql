@@ -2161,6 +2161,7 @@ CREATE TABLE `cloud`.`s2s_vpn_gateway` (
 CREATE TABLE `cloud`.`s2s_customer_gateway` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
+  `name` varchar(255) NOT NULL,
   `gateway_ip` char(40) NOT NULL,
   `guest_cidr_list` varchar(200) NOT NULL,
   `ipsec_psk` varchar(256),

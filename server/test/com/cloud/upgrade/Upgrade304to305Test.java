@@ -22,14 +22,15 @@ import org.junit.Before;
 
 import com.cloud.upgrade.dao.VersionDaoImpl;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.db.DbTestUtils;
 
-public class Upgarde304to305Test extends TestCase{
+public class Upgrade304to305Test extends TestCase{
     private static final Logger s_logger = Logger.getLogger(AdvanceZone217To224UpgradeTest.class);
 
     @Override
     @Before
     public void setUp() throws Exception {
-        //DbTestUtils.executeScript("PreviousDatabaseSchema/304/cloud_304.sql", false, true);
+        DbTestUtils.executeScript("test/dbupgrade/cloud_304.sql", false, true);
     }
 
     @Override

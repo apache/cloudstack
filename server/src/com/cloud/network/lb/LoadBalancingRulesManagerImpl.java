@@ -259,6 +259,18 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         String secretKey = user.getSecretKey();
         String csUrl = _configDao.getValue(Config.EndpointeUrl.key());
 
+        if(apiKey == null) {
+            throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
+        }
+
+        if(secretKey == null) {
+            throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
+        }
+
+        if(csUrl == null || csUrl.contains("localhost")) {
+            throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point");
+        }
+
         LbAutoScaleVmProfile lbAutoScaleVmProfile = new LbAutoScaleVmProfile(autoScaleVmProfile, apiKey, secretKey, csUrl);
         return new LbAutoScaleVmGroup(vmGroup, autoScalePolicies, lbAutoScaleVmProfile);
     }
