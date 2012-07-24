@@ -82,7 +82,7 @@
         <include name="cloud-commons-collections-3.2.1.jar" />
         <include name="cloud-commons-codec-1.4.jar" />
         <include name="cloud-commons-pool-1.4.jar" />
-        <include name="cloud-libvirt-0.4.5.jar" />
+        <include name="libvirt-0.4.8.jar" />
         <include name="cloud-jna.jar" />
         <include name="cloud-cglib.jar" />
         <include name="jetty-6.1.26.jar" />
