@@ -23,6 +23,9 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     @Column(name="uuid")
     private String uuid;
 
+    @Column(name="name")
+    private String name;
+
     @Column(name="gateway_ip")
     private String gatewayIp;
 
@@ -52,7 +55,8 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
 
     public Site2SiteCustomerGatewayVO() { }
 
-    public Site2SiteCustomerGatewayVO(long accountId, long domainId, String gatewayIp, String guestCidrList, String ipsecPsk, String ikePolicy, String espPolicy, long lifetime) {
+    public Site2SiteCustomerGatewayVO(String name, long accountId, long domainId, String gatewayIp, String guestCidrList, String ipsecPsk, String ikePolicy, String espPolicy, long lifetime) {
+        this.name = name;
         this.gatewayIp = gatewayIp;
         this.guestCidrList = guestCidrList;
         this.ipsecPsk = ipsecPsk;
@@ -67,6 +71,15 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     @Override
     public long getId() {
         return id;
+    }
+
+    @Override
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     @Override

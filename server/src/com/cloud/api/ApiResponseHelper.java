@@ -3887,6 +3887,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public Site2SiteVpnGatewayResponse createSite2SiteVpnGatewayResponse(Site2SiteVpnGateway result) {
         Site2SiteVpnGatewayResponse response = new Site2SiteVpnGatewayResponse();
         response.setId(result.getId());
+        response.setName(result.getName());
         response.setIp(ApiDBUtils.findIpAddressById(result.getAddrId()).getAddress().toString());
         response.setVpcId(result.getVpcId());
         response.setRemoved(result.getRemoved());

@@ -24,6 +24,9 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
     @SerializedName(ApiConstants.ID) @Param(description="the vpn gateway ID")
     private IdentityProxy id = new IdentityProxy("s2s_customer_gateway");
 
+    @SerializedName(ApiConstants.NAME) @Param(description="name of the customer gateway")
+    private String name;
+    
     @SerializedName(ApiConstants.GATEWAY) @Param(description="public ip address id of the customer gateway")
     private String gatewayIp;
 
@@ -58,6 +61,10 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
 		this.id.setValue(id);
 	}
 	
+    public void setName(String name) {
+        this.name = name;
+    }
+
     public void setGatewayIp(String gatewayIp) {
         this.gatewayIp = gatewayIp;
     }

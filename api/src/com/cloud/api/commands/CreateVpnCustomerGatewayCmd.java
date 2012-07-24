@@ -36,6 +36,9 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=false, description="name of this customer gateway")
+    private String name;
+    
     @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="public ip address id of the customer gateway")
     private String gatewayIp;
 
@@ -70,6 +73,10 @@ public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     	return "s2s_customer_gateway";
     }
     
+    public String getName() {
+        return name;
+    }
+
     public String getIpsecPsk() {
         return ipsecPsk;
     }
