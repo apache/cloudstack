@@ -1022,11 +1022,23 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
     @Override
     public boolean startSite2SiteVpn(Site2SiteVpnConnection conn, VirtualRouter router) throws ResourceUnavailableException {
+        if (router.getState() != State.Running) {
+            s_logger.warn("Unable to apply site-to-site VPN configuration, virtual router is not in the right state " + router.getState());
+            throw new ResourceUnavailableException("Unable to apply site 2 site VPN configuration," +
+                    " virtual router is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+        }
+
         return applySite2SiteVpn(true, router, conn);
     }
 
     @Override
     public boolean stopSite2SiteVpn(Site2SiteVpnConnection conn, VirtualRouter router) throws ResourceUnavailableException {
+        if (router.getState() != State.Running) {
+            s_logger.warn("Unable to apply site-to-site VPN configuration, virtual router is not in the right state " + router.getState());
+            throw new ResourceUnavailableException("Unable to apply site 2 site VPN configuration," +
+                    " virtual router is not in the right state", DataCenter.class, router.getDataCenterIdToDeployIn());
+        }
+
         return applySite2SiteVpn(false, router, conn);
     }
 
