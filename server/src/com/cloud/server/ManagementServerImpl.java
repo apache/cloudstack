@@ -1765,11 +1765,6 @@ public class ManagementServerImpl implements ManagementServer {
             vlanType = VlanType.VirtualNetwork;
         }
 
-        // don't show SSVM/CPVM ips
-        if (vlanType == VlanType.VirtualNetwork && (allocatedOnly)) {
-            sb.and("associatedNetworkId", sb.entity().getAssociatedWithNetworkId(), SearchCriteria.Op.NNULL);       
-        }
-
         SearchCriteria<IPAddressVO> sc = sb.create();
         if (isAllocated) {
           _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
