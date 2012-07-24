@@ -1261,10 +1261,6 @@
       return true;
     });
 
-    $listView.find('#filterBy').bind('click',function(event) {
-     page = 1; //Handling the case to display more than 20 entities on a page while switching between panels
-     return page;
-    });
     var search = function() {
       page = 1;
       loadBody(
