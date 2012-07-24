@@ -29,7 +29,7 @@
 # WARNING: if this script is changed, then all other initscripts MUST BE changed to match it as well
 
 . /lib/lsb/init-functions
-. /etc/default/rcS
+. /etc/rc.status
 
 whatami=cloud-agent
 
