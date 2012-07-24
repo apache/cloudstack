@@ -74,7 +74,6 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.Site2SiteCustomerGatewayVO;
 import com.cloud.network.Site2SiteVpnConnection;
-import com.cloud.network.Site2SiteVpnConnectionVO;
 import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.VirtualRouterProvider;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
@@ -260,7 +259,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         } finally {
             if (!result) {
                 s_logger.debug("Removing the router " + router + " from network " + network + " as a part of cleanup");
-                if (removeRouterFromGuestNetwork(router, network, isRedundant)) {
+                if (removeVpcRouterFromGuestNetwork(router, network, isRedundant)) {
                     s_logger.debug("Removed the router " + router + " from network " + network + " as a part of cleanup");
                 } else {
                     s_logger.warn("Failed to remove the router " + router + " from network " + network + " as a part of cleanup");
@@ -274,7 +273,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     }
 
     @Override
-    public boolean removeRouterFromGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) 
+    public boolean removeVpcRouterFromGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) 
             throws ConcurrentOperationException, ResourceUnavailableException {
         if (network.getTrafficType() != TrafficType.Guest) {
             s_logger.warn("Network " + network + " is not of type " + TrafficType.Guest);
@@ -541,6 +540,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         
         //only one router is supported in VPC now
         VirtualRouter router = routers.get(0);
+        
+        if (router.getVpcId() == null) {
+            return super.associatePublicIP(network, ipAddress, routers);
+        }
         
         Pair<Map<String, PublicIpAddress>, Map<String, PublicIpAddress>> nicsToChange = getNicsToChangeOnRouter(ipAddress, router);
         Map<String, PublicIpAddress> nicsToPlug = nicsToChange.first();
@@ -859,12 +862,14 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         
         super.finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
         
-        if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.NetworkACL, Provider.VPCVirtualRouter)) {
-            List<? extends FirewallRule> networkACLs = _networkACLMgr.listNetworkACLs(guestNetworkId);
-            s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + router 
-                    + " start for guest network id=" + guestNetworkId);
-            if (!networkACLs.isEmpty()) {
-                createNetworkACLsCommands(networkACLs, router, cmds, guestNetworkId);
+        if (router.getVpcId() == null) {
+            if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.NetworkACL, Provider.VPCVirtualRouter)) {
+                List<? extends FirewallRule> networkACLs = _networkACLMgr.listNetworkACLs(guestNetworkId);
+                s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + router 
+                        + " start for guest network id=" + guestNetworkId);
+                if (!networkACLs.isEmpty()) {
+                    createNetworkACLsCommands(networkACLs, router, cmds, guestNetworkId);
+                }
             }
         }
     }
@@ -970,6 +975,11 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
     @Override
     protected void finalizeIpAssocForNetwork(Commands cmds, VirtualRouter router, Provider provider, 
             Long guestNetworkId) {
+        
+        if (router.getVpcId() == null) {
+            super.finalizeIpAssocForNetwork(cmds, router, provider, guestNetworkId);
+            return;
+        }
         
         ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(router, provider, guestNetworkId, IpAddress.State.Releasing);
         

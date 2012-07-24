@@ -240,7 +240,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 continue;
             }
             //2) Call unplugNics in the network service
-            success = success && _vpcRouterMgr.removeRouterFromGuestNetwork(router, network, false);
+            success = success && _vpcRouterMgr.removeVpcRouterFromGuestNetwork(router, network, false);
             if (!success) {
                 s_logger.warn("Failed to unplug nic in network " + network + " for virtual router " + router);
             } else {
@@ -268,7 +268,7 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
                 continue;
             }
             //2) Call unplugNics in the network service
-            success = success && _vpcRouterMgr.removeRouterFromGuestNetwork(router, config, false);
+            success = success && _vpcRouterMgr.removeVpcRouterFromGuestNetwork(router, config, false);
             if (!success) {
                 s_logger.warn("Failed to unplug nic in network " + config + " for virtual router " + router);
             } else {

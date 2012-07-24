@@ -42,7 +42,7 @@ public interface VpcVirtualNetworkApplianceService {
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
-    boolean removeRouterFromGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) 
+    boolean removeVpcRouterFromGuestNetwork(VirtualRouter router, Network network, boolean isRedundant) 
             throws ConcurrentOperationException, ResourceUnavailableException;
 
 }
