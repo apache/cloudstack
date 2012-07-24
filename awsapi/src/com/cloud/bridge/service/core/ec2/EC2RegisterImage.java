@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.bridge.service.core.ec2;
 
+import com.cloud.bridge.service.exception.EC2ServiceException;
+import com.cloud.bridge.service.exception.EC2ServiceException.ClientError;
+
 public class EC2RegisterImage {
 
 	private String  location;
@@ -67,14 +70,19 @@ public class EC2RegisterImage {
 	 */
 	public void setArchitecture( String param ) {
 		if (null != param) {
-			String parts[] = param.split( ":" );
-			if (3 <= parts.length) {
-				format = parts[0];
-				zoneName = parts[1];
-				osTypeName = parts[2];
-				hypervisor = parts[3];
-			}
-		}
+            if (!param.contains(":") || param.split(":").length < 4) {
+                throw new EC2ServiceException(  ClientError.InvalidParameterValue, "Supported format for " +
+                    "'architecture' is format:zonename:ostypename:hypervisor" );
+            }
+            String parts[] = param.split( ":" );
+            format = parts[0];
+            zoneName = parts[1];
+            osTypeName = parts[2];
+            hypervisor = parts[3];
+        }
+        else {
+            throw new EC2ServiceException(ClientError.Unsupported, "Missing Parameter -" + " architecture");
+        }
 	}
 	
 	public String getFormat() {

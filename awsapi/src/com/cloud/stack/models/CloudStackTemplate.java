@@ -17,6 +17,8 @@
 
 package com.cloud.stack.models;
 
+import java.util.List;
+
 import com.google.gson.annotations.SerializedName;
 
 public class CloudStackTemplate {
@@ -82,6 +84,8 @@ public class CloudStackTemplate {
 	private String zoneId;
 	@SerializedName(ApiConstants.ZONE_NAME)
 	private String zoneName;
+    @SerializedName(ApiConstants.TAGS)
+    private List<CloudStackKeyValue> tags;
 
 	/**
 	 * 
@@ -306,4 +310,10 @@ public class CloudStackTemplate {
 		return zoneName;
 	}
 
+    /**
+     * @return all tags
+     */
+    public List<CloudStackKeyValue> getTags() {
+        return tags;
+    }
 }
