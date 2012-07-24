@@ -42,8 +42,6 @@ import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnGateway;
 import com.cloud.network.VirtualRouterProvider.VirtualRouterProviderType;
 import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
-import com.cloud.network.dao.Site2SiteVpnConnectionDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -73,14 +71,9 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
     @Inject
     VpcVirtualNetworkApplianceManager _vpcRouterMgr;
     @Inject
-    Site2SiteCustomerGatewayDao _customerGatewayDao;
-    @Inject
     Site2SiteVpnGatewayDao _vpnGatewayDao;
     @Inject
-    Site2SiteVpnConnectionDao _vpnConnectionDao;
-    @Inject
     IPAddressDao _ipAddressDao;
-    
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
     
