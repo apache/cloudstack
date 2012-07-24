@@ -675,14 +675,18 @@ cloudStack.api = {
       },
       dataProvider: function(args) {
         var resourceId = args.context[contextId][0].id;
+        var data = {
+          resourceId: resourceId,
+          resourceType: resourceType
+        };
+
+        if (args.context.projects) {
+          data.projectid=args.context.projects[0].id;
+        }
         
         $.ajax({
           url: createURL('listTags'),
-          data: {
-            listAll: true,
-            resourceId: resourceId,
-            resourceType: resourceType
-          },
+          data: data,
           success: function(json) {
             args.response.success({
               data: json.listtagsresponse ?
