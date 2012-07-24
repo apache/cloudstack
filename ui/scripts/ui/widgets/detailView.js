@@ -300,7 +300,6 @@
           $detailView.find('.ui-tabs-panel .detail-group.actions')
         ).fadeIn();
 
-      $detailView.find('.tagger').removeClass('readonly');
       $detailView.find('.tagger').find('input[type=text]').val('');
 
       var convertInputs = function($inputs) {
@@ -344,8 +343,6 @@
 		    }
 		    //Remove required labels
 		    $detailView.find('span.field-required').remove();
-        $detailView.find('.tagger').addClass('readonly');
-
 	    };
 
       // Put in original values
@@ -959,7 +956,7 @@
               $.extend(true, {}, tabs.tags, {
                 context: $detailView.data('view-args').context
               })
-            ).appendTo($detailView.find('.main-groups')).addClass('readonly');
+            ).appendTo($detailView.find('.main-groups'));
           }
 
           return true;
