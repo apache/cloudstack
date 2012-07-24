@@ -409,4 +409,18 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         doDeleteVpnGateway(gw.getId());
         return true;
     }
+    
+    @Override
+    public void markDisconnectVpnConnByVpc(long vpcId) {
+        List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByVpcId(vpcId);
+        for (Site2SiteVpnConnectionVO conn : conns) {
+            if (conn == null) {
+                continue;
+            }
+            if (conn.getState() == Site2SiteVpnConnection.State.Connected) {
+                conn.setState(Site2SiteVpnConnection.State.Disconnected);
+                _vpnConnectionDao.persist(conn);
+            }
+        }
+    }
 }
