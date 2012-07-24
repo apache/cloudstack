@@ -908,9 +908,9 @@ public class VirtualRoutingResource implements Manager {
             throw new ConfigurationException("Unable to find bumpUpPriority.sh");
         }
         
-        _routerProxyPath = findScript("routerProxy.sh");
+        _routerProxyPath = findScript("router_proxy.sh");
         if (_routerProxyPath == null) {
-            throw new ConfigurationException("Unable to find routerProxy.sh");
+            throw new ConfigurationException("Unable to find router_proxy.sh");
         }
         
         return true;
