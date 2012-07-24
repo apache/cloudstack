@@ -1695,6 +1695,9 @@
                         addButton: true
                       }
                     },
+
+                    tags: cloudStack.api.tags({ resourceType: 'FirewallRule', contextId: 'multiRule' }),
+
                     add: {
                       label: 'label.add',
                       action: function(args) {
@@ -1722,6 +1725,19 @@
                       }
                     },
                     actions: {
+                      edit: {
+                        label: 'label.edit',
+
+                        // Blank -- edit is just for tags right now
+                        action: function(args) {
+                          args.response.success({
+                            notification: {
+                              label: 'Edit firewall rule',
+                              poll: function(args) { args.complete(); }
+                            }
+                          });
+                        }
+                      },
                       destroy: {
                         label: 'label.action.delete.firewall',
                         action: function(args) {
