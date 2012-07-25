@@ -76,6 +76,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -172,7 +173,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         for (Counter counter : counters) {
             if (!supportedCounters.contains(counter.getSource().name().toString())) {
                 throw new InvalidParameterException("AutoScale counter with source='" + counter.getSource() + "' is not supported " +
-                "in the network where lb is configured");
+                        "in the network where lb is configured");
             }
         }
     }
@@ -183,7 +184,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         VO vo = dao.findById(id);
 
         if (vo == null) {
-            throw new InvalidParameterValueException("Unable to find " + paramName);
+            throw new InvalidParameterValueException("Unable to find " + paramName, null);
         }
 
         _accountMgr.checkAccess(caller, null, false, (ControlledEntity) vo);
@@ -215,25 +216,25 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
             }
             int duration = policy.getDuration();
             if (duration < interval) {
-                throw new InvalidParameterValueException("duration : " + duration + " specified in a policy cannot be less than vm group's interval : " + interval);
+                throw new InvalidParameterValueException("duration : " + duration + " specified in a policy cannot be less than vm group's interval : " + interval, null);
             }
 
             if (quietTime < interval) {
-                throw new InvalidParameterValueException("quietTime : " + quietTime + " specified in a policy cannot be less than vm group's interval : " + interval);
+                throw new InvalidParameterValueException("quietTime : " + quietTime + " specified in a policy cannot be less than vm group's interval : " + interval, null);
             }
 
             if (quietTime != prevQuietTime) {
-                throw new InvalidParameterValueException("quietTime should be same for all the policies specified in " + paramName);
+                throw new InvalidParameterValueException("quietTime should be same for all the policies specified in " + paramName, null);
             }
 
             if (scaleUpPolicies) {
                 if (!isAutoScaleScaleUpPolicy(policy)) {
-                    throw new InvalidParameterValueException("Only scaleup policies can be specified in scaleuppolicyids");
+                    throw new InvalidParameterValueException("Only scaleup policies can be specified in scaleuppolicyids", null);
                 }
             }
             else {
                 if (isAutoScaleScaleUpPolicy(policy)) {
-                    throw new InvalidParameterValueException("Only scaledown policies can be specified in scaledownpolicyids");
+                    throw new InvalidParameterValueException("Only scaledown policies can be specified in scaledownpolicyids", null);
                 }
             }
             List<AutoScalePolicyConditionMapVO> policyConditionMapVOs = _autoScalePolicyConditionMapDao.listByAll(policy.getId(), null);
@@ -255,16 +256,16 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         VirtualMachineTemplate template = _templateMgr.getTemplate(templateId);
         // Make sure a valid template ID was specified
         if (template == null) {
-            throw new InvalidParameterValueException("Unable to use the given template.");
+            throw new InvalidParameterValueException("Unable to use the given template.", null);
         }
 
         if (destroyVmGraceperiod < 0) {
-            throw new InvalidParameterValueException("Destroy Vm Grace Period cannot be less than 0.");
+            throw new InvalidParameterValueException("Destroy Vm Grace Period cannot be less than 0.", null);
         }
 
         User user = _userDao.findById(autoscaleUserId);
         if (user.getAccountId() != vmProfile.getAccountId()) {
-            throw new InvalidParameterValueException("AutoScale User id does not belong to the same account");
+            throw new InvalidParameterValueException("AutoScale User id does not belong to the same account", null);
         }
 
         String apiKey = user.getApiKey();
@@ -272,15 +273,15 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         String csUrl = _configDao.getValue(Config.EndpointeUrl.key());
 
         if(apiKey == null) {
-            throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
+            throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it", null);
         }
 
         if(secretKey == null) {
-            throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
+            throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it", null);
         }
 
         if(csUrl == null || csUrl.contains("localhost")) {
-            throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point");
+            throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point", null);
         }
 
         vmProfile = _autoScaleVmProfileDao.persist(vmProfile);
@@ -303,12 +304,12 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         DataCenter zone = _configMgr.getZone(zoneId);
 
         if (zone == null) {
-            throw new InvalidParameterValueException("Unable to find zone by id=" + zoneId);
+            throw new InvalidParameterValueException("Unable to find zone by id", null);
         }
 
         ServiceOffering serviceOffering = _configMgr.getServiceOffering(serviceOfferingId);
         if (serviceOffering == null) {
-            throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
+            throw new InvalidParameterValueException("Unable to find service offering by id", null);
         }
 
         // validations
@@ -368,7 +369,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         List<AutoScaleVmGroupVO> vmGroupList = _autoScaleVmGroupDao.listByAll(null, profileId);
         for (AutoScaleVmGroupVO vmGroupVO : vmGroupList) {
             if (vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
-                throw new InvalidParameterValueException("The AutoScale Vm Profile can be updated only if the Vm Group it is associated with is disabled in state");
+                throw new InvalidParameterValueException("The AutoScale Vm Profile can be updated only if the Vm Group it is associated with is disabled in state", null);
             }
         }
 
@@ -384,7 +385,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         /* Check if entity is in database */
         getEntityInDatabase(UserContext.current().getCaller(), "AutoScale Vm Profile", id, _autoScaleVmProfileDao);
         if (_autoScaleVmGroupDao.isProfileInUse(id)) {
-            throw new InvalidParameterValueException("Cannot delete AutoScale Vm Profile when it is in use by one more vm groups");
+            throw new InvalidParameterValueException("Cannot delete AutoScale Vm Profile when it is in use by one more vm groups", null);
         }
         boolean success = _autoScaleVmProfileDao.remove(id);
         if (success) {
@@ -425,11 +426,11 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         int quietTime = autoScalePolicyVO.getQuietTime();
 
         if (duration < 0) {
-            throw new InvalidParameterValueException("duration is an invalid value: " + duration);
+            throw new InvalidParameterValueException("duration is an invalid value: " + duration, null);
         }
 
         if (quietTime < 0) {
-            throw new InvalidParameterValueException("quiettime is an invalid value: " + quietTime);
+            throw new InvalidParameterValueException("quiettime is an invalid value: " + quietTime, null);
         }
 
         final Transaction txn = Transaction.currentTxn();
@@ -452,13 +453,13 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
 
             if (conditionIds.size() != conditions.size()) {
                 // TODO report the condition id which could not be found
-                throw new InvalidParameterValueException("Unable to find the condition specified");
+                throw new InvalidParameterValueException("Unable to find the condition specified", null);
             }
 
             ArrayList<Long> counterIds = new ArrayList<Long>();
             for (ConditionVO condition : conditions) {
                 if (counterIds.contains(condition.getCounterid())) {
-                    throw new InvalidParameterValueException("atleast two conditions in the conditionids have the same counter. It is not right to apply two different conditions for the same counter");
+                    throw new InvalidParameterValueException("atleast two conditions in the conditionids have the same counter. It is not right to apply two different conditions for the same counter", null);
                 }
                 counterIds.add(condition.getCounterid());
             }
@@ -490,7 +491,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
 
         action = action.toLowerCase();
         if (!NetUtils.isValidAutoScaleAction(action)) {
-            throw new InvalidParameterValueException("action is invalid, only 'scaleup' and 'scaledown' is supported");
+            throw new InvalidParameterValueException("action is invalid, only 'scaleup' and 'scaledown' is supported", null);
         }
 
         AutoScalePolicyVO policyVO = new AutoScalePolicyVO(cmd.getDomainId(), cmd.getAccountId(), duration, quietTime, action);
@@ -508,7 +509,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         getEntityInDatabase(UserContext.current().getCaller(), "AutoScale Policy", id, _autoScalePolicyDao);
 
         if (_autoScaleVmGroupPolicyMapDao.isAutoScalePolicyInUse(id)) {
-            throw new InvalidParameterValueException("Cannot delete AutoScale Policy when it is in use by one or more AutoScale Vm Groups");
+            throw new InvalidParameterValueException("Cannot delete AutoScale Policy when it is in use by one or more AutoScale Vm Groups", null);
         }
 
         Transaction txn = Transaction.currentTxn();
@@ -535,7 +536,9 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         Account caller = UserContext.current().getCaller();
         Account owner = _accountDao.findActiveAccount(accountName, domainId);
         if (owner == null) {
-            throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy("domain", domainId, "domainId"));
+            throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain with specifed domainId", idList);
         }
         _accountMgr.checkAccess(caller, null, false, owner);
     }
@@ -563,7 +566,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
             Account caller = UserContext.current().getCaller();
 
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
-            ListProjectResourcesCriteria>(domainId, isRecursive, null);
+                    ListProjectResourcesCriteria>(domainId, isRecursive, null);
             _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject,
                     listAll, false);
             domainId = domainIdRecursiveListProject.first();
@@ -661,13 +664,13 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
 
             }
             if (!vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
-                throw new InvalidParameterValueException("The AutoScale Policy can be updated only if the Vm Group it is associated with is disabled in state");
+                throw new InvalidParameterValueException("The AutoScale Policy can be updated only if the Vm Group it is associated with is disabled in state", null);
             }
             if (vmGroupVO.getInterval() < policy.getDuration()) {
-                throw new InvalidParameterValueException("duration is less than the associated AutoScaleVmGroup's interval");
+                throw new InvalidParameterValueException("duration is less than the associated AutoScaleVmGroup's interval", null);
             }
             if (vmGroupVO.getInterval() < policy.getQuietTime()) {
-                throw new InvalidParameterValueException("quietTime is less than the associated AutoScaleVmGroup's interval");
+                throw new InvalidParameterValueException("quietTime is less than the associated AutoScaleVmGroup's interval", null);
             }
         }
 
@@ -692,11 +695,11 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         Long zoneId = _ipAddressDao.findById(loadBalancer.getSourceIpAddressId()).getDataCenterId();
 
         if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancer.getId())) {
-            throw new InvalidParameterValueException("an AutoScaleVmGroup is already attached to the lb rule, the existing vm group has to be first deleted");
+            throw new InvalidParameterValueException("an AutoScaleVmGroup is already attached to the lb rule, the existing vm group has to be first deleted", null);
         }
 
         if (_lb2VmMapDao.isVmAttachedToLoadBalancer(loadBalancer.getId())) {
-            throw new InvalidParameterValueException("there are Vms already bound to the specified LoadBalancing Rule. User bound Vms and AutoScaled Vm Group cannot co-exist on a Load Balancing Rule");
+            throw new InvalidParameterValueException("there are Vms already bound to the specified LoadBalancing Rule. User bound Vms and AutoScaled Vm Group cannot co-exist on a Load Balancing Rule", null);
         }
 
         AutoScaleVmGroupVO vmGroupVO = new AutoScaleVmGroupVO(cmd.getLbRuleId(), zoneId, loadBalancer.getDomainId(), loadBalancer.getAccountId(), minMembers, maxMembers,
@@ -729,7 +732,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         }
 
         // This should never happen, because today loadbalancerruleid is manadatory for AutoScaleVmGroup.
-        throw new InvalidParameterValueException("Only LoadBalancer based AutoScale is supported");
+        throw new InvalidParameterValueException("Only LoadBalancer based AutoScale is supported", null);
     }
 
     @Override
@@ -829,19 +832,19 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         List<Long> policyIds = new ArrayList<Long>();
 
         if (minMembers < 0) {
-            throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " is an invalid value: " + minMembers);
+            throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " is an invalid value: " + minMembers, null);
         }
 
         if (maxMembers < 0) {
-            throw new InvalidParameterValueException(ApiConstants.MAX_MEMBERS + " is an invalid value: " + minMembers);
+            throw new InvalidParameterValueException(ApiConstants.MAX_MEMBERS + " is an invalid value: " + minMembers, null);
         }
 
         if (minMembers > maxMembers) {
-            throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " (" + minMembers + ")cannot be greater than " + ApiConstants.MAX_MEMBERS + " (" + maxMembers + ")");
+            throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " (" + minMembers + ")cannot be greater than " + ApiConstants.MAX_MEMBERS + " (" + maxMembers + ")", null);
         }
 
         if (interval < 0) {
-            throw new InvalidParameterValueException("interval is an invalid value: " + interval);
+            throw new InvalidParameterValueException("interval is an invalid value: " + interval, null);
         }
 
         if (scaleUpPolicyIds != null) {
@@ -906,7 +909,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         AutoScaleVmGroupVO vmGroupVO = getEntityInDatabase(UserContext.current().getCaller(), "AutoScale Vm Group", vmGroupId, _autoScaleVmGroupDao);
 
         if (!vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
-            throw new InvalidParameterValueException("An AutoScale Vm Group can be updated only when it is in disabled state");
+            throw new InvalidParameterValueException("An AutoScale Vm Group can be updated only when it is in disabled state", null);
         }
 
         if (minMembers != null) {
@@ -936,7 +939,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         AutoScaleVmGroupVO vmGroup = getEntityInDatabase(UserContext.current().getCaller(), "AutoScale Vm Group", id, _autoScaleVmGroupDao);
         boolean success = false;
         if (!vmGroup.getState().equals(AutoScaleVmGroup.State_Disabled)) {
-            throw new InvalidParameterValueException("Only a AutoScale Vm Group which is in Disabled state can be enabled.");
+            throw new InvalidParameterValueException("Only a AutoScale Vm Group which is in Disabled state can be enabled.", null);
         }
 
         try {
@@ -963,7 +966,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         AutoScaleVmGroupVO vmGroup = getEntityInDatabase(UserContext.current().getCaller(), "AutoScale Vm Group", id, _autoScaleVmGroupDao);
         boolean success = false;
         if (!vmGroup.getState().equals(AutoScaleVmGroup.State_Enabled)) {
-            throw new InvalidParameterValueException("Only a AutoScale Vm Group which is in Disabled state can be disabled.");
+            throw new InvalidParameterValueException("Only a AutoScale Vm Group which is in Disabled state can be disabled.", null);
         }
 
         try {
@@ -993,7 +996,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         try {
             src = Counter.Source.valueOf(source);
         } catch (Exception ex) {
-            throw new InvalidParameterValueException("The Source " + source + " does not exist; Unable to create Counter");
+            throw new InvalidParameterValueException("The Source " + source + " does not exist; Unable to create Counter", null);
         }
 
         CounterVO counter = null;
@@ -1017,14 +1020,14 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         try {
             op = Condition.Operator.valueOf(opr);
         } catch (IllegalArgumentException ex) {
-            throw new InvalidParameterValueException("The Operator " + opr + " does not exist; Unable to create Condition.");
+            throw new InvalidParameterValueException("The Operator " + opr + " does not exist; Unable to create Condition.", null);
         }
         // TODO - Validate threshold
 
         CounterVO counter = _counterDao.findById(cid);
 
         if (counter == null) {
-            throw new InvalidParameterValueException("Unable to find counter");
+            throw new InvalidParameterValueException("Unable to find counter", null);
         }
         ConditionVO condition = null;
 
@@ -1090,7 +1093,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         // Verify Counter id
         CounterVO counter = _counterDao.findById(counterId);
         if (counter == null) {
-            throw new InvalidParameterValueException("Unable to find Counter");
+            throw new InvalidParameterValueException("Unable to find Counter", null);
         }
 
         // Verify if it is used in any Condition
@@ -1115,7 +1118,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         /* Check if entity is in database */
         ConditionVO condition = getEntityInDatabase(UserContext.current().getCaller(), "Condition", conditionId, _conditionDao);
         if (condition == null) {
-            throw new InvalidParameterValueException("Unable to find Condition");
+            throw new InvalidParameterValueException("Unable to find Condition", null);
         }
 
         // Verify if condition is used in any autoscale policy

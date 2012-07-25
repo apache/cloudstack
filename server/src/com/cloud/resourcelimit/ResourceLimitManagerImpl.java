@@ -61,6 +61,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -371,7 +372,7 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
             try {
                 resourceType = ResourceType.values()[type];
             } catch (ArrayIndexOutOfBoundsException e) {
-                throw new InvalidParameterValueException("Please specify a valid resource type.");
+                throw new InvalidParameterValueException("Please specify a valid resource type.", null);
             }
         }
 
@@ -482,7 +483,7 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
         if (max == null) {
             max = new Long(Resource.RESOURCE_UNLIMITED);
         } else if (max.longValue() < Resource.RESOURCE_UNLIMITED) {
-            throw new InvalidParameterValueException("Please specify either '-1' for an infinite limit, or a limit that is at least '0'.");
+            throw new InvalidParameterValueException("Please specify either '-1' for an infinite limit, or a limit that is at least '0'.", null);
         }
 
         // Map resource type
@@ -494,7 +495,7 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
                 }
             }
             if (resourceType == null) {
-                throw new InvalidParameterValueException("Please specify valid resource type");
+                throw new InvalidParameterValueException("Please specify valid resource type", null);
             }
         }
 
@@ -504,17 +505,17 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
         if (accountId != null) {
             Account account = _entityMgr.findById(Account.class, accountId);
             if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-                throw new InvalidParameterValueException("Can't update system account");
+                throw new InvalidParameterValueException("Can't update system account", null);
             }
 
             //only Unlimited value is accepted if account is  Root Admin
             if (_accountMgr.isRootAdmin(account.getType()) && max.shortValue() != ResourceLimit.RESOURCE_UNLIMITED) {
-                throw new InvalidParameterValueException("Only " + ResourceLimit.RESOURCE_UNLIMITED + " limit is supported for Root Admin accounts");
+                throw new InvalidParameterValueException("Only " + ResourceLimit.RESOURCE_UNLIMITED + " limit is supported for Root Admin accounts", null);
             }
 
             if ((caller.getAccountId() == accountId.longValue()) &&
-                (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN ||
-                caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)) {
+                    (caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN ||
+                    caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)) {
                 // If the admin is trying to update his own account, disallow.
                 throw new PermissionDeniedException("Unable to update resource limit for his own account " + accountId + ", permission denied");
             }
@@ -546,8 +547,11 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
                 DomainVO parentDomain = _domainDao.findById(parentDomainId);
                 long parentMaximum = findCorrectResourceLimitForDomain(parentDomain, resourceType);
                 if ((parentMaximum >= 0) && (max.longValue() > parentMaximum)) {
-                    throw new InvalidParameterValueException("Domain " + domain.getName() + "(id: " + parentDomain.getId() + ") has maximum allowed resource limit " + parentMaximum + " for " + resourceType
-                            + ", please specify a value less that or equal to " + parentMaximum);
+                    List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                    idList.add(new IdentityProxy(parentDomain, parentDomain.getId(), "domainId"));
+                    throw new InvalidParameterValueException("Domain " + domain.getName() + " with specified domainId " +
+                            "has maximum allowed resource limit " + parentMaximum + " for " + resourceType +
+                            ", please specify a value less that or equal to " + parentMaximum, idList);
                 }
             }
             ownerType = ResourceOwnerType.Domain;
@@ -555,7 +559,7 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
         }
 
         if (ownerId == null) {
-            throw new InvalidParameterValueException("AccountId or domainId have to be specified in order to update resource limit");
+            throw new InvalidParameterValueException("AccountId or domainId have to be specified in order to update resource limit", null);
         }
 
         ResourceLimitVO limit = _resourceLimitDao.findByOwnerIdAndType(ownerId, ownerType, resourceType);
@@ -584,13 +588,13 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
                 }
             }
             if (resourceType == null) {
-                throw new InvalidParameterValueException("Please specify valid resource type");
+                throw new InvalidParameterValueException("Please specify valid resource type", null);
             }
         }
 
         DomainVO domain = _domainDao.findById(domainId);
         if (domain == null) {
-            throw new InvalidParameterValueException("Please specify a valid domain ID.");
+            throw new InvalidParameterValueException("Please specify a valid domain ID.", null);
         }
         _accountMgr.checkAccess(callerAccount, domain);
 
@@ -734,7 +738,7 @@ public class ResourceLimitManagerImpl implements ResourceLimitService, Manager {
         } else if (type == Resource.ResourceType.network) {
             newCount = _networkDao.countNetworksUserCanCreate(accountId);
         } else {
-            throw new InvalidParameterValueException("Unsupported resource type " + type);
+            throw new InvalidParameterValueException("Unsupported resource type " + type, null);
         }
         _resourceCountDao.setResourceCount(accountId, ResourceOwnerType.Account, type, (newCount == null) ? 0 : newCount.longValue());
 

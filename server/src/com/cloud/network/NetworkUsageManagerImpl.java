@@ -101,7 +101,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
     @Inject HostDetailsDao _detailsDao;
     @Inject AccountManager _accountMgr;
     @Inject NetworkDao _networksDao = null;
-	@Inject ResourceManager _resourceMgr;
+    @Inject ResourceManager _resourceMgr;
     ScheduledExecutorService _executor;
     int _networkStatsInterval;
     String _TSinclZones;
@@ -116,7 +116,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
         DataCenterVO zone = _dcDao.findById(zoneId);
         String zoneName;
         if (zone == null) {
-            throw new InvalidParameterValueException("Could not find zone with ID: " + zoneId);
+            throw new InvalidParameterValueException("Could not find zone by ID", null);
         } else {
             zoneName = zone.getName();
         }
@@ -124,7 +124,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
 
         List<HostVO> trafficMonitorsInZone = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.TrafficMonitor, zoneId);
         if (trafficMonitorsInZone.size() != 0) {
-            throw new InvalidParameterValueException("Already added an traffic monitor in zone: " + zoneName);
+            throw new InvalidParameterValueException("Already added an traffic monitor in zone: " + zoneName, null);
         }
 
         URI uri;
@@ -132,7 +132,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
             uri = new URI(cmd.getUrl());
         } catch (Exception e) {
             s_logger.debug(e);
-            throw new InvalidParameterValueException(e.getMessage());
+            throw new InvalidParameterValueException(e.getMessage(), null);
         }
 
         String ipAddress = uri.getHost();
@@ -161,13 +161,13 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
         hostDetails.put("url", cmd.getUrl());
         hostDetails.put("last_collection", ""+System.currentTimeMillis());
         if(cmd.getInclZones() != null){
-        	hostDetails.put("inclZones", cmd.getInclZones());
+            hostDetails.put("inclZones", cmd.getInclZones());
         }
         if(cmd.getExclZones() != null){
-        	hostDetails.put("exclZones", cmd.getExclZones());
+            hostDetails.put("exclZones", cmd.getExclZones());
         }
-        
-        
+
+
         Host trafficMonitor = _resourceMgr.addHost(zoneId, resource, Host.Type.TrafficMonitor, hostDetails);
         return trafficMonitor;
     }
@@ -182,12 +182,12 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
         User caller = _accountMgr.getActiveUser(UserContext.current().getCallerUserId());
         HostVO trafficMonitor = _hostDao.findById(hostId);
         if (trafficMonitor == null) {
-            throw new InvalidParameterValueException("Could not find an traffic monitor with ID: " + hostId);
+            throw new InvalidParameterValueException("Could not find an traffic monitor by ID", null);
         }
 
-		try {
-			if (_resourceMgr.maintain(hostId) && _resourceMgr.deleteHost(hostId, false, false)) {
-				return true;
+        try {
+            if (_resourceMgr.maintain(hostId) && _resourceMgr.deleteHost(hostId, false, false)) {
+                return true;
             } else {
                 return false;
             }
@@ -225,7 +225,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
         networkJoin.and("guestType", networkJoin.entity().getGuestType(), Op.EQ);
         AllocatedIpSearch.join("network", networkJoin, AllocatedIpSearch.entity().getSourceNetworkId(), networkJoin.entity().getId(), JoinBuilder.JoinType.INNER);
         AllocatedIpSearch.done();
-        
+
         _networkStatsInterval = NumbersUtil.parseInt(_configDao.getValue(Config.DirectNetworkStatsInterval.key()), 86400);
         _TSinclZones = _configDao.getValue(Config.TrafficSentinelIncludeZones.key());
         _TSexclZones = _configDao.getValue(Config.TrafficSentinelExcludeZones.key());
@@ -241,7 +241,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
 
     @Override
     public boolean stop() {
-    	_resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
+        _resourceMgr.unregisterResourceStateAdapter(this.getClass().getSimpleName());
         return true;
     }
 
@@ -262,7 +262,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
 
         private int _interval;
 
-        private long mgmtSrvrId = MacAddress.getMacAddress().toLong();
+        private final long mgmtSrvrId = MacAddress.getMacAddress().toLong();
 
         protected DirectNetworkStatsListener(int interval) {
             _interval = interval;
@@ -324,7 +324,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
 
             rightNow.add(Calendar.HOUR_OF_DAY, -2);
             Date now = rightNow.getTime();  
-            
+
             if(lastCollection.after(now)){
                 s_logger.debug("Current time is less than 2 hours after last collection time : " + lastCollection.toString() + ". Skipping direct network usage collection");
                 return false;
@@ -376,7 +376,7 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
             }
 
             List<UserStatisticsVO> collectedStats = new ArrayList<UserStatisticsVO>();
-            
+
             //Get usage for Ips which were assigned for the entire duration
             if(fullDurationIpUsage.size() > 0){
                 DirectNetworkUsageCommand cmd = new DirectNetworkUsageCommand(IpList, lastCollection, now, _TSinclZones, _TSexclZones);
@@ -441,8 +441,8 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
             }
 
             if(collectedStats.size() == 0){
-            	s_logger.debug("No new direct network stats. No need to persist");
-            	return false;
+                s_logger.debug("No new direct network stats. No need to persist");
+                return false;
             }
             //Persist all the stats and last_collection time in a single transaction
             Transaction txn = Transaction.open(Transaction.CLOUD_DB);
@@ -496,9 +496,9 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
                 s_logger.debug("Sending RecurringNetworkUsageCommand to " + agentId);
                 RecurringNetworkUsageCommand watch = new RecurringNetworkUsageCommand(_interval);
                 try {
-	                _agentMgr.send(agentId, new Commands(watch), this);
+                    _agentMgr.send(agentId, new Commands(watch), this);
                 } catch (AgentUnavailableException e) {
-	                s_logger.debug("Can not process connect for host " + agentId, e);
+                    s_logger.debug("Can not process connect for host " + agentId, e);
                 }
             }
             return;
@@ -516,34 +516,34 @@ public class NetworkUsageManagerImpl implements NetworkUsageManager, ResourceSta
 
         protected DirectNetworkStatsListener() {
         }
-        
+
 
     }
 
-	@Override
+    @Override
     public HostVO createHostVOForConnectedAgent(HostVO host, StartupCommand[] cmd) {
-	    // TODO Auto-generated method stub
-	    return null;
+        // TODO Auto-generated method stub
+        return null;
     }
 
-	@Override
+    @Override
     public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details,
             List<String> hostTags) {
         if (!(startup[0] instanceof StartupTrafficMonitorCommand)) {
             return null;
         }
-        
+
         host.setType(Host.Type.TrafficMonitor);
         return host;
     }
 
-	@Override
+    @Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
-		if(host.getType() != Host.Type.TrafficMonitor){
-			return null;
-		}
-		
-		return new DeleteHostAnswer(true);
+        if(host.getType() != Host.Type.TrafficMonitor){
+            return null;
+        }
+
+        return new DeleteHostAnswer(true);
     }
 
 }

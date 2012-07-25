@@ -224,7 +224,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     RulesManager _rulesMgr;
     @Inject
     IPAddressDao _ipAddressDao;
-    
+
     private ConsoleProxyListener _listener;
 
     private ServiceOfferingVO _serviceOffering;
@@ -257,7 +257,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     private Map<Long, ZoneHostInfo> _zoneHostInfoMap; // map <zone id, info about running host in zone>
     private Map<Long, ConsoleProxyLoadInfo> _zoneProxyCountMap; // map <zone id, info about proxy VMs count in zone>
     private Map<Long, ConsoleProxyLoadInfo> _zoneVmCountMap; // map <zone id, info about running VMs count in zone>
-    
+
     private String _hashKey;
 
     private final GlobalLock _allocProxyLock = GlobalLock.getInternLock(getAllocProxyLockName());
@@ -879,26 +879,26 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         }
 
         if(!cmd.isReauthenticating()) {
-	        String ticket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId());
-	        if (s_logger.isDebugEnabled()) {
-	            s_logger.debug("Console authentication. Ticket in 1 minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + ticket);
-	        }
-	
-	        if (!ticket.equals(ticketInUrl)) {
-	            Date now = new Date();
-	            // considering of minute round-up
-	            String minuteEarlyTicket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId(), new Date(now.getTime() - 60 * 1000));
-	
-	            if (s_logger.isDebugEnabled()) {
-	                s_logger.debug("Console authentication. Ticket in 2-minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + minuteEarlyTicket);
-	            }
-	
-	            if (!minuteEarlyTicket.equals(ticketInUrl)) {
-	                s_logger.error("Access ticket expired or has been modified. vmId: " + cmd.getVmId() + "ticket in URL: " + ticketInUrl + ", tickets to check against: " + ticket + ","
-	                        + minuteEarlyTicket);
-	                return new ConsoleAccessAuthenticationAnswer(cmd, false);
-	            }
-	        }
+            String ticket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId());
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Console authentication. Ticket in 1 minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + ticket);
+            }
+
+            if (!ticket.equals(ticketInUrl)) {
+                Date now = new Date();
+                // considering of minute round-up
+                String minuteEarlyTicket = ConsoleProxyServlet.genAccessTicket(cmd.getHost(), cmd.getPort(), cmd.getSid(), cmd.getVmId(), new Date(now.getTime() - 60 * 1000));
+
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Console authentication. Ticket in 2-minute boundary for " + cmd.getHost() + ":" + cmd.getPort() + "-" + cmd.getVmId() + " is " + minuteEarlyTicket);
+                }
+
+                if (!minuteEarlyTicket.equals(ticketInUrl)) {
+                    s_logger.error("Access ticket expired or has been modified. vmId: " + cmd.getVmId() + "ticket in URL: " + ticketInUrl + ", tickets to check against: " + ticket + ","
+                            + minuteEarlyTicket);
+                    return new ConsoleAccessAuthenticationAnswer(cmd, false);
+                }
+            }
         }
 
         if (cmd.getVmId() != null && cmd.getVmId().isEmpty()) {
@@ -935,38 +935,38 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
             s_logger.warn("sid " + sid + " in url does not match stored sid " + vm.getVncPassword());
             return new ConsoleAccessAuthenticationAnswer(cmd, false);
         }
-        
+
         if(cmd.isReauthenticating()) {
             ConsoleAccessAuthenticationAnswer authenticationAnswer = new ConsoleAccessAuthenticationAnswer(cmd, true);
             authenticationAnswer.setReauthenticating(true);
 
             s_logger.info("Re-authentication request, ask host " + vm.getHostId() + " for new console info");
-        	GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new 
-            	GetVncPortCommand(vm.getId(), vm.getInstanceName()));
+            GetVncPortAnswer answer = (GetVncPortAnswer) _agentMgr.easySend(vm.getHostId(), new 
+                    GetVncPortCommand(vm.getId(), vm.getInstanceName()));
 
             if (answer != null && answer.getResult()) {
-            	Ternary<String, String, String> parsedHostInfo = ConsoleProxyServlet.parseHostInfo(answer.getAddress());
-            	
-        		if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
-        			
+                Ternary<String, String, String> parsedHostInfo = ConsoleProxyServlet.parseHostInfo(answer.getAddress());
+
+                if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
+
                     s_logger.info("Re-authentication result. vm: " + vm.getId() + ", tunnel url: " + parsedHostInfo.second()
-                    	+ ", tunnel session: " + parsedHostInfo.third());
-        			
-        			authenticationAnswer.setTunnelUrl(parsedHostInfo.second());
-        			authenticationAnswer.setTunnelSession(parsedHostInfo.third());
-        		} else {
+                            + ", tunnel session: " + parsedHostInfo.third());
+
+                    authenticationAnswer.setTunnelUrl(parsedHostInfo.second());
+                    authenticationAnswer.setTunnelSession(parsedHostInfo.third());
+                } else {
                     s_logger.info("Re-authentication result. vm: " + vm.getId() + ", host address: " + parsedHostInfo.first()
-                        	+ ", port: " + answer.getPort());
-        			
-        			authenticationAnswer.setHost(parsedHostInfo.first());
-        			authenticationAnswer.setPort(answer.getPort());
-        		}
+                            + ", port: " + answer.getPort());
+
+                    authenticationAnswer.setHost(parsedHostInfo.first());
+                    authenticationAnswer.setPort(answer.getPort());
+                }
             } else {
                 s_logger.warn("Re-authentication request failed");
-            	
-            	authenticationAnswer.setSuccess(false);
+
+                authenticationAnswer.setSuccess(false);
             }
-            
+
             return authenticationAnswer;
         }
 
@@ -1383,7 +1383,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
                     result = result && _hostDao.remove(host.getId());
                 }
             }
-            
+
             return result;
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to expunge " + proxy, e);
@@ -1497,7 +1497,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         _itMgr.registerGuru(VirtualMachine.Type.ConsoleProxy, this);
 
         boolean useLocalStorage = Boolean.parseBoolean(configs.get(Config.SystemVMUseLocalStorage.key()));
-        
+
         //check if there is a default service offering configured
         String cpvmSrvcOffIdStr = configs.get(Config.ConsoleProxyServiceOffering.key()); 
         if (cpvmSrvcOffIdStr != null) {
@@ -1538,7 +1538,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         // verify parameters
         ConsoleProxyVO proxy = _consoleProxyDao.findById(proxyId);
         if (proxy == null) {
-            throw new InvalidParameterValueException("unable to find a console proxy with id " + proxyId);
+            throw new InvalidParameterValueException("unable to find a console proxy by id", null);
         }
 
         return destroyProxy(proxyId);
@@ -1981,7 +1981,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         sc.addAnd(sc.getEntity().getName(), Op.EQ, name);
         return sc.find();
     }
-    
+
     public String getHashKey() {
         // although we may have race conditioning here, database transaction serialization should
         // give us the same key
@@ -2007,15 +2007,15 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
     }
 
-	@Override
-	public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
-	}
+    @Override
+    public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
+    }
 
-	@Override
-	public boolean recreateNeeded(
-			VirtualMachineProfile<ConsoleProxyVO> profile, long hostId,
-			Commands cmds, ReservationContext context) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public boolean recreateNeeded(
+            VirtualMachineProfile<ConsoleProxyVO> profile, long hostId,
+            Commands cmds, ReservationContext context) {
+        // TODO Auto-generated method stub
+        return false;
+    }
 }

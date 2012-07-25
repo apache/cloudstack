@@ -76,7 +76,6 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.lb.LoadBalancingRule.LbAutoScaleVmGroup;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.resource.CreateLoadBalancerApplianceAnswer;
 import com.cloud.network.resource.DestroyLoadBalancerApplianceAnswer;
@@ -184,12 +183,12 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
         if ((ntwkDevice == null) || (url == null) || (username == null) || (resource == null) || (password == null)) {
             throw new InvalidParameterValueException("Atleast one of the required parameters (url, username, password," +
-                    " server resource, zone id/physical network id) is not specified or a valid parameter.");
+                    " server resource, zone id/physical network id) is not specified or a valid parameter.", null);
         }
 
         pNetwork = _physicalNetworkDao.findById(physicalNetworkId);
         if (pNetwork == null) {
-            throw new InvalidParameterValueException("Could not find phyical network with ID: " + physicalNetworkId);
+            throw new InvalidParameterValueException("Could not find phyical network by ID", null);
         }
         zoneId = pNetwork.getDataCenterId();
 
@@ -207,7 +206,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             uri = new URI(url);
         } catch (Exception e) {
             s_logger.debug(e);
-            throw new InvalidParameterValueException(e.getMessage());
+            throw new InvalidParameterValueException(e.getMessage(), null);
         }
 
         String ipAddress = uri.getHost();
@@ -236,7 +235,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
                 boolean dedicatedUse = (configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED) != null) ? Boolean.parseBoolean(configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED)) : false;
                 boolean inline = (configParams.get(ApiConstants.INLINE) != null) ? Boolean.parseBoolean(configParams.get(ApiConstants.INLINE)) : false;
-                long capacity = NumbersUtil.parseLong((String) configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY), 0);
+                long capacity = NumbersUtil.parseLong(configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_CAPACITY), 0);
                 if (capacity == 0) {
                     capacity = _defaultLbCapacity;
                 }
@@ -264,7 +263,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     public boolean deleteExternalLoadBalancer(long hostId) {
         HostVO externalLoadBalancer = _hostDao.findById(hostId);
         if (externalLoadBalancer == null) {
-            throw new InvalidParameterValueException("Could not find an external load balancer with ID: " + hostId);
+            throw new InvalidParameterValueException("Could not find an external load balancer by ID", null);
         }
 
         DetailVO lbHostDetails = _hostDetailDao.findDetail(hostId, ApiConstants.LOAD_BALANCER_DEVICE_ID);
@@ -314,7 +313,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         pNetwork = _physicalNetworkDao.findById(physicalNetworkId);
 
         if ((pNetwork == null) || (lbNetworkDevice == null)) {
-            throw new InvalidParameterValueException("Atleast one of the required parameter physical networkId, device name is invalid.");
+            throw new InvalidParameterValueException("Atleast one of the required parameter physical networkId, device name is invalid.", null);
         }
 
         PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(),
