@@ -836,7 +836,7 @@
           actionFilter: actionFilter,
           data: data,
           context: $detailView.data('view-args').context
-        }).prependTo($firstRow.closest('div.detail-group').closest('.details'));
+        });
 
       // 'View all' button
       var showViewAll = detailViewArgs.viewAll ?
@@ -846,6 +846,9 @@
                   context: context
                 }) : true
             ) : true;
+      if ($actions.find('div.action').size() || (detailViewArgs.viewAll && showViewAll)) {
+        $actions.prependTo($firstRow.closest('div.detail-group').closest('.details'));
+      }
       if (detailViewArgs.viewAll && showViewAll) {
         $('<div>')
           .addClass('view-all')
