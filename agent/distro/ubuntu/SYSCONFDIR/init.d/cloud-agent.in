@@ -37,7 +37,7 @@ SHORTNAME="cloud-agent"
 PIDFILE=@PIDDIR@/"$SHORTNAME".pid
 LOCKFILE=@LOCKDIR@/"$SHORTNAME"
 LOGFILE=@AGENTLOG@
-PROGNAME="Cloud Agent"
+PROGNAME="CloudStack Agent"
 CLASS="com.cloud.agent.AgentShell"
 PROG="jsvc"
 DAEMON="/usr/bin/jsvc"
@@ -82,13 +82,13 @@ wait_for_network() {
 }
 
 start() {
-    log_daemon_msg "Starting $PROGNAME" "$SHORTNAME"
     if [ -s "$PIDFILE" ] && kill -0 $(cat "$PIDFILE") >/dev/null 2>&1; then
-          log_progress_msg "apparently already running"
-          log_end_msg 0
-          exit 0
+        log_daemon_msg "$PROGNAME apparently already running"
+        log_end_msg 0
+        exit 0
     fi
 
+    log_daemon_msg "Starting $PROGNAME" "$SHORTNAME"
     if hostname --fqdn >/dev/null 2>&1 ; then
         true
     else
