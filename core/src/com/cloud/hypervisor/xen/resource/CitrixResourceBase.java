@@ -3540,8 +3540,12 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                             // Disable any VLAN networks that aren't used
                             // anymore
                             for (Network network : networks) {
-                                if (network.getNameLabel(conn).startsWith("VLAN")) {
-                                    disableVlanNetwork(conn, network);
+                                try {
+                                    if (network.getNameLabel(conn).startsWith("VLAN")) {
+                                        disableVlanNetwork(conn, network);
+                                    }
+                                } catch (Exception e) {
+                                    // network might be destroyed by other host
                                 }
                             }
                             return new StopAnswer(cmd, "Stop VM " + vmName + " Succeed", 0, true);
