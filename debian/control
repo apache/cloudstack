@@ -26,8 +26,7 @@ Depends: openjdk-6-jre
 Description: CloudStack agent library dependencies
  This package contains a number of third-party dependencies
  not shipped by distributions, required to run the CloudStack
- Cloud Stack.
-
+ Agent.
 
 Package: cloud-utils
 Provides: vmops-utils
@@ -68,11 +67,8 @@ Replaces: vmops-agent-scripts, vmops-console, cloud-console, vmops-console-proxy
 Architecture: any
 Depends: openjdk-6-jre, python, bash, bzip2, gzip, unzip, nfs-common, openssh-client
 Description: CloudStack agent scripts
- The CloudStack agent is in charge of managing shared computing resources in
- a CloudStack Cloud Stack-powered cloud.  Install this package if this computer
- will participate in your cloud -- this is a requirement for the CloudStack
- agent.
-
+ This package contains a number of scripts needed for the CloudStack Agent on KVM
+ HyperVisor hosts. The CloudStack Agent depends on this package.
 
 Package: cloud-core
 Provides: vmops-core
@@ -126,14 +122,14 @@ Architecture: any
 Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, libvirt0, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, uuid-runtime, rsync, grep, iproute, ebtables, vlan, libcglib-java, libcommons-httpclient-java, libservlet2.5-java, liblog4j1.2-java, libjna-java, wget, jsvc, lsb-base (>= 3.2)
 Description: CloudStack agent
  The CloudStack agent is in charge of managing shared computing resources in
- a CloudStack Cloud Stack-powered cloud.  Install this package if this computer
- will participate in your cloud.
+ a CloudStack powered cloud.  Install this package if this computer
+ will participate in your cloud as a KVM HyperVisor.
 
 Package: cloud-system-iso
 Architecture: any
 Description: CloudStack system iso
  The CloudStack agent is in charge of managing shared computing resources in
- a CloudStack Cloud Stack-powered cloud.  Install this package if this computer
+ a CloudStack powered cloud.  Install this package if this computer
  will participate in your cloud.
 
 Package: cloud-usage
