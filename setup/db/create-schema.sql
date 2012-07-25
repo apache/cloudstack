@@ -2366,7 +2366,7 @@ CREATE TABLE `cloud`.`external_nicira_nvp_devices` (
   `provider_name` varchar(255) NOT NULL COMMENT 'Service Provider name corresponding to this nicira nvp device',
   `device_name` varchar(255) NOT NULL COMMENT 'name of the nicira nvp device',
   `host_id` bigint unsigned NOT NULL COMMENT 'host id coresponding to the external nicira nvp device',
-  PRIMARY KEY (`id`),
+  PRIMARY KEY  (`id`),
   CONSTRAINT `fk_external_nicira_nvp_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_external_nicira_nvp_devices__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -2495,5 +2495,10 @@ CREATE TABLE `cloud`.`autoscale_vmgroup_policy_map` (
   CONSTRAINT `fk_autoscale_vmgroup_policy_map__vmgroup_id` FOREIGN KEY `fk_autoscale_vmgroup_policy_map__vmgroup_id` (`vmgroup_id`) REFERENCES `autoscale_vmgroups` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_autoscale_vmgroup_policy_map__policy_id` FOREIGN KEY `fk_autoscale_vmgroup_policy_map__policy_id` (`policy_id`) REFERENCES `autoscale_policies` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (1,'snmp','Linux User CPU Time(%)', '.1.3.6.1.4.1.2021.11.9.0', now());
+INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (2,'snmp','Linux System CPU Time(%)', '.1.3.6.1.4.1.2021.11.10.0', now());
+INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (3,'snmp','Linux CPU Idle Time(%)', '.1.3.6.1.4.1.2021.11.11.0', now());
+INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (100,'netscaler','ResponseTime(in ms)', 'RESPTIME', now());
 
 SET foreign_key_checks = 1;
