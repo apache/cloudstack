@@ -28,8 +28,10 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
@@ -71,11 +73,23 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
         	s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
         }
 
-		List<StoragePoolVO> pools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags(), null);
+        List<StoragePoolVO> pools = null;
+        if (!dskCh.useLocalStorage() || vmProfile.getVirtualMachine().getHostId() == null) {
+            pools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags(), !dskCh.useLocalStorage());
+        } else {
+            pools = new ArrayList<StoragePoolVO>();
+            List<StoragePoolHostVO> hostPools = _poolHostDao.listByHostId(vmProfile.getVirtualMachine().getHostId());
+            for (StoragePoolHostVO hostPool: hostPools) {
+                StoragePoolVO pool = _storagePoolDao.findById(hostPool.getPoolId());
+                if (pool != null && pool.isLocal()) {
+                    pools.add(pool);
+                }
+            }
+        }
         if (pools.size() == 0) {
-    		if (s_logger.isDebugEnabled()) {
-    			s_logger.debug("No storage pools available for allocation, returning");
-    		}
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("No storage pools available for " + (dskCh.useLocalStorage() ? "local" : "shared") + " volume allocation, returning");
+            }
             return suitablePools;
         }
         

@@ -2997,7 +2997,11 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
         StoragePool destPool = _storagePoolDao.findById(storagePoolId);
         if (destPool == null) {
-            throw new InvalidParameterValueException("Faild to find the destination storage pool: " + storagePoolId);
+            throw new InvalidParameterValueException("Failed to find the destination storage pool: " + storagePoolId);
+        }
+
+        if (!volumeOnSharedStoragePool(vol)) {
+            throw new InvalidParameterValueException("Migration of volume from local storage pool is not supported");
         }
 
         List<Volume> vols = new ArrayList<Volume>();

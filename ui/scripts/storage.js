@@ -1323,18 +1323,16 @@
       }
       else { //jsonObj.type == "DATADISK"
         if (jsonObj.virtualmachineid != null) {
-          if (jsonObj.storagetype == "shared" && (jsonObj.vmstate == "Running" || jsonObj.vmstate == "Stopped" || jsonObj.vmstate == "Destroyed")) {
+          if (jsonObj.vmstate == "Running" || jsonObj.vmstate == "Stopped" || jsonObj.vmstate == "Destroyed") {
             allowedActions.push("detachDisk");
           }
         }
         else { // Disk not attached
-          allowedActions.push("remove");		
-					if(jsonObj.state == "Ready" && isAdmin()) {
+          allowedActions.push("remove");
+          if(jsonObj.state == "Ready" && isAdmin() && jsonObj.storagetype == "shared") {
             allowedActions.push("migrateToAnotherStorage");
-					}
-          if (jsonObj.storagetype == "shared") {
-            allowedActions.push("attachDisk");
           }
+          allowedActions.push("attachDisk");
         }
       }
     }

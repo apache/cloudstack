@@ -1853,7 +1853,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DISK_OFFERING_CREATE, eventDescription = "creating disk offering")
-    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized) {
+    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired) {
         long diskSize = 0;// special case for custom disk offerings
         if (numGibibytes != null && (numGibibytes <= 0)) {
             throw new InvalidParameterValueException("Please specify a disk size of at least 1 Gb.", null);
@@ -1871,6 +1871,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
         tags = cleanupTags(tags);
         DiskOfferingVO newDiskOffering = new DiskOfferingVO(domainId, name, description, diskSize, tags, isCustomized);
+        newDiskOffering.setUseLocalStorage(localStorageRequired);
         UserContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
         DiskOfferingVO offering = _diskOfferingDao.persist(newDiskOffering);
         if (offering != null) {
@@ -1900,7 +1901,17 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             throw new InvalidParameterValueException("Disksize is required for non-customized disk offering", null);
         }
 
-        return createDiskOffering(domainId, name, description, numGibibytes, tags, isCustomized);
+        boolean localStorageRequired = false;
+        String storageType = cmd.getStorageType();
+        if (storageType != null) {
+            if (storageType.equalsIgnoreCase(ServiceOffering.StorageType.local.toString())) {
+                localStorageRequired = true;
+            } else if (!storageType.equalsIgnoreCase(ServiceOffering.StorageType.shared.toString())) {
+                throw new InvalidParameterValueException("Invalid storage type " + storageType + " specified, valid types are: 'local' and 'shared'", null);
+            }
+        }
+
+        return createDiskOffering(domainId, name, description, numGibibytes, tags, isCustomized, localStorageRequired);
     }
 
     @Override
