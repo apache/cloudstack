@@ -931,15 +931,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#getDefaultGuestTrafficLabel(long, com.cloud.hypervisor.Hypervisor.HypervisorType)
-     */
-    @Override
-    public String getDefaultGuestTrafficLabel(long dcId, HypervisorType vmware) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#getElementImplementingProvider(java.lang.String)
      */
     @Override
@@ -1001,14 +992,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#getNicProfile(com.cloud.vm.VirtualMachine, long)
-     */
-    @Override
-    public NicProfile getNicProfile(VirtualMachine vm, long networkId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#setupDns(com.cloud.network.Network, com.cloud.network.Network.Provider)
@@ -1137,5 +1120,32 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     public void removeNic(VirtualMachineProfile<? extends VMInstanceVO> vm, Nic nic) {
         // TODO Auto-generated method stub
         
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#getDefaultGuestTrafficLabel(long, com.cloud.hypervisor.Hypervisor.HypervisorType)
+     */
+    @Override
+    public String getDefaultGuestTrafficLabel(long dcId, HypervisorType vmware) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#getNicProfile(com.cloud.vm.VirtualMachine, long, java.lang.String)
+     */
+    @Override
+    public NicProfile getNicProfile(VirtualMachine vm, long networkId, String broadcastUri) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#assignVpnGatewayIpAddress(long, com.cloud.user.Account, long)
+     */
+    @Override
+    public PublicIp assignVpnGatewayIpAddress(long dcId, Account owner, long vpcId) throws InsufficientAddressCapacityException, ConcurrentOperationException {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package com.cloud.vm;
 
 import java.net.URI;
@@ -765,7 +766,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
 
                     cmds = new Commands(OnError.Stop);
-                    cmds.addCommand(new StartCommand(vmTO, dest.getHost()));
+                    cmds.addCommand(new StartCommand(vmTO));
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
 
@@ -815,9 +816,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                             if (vmGuru.recreateNeeded(vmProfile, destHostId, cmds, ctx)) {
                             	recreate = true;
                             } else {
-                            throw new ExecutionException("Unable to start " + vm + " due to error in finalizeStart, not retrying");
+                            	throw new ExecutionException("Unable to start " + vm + " due to error in finalizeStart, not retrying");
+                            }
                         }
-                    }
                     }
                     s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + (startAnswer == null ? " no start answer" : startAnswer.getDetails()));
                     
@@ -1826,7 +1827,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 					}
         		}
             }
-            
+             /* else if(info == null && vm.getState() == State.Stopping) { //Handling CS-13376
+                        s_logger.warn("Marking the VM as Stopped as it was still stopping on the CS" +vm.getName());
+                        vm.setState(State.Stopped); // Setting the VM as stopped on the DB and clearing it from the host
+                        vm.setLastHostId(vm.getHostId());
+                        vm.setHostId(null);
+                        _vmDao.persist(vm);
+                 }*/
         }
 
         for (final AgentVmInfo left : infos.values()) {
@@ -2525,7 +2532,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         Nic nic = null;
         
         if (broadcastUri != null) {
-            nic = _nicsDao.findByInstanceIdNetworkIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri.toString());
+            nic = _nicsDao.findByNetworkIdInstanceIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri.toString());
         } else {
             nic = _networkMgr.getNicInNetwork(vm.getId(), network.getId());
         }

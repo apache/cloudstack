@@ -2354,8 +2354,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
     
     @Override
-    public NicProfile getNicProfile(VirtualMachine vm, long networkId) {
-        NicVO nic = _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
+    public NicProfile getNicProfile(VirtualMachine vm, long networkId, String broadcastUri) {
+        NicVO nic = null;
+        if (broadcastUri != null) {
+            nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(networkId, vm.getId(), broadcastUri);
+        } else {
+           nic =  _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
+        }
         NetworkVO network = _networksDao.findById(networkId);
         Integer networkRate = getNetworkRate(network.getId(), vm.getId());
     
@@ -7454,16 +7459,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (requested != null && requested.getBroadCastUri() != null) {
             String broadcastUri = requested.getBroadCastUri().toString();
             String ipAddress = requested.getIp4Address();
-            NicVO nicVO = _nicDao.findByInstanceIdNetworkIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri);
+            NicVO nicVO = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(network.getId(), vm.getId(), broadcastUri);
             if (nicVO != null) {
                 if (ipAddress == null || nicVO.getIp4Address().equals(ipAddress)) {
-                    nic = getNicProfile(vm, network.getId());
+                    nic = getNicProfile(vm, network.getId(), broadcastUri);
                 }
             }
         } else {
             NicVO nicVO = _nicDao.findByInstanceIdAndNetworkId(network.getId(), vm.getId());
             if (nicVO != null) {
-                nic = getNicProfile(vm, network.getId());
+                nic = getNicProfile(vm, network.getId(), null);
             }
         }
         return nic;
