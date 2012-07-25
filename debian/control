@@ -11,7 +11,7 @@ Provides: vmops-deps
 Conflicts: vmops-deps
 Replaces: vmops-deps
 Architecture: any
-Depends: openjdk-6-jre, cloud-agent-deps
+Depends: openjdk-6-jre
 Description: CloudStack library dependencies
  This package contains a number of third-party dependencies
  not shipped by distributions, required to run the CloudStack
@@ -86,7 +86,7 @@ Provides: vmops-client
 Conflicts: vmops-client
 Replaces: vmops-client
 Architecture: any
-Depends: openjdk-6-jre, cloud-deps (= ${source:Version}), cloud-utils (= ${source:Version}), cloud-server (= ${source:Version}), cloud-client-ui (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), cloud-python (= ${source:Version}), tomcat6, libws-commons-util-java, libcommons-dbcp-java, libcommons-collections-java, libcommons-httpclient-java, sysvinit-utils, chkconfig, sudo, jsvc, python-mysqldb, python-paramiko, augeas-tools, genisoimage, cloud-system-iso
+Depends: openjdk-6-jre, cloud-deps (= ${source:Version}), cloud-utils (= ${source:Version}), cloud-server (= ${source:Version}), cloud-client-ui (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-python (= ${source:Version}), tomcat6, libws-commons-util-java, libcommons-dbcp-java, libcommons-collections-java, libcommons-httpclient-java, sysvinit-utils, chkconfig, sudo, jsvc, python-mysqldb, python-paramiko, augeas-tools, genisoimage, cloud-system-iso
 Description: CloudStack client
  The CloudStack management server is the central point of coordination,
  management, and intelligence in the CloudStack Cloud Stack.  This package
