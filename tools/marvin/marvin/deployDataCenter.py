@@ -191,26 +191,45 @@ class deployDataCenters():
         vrconfig.id = vrprovid
         vrconfigresponse = \
         self.apiClient.configureVirtualRouterElement(vrconfig)
+        
+        upnetprov = \
+        updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
+        upnetprov.id = vrprov.nspid
+        upnetprov.state = "Enabled"
+        upnetprovresponse = \
+        self.apiClient.updateNetworkServiceProvider(upnetprov)
 
         if zone.networktype == "Basic" and zone.securitygroupenabled:
             sgprovider = configGenerator.provider()
             sgprovider.name = "SecurityGroupProvider"
             zone.providers.append(sgprovider)
-
-        for prov in zone.providers:
-            pnetprov = \
-            listNetworkServiceProviders.listNetworkServiceProvidersCmd()
+            
+        if zone.networktype == "Advanced":
+            pnetprov = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
             pnetprov.physicalnetworkid = phynetwrk.id
-            pnetprov.name = prov.name
             pnetprov.state = "Disabled"
-            pnetprovs = self.apiClient.listNetworkServiceProviders(pnetprov)
-
-            upnetprov = \
-            updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
-            upnetprov.id = pnetprovs[0].id
-            upnetprov.state = "Enabled"
-            upnetprovresponse = \
-            self.apiClient.updateNetworkServiceProvider(upnetprov)
+            pnetprov.name = "VpcVirtualRouter"
+            pnetprovres = self.apiClient.listNetworkServiceProviders(pnetprov)
+            
+            if len(pnetprovres) > 0:
+                vpcvrprov = listVirtualRouterElements.listVirtualRouterElementsCmd()
+                vpcvrprov.nspid = pnetprovres[0].id
+                vpcvrprovresponse = self.apiClient.listVirtualRouterElements(vpcvrprov)
+                vpcvrprovid = vpcvrprovresponse[0].id
+        
+                vpcvrconfig = \
+                configureVirtualRouterElement.configureVirtualRouterElementCmd()
+                vpcvrconfig.enabled = "true"
+                vpcvrconfig.id = vpcvrprovid
+                vpcvrconfigresponse = \
+                self.apiClient.configureVirtualRouterElement(vpcvrconfig)
+                
+                upnetprov = \
+                updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
+                upnetprov.id = vpcvrprov.nspid
+                upnetprov.state = "Enabled"
+                upnetprovresponse = \
+                self.apiClient.updateNetworkServiceProvider(upnetprov)
 
     def addTrafficTypes(self, physical_network_id, traffictypes=None, \
                         network_labels=None):
