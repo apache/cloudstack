@@ -133,14 +133,14 @@ write_hbLog() {
 }
 
 check_hbLog() {
-  oldTimeStamp=$(cat $hbFile) 
-  sleep $interval &> /dev/null
-  newTimeStamp=$(cat $hbFile) 
-  if [ $newTimeStamp -gt $oldTimeStamp ]
+  now=$(date +%s)
+  hb=$(cat $hbFile)
+  diff=`expr $now - $hb`
+  if [ $diff -gt $interval ]
   then
-    return 0
+    return 1
   fi
-  return 1
+  return 0
 }
 
 if [ "$rflag" == "1" ]
