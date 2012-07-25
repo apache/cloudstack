@@ -49,7 +49,7 @@ public interface NicDao extends GenericDao<NicVO, Long> {
     
     int countNics(long instanceId);
     
-    NicVO findByInstanceIdNetworkIdAndBroadcastUri(long networkId, long instanceId, String broadcastUri);
+    NicVO findByNetworkIdInstanceIdAndBroadcastUri(long networkId, long instanceId, String broadcastUri);
     
     NicVO findByIp4AddressAndNetworkIdAndInstanceId(long networkId, long instanceId, String ip4Address);
 }

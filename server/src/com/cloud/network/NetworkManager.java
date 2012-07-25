@@ -411,9 +411,10 @@ public interface NetworkManager extends NetworkService {
     /**
      * @param vm
      * @param networkId
+     * @param broadcastUri TODO
      * @return
      */
-    NicProfile getNicProfile(VirtualMachine vm, long networkId);
+    NicProfile getNicProfile(VirtualMachine vm, long networkId, String broadcastUri);
 
 
     /**

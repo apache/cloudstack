@@ -1868,7 +1868,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         List<Long> routerGuestNtwkIds = _routerDao.getRouterNetworks(router.getId());
         for (Long guestNetworkId : routerGuestNtwkIds) {
             if (reprogramGuestNtwks) {
-                finalizeIpAssocForNetwork(cmds, router, provider, guestNetworkId);
+                finalizeIpAssocForNetwork(cmds, router, provider, guestNetworkId, null);
                 finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
             }
 
@@ -2024,7 +2024,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     protected void finalizeIpAssocForNetwork(Commands cmds, VirtualRouter router, Provider provider, 
-            Long guestNetworkId) {
+            Long guestNetworkId, Map<String, String> vlanMacAddress) {
         
         ArrayList<? extends PublicIpAddress> publicIps = getPublicIpsToApply(router, provider, guestNetworkId);
         

@@ -169,7 +169,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
 
 
     @Override
-    public NicVO findByInstanceIdNetworkIdAndBroadcastUri(long networkId, long instanceId, String broadcastUri) {
+    public NicVO findByNetworkIdInstanceIdAndBroadcastUri(long networkId, long instanceId, String broadcastUri) {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
         sc.setParameters("instance", instanceId);

@@ -959,7 +959,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      * @see com.cloud.network.NetworkManager#getNicProfile(com.cloud.vm.VirtualMachine, long)
      */
     @Override
-    public NicProfile getNicProfile(VirtualMachine vm, long networkId) {
+    public NicProfile getNicProfile(VirtualMachine vm, long networkId, String broadcastUri) {
         // TODO Auto-generated method stub
         return null;
     }
