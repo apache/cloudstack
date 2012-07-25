@@ -485,11 +485,11 @@ public class VirtualRoutingResource implements Manager {
     }
 
     public String getRouterStatus(String routerIP) {
-        return routerProxy("checkrouter.sh", routerIP, null);
+        return routerProxyWithParser("checkrouter.sh", routerIP, null);
     }
     
     
-    public String routerProxy(String script, String routerIP, String args) {
+    public String routerProxyWithParser(String script, String routerIP, String args) {
         final Script command  = new Script(_routerProxyPath, _timeout, s_logger);
         final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
         command.add(script);
@@ -518,6 +518,16 @@ public class VirtualRoutingResource implements Manager {
         }
         return new CheckS2SVpnConnectionsAnswer(cmd, true, result);
     }
+    
+    public String routerProxy(String script, String routerIP, String args) {
+        final Script command  = new Script(_routerProxyPath, _timeout, s_logger);
+        command.add(script);
+        command.add(routerIP);
+        if ( args != null ) {
+            command.add(args);
+        }
+        return command.execute();
+    }
 
     protected Answer execute(CheckRouterCommand cmd) {
         final String routerPrivateIPAddress = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
@@ -542,7 +552,7 @@ public class VirtualRoutingResource implements Manager {
     }
 
     protected String getDomRVersion(String routerIP) {
-        return routerProxy("get_template_version.sh", routerIP, null);
+        return routerProxyWithParser("get_template_version.sh", routerIP, null);
     }
 
     protected Answer execute(GetDomRVersionCmd cmd) {
