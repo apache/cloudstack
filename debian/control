@@ -15,7 +15,7 @@ Depends: openjdk-6-jre
 Description: CloudStack library dependencies
  This package contains a number of third-party dependencies
  not shipped by distributions, required to run the CloudStack
- Cloud Stack.
+ Management Server.
 
 Package: cloud-agent-deps
 Provides: cloud-agent-deps
@@ -36,7 +36,7 @@ Architecture: any
 Depends: openjdk-6-jre, python
 Description: CloudStack utility library
  The CloudStack utility libraries provide a set of Java classes used
- in the CloudStack Cloud Stack.
+ in the CloudStack environment.
 
 Package: cloud-client-ui
 Provides: vmops-client-ui
@@ -58,7 +58,7 @@ Architecture: any
 Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), libservlet2.5-java
 Description: CloudStack server library
  The CloudStack server libraries provide a set of Java classes used
- in the CloudStack Cloud Stack.
+ in the CloudStack management server.
 
 Package: cloud-agent-scripts
 Provides: vmops-agent-scripts, vmops-console, cloud-console, vmops-console-proxy
