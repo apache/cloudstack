@@ -574,11 +574,8 @@ setup_router() {
 setup_vpcrouter() {
   log_it "Setting up VPC virtual router system vm"
 
-  if [ "$hyp" == "vmware" ]; then
-    setup_vmware_extra_nics
-  fi
 
-    cat > /etc/network/interfaces << EOF
+  cat > /etc/network/interfaces << EOF
 auto lo
 iface lo inet loopback
 EOF
