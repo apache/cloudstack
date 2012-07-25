@@ -797,14 +797,16 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             for(String token : tokens) {
                 if(!("all".equalsIgnoreCase(token) || "default".equalsIgnoreCase(token) || "lo".equalsIgnoreCase(token))) {
                     String cmd = String.format("ip address show %s | grep link/ether | sed -e 's/^[ \t]*//' | cut -d' ' -f2", token);
-
-                    s_logger.info("Run domr script " + cmd);
+                    
+                    if(s_logger.isDebugEnabled())
+                        s_logger.debug("Run domr script " + cmd);
                     Pair<Boolean, String> result2 = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, 
                             // TODO need to find the dev index inside router based on IP address
                             cmd);
-                    s_logger.info("result: " + result2.first() + ", output: " + result2.second());
+                    if(s_logger.isDebugEnabled())
+                        s_logger.debug("result: " + result2.first() + ", output: " + result2.second());
                     
-                    if(result2.first() && result2.second().equalsIgnoreCase(mac))
+                    if(result2.first() && result2.second().trim().equalsIgnoreCase(mac.trim()))
                         return Integer.parseInt(token.substring(3));
                 }
             }
@@ -826,9 +828,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
     
     private SetupGuestNetworkAnswer execute(SetupGuestNetworkCommand cmd) {
+        
+        s_logger.info("Executing resource SetupGuestNetworkCommand " + _gson.toJson(cmd));
+        
         VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         
         NicTO nic = cmd.getNic();
+        
         String routerIp = getRouterSshControlIp(cmd);
         String domrGIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
         String domrName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
@@ -846,8 +852,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
         
         try {
-            int ethDeviceNum = allocRouterEthDeviceIndex(domrName, routerIp);
-
+            int ethDeviceNum = findRouterEthDeviceIndex(domrName, routerIp, nic.getMac());
+            s_logger.info("find interface index. routerIp: " + routerIp + ", mac: " + nic.getMac() + ", index: " + ethDeviceNum);
+            
             String args = "-C ";
             String dev = "eth" + ethDeviceNum;
             args += " -d " + dev;
@@ -878,7 +885,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             
             return new SetupGuestNetworkAnswer(cmd, true, "success");
         } catch (Exception e) {
-            String msg = " UnPlug Nic failed due to " + e.toString();
+            String msg = "SetupGuestNetwork failed due to " + e.toString();
             s_logger.warn(msg, e);
             return new SetupGuestNetworkAnswer(cmd, false, msg);
         }
