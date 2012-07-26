@@ -9473,17 +9473,22 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 .vpc-chart li.tier .vm-count .loading-overlay {
   display: none;
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
   position: absolute;
-  left: 94px;
-  top: 9px;
+  left: 15px;
+  top: 7px;
   /*+border-radius:12px;*/
   -moz-border-radius: 12px;
   -webkit-border-radius: 12px;
   -khtml-border-radius: 12px;
   border-radius: 12px;
   background-image: url(../images/ajax-loader-small.gif);
+  /*+opacity:100%;*/
+  filter: alpha(opacity=100);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=100);
+  -moz-opacity: 1;
+  opacity: 1;
 }
 
 .vpc-chart li.tier.loading .vm-count .loading-overlay {
