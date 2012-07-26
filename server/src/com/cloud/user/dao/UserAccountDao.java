@@ -23,4 +23,5 @@ import com.cloud.utils.db.GenericDao;
 public interface UserAccountDao extends GenericDao<UserAccountVO, Long> {
     UserAccount getUserAccount(String username, Long domainId);
     boolean validateUsernameInDomain(String username, Long domainId);
+    UserAccount getUserByApiKey(String apiKey);
 }

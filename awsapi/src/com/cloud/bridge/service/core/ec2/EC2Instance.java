@@ -41,6 +41,7 @@ public class EC2Instance {
     private String      rootDeviceType;
     private String      rootDeviceId;
     private List<String>    groupSet;
+    private List<EC2TagKeyValue>    tagsSet;
     
 	public EC2Instance() {
 		id               = null;
@@ -60,6 +61,7 @@ public class EC2Instance {
 		rootDeviceType   = null;
 		rootDeviceId     = null;
 		groupSet         = new ArrayList<String>();
+        tagsSet          = new ArrayList<EC2TagKeyValue>();
 	}
 	
 	public void setId( String id ) {
@@ -197,5 +199,13 @@ public class EC2Instance {
     public String[] getGroupSet() {
         return groupSet.toArray(new String[0]);
     }
-    
+
+    public void addResourceTag( EC2TagKeyValue param ) {
+        tagsSet.add( param );
+    }
+
+    public EC2TagKeyValue[] getResourceTags() {
+        return tagsSet.toArray(new EC2TagKeyValue[0]);
+    }
+
 }

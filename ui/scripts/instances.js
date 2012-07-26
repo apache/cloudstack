@@ -1150,6 +1150,8 @@
 								id: { label: 'label.id' }
               }
             ],
+            
+            tags: cloudStack.api.tags({ resourceType: 'UserVm', contextId: 'instances' }),
 
             dataProvider: function(args) {						 
 							$.ajax({

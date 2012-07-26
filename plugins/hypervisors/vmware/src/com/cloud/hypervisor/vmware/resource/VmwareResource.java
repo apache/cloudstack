@@ -2465,7 +2465,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     if (cmd.isAttach()) {
                         vmMo.mountToolsInstaller();
                     } else {
-                        vmMo.unmountToolsInstaller();
+                        try{
+                            vmMo.unmountToolsInstaller();
+                        }catch(Throwable e){
+                            vmMo.detachIso(null);
+                        }
                     }
 
                     return new Answer(cmd);

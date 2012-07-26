@@ -3,6 +3,5 @@
 /etc/cloud/agent/environment.properties
 /etc/cloud/agent/log4j-cloud.xml
 /etc/init.d/cloud-agent
-/usr/bin/agent-runner
 /usr/bin/cloud-setup-agent
 /var/log/cloud/agent

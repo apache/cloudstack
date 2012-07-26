@@ -1004,6 +1004,9 @@
                   }
                 ],
 
+                tags: cloudStack.api.tags({ resourceType: 'Volume', contextId: 'volumes' }),
+
+
                 dataProvider: function(args) {		
 								  $.ajax({
 										url: createURL("listVolumes&id=" + args.context.volumes[0].id),
@@ -1268,6 +1271,8 @@
                     created: { label: 'label.created', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
+
+                tags: cloudStack.api.tags({ resourceType: 'Snapshot', contextId: 'snapshots' }),
 
                 dataProvider: function(args) {
 								  $.ajax({

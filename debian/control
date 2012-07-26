@@ -11,11 +11,11 @@ Provides: vmops-deps
 Conflicts: vmops-deps
 Replaces: vmops-deps
 Architecture: any
-Depends: openjdk-6-jre, cloud-agent-deps
+Depends: openjdk-6-jre
 Description: CloudStack library dependencies
  This package contains a number of third-party dependencies
  not shipped by distributions, required to run the CloudStack
- Cloud Stack.
+ Management Server.
 
 Package: cloud-agent-deps
 Provides: cloud-agent-deps
@@ -26,8 +26,7 @@ Depends: openjdk-6-jre
 Description: CloudStack agent library dependencies
  This package contains a number of third-party dependencies
  not shipped by distributions, required to run the CloudStack
- Cloud Stack.
-
+ Agent.
 
 Package: cloud-utils
 Provides: vmops-utils
@@ -37,7 +36,7 @@ Architecture: any
 Depends: openjdk-6-jre, python
 Description: CloudStack utility library
  The CloudStack utility libraries provide a set of Java classes used
- in the CloudStack Cloud Stack.
+ in the CloudStack environment.
 
 Package: cloud-client-ui
 Provides: vmops-client-ui
@@ -59,7 +58,7 @@ Architecture: any
 Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), libservlet2.5-java
 Description: CloudStack server library
  The CloudStack server libraries provide a set of Java classes used
- in the CloudStack Cloud Stack.
+ in the CloudStack management server.
 
 Package: cloud-agent-scripts
 Provides: vmops-agent-scripts, vmops-console, cloud-console, vmops-console-proxy
@@ -68,11 +67,8 @@ Replaces: vmops-agent-scripts, vmops-console, cloud-console, vmops-console-proxy
 Architecture: any
 Depends: openjdk-6-jre, python, bash, bzip2, gzip, unzip, nfs-common, openssh-client
 Description: CloudStack agent scripts
- The CloudStack agent is in charge of managing shared computing resources in
- a CloudStack Cloud Stack-powered cloud.  Install this package if this computer
- will participate in your cloud -- this is a requirement for the CloudStack
- agent.
-
+ This package contains a number of scripts needed for the CloudStack Agent on KVM
+ HyperVisor hosts. The CloudStack Agent depends on this package.
 
 Package: cloud-core
 Provides: vmops-core
@@ -90,7 +86,7 @@ Provides: vmops-client
 Conflicts: vmops-client
 Replaces: vmops-client
 Architecture: any
-Depends: openjdk-6-jre, cloud-deps (= ${source:Version}), cloud-utils (= ${source:Version}), cloud-server (= ${source:Version}), cloud-client-ui (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), cloud-python (= ${source:Version}), tomcat6, libws-commons-util-java, libcommons-dbcp-java, libcommons-collections-java, libcommons-httpclient-java, sysvinit-utils, chkconfig, sudo, jsvc, python-mysqldb, python-paramiko, augeas-tools, genisoimage, cloud-system-iso
+Depends: openjdk-6-jre, cloud-deps (= ${source:Version}), cloud-utils (= ${source:Version}), cloud-server (= ${source:Version}), cloud-client-ui (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-python (= ${source:Version}), tomcat6, libws-commons-util-java, libcommons-dbcp-java, libcommons-collections-java, libcommons-httpclient-java, sysvinit-utils, chkconfig, sudo, jsvc, python-mysqldb, python-paramiko, augeas-tools, genisoimage, cloud-system-iso
 Description: CloudStack client
  The CloudStack management server is the central point of coordination,
  management, and intelligence in the CloudStack Cloud Stack.  This package
@@ -123,17 +119,17 @@ Provides: vmops-agent
 Conflicts: vmops-agent
 Replaces: vmops-agent
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, libvirt0, cloud-daemonize, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin,  uuid-runtime, rsync, grep, iproute, ebtables, vlan, libcglib-java, libcommons-httpclient-java, libservlet2.5-java, liblog4j1.2-java, libjna-java, wget
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java, libvirt0, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, uuid-runtime, rsync, grep, iproute, ebtables, vlan, libcglib-java, libcommons-httpclient-java, libservlet2.5-java, liblog4j1.2-java, libjna-java, wget, jsvc, lsb-base (>= 3.2)
 Description: CloudStack agent
  The CloudStack agent is in charge of managing shared computing resources in
- a CloudStack Cloud Stack-powered cloud.  Install this package if this computer
- will participate in your cloud.
+ a CloudStack powered cloud.  Install this package if this computer
+ will participate in your cloud as a KVM HyperVisor.
 
 Package: cloud-system-iso
 Architecture: any
 Description: CloudStack system iso
  The CloudStack agent is in charge of managing shared computing resources in
- a CloudStack Cloud Stack-powered cloud.  Install this package if this computer
+ a CloudStack powered cloud.  Install this package if this computer
  will participate in your cloud.
 
 Package: cloud-usage
@@ -141,7 +137,7 @@ Provides: vmops-usage
 Conflicts: vmops-usage
 Replaces: vmops-usage
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-server (= ${source:Version}), cloud-daemonize (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-client (= ${source:Version})
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-server (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-client (= ${source:Version}), jsvc
 Description: CloudStack usage monitor
  The CloudStack usage monitor provides usage accounting across the entire cloud for
  cloud operators to charge based on usage parameters.
@@ -149,6 +145,6 @@ Description: CloudStack usage monitor
 Package: cloud-cli
 Provides: cloud-cli
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-server (= ${source:Version}), cloud-daemonize (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-client (= ${source:Version})
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-server (= ${source:Version}), cloud-setup (= ${source:Version}), cloud-client (= ${source:Version})
 Description: CloudStack commandline tool
  The CloudStack commandline tool for invoking APi

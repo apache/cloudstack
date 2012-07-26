@@ -201,6 +201,7 @@ Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: jna
 Requires: ebtables
+Requires: jsvc
 Group:     System Environment/Libraries
 
 Requires: kvm
@@ -255,6 +256,7 @@ Requires: java >= 1.6.0
 Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-server = %{version} 
 Requires: %{name}-setup = %{version}
 Requires: %{name}-client = %{version}
+Requires: jsvc
 License:   GPLv3+
 Group:     System Environment/Libraries
 %description usage

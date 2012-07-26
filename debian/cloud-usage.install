@@ -1,6 +1,5 @@
 /usr/share/java/cloud-usage.jar
 /etc/init.d/cloud-usage
-/usr/bin/usage-runner
 /var/log/cloud/usage
 /etc/cloud/usage/usage-components.xml
 /etc/cloud/usage/log4j-cloud_usage.xml

@@ -23,6 +23,7 @@ public class EC2DescribeInstances {
 
 	private List<String> instancesSet = new ArrayList<String>();    // a list of strings identifying instances
 	private EC2InstanceFilterSet ifs = null;
+    private List<EC2TagKeyValue> resourceTagSet = new ArrayList<EC2TagKeyValue>();
 
 	public EC2DescribeInstances() {
 	}
@@ -42,4 +43,12 @@ public class EC2DescribeInstances {
 	public void setFilterSet( EC2InstanceFilterSet param ) {
 		ifs = param;
 	}
+
+    public void addResourceTag( EC2TagKeyValue param ) {
+        resourceTagSet.add( param );
+    }
+
+    public EC2TagKeyValue[] getResourceTagSet() {
+        return resourceTagSet.toArray(new EC2TagKeyValue[0]);
+    }
 }

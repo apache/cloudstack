@@ -437,8 +437,6 @@ public class UploadMonitorImpl implements UploadMonitor {
         @Override
         public void run() {
             try {
-                s_logger.info("Extract Monitor Garbage Collection Thread is running.");
-
                 GlobalLock scanLock = GlobalLock.getInternLock("uploadmonitor.storageGC");
                 try {
                     if (scanLock.lock(3)) {
@@ -476,24 +474,26 @@ public class UploadMonitorImpl implements UploadMonitor {
             if( getTimeDiff(extractJob.getLastUpdated()) > EXTRACT_URL_LIFE_LIMIT_IN_SECONDS ){                           
                 String path = extractJob.getInstallPath();
                 HostVO secStorage = ApiDBUtils.findHostById(extractJob.getHostId());
-                s_logger.debug("Sending deletion of extract URL "+extractJob.getUploadUrl());
+                
                 // Would delete the symlink for the Type and if Type == VOLUME then also the volume
                 DeleteEntityDownloadURLCommand cmd = new DeleteEntityDownloadURLCommand(path, extractJob.getType(),extractJob.getUploadUrl(), secStorage.getParent());
                 HostVO ssvm = _ssvmMgr.pickSsvmHost(secStorage);
                 if( ssvm == null ) {
-                	s_logger.warn("There is no secondary storage VM for secondary storage host " + extractJob.getHostId());
-                	continue;
+                	s_logger.warn("UploadMonitor cleanup: There is no secondary storage VM for secondary storage host " + extractJob.getHostId());
+                	continue; //TODO: why continue? why not break?
                 }
-                
+                if (s_logger.isDebugEnabled()) {
+                	s_logger.debug("UploadMonitor cleanup: Sending deletion of extract URL "+ extractJob.getUploadUrl() + " to ssvm " + ssvm.getId());
+                }
                 try {
-	                send(ssvm.getId(), cmd, null);
+                    send(ssvm.getId(), cmd, null); //TODO: how do you know if it was successful?
                     _uploadDao.remove(extractJob.getId());
                 } catch (AgentUnavailableException e) {
-                	s_logger.warn("Unable to delete the link for " +extractJob.getType()+ " id=" +extractJob.getTypeId()+ " url="+extractJob.getUploadUrl(), e);
+                	s_logger.warn("UploadMonitor cleanup: Unable to delete the link for " + extractJob.getType()+ " id=" + extractJob.getTypeId()+ " url="+ extractJob.getUploadUrl() + " on ssvm " + ssvm.getId(), e);
                 }
             }
         }
                 
     }
-	
+
 }

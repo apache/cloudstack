@@ -134,7 +134,8 @@
                 $('<input>')
                   .attr({
                     type: options.secondary.type,
-                    name: options.secondary.name
+                    name: options.secondary.name,
+                    'wizard-field': options.secondary['wizard-field']
                   })
                   .val(id)
                   .click(function() {
@@ -513,7 +514,8 @@
                       secondary: {
                         desc: 'Default',
                         name: 'defaultNetwork',
-                        type: 'radio'
+                        type: 'radio',
+                        'wizard-field': 'default-network'
                       }
                     })
                   );
@@ -525,7 +527,8 @@
                       desc: 'description',
                       id: 'id'
                     }, {
-                      type: 'checkbox'
+                      type: 'checkbox',
+                      'wizard-field': 'security-groups'
                     })
                   );
 
@@ -536,37 +539,55 @@
           },
 
           'review': function($step, formData) {
-            return {
-              response: {
-                success: function(args) {
-                  $step.find('[wizard-field]').each(function() {
-                    var field = $(this).attr('wizard-field');
-                    var fieldName;
-                    var $input = $wizard.find('[wizard-field=' + field + ']').filter(function() {
-                      return $(this).is(':selected') || $(this).is(':checked');
-                    });
+            $step.find('[wizard-field]').each(function() {
+              var field = $(this).attr('wizard-field');
+              var fieldName;
+              var $input = $wizard.find('[wizard-field=' + field + ']').filter(function() {
+                return $(this).is(':selected') || $(this).is(':checked');
+              });
 
-                    if ($input.is('option')) {
-                      fieldName = $input.html();
-                    } else if ($input.is('input[type=radio]')) {
-                      fieldName = $input.parent().find('.select-desc .name').html();
-                    }
+              if ($input.is('option')) {
+                fieldName = $input.html();
+              } else if ($input.is('input[type=radio]')) {
+                // Choosen New network as default
+                if ($input.parents('div.new-network').size()) {
+                  fieldName = $input.closest('div.new-network').find('input[name="new-network-name"]').val();
+                // Choosen Network from existed
+                } else if ($input.parents('div.my-networks').size()) {
+                  fieldName = $input.closest('div.select').find('.select-desc .name').html();
+                } else {
+                  fieldName = $input.parent().find('.select-desc .name').html();
+                }
+              } else if ($input.eq(0).is('input[type=checkbox]')) {
+                fieldName = '';
+                $input.each(function(index) {
+                  if (index != 0) fieldName += '<br />';
+                  fieldName += $(this).next('div.select-desc').find('.name').html();
+                });
+              }
 
-                    if (fieldName) {
-                      $(this).html(fieldName);
-                    } else {
-                      $(this).html('(' + _l('label.none') + ')');
-                    }
-                  });
+              if (fieldName) {
+                $(this).html(fieldName);
+              } else {
+                $(this).html('(' + _l('label.none') + ')');
+              }
+              
+              var conditionalFieldFrom = $(this).attr('conditional-field');
+              if (conditionalFieldFrom) {
+                if ($wizard.find('.'+conditionalFieldFrom).css('display') == 'block') {
+                    $(this).closest('div.select').show();
+                } else {
+                    $(this).closest('div.select').hide();
                 }
               }
-            };
+            });
           }
         };
 
         // Go to specified step in wizard,
         // updating nav items and diagram
-        var showStep = function(index) {
+        var showStep = function(index, options) {
+          if (!options) options = {};
           var targetIndex = index - 1;
 
           if (index <= 1) targetIndex = 0;
@@ -651,17 +672,17 @@
                 return false;
               }
             }
-						
-						//step 6 - review (spcifiy displyname, group as well)		
-						if ($activeStep.hasClass('review')) {						  
-						  if($activeStep.find('input[name=displayname]').size() > 0 && $activeStep.find('input[name=displayname]').val().length > 0) {
-							  //validate 
-								var b = cloudStack.validate.vmHostName($activeStep.find('input[name=displayname]').val());								
-								if(b == false)
-								  return false;
-							}
-            }						
-						
+
+            //step 6 - review (spcifiy displyname, group as well)
+            if ($activeStep.hasClass('review')) {
+              if($activeStep.find('input[name=displayname]').size() > 0 && $activeStep.find('input[name=displayname]').val().length > 0) {
+                  //validate 
+                  var b = cloudStack.validate.vmHostName($activeStep.find('input[name=displayname]').val());
+                  if(b == false)
+                    return false;
+                }
+            }
+
             if (!$form.valid()) {
               if ($form.find('input.error:visible, select.error:visible').size()) {
                 return false;

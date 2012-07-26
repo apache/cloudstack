@@ -204,11 +204,42 @@
                     }
                   },
 
-                  osTypeId: {
-                    label: 'label.os.type',
+                  osCategory: {
+                    label: 'OS Category',
                     select: function(args) {
                       $.ajax({
-                        url: createURL("listOsTypes"),
+                        url: createURL("listOsCategories"),
+                        dataType: "json",
+                        async: true,
+                        success: function(json) {
+                          var osCats = json.listoscategoriesresponse.oscategory;
+                          var items = [];
+                          if (isAdmin())
+                            items.push({id: -1, description: "All OS"});
+                          $(osCats).each(function() {
+                            items.push({id: this.id, description: this.name});
+                          });
+                          args.response.success({data: items});
+                        }
+                      });
+                    }
+                  },
+
+                  osTypeId: {
+                    label: 'label.os.type',
+                    dependsOn: 'osCategory',
+                    select: function(args) {
+                      if(args.osCategory == null)
+                        return;
+
+                      var apiCmd;
+                      if(args.osCategory == -1)
+                        apiCmd = "listOsTypes";
+                      else
+                        apiCmd = "listOsTypes&oscategoryid=" + args.osCategory;
+
+                      $.ajax({
+                        url: createURL(apiCmd),
                         dataType: "json",
                         async: true,
                         success: function(json) {
@@ -678,9 +709,12 @@
                     account: { label: 'label.account' },
                     created: { label: 'label.created', converter: cloudStack.converters.toLocalDate }
                   }
-                ],
+                 ],
+         
+               tags: cloudStack.api.tags({ resourceType: 'Template', contextId: 'templates' }),
+ 
 
-                dataProvider: function(args) {
+               dataProvider: function(args) {
                   var jsonObj = args.context.templates[0];
                   var apiCmd = "listTemplates&templatefilter=self&id=" + jsonObj.id;
                   if(jsonObj.zoneid != null)
@@ -780,15 +814,46 @@
                     isBoolean: true,
                     isChecked: true
                   },
-
+                  
+                  osCategory: {
+                    label: 'OS Category',
+                    dependsOn: 'isBootable',
+                    select: function(args) {
+                      $.ajax({
+                        url: createURL("listOsCategories"),
+                        dataType: "json",
+                        async: true,
+                        success: function(json) {
+                          var osCats = json.listoscategoriesresponse.oscategory;
+                          var items = [];
+                          if (isAdmin())
+                            items.push({id: -1, description: "All OS"});
+                          $(osCats).each(function() {
+                            items.push({id: this.id, description: this.name});
+                          });
+                          args.response.success({data: items});
+                        }
+                      });
+                    }
+                  },
+                  
                   osTypeId: {
                     label: 'label.os.type',
-                    dependsOn: 'isBootable',
+                    dependsOn: ['isBootable','osCategory'],
                     isHidden: false,
                     validation: { required: true },
                     select: function(args) {
+                      if(args.osCategory == null)
+                        return;
+
+                      var apiCmd;
+                      if(args.osCategory == -1)
+                        apiCmd = "listOsTypes";
+                      else
+                        apiCmd = "listOsTypes&oscategoryid=" + args.osCategory;
+
                       $.ajax({
-                        url: createURL("listOsTypes"),
+                        url: createURL(apiCmd),
                         dataType: "json",
                         async: true,
                         success: function(json) {
@@ -822,6 +887,7 @@
                   }
                 }
               },
+             
 
               action: function(args) {
                 var array1 = [];
@@ -1192,8 +1258,10 @@
                     created: { label: 'label.created', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
+                  
+                 tags: cloudStack.api.tags({ resourceType: 'ISO', contextId: 'isos' }),
 
-                dataProvider: function(args) {
+                 dataProvider: function(args) {
                   var jsonObj = args.context.isos[0];
                   var apiCmd = "listIsos&isofilter=self&id="+jsonObj.id;
                   if(jsonObj.zoneid != null)

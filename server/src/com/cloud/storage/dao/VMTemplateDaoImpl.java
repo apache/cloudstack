@@ -84,7 +84,6 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     DomainDao _domainDao;
     @Inject
     DataCenterDao _dcDao;
-
     private final String SELECT_TEMPLATE_HOST_REF = "SELECT t.id, h.data_center_id, t.unique_name, t.name, t.public, t.featured, t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, " +
     								"t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones, t.hypervisor_type FROM vm_template t";
     
@@ -93,7 +92,6 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     
     private final String SELECT_TEMPLATE_SWIFT_REF = "SELECT t.id, t.unique_name, t.name, t.public, t.featured, t.type, t.hvm, t.bits, t.url, t.format, t.created, t.account_id, "
             + "t.checksum, t.display_text, t.enable_password, t.guest_os_id, t.bootable, t.prepopulate, t.cross_zones, t.hypervisor_type FROM vm_template t";
-
     protected SearchBuilder<VMTemplateVO> TemplateNameSearch;
     protected SearchBuilder<VMTemplateVO> UniqueNameSearch;
     protected SearchBuilder<VMTemplateVO> tmpltTypeSearch;
@@ -106,6 +104,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     private SearchBuilder<VMTemplateVO> PublicSearch;
     private SearchBuilder<VMTemplateVO> NameAccountIdSearch;
     private SearchBuilder<VMTemplateVO> PublicIsoSearch;
+    private SearchBuilder<VMTemplateVO> UserIsoSearch;
     private GenericSearchBuilder<VMTemplateVO, Long> CountTemplatesByAccount;
 
     ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
@@ -189,6 +188,22 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         return listBy(sc);
     }
     
+    @Override
+    public List<VMTemplateVO> userIsoSearch(boolean listRemoved){
+
+        SearchBuilder<VMTemplateVO> sb = null;
+        sb = UserIsoSearch;
+        SearchCriteria<VMTemplateVO> sc = sb.create();
+
+        sc.setParameters("format", Storage.ImageFormat.ISO);
+        sc.setParameters("type", TemplateType.USER.toString());
+
+        if (!listRemoved) {
+            sc.setParameters("removed", (Object)null);
+        }
+
+        return listBy(sc);
+    }
 	@Override
 	public List<VMTemplateVO> listAllSystemVMTemplates() {
 		SearchCriteria<VMTemplateVO> sc = tmpltTypeSearch.create();
@@ -298,7 +313,12 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 		PublicIsoSearch.and("type", PublicIsoSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
 		PublicIsoSearch.and("bootable", PublicIsoSearch.entity().isBootable(), SearchCriteria.Op.EQ);
 		PublicIsoSearch.and("removed", PublicIsoSearch.entity().getRemoved(), SearchCriteria.Op.EQ);
-		
+
+		UserIsoSearch = createSearchBuilder();
+		UserIsoSearch.and("format", UserIsoSearch.entity().getFormat(), SearchCriteria.Op.EQ);
+		UserIsoSearch.and("type", UserIsoSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
+		UserIsoSearch.and("removed", UserIsoSearch.entity().getRemoved(), SearchCriteria.Op.EQ);
+
 		tmpltTypeHyperSearch = createSearchBuilder();
 		tmpltTypeHyperSearch.and("templateType", tmpltTypeHyperSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
 		SearchBuilder<HostVO> hostHyperSearch = _hostDao.createSearchBuilder();
@@ -648,28 +668,44 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
             pstmt = txn.prepareStatement(sql);
             rs = pstmt.executeQuery();
+
             while (rs.next()) {
-            	Pair<Long, Long> templateZonePair = new Pair<Long, Long>(rs.getLong(1), rs.getLong(2));            	
-				templateZonePairList.add(templateZonePair);    		
+               Pair<Long, Long> templateZonePair = new Pair<Long, Long>(rs.getLong(1), rs.getLong(2));
+                               templateZonePairList.add(templateZonePair);
             }
-            
            //for now, defaulting pageSize to a large val if null; may need to revisit post 2.2RC2 
            if(isIso && templateZonePairList.size() < (pageSize != null ? pageSize : 500) 
-                   && templateFilter != TemplateFilter.community 
+                   && templateFilter != TemplateFilter.community
                    && !(templateFilter == TemplateFilter.self && !BaseCmd.isRootAdmin(caller.getType())) ){ //evaluates to true If root admin and filter=self
-            	List<VMTemplateVO> publicIsos = publicIsoSearch(bootable, false, tags);            	
-            	for( int i=0; i < publicIsos.size(); i++){
-                    if (keyword != null && publicIsos.get(i).getName().contains(keyword)) {
-                        templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getId(), null));
-                        continue;
-                    } else if (name != null && publicIsos.get(i).getName().contains(name)) {
-                        templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getId(), null));
-                        continue;
-                    }else if (keyword == null && name == null){
-                        templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getId(), null));
+
+               List<VMTemplateVO> publicIsos = publicIsoSearch(bootable, false, tags);
+               List<VMTemplateVO> userIsos = userIsoSearch(false);
+
+               //Listing the ISOs according to the page size.Restricting the total no. of ISOs on a page
+               //to be less than or equal to the pageSize parameter
+
+               int i=0;
+
+               if (startIndex > userIsos.size()) {
+                   i=(int) (startIndex - userIsos.size());
+               }
+
+               for (; i < publicIsos.size(); i++) {
+                   if(templateZonePairList.size() >= pageSize){
+                        break;
+                        } else {
+                        if (keyword != null && publicIsos.get(i).getName().contains(keyword)) {
+                            templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getId(), null));
+                            continue;
+                        } else if (name != null && publicIsos.get(i).getName().contains(name)) {
+                            templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getId(), null));
+                            continue;
+                        } else if (keyword == null && name == null){
+                            templateZonePairList.add(new Pair<Long,Long>(publicIsos.get(i).getId(), null));
+                        }
+                      }
                     }
-            	}
-            }
+                }
         } catch (Exception e) {
             s_logger.warn("Error listing templates", e);
         } finally {
