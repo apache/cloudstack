@@ -440,10 +440,11 @@
             });
 
             updateVMLoadingState();
-          }
-
-          else if (actionID == 'remove') { //remove tier
+          } else if (actionID == 'remove') { //remove tier
+            $loading.remove();
             $tier.remove();
+          } else {
+            $loading.remove();
           }
 
         },
@@ -454,6 +455,8 @@
         function(args) {
           if (actionID == 'addVM') {
             updateVMLoadingState();
+          } else {
+            $loading.remove();
           }
         }
       );
