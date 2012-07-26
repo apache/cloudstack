@@ -207,6 +207,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.EnumUtils;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PasswordGenerator;
@@ -223,7 +224,6 @@ import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.JoinBuilder.JoinType;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.MacAddress;
@@ -305,7 +305,7 @@ public class ManagementServerImpl implements ManagementServer {
     private final Adapters<HostAllocator> _hostAllocators;
     private final ConfigurationManager _configMgr;
     private final ResourceTagDao _resourceTagDao;
-    
+
     @Inject
     ProjectManager _projectMgr;
     private final ResourceManager _resourceMgr;
@@ -537,10 +537,10 @@ public class ManagementServerImpl implements ManagementServer {
     protected void checkPortParameters(String publicPort, String privatePort, String privateIp, String proto) {
 
         if (!NetUtils.isValidPort(publicPort)) {
-            throw new InvalidParameterValueException("publicPort is an invalid value");
+            throw new InvalidParameterValueException("publicPort is an invalid value", null);
         }
         if (!NetUtils.isValidPort(privatePort)) {
-            throw new InvalidParameterValueException("privatePort is an invalid value");
+            throw new InvalidParameterValueException("privatePort is an invalid value", null);
         }
 
         // s_logger.debug("Checking if " + privateIp + " is a valid private IP address. Guest IP address is: " +
@@ -550,7 +550,7 @@ public class ManagementServerImpl implements ManagementServer {
         // throw new InvalidParameterValueException("Invalid private ip address");
         // }
         if (!NetUtils.isValidProto(proto)) {
-            throw new InvalidParameterValueException("Invalid protocol");
+            throw new InvalidParameterValueException("Invalid protocol", null);
         }
     }
 
@@ -648,7 +648,7 @@ public class ManagementServerImpl implements ManagementServer {
         String vmTypeStr = cmd.getSystemVmType();
 
         if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && isSystem) {
-            throw new InvalidParameterValueException("Only ROOT admins can access system's offering");
+            throw new InvalidParameterValueException("Only ROOT admins can access system's offering", null);
         }
 
         // Keeping this logic consistent with domain specific zones
@@ -663,14 +663,14 @@ public class ManagementServerImpl implements ManagementServer {
         // For non-root users
         if ((caller.getType() == Account.ACCOUNT_TYPE_NORMAL || caller.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
             if (isSystem) {
-                throw new InvalidParameterValueException("Only root admins can access system's offering");
+                throw new InvalidParameterValueException("Only root admins can access system's offering", null);
             }
             return searchServiceOfferingsInternal(caller, name, id, vmId, keyword, searchFilter);
         }
 
         // for root users, the existing flow
         if (caller.getDomainId() != 1 && isSystem) { // NON ROOT admin
-            throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering");
+            throw new InvalidParameterValueException("Non ROOT admins cannot access system's offering", null);
         }
 
         if (keyword != null) {
@@ -682,9 +682,7 @@ public class ManagementServerImpl implements ManagementServer {
         } else if (vmId != null) {
             UserVmVO vmInstance = _userVmDao.findById(vmId);
             if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
-            	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a virtual machine with specified id");
-            	ex.addProxyObject(vmInstance, vmId, "vmId");
-                throw ex;
+                throw new InvalidParameterValueException("unable to find virtual machine by id", null);
             }
 
             _accountMgr.checkAccess(caller, null, true, vmInstance);
@@ -754,9 +752,7 @@ public class ManagementServerImpl implements ManagementServer {
                 } else if (vmId != null) {
                     UserVmVO vmInstance = _userVmDao.findById(vmId);
                     if ((vmInstance == null) || (vmInstance.getRemoved() != null)) {
-                    	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
-                    	ex.addProxyObject(vmInstance, vmId, "vmId");
-                        throw ex;
+                        throw new InvalidParameterValueException("Unable to find a virtual machine by id", null);
                     }
 
                     _accountMgr.checkAccess(caller, null, false, vmInstance);
@@ -801,20 +797,20 @@ public class ManagementServerImpl implements ManagementServer {
 
         return sol;
     }
-    
+
     @Override
     public List<? extends Cluster> searchForClusters(long zoneId, Long startIndex, Long pageSizeVal, String hypervisorType) {
-    	Filter searchFilter = new Filter(ClusterVO.class, "id", true, startIndex, pageSizeVal);
-    	SearchCriteria<ClusterVO> sc = _clusterDao.createSearchCriteria();
-    	
-    	zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
+        Filter searchFilter = new Filter(ClusterVO.class, "id", true, startIndex, pageSizeVal);
+        SearchCriteria<ClusterVO> sc = _clusterDao.createSearchCriteria();
 
-    	sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
-    	sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hypervisorType);
-    	
-    	return _clusterDao.search(sc, searchFilter);
+        zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
+
+        sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
+        sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, hypervisorType);
+
+        return _clusterDao.search(sc, searchFilter);
     }
-    
+
     @Override
     public List<ClusterVO> searchForClusters(ListClustersCmd cmd) {
         Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -899,18 +895,16 @@ public class ManagementServerImpl implements ManagementServer {
 
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the VM with specified id");
-        	ex.addProxyObject(vm, vmId, "vmId");
-            throw ex;
+            throw new InvalidParameterValueException("Unable to find the VM by id", null);
         }
         // business logic
         if (vm.getState() != State.Running) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM is not Running, unable to migrate the vm" + vm);
             }
-            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, unable to migrate the vm with specified id");
-            ex.addProxyObject(vm, vmId, "vmId");
-            throw ex;
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(vm, vmId, "vmId"));
+            throw new InvalidParameterValueException("VM is not Running, unable to migrate the vm with specified id", idList);
         }
 
         if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM)
@@ -918,14 +912,14 @@ public class ManagementServerImpl implements ManagementServer {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(vm + " is not XenServer/VMware/KVM/OVM, cannot migrate this VM.");
             }
-            throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM only");
+            throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM only", null);
         }
         ServiceOfferingVO svcOffering = _offeringsDao.findById(vm.getServiceOfferingId());
         if (svcOffering.getUseLocalStorage()) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(vm + " is using Local Storage, cannot migrate this VM.");
             }
-            throw new InvalidParameterValueException("Unsupported operation, VM uses Local storage, cannot migrate");
+            throw new InvalidParameterValueException("Unsupported operation, VM uses Local storage, cannot migrate", null);
         }
         long srcHostId = vm.getHostId();
         // why is this not HostVO?
@@ -934,10 +928,10 @@ public class ManagementServerImpl implements ManagementServer {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to find the host with id: " + srcHostId + " of this VM:" + vm);
             }
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find the host (with specified id) of VM with specified id");
-            ex.addProxyObject(srcHost, srcHostId, "hostId");            
-            ex.addProxyObject(vm, vmId, "vmId");
-            throw ex;
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(srcHost, srcHostId, "hostId"));
+            idList.add(new IdentityProxy(vm, vmId, "vmId"));
+            throw new InvalidParameterValueException("Unable to find the host (with specified id) of VM with specified id", idList);
         }
         Long cluster = srcHost.getClusterId();
         Type hostType = srcHost.getType();
@@ -987,7 +981,7 @@ public class ManagementServerImpl implements ManagementServer {
     private List<HostVO> searchForServers(Long startIndex, Long pageSize, Object name, Object type, Object state, Object zone, Object pod, Object cluster, Object id, Object keyword,
             Object resourceState, Object haHosts) {
         Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
-        
+
         SearchBuilder<HostVO> sb = _hostDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
@@ -997,7 +991,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
-        
+
         String haTag = _haMgr.getHaTag();
         SearchBuilder<HostTagVO> hostTagSearch = null;
         if (haHosts != null && haTag != null && !haTag.isEmpty()) {
@@ -1012,7 +1006,7 @@ public class ManagementServerImpl implements ManagementServer {
             hostTagSearch.cp();
             sb.join("hostTagSearch", hostTagSearch, sb.entity().getId(), hostTagSearch.entity().getHostId(), JoinBuilder.JoinType.LEFTOUTER); 
         }
-        
+
         SearchCriteria<HostVO> sc = sb.create();
 
         if (keyword != null) {
@@ -1050,7 +1044,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (resourceState != null) {
             sc.setParameters("resourceState", resourceState);
         }
-        
+
         if (haHosts != null && haTag != null && !haTag.isEmpty()) {
             sc.setJoinParameters("hostTagSearch", "tag", haTag);
         }
@@ -1112,15 +1106,15 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (accountName != null && domainId != null) {
             if (projectId != null) {
-                throw new InvalidParameterValueException("Account and projectId can't be specified together");
+                throw new InvalidParameterValueException("Account and projectId can't be specified together", null);
             }
             Account account = _accountDao.findActiveAccount(accountName, domainId);
             if (account == null) {
-            	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find account " + accountName + " in specified domain");            	
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
                 // Since we don't have a DomainVO object here, we directly set tablename to "domain".
-                String tablename = "domain";
-                ex.addProxyObject(tablename, domainId, "domainId");
-                throw ex;
+                idList.add(new IdentityProxy("domain", domainId, "domainId"));
+                throw new InvalidParameterValueException("Unable to find account " + accountName +
+                        " in domain with specified domainId", idList);
             } else {
                 accountId = account.getId();
             }
@@ -1138,9 +1132,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (projectId != null) {
             Project project = _projectMgr.getProject(projectId);
             if (project == null) {
-            	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find project by id " + projectId);
-            	ex.addProxyObject(project, projectId, "projectId");
-                throw ex;
+                throw new InvalidParameterValueException("Unable to find project by id ", null);
             }
             accountId = project.getProjectAccountId();
         }
@@ -1307,19 +1299,19 @@ public class ManagementServerImpl implements ManagementServer {
         if (templateId != null) {
             template = _templateDao.findById(templateId);
             if (template == null) {
-                throw new InvalidParameterValueException("Please specify a valid template ID.");
+                throw new InvalidParameterValueException("Please specify a valid template ID.", null);
             }// If ISO requested then it should be ISO.
             if (isIso && template.getFormat() != ImageFormat.ISO) {
                 s_logger.error("Template Id " + templateId + " is not an ISO");
-                InvalidParameterValueException ex = new InvalidParameterValueException("Specified Template Id is not an ISO");
+                InvalidParameterValueException ex = new InvalidParameterValueException("Specified Template Id is not an ISO", null);
                 ex.addProxyObject(template, templateId, "templateId");
                 throw ex;
             }// If ISO not requested then it shouldn't be an ISO.
             if (!isIso && template.getFormat() == ImageFormat.ISO) {
                 s_logger.error("Incorrect format of the template id " + templateId);
-                InvalidParameterValueException ex = new InvalidParameterValueException("Incorrect format " + template.getFormat() + " of the specified template id");
-                ex.addProxyObject(template, templateId, "templateId");
-                throw ex;
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(template, templateId, "templateId"));
+                throw new InvalidParameterValueException("Incorrect format " + template.getFormat() + " of the specified template id", idList);
             }
         }
 
@@ -1344,7 +1336,7 @@ public class ManagementServerImpl implements ManagementServer {
                 templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, 
                         bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
                         permittedAccounts, caller, listProjectResourcesCriteria, tags);
-                
+
                 for (Pair<Long, Long> tmpltPair : templateZonePairSet2) {
                     if (!templateZonePairSet.contains(new Pair<Long, Long>(tmpltPair.first(), -1L))) {
                         templateZonePairSet.add(tmpltPair);
@@ -1401,16 +1393,14 @@ public class ManagementServerImpl implements ManagementServer {
         // verify that template exists
         VMTemplateVO template = _templateDao.findById(id);
         if (template == null || template.getRemoved() != null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find template/iso with specified id");
-        	ex.addProxyObject(template, id, "templateId");
-            throw ex;
+            throw new InvalidParameterValueException("unable to find template/iso by id", null);
         }
 
         // Don't allow to modify system template
         if (id == Long.valueOf(1)) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to update template/iso of specified id");
-        	ex.addProxyObject(template, id, "templateId");
-            throw ex;
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(template, id, "templateId"));
+            throw new InvalidParameterValueException("Template/iso of specified id is a system template, and cannot be modified", idList);
         }
 
         // do a permission check
@@ -1440,7 +1430,7 @@ public class ManagementServerImpl implements ManagementServer {
             try {
                 imageFormat = ImageFormat.valueOf(format.toUpperCase());
             } catch (IllegalArgumentException e) {
-                throw new InvalidParameterValueException("Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values()));
+                throw new InvalidParameterValueException("Image format: " + format + " is incorrect. Supported formats are " + EnumUtils.listValues(ImageFormat.values()), null);
             }
 
             template.setFormat(imageFormat);
@@ -1450,7 +1440,7 @@ public class ManagementServerImpl implements ManagementServer {
             GuestOSVO guestOS = _guestOSDao.findById(guestOSId);
 
             if (guestOS == null) {
-                throw new InvalidParameterValueException("Please specify a valid guest OS ID.");
+                throw new InvalidParameterValueException("Please specify a valid guest OS ID.", null);
             } else {
                 template.setGuestOSId(guestOSId);
             }
@@ -1569,7 +1559,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         if ((entryTime != null) && (duration != null)) {
             if (entryTime <= duration) {
-                throw new InvalidParameterValueException("Entry time must be greater than duration");
+                throw new InvalidParameterValueException("Entry time must be greater than duration", null);
             }
             Calendar calMin = Calendar.getInstance();
             Calendar calMax = Calendar.getInstance();
@@ -1628,7 +1618,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("podId", sb.entity().getPodIdToDeployIn(), SearchCriteria.Op.EQ);
         sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
-        
+
         if (forVpc != null) {
             if (forVpc) {
                 sb.and("forVpc", sb.entity().getVpcId(), SearchCriteria.Op.NNULL); 
@@ -1646,7 +1636,7 @@ public class ManagementServerImpl implements ManagementServer {
 
             sb.join("nicSearch", nicSearch, sb.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         }
-        
+
         SearchCriteria<DomainRouterVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
@@ -1662,27 +1652,27 @@ public class ManagementServerImpl implements ManagementServer {
         if (name != null) {
             sc.setParameters("name", "%" + name + "%");
         }
-        
+
         if (id != null) {
             sc.setParameters("id", id);
         }
-        
+
         if (state != null) {
             sc.setParameters("state", state);
         }
-        
+
         if (zone != null) {
             sc.setParameters("dataCenterId", zone);
         }
-        
+
         if (pod != null) {
             sc.setParameters("podId", pod);
         }
-        
+
         if (hostId != null) {
             sc.setParameters("hostId", hostId);
         }
-        
+
         if (networkId != null) {
             sc.setJoinParameters("nicSearch", "networkId", networkId);
         }
@@ -1710,12 +1700,12 @@ public class ManagementServerImpl implements ManagementServer {
         Long vpcId = cmd.getVpcId();
         Map<String, String> tags = cmd.getTags();
 
-        
+
         Boolean isAllocated = cmd.isAllocatedOnly();
         if (isAllocated == null) {
             isAllocated = Boolean.TRUE;
         }
-        
+
         Filter searchFilter = new Filter(IPAddressVO.class, "address", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<IPAddressVO> sb = _publicIpAddressDao.createSearchBuilder();
         Long domainId = null;
@@ -1745,7 +1735,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("isStaticNat", sb.entity().isOneToOneNat(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
 
-        if (forLoadBalancing != null && (Boolean) forLoadBalancing) {
+        if (forLoadBalancing != null && forLoadBalancing) {
             SearchBuilder<LoadBalancerVO> lbSearch = _loadbalancerDao.createSearchBuilder();
             sb.join("lbSearch", lbSearch, sb.entity().getId(), lbSearch.entity().getSourceIpAddressId(), JoinType.INNER);
             sb.groupBy(sb.entity().getId());
@@ -1754,7 +1744,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (keyword != null && address == null) {
             sb.and("addressLIKE", sb.entity().getAddress(), SearchCriteria.Op.LIKE);
         }
-        
+
         if (tags != null && !tags.isEmpty()) {
             SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
             for (int count=0; count < tags.size(); count++) {
@@ -1780,18 +1770,18 @@ public class ManagementServerImpl implements ManagementServer {
 
         VlanType vlanType = null;
         if (forVirtualNetwork != null) {
-            vlanType = (Boolean) forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
+            vlanType = forVirtualNetwork ? VlanType.VirtualNetwork : VlanType.DirectAttached;
         } else {
             vlanType = VlanType.VirtualNetwork;
         }
 
         SearchCriteria<IPAddressVO> sc = sb.create();
         if (isAllocated) {
-          _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+            _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
         }
 
         sc.setJoinParameters("vlanSearch", "vlanType", vlanType);
-        
+
         if (tags != null && !tags.isEmpty()) {
             int count = 0;
             sc.setJoinParameters("tagSearch", "resourceType", TaggedResourceType.PublicIpAddress.toString());
@@ -1809,7 +1799,7 @@ public class ManagementServerImpl implements ManagementServer {
         if (vpcId != null) {
             sc.setParameters("vpcId", vpcId);
         }
-        
+
         if (ipId != null) {
             sc.setParameters("id", ipId);
         }
@@ -1862,11 +1852,11 @@ public class ManagementServerImpl implements ManagementServer {
         if (osCategoryId != null) {
             sc.addAnd("categoryId", SearchCriteria.Op.EQ, osCategoryId);
         }
-        
+
         if (description != null) {
             sc.addAnd("displayName", SearchCriteria.Op.LIKE, "%" + description + "%");
         }
-        
+
         if (keyword != null) {
             sc.addAnd("displayName", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
@@ -1886,11 +1876,11 @@ public class ManagementServerImpl implements ManagementServer {
         if (id != null) {
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
-        
+
         if (name != null) {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + name + "%");
         }
-        
+
         if (keyword != null) {
             sc.addAnd("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
@@ -1977,12 +1967,10 @@ public class ManagementServerImpl implements ManagementServer {
         // check if domain exists in the system
         DomainVO domain = _domainDao.findById(domainId);
         if (domain == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find domain with specified domain id");
-        	ex.addProxyObject(domain, domainId, "domainId");            
-            throw ex;
+            throw new InvalidParameterValueException("Unable to find domain by id", null);
         } else if (domain.getParent() == null && domainName != null) {
             // check if domain is ROOT domain - and deny to edit it with the new name
-            throw new InvalidParameterValueException("ROOT domain can not be edited with a new name");
+            throw new InvalidParameterValueException("ROOT domain can not be edited with a new name", null);
         }
 
         // check permissions
@@ -1998,9 +1986,9 @@ public class ManagementServerImpl implements ManagementServer {
             boolean sameDomain = (domains.size() == 1 && domains.get(0).getId() == domainId);
 
             if (!domains.isEmpty() && !sameDomain) {
-                InvalidParameterValueException ex = new InvalidParameterValueException("Failed to update specified domain id with name '" + domainName + "' since it already exists in the system");
-                ex.addProxyObject(domain, domainId, "domainId");                
-            	throw ex;
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(domain, domainId, "domainId"));
+                throw new InvalidParameterValueException("Failed to update specified domain id with name '" + domainName + "' since it already exists in the system", idList);
             }
         }
 
@@ -2009,7 +1997,7 @@ public class ManagementServerImpl implements ManagementServer {
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
                         "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                                + "and the hyphen ('-'); can't start or end with \"-\"");
+                                + "and the hyphen ('-'); can't start or end with \"-\"", null);
             }
         }
 
@@ -2099,7 +2087,7 @@ public class ManagementServerImpl implements ManagementServer {
         Long clusterId = cmd.getClusterId();
 
         if (clusterId != null) {
-            throw new InvalidParameterValueException("Currently clusterId param is not suppoerted");
+            throw new InvalidParameterValueException("Currently clusterId param is not suppoerted", null);
         }
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(UserContext.current().getCaller(), zoneId);
         List<SummedCapacity> summedCapacities = new ArrayList<SummedCapacity>();
@@ -2146,7 +2134,7 @@ public class ManagementServerImpl implements ManagementServer {
         try {
             pageSize = Integer.valueOf(cmd.getPageSizeVal().toString());
         } catch (IllegalArgumentException e) {
-            throw new InvalidParameterValueException("pageSize " + cmd.getPageSizeVal() + " is out of Integer range is not supported for this call");
+            throw new InvalidParameterValueException("pageSize " + cmd.getPageSizeVal() + " is out of Integer range is not supported for this call", null);
         }
 
         summedCapacities = summedCapacities.subList(0, summedCapacities.size() < cmd.getPageSizeVal() ? summedCapacities.size() : pageSize);
@@ -2232,11 +2220,11 @@ public class ManagementServerImpl implements ManagementServer {
         } else if (zoneId != null) {
             dcList.add(ApiDBUtils.findZoneById(zoneId));
         } else {
-        	if (clusterId != null){
-        		zoneId = ApiDBUtils.findClusterById(clusterId).getDataCenterId();
-        	}else{
-        		zoneId = ApiDBUtils.findPodById(podId).getDataCenterId();
-        	}
+            if (clusterId != null){
+                zoneId = ApiDBUtils.findClusterById(clusterId).getDataCenterId();
+            }else{
+                zoneId = ApiDBUtils.findPodById(podId).getDataCenterId();
+            }
             if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_STORAGE) {
                 capacities.add(_storageMgr.getStoragePoolUsedStats(null, clusterId, podId, zoneId));
             }
@@ -2704,9 +2692,7 @@ public class ManagementServerImpl implements ManagementServer {
     public VirtualMachine.Type findSystemVMTypeById(long instanceId) {
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(instanceId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a system vm of specified instanceId");
-        	ex.addProxyObject(systemVm, instanceId, "instanceId");
-            throw ex;
+            throw new InvalidParameterValueException("Unable to find system vm by Id", null);
         }
         return systemVm.getType();
     }
@@ -2716,9 +2702,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(vmId, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a system vm with specified vmId");
-        	ex.addProxyObject(systemVm, vmId, "vmId");           
-            throw ex;
+            throw new InvalidParameterValueException("unable to find system vm by id", null);
         }
 
         if (systemVm.getType() == VirtualMachine.Type.ConsoleProxy) {
@@ -2726,9 +2710,7 @@ public class ManagementServerImpl implements ManagementServer {
         } else if (systemVm.getType() == VirtualMachine.Type.SecondaryStorageVm) {
             return startSecondaryStorageVm(vmId);
         } else {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a system vm with specified vmId");
-        	ex.addProxyObject(systemVm, vmId, "vmId");            
-            throw ex;
+            throw new InvalidParameterValueException("Unable to find system vm by Id", null);
         }
     }
 
@@ -2739,9 +2721,7 @@ public class ManagementServerImpl implements ManagementServer {
         // verify parameters
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(id, VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a system vm with specified vmId");
-        	ex.addProxyObject(systemVm, id, "vmId");
-            throw ex;
+            throw new InvalidParameterValueException("unable to find system vm by Id", null);
         }
 
         try {
@@ -2761,9 +2741,7 @@ public class ManagementServerImpl implements ManagementServer {
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
 
         if (systemVm == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a system vm with specified vmId");
-        	ex.addProxyObject(systemVm, cmd.getId(), "vmId");
-            throw ex;
+            throw new InvalidParameterValueException("unable to find system vm by Id", null);
         }
 
         if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
@@ -2778,9 +2756,7 @@ public class ManagementServerImpl implements ManagementServer {
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(cmd.getId(), VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm);
 
         if (systemVm == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a system vm with specified vmId");
-        	ex.addProxyObject(systemVm, cmd.getId(), "vmId");
-            throw ex;
+            throw new InvalidParameterValueException("unable to find a system vm by Id", null);
         }
 
         if (systemVm.getType().equals(VirtualMachine.Type.ConsoleProxy)) {
@@ -2816,9 +2792,7 @@ public class ManagementServerImpl implements ManagementServer {
         // verify that user exists
         User user = _accountMgr.getUserIncludingRemoved(userId);
         if ((user == null) || (user.getRemoved() != null)) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find active user of specified id");
-        	ex.addProxyObject(user, userId, "userId");
-            throw ex;
+            throw new InvalidParameterValueException("Unable to find active user by Id", null);
         }
 
         // check permissions
@@ -2865,7 +2839,7 @@ public class ManagementServerImpl implements ManagementServer {
                     supportELB = networkType;
             }
         }
-        
+
         long diskOffMaxSize = Long.valueOf(_configDao.getValue(Config.CustomDiskOfferingMaxSize.key()));
 
         String userPublicTemplateEnabled = _configs.get(Config.AllowPublicUserTemplates.key());
@@ -2877,7 +2851,7 @@ public class ManagementServerImpl implements ManagementServer {
         capabilities.put("projectInviteRequired", _projectMgr.projectInviteRequired());
         capabilities.put("allowusercreateprojects", _projectMgr.allowUserToCreateProject());
         capabilities.put("customDiskOffMaxSize", diskOffMaxSize);
-        
+
         return capabilities;
     }
 
@@ -2902,19 +2876,17 @@ public class ManagementServerImpl implements ManagementServer {
 
         VolumeVO volume = _volumeDao.findById(volumeId);
         if (volume == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find volume with specified volumeId");
-        	ex.addProxyObject(volume, volumeId, "volumeId");
-            throw ex;
+            throw new InvalidParameterValueException("Unable to find volume by Id", null);
         }
 
         // perform permission check
         _accountMgr.checkAccess(account, null, true, volume);
 
         if (_dcDao.findById(zoneId) == null) {
-            throw new InvalidParameterValueException("Please specify a valid zone.");
+            throw new InvalidParameterValueException("Please specify a valid zone.", null);
         }
         if (volume.getPoolId() == null) {
-            throw new InvalidParameterValueException("The volume doesnt belong to a storage pool so cant extract it");
+            throw new InvalidParameterValueException("The volume doesnt belong to a storage pool so cant extract it", null);
         }
         // Extract activity only for detached volumes or for volumes whose instance is stopped
         if (volume.getInstanceId() != null && ApiDBUtils.findVMInstanceById(volume.getInstanceId()).getState() != State.Stopped) {
@@ -2931,8 +2903,8 @@ public class ManagementServerImpl implements ManagementServer {
                 boolean isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
                 if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) { // Global
 // admins are always allowed to extract
-                	PermissionDeniedException ex = new PermissionDeniedException("The volume with specified volumeId is not allowed to be extracted");
-                	ex.addProxyObject(volume, volumeId, "volumeId");                    
+                    PermissionDeniedException ex = new PermissionDeniedException("The volume with specified volumeId is not allowed to be extracted");
+                    ex.addProxyObject(volume, volumeId, "volumeId");
                     throw ex;
                 }
             }
@@ -2940,7 +2912,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         Upload.Mode extractMode;
         if (mode == null || (!mode.equals(Upload.Mode.FTP_UPLOAD.toString()) && !mode.equals(Upload.Mode.HTTP_DOWNLOAD.toString()))) {
-            throw new InvalidParameterValueException("Please specify a valid extract Mode ");
+            throw new InvalidParameterValueException("Please specify a valid extract Mode ", null);
         } else {
             extractMode = mode.equals(Upload.Mode.FTP_UPLOAD.toString()) ? Upload.Mode.FTP_UPLOAD : Upload.Mode.HTTP_DOWNLOAD;
         }
@@ -3068,9 +3040,7 @@ public class ManagementServerImpl implements ManagementServer {
         // Verify input parameters
         InstanceGroupVO group = _vmGroupDao.findById(groupId.longValue());
         if (group == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find a vm group with specified groupId");
-        	ex.addProxyObject(group, groupId, "groupId");
-            throw ex;
+            throw new InvalidParameterValueException("unable to find a vm group by Id", null);
         }
 
         _accountMgr.checkAccess(caller, null, true, group);
@@ -3079,7 +3049,7 @@ public class ManagementServerImpl implements ManagementServer {
         boolean isNameInUse = _vmGroupDao.isNameInUse(group.getAccountId(), groupName);
 
         if (isNameInUse && !group.getName().equals(groupName)) {
-            throw new InvalidParameterValueException("Unable to update vm group, a group with name " + groupName + " already exists for account");
+            throw new InvalidParameterValueException("Unable to update vm group, a group with name " + groupName + " already exists for account", null);
         }
 
         if (groupName != null) {
@@ -3185,21 +3155,21 @@ public class ManagementServerImpl implements ManagementServer {
     @DB
     public String uploadCertificate(UploadCustomCertificateCmd cmd) {
         if (cmd.getPrivateKey() != null && cmd.getAlias() != null) {
-            throw new InvalidParameterValueException("Can't change the alias for private key certification");
+            throw new InvalidParameterValueException("Can't change the alias for private key certification", null);
         }
 
         if (cmd.getPrivateKey() == null) {
             if (cmd.getAlias() == null) {
-                throw new InvalidParameterValueException("alias can't be empty, if it's a certification chain");
+                throw new InvalidParameterValueException("alias can't be empty, if it's a certification chain", null);
             }
 
             if (cmd.getCertIndex() == null) {
-                throw new InvalidParameterValueException("index can't be empty, if it's a certifciation chain");
+                throw new InvalidParameterValueException("index can't be empty, if it's a certifciation chain", null);
             }
         }
 
         if (cmd.getPrivateKey() != null && !_ksMgr.validateCertificate(cmd.getCertificate(), cmd.getPrivateKey(), cmd.getDomainSuffix())) {
-            throw new InvalidParameterValueException("Failed to pass certificate validation check");
+            throw new InvalidParameterValueException("Failed to pass certificate validation check", null);
         }
 
         if (cmd.getPrivateKey() != null) {
@@ -3268,7 +3238,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (s != null) {
-            throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
+            throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.", null);
         }
 
         SSHKeysHelper keys = new SSHKeysHelper();
@@ -3292,9 +3262,9 @@ public class ManagementServerImpl implements ManagementServer {
 
         SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (s == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' does not exist for account " + owner.getAccountName() + " in specified domain id");
-        	ex.addProxyObject(owner, owner.getDomainId(), "domainId");
-            throw ex;
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(owner, owner.getDomainId(), "domainId"));
+            throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' does not exist for account " + owner.getAccountName() + " in specified domain id", idList);
         }
 
         return _sshKeyPairDao.deleteByName(caller.getAccountId(), caller.getDomainId(), cmd.getName());
@@ -3339,14 +3309,14 @@ public class ManagementServerImpl implements ManagementServer {
 
         SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (s != null) {
-            throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
+            throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.", null);
         }
 
         String name = cmd.getName();
         String publicKey = SSHKeysHelper.getPublicKeyFromKeyMaterial(cmd.getPublicKey());
 
         if (publicKey == null) {
-            throw new InvalidParameterValueException("Public key is invalid");
+            throw new InvalidParameterValueException("Public key is invalid", null);
         }
 
         String fingerprint = SSHKeysHelper.getPublicKeyFingerprint(publicKey);
@@ -3375,9 +3345,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         UserVmVO vm = _userVmDao.findById(cmd.getId());
         if (vm == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("No VM with specified id found.");
-        	ex.addProxyObject(vm, cmd.getId(), "vmId");
-            throw ex;
+            throw new InvalidParameterValueException("Could not find VM by id", null);
         }
 
         // make permission check
@@ -3386,9 +3354,9 @@ public class ManagementServerImpl implements ManagementServer {
         _userVmDao.loadDetails(vm);
         String password = vm.getDetail("Encrypted.Password");
         if (password == null || password.equals("")) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("No password for VM with specified id found.");
-        	ex.addProxyObject(vm, cmd.getId(), "vmId");
-            throw ex;
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(vm, cmd.getId(), "vmId"));
+            throw new InvalidParameterValueException("No password for VM with specified id found.", idList);
         }
 
         return password;
@@ -3398,19 +3366,19 @@ public class ManagementServerImpl implements ManagementServer {
     @DB
     public boolean updateHostPassword(UpdateHostPasswordCmd cmd) {
         if (cmd.getClusterId() == null && cmd.getHostId() == null) {
-            throw new InvalidParameterValueException("You should provide one of cluster id or a host id.");
+            throw new InvalidParameterValueException("You should provide one of cluster id or a host id.", null);
         } else if (cmd.getClusterId() == null) {
             HostVO host = _hostDao.findById(cmd.getHostId());
             if (host != null && host.getHypervisorType() == HypervisorType.XenServer) {
-                throw new InvalidParameterValueException("You should provide cluster id for Xenserver cluster.");
+                throw new InvalidParameterValueException("You should provide cluster id for Xenserver cluster.", null);
             } else {
-                throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
+                throw new InvalidParameterValueException("This operation is not supported for this hypervisor type", null);
             }
         } else {
 
             ClusterVO cluster = ApiDBUtils.findClusterById(cmd.getClusterId());
             if (cluster == null || cluster.getHypervisorType() != HypervisorType.XenServer) {
-                throw new InvalidParameterValueException("This operation is not supported for this hypervisor type");
+                throw new InvalidParameterValueException("This operation is not supported for this hypervisor type", null);
             }
             // get all the hosts in this cluster
             List<HostVO> hosts = _resourceMgr.listAllHostsInCluster(cmd.getClusterId());
@@ -3430,7 +3398,7 @@ public class ManagementServerImpl implements ManagementServer {
                     } else {
                         // if one host in the cluster has diff username then rollback to maintain consistency
                         txn.rollback();
-                        throw new InvalidParameterValueException("The username is not same for all hosts, please modify passwords for individual hosts.");
+                        throw new InvalidParameterValueException("The username is not same for all hosts, please modify passwords for individual hosts.", null);
                     }
                 }
                 txn.commit();
@@ -3492,9 +3460,7 @@ public class ManagementServerImpl implements ManagementServer {
         HypervisorCapabilitiesVO hpvCapabilities = _hypervisorCapabilitiesDao.findById(id, true);
 
         if (hpvCapabilities == null) {
-        	InvalidParameterValueException ex = new InvalidParameterValueException("unable to find the hypervisor capabilities for specified id");
-        	ex.addProxyObject(hpvCapabilities, id, "Id");
-            throw ex;
+            throw new InvalidParameterValueException("unable to find the hypervisor capabilities by id", null);
         }
 
         boolean updateNeeded = (maxGuestsLimit != null || securityGroupEnabled != null);
@@ -3520,8 +3486,8 @@ public class ManagementServerImpl implements ManagementServer {
             return null;
         }
     }
-    
-    
+
+
     @Override
     public VirtualMachine upgradeSystemVM(UpgradeSystemVMCmd cmd) {
         Long systemVmId = cmd.getId();
@@ -3531,16 +3497,16 @@ public class ManagementServerImpl implements ManagementServer {
         VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(systemVmId, VirtualMachine.Type.ConsoleProxy, 
                 VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {
-            throw new InvalidParameterValueException("Unable to find SystemVm with id " + systemVmId);
+            throw new InvalidParameterValueException("Unable to find SystemVm by id", null);
         }
 
         _accountMgr.checkAccess(caller, null, true, systemVm);
-        
+
         // Check that the specified service offering ID is valid
         _itMgr.checkIfCanUpgrade(systemVm, serviceOfferingId);
 
         boolean result = _itMgr.upgradeVmDb(systemVmId, serviceOfferingId);
-        
+
         if (result) {
             return _vmInstanceDao.findById(systemVmId);
         } else {
