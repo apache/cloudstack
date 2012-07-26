@@ -881,7 +881,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         
         super.finalizeNetworkRulesForNetwork(cmds, router, provider, guestNetworkId);
         
-        if (router.getVpcId() == null) {
+        if (router.getVpcId() != null) {
             if (_networkMgr.isProviderSupportServiceInNetwork(guestNetworkId, Service.NetworkACL, Provider.VPCVirtualRouter)) {
                 List<? extends FirewallRule> networkACLs = _networkACLMgr.listNetworkACLs(guestNetworkId);
                 s_logger.debug("Found " + networkACLs.size() + " network ACLs to apply as a part of VPC VR " + router 

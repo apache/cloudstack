@@ -287,11 +287,13 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
         capabilities.putAll(VirtualRouterElement.capabilities);
         
-        Map<Capability, String> sourceNatCapabilities = capabilities.get(Service.SourceNat);
+        Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
+        sourceNatCapabilities.putAll(capabilities.get(Service.SourceNat));
         sourceNatCapabilities.put(Capability.RedundantRouter, "false");
         capabilities.put(Service.SourceNat, sourceNatCapabilities);
         
-        Map<Capability, String> vpnCapabilities = capabilities.get(Service.Vpn);
+        Map<Capability, String> vpnCapabilities = new HashMap<Capability, String>();
+        vpnCapabilities.putAll(capabilities.get(Service.Vpn));
         vpnCapabilities.put(Capability.VpnTypes, "s2svpn");
         capabilities.put(Service.Vpn, vpnCapabilities);
         
