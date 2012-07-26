@@ -116,7 +116,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "Updating AutoScale Vm Profile";
+        return "Updating AutoScale Vm Profile. Vm Profile Id: " + getId();
     }
 
     @Override

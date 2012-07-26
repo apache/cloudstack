@@ -20,17 +20,19 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.AutoScaleVmGroupResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.user.Account;
 
 @Implementation(description = "Enables an AutoScale Vm Group", responseObject = AutoScaleVmGroupResponse.class)
-public class EnableAutoScaleVmGroupCmd extends BaseCmd {
+public class EnableAutoScaleVmGroupCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(EnableAutoScaleVmGroupCmd.class.getName());
     private static final String s_name = "enableautoscalevmGroupresponse";
 
@@ -79,6 +81,16 @@ public class EnableAutoScaleVmGroupCmd extends BaseCmd {
         }
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are
         // tracked
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_AUTOSCALEVMGROUP_ENABLE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Enabling AutoScale Vm Group. Vm Group Id: "+getId();
     }
 
 }
