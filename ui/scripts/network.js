@@ -164,6 +164,23 @@
     sectionSelect: {
       preFilter: function(args) {
         var havingSecurityGroupNetwork = false;
+        var havingBasicZones = false;
+
+        // Get basic zones
+        $.ajax({
+          url: createURL('listZones'),
+          async: false,
+          success: function(json) {
+            var zones = json.listzonesresponse.zone ?
+                  json.listzonesresponse.zone : [];
+            var basicZones = $.grep(zones, function(zone) {
+              return zone.networktype == 'Basic';
+            });
+            
+            havingBasicZones = basicZones.length ? true : false;
+          }
+        });
+        
         $.ajax({
           url: createURL('listNetworks', { ignoreProject: true }),
           data: {
@@ -178,7 +195,12 @@
           }
         });
 
-        var sectionsToShow = ['networks', 'vpc', 'vpnCustomerGateway'];
+        var sectionsToShow = ['networks', 'vpnCustomerGateway'];
+
+        if (!havingBasicZones) {
+          sectionsToShow.push('vpc');
+        }
+        
         if(havingSecurityGroupNetwork == true)
           sectionsToShow.push('securityGroups');
 
