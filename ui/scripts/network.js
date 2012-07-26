@@ -869,6 +869,7 @@
                       context: context,
                       listView: $.extend(true, {}, cloudStack.sections.instances, {
                         listView: {
+                          filters: false,
                           dataProvider: function(args) {                           
 														var networkid;
 														if('vpc' in args.context) 
@@ -1390,6 +1391,7 @@
 
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
+                        filters: false,
                         dataProvider: function(args) {
                           var $listView = args.$listView;
                           var data = {
@@ -2125,6 +2127,7 @@
                   loadBalancing: {
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
+                        filters: false,
                         dataProvider: function(args) {
                           var itemData = $.isArray(args.context.multiRule) && args.context.multiRule[0]['_itemData'] ?
                             args.context.multiRule[0]['_itemData'] : [];
@@ -2623,6 +2626,7 @@
                     },
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
                       listView: {
+                        filters: false,
                         dataProvider: function(args) {
                           var networkid;
 													if('vpc' in args.context) 

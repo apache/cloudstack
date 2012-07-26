@@ -1441,6 +1441,7 @@
 									context: context,
 									listView: $.extend(true, {}, cloudStack.sections.instances, {
 										listView: {
+                      filters: false,
 											dataProvider: function(args) {                           
 												var networkid;
 												if('vpc' in args.context) 
