@@ -742,6 +742,6 @@ UPDATE `cloud`.`guest_os` SET category_id=4 where id=131;
 UPDATE `cloud`.`networks` n  SET n.name=(CONCAT('guestNetworkForBasicZone_', (SELECT name from `cloud`.`data_center` d where d.id=n.data_center_id AND d.networktype='Basic'))) where n.name is null and n.traffic_type='Guest';
 UPDATE `cloud`.`networks` n  SET n.display_text=(CONCAT('guestNetworkForBasicZone_', (SELECT name from `cloud`.`data_center` d where d.id=n.data_center_id AND d.networktype='Basic'))) where n.display_text is null and n.traffic_type='Guest';
 
-UPDATE `cloud`.`configuration` SET description='Bypass internal dns, use exetrnal dns1 and dns2' WHERE name='use.external.dns';
+UPDATE `cloud`.`configuration` SET description='Bypass internal dns, use external dns1 and dns2' WHERE name='use.external.dns';
 UPDATE `cloud`.`configuration` SET category='Alert' WHERE name='capacity.check.period';
 UPDATE `cloud`.`vm_instance` SET vnc_password = '' where removed is not null;

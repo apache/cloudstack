@@ -48,7 +48,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     // ///////////////////////////////////////////////////
 
     @IdentityMapper(entityTableName="user_ip_address")
-    @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.LONG, description = "the IP address id of the port forwarding rule")
+    @Parameter(name = ApiConstants.IP_ADDRESS_ID, type = CommandType.LONG, required=true, description = "the IP address id of the port forwarding rule")
     private Long ipAddressId;
 
     @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "the protocol for the firewall rule. Valid values are TCP/UDP/ICMP.")

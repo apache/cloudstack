@@ -45,7 +45,6 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.network.IPAddressVO;
-import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
@@ -150,11 +149,11 @@ public class VpcManagerImpl implements VpcManager, Manager{
     FirewallRulesDao _firewallDao;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
-
     private VpcProvider vpcElement = null;
 
     String _name;
     int _cleanupInterval;
+    int _maxNetworks;
 
     @Override
     @DB
@@ -192,7 +191,9 @@ public class VpcManagerImpl implements VpcManager, Manager{
         Map<String, String> configs = configDao.getConfiguration(params);
         String value = configs.get(Config.VpcCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60); // 1 hour
-
+        
+        String maxNtwks = configs.get(Config.VpcMaxNetworks.key());
+        _maxNetworks = NumbersUtil.parseInt(maxNtwks, 3); // max=3 is default
         return true;
     }
 
@@ -972,6 +973,13 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
 
         try {
+            //check number of active networks in vpc
+            if (_ntwkDao.countVpcNetworks(vpc.getId()) >= _maxNetworks) {
+                throw new CloudRuntimeException("Number of networks per VPC can't extend " 
+                        + _maxNetworks + "; increase it using global config " + Config.VpcMaxNetworks);
+            }
+            
+            
             //1) CIDR is required
             if (cidr == null) {
                 throw new InvalidParameterValueException("Gateway/netmask are required when create network for VPC", null);
@@ -1671,6 +1679,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @Override
     public VpcGateway getPrivateGatewayForVpc(long vpcId) {
         return _vpcGatewayDao.getPrivateGatewayForVpc(vpcId);
+    }
+    
+    public int getMaxNetworksPerVpc() {
+        return _maxNetworks;
     }
     
 }

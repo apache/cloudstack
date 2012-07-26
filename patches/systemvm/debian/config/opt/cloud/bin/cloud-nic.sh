@@ -30,6 +30,11 @@ unplug_nic() {
     rule=$(echo $rule | sed 's/\-A/\-D/')
     sudo iptables -t mangle $rule
   done
+  iptables-save -t nat | grep $dev | grep "\-A"  | while read rule
+  do
+    rule=$(echo $rule | sed 's/\-A/\-D/')
+    sudo iptables -t nat $rule
+  done
   iptables-save | grep $dev | grep "\-A"  | while read rule
   do
     rule=$(echo $rule | sed 's/\-A/\-D/')

@@ -170,6 +170,8 @@ ALTER TABLE `cloud`.`domain_router` ADD CONSTRAINT `fk_domain_router__vpc_id` FO
 ALTER TABLE `cloud`.`physical_network_service_providers` ADD COLUMN `networkacl_service_provided` tinyint(1) unsigned NOT NULL DEFAULT 0 COMMENT 'Is Network ACL service provided';
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vpc.cleanup.interval', '3600', 'The interval (in seconds) between cleanup for Inactive VPCs');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vpc.max.networks', '3', 'Maximum number of networks per vpc');
+
 
 CREATE TABLE `cloud`.`counter` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
