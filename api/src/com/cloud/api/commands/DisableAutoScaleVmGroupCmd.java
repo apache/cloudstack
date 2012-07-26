@@ -38,8 +38,8 @@ public class DisableAutoScaleVmGroupCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName = "account")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "Account id")
+    @IdentityMapper(entityTableName="autoscale_vmgroups")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the autoscale group")
     private Long id;
 
     // ///////////////////////////////////////////////////
