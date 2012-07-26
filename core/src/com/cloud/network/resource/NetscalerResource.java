@@ -125,7 +125,7 @@ public class NetscalerResource implements ServerResource {
     // interface to interact with service VM of the SDX appliance
     com.citrix.sdx.nitro.service.nitro_service _netscalerSdxService;
 
-    Long _timeout = new Long(100000);
+    Long _timeout = new Long(0);
     base_response apiCallResult;
 
     public NetscalerResource () {
