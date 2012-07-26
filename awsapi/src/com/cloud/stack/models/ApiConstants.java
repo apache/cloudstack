@@ -116,7 +116,7 @@ public class ApiConstants {
     public static final String DELETE_SSH_KEY_PAIR = "deleteSSHKeyPair";
     public static final String DELETE_SSH_KEY_PAIR_RESPONSE = "deletesshkeypairresponse";
     public static final String DELETE_TAGS = "deleteTags";
-    public static final String DELETE_TAGS_RESPONSE = "deleteTagsresponse";
+    public static final String DELETE_TAGS_RESPONSE = "deletetagsresponse";
     public static final String DELETE_TEMPLATE = "deleteTemplate";
     public static final String DELETE_TEMPLATE_RESPONSE = "deletetemplateresponse";
     public static final String DELETE_VOLUME = "deleteVolume";
