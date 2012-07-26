@@ -9467,6 +9467,29 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   text-decoration: underline;
 }
 
+.vpc-chart li.tier.loading .vm-count {
+  padding-right: 10px;
+}
+
+.vpc-chart li.tier .vm-count .loading-overlay {
+  display: none;
+  width: 18px;
+  height: 18px;
+  position: absolute;
+  left: 94px;
+  top: 9px;
+  /*+border-radius:12px;*/
+  -moz-border-radius: 12px;
+  -webkit-border-radius: 12px;
+  -khtml-border-radius: 12px;
+  border-radius: 12px;
+  background-image: url(../images/ajax-loader-small.gif);
+}
+
+.vpc-chart li.tier.loading .vm-count .loading-overlay {
+  display: block;
+}
+
 .vpc-chart li.tier .vm-count:hover,
 .vpc-chart li.tier .title:hover {
   border-radius: 4px;
