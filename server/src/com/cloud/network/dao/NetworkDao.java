@@ -101,5 +101,7 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long> {
     List<NetworkVO> listByVpc(long vpcId);
     
     NetworkVO getPrivateNetwork(String broadcastUri, String cidr, long accountId, long zoneId);
+    
+    long countVpcNetworks(long vpcId);
 
 }
