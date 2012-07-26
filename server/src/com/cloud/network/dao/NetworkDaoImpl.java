@@ -71,6 +71,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     private final GenericSearchBuilder<NetworkVO, Integer> NetworksCount;
     final SearchBuilder<NetworkVO> SourceNATSearch;
     final GenericSearchBuilder<NetworkVO, Long>  CountByZoneAndURI;
+    final GenericSearchBuilder<NetworkVO, Long> VpcNetworksCount;
     
     
     ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
@@ -194,6 +195,11 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         join6.and("service", join6.entity().getService(), Op.EQ);
         SourceNATSearch.join("services", join6, SourceNATSearch.entity().getId(), join6.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
         SourceNATSearch.done();
+        
+        VpcNetworksCount = createSearchBuilder(Long.class);
+        VpcNetworksCount.and("vpcId", VpcNetworksCount.entity().getVpcId(), Op.EQ);
+        VpcNetworksCount.select(null, Func.COUNT, VpcNetworksCount.entity().getId());
+        VpcNetworksCount.done();
 
     }
 
@@ -533,5 +539,12 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         boolean result = super.remove(id);
         txn.commit();
         return result;
+    }
+
+    @Override
+    public long countVpcNetworks(long vpcId) {
+        SearchCriteria<Long> sc = VpcNetworksCount.create();
+        sc.setParameters("vpcId", vpcId);
+        return customSearch(sc, null).get(0);
     }
 }

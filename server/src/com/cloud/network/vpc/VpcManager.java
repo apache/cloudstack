@@ -22,7 +22,6 @@ import java.util.Set;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.IpAddress;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.element.VpcProvider;
@@ -111,4 +110,9 @@ public interface VpcManager extends VpcService{
      * @return
      */
     VpcGateway getPrivateGatewayForVpc(long vpcId);
+
+    /**
+     * @return
+     */
+    int getMaxNetworksPerVpc();
 }
