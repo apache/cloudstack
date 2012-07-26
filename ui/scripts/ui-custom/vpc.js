@@ -456,33 +456,33 @@
     };
 
     switch(actionID) {
-      case 'addVM':
-        action({
-          context: context,
-          complete: function(args) {
-            var pendingVMs = $tier.data('vpc-tier-pending-vms');
+    case 'addVM':
+      action({
+        context: context,
+        complete: function(args) {
+          var pendingVMs = $tier.data('vpc-tier-pending-vms');
 
-            pendingVMs = pendingVMs ? pendingVMs + 1 : 1;
-            $tier.addClass('loading');
-            $tier.data('vpc-tier-pending-vms', pendingVMs);
-            success(args);
+          pendingVMs = pendingVMs ? pendingVMs + 1 : 1;
+          $tier.addClass('loading');
+          $tier.data('vpc-tier-pending-vms', pendingVMs);
+          success(args);
+        }
+      });
+      break;
+    case 'remove':
+      $loading.appendTo($tier);
+      action({
+        context: context,
+        response: {
+          success: function(args) {
+            success($.extend(args, {
+              remove: true
+            }));
           }
-        });
-        break;
-      case 'remove':
-        $loading.appendTo($tier);
-        action({
-          context: context,
-          response: {
-            success: function(args) {
-              success($.extend(args, {
-                remove: true
-              }));
-            }
-          }
-        });
-        break;
-      case 'acl':
+        }
+      });
+      break;
+    case 'acl':
       // Show ACL dialog
       $('<div>').multiEdit(
         $.extend(true, {}, actionArgs.multiEdit, {
@@ -501,16 +501,16 @@
         }
       }).closest('.ui-dialog').overlay();
       break;
-      default:
-        $loading.appendTo($tier);
-        action({
-          context: context,
-          complete: success,
-          response: {
-            success: success,
-            error: function(args) { $loading.remove(); }
-          }
-        });
+    default:
+      $loading.appendTo($tier);
+      action({
+        context: context,
+        complete: success,
+        response: {
+          success: success,
+          error: function(args) { $loading.remove(); }
+        }
+      });
     }
   };
 
