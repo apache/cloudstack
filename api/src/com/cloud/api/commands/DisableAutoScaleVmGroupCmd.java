@@ -20,17 +20,19 @@ package com.cloud.api.commands;
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
+import com.cloud.api.BaseAsyncCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.AutoScaleVmGroupResponse;
+import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.user.Account;
 
 @Implementation(description = "Disables an AutoScale Vm Group", responseObject = AutoScaleVmGroupResponse.class)
-public class DisableAutoScaleVmGroupCmd extends BaseCmd {
+public class DisableAutoScaleVmGroupCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DisableAutoScaleVmGroupCmd.class.getName());
     private static final String s_name = "disableautoscalevmGroupresponse";
 
@@ -38,8 +40,8 @@ public class DisableAutoScaleVmGroupCmd extends BaseCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @IdentityMapper(entityTableName = "account")
-    @Parameter(name = ApiConstants.ID, type = CommandType.LONG, description = "Account id")
+    @IdentityMapper(entityTableName="autoscale_vmgroups")
+    @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="the ID of the autoscale group")
     private Long id;
 
     // ///////////////////////////////////////////////////
@@ -81,4 +83,13 @@ public class DisableAutoScaleVmGroupCmd extends BaseCmd {
         // tracked
     }
 
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_AUTOSCALEVMGROUP_DISABLE;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Disabling AutoScale Vm Group. Vm Group Id: " + getId();
+    }
 }

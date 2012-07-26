@@ -156,7 +156,7 @@ public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
         for (String keyValue : keyValues) { // keyValue == "hostid=123"
             String[] keyAndValue = keyValue.split("="); // keyValue = hostid, 123
             if (keyAndValue.length != 2) {
-                throw new InvalidParameterValueException("Invalid parameter in otherDeployParam : " + keyValue);
+                throw new InvalidParameterValueException("Invalid parameter in otherDeployParam : " + keyValue, null);
             }
             String paramName = keyAndValue[0]; // hostid
             String paramValue = keyAndValue[1]; // 123

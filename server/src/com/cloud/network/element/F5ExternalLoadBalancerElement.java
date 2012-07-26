@@ -73,8 +73,8 @@ import com.cloud.network.resource.F5BigIpResource;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.resource.ServerResource;
 import com.cloud.server.api.response.ExternalLoadBalancerResponse;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -123,7 +123,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException,
-            InsufficientNetworkCapacityException {
+    InsufficientNetworkCapacityException {
 
         if (!canHandle(guestConfig)) {
             return false;
@@ -138,7 +138,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
 
     @Override
     public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-            InsufficientNetworkCapacityException, ResourceUnavailableException {
+    InsufficientNetworkCapacityException, ResourceUnavailableException {
         return true;
     }
 
@@ -239,7 +239,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
 
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+    ResourceUnavailableException {
         // TODO Auto-generated method stub
         return true;
     }
@@ -265,18 +265,20 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
 
         zone = _dcDao.findById(zoneId);
         if (zone == null) {
-            throw new InvalidParameterValueException("Could not find zone with ID: " + zoneId);
+            throw new InvalidParameterValueException("Could not find zone by ID", null);
         }
 
         List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZone(zoneId);
         if ((physicalNetworks == null) || (physicalNetworks.size() > 1)) {
-            throw new InvalidParameterValueException("There are no physical networks or multiple physical networks configured in zone with ID: "
-                    + zoneId + " to add this device.");
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(zone, zoneId, "zoneId"));
+            throw new InvalidParameterValueException("There are no physical networks or multiple physical networks " +
+                    "configured in zone with specified zoneId to add this device.", idList);
         }
         pNetwork = physicalNetworks.get(0);
 
         String deviceType = NetworkDevice.F5BigIpLoadBalancer.getName();
-        lbDeviceVO = addExternalLoadBalancer(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceType, (ServerResource) new F5BigIpResource());
+        lbDeviceVO = addExternalLoadBalancer(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceType, new F5BigIpResource());
 
         if (lbDeviceVO != null) {
             lbHost = _hostDao.findById(lbDeviceVO.getHostId());
@@ -301,18 +303,21 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         if (zoneId != null) {
             zone = _dcDao.findById(zoneId);
             if (zone == null) {
-                throw new InvalidParameterValueException("Could not find zone with ID: " + zoneId);
+                throw new InvalidParameterValueException("Could not find zone by ID", null);
             }
 
             List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZone(zoneId);
             if ((physicalNetworks == null) || (physicalNetworks.size() > 1)) {
-                throw new InvalidParameterValueException("There are no physical networks or multiple physical networks configured in zone with ID: "
-                        + zoneId + " to add this device.");
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(zone, zoneId, "zoneId"));
+                throw new InvalidParameterValueException("There are no physical networks or multiple " +
+                        "physical networks configured in zone with specified zoneId " +
+                        "to add this device.", idList);
             }
             pNetwork = physicalNetworks.get(0);
             return listExternalLoadBalancers(pNetwork.getId(), NetworkDevice.F5BigIpLoadBalancer.getName());
         } else {
-            throw new InvalidParameterValueException("Zone Id must be specified to list the external load balancers");
+            throw new InvalidParameterValueException("Zone Id must be specified to list the external load balancers", null);
         }
     }
 
@@ -326,10 +331,10 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     public ExternalLoadBalancerDeviceVO addF5LoadBalancer(AddF5LoadBalancerCmd cmd) {
         String deviceName = cmd.getDeviceType();
         if (!deviceName.equalsIgnoreCase(NetworkDevice.F5BigIpLoadBalancer.getName())) {
-            throw new InvalidParameterValueException("Invalid F5 load balancer device type");
+            throw new InvalidParameterValueException("Invalid F5 load balancer device type", null);
         }
 
-        return addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName, (ServerResource) new F5BigIpResource());
+        return addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName, new F5BigIpResource());
 
     }
 
@@ -339,7 +344,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
 
         ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
         if ((lbDeviceVo == null) || !lbDeviceVo.getDeviceName().equalsIgnoreCase(NetworkDevice.F5BigIpLoadBalancer.getName())) {
-            throw new InvalidParameterValueException("No F5 load balancer device found with ID: " + lbDeviceId);
+            throw new InvalidParameterValueException("Couldn't find F5 load balancer device by ID", null);
         }
 
         return deleteExternalLoadBalancer(lbDeviceVo.getHostId());
@@ -352,7 +357,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
 
         ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
         if ((lbDeviceVo == null) || !lbDeviceVo.getDeviceName().equalsIgnoreCase(NetworkDevice.F5BigIpLoadBalancer.getName())) {
-            throw new InvalidParameterValueException("No F5 load balancer device found with ID: " + lbDeviceId);
+            throw new InvalidParameterValueException("Couldn't find F5 load balancer device by ID", null);
         }
 
         if (capacity != null) {
@@ -381,13 +386,13 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         List<ExternalLoadBalancerDeviceVO> lbDevices = new ArrayList<ExternalLoadBalancerDeviceVO>();
 
         if (physcialNetworkId == null && lbDeviceId == null) {
-            throw new InvalidParameterValueException("Either physical network Id or load balancer device Id must be specified");
+            throw new InvalidParameterValueException("Either physical network Id or load balancer device Id must be specified", null);
         }
 
         if (lbDeviceId != null) {
             ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
             if (lbDeviceVo == null || !lbDeviceVo.getDeviceName().equalsIgnoreCase(NetworkDevice.F5BigIpLoadBalancer.getName())) {
-                throw new InvalidParameterValueException("Could not find F5 load balancer device with ID: " + lbDeviceId);
+                throw new InvalidParameterValueException("Could not find F5 load balancer device by ID", null);
             }
             lbDevices.add(lbDeviceVo);
             return lbDevices;
@@ -396,7 +401,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
         if (physcialNetworkId != null) {
             pNetwork = _physicalNetworkDao.findById(physcialNetworkId);
             if (pNetwork == null) {
-                throw new InvalidParameterValueException("Could not find phyical network with ID: " + physcialNetworkId);
+                throw new InvalidParameterValueException("Could not find phyical network by ID", null);
             }
             lbDevices = _lbDeviceDao.listByPhysicalNetworkAndProvider(physcialNetworkId, Provider.F5BigIp.getName());
             return lbDevices;
@@ -412,7 +417,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
 
         ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
         if (lbDeviceVo == null || !lbDeviceVo.getDeviceName().equalsIgnoreCase(NetworkDevice.F5BigIpLoadBalancer.getName())) {
-            throw new InvalidParameterValueException("Could not find F5 load balancer device with ID " + lbDeviceId);
+            throw new InvalidParameterValueException("Could not find F5 load balancer device by ID ", null);
         }
 
         List<NetworkExternalLoadBalancerVO> networkLbMaps = _networkLBDao.listByLoadBalancerDeviceId(lbDeviceId);

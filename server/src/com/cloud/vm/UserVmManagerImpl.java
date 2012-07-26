@@ -2196,7 +2196,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     // Validate physical network
                     PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
                     if (physicalNetwork == null) {
-                        throw new InvalidParameterValueException("Unable to find physical network with id: "+physicalNetworkId   + " and tag: " +requiredOfferings.get(0).getTags());
+                        throw new InvalidParameterValueException("Unable to find physical network by id and tag: " +requiredOfferings.get(0).getTags(), null);
                     }
                     s_logger.debug("Creating network for account " + owner + " from the network offering id=" + 
                             requiredOfferings.get(0).getId() + " as a part of deployVM process");
@@ -2429,7 +2429,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         String instanceName = VirtualMachineName.getVmName(id, owner.getId(), _instance);
 
         String uuidName = UUID.randomUUID().toString();
-        
+
         //verify hostname information
         if (hostName == null) {
             hostName = uuidName;
@@ -2453,16 +2453,16 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                     ntwkDomains.put(ntwkDomain, ntwkIds);
                 }
             } 
-            
+
             for (String ntwkDomain : ntwkDomains.keySet()) {
                 for (Long ntwkId : ntwkDomains.get(ntwkDomain)) {
-                  //* get all vms hostNames in the network
+                    //* get all vms hostNames in the network
                     List<String> hostNames = _vmInstanceDao.listDistinctHostNames(ntwkId);
                     //* verify that there are no duplicates
                     if (hostNames.contains(hostName)) {
                         throw new InvalidParameterValueException("The vm with hostName " + hostName
                                 + " already exists in the network domain: " + ntwkDomain + "; network=" 
-                                + _networkMgr.getNetwork(ntwkId));
+                                + _networkMgr.getNetwork(ntwkId), null);
                     }
                 }
             }
@@ -3259,7 +3259,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         return usesLocalStorage;
     }
-    
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_MIGRATE, eventDescription = "migrating VM", async = true)
     public VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
@@ -3592,7 +3592,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                             if (physicalNetwork == null) {
                                 throw new InvalidParameterValueException("Unable to find physical network with id: "+physicalNetworkId   + " and tag: " +requiredOfferings.get(0).getTags());
                             }
-                            
+
                             s_logger.debug("Creating network for account " + newAccount + " from the network offering id=" + 
                                     requiredOfferings.get(0).getId() + " as a part of deployVM process");
                             Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), 
@@ -3745,9 +3745,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     }
     @Override
     public boolean recreateNeeded(VirtualMachineProfile<UserVmVO> profile,
-                       long hostId, Commands cmds, ReservationContext context) {
-               // TODO Auto-generated method stub
-               return false;
+            long hostId, Commands cmds, ReservationContext context) {
+        // TODO Auto-generated method stub
+        return false;
     }
 
 }

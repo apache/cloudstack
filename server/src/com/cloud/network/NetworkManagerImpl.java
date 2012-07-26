@@ -537,12 +537,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         return ipToReturn;
     }
-    
+
     @Override
     public PublicIp assignVpnGatewayIpAddress(long dcId, Account owner, long vpcId) throws InsufficientAddressCapacityException, ConcurrentOperationException {
         return assignDedicateIpAddress(owner, null, vpcId, dcId, false);
     }
-    
+
 
     @DB
     public PublicIp assignDedicateIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId, boolean isSourceNat) 
@@ -1143,7 +1143,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public IPAddressVO associateIPToGuestNetwork(long ipId, long networkId, boolean releaseOnFailure) 
             throws ResourceAllocationException, ResourceUnavailableException, 
-    InsufficientAddressCapacityException, ConcurrentOperationException {
+            InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
         Account owner = null;
 
@@ -1467,7 +1467,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             offering.setState(NetworkOffering.State.Enabled);
             _networkOfferingDao.update(offering.getId(), offering);
         }
-        
+
         if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultIsolatedNetworkOfferingForVpcNetworksNoLB) == null) {
             //remove LB service
             defaultVPCOffProviders.remove(Service.Lb);
@@ -2282,7 +2282,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public void releaseNic(VirtualMachineProfile<? extends VMInstanceVO> vmProfile, Nic nic) 
             throws ConcurrentOperationException, ResourceUnavailableException {
-        
+
         NicVO nicVO = _nicDao.findById(nic.getId());
         releaseNic(vmProfile, nicVO);
     }
@@ -2356,7 +2356,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (broadcastUri != null) {
             nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(networkId, vm.getId(), broadcastUri);
         } else {
-           nic =  _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
+            nic =  _nicDao.findByInstanceIdAndNetworkId(networkId, vm.getId());
         }
         NetworkVO network = _networksDao.findById(networkId);
         Integer networkRate = getNetworkRate(network.getId(), vm.getId());
@@ -3189,7 +3189,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         Filter searchFilter = new Filter(NetworkVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchBuilder<NetworkVO> sb = _networksDao.createSearchBuilder();
-        
+
         if (forVpc != null) {
             if (forVpc) {
                 sb.and("vpc", sb.entity().getVpcId(), Op.NNULL);
@@ -4260,14 +4260,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
-                
+
                 long physicalNetworkId = findPhysicalNetworkId(zoneId, requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
                 // Validate physical network
                 PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
                 if (physicalNetwork == null) {
-                    throw new InvalidParameterValueException("Unable to find physical network with id: "+physicalNetworkId   + " and tag: " +requiredOfferings.get(0).getTags());
+                    throw new InvalidParameterValueException("Unable to find physical network by id, with tag: " +requiredOfferings.get(0).getTags(), null);
                 }
-                
+
                 s_logger.debug("Creating network for account " + owner + " from the network offering id=" + 
                         requiredOfferings.get(0).getId() + " as a part of createVlanIpRange process");
                 guestNetwork = createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network"
@@ -5301,7 +5301,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             txn.start();
             // Create the new physical network in the database
             long id = _physicalNetworkDao.getNextInSequence(Long.class, "id");
-            
+
             PhysicalNetworkVO pNetwork = new PhysicalNetworkVO(id, zoneId, vnetRange, networkSpeed, domainId, broadcastDomainRange, name);
             pNetwork.setTags(tags);
             pNetwork.setIsolationMethods(isolationMethods);
@@ -6954,7 +6954,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (networkId == null) {
             networkId = userIp.getAssociatedWithNetworkId();
         }
-        
+
         NetworkVO network = _networksDao.findById(networkId);
         NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         if (offering.getGuestType() != GuestType.Isolated) {
@@ -7212,7 +7212,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             if (network.getVpcId() != null) {
                 throw new InvalidParameterValueException("Can't assign ip to the network directly when network belongs" +
-                		" to VPC.Specify vpcId to associate ip address to VPC", null);
+                        " to VPC.Specify vpcId to associate ip address to VPC", null);
             }
             return associateIPToGuestNetwork(ipId, networkId, true);
         }
@@ -7244,11 +7244,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (ipUsedInVpc(ip)) {
             return;
         }
-        
+
         if (ip == null || ip.getVpcId() == null) {
             return;
         }
-        
+
         s_logger.debug("Releasing VPC ip address " + ip + " from vpc network id=" + networkId);
 
         long  vpcId = ip.getVpcId();
@@ -7389,41 +7389,41 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         return true;
     }
-    
+
     @Override
     public NicProfile createNicForVm(Network network, NicProfile requested, ReservationContext context,
             VirtualMachineProfileImpl<VMInstanceVO> vmProfile, boolean prepare)
-            throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, 
-            ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        
+                    throws InsufficientVirtualNetworkCapcityException, InsufficientAddressCapacityException, 
+                    ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
+
         VirtualMachine vm = vmProfile.getVirtualMachine();
         NetworkVO networkVO = _networksDao.findById(network.getId());
         DataCenter dc = _configMgr.getZone(network.getDataCenterId());
         Host host = _hostDao.findById(vm.getHostId()); 
         DeployDestination dest = new DeployDestination(dc, null, null, host);
-        
+
         NicProfile nic = getNicProfileForVm(network, requested, vm);
-        
+
         //1) allocate nic (if needed)
         if (nic == null) {
             int deviceId = _nicDao.countNics(vm.getId());
-            
+
             nic = allocateNic(requested, network, false, 
                     deviceId, vmProfile).first();
-            
+
             if (nic == null) {
                 throw new CloudRuntimeException("Failed to allocate nic for vm " + vm + " in network " + network);
             }
-            
+
             s_logger.debug("Nic is allocated successfully for vm " + vm + " in network " + network); 
         }
-        
+
         //2) prepare nic
         if (prepare) {
             nic = prepareNic(vmProfile, dest, context, nic.getId(), networkVO);
             s_logger.debug("Nic is prepared successfully for vm " + vm + " in network " + network);
         }
-        
+
         return nic;
     }
 
@@ -7446,5 +7446,5 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         return nic;
     }
-    
+
 }

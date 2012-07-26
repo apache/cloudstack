@@ -120,7 +120,7 @@ public class CreateAutoScaleVmGroupCmd extends BaseAsyncCreateCmd {
     public long getEntityOwnerId() {
         LoadBalancer lb = _entityMgr.findById(LoadBalancer.class, getLbRuleId());
         if (lb == null) {
-            throw new InvalidParameterValueException("Unable to find loadbalancer from lbRuleId=" + getLbRuleId());
+            throw new InvalidParameterValueException("Unable to find loadbalancer by lbRuleId", null);
         }
         return lb.getAccountId();
     }

@@ -38,6 +38,8 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
+import com.cloud.agent.api.CheckS2SVpnConnectionsAnswer;
+import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
@@ -135,6 +137,8 @@ public class VirtualRoutingResource implements Manager {
                 return execute((GetDomRVersionCmd)cmd);
             } else if (cmd instanceof Site2SiteVpnCfgCommand) {
                 return execute((Site2SiteVpnCfgCommand)cmd);
+            } else if (cmd instanceof CheckS2SVpnConnectionsCommand) {
+                return execute((CheckS2SVpnConnectionsCommand)cmd);
             }
             else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
@@ -504,6 +508,21 @@ public class VirtualRoutingResource implements Manager {
             command.add(args);
         }
         return command.execute();
+    }
+
+    private CheckS2SVpnConnectionsAnswer execute(CheckS2SVpnConnectionsCommand cmd) {
+        final String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+    
+        String args = "";
+        for (String ip : cmd.getVpnIps()) {
+            args += " " + ip;
+        }
+        
+        final String result = routerProxyWithParser("checkbatchs2svpn.sh", routerIP, args);
+        if (result == null || result.isEmpty()) {
+            return new CheckS2SVpnConnectionsAnswer(cmd, false, "CheckS2SVpnConneciontsCommand failed");
+        }
+        return new CheckS2SVpnConnectionsAnswer(cmd, true, result);
     }
 
     protected Answer execute(CheckRouterCommand cmd) {

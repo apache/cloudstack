@@ -92,7 +92,7 @@ public class ListAutoScaleVmGroupsCmd extends BaseListProjectAndAccountResources
     @Override
     public void execute() {
         if(id != null && (loadBalancerId != null || profileId != null || policyId != null))
-            throw new InvalidParameterValueException("When id is specified other parameters need not be specified");
+            throw new InvalidParameterValueException("When id is specified other parameters need not be specified", null);
 
         List<? extends AutoScaleVmGroup> autoScaleGroups = _autoScaleService.listAutoScaleVmGroups(this);
         ListResponse<AutoScaleVmGroupResponse> response = new ListResponse<AutoScaleVmGroupResponse>();

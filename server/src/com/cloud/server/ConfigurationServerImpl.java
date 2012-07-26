@@ -90,6 +90,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.PasswordGenerator;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentLocator;
@@ -373,7 +374,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         // now insert the user
         insertSql = "INSERT INTO `cloud`.`user` (id, username, password, account_id, firstname, lastname, created) " +
-        "VALUES (" + id + ",'" + username + "','" + sb.toString() + "', 2, '" + firstname + "','" + lastname + "',now())";
+                "VALUES (" + id + ",'" + username + "','" + sb.toString() + "', 2, '" + firstname + "','" + lastname + "',now())";
 
         txn = Transaction.currentTxn();
         try {
@@ -400,10 +401,10 @@ public class ConfigurationServerImpl implements ConfigurationServer {
                 // save default security group
                 if (tableName.equals("security_group")) {
                     insertSql = "INSERT INTO " + tableName + " (name, description, account_id, domain_id) " +
-                    "VALUES ('default', 'Default Security Group', 2, 1)";
+                            "VALUES ('default', 'Default Security Group', 2, 1)";
                 } else {
                     insertSql = "INSERT INTO " + tableName + " (name, description, account_id, domain_id, account_name) " +
-                    "VALUES ('default', 'Default Security Group', 2, 1, 'admin')";
+                            "VALUES ('default', 'Default Security Group', 2, 1, 'admin')";
                 }
 
                 txn = Transaction.currentTxn();
@@ -561,8 +562,8 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             try {
                 String rpassword = PasswordGenerator.generatePresharedKey(8);
                 String wSql = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) "
-                    + "VALUES ('Hidden','DEFAULT', 'management-server','system.vm.password', '" + rpassword
-                    + "','randmon password generated each management server starts for system vm')";
+                        + "VALUES ('Hidden','DEFAULT', 'management-server','system.vm.password', '" + rpassword
+                        + "','randmon password generated each management server starts for system vm')";
                 PreparedStatement stmt = txn.prepareAutoCloseStatement(wSql);
                 stmt.executeUpdate(wSql);
                 s_logger.info("Updated systemvm password in database");
@@ -635,9 +636,9 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             String publicKey = new String(arr2).trim();
 
             String insertSql1 = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
-            "VALUES ('Hidden','DEFAULT', 'management-server','ssh.privatekey', '" + DBEncryptionUtil.encrypt(privateKey) + "','Private key for the entire CloudStack')";
+                    "VALUES ('Hidden','DEFAULT', 'management-server','ssh.privatekey', '" + DBEncryptionUtil.encrypt(privateKey) + "','Private key for the entire CloudStack')";
             String insertSql2 = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
-            "VALUES ('Hidden','DEFAULT', 'management-server','ssh.publickey', '" + DBEncryptionUtil.encrypt(publicKey) + "','Public key for the entire CloudStack')";
+                    "VALUES ('Hidden','DEFAULT', 'management-server','ssh.publickey', '" + DBEncryptionUtil.encrypt(publicKey) + "','Public key for the entire CloudStack')";
 
             Transaction txn = Transaction.currentTxn();
             try {
@@ -749,7 +750,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             String password = PasswordGenerator.generateRandomPassword(12);
 
             String insertSql1 = "INSERT INTO `cloud`.`configuration` (category, instance, component, name, value, description) " +
-            "VALUES ('Hidden','DEFAULT', 'management-server','secstorage.copy.password', '" + DBEncryptionUtil.encrypt(password) + "','Password used to authenticate zone-to-zone template copy requests')";
+                    "VALUES ('Hidden','DEFAULT', 'management-server','secstorage.copy.password', '" + DBEncryptionUtil.encrypt(password) + "','Password used to authenticate zone-to-zone template copy requests')";
 
             Transaction txn = Transaction.currentTxn();
             try {
@@ -818,12 +819,12 @@ public class ConfigurationServerImpl implements ConfigurationServer {
             String ipNums = _configDao.getValue("linkLocalIp.nums");
             int nums = Integer.parseInt(ipNums);
             if (nums > 16 || nums <= 0) {
-                throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "is wrong, should be 1~16");
+                throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "is wrong, should be 1~16", null);
             }
             /* local link ip address starts from 169.254.0.2 - 169.254.(nums) */
             String[] linkLocalIpRanges = NetUtils.getLinkLocalIPRange(nums);
             if (linkLocalIpRanges == null) {
-                throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "may be wrong, should be 1~16");
+                throw new InvalidParameterValueException("The linkLocalIp.nums: " + nums + "may be wrong, should be 1~16", null);
             } else {
                 _zoneDao.addLinkLocalIpAddress(zoneId, pod.getId(), linkLocalIpRanges[0], linkLocalIpRanges[1]);
             }
@@ -977,7 +978,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         for (Service service : defaultIsolatedSourceNatEnabledNetworkOfferingProviders.keySet()) {
             NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
-            (defaultIsolatedSourceNatEnabledNetworkOffering.getId(), service, defaultIsolatedSourceNatEnabledNetworkOfferingProviders.get(service));
+                    (defaultIsolatedSourceNatEnabledNetworkOffering.getId(), service, defaultIsolatedSourceNatEnabledNetworkOfferingProviders.get(service));
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
@@ -1041,7 +1042,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         for (Service service : defaultVpcNetworkOfferingProviders.keySet()) {
             NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
-            (defaultNetworkOfferingForVpcNetworks.getId(), service, defaultVpcNetworkOfferingProviders.get(service));
+                    (defaultNetworkOfferingForVpcNetworks.getId(), service, defaultVpcNetworkOfferingProviders.get(service));
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
@@ -1070,7 +1071,7 @@ public class ConfigurationServerImpl implements ConfigurationServer {
 
         for (Service service : defaultVpcNetworkOfferingProvidersNoLB.keySet()) {
             NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO
-            (defaultNetworkOfferingForVpcNetworksNoLB.getId(), service, defaultVpcNetworkOfferingProvidersNoLB.get(service));
+                    (defaultNetworkOfferingForVpcNetworksNoLB.getId(), service, defaultVpcNetworkOfferingProvidersNoLB.get(service));
             _ntwkOfferingServiceMapDao.persist(offService);
             s_logger.trace("Added service for the network offering: " + offService);
         }
@@ -1173,12 +1174,15 @@ public class ConfigurationServerImpl implements ConfigurationServer {
         }
 
         if (networkOfferingId == null) {
-            throw new InvalidParameterValueException("Unable to find system network offering with traffic type " + trafficType);
+            throw new InvalidParameterValueException("Unable to find system network offering with traffic type " + trafficType, null);
         }
 
         List<NetworkVO> networks = _networkDao.listBy(Account.ACCOUNT_ID_SYSTEM, networkOfferingId, zoneId);
         if (networks == null || networks.isEmpty()) {
-            throw new InvalidParameterValueException("Unable to find network with traffic type " + trafficType + " in zone " + zoneId);
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy("data_center", zoneId, "zoneId"));
+            throw new InvalidParameterValueException("Unable to find network with traffic type " + trafficType +
+                    " in zone with specified zoneId", idList);
         }
         return networks.get(0).getId();
     }

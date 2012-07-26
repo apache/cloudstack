@@ -113,12 +113,12 @@ public class UpdateAutoScaleVmGroupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return "Update AutoScale Vm Group";
+        return EventTypes.EVENT_AUTOSCALEVMGROUP_UPDATE;
     }
 
     @Override
     public String getEventDescription() {
-        return EventTypes.EVENT_AUTOSCALEVMGROUP_UPDATE;
+        return "Updating AutoScale Vm Group. Vm Group Id: "+getId();
     }
 
     @Override
