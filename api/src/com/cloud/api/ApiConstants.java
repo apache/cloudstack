@@ -31,10 +31,10 @@ public class ApiConstants {
     public static final String BIND_DN = "binddn";
     public static final String BIND_PASSWORD = "bindpass";
     public static final String CATEGORY = "category";
-    public static final String CERTIFICATE = "certificate";    
-    public static final String PRIVATE_KEY = "privatekey";    
-    public static final String DOMAIN_SUFFIX = "domainsuffix";    
-    public static final String DNS_SEARCH_ORDER = "dnssearchorder";    
+    public static final String CERTIFICATE = "certificate";
+    public static final String PRIVATE_KEY = "privatekey";
+    public static final String DOMAIN_SUFFIX = "domainsuffix";
+    public static final String DNS_SEARCH_ORDER = "dnssearchorder";
     public static final String CIDR = "cidr";
     public static final String CIDR_LIST = "cidrlist";
     public static final String CLEANUP = "cleanup";
@@ -104,7 +104,7 @@ public class ApiConstants {
     public static final String JOB_STATUS = "jobstatus";
     public static final String LASTNAME = "lastname";
     public static final String LEVEL = "level";
-    public static final String LIMIT_CPU_USE = "limitcpuuse";    
+    public static final String LIMIT_CPU_USE = "limitcpuuse";
     public static final String LOCK = "lock";
     public static final String LUN = "lun";
     public static final String LBID = "lbruleid";
@@ -137,9 +137,9 @@ public class ApiConstants {
     public static final String PORTAL = "portal";
     public static final String PORT_FORWARDING_SERVICE_ID = "portforwardingserviceid";
     public static final String PRIVATE_INTERFACE = "privateinterface";
-    public static final String PRIVATE_IP = "privateip";    
+    public static final String PRIVATE_IP = "privateip";
     public static final String PRIVATE_PORT = "privateport";
-    public static final String PRIVATE_START_PORT = "privateport";    
+    public static final String PRIVATE_START_PORT = "privateport";
     public static final String PRIVATE_END_PORT = "privateendport";
     public static final String PRIVATE_ZONE = "privatezone";
     public static final String PROTOCOL = "protocol";
@@ -147,7 +147,7 @@ public class ApiConstants {
     public static final String PUBLIC_IP_ID = "publicipid";
     public static final String PUBLIC_IP = "publicip";
     public static final String PUBLIC_PORT = "publicport";
-    public static final String PUBLIC_START_PORT = "publicport";    
+    public static final String PUBLIC_START_PORT = "publicport";
     public static final String PUBLIC_END_PORT = "publicendport";
     public static final String PUBLIC_ZONE = "publiczone";
     public static final String RECEIVED_BYTES = "receivedbytes";
@@ -171,7 +171,7 @@ public class ApiConstants {
     public static final String SNAPSHOT_ID = "snapshotid";
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";
     public static final String SNAPSHOT_TYPE = "snapshottype";
-    public static final String SOURCE_ZONE_ID = "sourcezoneid";    
+    public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String START_DATE = "startdate";
     public static final String START_IP = "startip";
     public static final String START_PORT = "startport";
@@ -384,18 +384,44 @@ public class ApiConstants {
     public static final String NICIRA_NVP_DEVICE_NAME = "niciradevicename";
 	public static final String NICIRA_NVP_GATEWAYSERVICE_UUID = "l3gatewayserviceuuid";
     
+    public static final String SOURCE = "source";
+    public static final String COUNTER_ID = "counterid";
+    public static final String AGGR_OPERATOR = "aggroperator";
+    public static final String AGGR_FUNCTION = "aggrfunction";
+    public static final String AGGR_VALUE = "aggrvalue";
+    public static final String THRESHOLD = "threshold";
+    public static final String RELATIONAL_OPERATOR = "relationaloperator";
+    public static final String SNMP_COMMUNITY = "snmpcommunity";
+    public static final String SNMP_PORT = "snmpport";
+    public static final String OTHER_DEPLOY_PARAMS = "otherdeployparams";
+    public static final String MIN_MEMBERS = "minmembers";
+    public static final String MAX_MEMBERS = "maxmembers";
+    public static final String AUTOSCALE_VM_DESTROY_TIME = "destroyvmgraceperiod";
+    public static final String VMPROFILE_ID = "vmprofileid";
+    public static final String VMGROUP_ID = "vmgroupid";
+    public static final String CS_URL = "csurl";
+    public static final String SCALEUP_POLICY_IDS = "scaleuppolicyids";
+    public static final String SCALEDOWN_POLICY_IDS = "scaledownpolicyids";
+    public static final String SCALEUP_POLICIES = "scaleuppolicies";
+    public static final String SCALEDOWN_POLICIES = "scaledownpolicies";
+    public static final String INTERVAL = "interval";
+    public static final String QUIETTIME = "quiettime";
+    public static final String ACTION = "action";
+    public static final String CONDITION_ID = "conditionid";
+    public static final String CONDITION_IDS = "conditionids";
+    public static final String AUTOSCALE_USER_ID = "autoscaleuserid";
 
     public enum HostDetails {
         all, capacity, events, stats, min;
     }
-    
+
     public enum VMDetails {
         all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min;
     }
-    
+
     public enum LDAPParams {
         hostname, port, usessl, queryfilter, searchbase, dn, passwd, truststore, truststorepass;
-        
+
         @Override
         public String toString(){
             return "ldap." + name();

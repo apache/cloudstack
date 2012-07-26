@@ -60,6 +60,12 @@ public class NetUtils {
 
     public final static String ALL_CIDRS = "0.0.0.0/0";
 
+    public final static String DEFAULT_SNMP_COMMUNITY = "public";
+    public final static int DEFAULT_SNMP_PORT = 161;
+
+    public final static int DEFAULT_AUTOSCALE_VM_DESTROY_TIME = 2 * 60; // Grace period before Vm is destroyed
+    public final static int DEFAULT_AUTOSCALE_POLICY_INTERVAL_TIME = 30;
+    public final static int DEFAULT_AUTOSCALE_POLICY_QUIET_TIME = 5 * 60;
     private final static Random _rand = new Random(System.currentTimeMillis());
 
     public static long createSequenceBasedMacAddress(long macAddress) {
@@ -157,7 +163,7 @@ public class NetUtils {
             try {
                 Process result = Runtime.getRuntime().exec("route print -4");
                 BufferedReader output = new BufferedReader
-                        (new InputStreamReader(result.getInputStream()));
+                (new InputStreamReader(result.getInputStream()));
 
                 String line = output.readLine();
                 while(line != null){
@@ -167,8 +173,8 @@ public class NetUtils {
                     }
                     line = output.readLine();
                 }
-            } catch( Exception e ) { 
-            }    	
+            } catch( Exception e ) {
+            }
             return null;
         } else {
             NetworkInterface nic = null;
@@ -913,6 +919,11 @@ public class NetUtils {
         return (algo.equals("roundrobin") || algo.equals("leastconn") || algo.equals("source"));
     }
 
+    public static boolean isValidAutoScaleAction(String p) {
+        String action = p.toLowerCase();
+        return (action.equals("scaleup") || action.equals("scaledown"));
+    }
+
     public static String getLinkLocalNetMask() {
         return "255.255.0.0";
     }
@@ -1056,7 +1067,7 @@ public class NetUtils {
         if (instanceName.contains("-") || instanceName.contains(" ") || instanceName.contains("+")) {
             s_logger.warn("Instance name can not contain hyphen, spaces and \"+\" char");
             return false;
-        } 
+        }
 
         return true;
     }

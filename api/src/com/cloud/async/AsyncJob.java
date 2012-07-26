@@ -42,7 +42,12 @@ public interface AsyncJob extends Identity {
         Account,
         User,
         PrivateGateway,
-        StaticRoute
+        StaticRoute,
+        Counter,
+        Condition,
+        AutoScalePolicy,
+        AutoScaleVmProfile,
+        AutoScaleVmGroup
     }
 
     Long getId();
