@@ -61,7 +61,6 @@ class MarvinPlugin(Plugin):
         cfg = nose.config.Config()
         cfg.logStream = self.result_stream
         cfg.debugLog = self.debug_stream
-        cfg.workingDir = options.test_dir
         
         self.testrunner = nose.core.TextTestRunner(stream=self.result_stream, descriptions=True, verbosity=2, config=config)
     

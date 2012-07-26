@@ -216,7 +216,7 @@ class deployDataCenters():
             pnetprov.name = "VpcVirtualRouter"
             pnetprovres = self.apiClient.listNetworkServiceProviders(pnetprov)
             
-            if len(pnetprovres) > 0:
+            if pnetprovres and len(pnetprovres) > 0:
                 vpcvrprov = listVirtualRouterElements.listVirtualRouterElementsCmd()
                 vpcvrprov.nspid = pnetprovres[0].id
                 vpcvrprovresponse = self.apiClient.listVirtualRouterElements(vpcvrprov)
