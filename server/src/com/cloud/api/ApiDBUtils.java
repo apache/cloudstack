@@ -132,10 +132,12 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
 import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
@@ -146,6 +148,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -155,6 +158,7 @@ import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmData;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class ApiDBUtils {
@@ -218,6 +222,8 @@ public class ApiDBUtils {
     private static AutoScaleVmGroupPolicyMapDao _asVmGroupPolicyMapDao;
     private static AutoScalePolicyDao _asPolicyDao;
     private static CounterDao _counterDao;
+    private static UserVmDetailsDao _userVmDetailsDao;
+    private static SSHKeyPairDao _sshKeyPairDao;
 
     static {
         _ms = (ManagementServer) ComponentLocator.getComponent(ManagementServer.Name);
@@ -282,6 +288,9 @@ public class ApiDBUtils {
         _asVmGroupPolicyMapDao = locator.getDao(AutoScaleVmGroupPolicyMapDao.class);
         _asVmGroupPolicyMapDao = locator.getDao(AutoScaleVmGroupPolicyMapDao.class);
         _counterDao = locator.getDao(CounterDao.class);
+        _sshKeyPairDao = locator.getDao(SSHKeyPairDao.class);
+        _userVmDetailsDao = locator.getDao(UserVmDetailsDao.class);
+
 
         // Note: stats collector should already have been initialized by this time, otherwise a null instance is
         // returned
@@ -860,5 +869,14 @@ public class ApiDBUtils {
 
     public static CounterVO getCounter(long counterId) {
         return _counterDao.findById(counterId);
+    }
+
+    public static String getKeyPairName(String sshPublicKey) {
+        SSHKeyPairVO sshKeyPair = _sshKeyPairDao.findByPublicKey(sshPublicKey);
+        return sshKeyPair.getName();
+    }
+
+    public static UserVmDetailVO  findPublicKeyByVmId(long vmId) {
+        return _userVmDetailsDao.findDetail(vmId, "SSH.PublicKey");
     }
 }
