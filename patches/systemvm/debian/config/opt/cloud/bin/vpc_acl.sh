@@ -29,49 +29,64 @@ usage() {
 }
 #set -x
 #FIXME: eating up the error code during execution of iptables
+
+acl_switch_to_new() {
+  sudo iptables -D FORWARD -o $dev -d $gcidr -j _ACL_INBOUND_$dev  2>/dev/null
+  sudo iptables-save  | grep "\-j _ACL_INBOUND_$dev" | grep "\-A" | while read rule;
+  do
+    rule1=$(echo $rule | sed 's/\_ACL_INBOUND/ACL_INBOUND/')
+    sudo iptables $rule1
+    rule2=$(echo $rule | sed 's/\-A/\-D/')
+    sudo iptables $rule2
+  done
+  sudo iptables -F _ACL_INBOUND_$dev 2>/dev/null
+  sudo iptables -X _ACL_INBOUND_$dev 2>/dev/null
+  sudo iptables -t mangle -F _ACL_OUTBOUND_$dev 2>/dev/null
+  sudo iptables -t mangle -D PREROUTING -m state --state NEW -i $dev -s $gcidr ! -d $ip -j _ACL_OUTBOUND_$dev  2>/dev/null
+  sudo iptables -t mangle -X _ACL_OUTBOUND_$dev 2>/dev/null
+}
+
 acl_remove_backup() {
-  sudo iptables -F _ACL_INBOUND_$ip 2>/dev/null
-  sudo iptables -D FORWARD -o $dev -d $gcidr -j _ACL_INBOUND_$ip  2>/dev/null
-  sudo iptables -X _ACL_INBOUND_$ip 2>/dev/null
-  sudo iptables -F _ACL_OUTBOUND_$ip 2>/dev/null
-  sudo iptables -D FORWARD -i $dev -s $gcidr -j _ACL_OUTBOUND_$ip  2>/dev/null
-  sudo iptables -X _ACL_OUTBOUND_$ip 2>/dev/null
+  sudo iptables -F _ACL_INBOUND_$dev 2>/dev/null
+  sudo iptables -D FORWARD -o $dev -d $gcidr -j _ACL_INBOUND_$dev  2>/dev/null
+  sudo iptables -X _ACL_INBOUND_$dev 2>/dev/null
+  sudo iptables -t mangle -F _ACL_OUTBOUND_$dev 2>/dev/null
+  sudo iptables -t mangle -D PREROUTING -m state --state NEW -i $dev -s $gcidr ! -d $ip -j _ACL_OUTBOUND_$dev  2>/dev/null
+  sudo iptables -t mangle -X _ACL_OUTBOUND_$dev 2>/dev/null
 }
 
 acl_remove() {
-  sudo iptables -F ACL_INBOUND_$ip 2>/dev/null
-  sudo iptables -D FORWARD -o $dev -d $gcidr -j ACL_INBOUND_$ip  2>/dev/null
-  sudo iptables -X ACL_INBOUND_$ip 2>/dev/null
-  sudo iptables -F ACL_OUTBOUND_$ip 2>/dev/null
-  sudo iptables -D FORWARD -i $dev -s $gcidr -j ACL_OUTBOUND_$ip  2>/dev/null
-  sudo iptables -X ACL_OUTBOUND_$ip 2>/dev/null
+  sudo iptables -F ACL_INBOUND_$dev 2>/dev/null
+  sudo iptables -D FORWARD -o $dev -d $gcidr -j ACL_INBOUND_$dev  2>/dev/null
+  sudo iptables -X ACL_INBOUND_$dev 2>/dev/null
+  sudo iptables -t mangle -F ACL_OUTBOUND_$dev 2>/dev/null
+  sudo iptables -t mangle -D PREROUTING -m state --state NEW -i $dev -s $gcidr ! -d $ip -j ACL_OUTBOUND_$dev  2>/dev/null
+  sudo iptables -t mangle -X ACL_OUTBOUND_$dev 2>/dev/null
 }
 
 acl_restore() {
   acl_remove
-  sudo iptables -E _ACL_INBOUND_$ip ACL_INBOUND_$ip 2>/dev/null
-  sudo iptables -E _ACL_OUTBOUND_$ip ACL_OUTBOUND_$ip 2>/dev/null
+  sudo iptables -E _ACL_INBOUND_$dev ACL_INBOUND_$dev 2>/dev/null
+  sudo iptables -t mangle -E _ACL_OUTBOUND_$dev ACL_OUTBOUND_$dev 2>/dev/null
 }
 
 acl_save() {
   acl_remove_backup
-  sudo iptables -E ACL_INBOUND_$ip _ACL_INBOUND_$ip 2>/dev/null
-  sudo iptables -E ACL_OUTBOUND_$ip _ACL_OUTBOUND_$gGW 2>/dev/null
+  sudo iptables -E ACL_INBOUND_$dev _ACL_INBOUND_$dev 2>/dev/null
+  sudo iptables -t mangle -E ACL_OUTBOUND_$dev _ACL_OUTBOUND_$dev 2>/dev/null
 }
 
 acl_chain_for_guest_network () {
   acl_save
   # inbound
-  sudo iptables -E ACL_INBOUND_$ip _ACL_INBOUND_$ip 2>/dev/null
-  sudo iptables -N ACL_INBOUND_$ip 2>/dev/null
+  sudo iptables -N ACL_INBOUND_$dev 2>/dev/null
   # drop if no rules match (this will be the last rule in the chain)
-  sudo iptables -A ACL_INBOUND_$ip -j DROP 2>/dev/null
-  sudo iptables -A FORWARD -o $dev -d $gcidr -j ACL_INBOUND_$ip  2>/dev/null
+  sudo iptables -A ACL_INBOUND_$dev -j DROP 2>/dev/null
+  sudo iptables -A FORWARD -o $dev -d $gcidr -j ACL_INBOUND_$dev  2>/dev/null
   # outbound
-  sudo iptables -E ACL_OUTBOUND_$ip _ACL_OUTBOUND_$ip 2>/dev/null
-  sudo iptables -N ACL_OUTBOUND_$ip 2>/dev/null
-  sudo iptables -A ACL_OUTBOUND_$ip -j DROP 2>/dev/null
-  sudo iptables -D FORWARD -i $dev -s $gcidr -j ACL_OUTBOUND_$ip  2>/dev/null
+  sudo iptables -t mangle -N ACL_OUTBOUND_$dev 2>/dev/null
+  sudo iptables -t mangle -A ACL_OUTBOUND_$dev -j DROP 2>/dev/null
+  sudo iptables -t mangle -A PREROUTING -m state --state NEW -i $dev -s $gcidr ! -d $ip -j ACL_OUTBOUND_$dev  2>/dev/null
 }
 
 
@@ -79,17 +94,22 @@ acl_chain_for_guest_network () {
 acl_entry_for_guest_network() {
   local rule=$1
 
-  local inbound=$(echo $rule | cut -d: -f1)
-  local prot=$(echo $rules | cut -d: -f2)
-  local sport=$(echo $rules | cut -d: -f3)    
-  local eport=$(echo $rules | cut -d: -f4)    
-  local cidrs=$(echo $rules | cut -d: -f5 | sed 's/-/ /g')
-  
+  local ttype=$(echo $rule | cut -d: -f1)
+  local prot=$(echo $rule | cut -d: -f2)
+  local sport=$(echo $rule | cut -d: -f3)
+  local eport=$(echo $rule | cut -d: -f4)
+  local cidrs=$(echo $rule | cut -d: -f5 | sed 's/-/ /g')
+  if [ "$sport" == "0" -a "$eport" == "0" ]
+  then
+      DPORT=""
+  else
+      DPORT="--dport $sport:$eport"
+  fi
   logger -t cloud "$(basename $0): enter apply acl rules for guest network: $gcidr, inbound:$inbound:$prot:$sport:$eport:$cidrs"  
-
+  
   # note that rules are inserted after the RELATED,ESTABLISHED rule 
   # but before the DROP rule
-  for lcidr in $scidrs
+  for lcidr in $cidrs
   do
     [ "$prot" == "reverted" ] && continue;
     if [ "$prot" == "icmp" ]
@@ -97,22 +117,23 @@ acl_entry_for_guest_network() {
       typecode="$sport/$eport"
       [ "$eport" == "-1" ] && typecode="$sport"
       [ "$sport" == "-1" ] && typecode="any"
-      if [ "$inbound" == "1" ]
+      if [ "$ttype" == "Ingress" ]
       then
-        sudo iptables -I ACL_INBOUND_$gGW -p $prot -s $lcidr  \
+        sudo iptables -I ACL_INBOUND_$dev -p $prot -s $lcidr  \
                     --icmp-type $typecode  -j ACCEPT
       else
-        sudo iptables -I ACL_OUTBOUND_$gGW -p $prot -d $lcidr  \
+        sudo iptables -t mangle -I ACL_OUTBOUND_$dev -p $prot -d $lcidr  \
                     --icmp-type $typecode  -j ACCEPT
       fi
     else
-      if [ "$inbound" == "1" ]
+      if [ "$ttype" == "Ingress" ]
       then
-        sudo iptables -I ACL_INBOUND_$gGW -p $prot -s $lcidr \
-                    --dport $sport:$eport -j ACCEPT
+        sudo iptables -I ACL_INBOUND_$dev -p $prot -s $lcidr \
+                    $DPORT -j ACCEPT
       else
-        sudo iptables -I ACL_OUTBOUND_$gGW -p $prot -d $lcidr \
-                    --dport $sport:$eport -j ACCEP`T
+        sudo iptables -t mangle -I ACL_OUTBOUND_$dev -p $prot -d $lcidr \
+                    $DPORT -j ACCEPT
+      fi
     fi
     result=$?
     [ $result -gt 0 ] && 
@@ -125,22 +146,25 @@ acl_entry_for_guest_network() {
 }
 
 
-shift 
 dflag=0
 gflag=0
 aflag=0
 rules=""
 rules_list=""
-gcidr=""
 ip=""
 dev=""
-while getopts ':d:g:a:' OPTION
+while getopts 'd:i:m:a:' OPTION
 do
   case $OPTION in
   d)    dflag=1
-                dev="$OPTAGR"
-  g)    gflag=1
-                gcidr="$OPTAGR"
+                dev="$OPTARG"
+                ;;
+  i)    iflag=1
+                ip="$OPTARG"
+                ;;
+  m)    mflag=1
+                mask="$OPTARG"
+                ;;
   a)	aflag=1
 		rules="$OPTARG"
 		;;
@@ -150,13 +174,14 @@ do
   esac
 done
 
-if [ "$dflag$gflag$aflag" != "!11" ]
+if [ "$dflag$iflag$mflag$aflag" != "1111" ]
 then
-  usage()
+  usage
+  unlock_exit 2 $lock $locked
 fi
 
-
-if [ -n "$rules" == "" ]
+gcidr="$ip/$mask"
+if [ -n "$rules" ]
 then
   rules_list=$(echo $rules | cut -d, -f1- --output-delimiter=" ")
 fi
@@ -168,7 +193,6 @@ fi
 # example : 172.16.92.44:tcp:80:80:0.0.0.0/0:,172.16.92.44:tcp:220:220:0.0.0.0/0:,200.1.1.2:reverted:0:0:0 
 
 success=0
-ip=$(echo $gcidr | awk -F'/' '{print $1}')
 
 acl_chain_for_guest_network
 
@@ -191,7 +215,7 @@ then
   acl_restore
 else
   logger -t cloud "$(basename $0): deleting backup for guest network: $gcidr"
-  acl_remove_backup
+  acl_switch_to_new
 fi
 unlock_exit $success $lock $locked
 
