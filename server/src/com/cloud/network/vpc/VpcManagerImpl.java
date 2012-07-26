@@ -917,7 +917,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 && _ntwkMgr.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.SourceNat))) {
 
             throw new InvalidParameterValueException("Only networks of type " + GuestType.Isolated + " with service "
-                    + Service.SourceNat +
+                    + Service.SourceNat.getName() +
                     " can be added as a part of VPC", null);
         }
 
