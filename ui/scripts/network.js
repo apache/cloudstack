@@ -1710,7 +1710,11 @@
 											});
 										}
 										else { //a VPC network from Guest Network section or from VPC section
-										  havingFirewallService = false;  //firewall is not supported in IP from VPC section (because ACL has already supported in tier from VPC section)
+                      // Firewall is not supported in IP from VPC section
+                      // (because ACL has already supported in tier from VPC section)
+										  havingFirewallService = false;
+	                    disallowedActions.push("firewall");
+                      
 											havingVpnService = false; //VPN is not supported in IP from VPC section
 										
 										  if(args.context.ipAddresses[0].associatednetworkid == null) { //IP is not associated with any tier yet												
