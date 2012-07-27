@@ -2528,17 +2528,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             _nicDao.expunge(nic.getId());
         }
     }
-
-    private String getCidrAddress(String cidr) {
-        String[] cidrPair = cidr.split("\\/");
-        return cidrPair[0];
-    }
-
-    private int getCidrSize(String cidr) {
-        String[] cidrPair = cidr.split("\\/");
-        return Integer.parseInt(cidrPair[1]);
-    }
-
+    
+    
     @Override
     public void checkVirtualNetworkCidrOverlap(Long zoneId, String cidr) {
         if (zoneId == null) {
@@ -4677,6 +4668,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 idList.add(new IdentityProxy(networkOffering, networkOfferingId, "networkOfferingId"));
                 throw new InvalidParameterValueException("Network offering with specified id is not in " + NetworkOffering.State.Enabled + " state, can't upgrade to it", idList);
             }
+            
+            //can't update from vpc to non-vpc network offering
+            boolean forVpcNew = _configMgr.isOfferingForVpc(networkOffering);
+            boolean vorVpcOriginal = _configMgr.isOfferingForVpc(_configMgr.getNetworkOffering(oldNetworkOfferingId));
+            if (forVpcNew != vorVpcOriginal) {
+                String errMsg = forVpcNew ? "a vpc offering " : "not a vpc offering";
+                throw new InvalidParameterValueException("Can't update as the new offering is " + errMsg);
+            }
 
             //perform below validation if the network is vpc network
             if (network.getVpcId() != null) {
@@ -4739,7 +4738,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
         // 1) Shutdown all the elements and cleanup all the rules. Don't allow to shutdown network in intermediate
-// states - Shutdown and Implementing
+        // states - Shutdown and Implementing
         boolean validStateToShutdown = (network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup || network.getState() == Network.State.Allocated);
         if (restartNetwork) {
             if (validStateToShutdown) {

@@ -13,18 +13,13 @@
 package com.cloud.agent.api;
 
 import com.cloud.agent.api.to.NicTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
 
 /**
  * @author Alena Prokharchyk
  */
 public class UnPlugNicCommand extends Command{
-    VirtualMachineTO vm;
     NicTO nic;
-    
-    public VirtualMachineTO getVirtualMachine() {
-        return vm;
-    }
+    String instanceName;
     
     public NicTO getNic() {
         return nic;
@@ -38,8 +33,12 @@ public class UnPlugNicCommand extends Command{
     protected UnPlugNicCommand() {
     }
     
-    public UnPlugNicCommand(VirtualMachineTO vm, NicTO nic) {
-        this.vm = vm;
+    public UnPlugNicCommand(NicTO nic, String instanceName) {
         this.nic = nic;
+        this.instanceName = instanceName;
+    }
+
+    public String getInstanceName() {
+        return instanceName;
     }
 }
