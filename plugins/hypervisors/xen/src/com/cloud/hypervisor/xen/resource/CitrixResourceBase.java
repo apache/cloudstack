@@ -7252,8 +7252,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      */
     private UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
         Connection conn = getConnection();
-        VirtualMachineTO vmto = cmd.getVirtualMachine();
-        String vmName = vmto.getName();
+        String vmName = cmd.getInstanceName();
         try {
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
             if ( vms == null || vms.isEmpty() ) {
@@ -7288,8 +7287,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      */
     private PlugNicAnswer execute(PlugNicCommand cmd) {
         Connection conn = getConnection();
-        VirtualMachineTO vmto = cmd.getVirtualMachine();
-        String vmName = vmto.getName();
+        String vmName = cmd.getVmName();
         try {
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
             if ( vms == null || vms.isEmpty() ) {

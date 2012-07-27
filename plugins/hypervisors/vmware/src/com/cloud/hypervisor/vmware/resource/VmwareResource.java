@@ -1064,7 +1064,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(context);
 
-            String vmName = cmd.getVirtualMachine().getName();
+            String vmName = cmd.getVmName();
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
 
             if(vmMo == null) {
@@ -1138,7 +1138,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(context);
 
-            String vmName = cmd.getVirtualMachine().getName();
+            String vmName = cmd.getInstanceName();
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
 
             if(vmMo == null) {

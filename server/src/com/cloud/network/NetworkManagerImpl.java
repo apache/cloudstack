@@ -2537,17 +2537,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             _nicDao.expunge(nic.getId());
         }
     }
-
-    private String getCidrAddress(String cidr) {
-        String[] cidrPair = cidr.split("\\/");
-        return cidrPair[0];
-    }
-
-    private int getCidrSize(String cidr) {
-        String[] cidrPair = cidr.split("\\/");
-        return Integer.parseInt(cidrPair[1]);
-    }
-
+    
+    
     @Override
     public void checkVirtualNetworkCidrOverlap(Long zoneId, String cidr) {
         if (zoneId == null) {

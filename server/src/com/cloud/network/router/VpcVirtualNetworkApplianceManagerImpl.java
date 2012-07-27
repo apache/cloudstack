@@ -325,7 +325,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         DomainRouterVO router = _routerDao.findById(vm.getId());
         if (router.getState() == State.Running) {
             try {
-                PlugNicCommand plugNicCmd = new PlugNicCommand(vm, nic);
+                PlugNicCommand plugNicCmd = new PlugNicCommand(nic, vm.getName());
                 
                 Commands cmds = new Commands(OnError.Stop);
                 cmds.addCommand("plugnic", plugNicCmd);
@@ -360,7 +360,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         
         if (router.getState() == State.Running) {
             try {
-                UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(vm, nic);
+                UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(nic, vm.getName());
                 Commands cmds = new Commands(OnError.Stop);
                 cmds.addCommand("unplugnic", unplugNicCmd);
                 _agentMgr.send(dest.getHost().getId(), cmds);
@@ -783,7 +783,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     }
                 }
                 
-                PlugNicCommand plugNicCmd = new PlugNicCommand(_itMgr.toVmTO(profile), getNicTO(router, publicNic.getNetworkId(), publicNic.getBroadcastUri().toString()));
+                PlugNicCommand plugNicCmd = new PlugNicCommand(getNicTO(router, publicNic.getNetworkId(), publicNic.getBroadcastUri().toString()), router.getInstanceName());
                 cmds.addCommand(plugNicCmd); 
             }
             
@@ -796,7 +796,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             for (Pair<Nic, Network> nicNtwk : guestNics) {
                 Nic guestNic = nicNtwk.first();
                 //plug guest nic 
-                PlugNicCommand plugNicCmd = new PlugNicCommand(_itMgr.toVmTO(profile), getNicTO(router, guestNic.getNetworkId(), null));
+                PlugNicCommand plugNicCmd = new PlugNicCommand(getNicTO(router, guestNic.getNetworkId(), null), router.getInstanceName());
                 cmds.addCommand(plugNicCmd);
                 
                 if (!_networkMgr.isPrivateGateway(guestNic)) {
