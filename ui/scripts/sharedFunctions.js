@@ -482,8 +482,8 @@ function rbdURL(monitor, pool, id, secret) {
 	Replace the + and / symbols by - and _ to have URL-safe base64 going to the API
 	It's hacky, but otherwise we'll confuse java.net.URI which splits the incoming URI
 	*/
-	secret = str.replace("+", "-");
-	secret = str.replace("/", "_");
+	secret = secret.replace("+", "-");
+	secret = secret.replace("/", "_");
 
 	if (id != null && secret != null) {
 		monitor = id + ":" + secret + "@" + monitor;
