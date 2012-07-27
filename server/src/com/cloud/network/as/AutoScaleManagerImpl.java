@@ -173,7 +173,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         for (Counter counter : counters) {
             if (!supportedCounters.contains(counter.getSource().name().toString())) {
                 throw new InvalidParameterException("AutoScale counter with source='" + counter.getSource() + "' is not supported " +
-                        "in the network where lb is configured");
+                "in the network where lb is configured");
             }
         }
     }
@@ -566,7 +566,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
             Account caller = UserContext.current().getCaller();
 
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
-                    ListProjectResourcesCriteria>(domainId, isRecursive, null);
+            ListProjectResourcesCriteria>(domainId, isRecursive, null);
             _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject,
                     listAll, false);
             domainId = domainIdRecursiveListProject.first();
@@ -666,10 +666,10 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
             if (!vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
                 throw new InvalidParameterValueException("The AutoScale Policy can be updated only if the Vm Group it is associated with is disabled in state", null);
             }
-            if (vmGroupVO.getInterval() < policy.getDuration()) {
+            if (policy.getDuration() < vmGroupVO.getInterval()) {
                 throw new InvalidParameterValueException("duration is less than the associated AutoScaleVmGroup's interval", null);
             }
-            if (vmGroupVO.getInterval() < policy.getQuietTime()) {
+            if (policy.getQuietTime() < vmGroupVO.getInterval()) {
                 throw new InvalidParameterValueException("quietTime is less than the associated AutoScaleVmGroup's interval", null);
             }
         }
