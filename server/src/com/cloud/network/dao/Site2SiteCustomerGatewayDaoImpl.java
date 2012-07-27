@@ -18,6 +18,7 @@ public class Site2SiteCustomerGatewayDaoImpl extends GenericDaoBase<Site2SiteCus
     protected Site2SiteCustomerGatewayDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("gatewayIp", AllFieldsSearch.entity().getGatewayIp(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
     
@@ -25,6 +26,13 @@ public class Site2SiteCustomerGatewayDaoImpl extends GenericDaoBase<Site2SiteCus
     public Site2SiteCustomerGatewayVO findByGatewayIp(String ip) {
         SearchCriteria<Site2SiteCustomerGatewayVO> sc = AllFieldsSearch.create();
         sc.setParameters("gatewayIp", ip);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public Site2SiteCustomerGatewayVO findByName(String name) {
+        SearchCriteria<Site2SiteCustomerGatewayVO> sc = AllFieldsSearch.create();
+        sc.setParameters("name", name);
         return findOneBy(sc);
     }
 

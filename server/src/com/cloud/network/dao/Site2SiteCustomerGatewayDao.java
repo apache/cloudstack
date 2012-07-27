@@ -5,4 +5,5 @@ import com.cloud.utils.db.GenericDao;
 
 public interface Site2SiteCustomerGatewayDao extends GenericDao<Site2SiteCustomerGatewayVO, Long> {
     Site2SiteCustomerGatewayVO findByGatewayIp(String ip);
+    Site2SiteCustomerGatewayVO findByName(String name);
 }

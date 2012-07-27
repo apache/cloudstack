@@ -3785,6 +3785,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public Site2SiteCustomerGatewayResponse createSite2SiteCustomerGatewayResponse(Site2SiteCustomerGateway result) {
         Site2SiteCustomerGatewayResponse response = new Site2SiteCustomerGatewayResponse();
         response.setId(result.getId());
+        response.setName(result.getName());
         response.setGatewayIp(result.getGatewayIp());
         response.setGuestCidrList(result.getGuestCidrList());
         response.setIpsecPsk(result.getIpsecPsk());
