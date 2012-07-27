@@ -2528,8 +2528,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             _nicDao.expunge(nic.getId());
         }
     }
-    
-    
+
+
     @Override
     public void checkVirtualNetworkCidrOverlap(Long zoneId, String cidr) {
         if (zoneId == null) {
@@ -4668,13 +4668,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 idList.add(new IdentityProxy(networkOffering, networkOfferingId, "networkOfferingId"));
                 throw new InvalidParameterValueException("Network offering with specified id is not in " + NetworkOffering.State.Enabled + " state, can't upgrade to it", idList);
             }
-            
+
             //can't update from vpc to non-vpc network offering
             boolean forVpcNew = _configMgr.isOfferingForVpc(networkOffering);
             boolean vorVpcOriginal = _configMgr.isOfferingForVpc(_configMgr.getNetworkOffering(oldNetworkOfferingId));
             if (forVpcNew != vorVpcOriginal) {
                 String errMsg = forVpcNew ? "a vpc offering " : "not a vpc offering";
-                throw new InvalidParameterValueException("Can't update as the new offering is " + errMsg);
+                throw new InvalidParameterValueException("Can't update as the new offering is " + errMsg, null);
             }
 
             //perform below validation if the network is vpc network
