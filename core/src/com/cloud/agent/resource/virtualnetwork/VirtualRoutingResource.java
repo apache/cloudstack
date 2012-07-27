@@ -542,7 +542,7 @@ public class VirtualRoutingResource implements Manager {
     }
 
     protected String getDomRVersion(String routerIP) {
-        return routerProxy("netusage.sh", routerIP, null);
+        return routerProxy("get_template_version.sh", routerIP, null);
     }
 
     protected Answer execute(GetDomRVersionCmd cmd) {
@@ -654,20 +654,6 @@ public class VirtualRoutingResource implements Manager {
         return command.execute();
     }
 
-
-    public String assignPublicIpAddress(final String vmName, final long id, final String vnet, final String privateIpAddress, final String macAddress, final String publicIpAddress) {
-        String args ="-A";
-        args += " -f"; //first ip is source nat ip
-        args += " -r ";
-        args += vmName;
-        args += " -i ";
-        args += privateIpAddress;
-        args += " -a ";
-        args += macAddress;
-        args += " -l ";
-        args += publicIpAddress;
-        return routerProxy("ipassoc.sh", privateIpAddress, args);
-    }
 
     public String assignPublicIpAddress(final String vmName,
             final String privateIpAddress, final String publicIpAddress,
