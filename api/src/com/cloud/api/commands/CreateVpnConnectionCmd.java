@@ -101,10 +101,6 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
         if (accountId == null) {
             accountId = UserContext.current().getCaller().getId();
         }
-        
-        if (accountId == null) {
-            accountId = Account.ACCOUNT_ID_SYSTEM;
-        }
         return accountId;
     }
 
@@ -115,7 +111,7 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_S2S_CONNECTION_CREATE;
+        return EventTypes.EVENT_S2S_VPN_CONNECTION_CREATE;
     }
 
     @Override

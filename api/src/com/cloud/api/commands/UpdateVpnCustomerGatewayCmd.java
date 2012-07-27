@@ -126,7 +126,7 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
 
 	@Override
 	public String getEventType() {
-		return EventTypes.EVENT_S2S_CUSTOMER_GATEWAY_UPDATE;
+		return EventTypes.EVENT_S2S_VPN_CUSTOMER_GATEWAY_UPDATE;
 	}
 	
     @Override
