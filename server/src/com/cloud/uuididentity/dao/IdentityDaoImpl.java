@@ -34,73 +34,75 @@ import com.cloud.utils.db.Transaction;
 @Local(value={IdentityDao.class})
 public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements IdentityDao {
     private static final Logger s_logger = Logger.getLogger(IdentityDaoImpl.class);
-    
+
     public IdentityDaoImpl() {
     }
-    
+
+    @Override
     @DB
-	public Long getIdentityId(IdentityMapper mapper, String identityString) {
-    	assert(mapper.entityTableName() != null);
-    	return getIdentityId(mapper.entityTableName(), identityString);
-	}
-    
+    public Long getIdentityId(IdentityMapper mapper, String identityString) {
+        assert(mapper.entityTableName() != null);
+        return getIdentityId(mapper.entityTableName(), identityString);
+    }
+
+    @Override
     @DB
     public Long getIdentityId(String tableName, String identityString) {
-		assert(tableName != null);
-		assert(identityString != null);
+        assert(tableName != null);
+        assert(identityString != null);
 
         PreparedStatement pstmt = null;
-		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-		try {
-	        try {
-	            try {
-	                pstmt = txn.prepareAutoCloseStatement(String.format("SELECT uuid FROM `%s`", tableName));
-	                pstmt.executeQuery();
-	            } catch (SQLException e) {
-	                throw new InvalidParameterValueException("uuid field doesn't exist in table " + tableName);
-	            }
-	            
-	            pstmt = txn.prepareAutoCloseStatement(
-	        		String.format("SELECT id FROM `%s` WHERE id=? OR uuid=?", tableName)
-	        		
-	        		// TODO : after graceful period, use following line turn on more secure check
-	        		// String.format("SELECT id FROM %s WHERE (id=? AND uuid IS NULL) OR uuid=?", mapper.entityTableName())
-	            );
-	            
-	            long id = 0;
-	            try {
-	            	// TODO : use regular expression to determine
-	            	id = Long.parseLong(identityString);
-	            } catch(NumberFormatException e) {
-	            	// this could happen when it is a uuid string, so catch and ignore it
-	            }
-	            
-	            pstmt.setLong(1, id);
-	            pstmt.setString(2, identityString);
-	            
-	            ResultSet rs = pstmt.executeQuery();
-	            if(rs.next()) {
-	            	return rs.getLong(1);
-	            } else {
-	            	if(id == -1L)
-	            		return id;
-	            	
-	        		throw new InvalidParameterValueException("Object " + tableName + "(uuid: " + identityString + ") does not exist.");
-	            }
-	        } catch (SQLException e) {
-	        	s_logger.error("Unexpected exception ", e);
-	        }
-		} finally {
-			txn.close();
-		}
-		return null;
+        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        try {
+            try {
+                try {
+                    pstmt = txn.prepareAutoCloseStatement(String.format("SELECT uuid FROM `%s`", tableName));
+                    pstmt.executeQuery();
+                } catch (SQLException e) {
+                    throw new InvalidParameterValueException("uuid field doesn't exist in table " + tableName, null);
+                }
+
+                pstmt = txn.prepareAutoCloseStatement(
+                        String.format("SELECT id FROM `%s` WHERE id=? OR uuid=?", tableName)
+
+                        // TODO : after graceful period, use following line turn on more secure check
+                        // String.format("SELECT id FROM %s WHERE (id=? AND uuid IS NULL) OR uuid=?", mapper.entityTableName())
+                        );
+
+                long id = 0;
+                try {
+                    // TODO : use regular expression to determine
+                    id = Long.parseLong(identityString);
+                } catch(NumberFormatException e) {
+                    // this could happen when it is a uuid string, so catch and ignore it
+                }
+
+                pstmt.setLong(1, id);
+                pstmt.setString(2, identityString);
+
+                ResultSet rs = pstmt.executeQuery();
+                if(rs.next()) {
+                    return rs.getLong(1);
+                } else {
+                    if(id == -1L)
+                        return id;
+
+                    throw new InvalidParameterValueException("Object " + tableName + "(uuid: " + identityString + ") does not exist.", null);
+                }
+            } catch (SQLException e) {
+                s_logger.error("Unexpected exception ", e);
+            }
+        } finally {
+            txn.close();
+        }
+        return null;
     }
-    
+
     @DB
     @Override
     public Pair<Long, Long> getAccountDomainInfo(String tableName, Long identityId, TaggedResourceType resourceType) {
         assert(tableName != null);
-        
+
         PreparedStatement pstmt = null;
         Transaction txn = Transaction.open(Transaction.CLOUD_DB);
         try {
@@ -116,7 +118,7 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
                 }
             } catch (SQLException e) {
             }
-            
+
             //get accountId
             try {
                 String account = "account_id";
@@ -136,55 +138,56 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
             txn.close();
         }
     }
-	
+
     @DB
     @Override
-	public String getIdentityUuid(String tableName, String identityString) {
-		assert(tableName != null);
-		assert(identityString != null);
-		
+    public String getIdentityUuid(String tableName, String identityString) {
+        assert(tableName != null);
+        assert(identityString != null);
+
         PreparedStatement pstmt = null;
-		Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-		try {
-	        try {
-	            pstmt = txn.prepareAutoCloseStatement(
-	            	String.format("SELECT uuid FROM `%s` WHERE id=? OR uuid=?", tableName)
-	        		// String.format("SELECT uuid FROM %s WHERE (id=? AND uuid IS NULL) OR uuid=?", tableName)
-	        	);
-	            
-	            long id = 0;
-	            try {
-	            	// TODO : use regular expression to determine
-	            	id = Long.parseLong(identityString);
-	            } catch(NumberFormatException e) {
-	            	// this could happen when it is a uuid string, so catch and ignore it
-	            }
-	            
-	            pstmt.setLong(1, id);
-	            pstmt.setString(2, identityString);
-	            
-	            ResultSet rs = pstmt.executeQuery();
-	            if(rs.next()) {
-	            	String uuid = rs.getString(1);
-	            	if(uuid != null && !uuid.isEmpty())
-	            		return uuid;
-	            	return identityString;
-	            }
-	        } catch (SQLException e) {
-	        	s_logger.error("Unexpected exception ", e);
-	        }
-		} finally {
-			txn.close();
-		}
-		
-		return identityString;
-	}
-    
+        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        try {
+            try {
+                pstmt = txn.prepareAutoCloseStatement(
+                        String.format("SELECT uuid FROM `%s` WHERE id=? OR uuid=?", tableName)
+                        // String.format("SELECT uuid FROM %s WHERE (id=? AND uuid IS NULL) OR uuid=?", tableName)
+                        );
+
+                long id = 0;
+                try {
+                    // TODO : use regular expression to determine
+                    id = Long.parseLong(identityString);
+                } catch(NumberFormatException e) {
+                    // this could happen when it is a uuid string, so catch and ignore it
+                }
+
+                pstmt.setLong(1, id);
+                pstmt.setString(2, identityString);
+
+                ResultSet rs = pstmt.executeQuery();
+                if(rs.next()) {
+                    String uuid = rs.getString(1);
+                    if(uuid != null && !uuid.isEmpty())
+                        return uuid;
+                    return identityString;
+                }
+            } catch (SQLException e) {
+                s_logger.error("Unexpected exception ", e);
+            }
+        } finally {
+            txn.close();
+        }
+
+        return identityString;
+    }
+
+    @Override
     @DB
     public void initializeDefaultUuid(String tableName) {
         assert(tableName != null);
         List<Long> l = getNullUuidRecords(tableName);
-        
+
         Transaction txn = Transaction.open(Transaction.CLOUD_DB);
         try {
             try {
@@ -201,19 +204,19 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
             txn.close();
         }
     }
-    
+
     @DB
     List<Long> getNullUuidRecords(String tableName) {
         List<Long> l = new ArrayList<Long>();
-        
+
         PreparedStatement pstmt = null;
         Transaction txn = Transaction.open(Transaction.CLOUD_DB);
         try {
             try {
                 pstmt = txn.prepareAutoCloseStatement(
-                    String.format("SELECT id FROM `%s` WHERE uuid IS NULL", tableName)
-                );
-                
+                        String.format("SELECT id FROM `%s` WHERE uuid IS NULL", tableName)
+                        );
+
                 ResultSet rs = pstmt.executeQuery();
                 while(rs.next()) {
                     l.add(rs.getLong(1));
@@ -226,16 +229,16 @@ public class IdentityDaoImpl extends GenericDaoBase<IdentityVO, Long> implements
         }
         return l;
     }
-    
+
     @DB
     void setInitialUuid(String tableName, long id) throws SQLException {
         Transaction txn = Transaction.currentTxn();
-        
+
         PreparedStatement pstmtUpdate = null;
         pstmtUpdate = txn.prepareAutoCloseStatement(
-            String.format("UPDATE `%s` SET uuid=? WHERE id=?", tableName)
-        );
-        
+                String.format("UPDATE `%s` SET uuid=? WHERE id=?", tableName)
+                );
+
         pstmtUpdate.setString(1, UUID.randomUUID().toString());
         pstmtUpdate.setLong(2, id);
         pstmtUpdate.executeUpdate();

@@ -223,7 +223,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 serviceResponse.setName(service.getName());
                 if ("Lb".equalsIgnoreCase(service.getName())) {
                     Map<Capability, String> serviceCapabilities = serviceCapabilitiesMap
-                    .get(service);
+                            .get(service);
                     if (serviceCapabilities != null) {
                         for (Capability capability : serviceCapabilities
                                 .keySet()) {
@@ -260,15 +260,15 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         String csUrl = _configDao.getValue(Config.EndpointeUrl.key());
 
         if(apiKey == null) {
-            throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
+            throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it", null);
         }
 
         if(secretKey == null) {
-            throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
+            throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it", null);
         }
 
         if(csUrl == null || csUrl.contains("localhost")) {
-            throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point");
+            throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point", null);
         }
 
         LbAutoScaleVmProfile lbAutoScaleVmProfile = new LbAutoScaleVmProfile(autoScaleVmProfile, apiKey, secretKey, csUrl);
@@ -922,7 +922,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             try {
                 if (ipVO.getAssociatedWithNetworkId() == null) {
                     boolean assignToVpcNtwk = network.getVpcId() != null
-                    && ipVO.getVpcId() != null && ipVO.getVpcId().longValue() == network.getVpcId();
+                            && ipVO.getVpcId() != null && ipVO.getVpcId().longValue() == network.getVpcId();
                     if (assignToVpcNtwk) {
                         // set networkId just for verification purposes
                         _networkMgr.checkIpForService(ipVO, Service.Lb, lb.getNetworkId());
@@ -936,7 +936,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 }
 
                 if (ipVO.getAssociatedWithNetworkId() == null) {
-                    throw new InvalidParameterValueException("Ip address " + ipVO + " is not assigned to the network " + network);
+                    throw new InvalidParameterValueException("Ip address " + ipVO + " is not assigned to the network " + network, null);
                 }
 
                 if (lb.getSourceIpAddressId() == null) {

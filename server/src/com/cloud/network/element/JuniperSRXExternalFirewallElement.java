@@ -74,8 +74,8 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.resource.ServerResource;
 import com.cloud.server.api.response.ExternalFirewallResponse;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -86,7 +86,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value = NetworkElement.class)
 public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceManagerImpl implements SourceNatServiceProvider, FirewallServiceProvider,
-        PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer, JuniperSRXFirewallElementService {
+PortForwardingServiceProvider, RemoteAccessVPNServiceProvider, IpDeployer, JuniperSRXFirewallElementService {
 
     private static final Logger s_logger = Logger.getLogger(JuniperSRXExternalFirewallElement.class);
 
@@ -143,7 +143,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException,
-            InsufficientNetworkCapacityException {
+    InsufficientNetworkCapacityException {
         DataCenter zone = _configMgr.getZone(network.getDataCenterId());
 
         // don't have to implement network is Basic zone
@@ -168,7 +168,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
     @Override
     public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-            InsufficientNetworkCapacityException, ResourceUnavailableException {
+    InsufficientNetworkCapacityException, ResourceUnavailableException {
         return true;
     }
 
@@ -317,7 +317,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+    ResourceUnavailableException {
         // TODO Auto-generated method stub
         return true;
     }
@@ -338,18 +338,21 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
         zone = _dcDao.findById(zoneId);
         if (zone == null) {
-            throw new InvalidParameterValueException("Could not find zone with ID: " + zoneId);
+            throw new InvalidParameterValueException("Could not find zone by id", null);
         }
 
         List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZone(zoneId);
         if ((physicalNetworks == null) || (physicalNetworks.size() > 1)) {
-            throw new InvalidParameterValueException("There are no physical networks or multiple physical networks configured in zone with ID: "
-                    + zoneId + " to add this device.");
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(zone, zoneId, "zoneId"));
+            throw new InvalidParameterValueException("There are no physical networks or multiple " +
+                    "physical networks configured in zone with specified zoneId" +
+                    " to add this device.", idList);
         }
         pNetwork = physicalNetworks.get(0);
 
         String deviceType = NetworkDevice.JuniperSRXFirewall.getName();
-        ExternalFirewallDeviceVO fwDeviceVO = addExternalFirewall(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceType, (ServerResource) new JuniperSrxResource());
+        ExternalFirewallDeviceVO fwDeviceVO = addExternalFirewall(pNetwork.getId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceType, new JuniperSrxResource());
         if (fwDeviceVO != null) {
             fwHost = _hostDao.findById(fwDeviceVO.getHostId());
         }
@@ -374,13 +377,16 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         if (zoneId != null) {
             zone = _dcDao.findById(zoneId);
             if (zone == null) {
-                throw new InvalidParameterValueException("Could not find zone with ID: " + zoneId);
+                throw new InvalidParameterValueException("Could not find zone by id", null);
             }
 
             List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZone(zoneId);
             if ((physicalNetworks == null) || (physicalNetworks.size() > 1)) {
-                throw new InvalidParameterValueException("There are no physical networks or multiple physical networks configured in zone with ID: "
-                        + zoneId + " to add this device.");
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(zone, zoneId, "zoneId"));
+                throw new InvalidParameterValueException("There are no physical networks or multiple " +
+                        "physical networks configured in zone with specified zoneId " +
+                        "to add this device.", idList);
             }
             pNetwork = physicalNetworks.get(0);
         }
@@ -389,6 +395,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         return firewallHosts;
     }
 
+    @Override
     public ExternalFirewallResponse createExternalFirewallResponse(Host externalFirewall) {
         return super.createExternalFirewallResponse(externalFirewall);
     }
@@ -402,10 +409,10 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
     public ExternalFirewallDeviceVO addSrxFirewall(AddSrxFirewallCmd cmd) {
         String deviceName = cmd.getDeviceType();
         if (!deviceName.equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
-            throw new InvalidParameterValueException("Invalid SRX firewall device type");
+            throw new InvalidParameterValueException("Invalid SRX firewall device type", null);
         }
         return addExternalFirewall(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName,
-                (ServerResource) new JuniperSrxResource());
+                new JuniperSrxResource());
     }
 
     @Override
@@ -414,7 +421,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
         ExternalFirewallDeviceVO fwDeviceVO = _fwDevicesDao.findById(fwDeviceId);
         if (fwDeviceVO == null || !fwDeviceVO.getDeviceName().equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
-            throw new InvalidParameterValueException("No SRX firewall device found with ID: " + fwDeviceId);
+            throw new InvalidParameterValueException("No SRX firewall device found by ID", null);
         }
         return deleteExternalFirewall(fwDeviceVO.getHostId());
     }
@@ -426,7 +433,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
         ExternalFirewallDeviceVO fwDeviceVO = _fwDevicesDao.findById(fwDeviceId);
         if (fwDeviceVO == null || !fwDeviceVO.getDeviceName().equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
-            throw new InvalidParameterValueException("No SRX firewall device found with ID: " + fwDeviceId);
+            throw new InvalidParameterValueException("No SRX firewall device found by ID", null);
         }
 
         if (deviceCapacity != null) {
@@ -455,13 +462,13 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         List<ExternalFirewallDeviceVO> fwDevices = new ArrayList<ExternalFirewallDeviceVO>();
 
         if (physcialNetworkId == null && fwDeviceId == null) {
-            throw new InvalidParameterValueException("Either physical network Id or load balancer device Id must be specified");
+            throw new InvalidParameterValueException("Either physical network Id or load balancer device Id must be specified", null);
         }
 
         if (fwDeviceId != null) {
             ExternalFirewallDeviceVO fwDeviceVo = _fwDevicesDao.findById(fwDeviceId);
             if (fwDeviceVo == null || !fwDeviceVo.getDeviceName().equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
-                throw new InvalidParameterValueException("Could not find SRX firewall device with ID: " + fwDeviceId);
+                throw new InvalidParameterValueException("Could not find SRX firewall device by ID", null);
             }
             fwDevices.add(fwDeviceVo);
         }
@@ -469,7 +476,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
         if (physcialNetworkId != null) {
             pNetwork = _physicalNetworkDao.findById(physcialNetworkId);
             if (pNetwork == null) {
-                throw new InvalidParameterValueException("Could not find phyical network with ID: " + physcialNetworkId);
+                throw new InvalidParameterValueException("Could not find phyical network by ID", null);
             }
             fwDevices = _fwDevicesDao.listByPhysicalNetworkAndProvider(physcialNetworkId, Provider.JuniperSRX.getName());
         }
@@ -484,7 +491,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
         ExternalFirewallDeviceVO fwDeviceVo = _fwDevicesDao.findById(fwDeviceId);
         if (fwDeviceVo == null || !fwDeviceVo.getDeviceName().equalsIgnoreCase(NetworkDevice.JuniperSRXFirewall.getName())) {
-            throw new InvalidParameterValueException("Could not find SRX firewall device with ID " + fwDeviceId);
+            throw new InvalidParameterValueException("Could not find SRX firewall device by ID", null);
         }
 
         List<NetworkExternalFirewallVO> networkFirewallMaps = _networkFirewallDao.listByFirewallDeviceId(fwDeviceId);

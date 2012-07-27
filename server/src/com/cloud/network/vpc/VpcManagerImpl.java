@@ -191,7 +191,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         Map<String, String> configs = configDao.getConfiguration(params);
         String value = configs.get(Config.VpcCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60); // 1 hour
-        
+
         String maxNtwks = configs.get(Config.VpcMaxNetworks.key());
         _maxNetworks = NumbersUtil.parseInt(maxNtwks, 3); // max=3 is default
         return true;
@@ -978,8 +978,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 throw new CloudRuntimeException("Number of networks per VPC can't extend " 
                         + _maxNetworks + "; increase it using global config " + Config.VpcMaxNetworks);
             }
-            
-            
+
+
             //1) CIDR is required
             if (cidr == null) {
                 throw new InvalidParameterValueException("Gateway/netmask are required when create network for VPC", null);
@@ -1021,17 +1021,17 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 throw new InvalidParameterValueException("Network domain of the new network should match network" +
                         " domain of vpc with specified vpcId", idList);
             }
-            
+
             //6) gateway should never be equal to the cidr subnet
             if (NetUtils.getCidrSubNet(cidr).equalsIgnoreCase(gateway)) {
-                throw new InvalidParameterValueException("Invalid gateway specified. It should never be equal to the cidr subnet value");
+                throw new InvalidParameterValueException("Invalid gateway specified. It should never be equal to the cidr subnet value", null);
             }
             //7) gateway should never be equal to the cidr broadcast ip
             if (NetUtils.getCidrBroadcastIp(cidr).equalsIgnoreCase(gateway)) {
-                throw new InvalidParameterValueException("Invalid gateway specified. It should never be equal to the cidr broadcast ip");
+                throw new InvalidParameterValueException("Invalid gateway specified. It should never be equal to the cidr broadcast ip", null);
             }
 
-            
+
         } finally {
             s_logger.debug("Releasing lock for " + locked);
             _vpcDao.releaseFromLockTable(locked.getId());
@@ -1062,7 +1062,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         _s2sVpnMgr.cleanupVpnConnectionByVpc(vpcId);
         s_logger.debug("Cleaning up existed site to site VPN gateways");
         _s2sVpnMgr.cleanupVpnGatewayByVpc(vpcId);
-        
+
         //2) release all ip addresses
         List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedVpc(vpcId, null);
         s_logger.debug("Releasing ips for vpc id=" + vpcId + " as a part of vpc cleanup");
@@ -1680,9 +1680,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
     public VpcGateway getPrivateGatewayForVpc(long vpcId) {
         return _vpcGatewayDao.getPrivateGatewayForVpc(vpcId);
     }
-    
+
+    @Override
     public int getMaxNetworksPerVpc() {
         return _maxNetworks;
     }
-    
+
 }

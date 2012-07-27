@@ -76,6 +76,7 @@ import com.cloud.network.as.dao.AutoScalePolicyConditionMapDaoImpl;
 import com.cloud.network.as.dao.AutoScalePolicyDaoImpl;
 import com.cloud.network.as.dao.AutoScaleVmGroupDaoImpl;
 import com.cloud.network.as.dao.AutoScaleVmGroupPolicyMapDaoImpl;
+import com.cloud.network.as.dao.AutoScaleVmProfileDaoImpl;
 import com.cloud.network.as.dao.ConditionDaoImpl;
 import com.cloud.network.as.dao.CounterDaoImpl;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDaoImpl;
@@ -86,7 +87,6 @@ import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
 import com.cloud.network.dao.InlineLoadBalancerNicMapDaoImpl;
 import com.cloud.network.dao.LBStickinessPolicyDaoImpl;
-import com.cloud.network.as.dao.AutoScaleVmProfileDaoImpl;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
 import com.cloud.network.dao.LoadBalancerVMMapDaoImpl;
 import com.cloud.network.dao.NetworkDaoImpl;
@@ -182,7 +182,7 @@ import com.cloud.storage.swift.SwiftManagerImpl;
 import com.cloud.storage.upload.UploadMonitorImpl;
 import com.cloud.tags.TaggedResourceManagerImpl;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
-import com.cloud.template.HyervisorTemplateAdapter;
+import com.cloud.template.HypervisorTemplateAdapter;
 import com.cloud.template.TemplateAdapter;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.template.TemplateManagerImpl;
@@ -439,7 +439,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
     }
 
     protected void populateAdapters() {
-        addAdapter(TemplateAdapter.class, TemplateAdapterType.Hypervisor.getName(), HyervisorTemplateAdapter.class);
+        addAdapter(TemplateAdapter.class, TemplateAdapterType.Hypervisor.getName(), HypervisorTemplateAdapter.class);
     }
 
     @Override

@@ -209,9 +209,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         } else {
             _networkMgr.checkIpForService(ipAddress, Service.PortForwarding, null);
         }
-        
+
         if (ipAddress.getAssociatedWithNetworkId() == null) { 
-            throw new InvalidParameterValueException("Ip address " + ipAddress + " is not assigned to the network " + network);
+            throw new InvalidParameterValueException("Ip address " + ipAddress + " is not assigned to the network " + network, null);
         }
 
         try {
@@ -295,9 +295,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
                 IpAddress ip = _ipAddressDao.findById(ipAddress.getId());
                 _networkMgr.unassignIPFromVpcNetwork(ip.getId(), networkId);  
-                }
             }
         }
+    }
 
     @Override
     @DB
@@ -418,7 +418,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             if (network == null) {
                 throw new InvalidParameterValueException("Unable to find network by id", null);
             }
-            
+
             // Check that vm has a nic in the network
             Nic guestNic = _networkMgr.getNicInNetwork(vmId, networkId);
             if (guestNic == null) {
@@ -433,7 +433,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 throw new InvalidParameterValueException("Unable to create static nat rule; StaticNat service is not " +
                         "supported in network with specified id", idList);
             }
- 
+
             if (!isSystemVm) {
                 //associate ip address to network (if needed)
                 if (ipAddress.getAssociatedWithNetworkId() == null) {
@@ -441,7 +441,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                             && ipAddress.getVpcId() != null && ipAddress.getVpcId().longValue() == network.getVpcId();
                     if (assignToVpcNtwk) {
                         _networkMgr.checkIpForService(ipAddress, Service.StaticNat, networkId);
-                        
+
                         s_logger.debug("The ip is not associated with the VPC network id="+ networkId + ", so assigning");
                         try {
                             ipAddress = _networkMgr.associateIPToGuestNetwork(ipId, networkId, false);
@@ -455,18 +455,18 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 } else {
                     _networkMgr.checkIpForService(ipAddress, Service.StaticNat, null);
                 }
-                
+
                 if (ipAddress.getAssociatedWithNetworkId() == null) { 
-                    throw new InvalidParameterValueException("Ip address " + ipAddress + " is not assigned to the network " + network);
+                    throw new InvalidParameterValueException("Ip address " + ipAddress + " is not assigned to the network " + network, null);
                 }
 
                 // Check permissions
                 checkIpAndUserVm(ipAddress, vm, caller);
-                
+
                 // Verify ip address parameter
                 isIpReadyForStaticNat(vmId, ipAddress, caller, ctx.getCallerUserId());
             }
-            
+
             ipAddress.setOneToOneNat(true);
             ipAddress.setAssociatedWithVmId(vmId);
 
@@ -480,21 +480,21 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 }
             } else {
                 s_logger.warn("Failed to update ip address " + ipAddress + " in the DB as a part of enableStaticNat");
-                
+
             }
         } finally {
             if (!result) {
                 ipAddress.setOneToOneNat(false);
                 ipAddress.setAssociatedWithVmId(null);
                 _ipAddressDao.update(ipAddress.getId(), ipAddress);
-                
+
                 if (performedIpAssoc) {
                     //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
                     IpAddress ip = _ipAddressDao.findById(ipAddress.getId());
                     _networkMgr.unassignIPFromVpcNetwork(ip.getId(), networkId);
-                    }
-                } 
-            }
+                }
+            } 
+        }
         return result;
     }
 
@@ -1395,9 +1395,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     protected void removePFRule(PortForwardingRuleVO rule) {
-        
+
         _portForwardingDao.remove(rule.getId());
-        
+
         //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
         IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
         _networkMgr.unassignIPFromVpcNetwork(ip.getId(), rule.getNetworkId());   

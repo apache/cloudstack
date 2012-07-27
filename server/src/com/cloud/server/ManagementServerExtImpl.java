@@ -35,6 +35,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
@@ -96,21 +97,21 @@ public class ManagementServerExtImpl extends ManagementServerImpl implements Man
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Account userAccount = null;
-        Account caller = (Account)UserContext.current().getCaller();
+        Account caller = UserContext.current().getCaller();
         Long usageType = cmd.getUsageType();
         Long projectId = cmd.getProjectId();
-        
+
         if (projectId != null) {
             if (accountId != null) {
-                throw new InvalidParameterValueException("Projectid and accountId can't be specified together");
+                throw new InvalidParameterValueException("Projectid and accountId can't be specified together", null);
             }
             Project project = _projectMgr.getProject(projectId);
             if (project == null) {
-                throw new InvalidParameterValueException("Unable to find project by id " + projectId);
+                throw new InvalidParameterValueException("Unable to find project by id", null);
             }
             accountId = project.getProjectAccountId();
         }
-        
+
         //if accountId is not specified, use accountName and domainId
         if ((accountId == null) && (accountName != null) && (domainId != null)) {
             if (_domainDao.isChildDomain(caller.getDomainId(), domainId)) {
@@ -122,7 +123,9 @@ public class ManagementServerExtImpl extends ManagementServerImpl implements Man
                 if (userAccount != null) {
                     accountId = userAccount.getId();
                 } else {
-                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId);
+                    List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                    idList.add(new IdentityProxy("domain", domainId, "domainId"));
+                    throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain " + domainId, idList);
                 }
             } else {
                 throw new PermissionDeniedException("Invalid Domain Id or Account");
@@ -130,7 +133,7 @@ public class ManagementServerExtImpl extends ManagementServerImpl implements Man
         } 
 
         boolean isAdmin = false;
-        
+
         //If accountId couldn't be found using accountName and domainId, get it from userContext
         if(accountId == null){
             accountId = caller.getId();
@@ -145,7 +148,7 @@ public class ManagementServerExtImpl extends ManagementServerImpl implements Man
         Date startDate = cmd.getStartDate();
         Date endDate = cmd.getEndDate();
         if(startDate.after(endDate)){
-        	throw new InvalidParameterValueException("Incorrect Date Range. Start date: "+startDate+" is after end date:"+endDate);
+            throw new InvalidParameterValueException("Incorrect Date Range. Start date: "+startDate+" is after end date:"+endDate, null);
         }
         TimeZone usageTZ = getUsageTimezone();
         Date adjustedStartDate = computeAdjustedTime(startDate, usageTZ, true);
@@ -156,7 +159,7 @@ public class ManagementServerExtImpl extends ManagementServerImpl implements Man
         }
 
         Filter usageFilter = new Filter(UsageVO.class, "startDate", false, cmd.getStartIndex(), cmd.getPageSizeVal());
-        
+
         SearchCriteria<UsageVO> sc = _usageDao.createSearchCriteria();
 
         if (accountId != -1 && accountId != Account.ACCOUNT_ID_SYSTEM && !isAdmin) {
@@ -166,7 +169,7 @@ public class ManagementServerExtImpl extends ManagementServerImpl implements Man
         if (domainId != null) {
             sc.addAnd("domainId", SearchCriteria.Op.EQ, domainId);
         }
-        
+
         if (usageType != null) {
             sc.addAnd("usageType", SearchCriteria.Op.EQ, usageType);
         }
@@ -241,8 +244,8 @@ public class ManagementServerExtImpl extends ManagementServerImpl implements Man
         return calTS.getTime();
     }
 
-	@Override
-	public List<UsageTypeResponse> listUsageTypes() {
-		return UsageTypes.listUsageTypes();
-	}
+    @Override
+    public List<UsageTypeResponse> listUsageTypes() {
+        return UsageTypes.listUsageTypes();
+    }
 }

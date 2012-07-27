@@ -282,7 +282,7 @@ StaticNatServiceProvider {
         String deviceName = cmd.getDeviceType();
 
         if (!isNetscalerDevice(deviceName)) {
-            throw new InvalidParameterValueException("Invalid Netscaler device type");
+            throw new InvalidParameterValueException("Invalid Netscaler device type", null);
         }
 
         URI uri;
@@ -291,7 +291,7 @@ StaticNatServiceProvider {
         } catch (Exception e) {
             String msg = "Error parsing the url parameter specified in addNetscalerLoadBalancer command due to " + e.getMessage();
             s_logger.debug(msg);
-            throw new InvalidParameterValueException(msg);
+            throw new InvalidParameterValueException(msg, null);
         }
         Map<String, String> configParams = new HashMap<String, String>();
         UrlUtil.parseQueryParameters(uri.getQuery(), false, configParams);
@@ -300,7 +300,7 @@ StaticNatServiceProvider {
         if (dedicatedUse && !deviceName.equals(NetworkDevice.NetscalerVPXLoadBalancer.getName())) {
             String msg = "Only Netscaler VPX load balancers can be specified for dedicated use";
             s_logger.debug(msg);
-            throw new InvalidParameterValueException(msg);
+            throw new InvalidParameterValueException(msg, null);
         }
 
         ExternalLoadBalancerDeviceVO lbDeviceVO = addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(), cmd.getUsername(), cmd.getPassword(), deviceName, new NetscalerResource());
@@ -313,7 +313,7 @@ StaticNatServiceProvider {
 
         ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
         if ((lbDeviceVo == null) || !isNetscalerDevice(lbDeviceVo.getDeviceName())) {
-            throw new InvalidParameterValueException("No netscaler device found with ID: " + lbDeviceId);
+            throw new InvalidParameterValueException("No netscaler device found by ID", null);
         }
 
         return deleteExternalLoadBalancer(lbDeviceVo.getHostId());
@@ -339,7 +339,7 @@ StaticNatServiceProvider {
         Map<String, String> lbDetails = _detailsDao.findDetails(lbDeviceVo.getHostId());
 
         if ((lbDeviceVo == null) || !isNetscalerDevice(lbDeviceVo.getDeviceName())) {
-            throw new InvalidParameterValueException("No netscaler device found with ID: " + lbDeviceId);
+            throw new InvalidParameterValueException("No netscaler device found by ID", null);
         }
 
         String deviceName = lbDeviceVo.getDeviceName();
@@ -347,7 +347,7 @@ StaticNatServiceProvider {
             if (NetworkDevice.NetscalerSDXLoadBalancer.getName().equalsIgnoreCase(deviceName) ||
                     NetworkDevice.NetscalerMPXLoadBalancer.getName().equalsIgnoreCase(deviceName)) {
                 if (dedicatedUse != null && dedicatedUse == true) {
-                    throw new InvalidParameterValueException("Netscaler MPX and SDX device should be shared and can not be dedicated to a single account.");
+                    throw new InvalidParameterValueException("Netscaler MPX and SDX device should be shared and can not be dedicated to a single account.", null);
                 }
             }
 
@@ -417,7 +417,7 @@ StaticNatServiceProvider {
 
         ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
         if (lbDeviceVo == null || !isNetscalerDevice(lbDeviceVo.getDeviceName())) {
-            throw new InvalidParameterValueException("Could not find Netscaler load balancer device with ID " + lbDeviceId);
+            throw new InvalidParameterValueException("Could not find Netscaler load balancer device by ID", null);
         }
 
         List<NetworkExternalLoadBalancerVO> networkLbMaps = _networkLBDao.listByLoadBalancerDeviceId(lbDeviceId);
@@ -439,13 +439,13 @@ StaticNatServiceProvider {
         List<ExternalLoadBalancerDeviceVO> lbDevices = new ArrayList<ExternalLoadBalancerDeviceVO>();
 
         if (physcialNetworkId == null && lbDeviceId == null) {
-            throw new InvalidParameterValueException("Either physical network Id or load balancer device Id must be specified");
+            throw new InvalidParameterValueException("Either physical network Id or load balancer device Id must be specified", null);
         }
 
         if (lbDeviceId != null) {
             ExternalLoadBalancerDeviceVO lbDeviceVo = _lbDeviceDao.findById(lbDeviceId);
             if (lbDeviceVo == null || !isNetscalerDevice(lbDeviceVo.getDeviceName())) {
-                throw new InvalidParameterValueException("Could not find Netscaler load balancer device with ID: " + lbDeviceId);
+                throw new InvalidParameterValueException("Could not find Netscaler load balancer device by ID", null);
             }
             lbDevices.add(lbDeviceVo);
             return lbDevices;
@@ -454,7 +454,7 @@ StaticNatServiceProvider {
         if (physcialNetworkId != null) {
             pNetwork = _physicalNetworkDao.findById(physcialNetworkId);
             if (pNetwork == null) {
-                throw new InvalidParameterValueException("Could not find phyical network with ID: " + physcialNetworkId);
+                throw new InvalidParameterValueException("Could not find phyical network by ID", null);
             }
             lbDevices = _lbDeviceDao.listByPhysicalNetworkAndProvider(physcialNetworkId, Provider.Netscaler.getName());
             return lbDevices;
