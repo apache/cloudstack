@@ -129,7 +129,9 @@ import com.cloud.vm.ReservationContextImpl;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.InstanceGroupDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -207,6 +209,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private IPAddressDao _ipAddressDao;
     @Inject
     private VpcManager _vpcMgr;
+    @Inject
+    private DomainRouterDao _routerDao;
 
     private Adapters<UserAuthenticator> _userAuthenticators;
 
@@ -678,7 +682,13 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         for (VMInstanceVO vm : vms) {
             try {
                 try {
-                    success = (success && _itMgr.advanceStop(vm, false, getSystemUser(), getSystemAccount()));
+                    if (vm.getType() == Type.User) {
+                        success = (success && _itMgr.advanceStop(_userVmDao.findById(vm.getId()), false, getSystemUser(), getSystemAccount()));
+                    } else if (vm.getType() == Type.DomainRouter) {
+                        success = (success && _itMgr.advanceStop(_routerDao.findById(vm.getId()), false, getSystemUser(), getSystemAccount()));
+                    } else {
+                        success = (success && _itMgr.advanceStop(vm, false, getSystemUser(), getSystemAccount()));
+                    }
                 } catch (OperationTimedoutException ote) {
                     s_logger.warn("Operation for stopping vm timed out, unable to stop vm " + vm.getHostName(), ote);
                     success = false;
