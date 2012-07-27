@@ -25,7 +25,7 @@ Vagrant::Config.run do |config|
 
   # Uncomment this line to enable the console for debugging the 
   # build process.
-  config.vm.boot_mode = :gui
+  #config.vm.boot_mode = :gui
 
   # Setup port forwarding
   config.vm.forward_port 22, 2222
@@ -38,7 +38,13 @@ Vagrant::Config.run do |config|
   # Ensure the VM has the right virtual resources
   #config.vm.
       
-  #config.vm.provision :shell, :inline => "/vagrant/devcloudsetup.sh -p -v"
+  config.vm.provision :puppet do |puppet|
+    puppet.manifests_path = "puppet-devcloudinitial"
+    puppet.manifest_file  = "init.pp"
+    puppet.with_ssh       = true
+    puppet.pp_path        = "/etc/puppet"
+    puppet.module_path    = "puppet-devcloudinitial"
+  end
 
   # Enable provisioning with Puppet stand alone.  Puppet manifests
   # are contained in a directory path relative to this Vagrantfile.

@@ -9,39 +9,51 @@ class puppet-devcloudinitial {
   }
 
   package { 'xcp-xapi':
-    ensure => latest,
+    require => Package['xen-hypervisor-4.1-amd64'],
+    ensure  => latest,
   }
 
   file { '/etc/xcp/network.conf':
+    require => Package['xcp-xapi'],
     ensure  => 'file',
-    source  => 'puppet:///files/puppet-devcloudinitial/files/network.conf',
+    source  => 'puppet:///modules/puppet-devcloudinitial/network.conf',
     group   => '0',
     mode    => '644',
     owner   => '0',
   }
 
-  exec { "/bin/sed -i -e 's/xend_start$/#xend_start/' -e 's/xend_stop$/#xend_stop/' /etc/init.d/xend":
-    cwd     => '/etc/init.d',
+  file { '/etc/init.d/xend':
+    require => Package['xcp-xapi'],
+    ensure  => 'file',
+    source  => 'puppet:///modules/puppet-devcloudinitial/xend',
+    group   => '0',
+    owner   => '0',
+    mode    => '755',
   }
 
   service { 'xendomains':
-    ensure => 'stopped',
-    enable => 'false',
+    require => Package['xcp-xapi'],
+    ensure  => 'stopped',
+    enable  => 'false',
   }
 
   file { '/etc/default/grub':
+    require => Package['xen-hypervisor-4.1-amd64'],
     ensure  => 'file',
-    source  => 'puppet:///files/puppet-devcloudinitial/files/grub',
+    source  => 'puppet:///modules/puppet-devcloudinitial/grub',
     group   => '0',
     mode    => '644',
     owner   => '0',
   }
 
   exec { "/usr/sbin/update-grub":
-    cwd     => '/',
+    subscribe => File['/etc/default/grub'],
+    refreshonly => true,
+    cwd       => '/',
   }
 
   file { '/usr/share/qemu':
+    require => Package['xen-hypervisor-4.1-amd64'],
     ensure => 'directory',
     group  => '0',
     mode   => '755',
@@ -49,6 +61,7 @@ class puppet-devcloudinitial {
   }
 
   file { '/usr/share/qemu/keymaps':
+    require => File['/usr/share/qemu'],
     ensure => 'link',
     group  => '0',
     mode   => '777',
@@ -58,15 +71,16 @@ class puppet-devcloudinitial {
 
   file { '/etc/network/interfaces':
     ensure  => 'file',
-    source  => 'puppet:///files/puppet-devcloudinitial/files/interfaces',
+    source  => 'puppet:///modules/puppet-devcloudinitial/interfaces',
     group   => '0',
     mode    => '644',
     owner   => '0',
   }
 
   file { '/etc/default/xen':
+    require => Package['xen-hypervisor-4.1-amd64'],
     ensure  => 'file',
-    source  => 'puppet:///files/puppet-devcloudinitial/files/xen-defaults',
+    source  => 'puppet:///modules/puppet-devcloudinitial/xen-defaults',
     group   => '0',
     mode    => '644',
     owner   => '0',
