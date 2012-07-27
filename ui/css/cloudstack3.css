@@ -280,6 +280,8 @@ body.login {
 .login .fields .field label.error {
   color: #FF0000;
   float: right;
+  left: 204px;
+  top: 0;
 }
 
 .login .fields input {

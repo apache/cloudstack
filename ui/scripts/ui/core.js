@@ -352,7 +352,7 @@
     // Check if target should be hovered
     function checkHoveredLabel($target) {
       var $multiWizard = $('div.ui-dialog div.multi-wizard');
-      if ($target.is('label[for]') || 
+      if (($target.is('label[for]') && !$target.parents('body.login')) || 
         ($multiWizard.size() && 
           ($target.is('.multi-wizard label') && $target.prev('input[type="radio"],input[type="checkbox"]').size()) || 
           ($target.is('.multi-wizard .select-desc div.name') && $target.parent('div.select-desc').prev('input[type="radio"],input[type="checkbox"]').size())
