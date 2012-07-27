@@ -105,7 +105,7 @@
 	
 	
   <target name="init" description="Initialize binaries directory">
-  	<mkdir dir="${classes.dir}/${user-concentrated-pod.jar}"/>
+  	<mkdir dir="${classes.dir}/${dp-user-concentrated-pod.jar}"/>
   	<mkdir dir="${jar.dir}"/>
   </target>
 	
