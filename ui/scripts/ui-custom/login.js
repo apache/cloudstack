@@ -53,7 +53,7 @@
     $form.validate();
 
     // Form label behavior
-    $inputs.bind('keydown keyup focus blur', function(event) {
+    $inputs.bind('keydown focus click blur', function(event) {
       var $target = $(event.target);
       var $label = $form.find('label').filter(function() {
         return $(this).attr('for') == $target.attr('name');
@@ -63,11 +63,16 @@
         $label.hide();
 
         return true;
-      } else {
-        if (!$target.val()) {
+      } else if (event.type == 'blur') {
+        if ($target.hasClass('first-input')) {
+          $target.removeClass('first-input');
+        }
+        if (!$(this).val()) {
           $label.show();
-        } else {
-          $label.hide();
+        }
+      } else {
+        if (!$target.hasClass('first-input')) {
+            $label.hide();
         }
       }
 
@@ -79,11 +84,13 @@
     // Labels cause related input to be focused
     $login.find('label').click(function() {
       var $input = $inputs.filter('[name=' + $(this).attr('for') + ']');
+      var $label = $(this);
 
       $input.focus();
+      $label.hide();
     });
 
-    $inputs.filter(':first').focus();
+    $inputs.filter(':first').addClass('first-input').focus();
 
     // Login action
     $login.find('input[type=submit]').click(function() {
