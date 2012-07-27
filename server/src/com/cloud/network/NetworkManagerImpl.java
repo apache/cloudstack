@@ -4693,6 +4693,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw ex;
             }
             
+            
+            //can't update from vpc to non-vpc network offering
+            boolean forVpcNew = _configMgr.isOfferingForVpc(networkOffering);
+            boolean vorVpcOriginal = _configMgr.isOfferingForVpc(_configMgr.getNetworkOffering(oldNetworkOfferingId));
+            if (forVpcNew != vorVpcOriginal) {
+                String errMsg = forVpcNew ? "a vpc offering " : "not a vpc offering";
+                throw new InvalidParameterValueException("Can't update as the new offering is " + errMsg);
+            }
+
             //perform below validation if the network is vpc network
             if (network.getVpcId() != null) {
                 Vpc vpc = _vpcMgr.getVpc(network.getVpcId());
@@ -4752,7 +4761,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
         // 1) Shutdown all the elements and cleanup all the rules. Don't allow to shutdown network in intermediate
-// states - Shutdown and Implementing
+        // states - Shutdown and Implementing
         boolean validStateToShutdown = (network.getState() == Network.State.Implemented || network.getState() == Network.State.Setup || network.getState() == Network.State.Allocated);
         if (restartNetwork) {
             if (validStateToShutdown) {

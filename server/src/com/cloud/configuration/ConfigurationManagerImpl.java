@@ -3356,9 +3356,10 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         sc.addAnd("systemOnly", SearchCriteria.Op.EQ, false);
 
         // if networkId is specified, list offerings available for upgrade only (for this network)
+        Network network = null;
         if (networkId != null) {
             // check if network exists and the caller can operate with it
-            Network network = _networkMgr.getNetwork(networkId);
+            network = _networkMgr.getNetwork(networkId);
             if (network == null) {
                 throw new InvalidParameterValueException("Unable to find the network by id=" + networkId);
             }
@@ -3418,7 +3419,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         boolean listBySupportedServices = (supportedServicesStr != null && !supportedServicesStr.isEmpty() && !offerings.isEmpty());
         boolean checkIfProvidersAreEnabled = (zoneId != null);
         boolean parseOfferings = (listBySupportedServices || sourceNatSupported != null || checkIfProvidersAreEnabled 
-                || forVpc != null);
+                || forVpc != null || network != null);
 
         if (parseOfferings) {
             List<NetworkOfferingVO> supportedOfferings = new ArrayList<NetworkOfferingVO>();
@@ -3467,7 +3468,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
                 }
                 
                 if (forVpc != null) {
-                    addOffering = addOffering && (isOfferingForVpc(offering) == forVpc.booleanValue());    
+                    addOffering = addOffering && (isOfferingForVpc(offering) == forVpc.booleanValue());
+                } else if (network != null){
+                    addOffering = addOffering && (isOfferingForVpc(offering) == (network.getVpcId() != null));
                 }
 
                 if (addOffering) {
