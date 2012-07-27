@@ -4725,6 +4725,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 String errMsg = forVpcNew ? "a vpc offering " : "not a vpc offering";
                 throw new InvalidParameterValueException("Can't update as the new offering is " + errMsg);
             }
+            
+            //can't update from vpc to non-vpc network offering
+            boolean forVpcNew = _configMgr.isOfferingForVpc(networkOffering);
+            boolean vorVpcOriginal = _configMgr.isOfferingForVpc(_configMgr.getNetworkOffering(oldNetworkOfferingId));
+            if (forVpcNew != vorVpcOriginal) {
+                String errMsg = forVpcNew ? "a vpc offering " : "not a vpc offering";
+                throw new InvalidParameterValueException("Can't update as the new offering is " + errMsg);
+            }
 
             //perform below validation if the network is vpc network
             if (network.getVpcId() != null) {
