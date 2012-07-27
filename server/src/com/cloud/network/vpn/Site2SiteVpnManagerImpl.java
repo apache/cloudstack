@@ -9,6 +9,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.api.BaseListProjectAndAccountResourcesCmd;
 import com.cloud.api.commands.CreateVpnConnectionCmd;
 import com.cloud.api.commands.CreateVpnCustomerGatewayCmd;
 import com.cloud.api.commands.CreateVpnGatewayCmd;
@@ -44,12 +45,19 @@ import com.cloud.network.element.Site2SiteVpnServiceProvider;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.Dao.VpcDao;
+import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
@@ -421,12 +429,38 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     @Override
     public List<Site2SiteCustomerGateway> searchForCustomerGateways(ListVpnCustomerGatewaysCmd cmd) {
         Long id = cmd.getId();
-        List<Site2SiteCustomerGateway> results = new ArrayList<Site2SiteCustomerGateway>();
+        Long domainId = cmd.getDomainId();
+        boolean isRecursive = cmd.isRecursive();
+        String accountName = cmd.getAccountName();
+        boolean listAll = cmd.listAll();
+        long startIndex = cmd.getStartIndex();
+        long pageSizeVal = cmd.getPageSizeVal();
+        
+        Account caller = UserContext.current().getCaller();
+        List<Long> permittedAccounts = new ArrayList<Long>();
+
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, 
+                ListProjectResourcesCriteria>(domainId, isRecursive, null);
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject, listAll, false);
+        domainId = domainIdRecursiveListProject.first();
+        isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        Filter searchFilter = new Filter(Site2SiteCustomerGatewayVO.class, "id", false, startIndex, pageSizeVal);
+
+        SearchBuilder<Site2SiteCustomerGatewayVO> sb = _customerGatewayDao.createSearchBuilder();
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<Site2SiteCustomerGatewayVO> sc = sb.create();
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);  
+
         if (id != null) {
-            results.add(_customerGatewayDao.findById(cmd.getId()));
-        } else {
-            results.addAll(_customerGatewayDao.listAll());
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
+
+        List<Site2SiteCustomerGateway> results = new ArrayList<Site2SiteCustomerGateway>();
+        results.addAll(_customerGatewayDao.search(sc, searchFilter));
         return results;
     }
 
@@ -435,14 +469,43 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         Long id = cmd.getId();
         Long vpcId = cmd.getVpcId();
         
-        List<Site2SiteVpnGateway> results = new ArrayList<Site2SiteVpnGateway>();
-        if (id != null) {
-            results.add(_vpnGatewayDao.findById(cmd.getId()));
-        } else if (vpcId != null) {
-            results.add(_vpnGatewayDao.findByVpcId(vpcId));
-        } else { //id == null && vpcId == null
-            results.addAll(_vpnGatewayDao.listAll());
+        Long domainId = cmd.getDomainId();
+        boolean isRecursive = cmd.isRecursive();
+        String accountName = cmd.getAccountName();
+        boolean listAll = cmd.listAll();
+        long startIndex = cmd.getStartIndex();
+        long pageSizeVal = cmd.getPageSizeVal();
+        
+        Account caller = UserContext.current().getCaller();
+        List<Long> permittedAccounts = new ArrayList<Long>();
+
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, 
+                ListProjectResourcesCriteria>(domainId, isRecursive, null);
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject, listAll, false);
+        domainId = domainIdRecursiveListProject.first();
+        isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        Filter searchFilter = new Filter(Site2SiteVpnGatewayVO.class, "id", false, startIndex, pageSizeVal);
+
+        SearchBuilder<Site2SiteVpnGatewayVO> sb = _vpnGatewayDao.createSearchBuilder();
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<Site2SiteVpnGatewayVO> sc = sb.create();
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);  
+
+         if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
+        
+        if (vpcId != null) {
+            sc.addAnd("vpcId", SearchCriteria.Op.EQ, vpcId);
+        }
+
+        List<Site2SiteVpnGateway> results = new ArrayList<Site2SiteVpnGateway>();
+        results.addAll(_vpnGatewayDao.search(sc, searchFilter));
         return results;
     }
 
@@ -450,15 +513,49 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     public List<Site2SiteVpnConnection> searchForVpnConnections(ListVpnConnectionsCmd cmd) {
         Long id = cmd.getId();
         Long vpcId = cmd.getVpcId();
+
+        Long domainId = cmd.getDomainId();
+        boolean isRecursive = cmd.isRecursive();
+        String accountName = cmd.getAccountName();
+        boolean listAll = cmd.listAll();
+        long startIndex = cmd.getStartIndex();
+        long pageSizeVal = cmd.getPageSizeVal();
         
-        List<Site2SiteVpnConnection> results = new ArrayList<Site2SiteVpnConnection>();
-        if (id != null) {
-            results.add(_vpnConnectionDao.findById(cmd.getId()));
-        } else if (vpcId != null) {
-            results.addAll(_vpnConnectionDao.listByVpcId(vpcId));
-        } else { //id == null && vpcId == null
-            results.addAll(_vpnConnectionDao.listAll());
+        Account caller = UserContext.current().getCaller();
+        List<Long> permittedAccounts = new ArrayList<Long>();
+
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, 
+                ListProjectResourcesCriteria>(domainId, isRecursive, null);
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject, listAll, false);
+        domainId = domainIdRecursiveListProject.first();
+        isRecursive = domainIdRecursiveListProject.second();
+        ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
+        Filter searchFilter = new Filter(Site2SiteVpnConnectionVO.class, "id", false, startIndex, pageSizeVal);
+
+        SearchBuilder<Site2SiteVpnConnectionVO> sb = _vpnConnectionDao.createSearchBuilder();
+        _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
+
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        
+        if (vpcId != null) {
+            SearchBuilder<Site2SiteVpnGatewayVO> gwSearch = _vpnGatewayDao.createSearchBuilder();
+            gwSearch.and("vpcId", gwSearch.entity().getVpcId(), SearchCriteria.Op.EQ);
+            sb.join("gwSearch", gwSearch, sb.entity().getVpnGatewayId(), gwSearch.entity().getId(), JoinBuilder.JoinType.INNER);
         }
+
+        SearchCriteria<Site2SiteVpnConnectionVO> sc = sb.create();
+        _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);  
+
+        if (id != null) {
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+        }
+        
+        if (vpcId != null) {
+            sc.setJoinParameters("gwSearch", "vpcId", vpcId);
+        }
+
+        List<Site2SiteVpnConnection> results = new ArrayList<Site2SiteVpnConnection>();
+        results.addAll(_vpnConnectionDao.search(sc, searchFilter));
         return results;
     }
 

@@ -27,6 +27,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
+import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.user.Account;
 
 @Implementation(description="Delete site to site vpn customer gateway", responseObject=SuccessResponse.class)

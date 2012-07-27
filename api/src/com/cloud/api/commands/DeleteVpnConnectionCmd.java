@@ -28,6 +28,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 

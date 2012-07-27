@@ -5,6 +5,8 @@ import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -30,6 +32,7 @@ public class Site2SiteVpnConnectionVO implements Site2SiteVpnConnection {
     private long customerGatewayId;
 
     @Column(name="state")
+    @Enumerated(value=EnumType.STRING)
     private State state;
     
     @Column(name="domain_id")
