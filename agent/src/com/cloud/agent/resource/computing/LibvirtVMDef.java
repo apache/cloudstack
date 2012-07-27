@@ -338,7 +338,7 @@ public class LibvirtVMDef {
         }
 
         enum diskType {
-            FILE("file"), BLOCK("block"), DIRECTROY("dir");
+            FILE("file"), BLOCK("block"), DIRECTROY("dir"), NETWORK("network");
             String _diskType;
 
             diskType(String type) {
@@ -348,6 +348,20 @@ public class LibvirtVMDef {
             @Override
             public String toString() {
                 return _diskType;
+            }
+        }
+
+        enum diskProtocol {
+            RBD("rbd"), SHEEPDOG("sheepdog");
+            String _diskProtocol;
+
+            diskProtocol(String protocol) {
+                _diskProtocol = protocol;
+            }
+
+            @Override
+            public String toString() {
+                return _diskProtocol;
             }
         }
 
@@ -382,7 +396,12 @@ public class LibvirtVMDef {
 
         private deviceType _deviceType; /* floppy, disk, cdrom */
         private diskType _diskType;
+        private diskProtocol _diskProtocol;
         private String _sourcePath;
+        private String _sourceHost;
+        private int _sourcePort;
+        private String _authUserName;
+        private String _authSecretUUID;
         private String _diskLabel;
         private diskBus _bus;
         private diskFmtType _diskFmtType; /* qcow2, raw etc. */
@@ -461,6 +480,38 @@ public class LibvirtVMDef {
             _bus = bus;
         }
 
+        public void defNetworkBasedDisk(String diskName, String sourceHost, int sourcePort,
+                                        String authUserName, String authSecretUUID,
+                                        int devId, diskBus bus, diskProtocol protocol) {
+            _diskType = diskType.NETWORK;
+            _deviceType = deviceType.DISK;
+            _diskFmtType = diskFmtType.RAW;
+            _sourcePath = diskName;
+            _sourceHost = sourceHost;
+            _sourcePort = sourcePort;
+            _authUserName = authUserName;
+            _authSecretUUID = authSecretUUID;
+            _diskLabel = getDevLabel(devId, bus);
+            _bus = bus;
+            _diskProtocol = protocol;
+        }
+
+        public void defNetworkBasedDisk(String diskName, String sourceHost, int sourcePort,
+                                        String authUserName, String authSecretUUID,
+                                        String diskLabel, diskBus bus, diskProtocol protocol) {
+            _diskType = diskType.NETWORK;
+            _deviceType = deviceType.DISK;
+            _diskFmtType = diskFmtType.RAW;
+            _sourcePath = diskName;
+            _sourceHost = sourceHost;
+            _sourcePort = sourcePort;
+            _authUserName = authUserName;
+            _authSecretUUID = authSecretUUID;
+            _diskLabel = diskLabel;
+            _bus = bus;
+            _diskProtocol = protocol;
+        }
+
         public void setReadonly() {
             _readonly = true;
         }
@@ -527,6 +578,18 @@ public class LibvirtVMDef {
                     diskBuilder.append(" dev='" + _sourcePath + "'");
                 }
                 diskBuilder.append("/>\n");
+            } else if (_diskType == diskType.NETWORK) {
+                diskBuilder.append("<source ");
+                diskBuilder.append(" protocol='" + _diskProtocol + "'");
+                diskBuilder.append(" name='" + _sourcePath + "'");
+                diskBuilder.append(">\n");
+                diskBuilder.append("<host name='" + _sourceHost + "' port='" + _sourcePort + "'/>\n");
+                diskBuilder.append("</source>\n");
+                if (_authUserName != null) {
+                    diskBuilder.append("<auth username='" + _authUserName + "'>\n");
+                    diskBuilder.append("<secret type='ceph' uuid='" + _authSecretUUID + "'/>\n");
+                    diskBuilder.append("</auth>\n");
+                }
             }
             diskBuilder.append("<target dev='" + _diskLabel + "'");
             if (_bus != null) {
@@ -898,5 +961,4 @@ public class LibvirtVMDef {
 
         System.out.println(vm.toString());
     }
-
 }

@@ -24,6 +24,7 @@ public class StorageFilerTO {
     String uuid;
     String host;
     String path;
+    String userInfo;
     int port;
     StoragePoolType type;
     
@@ -34,6 +35,7 @@ public class StorageFilerTO {
         this.path = pool.getPath();
         this.type = pool.getPoolType();
         this.uuid = pool.getUuid();
+        this.userInfo = pool.getUserInfo();
     }
 
     public long getId() {
@@ -50,6 +52,10 @@ public class StorageFilerTO {
 
     public String getPath() {
         return path;
+    }
+
+    public String getUserInfo() {
+        return userInfo;
     }
 
     public int getPort() {

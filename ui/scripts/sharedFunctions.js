@@ -475,6 +475,31 @@ function SharedMountPointURL(server, path) {
 	return url;
 }
 
+function rbdURL(monitor, pool, id, secret) {
+	var url;
+
+	/*
+	Replace the + and / symbols by - and _ to have URL-safe base64 going to the API
+	It's hacky, but otherwise we'll confuse java.net.URI which splits the incoming URI
+	*/
+	secret = str.replace("+", "-");
+	secret = str.replace("/", "_");
+
+	if (id != null && secret != null) {
+		monitor = id + ":" + secret + "@" + monitor;
+	}
+
+	if(pool.substring(0,1) != "/")
+		pool = "/" + pool;
+
+	if(monitor.indexOf("://")==-1)
+		url = "rbd://" + monitor + pool;
+	else
+		url = monitor + pool;
+
+	return url;
+}
+
 function clvmURL(vgname) {
 	var url;
 	if(vgname.indexOf("://")==-1)

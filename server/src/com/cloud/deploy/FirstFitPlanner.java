@@ -17,10 +17,12 @@
 package com.cloud.deploy;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
@@ -55,6 +57,7 @@ import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceState;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
@@ -98,6 +101,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     @Inject protected StoragePoolDao _storagePoolDao;
     @Inject protected CapacityDao _capacityDao;
     @Inject protected AccountManager _accountMgr;
+    @Inject protected StorageManager _storageMgr;
 
     @Inject(adapter=StoragePoolAllocator.class)
     protected Adapters<StoragePoolAllocator> _storagePoolAllocators;
@@ -638,25 +642,56 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         s_logger.debug("Trying to find a potenial host and associated storage pools from the suitable host/pool lists for this VM");
 
         boolean hostCanAccessPool = false;
+        boolean haveEnoughSpace = false;
         Map<Volume, StoragePool> storage = new HashMap<Volume, StoragePool>();
+        TreeSet<Volume> volumesOrderBySizeDesc = new TreeSet<Volume>(new Comparator<Volume>() {
+            @Override
+            public int compare(Volume v1, Volume v2) {
+                if(v1.getSize() < v2.getSize())
+                    return 1;
+                else 
+                    return -1;
+            }
+        });
+        volumesOrderBySizeDesc.addAll(suitableVolumeStoragePools.keySet());
+        boolean multipleVolume = volumesOrderBySizeDesc.size() > 1;
         for(Host potentialHost : suitableHosts){
-            for(Volume vol : suitableVolumeStoragePools.keySet()){
+            Map<StoragePool,List<Volume>> volumeAllocationMap = new HashMap<StoragePool,List<Volume>>();
+            for(Volume vol : volumesOrderBySizeDesc){
+                haveEnoughSpace = false;
                 s_logger.debug("Checking if host: "+potentialHost.getId() +" can access any suitable storage pool for volume: "+ vol.getVolumeType());
                 List<StoragePool> volumePoolList = suitableVolumeStoragePools.get(vol);
                 hostCanAccessPool = false;
                 for(StoragePool potentialSPool : volumePoolList){
                     if(hostCanAccessSPool(potentialHost, potentialSPool)){
-                        storage.put(vol, potentialSPool);
                         hostCanAccessPool = true;
+                        if(multipleVolume){
+                            List<Volume> requestVolumes  = null;
+                            if(volumeAllocationMap.containsKey(potentialSPool))
+                                requestVolumes = volumeAllocationMap.get(potentialSPool);
+                            else
+                                requestVolumes = new ArrayList<Volume>();
+                            requestVolumes.add(vol);
+
+                            if(!_storageMgr.storagePoolHasEnoughSpace(requestVolumes, potentialSPool))
+                                continue;
+                            volumeAllocationMap.put(potentialSPool,requestVolumes);
+                        }
+                        storage.put(vol, potentialSPool);
+                        haveEnoughSpace = true;
                         break;
                     }
                 }
                 if(!hostCanAccessPool){
                     break;
                 }
+                if(!haveEnoughSpace) {
+                    s_logger.warn("insufficient capacity to allocate all volumes");
+                    break;
+                }
             }
-            if(hostCanAccessPool){
-                s_logger.debug("Found a potential host " + "id: "+potentialHost.getId() + " name: " +potentialHost.getName()+ " and associated storage pools for this VM");
+            if(hostCanAccessPool && haveEnoughSpace){
+                s_logger.debug("Found a potential host " + "id: "+potentialHost.getId() + " name: " +potentialHost.getName() + " and associated storage pools for this VM");
                 return new Pair<Host, Map<Volume, StoragePool>>(potentialHost, storage);
             }
         }
