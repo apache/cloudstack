@@ -47,6 +47,8 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.BumpUpPriorityCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
+import com.cloud.agent.api.CheckS2SVpnConnectionsAnswer;
+import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetDomRVersionAnswer;
 import com.cloud.agent.api.GetDomRVersionCmd;
@@ -132,6 +134,11 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.RemoteAccessVpn;
+import com.cloud.network.Site2SiteCustomerGateway;
+import com.cloud.network.Site2SiteCustomerGatewayVO;
+import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnConnectionVO;
+import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.SshKeysDistriMonitor;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VirtualRouterProvider;
@@ -165,6 +172,7 @@ import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatImpl;
 import com.cloud.network.rules.StaticNatRule;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -318,6 +326,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     Site2SiteVpnGatewayDao _s2sVpnGatewayDao;
     @Inject
     Site2SiteVpnConnectionDao _s2sVpnConnectionDao;
+    @Inject
+    Site2SiteVpnManager _s2sVpnMgr;
     
     int _routerRamSize;
     int _routerCpuMHz;
@@ -901,7 +911,79 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
     }
 
-
+    protected void updateSite2SiteVpnConnectionState(List<DomainRouterVO> routers) {
+        for (DomainRouterVO router : routers) {
+            List<Site2SiteVpnConnectionVO> conns = _s2sVpnMgr.getConnectionsForRouter(router);
+            if (conns == null || conns.isEmpty()) {
+                continue;
+            }
+            if (router.getState() != State.Running) {
+                for (Site2SiteVpnConnectionVO conn : conns) {
+                    conn.setState(Site2SiteVpnConnection.State.Disconnected);
+                    _s2sVpnConnectionDao.persist(conn);
+                }
+                continue;
+            }
+            List<String> ipList = new ArrayList<String>();
+            for (Site2SiteVpnConnectionVO conn : conns) {
+                if (conn.getState() != Site2SiteVpnConnection.State.Connected &&
+                        conn.getState() != Site2SiteVpnConnection.State.Disconnected) {
+                    continue;
+                }
+                Site2SiteCustomerGateway gw = _s2sCustomerGatewayDao.findById(conn.getCustomerGatewayId());
+                ipList.add(gw.getGatewayIp());
+            }
+            String privateIP = router.getPrivateIpAddress();
+            HostVO host = _hostDao.findById(router.getHostId());
+            if (host == null || host.getStatus() != Status.Up) {
+                continue;
+            } else if (host.getManagementServerId() != ManagementServerNode.getManagementServerId()) {
+                /* Only cover hosts managed by this management server */
+                continue;
+            } else if (privateIP != null) {
+                final CheckS2SVpnConnectionsCommand command = new CheckS2SVpnConnectionsCommand(ipList);
+                command.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
+                command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
+                command.setWait(30);
+                final Answer origAnswer = _agentMgr.easySend(router.getHostId(), command);
+                CheckS2SVpnConnectionsAnswer answer = null;
+                if (origAnswer instanceof CheckS2SVpnConnectionsAnswer) {
+                    answer = (CheckS2SVpnConnectionsAnswer)origAnswer;
+                } else {
+                    s_logger.warn("Unable to update router " + router.getHostName() + "'s VPN connection status");
+                    continue;
+                }
+                if (!answer.getResult()) {
+                    s_logger.warn("Unable to update router " + router.getHostName() + "'s VPN connection status");
+                    continue;
+                }
+                for (Site2SiteVpnConnectionVO conn : conns) {
+                    if (conn.getState() != Site2SiteVpnConnection.State.Connected &&
+                            conn.getState() != Site2SiteVpnConnection.State.Disconnected) {
+                        continue;
+                    }
+                    Site2SiteVpnConnection.State oldState = conn.getState();
+                    Site2SiteCustomerGateway gw = _s2sCustomerGatewayDao.findById(conn.getCustomerGatewayId());
+                    if (answer.isConnected(gw.getGatewayIp())) {
+                        conn.setState(Site2SiteVpnConnection.State.Connected);
+                    } else {
+                        conn.setState(Site2SiteVpnConnection.State.Disconnected);
+                    }
+                    _s2sVpnConnectionDao.persist(conn);
+                    if (oldState != conn.getState()) {
+                        String title = "Site-to-site Vpn Connection to " + gw.getName() +
+                                " just switch from " + oldState + " to " + conn.getState();
+                        String context = "Site-to-site Vpn Connection to " + gw.getName() + " on router " + router.getHostName() + 
+                                "(id: " + router.getId() + ") " + " just switch from " + oldState + " to " + conn.getState();
+                        s_logger.info(context);
+                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
+                                router.getDataCenterIdToDeployIn(), router.getPodIdToDeployIn(), title, context);
+                    }
+                }
+            }
+        }
+    }
+    
     protected void updateRoutersRedundantState(List<DomainRouterVO> routers) {
         boolean updated = false;
         for (DomainRouterVO router : routers) {
@@ -1094,6 +1176,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 s_logger.debug("Found " + routers.size() + " routers. ");
 
                 updateRoutersRedundantState(routers);
+                updateSite2SiteVpnConnectionState(routers);
 
                 /* FIXME assumed the a pair of redundant routers managed by same mgmt server,
                  * then the update above can get the latest status */

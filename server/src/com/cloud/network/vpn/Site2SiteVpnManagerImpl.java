@@ -60,6 +60,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.DomainRouterVO;
 
 @Local(value = { Site2SiteVpnManager.class, Site2SiteVpnService.class } )
 public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
@@ -590,5 +591,17 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
                 _vpnConnectionDao.persist(conn);
             }
         }
+    }
+
+    @Override
+    public List<Site2SiteVpnConnectionVO> getConnectionsForRouter(DomainRouterVO router) {
+        List<Site2SiteVpnConnectionVO> conns = new ArrayList<Site2SiteVpnConnectionVO>();
+        // One router for one VPC
+        Long vpcId = router.getVpcId();
+        if (router.getVpcId() == null) {
+            return conns;
+        }
+        conns.addAll(_vpnConnectionDao.listByVpcId(vpcId));
+        return conns;
     }
 }

@@ -66,6 +66,8 @@ import com.cloud.agent.api.CheckOnHostAnswer;
 import com.cloud.agent.api.CheckOnHostCommand;
 import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
+import com.cloud.agent.api.CheckS2SVpnConnectionsAnswer;
+import com.cloud.agent.api.CheckS2SVpnConnectionsCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
@@ -549,6 +551,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             return execute((SetStaticRouteCommand) cmd);
         } else if (clazz == Site2SiteVpnCfgCommand.class) {
             return execute((Site2SiteVpnCfgCommand) cmd);
+        } else if (clazz == CheckS2SVpnConnectionsCommand.class) {
+            return execute((CheckS2SVpnConnectionsCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -1400,6 +1404,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         return new Answer(cmd);
     }
 
+    private CheckS2SVpnConnectionsAnswer execute(CheckS2SVpnConnectionsCommand cmd) {
+        Connection conn = getConnection();
+        String args = "checkbatchs2svpn.sh " + cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        for (String ip : cmd.getVpnIps()) {
+            args += " " + ip;
+        }
+        String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
+        if (result == null || result.isEmpty()) {
+            return new CheckS2SVpnConnectionsAnswer(cmd, false, "CheckS2SVpnConneciontsCommand failed");
+        }
+        return new CheckS2SVpnConnectionsAnswer(cmd, true, result);
+    }
 
     private CheckRouterAnswer execute(CheckRouterCommand cmd) {
         Connection conn = getConnection();
