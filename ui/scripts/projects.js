@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 (function(cloudStack) {
-  var getProjectAdmin;
+  var getProjectAdmin, selectedProjectObj;
   cloudStack.projects = {
     requireInvitation: function(args) {
       return g_capabilities.projectinviterequired;
@@ -518,6 +518,9 @@
                     onComplete: function(){
                       setTimeout(function() {
                         $(window).trigger('cloudStack.fullRefresh');
+                        if (isUser()) {
+                          $(window).trigger('cloudStack.detailsRefresh');
+                        }
                       }, 500);
                     }
                   },
@@ -659,6 +662,30 @@
           },
 
           detailView: {
+            updateContext: function (args) {
+              var project;
+              var projectID = args.context.projects[0].id;
+              var url = 'listProjects';
+              if (isDomainAdmin()) {
+                url += '&domainid=' + args.context.users[0].domainid;
+              }
+              $.ajax({
+                url: createURL(url),
+                data: {
+                  listAll: true,
+                  id: projectID
+                },
+                async: false,
+                success: function(json) {
+                  project = json.listprojectsresponse.project[0]; // override project after update owner
+                }
+              });
+              selectedProjectObj = project;
+
+              return {
+                projects: [project]
+              };
+            },
             actions: {
               edit: {
                 label: 'label.edit',
@@ -782,7 +809,7 @@
             },
 
             tabFilter: function(args) {
-              var project = args.context.projects[0];
+              var project = selectedProjectObj;
               var projectOwner = project.account;
               var currentAccount = args.context.users[0].account;
               var hiddenTabs = [];
