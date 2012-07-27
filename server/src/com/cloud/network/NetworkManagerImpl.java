@@ -3625,7 +3625,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         s_logger.debug("Sending destroy to " + element);
                     }
 
-                    element.destroy(network);
+                    if (!element.destroy(network)) {
+                        success = false;
+                        s_logger.warn("Unable to complete destroy of the network: failed to destroy network element " + element.getName());
+                    }
                 } catch (ResourceUnavailableException e) {
                     s_logger.warn("Unable to complete destroy of the network due to element: " + element.getName(), e);
                     success = false;
@@ -3635,7 +3638,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 } catch (Exception e) {
                     s_logger.warn("Unable to complete destroy of the network due to element: " + element.getName(), e);
                     success = false;
-                }
+                } 
             }
         }
 

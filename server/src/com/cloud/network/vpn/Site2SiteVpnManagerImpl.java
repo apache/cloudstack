@@ -120,18 +120,13 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
             idList.add(new IdentityProxy(vpc, vpcId, "vpcId"));
             throw new InvalidParameterValueException("The VPN gateway of VPC with specified vpcId already exists!", idList);
         }
-        Long accountId = cmd.getEntityOwnerId();
-        Long domainId = cmd.getDomainId();
-        if (domainId == null) {
-            domainId = Domain.ROOT_DOMAIN;
-        }
         //Use source NAT ip for VPC
         List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpcId, true);
         if (ips.size() != 1) {
             throw new CloudRuntimeException("Cannot found source nat ip of vpc " + vpcId);
         }
 
-        Site2SiteVpnGatewayVO gw = new Site2SiteVpnGatewayVO(accountId, domainId, ips.get(0).getId(), vpcId);
+        Site2SiteVpnGatewayVO gw = new Site2SiteVpnGatewayVO(owner.getAccountId(), owner.getDomainId(), ips.get(0).getId(), vpcId);
         _vpnGatewayDao.persist(gw);
         return gw;
     }
@@ -180,12 +175,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         if (_customerGatewayDao.findByName(name) != null) {
             throw new InvalidParameterValueException("The customer gateway with name " + name + " already existed!", null);
         }
-        Long accountId = cmd.getEntityOwnerId();
-        Long domainId = cmd.getDomainId();
-        if (domainId == null) {
-            domainId = Domain.ROOT_DOMAIN;
-        }
-        Site2SiteCustomerGatewayVO gw = new Site2SiteCustomerGatewayVO(name, accountId, domainId, gatewayIp, guestCidrList, ipsecPsk,
+        Site2SiteCustomerGatewayVO gw = new Site2SiteCustomerGatewayVO(name, owner.getAccountId(), owner.getDomainId(), gatewayIp, guestCidrList, ipsecPsk,
                 ikePolicy, espPolicy, lifetime);
         _customerGatewayDao.persist(gw);
         return gw;
@@ -221,12 +211,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
             throw new InvalidParameterValueException("The vpn connection with specified customer gateway id or vpn gateway id " +
                     " already exists!", idList);
         }
-        Long accountId = cmd.getEntityOwnerId();
-        Long domainId = cmd.getDomainId();
-        if (domainId == null) {
-            domainId = Domain.ROOT_DOMAIN;
-        }
-        Site2SiteVpnConnectionVO conn = new Site2SiteVpnConnectionVO(accountId, domainId, vpnGatewayId, customerGatewayId);
+        Site2SiteVpnConnectionVO conn = new Site2SiteVpnConnectionVO(owner.getAccountId(), owner.getDomainId(), vpnGatewayId, customerGatewayId);
         conn.setState(State.Pending);
         _vpnConnectionDao.persist(conn);
         return conn;
