@@ -157,6 +157,9 @@ public class StoragePoolVO implements StoragePool, Identity {
     @Column(name="port")
     private int port;
 
+    @Column(name="user_info")
+    private String userInfo;
+
     @Column(name="cluster_id")
     private Long clusterId;
     
@@ -178,6 +181,11 @@ public class StoragePoolVO implements StoragePool, Identity {
     @Override
     public String getPath() {
         return path;
+    }
+
+    @Override
+    public String getUserInfo() {
+        return userInfo;
     }
     
     public StoragePoolVO(long poolId, String name, String uuid, StoragePoolType type,
@@ -208,6 +216,16 @@ public class StoragePoolVO implements StoragePool, Identity {
         this.setStatus(StoragePoolStatus.Up);
         this.uuid = UUID.randomUUID().toString();
     }
+
+    public StoragePoolVO(StoragePoolType type, String hostAddress, int port, String path, String userInfo) {
+        this.poolType = type;
+        this.hostAddress = hostAddress;
+        this.port = port;
+        this.path = path;
+        this.userInfo = userInfo;
+        this.setStatus(StoragePoolStatus.Up);
+        this.uuid = UUID.randomUUID().toString();
+    }
     
     public void setStatus(StoragePoolStatus status)
     {
@@ -232,6 +250,10 @@ public class StoragePoolVO implements StoragePool, Identity {
     
     public void setPath(String path) {
     	this.path = path;
+    }
+
+    public void setUserInfo(String userInfo) {
+        this.userInfo = userInfo;
     }
     
     @Override

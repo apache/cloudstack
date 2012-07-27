@@ -80,6 +80,7 @@ import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.api.commands.UploadVolumeCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.capacity.Capacity;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityState;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -133,6 +134,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.server.ManagementServer;
 import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.server.StatsCollector;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.Storage.ImageFormat;
@@ -274,6 +276,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     @Inject
     protected CapacityDao _capacityDao;
     @Inject
+    protected CapacityManager _capacityMgr;
+    @Inject
     protected DiskOfferingDao _diskOfferingDao;
     @Inject
     protected AccountDao _accountDao;
@@ -352,6 +356,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     private StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     private int _customDiskOfferingMinSize = 1;
     private int _customDiskOfferingMaxSize = 1024;
+    private double _storageUsedThreshold = 1.0d;
+    private double _storageAllocatedThreshold = 1.0d;
+    protected BigDecimal _storageOverprovisioningFactor = new BigDecimal(1);
 
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) throws StorageUnavailableException {
 
@@ -955,6 +962,19 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         String time = configs.get("storage.cleanup.interval");
         _storageCleanupInterval = NumbersUtil.parseInt(time, 86400);
 
+        String storageUsedThreshold = configDao.getValue(Config.StorageCapacityDisableThreshold.key());
+        if (storageUsedThreshold != null) {
+            _storageUsedThreshold = Double.parseDouble(storageUsedThreshold);
+        }
+
+        String storageAllocatedThreshold = configDao.getValue(Config.StorageAllocatedCapacityDisableThreshold.key());
+        if (storageAllocatedThreshold != null) {
+            _storageAllocatedThreshold = Double.parseDouble(storageAllocatedThreshold);
+        }
+
+        String globalStorageOverprovisioningFactor = configs.get("storage.overprovisioning.factor");
+        _storageOverprovisioningFactor = new BigDecimal(NumbersUtil.parseFloat(globalStorageOverprovisioningFactor, 2.0f));
+
         s_logger.info("Storage cleanup enabled: " + _storageCleanupEnabled + ", interval: " + _storageCleanupInterval + ", template cleanup enabled: " + _templateCleanupEnabled);
 
         String workers = configs.get("expunge.workers");
@@ -1257,10 +1277,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                 if (uriPath == null) {
                     throw new InvalidParameterValueException("host or path is null, should be sharedmountpoint://localhost/path");
                 }
-            } else if (uri.getScheme().equalsIgnoreCase("clvm")) {
+            }  else if (uri.getScheme().equalsIgnoreCase("rbd")) {
                 String uriPath = uri.getPath();
                 if (uriPath == null) {
-                    throw new InvalidParameterValueException("host or path is null, should be clvm://localhost/path");
+                    throw new InvalidParameterValueException("host or path is null, should be rbd://hostname/pool");
                 }
             }
         } catch (URISyntaxException e) {
@@ -1283,6 +1303,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         String scheme = uri.getScheme();
         String storageHost = uri.getHost();
         String hostPath = uri.getPath();
+        String userInfo = uri.getUserInfo();
         int port = uri.getPort();
         StoragePoolVO pool = null;
         if (s_logger.isDebugEnabled()) {
@@ -1303,6 +1324,11 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             pool = new StoragePoolVO(StoragePoolType.Filesystem, "localhost", 0, hostPath);
         } else if (scheme.equalsIgnoreCase("sharedMountPoint")) {
             pool = new StoragePoolVO(StoragePoolType.SharedMountPoint, storageHost, 0, hostPath);
+        } else if (scheme.equalsIgnoreCase("rbd")) {
+            if (port == -1) {
+                port = 6789;
+            }
+            pool = new StoragePoolVO(StoragePoolType.RBD, storageHost, port, hostPath.replaceFirst("/", ""), userInfo);
         } else if (scheme.equalsIgnoreCase("PreSetup")) {
             pool = new StoragePoolVO(StoragePoolType.PreSetup, storageHost, 0, hostPath);
         } else if (scheme.equalsIgnoreCase("iscsi")) {
@@ -1601,7 +1627,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         s_logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
         if (pool.getPoolType() != StoragePoolType.NetworkFilesystem && pool.getPoolType() != StoragePoolType.Filesystem && pool.getPoolType() != StoragePoolType.IscsiLUN
                 && pool.getPoolType() != StoragePoolType.Iscsi && pool.getPoolType() != StoragePoolType.VMFS && pool.getPoolType() != StoragePoolType.SharedMountPoint
-                && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.OCFS2) {
+                && pool.getPoolType() != StoragePoolType.PreSetup && pool.getPoolType() != StoragePoolType.OCFS2 && pool.getPoolType() != StoragePoolType.RBD) {
             s_logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
             return false;
         }
@@ -3905,6 +3931,82 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         } else {
             return HypervisorType.None;
         }
+    }
+
+    private boolean checkUsagedSpace(StoragePool pool){
+        StatsCollector sc = StatsCollector.getInstance();
+        if (sc != null) {
+            long totalSize = pool.getCapacityBytes();
+            StorageStats stats = sc.getStoragePoolStats(pool.getId());
+            if(stats == null){
+                stats = sc.getStorageStats(pool.getId());
+            }
+            if (stats != null) {
+                double usedPercentage = ((double)stats.getByteUsed() / (double)totalSize);
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Checking pool " + pool.getId() + " for storage, totalSize: " + pool.getCapacityBytes() + ", usedBytes: " + stats.getByteUsed() + ", usedPct: " + usedPercentage + ", disable threshold: " + _storageUsedThreshold);
+                }
+                if (usedPercentage >= _storageUsedThreshold) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Insufficient space on pool: " + pool.getId() + " since its usage percentage: " +usedPercentage + " has crossed the pool.storage.capacity.disablethreshold: " + _storageUsedThreshold);
+                    }
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean storagePoolHasEnoughSpace(List<Volume> volumes, StoragePool pool) {
+        if(volumes == null || volumes.isEmpty())
+            return false;
+
+        if(!checkUsagedSpace(pool))
+            return false;
+
+        // allocated space includes template of specified volume
+        StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
+        long allocatedSizeWithtemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
+        long totalAskingSize = 0;
+        for (Volume volume : volumes) {
+            if(volume.getTemplateId()!=null){
+                VMTemplateVO tmpl = _templateDao.findById(volume.getTemplateId());
+                if (tmpl.getFormat() != ImageFormat.ISO){
+                    allocatedSizeWithtemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, tmpl);
+                }
+            }
+            if(volume.getState() != Volume.State.Ready)
+                totalAskingSize = totalAskingSize + volume.getSize();
+        }
+
+        long totalOverProvCapacity;
+        if (pool.getPoolType() == StoragePoolType.NetworkFilesystem) {
+            totalOverProvCapacity = _storageOverprovisioningFactor.multiply(new BigDecimal(pool.getCapacityBytes())).longValue();// All this for the inaccuracy of floats for big number multiplication.
+        }else {
+            totalOverProvCapacity = pool.getCapacityBytes();
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Checking pool: " + pool.getId() + " for volume allocation " + volumes.toString() + ", maxSize : " + totalOverProvCapacity + ", totalAllocatedSize : " + allocatedSizeWithtemplate + ", askingSize : " + totalAskingSize + ", allocated disable threshold: " + _storageAllocatedThreshold);
+        }
+
+        double usedPercentage = (allocatedSizeWithtemplate + totalAskingSize) / (double)(totalOverProvCapacity);
+        if (usedPercentage > _storageAllocatedThreshold){
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for volume allocation: " + volumes.toString() + " since its allocated percentage: " +usedPercentage + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: " + _storageAllocatedThreshold + ", skipping this pool");
+            }
+            return false;
+        }
+
+        if (totalOverProvCapacity < (allocatedSizeWithtemplate + totalAskingSize)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for volume allocation: " + volumes.toString() + ", not enough storage, maxSize : " + totalOverProvCapacity + ", totalAllocatedSize : " + allocatedSizeWithtemplate + ", askingSize : " + totalAskingSize);
+            }
+            return false;
+        }
+        return true;
     }
     
 }

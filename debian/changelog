@@ -1,3 +1,9 @@
+cloud (3.0.2) unstable; urgency=low
+
+  * Bumping the package version to the latest release.
+
+ -- Wido den Hollander <wido@widodh.nl>  Wed, 25 Jul 2012 14:53:31 +0200
+
 cloud (2.2.2) unstable; urgency=low
 
   * Bumping version number for next CloudStack release

@@ -375,4 +375,8 @@ public class AgentBasedConsoleProxyManager implements ConsoleProxyManager, Virtu
 		// TODO Auto-generated method stub
 		return false;
     }
+
+    @Override 
+    public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
+    }
 }

@@ -235,4 +235,6 @@ public interface StorageManager extends StorageService, Manager {
 	String getSupportedImageFormatForCluster(Long clusterId);
 
 	HypervisorType getHypervisorTypeFromFormat(ImageFormat format);
+
+        boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool);
 }

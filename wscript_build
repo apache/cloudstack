@@ -10,6 +10,7 @@ import Utils,Node,Options,Logs,Scripting,Environment,Build,Configure
 from os import unlink as _unlink, makedirs as _makedirs, getcwd as _getcwd, chdir as _chdir
 from os.path import abspath as _abspath, basename as _basename, dirname as _dirname, exists as _exists, isdir as _isdir, split as _split, join as _join, sep, pathsep, pardir, curdir
 from glob import glob as _glob
+from subprocess import Popen as _Popen,PIPE
 try: set([1,2,3])
 except Exception: from Sets import set
 import re
@@ -31,7 +32,49 @@ filelist = bld.path.ant_glob
 distdir = Utils.relpath(_join(sourcedir,"dist"))
 targetdir = Utils.relpath(_join(sourcedir,"target"))
 
+def gitinfo(dir=None):
+	if dir and not _isdir(dir): return ''
+	try: p = _Popen(['git','remote','show','-n','origin'],stdin=PIPE,stdout=PIPE,stderr=PIPE,cwd=dir)
+	except OSError,e:
+		if e.errno == 2: return '' # svn command is not installed
+		raise
+	stdout,stderr = p.communicate('')
+	retcode = p.wait()
+	# If the guess fails, just return nothing.
+	if retcode: return
+	stdout = [ s.strip() for s in stdout.splitlines() ]
+	try: url = [ s[11:] for s in stdout if s.startswith("Fetch URL") ][0]
+	except IndexError: url = [ s[5:] for s in stdout if s.startswith("URL") ][0]
+	assert url
+	
+	p = _Popen(['git','log','-1'],stdin=PIPE,stdout=PIPE,stderr=PIPE,cwd=dir)
+	stdout,stderr = p.communicate('')
+	retcode = p.wait()
+	if retcode: return
+	# If the guess fails, just return nothing.
+	stdout = [ s.strip() for s in stdout.splitlines() ]
+	commitid = [ s.split()[1] for s in stdout if s.startswith("commit") ][0]
+	assert commitid
+	
+	return "Git Revision: %s"%commitid + "\n" + "Git URL: %s"%url + "\n"
+
 def build_utils_docs ():
+	stdout = gitinfo()
+	if stdout:
+		f = file("sccs-info","w")
+		f.write(stdout)
+		f.flush()
+		f.close()
+	else:
+		if _exists("sccs-info"):
+			# If the file already existed, we preserve it
+			return
+		else:
+			f = file("sccs-info","w")
+			f.write("No revision control information could be detected when the source distribution was built.")
+			f.flush()
+			f.close()
+
 	sccsinfo = _join(sourcedir,"sccs-info")
 	if _exists(sccsinfo): bld.install_files("${DOCDIR}","sccs-info")
 
@@ -87,19 +130,6 @@ def build_jars ():
 	
 	bld.install_files ('${JAVADIR}', ant_jars)
 
-
-#def build_python_and_daemonize ():
-#	obj = bld(features = 'py',name='pythonmodules')
-#	obj.find_sources_in_dirs('python/lib', exts=['.py'])
-#
-#	if bld.env.DISTRO not in ['Windows','Mac']:
-#		# build / install declarations of the daemonization utility - except for Windows
-#		bld(
-#			name='daemonize',
-#			features='cc cprogram',
-#			source='daemonize/daemonize.c',
-#			target='daemonize/cloud-daemonize'
-#		   )
 
 def build_premium ():
 	if buildpremium: bld.recurse(["cloudstack-proprietary/"],'build')
@@ -388,7 +418,6 @@ def build_usage_dir ():
 # Get started to execute here
 build_utils_docs ()
 build_jars ()
-#build_python_and_daemonize ()
 build_premium ()
 #build_thirdparty_dir()
 build_dependences ()

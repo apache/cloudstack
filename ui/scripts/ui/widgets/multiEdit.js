@@ -675,6 +675,7 @@
     var context = args.context;
     var ignoreEmptyFields = args.ignoreEmptyFields;
     var actionPreFilter = args.actionPreFilter;
+    var readOnlyCheck = args.readOnlyCheck;
 
     var $thead = $('<tr>').appendTo(
       $('<thead>').appendTo($inputTable)
@@ -934,6 +935,11 @@
                 }
               ).appendTo($dataBody);
             });
+
+            if (readOnlyCheck && !readOnlyCheck(args)) {
+                $multi.find('th.add-user, td.add-user').detach();
+                $multiForm.find('tbody').detach();
+            }
 
             _medit.refreshItemWidths($multi);
           },

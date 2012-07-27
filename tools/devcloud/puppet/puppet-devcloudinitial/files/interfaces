@@ -1,0 +1,16 @@
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+auto xenbr0
+iface xenbr0 inet dhcp
+    gateway 10.0.2.2
+    bridge_ports eth0
+
+
+auto eth0
+iface eth0 inet dhcp
+pre-up iptables-save < /etc/iptables.save
+pre-up /etc/init.d/ebtables load
+

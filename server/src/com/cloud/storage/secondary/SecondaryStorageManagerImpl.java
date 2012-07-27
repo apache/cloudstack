@@ -1477,4 +1477,9 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 		// TODO Auto-generated method stub
 		return false;
     }
+
+	@Override
+	public void prepareStop(VirtualMachineProfile<SecondaryStorageVmVO> profile) {
+		
+	}
 }

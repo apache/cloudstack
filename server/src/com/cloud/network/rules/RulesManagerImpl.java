@@ -27,7 +27,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
-import com.citrix.netscaler.nitro.resource.config.network.vlan;
 import com.cloud.api.commands.ListPortForwardingRulesCmd;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.domain.dao.DomainDao;
@@ -372,10 +371,12 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ENABLE_STATIC_NAT, eventDescription = "enabling static nat")
     public boolean enableStaticNat(long ipId, long vmId, long networkId, boolean isSystemVm) 
             throws NetworkRuleConflictException, ResourceUnavailableException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
+        UserContext.current().setEventDetails("Ip Id: " + ipId);
 
         // Verify input parameters
 
@@ -1136,6 +1137,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_DISABLE_STATIC_NAT, eventDescription = "disabling static nat", async=true)
     public boolean disableStaticNat(long ipId) throws ResourceUnavailableException, NetworkRuleConflictException, InsufficientAddressCapacityException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();

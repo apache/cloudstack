@@ -1,0 +1,6 @@
+This folder contains various scripts used to build the devcloud image.
+
+Folders:
+puppet - puppet conf files and module directories for the various build phases
+vagrant - basic vagrant configuration for a devcloud box (and a puppet manifest to help configure the system to be a valid vagrant box)
+ubuntu_install - ubuntu installation / initial configuration

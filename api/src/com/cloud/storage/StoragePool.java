@@ -86,6 +86,11 @@ public interface StoragePool {
     String getPath();
 
     /**
+     * @return the user information / credentials for the storage host
+     */
+    String getUserInfo();
+
+    /**
      * @return the storage pool represents a shared storage resource
      */
     boolean isShared();

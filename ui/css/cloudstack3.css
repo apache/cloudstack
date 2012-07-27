@@ -280,6 +280,8 @@ body.login {
 .login .fields .field label.error {
   color: #FF0000;
   float: right;
+  left: 204px;
+  top: 0;
 }
 
 .login .fields input {
@@ -10004,3 +10006,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   background-position: -230px -615px;
 }
 
+.label-hovered {
+  cursor: pointer;
+  color: blue !important;
+}

@@ -34,6 +34,22 @@ public class KVMPhysicalDisk {
         }
     }
 
+    public static String RBDStringBuilder(String monHost, int monPort,
+                            String authUserName, String authSecret, String image) {
+        String rbdOpts;
+
+        rbdOpts = "rbd:" + image;
+        rbdOpts += ":mon_host=" + monHost + "\\\\:" + monPort;
+        if (authUserName == null) {
+            rbdOpts += ":auth_supported=none";
+        } else {
+            rbdOpts += ":auth_supported=cephx";
+            rbdOpts += ":id=" + authUserName;
+            rbdOpts += ":key=" + authSecret;
+        }
+        return rbdOpts;
+    }
+
     private PhysicalDiskFormat format;
     private long size;
     private long virtualSize;

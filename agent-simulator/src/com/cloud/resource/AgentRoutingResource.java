@@ -233,10 +233,10 @@ public class AgentRoutingResource extends AgentStorageResource {
 		    Answer result = _simMgr.simulate(cmd, hostGuid);
 		    
 		    if (!result.getResult()) {
-		        return new StopAnswer(cmd, result.getDetails());
+		        return new StopAnswer(cmd, result.getDetails(), false);
 		    }
 		    
-			answer = new StopAnswer(cmd, null, 0, new Long(100), new Long(200));
+			answer = new StopAnswer(cmd, null, 0, true);
 			Pair<Long, Long> data = _runningVms.get(vmName);
 			if (data != null) {
 				this.usedCpu -= data.first();

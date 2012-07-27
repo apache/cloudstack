@@ -3449,6 +3449,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
         }
 
+        sc.addAnd("id", SearchCriteria.Op.SC, accountSC);
         return _networksDao.search(sc, searchFilter);
     }
 

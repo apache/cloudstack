@@ -836,7 +836,7 @@
           actionFilter: actionFilter,
           data: data,
           context: $detailView.data('view-args').context
-        }).prependTo($firstRow.closest('div.detail-group').closest('.details'));
+        });
 
       // 'View all' button
       var showViewAll = detailViewArgs.viewAll ?
@@ -846,6 +846,9 @@
                   context: context
                 }) : true
             ) : true;
+      if ($actions.find('div.action').size() || (detailViewArgs.viewAll && showViewAll)) {
+        $actions.prependTo($firstRow.closest('div.detail-group').closest('.details'));
+      }
       if (detailViewArgs.viewAll && showViewAll) {
         $('<div>')
           .addClass('view-all')
@@ -1035,7 +1038,7 @@
     );
   };
 
-  var replaceTabs = function($detailView, $newTabs, tabs, options) {
+  var replaceTabs = function($detailView, tabs, options) {
     var $detailViewElems = $detailView.find('ul.ui-tabs-nav, .detail-group');
     $detailView.tabs('destroy');
     $detailViewElems.remove();
@@ -1054,24 +1057,31 @@
       );
   };
 
-  $.fn.detailView = function(args) {
+  $.fn.detailView = function(args, options) {
     var $detailView = this;
+    
+    if (options == 'refresh') {
+      var $tabs = replaceTabs($detailView, args.tabs, {
+        context: args.context,
+        tabFilter: args.tabFilter
+      });
+    } else {
+      $detailView.addClass('detail-view');
+      $detailView.data('view-args', args);
 
-    $detailView.addClass('detail-view');
-    $detailView.data('view-args', args);
+      if (args.$listViewRow) {
+        $detailView.data('list-view-row', args.$listViewRow);
+      }
 
-    if (args.$listViewRow) {
-      $detailView.data('list-view-row', args.$listViewRow);
+      // Create toolbar
+      var $toolbar = makeToolbar().appendTo($detailView);
+
+      // Create tabs
+      var $tabs = makeTabs($detailView, args.tabs, {
+        context: args.context,
+        tabFilter: args.tabFilter
+      }).appendTo($detailView);
     }
-
-    // Create toolbar
-    var $toolbar = makeToolbar().appendTo($detailView);
-
-    // Create tabs
-    var $tabs = makeTabs($detailView, args.tabs, {
-      context: args.context,
-      tabFilter: args.tabFilter
-    }).appendTo($detailView);
 
     $detailView.tabs();
 
@@ -1151,4 +1161,17 @@
 
     return true;
   });
+
+  // Detail view refresh handler
+  $(window).bind('cloudStack.detailsRefresh', function() {
+    var $detailView = $('.detail-view');
+
+    $detailView.each(function() {
+      var $detailView = $(this),
+      args = $detailView.data('view-args');
+
+      $detailView.detailView(args, 'refresh');
+    });
+  });
+
 }(window.jQuery, window.cloudStack, window._l));

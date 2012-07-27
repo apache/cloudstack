@@ -51,15 +51,34 @@ public class LibvirtStoragePoolXMLParser {
             Element source = (Element) rootElement.getElementsByTagName(
                     "source").item(0);
             String host = getAttrValue("host", "name", source);
-            String path = getAttrValue("dir", "path", source);
 
-            Element target = (Element) rootElement.getElementsByTagName(
-                    "target").item(0);
-            String targetPath = getTagValue("path", target);
+            if (type.equalsIgnoreCase("rbd")) {
+                int port = Integer.parseInt(getAttrValue("host", "port", source));
+                String pool = getTagValue("name", source);
 
-            return new LibvirtStoragePoolDef(
-                    LibvirtStoragePoolDef.poolType.valueOf(type.toUpperCase()),
-                    poolName, uuid, host, path, targetPath);
+                Element auth = (Element) source.getElementsByTagName(
+                    "auth").item(0);
+
+                if (auth != null) {
+                    String authUsername = auth.getAttribute("username");
+                    String authType = auth.getAttribute("type");
+                    return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.poolType.valueOf(type.toUpperCase()),
+                        poolName, uuid, host, port, pool, authUsername, LibvirtStoragePoolDef.authType.valueOf(authType.toUpperCase()), uuid);
+                } else {
+                    return new LibvirtStoragePoolDef(LibvirtStoragePoolDef.poolType.valueOf(type.toUpperCase()),
+                        poolName, uuid, host, port, pool, "");
+                }
+            } else {
+                String path = getAttrValue("dir", "path", source);
+
+                Element target = (Element) rootElement.getElementsByTagName(
+                        "target").item(0);
+                String targetPath = getTagValue("path", target);
+
+                return new LibvirtStoragePoolDef(
+                        LibvirtStoragePoolDef.poolType.valueOf(type.toUpperCase()),
+                        poolName, uuid, host, path, targetPath);
+            }
         } catch (ParserConfigurationException e) {
             s_logger.debug(e.toString());
         } catch (SAXException e) {

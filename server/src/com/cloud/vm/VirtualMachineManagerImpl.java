@@ -1074,11 +1074,10 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         if (vm.getState() != State.Stopping) {
             throw new CloudRuntimeException("We cannot proceed with stop VM " + vm + " since it is not in 'Stopping' state, current state: " + vm.getState());
         }
-        String routerPrivateIp = null;
-        if (vm.getType() == VirtualMachine.Type.DomainRouter) {
-            routerPrivateIp = vm.getPrivateIpAddress();
-        }
-        StopCommand stop = new StopCommand(vm, vm.getInstanceName(), null, routerPrivateIp);
+
+        vmGuru.prepareStop(profile);
+        
+        StopCommand stop = new StopCommand(vm, vm.getInstanceName(), null);
         boolean stopped = false;
         StopAnswer answer = null;
         try {

@@ -45,6 +45,16 @@ public interface KVMStoragePool {
 
     public String getLocalPath();
 
+    public String getSourceHost();
+
+    public String getSourceDir();
+
+    public int getSourcePort();
+
+    public String getAuthUserName();
+
+    public String getAuthSecret();
+
     public StoragePoolType getType();
 
     public boolean delete();

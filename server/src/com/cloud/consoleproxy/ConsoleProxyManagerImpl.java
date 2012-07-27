@@ -2032,4 +2032,8 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
 		// TODO Auto-generated method stub
 		return false;
     }
+	
+	@Override
+	public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
+	}
 }
