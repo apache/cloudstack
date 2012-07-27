@@ -1020,7 +1020,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
 
         VirtualMachineGuru<T> vmGuru = getVmGuru(vm);
-        vm = vmGuru.findById(vm.getId());
         VirtualMachineProfile<T> profile = new VirtualMachineProfileImpl<T>(vm);
 
         try {
