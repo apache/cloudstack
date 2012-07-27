@@ -19,9 +19,6 @@ package com.cloud.network.as;
 
 import com.cloud.acl.ControlledEntity;
 
-/**
- * @author Deepak Garg
- */
 
 public interface AutoScaleVmGroup extends ControlledEntity {
 
