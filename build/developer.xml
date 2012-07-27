@@ -102,9 +102,9 @@
       <jvmarg value="-Dcom.sun.management.jmxremote.port=${jmxport}"/>
       <jvmarg value="-Dcom.sun.management.jmxremote.authenticate=false"/>
       <jvmarg value="-Dcom.sun.management.jmxremote.ssl=false"/>
-      <jvmarg value="-Xms256m"/>
-      <jvmarg value="-Xmx512m"/>
-      <jvmarg value="-XX:MaxPermSize=128m"/>
+      <jvmarg value="-Xms512m"/>
+      <jvmarg value="-Xmx1024m"/>
+      <jvmarg value="-XX:MaxPermSize=256m"/>
       <jvmarg value="-ea"/>
       <arg value="start"/>
     </java>
@@ -119,9 +119,9 @@
 	  <jvmarg value="-Xdebug"/>
       <jvmarg value="${debug.jvmarg}"/>
       <jvmarg value="-ea"/>
-      <jvmarg value="-Xms256m"/>
-      <jvmarg value="-Xmx512m"/>
-      <jvmarg value="-XX:MaxPermSize=128m"/>
+      <jvmarg value="-Xms512m"/>
+      <jvmarg value="-Xmx1024m"/>
+      <jvmarg value="-XX:MaxPermSize=256m"/>
     </java>
   </target>
 
