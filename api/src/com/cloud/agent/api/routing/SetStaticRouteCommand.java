@@ -14,12 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package com.cloud.agent.api.routing;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteProfile;
+import com.cloud.utils.net.NetUtils;
 
+/**
+ * @author Alena Prokharchyk
+ */
 public class SetStaticRouteCommand extends NetworkElementCommand{
     StaticRouteProfile[] staticRoutes;
     
@@ -32,5 +40,29 @@ public class SetStaticRouteCommand extends NetworkElementCommand{
 
     public StaticRouteProfile[] getStaticRoutes() {
         return staticRoutes;
+    }
+
+    public boolean isEmpty() {
+        if(staticRoutes == null || staticRoutes.length == 0 ) {
+            return true;
+        }
+        return false;
+    }
+    public String[][] generateSRouteRules() {
+        String [][] result = new String [2][];
+        Set<String> toAdd = new HashSet<String>();
+        for (StaticRouteProfile route: staticRoutes) {
+            /*  example  :  ip:gateway:cidr,
+             */
+            if( route.getState() == StaticRoute.State.Active || route.getState() == StaticRoute.State.Add ) {
+                String cidr = route.getCidr();
+                String subnet = NetUtils.getCidrSubNet(cidr);
+                String cidrSize =  cidr.split("\\/")[1];
+                String entry = route.getIp4Address()+ ":" + route.getGateway() + ":" + subnet + "/" + cidrSize;
+                toAdd.add(entry);
+            }
+        }
+        result[0] = toAdd.toArray(new String[toAdd.size()]);
+        return result;
     }
 }

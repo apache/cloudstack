@@ -16,10 +16,12 @@
 // under the License.
 package com.cloud.agent.api;
 
+import com.cloud.agent.api.routing.SetSourceNatCommand;
+
 public class SetSourceNatAnswer extends Answer{
     public SetSourceNatAnswer() {}
 
-    public SetSourceNatAnswer(PlugNicCommand cmd, boolean success, String result) {
+    public SetSourceNatAnswer(SetSourceNatCommand cmd, boolean success, String result) {
         super(cmd, success, result);
     }
 }
