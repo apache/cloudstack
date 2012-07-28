@@ -3,7 +3,7 @@
 # For full documentation of the options in this file, see:
 #   info -f grub -n 'Simple configuration'
 
-GRUB_DEFAULT=0
+GRUB_DEFAULT=2
 #GRUB_HIDDEN_TIMEOUT=0
 GRUB_HIDDEN_TIMEOUT_QUIET=true
 GRUB_TIMEOUT=2

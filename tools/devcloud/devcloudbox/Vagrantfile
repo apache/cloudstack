@@ -19,13 +19,15 @@
 # under the License.
 
 Vagrant::Config.run do |config|
-  config.vm.box = "devcloudbase-ubuntu-12-04-64bit"
+  config.vm.box = "devcloud" 
   # TODO: Get a URL to host the base image
   # config.vm.box_url = "http://domain.com/path/to/above.box"
+  config.vm.guest = :xen
+  config.ssh.username = "devcloud"
 
   # Uncomment this line to enable the console for debugging the 
   # build process.
-  #config.vm.boot_mode = :gui
+  config.vm.boot_mode = :gui
 
   # Setup port forwarding
   config.vm.forward_port 22, 2222
@@ -38,35 +40,12 @@ Vagrant::Config.run do |config|
   # Ensure the VM has the right virtual resources
   #config.vm.
       
-  config.vm.provision :puppet do |puppet|
-    puppet.manifests_path = "puppet-devcloudinitial"
-    puppet.manifest_file  = "init.pp"
-    puppet.with_ssh       = true
-    puppet.pp_path        = "/etc/puppet"
-    puppet.module_path    = "puppet-devcloudinitial"
-  end
-
-  # Enable provisioning with Puppet stand alone.  Puppet manifests
-  # are contained in a directory path relative to this Vagrantfile.
-  # You will need to create the manifests directory and a manifest in
-  # the file my_box.pp in the manifests_path directory.
-  #
-  # An example Puppet manifest to provision the message of the day:
-  #
-  # # group { "puppet":
-  # #   ensure => "present",
-  # # }
-  # #
-  # # File { owner => 0, group => 0, mode => 0644 }
-  # #
-  # # file { '/etc/motd':
-  # #   content => "Welcome to your Vagrant-built virtual machine!
-  # #               Managed by Puppet.\n"
-  # # }
-  #
-  # config.vm.provision :puppet do |puppet|
-  #   puppet.manifests_path = "manifests"
-  #   puppet.manifest_file  = "my_box.pp"
-  # end
+#  config.vm.provision :puppet do |puppet|
+#    puppet.manifests_path = "puppet-devcloud"
+#    puppet.manifest_file  = "init.pp"
+#    puppet.with_ssh       = true
+#    puppet.pp_path        = "/etc/puppet"
+#    puppet.module_path    = "puppet-devcloud"
+#  end
 
 end

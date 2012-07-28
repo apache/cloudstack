@@ -4,12 +4,12 @@ class puppet-devcloudinitial {
     ensure => latest,
   }
 
-  package { 'xen-hypervisor-4.1-amd64':
+  package { 'xen-hypervisor-4.1-i386':
     ensure => latest,
   }
 
   package { 'xcp-xapi':
-    require => Package['xen-hypervisor-4.1-amd64'],
+    require => Package['xen-hypervisor-4.1-i386'],
     ensure  => latest,
   }
 
@@ -38,7 +38,7 @@ class puppet-devcloudinitial {
   }
 
   file { '/etc/default/grub':
-    require => Package['xen-hypervisor-4.1-amd64'],
+    require => Package['xen-hypervisor-4.1-i386'],
     ensure  => 'file',
     source  => 'puppet:///modules/puppet-devcloudinitial/grub',
     group   => '0',
@@ -53,7 +53,7 @@ class puppet-devcloudinitial {
   }
 
   file { '/usr/share/qemu':
-    require => Package['xen-hypervisor-4.1-amd64'],
+    require => Package['xen-hypervisor-4.1-i386'],
     ensure => 'directory',
     group  => '0',
     mode   => '755',
@@ -78,7 +78,7 @@ class puppet-devcloudinitial {
   }
 
   file { '/etc/default/xen':
-    require => Package['xen-hypervisor-4.1-amd64'],
+    require => Package['xen-hypervisor-4.1-i386'],
     ensure  => 'file',
     source  => 'puppet:///modules/puppet-devcloudinitial/xen-defaults',
     group   => '0',
