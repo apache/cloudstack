@@ -211,6 +211,12 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
             throw new InvalidParameterValueException("The vpn connection with specified customer gateway id or vpn gateway id " +
                     " already exists!", idList);
         }
+        if (_vpnConnectionDao.findByCustomerGatewayId(customerGatewayId) != null) {
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(customerGateway, customerGatewayId, "customerGatewayId"));
+            throw new InvalidParameterValueException("The vpn connection with specified customer gateway id " +
+                    " already exists!", idList);
+        }
         Site2SiteVpnConnectionVO conn = new Site2SiteVpnConnectionVO(owner.getAccountId(), owner.getDomainId(), vpnGatewayId, customerGatewayId);
         conn.setState(State.Pending);
         _vpnConnectionDao.persist(conn);
