@@ -24,6 +24,8 @@ then
     exit 1
 fi
 
+vpnoutmark="0x525"
+
 usage() {
   printf "Usage: %s: (-A|-D)   -r <target-instance-ip> -P protocol (-p port_range | -t icmp_type_code)  -l <public ip address> -d <target port> -s <source cidrs> [-G]   \n" $(basename $0) >&2
 }
@@ -204,8 +206,19 @@ static_nat() {
   [ "$op" == "-A" ] && static_nat $publicIp $instIp  "-D" 
   # the delete operation may have errored out but the only possible reason is 
   # that the rules didn't exist in the first place
-  [ "$op" == "-A" ] && rulenum=1
   [ "$op" == "-A" ] && op2="-I"
+  if [ "$op" == "-A" ]
+  then
+    # put static nat rule one rule after VPN no-NAT rule
+    # rule chain can be used to improve it later
+    iptables-save -t nat|grep "POSTROUTING" | grep $vpnoutmark > /dev/null
+    if [ $? -eq 0 ]
+    then
+      rulenum=2
+    else
+      rulenum=1
+    fi
+  fi
 
   local dev=$(ip_to_dev $publicIp)
   [ $? -ne 0 ] && echo "Could not find device associated with $publicIp" && return 1
