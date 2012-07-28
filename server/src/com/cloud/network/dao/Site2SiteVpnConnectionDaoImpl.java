@@ -67,4 +67,11 @@ public class Site2SiteVpnConnectionDaoImpl extends GenericDaoBase<Site2SiteVpnCo
         sc.setParameters("customerGatewayId", customerId);
         return findOneBy(sc);
     }
+
+    @Override
+    public Site2SiteVpnConnectionVO findByCustomerGatewayId(long customerId) {
+        SearchCriteria<Site2SiteVpnConnectionVO> sc = AllFieldsSearch.create();
+        sc.setParameters("customerGatewayId", customerId);
+        return findOneBy(sc);
+    }
 }
