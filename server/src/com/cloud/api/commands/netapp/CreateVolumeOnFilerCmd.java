@@ -35,108 +35,108 @@ public class CreateVolumeOnFilerCmd extends BaseCmd {
     private static final String s_name = "createvolumeresponse";
 
     @Parameter(name=ApiConstants.IP_ADDRESS, type=CommandType.STRING, required = true, description="ip address.")
-	private String ipAddress;
-    
+    private String ipAddress;
+
     @Parameter(name=ApiConstants.AGGREGATE_NAME, type=CommandType.STRING, required = true, description="aggregate name.")
-	private String aggrName;
+    private String aggrName;
 
     @Parameter(name=ApiConstants.POOL_NAME, type=CommandType.STRING, required = true, description="pool name.")
-	private String poolName;
-    
+    private String poolName;
+
     @Parameter(name=ApiConstants.VOLUME_NAME, type=CommandType.STRING, required = true, description="volume name.")
-	private String volName;
-    
+    private String volName;
+
     @Parameter(name=ApiConstants.SIZE, type=CommandType.INTEGER, required = true, description="volume size.")
-	private Integer volSize;
-    
+    private Integer volSize;
+
     @Parameter(name=ApiConstants.SNAPSHOT_POLICY, type=CommandType.STRING, required = false, description="snapshot policy.")
-	private String snapshotPolicy;
-    
+    private String snapshotPolicy;
+
     @Parameter(name=ApiConstants.SNAPSHOT_RESERVATION, type=CommandType.INTEGER, required = false, description="snapshot reservation.")
-	private Integer snapshotReservation;
-    
+    private Integer snapshotReservation;
+
     @Parameter(name=ApiConstants.USERNAME, type=CommandType.STRING, required = true, description="user name.")
-	private String userName;
-    
+    private String userName;
+
     @Parameter(name=ApiConstants.PASSWORD, type=CommandType.STRING, required = true, description="password.")
-	private String password;
-    
+    private String password;
+
 
     public String getIpAddress() {
-    	return ipAddress;
+        return ipAddress;
     }
-    
+
     public String getAggrName() {
-    	return aggrName;
+        return aggrName;
     }
-    
+
     public String getPoolName() {
-    	return poolName;
+        return poolName;
     }
-    
+
     public String volName() {
-    	return volName;
+        return volName;
     }
-    
+
     public Integer getVolSize() {
-    	return volSize;
+        return volSize;
     }
-    
+
     public String getSnapshotPolicy() {
-    	return snapshotPolicy;
+        return snapshotPolicy;
     }
-    
+
     public Integer getSnapshotReservation() {
-    	return snapshotReservation;
+        return snapshotReservation;
     }
-    
+
     public String getUserName() {
-    	return userName;
+        return userName;
     }
-    
+
     public String getPassword() {
-    	return password;
+        return password;
     }
 
-	@Override
-	public void execute() throws ResourceUnavailableException,
-			InsufficientCapacityException, ServerApiException,
-			ConcurrentOperationException, ResourceAllocationException {
-		//param checks
-		if(snapshotReservation != null && (snapshotReservation<0 || snapshotReservation>100))
-			throw new InvalidParameterValueException("Invalid snapshot reservation");
-		
-		ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    	NetappManager netappMgr = locator.getManager(NetappManager.class);
-    	
-		StringBuilder s = new StringBuilder(getVolSize().toString());
-		s.append("g");
-	
-		try {
-			netappMgr.createVolumeOnFiler(ipAddress, aggrName, poolName, volName, s.toString(), snapshotPolicy, snapshotReservation, userName, password);
-			CreateVolumeOnFilerCmdResponse response = new CreateVolumeOnFilerCmdResponse();
-			response.setResponseName(getCommandName());
-			this.setResponseObject(response);
-		} catch (ServerException e) {
-			throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.toString());
-		} catch (InvalidParameterValueException e) {
-			throw new ServerApiException(BaseCmd.PARAM_ERROR, e.toString());
-		} catch (UnknownHostException e) {
-			throw new ServerApiException(BaseCmd.PARAM_ERROR, e.toString());
-		}
-		
-	}
+    @Override
+    public void execute() throws ResourceUnavailableException,
+    InsufficientCapacityException, ServerApiException,
+    ConcurrentOperationException, ResourceAllocationException {
+        //param checks
+        if(snapshotReservation != null && (snapshotReservation<0 || snapshotReservation>100))
+            throw new InvalidParameterValueException("Invalid snapshot reservation", null);
 
-	@Override
-	public String getCommandName() {
-		// TODO Auto-generated method stub
-		return s_name;
-	}
+        ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
+        NetappManager netappMgr = locator.getManager(NetappManager.class);
 
-	@Override
-	public long getEntityOwnerId() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-    
+        StringBuilder s = new StringBuilder(getVolSize().toString());
+        s.append("g");
+
+        try {
+            netappMgr.createVolumeOnFiler(ipAddress, aggrName, poolName, volName, s.toString(), snapshotPolicy, snapshotReservation, userName, password);
+            CreateVolumeOnFilerCmdResponse response = new CreateVolumeOnFilerCmdResponse();
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        } catch (ServerException e) {
+            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, e.toString());
+        } catch (InvalidParameterValueException e) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, e.toString());
+        } catch (UnknownHostException e) {
+            throw new ServerApiException(BaseCmd.PARAM_ERROR, e.toString());
+        }
+
+    }
+
+    @Override
+    public String getCommandName() {
+        // TODO Auto-generated method stub
+        return s_name;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
 }

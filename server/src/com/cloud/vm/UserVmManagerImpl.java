@@ -3590,7 +3590,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                             // Validate physical network
                             PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
                             if (physicalNetwork == null) {
-                                throw new InvalidParameterValueException("Unable to find physical network with id: "+physicalNetworkId   + " and tag: " +requiredOfferings.get(0).getTags());
+                                throw new InvalidParameterValueException("Unable to find physical network by id and tag: " +requiredOfferings.get(0).getTags(), null);
                             }
 
                             s_logger.debug("Creating network for account " + newAccount + " from the network offering id=" + 

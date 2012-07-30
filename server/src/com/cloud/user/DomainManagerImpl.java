@@ -133,7 +133,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
 
         DomainVO parentDomain = _domainDao.findById(parentId);
         if (parentDomain == null) {
-            throw new InvalidParameterValueException("Unable to create domain " + name + ", parent domain " + parentId + " not found.");
+            throw new InvalidParameterValueException("Unable to create domain " + name + ", parent domain not found.", null);
         }
 
         if (parentDomain.getState().equals(Domain.State.Inactive)) {
@@ -154,7 +154,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
             if (!NetUtils.verifyDomainName(networkDomain)) {
                 throw new InvalidParameterValueException(
                         "Invalid network domain. Total length shouldn't exceed 190 chars. Each domain label must be between 1 and 63 characters long, can contain ASCII letters 'a' through 'z', the digits '0' through '9', "
-                                + "and the hyphen ('-'); can't start or end with \"-\"");
+                                + "and the hyphen ('-'); can't start or end with \"-\"", null);
             }
         }
 
@@ -164,7 +164,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
         List<DomainVO> domains = _domainDao.search(sc, null);
 
         if (!domains.isEmpty()) {
-            throw new InvalidParameterValueException("Domain with name " + name + " already exists for the parent id=" + parentId);
+            throw new InvalidParameterValueException("Domain with name " + name + " already exists for the parent id=" + parentId, null);
         }
 
         Transaction txn = Transaction.currentTxn();
@@ -206,7 +206,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
         DomainVO domain = _domainDao.findById(domainId);
 
         if (domain == null) {
-            throw new InvalidParameterValueException("Failed to delete domain " + domainId + ", domain not found");
+            throw new InvalidParameterValueException("Failed to delete domain: domain not found", null);
         } else if (domainId == DomainVO.ROOT_DOMAIN) {
             throw new PermissionDeniedException("Can't delete ROOT domain");
         }
@@ -354,7 +354,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
         if (domainId != null) {
             Domain domain = getDomain(domainId);
             if (domain == null) {
-                throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
+                throw new InvalidParameterValueException("Domain doesn't exist", null);
             }
             _accountMgr.checkAccess(caller, domain);
         } else {

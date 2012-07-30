@@ -34,14 +34,14 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.storage.DeleteTemplateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.DownloadCommand;
-import com.cloud.agent.api.storage.ListVolumeAnswer;
-import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.DownloadCommand.Proxy;
 import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.agent.api.storage.ListTemplateAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
+import com.cloud.agent.api.storage.ListVolumeAnswer;
+import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
@@ -65,13 +65,11 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.SwiftVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeHostVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.Volume.Event;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
+import com.cloud.storage.VolumeHostVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.SwiftDao;
 import com.cloud.storage.dao.VMTemplateDao;
@@ -94,12 +92,12 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.SecondaryStorageVm;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
+
 import edu.emory.mathcs.backport.java.util.Collections;
 
 
@@ -111,13 +109,13 @@ import edu.emory.mathcs.backport.java.util.Collections;
 @Local(value={DownloadMonitor.class})
 public class DownloadMonitorImpl implements  DownloadMonitor {
     static final Logger s_logger = Logger.getLogger(DownloadMonitorImpl.class);
-	
+
     @Inject 
     VMTemplateHostDao _vmTemplateHostDao;
     @Inject 
     VMTemplateZoneDao _vmTemplateZoneDao;
     @Inject
-	VMTemplatePoolDao _vmTemplatePoolDao;
+    VMTemplatePoolDao _vmTemplatePoolDao;
     @Inject
     VMTemplateSwiftDao _vmTemplateSwiftlDao;
     @Inject
@@ -136,23 +134,23 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     SecondaryStorageVmManager _ssvmMgr;
     @Inject
     StorageManager _storageMgr ;
-    
+
     @Inject
     private final DataCenterDao _dcDao = null;
     @Inject
     VMTemplateDao _templateDao =  null;
     @Inject
-	private AgentManager _agentMgr;
+    private AgentManager _agentMgr;
     @Inject SecondaryStorageVmManager _secMgr;
     @Inject
     ConfigurationDao _configDao;
     @Inject
     UserVmManager _vmMgr;
 
-    
+
     @Inject 
     private UsageEventDao _usageEventDao;
-    
+
     @Inject
     private ClusterDao _clusterDao;
     @Inject
@@ -164,38 +162,38 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     @Inject
     protected ResourceLimitService _resourceLimitMgr;
 
-	private String _name;
-	private Boolean _sslCopy = new Boolean(false);
-	private String _copyAuthPasswd;
-	private String _proxy = null;
+    private String _name;
+    private Boolean _sslCopy = new Boolean(false);
+    private String _copyAuthPasswd;
+    private String _proxy = null;
     protected SearchBuilder<VMTemplateHostVO> ReadyTemplateStatesSearch;
 
-	Timer _timer;
+    Timer _timer;
 
-	final Map<VMTemplateHostVO, DownloadListener> _listenerMap = new ConcurrentHashMap<VMTemplateHostVO, DownloadListener>();
-	final Map<VolumeHostVO, DownloadListener> _listenerVolumeMap = new ConcurrentHashMap<VolumeHostVO, DownloadListener>();
+    final Map<VMTemplateHostVO, DownloadListener> _listenerMap = new ConcurrentHashMap<VMTemplateHostVO, DownloadListener>();
+    final Map<VolumeHostVO, DownloadListener> _listenerVolumeMap = new ConcurrentHashMap<VolumeHostVO, DownloadListener>();
 
 
-	public void send(Long hostId, Command cmd, Listener listener) throws AgentUnavailableException {
-		_agentMgr.send(hostId, new Commands(cmd), listener);
-	}
+    public void send(Long hostId, Command cmd, Listener listener) throws AgentUnavailableException {
+        _agentMgr.send(hostId, new Commands(cmd), listener);
+    }
 
-	@Override
-	public boolean configure(String name, Map<String, Object> params) {
-		_name = name;
+    @Override
+    public boolean configure(String name, Map<String, Object> params) {
+        _name = name;
         final Map<String, String> configs = _configDao.getConfiguration("ManagementServer", params);
         _sslCopy = Boolean.parseBoolean(configs.get("secstorage.encrypt.copy"));
         _proxy = configs.get(Config.SecStorageProxy.key());
-        
+
         String cert = configs.get("secstorage.ssl.cert.domain");
         if (!"realhostip.com".equalsIgnoreCase(cert)) {
-        	s_logger.warn("Only realhostip.com ssl cert is supported, ignoring self-signed and other certs");
+            s_logger.warn("Only realhostip.com ssl cert is supported, ignoring self-signed and other certs");
         }
-        
+
         _copyAuthPasswd = configs.get("secstorage.copy.password");
-        
+
         _agentMgr.registerForHostEvents(new DownloadListener(this), true, false, false);
-        
+
         ReadyTemplateStatesSearch = _vmTemplateHostDao.createSearchBuilder();
         ReadyTemplateStatesSearch.and("download_state", ReadyTemplateStatesSearch.entity().getDownloadState(), SearchCriteria.Op.EQ);
         ReadyTemplateStatesSearch.and("destroyed", ReadyTemplateStatesSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
@@ -208,49 +206,49 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                 ReadyTemplateStatesSearch.entity().getTemplateId(), JoinBuilder.JoinType.INNER);
         TemplatesWithNoChecksumSearch.done();
         ReadyTemplateStatesSearch.done();
-               
-		return true;
-	}
 
-	@Override
-	public String getName() {
-		return _name;
-	}
+        return true;
+    }
 
-	@Override
-	public boolean start() {
-		_timer = new Timer();
-		return true;
-	}
+    @Override
+    public String getName() {
+        return _name;
+    }
 
-	@Override
-	public boolean stop() {
-		return true;
-	}
-	
-	public boolean isTemplateUpdateable(Long templateId, Long hostId) {
-		List<VMTemplateHostVO> downloadsInProgress =
-			_vmTemplateHostDao.listByTemplateHostStatus(templateId.longValue(), hostId.longValue(), VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS, VMTemplateHostVO.Status.DOWNLOADED);
-		return (downloadsInProgress.size() == 0);
-	}
-	
-	@Override
+    @Override
+    public boolean start() {
+        _timer = new Timer();
+        return true;
+    }
+
+    @Override
+    public boolean stop() {
+        return true;
+    }
+
+    public boolean isTemplateUpdateable(Long templateId, Long hostId) {
+        List<VMTemplateHostVO> downloadsInProgress =
+                _vmTemplateHostDao.listByTemplateHostStatus(templateId.longValue(), hostId.longValue(), VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS, VMTemplateHostVO.Status.DOWNLOADED);
+        return (downloadsInProgress.size() == 0);
+    }
+
+    @Override
     public boolean copyTemplate(VMTemplateVO template, HostVO sourceServer, HostVO destServer) throws StorageUnavailableException{
 
-		boolean downloadJobExists = false;
+        boolean downloadJobExists = false;
         VMTemplateHostVO destTmpltHost = null;
         VMTemplateHostVO srcTmpltHost = null;
 
         srcTmpltHost = _vmTemplateHostDao.findByHostTemplate(sourceServer.getId(), template.getId());
         if (srcTmpltHost == null) {
-        	throw new InvalidParameterValueException("Template " + template.getName() + " not associated with " + sourceServer.getName());
+            throw new InvalidParameterValueException("Template " + template.getName() + " not associated with " + sourceServer.getName(), null);
         }
 
         String url = generateCopyUrl(sourceServer, srcTmpltHost);
-	    if (url == null) {
-			s_logger.warn("Unable to start/resume copy of template " + template.getUniqueName() + " to " + destServer.getName() + ", no secondary storage vm in running state in source zone");
-			throw new CloudRuntimeException("No secondary VM in running state in zone " + sourceServer.getDataCenterId());
-	    }
+        if (url == null) {
+            s_logger.warn("Unable to start/resume copy of template " + template.getUniqueName() + " to " + destServer.getName() + ", no secondary storage vm in running state in source zone");
+            throw new CloudRuntimeException("No secondary VM in running state in zone " + sourceServer.getDataCenterId());
+        }
         destTmpltHost = _vmTemplateHostDao.findByHostTemplate(destServer.getId(), template.getId());
         if (destTmpltHost == null) {
             destTmpltHost = new VMTemplateHostVO(destServer.getId(), template.getId(), new Date(), 0, VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED, null, null, "jobid0000", null, url);
@@ -263,84 +261,84 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
 
         Long maxTemplateSizeInBytes = getMaxTemplateSizeInBytes();
         if (srcTmpltHost.getSize() > maxTemplateSizeInBytes){
-        	throw new CloudRuntimeException("Cant copy the template as the template's size " +srcTmpltHost.getSize()+
-        			" is greater than max.template.iso.size " + maxTemplateSizeInBytes);
+            throw new CloudRuntimeException("Cant copy the template as the template's size " +srcTmpltHost.getSize()+
+                    " is greater than max.template.iso.size " + maxTemplateSizeInBytes);
         }
-        
-		if(destTmpltHost != null) {
-		    start();
+
+        if(destTmpltHost != null) {
+            start();
             String sourceChecksum = _vmMgr.getChecksum(srcTmpltHost.getHostId(), srcTmpltHost.getInstallPath());
-			DownloadCommand dcmd =  
-              new DownloadCommand(destServer.getStorageUrl(), url, template, TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd, maxTemplateSizeInBytes); 
-			dcmd.setProxy(getHttpProxy());
-			if (downloadJobExists) {
-				dcmd = new DownloadProgressCommand(dcmd, destTmpltHost.getJobId(), RequestType.GET_OR_RESTART);
-	 		}
-			dcmd.setChecksum(sourceChecksum); // We need to set the checksum as the source template might be a compressed url and have cksum for compressed image. Bug #10775
+            DownloadCommand dcmd =  
+                    new DownloadCommand(destServer.getStorageUrl(), url, template, TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd, maxTemplateSizeInBytes); 
+            dcmd.setProxy(getHttpProxy());
+            if (downloadJobExists) {
+                dcmd = new DownloadProgressCommand(dcmd, destTmpltHost.getJobId(), RequestType.GET_OR_RESTART);
+            }
+            dcmd.setChecksum(sourceChecksum); // We need to set the checksum as the source template might be a compressed url and have cksum for compressed image. Bug #10775
             HostVO ssAhost = _ssvmMgr.pickSsvmHost(destServer);
             if( ssAhost == null ) {
-                 s_logger.warn("There is no secondary storage VM for secondary storage host " + destServer.getName());
-                 return false;
+                s_logger.warn("There is no secondary storage VM for secondary storage host " + destServer.getName());
+                return false;
             }
             DownloadListener dl = new DownloadListener(ssAhost, destServer, template, _timer, _vmTemplateHostDao, destTmpltHost.getId(), this, dcmd, _templateDao);
             if (downloadJobExists) {
                 dl.setCurrState(destTmpltHost.getDownloadState());
             }
-			DownloadListener old = null;
-			synchronized (_listenerMap) {
-			    old = _listenerMap.put(destTmpltHost, dl);
-			}
-			if( old != null ) {
-			    old.abandon();
-			}
-			
-            try {
-	            send(ssAhost.getId(), dcmd, dl);
-	            return true;
-            } catch (AgentUnavailableException e) {
-				s_logger.warn("Unable to start /resume COPY of template " + template.getUniqueName() + " to " + destServer.getName(), e);
-				dl.setDisconnected();
-				dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
-	            e.printStackTrace();
+            DownloadListener old = null;
+            synchronized (_listenerMap) {
+                old = _listenerMap.put(destTmpltHost, dl);
             }
-		}
-		
-		return false;
-	}
-	
-	private String generateCopyUrl(String ipAddress, String dir, String path){
-		String hostname = ipAddress;
-		String scheme = "http";
-		if (_sslCopy) {
-			hostname = ipAddress.replace(".", "-");
-			hostname = hostname + ".realhostip.com";
-			scheme = "https";
-		}
-		return scheme + "://" + hostname + "/copy/SecStorage/" + dir + "/" + path; 
-	}
-	
-	private String generateCopyUrl(HostVO sourceServer, VMTemplateHostVO srcTmpltHost) {
-		List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, sourceServer.getDataCenterId(), State.Running);
-		if (ssVms.size() > 0) {
-			SecondaryStorageVmVO ssVm = ssVms.get(0);
-			if (ssVm.getPublicIpAddress() == null) {
-				s_logger.warn("A running secondary storage vm has a null public ip?");
-				return null;
-			}
-			return generateCopyUrl(ssVm.getPublicIpAddress(), sourceServer.getParent(), srcTmpltHost.getInstallPath());
-		}
-		
-		VMTemplateVO tmplt = _templateDao.findById(srcTmpltHost.getTemplateId());
-		HypervisorType hyperType = tmplt.getHypervisorType();
-		/*No secondary storage vm yet*/
-		if (hyperType != null && hyperType == HypervisorType.KVM) {
-			return "file://" + sourceServer.getParent() + "/" + srcTmpltHost.getInstallPath();
-		}
-		return null;
-	}
+            if( old != null ) {
+                old.abandon();
+            }
 
-	private void downloadTemplateToStorage(VMTemplateVO template, HostVO sserver) {
-		boolean downloadJobExists = false;
+            try {
+                send(ssAhost.getId(), dcmd, dl);
+                return true;
+            } catch (AgentUnavailableException e) {
+                s_logger.warn("Unable to start /resume COPY of template " + template.getUniqueName() + " to " + destServer.getName(), e);
+                dl.setDisconnected();
+                dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
+                e.printStackTrace();
+            }
+        }
+
+        return false;
+    }
+
+    private String generateCopyUrl(String ipAddress, String dir, String path){
+        String hostname = ipAddress;
+        String scheme = "http";
+        if (_sslCopy) {
+            hostname = ipAddress.replace(".", "-");
+            hostname = hostname + ".realhostip.com";
+            scheme = "https";
+        }
+        return scheme + "://" + hostname + "/copy/SecStorage/" + dir + "/" + path; 
+    }
+
+    private String generateCopyUrl(HostVO sourceServer, VMTemplateHostVO srcTmpltHost) {
+        List<SecondaryStorageVmVO> ssVms = _secStorageVmDao.getSecStorageVmListInStates(SecondaryStorageVm.Role.templateProcessor, sourceServer.getDataCenterId(), State.Running);
+        if (ssVms.size() > 0) {
+            SecondaryStorageVmVO ssVm = ssVms.get(0);
+            if (ssVm.getPublicIpAddress() == null) {
+                s_logger.warn("A running secondary storage vm has a null public ip?");
+                return null;
+            }
+            return generateCopyUrl(ssVm.getPublicIpAddress(), sourceServer.getParent(), srcTmpltHost.getInstallPath());
+        }
+
+        VMTemplateVO tmplt = _templateDao.findById(srcTmpltHost.getTemplateId());
+        HypervisorType hyperType = tmplt.getHypervisorType();
+        /*No secondary storage vm yet*/
+        if (hyperType != null && hyperType == HypervisorType.KVM) {
+            return "file://" + sourceServer.getParent() + "/" + srcTmpltHost.getInstallPath();
+        }
+        return null;
+    }
+
+    private void downloadTemplateToStorage(VMTemplateVO template, HostVO sserver) {
+        boolean downloadJobExists = false;
         VMTemplateHostVO vmTemplateHost = null;
 
         vmTemplateHost = _vmTemplateHostDao.findByHostTemplate(sserver.getId(), template.getId());
@@ -350,29 +348,29 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         } else if ((vmTemplateHost.getJobId() != null) && (vmTemplateHost.getJobId().length() > 2)) {
             downloadJobExists = true;
         }
-                
+
         Long maxTemplateSizeInBytes = getMaxTemplateSizeInBytes();
         String secUrl = sserver.getStorageUrl();
-		if(vmTemplateHost != null) {
-		    start();
-			DownloadCommand dcmd =
-             new DownloadCommand(secUrl, template, maxTemplateSizeInBytes);
-			dcmd.setProxy(getHttpProxy());
-	        if (downloadJobExists) {
-	            dcmd = new DownloadProgressCommand(dcmd, vmTemplateHost.getJobId(), RequestType.GET_OR_RESTART);
-	        }
-			if (vmTemplateHost.isCopy()) {
-				dcmd.setCreds(TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd);
-			}
-			HostVO ssAhost = _ssvmMgr.pickSsvmHost(sserver);
-			if( ssAhost == null ) {
-	             s_logger.warn("There is no secondary storage VM for secondary storage host " + sserver.getName());
-	             return;
-			}
-			DownloadListener dl = new DownloadListener(ssAhost, sserver, template, _timer, _vmTemplateHostDao, vmTemplateHost.getId(), this, dcmd, _templateDao);
-			if (downloadJobExists) {
-				dl.setCurrState(vmTemplateHost.getDownloadState());
-	 		}
+        if(vmTemplateHost != null) {
+            start();
+            DownloadCommand dcmd =
+                    new DownloadCommand(secUrl, template, maxTemplateSizeInBytes);
+            dcmd.setProxy(getHttpProxy());
+            if (downloadJobExists) {
+                dcmd = new DownloadProgressCommand(dcmd, vmTemplateHost.getJobId(), RequestType.GET_OR_RESTART);
+            }
+            if (vmTemplateHost.isCopy()) {
+                dcmd.setCreds(TemplateConstants.DEFAULT_HTTP_AUTH_USER, _copyAuthPasswd);
+            }
+            HostVO ssAhost = _ssvmMgr.pickSsvmHost(sserver);
+            if( ssAhost == null ) {
+                s_logger.warn("There is no secondary storage VM for secondary storage host " + sserver.getName());
+                return;
+            }
+            DownloadListener dl = new DownloadListener(ssAhost, sserver, template, _timer, _vmTemplateHostDao, vmTemplateHost.getId(), this, dcmd, _templateDao);
+            if (downloadJobExists) {
+                dl.setCurrState(vmTemplateHost.getDownloadState());
+            }
             DownloadListener old = null;
             synchronized (_listenerMap) {
                 old = _listenerMap.put(vmTemplateHost, dl);
@@ -381,20 +379,20 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                 old.abandon();
             }
 
-			try {
-	            send(ssAhost.getId(), dcmd, dl);
+            try {
+                send(ssAhost.getId(), dcmd, dl);
             } catch (AgentUnavailableException e) {
-				s_logger.warn("Unable to start /resume download of template " + template.getUniqueName() + " to " + sserver.getName(), e);
-				dl.setDisconnected();
-				dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
+                s_logger.warn("Unable to start /resume download of template " + template.getUniqueName() + " to " + sserver.getName(), e);
+                dl.setDisconnected();
+                dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
             }
-		}
-	}
+        }
+    }
 
 
 
-	@Override
-	public boolean downloadTemplateToStorage(VMTemplateVO template, Long zoneId) {
+    @Override
+    public boolean downloadTemplateToStorage(VMTemplateVO template, Long zoneId) {
         List<DataCenterVO> dcs = new ArrayList<DataCenterVO>();       
         if (zoneId == null) {
             dcs.addAll(_dcDao.listAll());
@@ -404,65 +402,65 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         long templateId = template.getId();
         boolean isPublic = template.isFeatured() || template.isPublicTemplate(); 
         for ( DataCenterVO dc : dcs ) {
-    	    List<HostVO> ssHosts = _ssvmMgr.listAllTypesSecondaryStorageHostsInOneZone(dc.getId());
-    	    for ( HostVO ssHost : ssHosts ) {
-        		if (isTemplateUpdateable(templateId, ssHost.getId())) {
-       				initiateTemplateDownload(templateId, ssHost);
-       				if (! isPublic ) {
-       				    break;
-       				}
-        		}
-    	    }
-	    }
-	    return true;
-	}
-	
-	@Override
-	public boolean downloadVolumeToStorage(VolumeVO volume, Long zoneId, String url, String checkSum, ImageFormat format) {
-                                
-	    List<HostVO> ssHosts = _ssvmMgr.listAllTypesSecondaryStorageHostsInOneZone(zoneId);
-	    Collections.shuffle(ssHosts);
-	    HostVO ssHost = ssHosts.get(0);
-	    downloadVolumeToStorage(volume, ssHost, url, checkSum, format);
-	    return true;
-	}
-	
-	private void downloadVolumeToStorage(VolumeVO volume, HostVO sserver, String url, String checkSum, ImageFormat format) {
-		boolean downloadJobExists = false;
+            List<HostVO> ssHosts = _ssvmMgr.listAllTypesSecondaryStorageHostsInOneZone(dc.getId());
+            for ( HostVO ssHost : ssHosts ) {
+                if (isTemplateUpdateable(templateId, ssHost.getId())) {
+                    initiateTemplateDownload(templateId, ssHost);
+                    if (! isPublic ) {
+                        break;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean downloadVolumeToStorage(VolumeVO volume, Long zoneId, String url, String checkSum, ImageFormat format) {
+
+        List<HostVO> ssHosts = _ssvmMgr.listAllTypesSecondaryStorageHostsInOneZone(zoneId);
+        Collections.shuffle(ssHosts);
+        HostVO ssHost = ssHosts.get(0);
+        downloadVolumeToStorage(volume, ssHost, url, checkSum, format);
+        return true;
+    }
+
+    private void downloadVolumeToStorage(VolumeVO volume, HostVO sserver, String url, String checkSum, ImageFormat format) {
+        boolean downloadJobExists = false;
         VolumeHostVO volumeHost = null;
 
         volumeHost = _volumeHostDao.findByHostVolume(sserver.getId(), volume.getId());
         if (volumeHost == null) {
             volumeHost = new VolumeHostVO(sserver.getId(), volume.getId(), sserver.getDataCenterId(), new Date(), 0, VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED, null, null,
-            		"jobid0000", null, url, checkSum, format);
+                    "jobid0000", null, url, checkSum, format);
             _volumeHostDao.persist(volumeHost);
         } else if ((volumeHost.getJobId() != null) && (volumeHost.getJobId().length() > 2)) {
             downloadJobExists = true;
         }
-        
+
 
         Long maxVolumeSizeInBytes = getMaxVolumeSizeInBytes();
         String secUrl = sserver.getStorageUrl();
-		if(volumeHost != null) {
-		    start();
-			DownloadCommand dcmd = new DownloadCommand(secUrl, volume, maxVolumeSizeInBytes, checkSum, url, format);
-			dcmd.setProxy(getHttpProxy());
-	        if (downloadJobExists) {
-	            dcmd = new DownloadProgressCommand(dcmd, volumeHost.getJobId(), RequestType.GET_OR_RESTART);
-	            dcmd.setResourceType(ResourceType.VOLUME);
-	        }
-			
-			HostVO ssvm = _ssvmMgr.pickSsvmHost(sserver);
-			if( ssvm == null ) {
-	             s_logger.warn("There is no secondary storage VM for secondary storage host " + sserver.getName());
-	             return;
-			}
-			DownloadListener dl = new DownloadListener(ssvm, sserver, volume, _timer, _volumeHostDao, volumeHost.getId(),
-					this, dcmd, _volumeDao, _storageMgr);
-			
-			if (downloadJobExists) {
-				dl.setCurrState(volumeHost.getDownloadState());
-	 		}
+        if(volumeHost != null) {
+            start();
+            DownloadCommand dcmd = new DownloadCommand(secUrl, volume, maxVolumeSizeInBytes, checkSum, url, format);
+            dcmd.setProxy(getHttpProxy());
+            if (downloadJobExists) {
+                dcmd = new DownloadProgressCommand(dcmd, volumeHost.getJobId(), RequestType.GET_OR_RESTART);
+                dcmd.setResourceType(ResourceType.VOLUME);
+            }
+
+            HostVO ssvm = _ssvmMgr.pickSsvmHost(sserver);
+            if( ssvm == null ) {
+                s_logger.warn("There is no secondary storage VM for secondary storage host " + sserver.getName());
+                return;
+            }
+            DownloadListener dl = new DownloadListener(ssvm, sserver, volume, _timer, _volumeHostDao, volumeHost.getId(),
+                    this, dcmd, _volumeDao, _storageMgr);
+
+            if (downloadJobExists) {
+                dl.setCurrState(volumeHost.getDownloadState());
+            }
             DownloadListener old = null;
             synchronized (_listenerVolumeMap) {
                 old = _listenerVolumeMap.put(volumeHost, dl);
@@ -471,38 +469,38 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                 old.abandon();
             }
 
-			try {
-	            send(ssvm.getId(), dcmd, dl);
+            try {
+                send(ssvm.getId(), dcmd, dl);
             } catch (AgentUnavailableException e) {
-				s_logger.warn("Unable to start /resume download of volume " + volume.getName() + " to " + sserver.getName(), e);
-				dl.setDisconnected();
-				dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
+                s_logger.warn("Unable to start /resume download of volume " + volume.getName() + " to " + sserver.getName(), e);
+                dl.setDisconnected();
+                dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
             }
-		}
-	}
+        }
+    }
 
 
-	private void initiateTemplateDownload(Long templateId, HostVO ssHost) {
-		VMTemplateVO template = _templateDao.findById(templateId);
-		if (template != null && (template.getUrl() != null)) {
-			//find all storage hosts and tell them to initiate download
-    		downloadTemplateToStorage(template, ssHost);
-		}
-		
-	}
+    private void initiateTemplateDownload(Long templateId, HostVO ssHost) {
+        VMTemplateVO template = _templateDao.findById(templateId);
+        if (template != null && (template.getUrl() != null)) {
+            //find all storage hosts and tell them to initiate download
+            downloadTemplateToStorage(template, ssHost);
+        }
 
-	@DB
-	public void handleDownloadEvent(HostVO host, VMTemplateVO template, Status dnldStatus) {
-		if ((dnldStatus == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) || (dnldStatus==Status.ABANDONED)){
-			VMTemplateHostVO vmTemplateHost = new VMTemplateHostVO(host.getId(), template.getId());
-	        synchronized (_listenerMap) {
-	            _listenerMap.remove(vmTemplateHost);
-	        }
-		}
-		
-		VMTemplateHostVO vmTemplateHost = _vmTemplateHostDao.findByHostTemplate(host.getId(), template.getId());
-		
-		Transaction txn = Transaction.currentTxn();
+    }
+
+    @DB
+    public void handleDownloadEvent(HostVO host, VMTemplateVO template, Status dnldStatus) {
+        if ((dnldStatus == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) || (dnldStatus==Status.ABANDONED)){
+            VMTemplateHostVO vmTemplateHost = new VMTemplateHostVO(host.getId(), template.getId());
+            synchronized (_listenerMap) {
+                _listenerMap.remove(vmTemplateHost);
+            }
+        }
+
+        VMTemplateHostVO vmTemplateHost = _vmTemplateHostDao.findByHostTemplate(host.getId(), template.getId());
+
+        Transaction txn = Transaction.currentTxn();
         txn.start();		
 
         if (dnldStatus == Status.DOWNLOADED) {
@@ -523,25 +521,25 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             }
         }
         txn.commit();
-	}
+    }
 
-	@DB
-	public void handleDownloadEvent(HostVO host, VolumeVO volume, Status dnldStatus) {
-		if ((dnldStatus == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) || (dnldStatus==Status.ABANDONED)){
-			VolumeHostVO volumeHost = new VolumeHostVO(host.getId(), volume.getId());
-	        synchronized (_listenerVolumeMap) {
-	        	_listenerVolumeMap.remove(volumeHost);
-	        }
-		}
-		
-		VolumeHostVO volumeHost = _volumeHostDao.findByHostVolume(host.getId(), volume.getId());
-		
-		Transaction txn = Transaction.currentTxn();
+    @DB
+    public void handleDownloadEvent(HostVO host, VolumeVO volume, Status dnldStatus) {
+        if ((dnldStatus == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) || (dnldStatus==Status.ABANDONED)){
+            VolumeHostVO volumeHost = new VolumeHostVO(host.getId(), volume.getId());
+            synchronized (_listenerVolumeMap) {
+                _listenerVolumeMap.remove(volumeHost);
+            }
+        }
+
+        VolumeHostVO volumeHost = _volumeHostDao.findByHostVolume(host.getId(), volume.getId());
+
+        Transaction txn = Transaction.currentTxn();
         txn.start();		
 
         if (dnldStatus == Status.DOWNLOADED) {
-			
-			//Create usage event
+
+            //Create usage event
             long size = -1;
             if(volumeHost!=null){
                 size = volumeHost.getPhysicalSize();
@@ -551,78 +549,78 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             }
             String eventType = EventTypes.EVENT_VOLUME_UPLOAD;            
             if(volume.getAccountId() != Account.ACCOUNT_ID_SYSTEM){
-               UsageEventVO usageEvent = new UsageEventVO(eventType, volume.getAccountId(), host.getDataCenterId(), volume.getId(), volume.getName(), null, 0l , size);
-               _usageEventDao.persist(usageEvent);
+                UsageEventVO usageEvent = new UsageEventVO(eventType, volume.getAccountId(), host.getDataCenterId(), volume.getId(), volume.getName(), null, 0l , size);
+                _usageEventDao.persist(usageEvent);
             }
         }else if (dnldStatus == Status.DOWNLOAD_ERROR || dnldStatus == Status.ABANDONED || dnldStatus == Status.UNKNOWN){
             //Decrement the volume count
-        	_resourceLimitMgr.decrementResourceCount(volume.getAccountId(), com.cloud.configuration.Resource.ResourceType.volume);
+            _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), com.cloud.configuration.Resource.ResourceType.volume);
         }
         txn.commit();		
-	}
-	
-	@Override
-    public void handleSysTemplateDownload(HostVO host) {
-	    List<HypervisorType> hypers = _resourceMgr.listAvailHypervisorInZone(host.getId(), host.getDataCenterId());
-	    HypervisorType hostHyper = host.getHypervisorType();
-	    if (hypers.contains(hostHyper)) {
-	        return;
-	    }
+    }
 
-	    Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
-	    List<HostVO> ssHosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.SecondaryStorage, host.getDataCenterId());
-	    if (ssHosts == null || ssHosts.isEmpty()) {
-	        return;
-	    }
-	    /*Download all the templates in zone with the same hypervisortype*/
-        for ( HostVO ssHost : ssHosts) {
-    	    List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
-    	    List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
-    
-    
-    	    for (VMTemplateVO rtngTmplt : rtngTmplts) {
-    	        if (rtngTmplt.getHypervisorType() == hostHyper) {
-    	            toBeDownloaded.add(rtngTmplt);
-    	        }
-    	    }
-    
-    	    for (VMTemplateVO builtinTmplt : defaultBuiltin) {
-    	        if (builtinTmplt.getHypervisorType() == hostHyper) {
-    	            toBeDownloaded.add(builtinTmplt);
-    	        }
-    	    }
-    
-    	    for (VMTemplateVO template: toBeDownloaded) {
-    	        VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(ssHost.getId(), template.getId());
-    	        if (tmpltHost == null || tmpltHost.getDownloadState() != Status.DOWNLOADED) {
-    	            downloadTemplateToStorage(template, ssHost);
-    	        }
-    	    }
+    @Override
+    public void handleSysTemplateDownload(HostVO host) {
+        List<HypervisorType> hypers = _resourceMgr.listAvailHypervisorInZone(host.getId(), host.getDataCenterId());
+        HypervisorType hostHyper = host.getHypervisorType();
+        if (hypers.contains(hostHyper)) {
+            return;
         }
-	}
-    
+
+        Set<VMTemplateVO> toBeDownloaded = new HashSet<VMTemplateVO>();
+        List<HostVO> ssHosts = _resourceMgr.listAllUpAndEnabledHostsInOneZoneByType(Host.Type.SecondaryStorage, host.getDataCenterId());
+        if (ssHosts == null || ssHosts.isEmpty()) {
+            return;
+        }
+        /*Download all the templates in zone with the same hypervisortype*/
+        for ( HostVO ssHost : ssHosts) {
+            List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
+            List<VMTemplateVO> defaultBuiltin = _templateDao.listDefaultBuiltinTemplates();
+
+
+            for (VMTemplateVO rtngTmplt : rtngTmplts) {
+                if (rtngTmplt.getHypervisorType() == hostHyper) {
+                    toBeDownloaded.add(rtngTmplt);
+                }
+            }
+
+            for (VMTemplateVO builtinTmplt : defaultBuiltin) {
+                if (builtinTmplt.getHypervisorType() == hostHyper) {
+                    toBeDownloaded.add(builtinTmplt);
+                }
+            }
+
+            for (VMTemplateVO template: toBeDownloaded) {
+                VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(ssHost.getId(), template.getId());
+                if (tmpltHost == null || tmpltHost.getDownloadState() != Status.DOWNLOADED) {
+                    downloadTemplateToStorage(template, ssHost);
+                }
+            }
+        }
+    }
+
     @Override	
-	public void addSystemVMTemplatesToHost(HostVO host, Map<String, TemplateInfo> templateInfos){
-	    if ( templateInfos == null ) {
-	        return;
-	    }
-	    Long hostId = host.getId();
-	    List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
-	    for ( VMTemplateVO tmplt : rtngTmplts ) {
-	        TemplateInfo tmpltInfo = templateInfos.get(tmplt.getUniqueName());
-	        if ( tmpltInfo == null ) {
-	            continue;
-	        }
-	        VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(hostId, tmplt.getId());
-	        if ( tmpltHost == null ) {
+    public void addSystemVMTemplatesToHost(HostVO host, Map<String, TemplateInfo> templateInfos){
+        if ( templateInfos == null ) {
+            return;
+        }
+        Long hostId = host.getId();
+        List<VMTemplateVO> rtngTmplts = _templateDao.listAllSystemVMTemplates();
+        for ( VMTemplateVO tmplt : rtngTmplts ) {
+            TemplateInfo tmpltInfo = templateInfos.get(tmplt.getUniqueName());
+            if ( tmpltInfo == null ) {
+                continue;
+            }
+            VMTemplateHostVO tmpltHost = _vmTemplateHostDao.findByHostTemplate(hostId, tmplt.getId());
+            if ( tmpltHost == null ) {
                 tmpltHost = new VMTemplateHostVO(hostId, tmplt.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, tmpltInfo.getInstallPath(), tmplt.getUrl());
-	            tmpltHost.setSize(tmpltInfo.getSize());
-	            tmpltHost.setPhysicalSize(tmpltInfo.getPhysicalSize());
-	            _vmTemplateHostDao.persist(tmpltHost);
-	        }
-	    }
-	}
-	
+                tmpltHost.setSize(tmpltInfo.getSize());
+                tmpltHost.setPhysicalSize(tmpltInfo.getPhysicalSize());
+                _vmTemplateHostDao.persist(tmpltHost);
+            }
+        }
+    }
+
     @Override
     public void handleSync(Long dcId) {
         if (dcId != null) {
@@ -633,7 +631,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             }
         }
     }
-    
+
     private Map<String, TemplateInfo> listTemplate(HostVO ssHost) {
         ListTemplateCommand cmd = new ListTemplateCommand(ssHost.getStorageUrl());
         Answer answer = _agentMgr.sendToSecStorage(ssHost, cmd);
@@ -645,25 +643,25 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                 s_logger.debug("can not list template for secondary storage host " + ssHost.getId());
             }
         } 
-        
+
         return null;
     }
-    
+
     private Map<Long, TemplateInfo> listVolume(HostVO ssHost) {
-    	ListVolumeCommand cmd = new ListVolumeCommand(ssHost.getStorageUrl());
+        ListVolumeCommand cmd = new ListVolumeCommand(ssHost.getStorageUrl());
         Answer answer = _agentMgr.sendToSecStorage(ssHost, cmd);
         if (answer != null && answer.getResult()) {
-        	ListVolumeAnswer tanswer = (ListVolumeAnswer)answer;
+            ListVolumeAnswer tanswer = (ListVolumeAnswer)answer;
             return tanswer.getTemplateInfo();
         } else {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Can not list volumes for secondary storage host " + ssHost.getId());
             }
         } 
-        
+
         return null;
     }
-    
+
     private Map<String, TemplateInfo> listTemplate(SwiftVO swift) {
         if (swift == null) {
             return null;
@@ -680,7 +678,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         }
         return null;
     }
-    
+
     @Override
     public void handleVolumeSync(HostVO ssHost) {
         if (ssHost == null) {
@@ -697,21 +695,21 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         if (volumeInfos == null) {
             return;
         }
-        
+
         List<VolumeHostVO> dbVolumes = _volumeHostDao.listBySecStorage(sserverId);
         List<VolumeHostVO> toBeDownloaded = new ArrayList<VolumeHostVO>(dbVolumes);
         for (VolumeHostVO volumeHost : dbVolumes){
-        	VolumeVO volume = _volumeDao.findById(volumeHost.getVolumeId());
-        	//Exists then don't download
-        	if (volumeInfos.containsKey(volume.getId())){
+            VolumeVO volume = _volumeDao.findById(volumeHost.getVolumeId());
+            //Exists then don't download
+            if (volumeInfos.containsKey(volume.getId())){
                 TemplateInfo volInfo = volumeInfos.remove(volume.getId());
                 toBeDownloaded.remove(volumeHost);                
                 s_logger.info("Volume Sync found " + volume.getUuid() + " already in the volume host table");
                 if (volumeHost.getDownloadState() != Status.DOWNLOADED) {
-                	volumeHost.setErrorString("");
+                    volumeHost.setErrorString("");
                 }
                 if (volInfo.isCorrupted()) {
-                	volumeHost.setDownloadState(Status.DOWNLOAD_ERROR);
+                    volumeHost.setDownloadState(Status.DOWNLOAD_ERROR);
                     String msg = "Volume " + volume.getUuid() + " is corrupted on secondary storage ";
                     volumeHost.setErrorString(msg);
                     s_logger.info("msg");
@@ -723,23 +721,23 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                     }
 
                 } else { // Put them in right status
-                	volumeHost.setDownloadPercent(100);
-                	volumeHost.setDownloadState(Status.DOWNLOADED);
-                	volumeHost.setInstallPath(volInfo.getInstallPath());
-                	volumeHost.setSize(volInfo.getSize());
-                	volumeHost.setPhysicalSize(volInfo.getPhysicalSize());
-                	volumeHost.setLastUpdated(new Date());               
-                	_volumeHostDao.update(volumeHost.getId(), volumeHost);
+                    volumeHost.setDownloadPercent(100);
+                    volumeHost.setDownloadState(Status.DOWNLOADED);
+                    volumeHost.setInstallPath(volInfo.getInstallPath());
+                    volumeHost.setSize(volInfo.getSize());
+                    volumeHost.setPhysicalSize(volInfo.getPhysicalSize());
+                    volumeHost.setLastUpdated(new Date());               
+                    _volumeHostDao.update(volumeHost.getId(), volumeHost);
                 }
                 continue;
-        	}
-        	// Volume is not on secondary but we should download.
-        	if (volumeHost.getDownloadState() != Status.DOWNLOADED) {
+            }
+            // Volume is not on secondary but we should download.
+            if (volumeHost.getDownloadState() != Status.DOWNLOADED) {
                 s_logger.info("Volume Sync did not find " + volume.getName() + " ready on server " + sserverId + ", will request download to start/resume shortly");
                 toBeDownloaded.add(volumeHost);
             } 
         }
-        
+
         //Download volumes which haven't been downloaded yet.
         if (toBeDownloaded.size() > 0) {
             for (VolumeHostVO volumeHost : toBeDownloaded) {
@@ -756,19 +754,19 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             TemplateInfo vInfo = volumeInfos.get(uniqueName);
             DeleteVolumeCommand dtCommand = new DeleteVolumeCommand(ssHost.getStorageUrl(), vInfo.getInstallPath());
             try {
-	            _agentMgr.sendToSecStorage(ssHost, dtCommand, null);
+                _agentMgr.sendToSecStorage(ssHost, dtCommand, null);
             } catch (AgentUnavailableException e) {
                 String err = "Failed to delete " + vInfo.getTemplateName() + " on secondary storage " + sserverId + " which isn't in the database";
                 s_logger.error(err);
                 return;
             }
-            
+
             String description = "Deleted volume " + vInfo.getTemplateName() + " on secondary storage " + sserverId + " since it isn't in the database";
             s_logger.info(description);
         }
     }
-    
-	@Override
+
+    @Override
     public void handleTemplateSync(HostVO ssHost) {
         if (ssHost == null) {
             s_logger.warn("Huh? ssHost is null");
@@ -891,10 +889,10 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             /* Baremetal need not to download any template */
             availHypers.remove(HypervisorType.BareMetal);
             availHypers.add(HypervisorType.None); // bug 9809: resume ISO
-                                                  // download.
+            // download.
             for (VMTemplateVO tmplt : toBeDownloaded) {
                 if (tmplt.getUrl() == null) { // If url is null we can't
-                                              // initiate the download
+                    // initiate the download
                     continue;
                 }
                 // if this is private template, and there is no record for this
@@ -921,7 +919,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             TemplateInfo tInfo = templateInfos.get(uniqueName);
             DeleteTemplateCommand dtCommand = new DeleteTemplateCommand(ssHost.getStorageUrl(), tInfo.getInstallPath());
             try {
-	            _agentMgr.sendToSecStorage(ssHost, dtCommand, null);
+                _agentMgr.sendToSecStorage(ssHost, dtCommand, null);
             } catch (AgentUnavailableException e) {
                 String err = "Failed to delete " + tInfo.getTemplateName() + " on secondary storage " + sserverId + " which isn't in the database";
                 s_logger.error(err);
@@ -933,25 +931,25 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
         }
     }
 
-	@Override
-	public void cancelAllDownloads(Long templateId) {
-		List<VMTemplateHostVO> downloadsInProgress =
-			_vmTemplateHostDao.listByTemplateStates(templateId, VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS, VMTemplateHostVO.Status.NOT_DOWNLOADED);
-		if (downloadsInProgress.size() > 0){
-			for (VMTemplateHostVO vmthvo: downloadsInProgress) {
-			    DownloadListener dl = null;
-		        synchronized (_listenerMap) {
-				    dl = _listenerMap.remove(vmthvo);
-		        }
-				if (dl != null) {
-					dl.abandon();
-					s_logger.info("Stopping download of template " + templateId + " to storage server " + vmthvo.getHostId());
-				}
-			}
-		}
-	}
-	
-	private void checksumSync(long hostId){
+    @Override
+    public void cancelAllDownloads(Long templateId) {
+        List<VMTemplateHostVO> downloadsInProgress =
+                _vmTemplateHostDao.listByTemplateStates(templateId, VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS, VMTemplateHostVO.Status.NOT_DOWNLOADED);
+        if (downloadsInProgress.size() > 0){
+            for (VMTemplateHostVO vmthvo: downloadsInProgress) {
+                DownloadListener dl = null;
+                synchronized (_listenerMap) {
+                    dl = _listenerMap.remove(vmthvo);
+                }
+                if (dl != null) {
+                    dl.abandon();
+                    s_logger.info("Stopping download of template " + templateId + " to storage server " + vmthvo.getHostId());
+                }
+            }
+        }
+    }
+
+    private void checksumSync(long hostId){
         SearchCriteria<VMTemplateHostVO> sc = ReadyTemplateStatesSearch.create();
         sc.setParameters("download_state", com.cloud.storage.VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
         sc.setParameters("host_id", hostId);
@@ -967,36 +965,36 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             _templateDao.update(template.getId(), template);
         }
 
-	}
-	
-	private Long getMaxTemplateSizeInBytes() {
-		try {
-			return Long.parseLong(_configDao.getValue("max.template.iso.size")) * 1024L * 1024L * 1024L;
-		} catch (NumberFormatException e) {
-			return null;
-		}
-	}
-	
-	private Long getMaxVolumeSizeInBytes() {
-		try {
-			return Long.parseLong(_configDao.getValue("storage.max.volume.upload.size")) * 1024L * 1024L * 1024L;
-		} catch (NumberFormatException e) {
-			return null;
-		}
-	}
-	
-	private Proxy getHttpProxy() {
-		if (_proxy == null) {
-			return null;
-		}
-		try {
-			URI uri = new URI(_proxy);
-			Proxy prx = new Proxy(uri);
-			return prx;
-		} catch (URISyntaxException e) {
-			return null;
-		}
-	}	
-	
+    }
+
+    private Long getMaxTemplateSizeInBytes() {
+        try {
+            return Long.parseLong(_configDao.getValue("max.template.iso.size")) * 1024L * 1024L * 1024L;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private Long getMaxVolumeSizeInBytes() {
+        try {
+            return Long.parseLong(_configDao.getValue("storage.max.volume.upload.size")) * 1024L * 1024L * 1024L;
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private Proxy getHttpProxy() {
+        if (_proxy == null) {
+            return null;
+        }
+        try {
+            URI uri = new URI(_proxy);
+            Proxy prx = new Proxy(uri);
+            return prx;
+        } catch (URISyntaxException e) {
+            return null;
+        }
+    }	
+
 }
-	
+

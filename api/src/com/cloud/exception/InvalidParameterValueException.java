@@ -25,10 +25,6 @@ public class InvalidParameterValueException extends CloudRuntimeException {
 
     private static final long serialVersionUID = -2232066904895010203L;
 
-    public InvalidParameterValueException(String message) {
-        super(message);
-    }
-
     public InvalidParameterValueException(String message, List<IdentityProxy> idProxyList) {
         super(message);
         if (idProxyList != null) {

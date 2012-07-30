@@ -1946,7 +1946,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         try {
             VM router = getVM(conn, vmName);
             
-            VIF correctVif = getCorrectVif(conn, router, ip);
+            VIF correctVif = getVifByMac(conn, router, ip.getVifMacAddress());
             if (correctVif == null) {
                 if (ip.isAdd()) {
                     throw new InternalErrorException("Failed to find DomR VIF to associate IP with.");
@@ -7223,8 +7223,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      */
     private UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
         Connection conn = getConnection();
-        VirtualMachineTO vmto = cmd.getVirtualMachine();
-        String vmName = vmto.getName();
+        String vmName = cmd.getInstanceName();
         try {
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
             if ( vms == null || vms.isEmpty() ) {
@@ -7233,16 +7232,16 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             VM vm = vms.iterator().next();
             NicTO nic = cmd.getNic();
             String mac = nic.getMac();
-            for ( VIF vif : vm.getVIFs(conn)) {
-                String lmac = vif.getMAC(conn);
-                if ( lmac.equals(mac) ) {
-                    vif.unplug(conn);
-                    Network network = vif.getNetwork(conn);
-                    vif.destroy(conn);
+            VIF vif = getVifByMac(conn, vm, mac);
+            if ( vif != null ) {
+                vif.unplug(conn);
+                Network network = vif.getNetwork(conn);
+                vif.destroy(conn);
+                try {
                     if (network.getNameLabel(conn).startsWith("VLAN")) {
                         disableVlanNetwork(conn, network);
                     }
-                    break;
+                }  catch (Exception e) {
                 }
             }
             return new UnPlugNicAnswer(cmd, true, "success");
@@ -7259,8 +7258,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
      */
     private PlugNicAnswer execute(PlugNicCommand cmd) {
         Connection conn = getConnection();
-        VirtualMachineTO vmto = cmd.getVirtualMachine();
-        String vmName = vmto.getName();
+        String vmName = cmd.getVmName();
         try {
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
             if ( vms == null || vms.isEmpty() ) {
@@ -7268,9 +7266,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             VM vm = vms.iterator().next();
             NicTO nic = cmd.getNic();
+            VIF vif = getVifByMac(conn, vm, nic.getMac());
+            if ( vif != null ) {
+                String msg = " Plug Nic failed due to a VIF with the same mac " + nic.getMac() + " exists";
+                s_logger.warn(msg);
+                return new PlugNicAnswer(cmd, false, msg);
+            }
             String deviceId = getUnusedVIFNum(conn, vm);
             nic.setDeviceId(Integer.parseInt(deviceId));
-            VIF vif = createVif(conn, vmName, vm, nic);
+            vif = createVif(conn, vmName, vm, nic);
             vif.plug(conn);
             return new PlugNicAnswer(cmd, true, "success");
         } catch (Exception e) {
