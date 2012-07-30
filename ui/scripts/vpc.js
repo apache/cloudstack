@@ -1084,9 +1084,6 @@
     tiers: {
       detailView: { //duplicate from cloudStack.sections.network.sections.networks.listView.detailView (begin)			 
 				name: 'Guest network details',
-				
-				//comment out until JS error "$browser is undefined" is fixed
-				/*
 				viewAll: {
 					path: 'network.ipAddresses',
 					label: 'label.menu.ipaddresses',
@@ -1143,8 +1140,6 @@
 						return false;
 					}
 				},
-				*/
-				
 				actions: {
 					edit: {
 						label: 'label.edit',

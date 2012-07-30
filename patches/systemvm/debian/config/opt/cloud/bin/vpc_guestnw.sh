@@ -115,7 +115,7 @@ desetup_usage() {
 create_guest_network() {
   logger -t cloud " $(basename $0): Create network on interface $dev,  gateway $gw, network $ip/$mask "
   # setup ip configuration
-  sudo ip addr add dev $dev $ip/$mask
+  sudo ip addr add dev $dev $ip/$mask brd +
   sudo ip link set $dev up
   sudo arping -c 3 -I $dev -A -U -s $ip $ip
   # setup rules to allow dhcp/dns request
@@ -143,7 +143,7 @@ destroy_guest_network() {
   sudo iptables -D INPUT -i $dev -p udp -m udp --dport 53 -j ACCEPT
   sudo iptables -t mangle -D PREROUTING -i $dev -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
   sudo iptables -t nat -A POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
-  destroy_acl_outbound_chain
+  destroy_acl_chain
   desetup_usage
   desetup_dnsmasq
   desetup_apache2

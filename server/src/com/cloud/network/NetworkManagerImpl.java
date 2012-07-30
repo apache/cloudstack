@@ -2935,6 +2935,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                             "service disabled are allowed in security group enabled zone", null);
                 }
             }
+            
+            //don't allow eip/elb networks in Advance zone
+            if (ntwkOff.getElasticIp() || ntwkOff.getElasticLb()) {
+                throw new InvalidParameterValueException("Elastic IP and Elastic LB services are supported in zone of type " + NetworkType.Basic, null);
+            }
         }
 
         // VlanId can be specified only when network offering supports it

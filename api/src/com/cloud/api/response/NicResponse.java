@@ -26,6 +26,9 @@ public class NicResponse extends BaseResponse {
     @SerializedName("networkid") @Param(description="the ID of the corresponding network")
     private final IdentityProxy networkId = new IdentityProxy("networks");
     
+    @SerializedName("networkname") @Param(description="the name of the corresponding network")
+    private String  networkName ;
+
     @SerializedName(ApiConstants.NETMASK) @Param(description="the netmask of the nic")
     private String netmask;
     
@@ -63,6 +66,10 @@ public class NicResponse extends BaseResponse {
 
     public void setNetworkid(Long networkid) {
         this.networkId.setValue(networkid);
+    }
+
+    public void setNetworkName(String networkname) {
+    	this.networkName = networkname;
     }
 
     public void setNetmask(String netmask) {

@@ -39,6 +39,15 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
     @SerializedName(ApiConstants.IPSEC_PSK) @Param(description="IPsec preshared-key of customer gateway")
     private String ipsecPsk;
 
+    @SerializedName(ApiConstants.IKE_POLICY) @Param(description="IKE policy of customer gateway")
+    private String ikePolicy;
+    
+    @SerializedName(ApiConstants.ESP_POLICY) @Param(description="IPsec policy of customer gateway")
+    private String espPolicy;
+    
+    @SerializedName(ApiConstants.LIFETIME) @Param(description="Lifetime of IKE and IPsec policy of customer gateway")
+    private Long lifetime;
+    
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner")
     private String accountName;
     
@@ -79,6 +88,18 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
 
     public void setIpsecPsk(String ipsecPsk) {
         this.ipsecPsk = ipsecPsk;
+    }	
+    
+    public void setIkePolicy(String ikePolicy) {
+        this.ikePolicy = ikePolicy;
+    }	
+    
+    public void setEspPolicy(String espPolicy) {
+        this.espPolicy = espPolicy;
+    }	
+    
+    public void setLifetime(Long lifetime) {
+        this.lifetime = lifetime;
     }	
     
     public void setRemoved(Date removed) {

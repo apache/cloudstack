@@ -269,11 +269,16 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
             throw new InvalidParameterValueException("Fail to find customer gateway by id", null);
         }
         _accountMgr.checkAccess(caller, null, false, customerGateway);
+        
+        return doDeleteCustomerGateway(customerGateway);
+    }
 
+    protected boolean doDeleteCustomerGateway(Site2SiteCustomerGateway gw) {
+        long id = gw.getId();
         List<Site2SiteVpnConnectionVO> vpnConnections = _vpnConnectionDao.listByCustomerGatewayId(id);
         if (vpnConnections != null && vpnConnections.size() != 0) {
             List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
-            idList.add(new IdentityProxy(customerGateway, id, "customerGatewayId"));
+            idList.add(new IdentityProxy(gw, id, "customerGatewayId"));
             throw new InvalidParameterValueException("Unable to delete VPN customer gateway with specified id because there is still related VPN connections!", idList);
         }
         _customerGatewayDao.remove(id);
@@ -612,5 +617,15 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         }
         conns.addAll(_vpnConnectionDao.listByVpcId(vpcId));
         return conns;
+    }
+
+    @Override
+    public boolean deleteCustomerGatewayByAccount(long accountId) {
+        boolean result = true;;
+        List<Site2SiteCustomerGatewayVO> gws = _customerGatewayDao.listByAccountId(accountId);
+        for (Site2SiteCustomerGatewayVO gw : gws) {
+            result = result & doDeleteCustomerGateway(gw);
+        }
+        return result;
     }
 }

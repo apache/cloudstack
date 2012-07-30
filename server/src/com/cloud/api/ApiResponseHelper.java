@@ -1588,6 +1588,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     nicResponse.setGateway(singleNicProfile.getGateway());
                     nicResponse.setNetmask(singleNicProfile.getNetmask());
                     nicResponse.setNetworkid(singleNicProfile.getNetworkId());
+                    nicResponse.setNetworkName(ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId()).getName() );
                     if (acct.getType() == Account.ACCOUNT_TYPE_ADMIN) {
                         if (singleNicProfile.getBroadCastUri() != null) {
                             nicResponse.setBroadcastUri(singleNicProfile.getBroadCastUri().toString());
@@ -3914,6 +3915,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setGatewayIp(result.getGatewayIp());
         response.setGuestCidrList(result.getGuestCidrList());
         response.setIpsecPsk(result.getIpsecPsk());
+        response.setIkePolicy(result.getIkePolicy());
+        response.setEspPolicy(result.getEspPolicy());
+        response.setLifetime(result.getLifetime());
+        
         response.setRemoved(result.getRemoved());
         response.setObjectName("vpncustomergateway");
 

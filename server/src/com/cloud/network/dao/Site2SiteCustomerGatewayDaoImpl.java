@@ -1,5 +1,7 @@
 package com.cloud.network.dao;
 
+import java.util.List;
+
 import javax.ejb.Local;
 
 import org.apache.log4j.Logger;
@@ -19,6 +21,7 @@ public class Site2SiteCustomerGatewayDaoImpl extends GenericDaoBase<Site2SiteCus
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("gatewayIp", AllFieldsSearch.entity().getGatewayIp(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("name", AllFieldsSearch.entity().getName(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
     }
     
@@ -36,4 +39,10 @@ public class Site2SiteCustomerGatewayDaoImpl extends GenericDaoBase<Site2SiteCus
         return findOneBy(sc);
     }
 
+    @Override
+    public List<Site2SiteCustomerGatewayVO> listByAccountId(long accountId) {
+        SearchCriteria<Site2SiteCustomerGatewayVO> sc = AllFieldsSearch.create();
+        sc.setParameters("accountId", accountId);
+        return listBy(sc, null);
+    }
 }

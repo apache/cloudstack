@@ -1,13 +1,37 @@
+// Copyright 2012 Citrix Systems, Inc. Licensed under the
+// Apache License, Version 2.0 (the "License"); you may not use this
+// file except in compliance with the License.  Citrix Systems, Inc.
+// reserves all rights not expressly granted by the License.
+// You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 (function($, cloudStack) {
+  var isFormValid = function($form) {
+    var key = $form.find('input[name=key]').val();
+    var value = $form.find('input[name=value]').val();
+
+    if (!key || !value) {
+      cloudStack.dialog.notice({ message: 'Please specify a tag key and value' });
+      
+      return false;
+    }
+
+    return true;
+  };
+  
   var elems = {
     inputArea: function(args) {
       var $form = $('<form>').addClass('tag-input');
       var $keyField = $('<div>').addClass('field key');
       var $keyLabel = $('<label>').attr('for', 'key').html('Key:');
-      var $key = $('<input>').addClass('key required').attr('name', 'key');
+      var $key = $('<input>').addClass('key').attr('name', 'key');
       var $valueField = $('<div>').addClass('field value');
       var $valueLabel = $('<label>').attr('for', 'value').html('Value:');
-      var $value = $('<input>').addClass('value required').attr('name', 'value');
+      var $value = $('<input>').addClass('value').attr('name', 'value');
       var $submit = $('<input>').attr('type', 'submit').val('Add');
 
       $keyField.append($keyLabel, $key);
@@ -22,7 +46,7 @@
       $form.submit(
         args.onSubmit ?
           function() {
-            if (!$form.valid()) return false;
+            if (!isFormValid($form)) return false;
             
             args.onSubmit({
               data: cloudStack.serializeForm($form),
