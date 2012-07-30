@@ -160,9 +160,9 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
         }
         
         // Name is either the given name or the uuid
-        String name = implemented.getName();
+        String name = network.getName();
         if (name == null || name.isEmpty()) {
-            name = implemented.getUuid();
+            name = ((NetworkVO)network).getUuid();
         }
         if (name.length() > 40 ) {
             name = name.substring(0, 39); // max length 40
@@ -179,7 +179,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru {
         String transportzoneuuid = niciraNvpHost.getDetail("transportzoneuuid");
         String transportzoneisotype = niciraNvpHost.getDetail("transportzoneisotype");
         
-        CreateLogicalSwitchCommand cmd = new CreateLogicalSwitchCommand(transportzoneuuid, transportzoneisotype, network.getName(), 
+        CreateLogicalSwitchCommand cmd = new CreateLogicalSwitchCommand(transportzoneuuid, transportzoneisotype, name,
                 context.getDomain().getName() + "-" + context.getAccount().getAccountName());
         CreateLogicalSwitchAnswer answer = (CreateLogicalSwitchAnswer) _agentMgr.easySend(niciraNvpHost.getId(), cmd);
         
