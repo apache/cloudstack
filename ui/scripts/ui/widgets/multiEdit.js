@@ -19,7 +19,7 @@
     /**
      * Append item to list
      */
-    addItem: function(data, fields, $multi, itemData, actions, options) {
+    addItem: function(data, fields, hiddenFields, $multi, itemData, actions, options) {
       if (!options) options = {};
 
       var $tr;
@@ -35,7 +35,8 @@
 
       // Setup columns
       $.each(fields, function(fieldName, field) {
-        if (options.ignoreEmptyFields && !data[fieldName]) {
+        if ((options.ignoreEmptyFields && !data[fieldName]) ||
+            $.inArray(fieldName.toString(), hiddenFields) > -1) {
           return true;
         }
 
@@ -682,6 +683,16 @@
     var context = args.context;
     var ignoreEmptyFields = args.ignoreEmptyFields;
     var actionPreFilter = args.actionPreFilter;
+    var fieldPreFilter = args.fieldPreFilter;
+    var hiddenFields = [];
+
+    if (fieldPreFilter) {
+      hiddenFields = fieldPreFilter({
+        fields: $.map(fields, function(v, k) { return k; }),
+        context: context,
+        $multi: $multi
+      });
+    }
 
     var $thead = $('<tr>').appendTo(
       $('<thead>').appendTo($inputTable)
@@ -693,6 +704,8 @@
 
     // Setup input table headers
     $.each(args.fields, function(fieldName, field) {
+      if ($.inArray(fieldName.toString(), hiddenFields) > -1) return true;
+
       var $th = $('<th>').addClass(fieldName).html(_l(field.label.toString()));
       $th.attr('rel', fieldName);
       $th.appendTo($thead);
@@ -929,6 +942,7 @@
               _medit.addItem(
                 data,
                 fields,
+                hiddenFields,
                 $multi,
                 itemData,
                 actions,

@@ -2226,6 +2226,13 @@
                       }
                     },
                     multipleAdd: true,
+                    fieldPreFilter: function(args) {
+                      var context = args.context;
+                      var fields = args.fields;
+
+                      // Returns fields to be hidden
+                      return [];
+                    },
                     fields: {
                       'name': { edit: true, label: 'label.name', isEditable: true },
                       'publicport': { edit: true, label: 'label.public.port' },
