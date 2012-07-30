@@ -1032,7 +1032,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args += rule.revoked() ? " -D" : " -A";
             args += " -P " + rule.getProtocol().toLowerCase();
             args += " -l " + rule.getSrcIp();
-            args += " -p " + rule.getStringSrcPortRange().replace(":", "-");
+            args += " -p " + rule.getStringSrcPortRange();
             args += " -r " + rule.getDstIp();
             args += " -d " + rule.getStringDstPortRange().replace(":", "-");
 
