@@ -959,10 +959,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         int wrks = NumbersUtil.parseInt(workers, 10);
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("StorageManager-Scavenger"));
 
-        boolean localStorage = Boolean.parseBoolean(configs.get(Config.UseLocalStorage.key()));
-        if (localStorage) {
-            _agentMgr.registerForHostEvents(ComponentLocator.inject(LocalStoragePoolListener.class), true, false, false);
-        }
+        _agentMgr.registerForHostEvents(ComponentLocator.inject(LocalStoragePoolListener.class), true, false, false);
 
         String maxVolumeSizeInGbString = configDao.getValue("storage.max.volume.size");
         _maxVolumeSizeInGb = NumbersUtil.parseLong(maxVolumeSizeInGbString, 2000);

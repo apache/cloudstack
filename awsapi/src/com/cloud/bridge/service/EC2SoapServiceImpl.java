@@ -1347,7 +1347,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        param7.setPrivateDnsName( "" );
 	        param7.setDnsName( "" );
 	        param7.setReason( "" );
-	        param7.setKeyName( "" );
+            param7.setKeyName( inst.getKeyPairName());
 	        param7.setAmiLaunchIndex( "" );
 	        param7.setInstanceType( inst.getServiceOffering());
 	        
@@ -1669,7 +1669,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        param7.setPrivateDnsName( "" );
 	        param7.setDnsName( "" );
 	        param7.setReason( "" );
-	        param7.setKeyName( "" );
+            param7.setKeyName( inst.getKeyPairName());
 	        param7.setAmiLaunchIndex( "" );
 	        
 	        ProductCodesSetType param9 = new ProductCodesSetType();
@@ -1722,7 +1722,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             param19.setKey("");
             param19.setValue("");
             param18.addItem( param19 );
-            param7.setTagSet( param18 );          
+            param7.setTagSet( param18 );
             
             String hypervisor = inst.getHypervisor();
             param7.setHypervisor((null != hypervisor ? hypervisor : ""));

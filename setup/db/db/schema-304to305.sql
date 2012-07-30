@@ -340,4 +340,5 @@ CREATE TABLE `cloud`.`s2s_vpn_connection` (
   CONSTRAINT `uc_s2s_vpn_connection__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `is_local_storage_enabled` tinyint NOT NULL DEFAULT 0 COMMENT 'Is local storage offering enabled for this data center; 1: enabled, 0: not';
+UPDATE `cloud`.`data_center` SET `is_local_storage_enabled` = IF ((SELECT `value` FROM `cloud`.`configuration` WHERE `name`='use.local.storage')='true', 1, 0) WHERE `removed` IS NULL;

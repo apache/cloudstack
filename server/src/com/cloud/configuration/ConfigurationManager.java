@@ -129,7 +129,7 @@ public interface ConfigurationManager extends ConfigurationService, Manager {
      * @throws
      */
     DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId, NetworkType zoneType, String allocationState,
-            String networkDomain, boolean isSecurityGroupEnabled);
+            String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled);
 
     /**
      * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated

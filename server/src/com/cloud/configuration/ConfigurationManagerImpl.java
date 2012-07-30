@@ -1360,6 +1360,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String dhcpProvider = cmd.getDhcpProvider();
         Map<?, ?> detailsMap = cmd.getDetails();
         String networkDomain = cmd.getDomain();
+        Boolean localStorageEnabled = cmd.getLocalStorageEnabled();
 
         Map<String, String> newDetails = new HashMap<String, String>();
         if (detailsMap != null) {
@@ -1466,6 +1467,9 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         zone.setInternalDns1(internalDns1);
         zone.setInternalDns2(internalDns2);
         zone.setGuestNetworkCidr(guestCidr);
+        if (localStorageEnabled != null) {
+            zone.setLocalStorageEnabled(localStorageEnabled.booleanValue());
+        }
 
         if (networkDomain != null) {
             if (networkDomain.isEmpty()) {
@@ -1539,7 +1543,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     @Override
     @DB
     public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId,
-            NetworkType zoneType, String allocationStateStr, String networkDomain, boolean isSecurityGroupEnabled) {
+            NetworkType zoneType, String allocationStateStr, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled) {
 
         // checking the following params outside checkzoneparams method as we do
         // not use these params for updatezone
@@ -1565,7 +1569,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         try {
             txn.start();
             // Create the new zone in the database
-            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled);
+            DataCenterVO zone = new DataCenterVO(zoneName, null, dns1, dns2, internalDns1, internalDns2, guestCidr, domain, domainId, zoneType, zoneToken, networkDomain, isSecurityGroupEnabled, isLocalStorageEnabled);
             if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
                 Grouping.AllocationState allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
                 zone.setAllocationState(allocationState);
@@ -1645,6 +1649,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         String allocationState = cmd.getAllocationState();
         String networkDomain = cmd.getDomain();
         boolean isSecurityGroupEnabled = cmd.getSecuritygroupenabled();
+        boolean isLocalStorageEnabled = cmd.getLocalStorageEnabled();
 
         if (allocationState == null) {
             allocationState = Grouping.AllocationState.Disabled.toString();
@@ -1678,7 +1683,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         }
 
         return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType, allocationState, networkDomain,
-                isSecurityGroupEnabled);
+                isSecurityGroupEnabled, isLocalStorageEnabled);
     }
 
     @Override
