@@ -9009,8 +9009,8 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 .tagger form label.error {
   position: absolute;
   color: #FF0000;
-  left: 42px;
-  top: 29px;
+  left: 44px;
+  top: 28px !important;
   /*[empty]background-color:;*/
 }
 
