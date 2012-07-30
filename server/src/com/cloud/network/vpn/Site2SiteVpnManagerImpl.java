@@ -50,6 +50,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -207,9 +208,9 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         }
         if (_vpnConnectionDao.findByCustomerGatewayId(customerGatewayId) != null) {
             List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
-            idList.add(new IdentityProxy(customerGateway, customerGatewayId, "customerGatewayId"));
-            throw new InvalidParameterValueException("The vpn connection with specified customer gateway id " +
-                    " already exists!", idList);
+//            idList.add(new IdentityProxy(customerGateway, customerGatewayId, "customerGatewayId"));
+//            throw new InvalidParameterValueException("The vpn connection with specified customer gateway id " +
+//                    " already exists!", idList);
         }
         Site2SiteVpnConnectionVO conn = new Site2SiteVpnConnectionVO(owner.getAccountId(), owner.getDomainId(), vpnGatewayId, customerGatewayId);
         conn.setState(State.Pending);
