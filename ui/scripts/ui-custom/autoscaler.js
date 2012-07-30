@@ -232,7 +232,7 @@
             'class': 'ok',
             click: function() {
               var data = cloudStack.serializeForm($('.ui-dialog .autoscaler form'));
-              
+
               $loading.appendTo($autoscalerDialog);
               cloudStack.autoscaler.actions.add({
                 formData: formData,

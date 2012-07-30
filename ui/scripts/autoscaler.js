@@ -17,70 +17,70 @@
   var totalScaleDownCondition = 0;
 
   cloudStack.autoscaler = {
-    dataProvider: function(args) {				
+    dataProvider: function(args) {
       // Reset data
       scaleUpData = [];
       totalScaleUpCondition = 0;
       scaleDownData = [];
       totalScaleDownCondition = 0;
 
-			var sampleData = null;
-			/*
-      var sampleData = {
-        templateNames: '58d3f4b2-e847-4f93-993d-1ab1505129b6', //(will set this value to dropdown)
-        serviceOfferingId: '4aa823f3-27ec-46af-9e07-b023d7a7a6f1', //(will set this value to dropdown)
-        minInstance: 1,
-        maxInstance: 10,
-        scaleUpPolicy: {
-          id: 12345,
-          duration: 1000,
-          conditions: [
-            {
-              id: 1,
-              counterid: 'cpu',
-              relationaloperator: "GE",
-              threshold: 100
-            },
-            {
-              id: 2,
-              counterid: 'memory',
-              relationaloperator: "LT",
-              threshold: 200
-            }
+      var sampleData = null;
+      /*
+       var sampleData = {
+       templateNames: '58d3f4b2-e847-4f93-993d-1ab1505129b6', //(will set this value to dropdown)
+       serviceOfferingId: '4aa823f3-27ec-46af-9e07-b023d7a7a6f1', //(will set this value to dropdown)
+       minInstance: 1,
+       maxInstance: 10,
+       scaleUpPolicy: {
+       id: 12345,
+       duration: 1000,
+       conditions: [
+       {
+       id: 1,
+       counterid: 'cpu',
+       relationaloperator: "GE",
+       threshold: 100
+       },
+       {
+       id: 2,
+       counterid: 'memory',
+       relationaloperator: "LT",
+       threshold: 200
+       }
 
-          ]
-        },
-        scaleDownPolicy: {
-          id: 6789,
-          duration: 500,
-          conditions: [
-            {
-              id: 1,
-              counterid: 'cpu',
-              relationaloperator: "LT",
-              threshold: 30
-            },
-            {
-              id: 2,
-              counterid: 'cpu',
-              relationaloperator: "LT",
-              threshold: 50
-            }
+       ]
+       },
+       scaleDownPolicy: {
+       id: 6789,
+       duration: 500,
+       conditions: [
+       {
+       id: 1,
+       counterid: 'cpu',
+       relationaloperator: "LT",
+       threshold: 30
+       },
+       {
+       id: 2,
+       counterid: 'cpu',
+       relationaloperator: "LT",
+       threshold: 50
+       }
 
-          ]
-        },
-        interval: 200,
-        quietTime: 300,
-        destroyVMgracePeriod: null,
-        securityGroups: null, // (will set this value to dropdown)
-        diskOfferingId: 'a21c9aa4-ef7e-41dd-91eb-70b2182816b0', // (will set this value to dropdown)
-        snmpCommunity: 1,
-        snmpPort: 225,
+       ]
+       },
+       interval: 200,
+       quietTime: 300,
+       destroyVMgracePeriod: null,
+       securityGroups: null, // (will set this value to dropdown)
+       diskOfferingId: 'a21c9aa4-ef7e-41dd-91eb-70b2182816b0', // (will set this value to dropdown)
+       snmpCommunity: 1,
+       snmpPort: 225,
 
-        isAdvanced: false // Set this to true if any advanced field data is present
-      };
-      */
-			
+       isAdvanced: false // Set this to true if any advanced field data is present
+       };
+       */
+
       args.response.success({ data: sampleData });
     },
 
@@ -117,70 +117,70 @@
         templateNames: {
           label: 'label.template',
           id: 'templatename',
-          select: function(args) {	
-            var templates;		
-            var templateIdMap = {};		         				
+          select: function(args) {
+            var templates;
+            var templateIdMap = {};
             $.ajax({
               url: createURL('listTemplates'),
               data: {
-							  templatefilter: 'featured',
-								zoneid: args.context.networks[0].zoneid
-							},
-							async: false,
+                templatefilter: 'featured',
+                zoneid: args.context.networks[0].zoneid
+              },
+              async: false,
               success: function(json) {
-                templates = json.listtemplatesresponse.template;		
-								if (templates == null)
-								  templates = [];
+                templates = json.listtemplatesresponse.template;
+                if (templates == null)
+                  templates = [];
                 $(templates).each(function() {
-								  templateIdMap[this.id] = 1;
-								});								
+                  templateIdMap[this.id] = 1;
+                });
               }
             });
-												
-						$.ajax({
+
+            $.ajax({
               url: createURL('listTemplates'),
               data: {
-							  templatefilter: 'community',								
-								zoneid: args.context.networks[0].zoneid
-							},
-							async: false,
+                templatefilter: 'community',
+                zoneid: args.context.networks[0].zoneid
+              },
+              async: false,
               success: function(json) {
-                var items = json.listtemplatesresponse.template;	
-                $(items).each(function() {								  
-								  if(!(this.id in templateIdMap)) {
-									  templates.push(this);
-								    templateIdMap[this.id] = 1;
-									}									
-								});								
+                var items = json.listtemplatesresponse.template;
+                $(items).each(function() {
+                  if(!(this.id in templateIdMap)) {
+                    templates.push(this);
+                    templateIdMap[this.id] = 1;
+                  }
+                });
               }
             });
-						
-						$.ajax({
+
+            $.ajax({
               url: createURL('listTemplates'),
               data: {
-							  templatefilter: 'selfexecutable',								
-								zoneid: args.context.networks[0].zoneid
-							},
-							async: false,
+                templatefilter: 'selfexecutable',
+                zoneid: args.context.networks[0].zoneid
+              },
+              async: false,
               success: function(json) {
-                var items = json.listtemplatesresponse.template;	
-                $(items).each(function() {								  
-								  if(!(this.id in templateIdMap)) {
-									  templates.push(this);
-								    templateIdMap[this.id] = 1;
-									}									
-								});								
+                var items = json.listtemplatesresponse.template;
+                $(items).each(function() {
+                  if(!(this.id in templateIdMap)) {
+                    templates.push(this);
+                    templateIdMap[this.id] = 1;
+                  }
+                });
               }
             });
-												
-						args.response.success({
-							data: $.map(templates, function(template) {
-								return {
-									id: template.id,
-									description: template.name
-								};
-							})
-						});		
+
+            args.response.success({
+              data: $.map(templates, function(template) {
+                return {
+                  id: template.id,
+                  description: template.name
+                };
+              })
+            });
           }
         },
 
@@ -305,26 +305,26 @@
           dependsOn: 'isAdvanced',
           label: 'User',
           select: function(args) {
-					  var items = []; 
-						if(isAdmin() || isDomainAdmin()) {
-							$.ajax({
-								url: createURL('listUsers'),
-								data: {
-									domainid: g_domainid,
-									account: g_account
-								},
-								success: function(json) {
-									var users = json.listusersresponse.user;                               
-									$(users).each(function(){
-										items.push({id: this.id, description: this.username});
-									});
-									args.response.success({ data:  items });
-								}
-							});
-						}
-            else { //regular user doesn't have access to listUers API call.				
-							items.push({id: "", description: ""});
-						}						
+            var items = [];
+            if(isAdmin() || isDomainAdmin()) {
+              $.ajax({
+                url: createURL('listUsers'),
+                data: {
+                  domainid: g_domainid,
+                  account: g_account
+                },
+                success: function(json) {
+                  var users = json.listusersresponse.user;
+                  $(users).each(function(){
+                    items.push({id: this.id, description: this.username});
+                  });
+                  args.response.success({ data:  items });
+                }
+              });
+            }
+            else { //regular user doesn't have access to listUers API call.
+              items.push({id: "", description: ""});
+            }
           }
         }
       },
@@ -342,7 +342,7 @@
                 url: createURL("listCounters"),
                 dataType: "json",
                 async: true,
-                success: function(json) {   
+                success: function(json) {
                   var counters = json.counterresponse.counter;
 
                   args.response.success({
@@ -478,7 +478,7 @@
                 url: createURL("listCounters"),
                 dataType: "json",
                 async: true,
-                success: function(json) {    
+                success: function(json) {
                   var counters = json.counterresponse.counter;
 
                   args.response.success({
@@ -603,52 +603,52 @@
     },
 
     actions: {
-      add: function(args) {   
-			  //validation (begin) *****
-				if(isAdmin() || isDomainAdmin()) { //only admin and domain-admin has access to listUers API
-					var havingApiKeyAndSecretKey = false;
-					$.ajax({
-						url: createURL('listUsers'),
-						data: {
-							id: args.data.username
-						}, 
-						async: false,
-						success: function(json) {					 
-							if(json.listusersresponse.user[0].apikey != null && json.listusersresponse.user[0].secretkey != null) {
-								havingApiKeyAndSecretKey = true;
-							}						
-						}
-					});		       
-					if(havingApiKeyAndSecretKey == false) {
-						args.response.error('The selected user in advanced settings does not have API key or secret key');
-						return;
-					}			
-				}
-				
-				if(isAdmin()) { //only admin has access to listConfigurations API
-					var hasValidEndpointeUrl = false;
-					$.ajax({
-						url: createURL('listConfigurations'),
-						data: {
-							name: 'endpointe.url'
-						},
-						async: false,
-						success: function(json) {					  
-							if(json.listconfigurationsresponse.configuration != null) {						  
-								if(json.listconfigurationsresponse.configuration[0].value.indexOf('localhost') == -1) {							
-									hasValidEndpointeUrl = true;
-								}
-							}						
-						}
-					});				
-					if(hasValidEndpointeUrl == false) {
-						args.response.error("Global setting endpointe.url has to be set to the Management Server's API end point");
-						return;
-					}		
-        }					
-				//validation (end) *****	
-				
-			
+      add: function(args) {
+        //validation (begin) *****
+        if(isAdmin() || isDomainAdmin()) { //only admin and domain-admin has access to listUers API
+          var havingApiKeyAndSecretKey = false;
+          $.ajax({
+            url: createURL('listUsers'),
+            data: {
+              id: args.data.username
+            },
+            async: false,
+            success: function(json) {
+              if(json.listusersresponse.user[0].apikey != null && json.listusersresponse.user[0].secretkey != null) {
+                havingApiKeyAndSecretKey = true;
+              }
+            }
+          });
+          if(havingApiKeyAndSecretKey == false) {
+            args.response.error('The selected user in advanced settings does not have API key or secret key');
+            return;
+          }
+        }
+
+        if(isAdmin()) { //only admin has access to listConfigurations API
+          var hasValidEndpointeUrl = false;
+          $.ajax({
+            url: createURL('listConfigurations'),
+            data: {
+              name: 'endpointe.url'
+            },
+            async: false,
+            success: function(json) {
+              if(json.listconfigurationsresponse.configuration != null) {
+                if(json.listconfigurationsresponse.configuration[0].value.indexOf('localhost') == -1) {
+                  hasValidEndpointeUrl = true;
+                }
+              }
+            }
+          });
+          if(hasValidEndpointeUrl == false) {
+            args.response.error("Global setting endpointe.url has to be set to the Management Server's API end point");
+            return;
+          }
+        }
+        //validation (end) *****
+
+
         var scaleVmProfileResponse = [];
         var loadBalancerResponse  = [];
         var scaleVmGroupResponse = [];
@@ -656,171 +656,171 @@
         var scaleDownConditionIds = [];
 
         var scaleUp = function(args){
-				  var scaleUpConditionIds = [];
-				  $(scaleUpData).each(function(){
-					  var data = {
-						  counterid: this.counterid,
-							relationaloperator: this.relationaloperator,
-							threshold: this.threshold
-						};						
-						$.ajax({
-              url: createURL('createCondition'),   
-							data: data,
-              success: function(json) {							  
-								var createConditionIntervalID = setInterval(function() { 	
-									$.ajax({
-										url: createURL("queryAsyncJobResult&jobid=" + json.conditionresponse.jobid),
-										dataType: "json",
-										success: function(json) {
-											var result = json.queryasyncjobresultresponse;
-											if(result.jobstatus == 0) {
-												return;
-											}
-											else {                                    
-												clearInterval(createConditionIntervalID); 											
-												if(result.jobstatus == 1) {																		 
-													var item  = json.queryasyncjobresultresponse.jobresult.condition;
-													scaleUpConditionIds.push(item.id);													
-													if (scaleUpConditionIds.length == scaleUpData.length) {													  
-														var data = {
-														  action: 'scaleup',
-															conditionids: scaleUpConditionIds.join(","),
-															duration: args.data.scaleUpDuration,
-															quiettime: args.data.quietTime
-														};														
-														$.ajax({
-															url: createURL('createAutoScalePolicy'),
-												      data: data,															
-															success: function(json) {
-																var jobId = json.autoscalepolicyresponse.jobid;
-																var createAutoScalePolicyInterval = setInterval(function(){
-																	$.ajax({
-																		url: createURL("queryAsyncJobResult&jobId="+jobId),
-																		dataType: "json",
-																		success: function(json) {
-																			var result = json.queryasyncjobresultresponse;
-																			if (result.jobstatus == 0) {
-																				return; //Job has not completed
-																			}
-																			else {
-																				clearInterval(createAutoScalePolicyInterval);																	
-																				if (result.jobstatus == 1) { //AutoScalePolicy successfully created
-																					var item = result.jobresult.autoscalepolicy;
-																					scaleDown($.extend(args, {
-																					  scaleUpPolicyResponse: item
-																					}));
-																				}
-																				else if (result.jobstatus == 2) {
-																					args.response.error({ message: _s(result.jobresult.errortext) });              
-																				}
-																			}
-																		}
-																	});
-																}, 3000);
-															},																														
-															error: function(XMLHttpResponse) {
-																args.response.error(parseXMLHttpResponse(XMLHttpResponse));  
-															}	
-														});
-													}
-												}
-												else if(result.jobstatus == 2) {
-													args.response.error({ message: _s(result.jobresult.errortext) });  
-												}
-											}
-										}
-									});                            
-								}, 3000); 
-              },							
-							error: function(XMLHttpResponse) {
-								args.response.error(parseXMLHttpResponse(XMLHttpResponse));  
-							}		
-            });						
-					});		
+          var scaleUpConditionIds = [];
+          $(scaleUpData).each(function(){
+            var data = {
+              counterid: this.counterid,
+              relationaloperator: this.relationaloperator,
+              threshold: this.threshold
+            };
+            $.ajax({
+              url: createURL('createCondition'),
+              data: data,
+              success: function(json) {
+                var createConditionIntervalID = setInterval(function() {
+                  $.ajax({
+                    url: createURL("queryAsyncJobResult&jobid=" + json.conditionresponse.jobid),
+                    dataType: "json",
+                    success: function(json) {
+                      var result = json.queryasyncjobresultresponse;
+                      if(result.jobstatus == 0) {
+                        return;
+                      }
+                      else {
+                        clearInterval(createConditionIntervalID);
+                        if(result.jobstatus == 1) {
+                          var item  = json.queryasyncjobresultresponse.jobresult.condition;
+                          scaleUpConditionIds.push(item.id);
+                          if (scaleUpConditionIds.length == scaleUpData.length) {
+                            var data = {
+                              action: 'scaleup',
+                              conditionids: scaleUpConditionIds.join(","),
+                              duration: args.data.scaleUpDuration,
+                              quiettime: args.data.quietTime
+                            };
+                            $.ajax({
+                              url: createURL('createAutoScalePolicy'),
+                              data: data,
+                              success: function(json) {
+                                var jobId = json.autoscalepolicyresponse.jobid;
+                                var createAutoScalePolicyInterval = setInterval(function(){
+                                  $.ajax({
+                                    url: createURL("queryAsyncJobResult&jobId="+jobId),
+                                    dataType: "json",
+                                    success: function(json) {
+                                      var result = json.queryasyncjobresultresponse;
+                                      if (result.jobstatus == 0) {
+                                        return; //Job has not completed
+                                      }
+                                      else {
+                                        clearInterval(createAutoScalePolicyInterval);
+                                        if (result.jobstatus == 1) { //AutoScalePolicy successfully created
+                                          var item = result.jobresult.autoscalepolicy;
+                                          scaleDown($.extend(args, {
+                                            scaleUpPolicyResponse: item
+                                          }));
+                                        }
+                                        else if (result.jobstatus == 2) {
+                                          args.response.error({ message: _s(result.jobresult.errortext) });
+                                        }
+                                      }
+                                    }
+                                  });
+                                }, 3000);
+                              },
+                              error: function(XMLHttpResponse) {
+                                args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                              }
+                            });
+                          }
+                        }
+                        else if(result.jobstatus == 2) {
+                          args.response.error({ message: _s(result.jobresult.errortext) });
+                        }
+                      }
+                    }
+                  });
+                }, 3000);
+              },
+              error: function(XMLHttpResponse) {
+                args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+              }
+            });
+          });
         };
 
         var scaleDown = function(args){
-				  var scaleDownConditionIds = [];
-				  $(scaleDownData).each(function(){
-					  var data = {
-						  counterid: this.counterid,
-							relationaloperator: this.relationaloperator,
-							threshold: this.threshold
-						};						
-						$.ajax({
-              url: createURL('createCondition'),   
-							data: data,
-              success: function(json) {							  
-								var createConditionIntervalID = setInterval(function() { 	
-									$.ajax({
-										url: createURL("queryAsyncJobResult&jobid=" + json.conditionresponse.jobid),
-										dataType: "json",
-										success: function(json) {
-											var result = json.queryasyncjobresultresponse;
-											if(result.jobstatus == 0) {
-												return;
-											}
-											else {                                    
-												clearInterval(createConditionIntervalID); 										
-												if(result.jobstatus == 1) {																		 
-													var item  = json.queryasyncjobresultresponse.jobresult.condition;
-													scaleDownConditionIds.push(item.id);													
-													if (scaleDownConditionIds.length == scaleDownData.length) {													  
-														var data = {
-														  action: 'scaledown',
-															conditionids: scaleDownConditionIds.join(","),
-															duration: args.data.scaleDownDuration,
-															quiettime: args.data.quietTime
-														};														
-														$.ajax({
-															url: createURL('createAutoScalePolicy'),
-												      data: data,															
-															success: function(json) {
-																var jobId = json.autoscalepolicyresponse.jobid;
-																var createAutoScalePolicyInterval = setInterval(function(){
-																	$.ajax({
-																		url: createURL("queryAsyncJobResult&jobId="+jobId),
-																		dataType: "json",
-																		success: function(json) {
-																			var result = json.queryasyncjobresultresponse;
-																			if (result.jobstatus == 0) {
-																				return; //Job has not completed
-																			}
-																			else {
-																				clearInterval(createAutoScalePolicyInterval);																			
-																				if (result.jobstatus == 1) { //AutoScalePolicy successfully created
-																					var item = result.jobresult.autoscalepolicy;
-																					createVmProfile($.extend(args, {
-																					  scaleDownPolicyResponse: item
-																					}));
-																				}
-																				else if (result.jobstatus == 2) {
-																					args.response.error({ message: _s(result.jobresult.errortext) });              
-																				}
-																			}
-																		}
-																	});
-																}, 3000);
-															},	
-															error: function(XMLHttpResponse) {
-																args.response.error(parseXMLHttpResponse(XMLHttpResponse));  
-															}		
-														});
-													}
-												}
-												else if(result.jobstatus == 2) {
-													args.response.error({ message: _s(result.jobresult.errortext) });  
-												}
-											}
-										},																				
-										error: function(XMLHttpResponse) {
-											args.response.error(parseXMLHttpResponse(XMLHttpResponse));  
-										}		
-									});                            
-								}, 3000); 
+          var scaleDownConditionIds = [];
+          $(scaleDownData).each(function(){
+            var data = {
+              counterid: this.counterid,
+              relationaloperator: this.relationaloperator,
+              threshold: this.threshold
+            };
+            $.ajax({
+              url: createURL('createCondition'),
+              data: data,
+              success: function(json) {
+                var createConditionIntervalID = setInterval(function() {
+                  $.ajax({
+                    url: createURL("queryAsyncJobResult&jobid=" + json.conditionresponse.jobid),
+                    dataType: "json",
+                    success: function(json) {
+                      var result = json.queryasyncjobresultresponse;
+                      if(result.jobstatus == 0) {
+                        return;
+                      }
+                      else {
+                        clearInterval(createConditionIntervalID);
+                        if(result.jobstatus == 1) {
+                          var item  = json.queryasyncjobresultresponse.jobresult.condition;
+                          scaleDownConditionIds.push(item.id);
+                          if (scaleDownConditionIds.length == scaleDownData.length) {
+                            var data = {
+                              action: 'scaledown',
+                              conditionids: scaleDownConditionIds.join(","),
+                              duration: args.data.scaleDownDuration,
+                              quiettime: args.data.quietTime
+                            };
+                            $.ajax({
+                              url: createURL('createAutoScalePolicy'),
+                              data: data,
+                              success: function(json) {
+                                var jobId = json.autoscalepolicyresponse.jobid;
+                                var createAutoScalePolicyInterval = setInterval(function(){
+                                  $.ajax({
+                                    url: createURL("queryAsyncJobResult&jobId="+jobId),
+                                    dataType: "json",
+                                    success: function(json) {
+                                      var result = json.queryasyncjobresultresponse;
+                                      if (result.jobstatus == 0) {
+                                        return; //Job has not completed
+                                      }
+                                      else {
+                                        clearInterval(createAutoScalePolicyInterval);
+                                        if (result.jobstatus == 1) { //AutoScalePolicy successfully created
+                                          var item = result.jobresult.autoscalepolicy;
+                                          createVmProfile($.extend(args, {
+                                            scaleDownPolicyResponse: item
+                                          }));
+                                        }
+                                        else if (result.jobstatus == 2) {
+                                          args.response.error({ message: _s(result.jobresult.errortext) });
+                                        }
+                                      }
+                                    }
+                                  });
+                                }, 3000);
+                              },
+                              error: function(XMLHttpResponse) {
+                                args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                              }
+                            });
+                          }
+                        }
+                        else if(result.jobstatus == 2) {
+                          args.response.error({ message: _s(result.jobresult.errortext) });
+                        }
+                      }
+                    },
+                    error: function(XMLHttpResponse) {
+                      args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+                    }
+                  });
+                }, 3000);
               }
-            });						
-					});		
+            });
+          });
         };
 
         var createVmProfile = function(args){
@@ -870,45 +870,45 @@
                         loadBalancer(args);
                       }
                       else if (result.jobstatus == 2) {
-                        args.response.error({message: _s(result.jobresult.errortext)});              
+                        args.response.error({message: _s(result.jobresult.errortext)});
                       }
                     }
                   }
                 });
               }, 3000);
-            },						
-						error: function(XMLHttpResponse) {
-							args.response.error(parseXMLHttpResponse(XMLHttpResponse));  
-						}							
+            },
+            error: function(XMLHttpResponse) {
+              args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+            }
           });
         };
 
-        var loadBalancer = function(args){			
-					var networkid;												
-					if('vpc' in args.context) { //from VPC section
-						if(args.data.tier == null) {													  
-							cloudStack.dialog.notice({ message: 'Tier is required' });		
-							return;
-						}												
-						networkid = args.data.tier;		
-					}
-					else if('networks' in args.context) {	//from Guest Network section										  
-						networkid = args.context.networks[0].id;													
-					}											
-					var data = {
-						algorithm: args.formData.algorithm,
-						name: args.formData.name,
-						privateport: args.formData.privateport,
-						publicport: args.formData.publicport,
-						openfirewall: false,
-						networkid: networkid,													
-						publicipid: args.context.ipAddresses[0].id
-					};		
-				 
+        var loadBalancer = function(args){
+          var networkid;
+          if('vpc' in args.context) { //from VPC section
+            if(args.data.tier == null) {
+              cloudStack.dialog.notice({ message: 'Tier is required' });
+              return;
+            }
+            networkid = args.data.tier;
+          }
+          else if('networks' in args.context) {	//from Guest Network section
+            networkid = args.context.networks[0].id;
+          }
+          var data = {
+            algorithm: args.formData.algorithm,
+            name: args.formData.name,
+            privateport: args.formData.privateport,
+            publicport: args.formData.publicport,
+            openfirewall: false,
+            networkid: networkid,
+            publicipid: args.context.ipAddresses[0].id
+          };
+
           $.ajax({
             url: createURL('createLoadBalancerRule'),
             dataType: 'json',
-						data: data,
+            data: data,
             async: true,
             success: function(json) {
               var jobId = json.createloadbalancerruleresponse.jobid;
@@ -928,16 +928,16 @@
                         autoScaleVmGroup(args);
                       }
                       else if (result.jobstatus == 2) {
-                        args.response.error({message: _s(result.jobresult.errortext)});              
+                        args.response.error({message: _s(result.jobresult.errortext)});
                       }
                     }
                   }
                 });
               }, 3000);
-            },		
-						error: function(XMLHttpResponse) {
-							args.response.error(parseXMLHttpResponse(XMLHttpResponse));  
-						}							
+            },
+            error: function(XMLHttpResponse) {
+              args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+            }
           });
         };
 
@@ -947,7 +947,7 @@
           array1.push("&minMembers=" + args.data.minInstance);
           array1.push("&maxMembers=" + args.data.maxInstance );
           array1.push("&vmprofileid=" + scaleVmProfileResponse.id);
-          array1.push("&interval=" + args.data.interval);			
+          array1.push("&interval=" + args.data.interval);
           array1.push("&scaleuppolicyids=" + args.scaleUpPolicyResponse.id);
           array1.push("&scaledownpolicyids=" + args.scaleDownPolicyResponse.id );
           $.ajax({
@@ -969,24 +969,24 @@
                       clearInterval(scaleVmGroupTimer);
                       if (result.jobstatus == 1) { //autoscale Vm group successfully created
                         scaleVmGroupResponse = result.jobresult.autoscalevmgroup;
-												args.response.success();
+                        args.response.success();
                       }
                       else if (result.jobstatus == 2) {
-											  args.response.error({message: _s(result.jobresult.errortext)});                        
+                        args.response.error({message: _s(result.jobresult.errortext)});
                       }
                     }
                   }
                 });
               }, 3000);
-            },					
-						error: function(XMLHttpResponse) {
-							args.response.error(parseXMLHttpResponse(XMLHttpResponse));  
-						}		
+            },
+            error: function(XMLHttpResponse) {
+              args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+            }
           });
         };
 
         scaleUp(args);
-        
+
         //setTimeout(function() { args.response.success(); }, 1000);
         //setTimeout(function() { args.response.error('Error!'); }, 1000);
       },
