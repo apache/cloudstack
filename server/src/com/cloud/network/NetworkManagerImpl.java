@@ -126,6 +126,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
+import com.cloud.network.element.ConnectivityProvider;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.IpDeployer;
@@ -913,6 +914,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     deployer = ((PortForwardingServiceProvider) element).getIpDeployer(network);
                 } else if (element instanceof RemoteAccessVPNServiceProvider) {
                     deployer = ((RemoteAccessVPNServiceProvider) element).getIpDeployer(network);
+                } else if (element instanceof ConnectivityProvider) {
+                    // Nothing to do
+                    s_logger.debug("ConnectivityProvider " + element.getClass().getSimpleName() + " has no ip associations");
+                    continue;
                 } else {
                     throw new CloudRuntimeException("Fail to get ip deployer for element: " + element);
                 }
