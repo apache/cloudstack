@@ -1185,6 +1185,7 @@
             fields: [
               {
                 name: { label: 'label.name', header: true },
+                networkname: {label: 'Network Name' },
                 ipaddress: { label: 'label.ip.address' },
                 type: { label: 'label.type' },
                 gateway: { label: 'label.gateway' },
@@ -1198,17 +1199,28 @@
               }
             ],
             dataProvider: function(args) {
-              args.response.success({data: $.map(args.context.instances[0].nic, function(nic, index) {
-                var name = 'NIC ' + (index + 1);
-
-                if (nic.isdefault) {
-                  name += ' (' + _l('label.default') + ')';
-                }
-                return $.extend(nic, {
-                  name: name
+                    $.ajax({
+                     url:createURL("listVirtualMachines&details=nics&id=" + args.context.instances[0].id),
+                     dataType: "json",
+                     async:true,
+                     success:function(json) {
+                     // Handling the display of network name for a VM under the NICS tabs
+                     args.response.success({
+                     data: $.map(args.context.instances[0].nic, function(nic, index) {
+                     var name = 'NIC ' + (index + 1);
+                     var networkname = json.listvirtualmachinesresponse.virtualmachine[0].nic[index].networkname;
+                     if (nic.isdefault) {
+                          name += ' (' + _l('label.default') + ')';
+                          }
+                     return $.extend(nic, {
+                        name: name,
+                        networkname: networkname
+                               });
+                            })
+                        });
+                     }
                 });
-              })});
-            }
+              }
           },
 
            /**
