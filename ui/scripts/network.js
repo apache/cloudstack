@@ -929,6 +929,13 @@
                             action: cloudStack.lbStickyPolicy.dialog()
                           }
                         },
+                        'autoScale': {
+                            label: 'AutoScale',
+                            custom: {
+                              buttonLabel: 'label.configure',
+                              action: cloudStack.uiCustom.autoscaler(cloudStack.autoscaler)
+                            }
+                        },
                         'add-vm': {
                           label: 'label.add.vms',
                           addButton: true
@@ -2244,6 +2251,14 @@
                           action: cloudStack.lbStickyPolicy.dialog()
                         }
                       },
+		      'autoScale': {
+                            label: 'AutoScale',
+                            custom: {
+                              buttonLabel: 'label.configure',
+                              action: cloudStack.uiCustom.autoscaler(cloudStack.autoscaler)
+                            }
+                        },
+
                       'add-vm': {
                         label: 'label.add.vms',
                         addButton: true
@@ -2544,7 +2559,10 @@
                               _maxLength: {
                                 name: 7
                               },
-                              sticky: stickyData
+                              sticky: stickyData,
+                              autoScale: {
+                                lbRuleID: item.id
+                              }
                             });
                           });
 
