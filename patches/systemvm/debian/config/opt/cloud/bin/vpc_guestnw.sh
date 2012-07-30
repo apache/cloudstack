@@ -143,7 +143,7 @@ destroy_guest_network() {
   sudo iptables -D INPUT -i $dev -p udp -m udp --dport 53 -j ACCEPT
   sudo iptables -t mangle -D PREROUTING -i $dev -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
   sudo iptables -t nat -A POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
-  destroy_acl_outbound_chain
+  destroy_acl_chain
   desetup_usage
   desetup_dnsmasq
   desetup_apache2
