@@ -118,7 +118,8 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
         this.removed = removed;
     }
 
-    public long getLifetime() {
+    @Override
+    public Long getLifetime() {
         return lifetime;
     }
 
@@ -126,6 +127,7 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
         this.lifetime = lifetime;
     }
 
+    @Override
     public String getIkePolicy() {
         return ikePolicy;
     }
@@ -134,6 +136,7 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
         this.ikePolicy = ikePolicy;
     }
 
+    @Override
     public String getEspPolicy() {
         return espPolicy;
     }
