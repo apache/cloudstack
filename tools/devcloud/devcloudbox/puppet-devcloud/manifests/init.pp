@@ -40,14 +40,34 @@ class puppet-devcloud {
     owner   => '0',
   }
 
-  exec { "mac=`ifconfig xenbr0 |grep HWaddr |awk '{print $5}'`; /sbin/ebtables -I FORWARD -d ! $mac -i eth0 -p IPV4 --ip-prot udp --ip-dport 67:68 -j DROP":
+  file { '/tmp/configebtables.sh':
+    ensure  => 'file',
+    source  => 'puppet:///modules/puppet-devcloud/configebtables.sh',
+    group   => '0',
+    mode    => '777',
+    owner   => '0',
+  }
+
+  exec { "/tmp/configebtables.sh":
+    require => [
+      File['/tmp/configebtables.sh'],
+      Service['ebtables']
+      ],
     subscribe => Package['ebtables'],
     refreshonly => true,
     cwd       => '/',
+    path      => '/sbin/:/usr/bin/:/bin',
   }
 
   package { 'nfs-server':
     ensure => latest,
+  }
+
+  file { '/opt/storage':
+    ensure => 'directory',
+    group  => '0',
+    mode   => '755',
+    owner => '0',
   }
 
   file { '/opt/storage/secondary':
@@ -55,7 +75,27 @@ class puppet-devcloud {
     group  => '0',
     mode   => '755',
     owner  => '0',
-    type   => 'directory',
+  }
+
+  file { '/opt/storage/secondary/template':
+    ensure => 'directory',
+    group  => '0',
+    mode   => '755',
+    owner  => '0',
+  }
+
+  file { '/opt/storage/secondary/template/tmpl':
+    ensure => 'directory',
+    group  => '0',
+    mode   => '755',
+    owner  => '0',
+  }
+
+  file { '/opt/storage/secondary/template/tmpl/1':
+    ensure => 'directory',
+    group  => '0',
+    mode   => '755',
+    owner  => '0',
   }
 
   file { '/opt/storage/secondary/template/tmpl/1/1':
@@ -63,7 +103,6 @@ class puppet-devcloud {
     group  => '0',
     mode   => '755',
     owner  => '0',
-    type   => 'directory',
   }
 
   file { '/opt/storage/secondary/template/tmpl/1/5':
@@ -71,7 +110,6 @@ class puppet-devcloud {
     group  => '0',
     mode   => '755',
     owner  => '0',
-    type   => 'directory',
   }
 
   file { '/etc/exports':
@@ -84,37 +122,40 @@ class puppet-devcloud {
   }
 
   service { 'nfs-kernel-server':
-    requires => Package['nfs-server'],
+    require => Package['nfs-server'],
     ensure => 'running',
     enable => 'true',
   }
 
-  exec { "wget-default-template-1-vhd":
-    command => "/usr/bin/wget --output-document=/opt/storage/secondary/template/tmpl/1/1/dc68eb4c-228c-4a78-84fa-b80ae178fbfd.vhd http://download.cloud.com/templates/devcloud/defaulttemplates/1/dc68eb4c-228c-4a78-84fa-b80ae178fbfd.vhd",
-    creates => "/opt/storage/secondary/template/tmpl/1/1/dc68eb4c-228c-4a78-84fa-b80ae178fbfd.vhd",
-    requires => File['/opt/storage/secondary/template/tmpl/1/1'],
-    cwd     => '/',
+  exec { '/usr/bin/wget http://download.cloud.com/templates/devcloud/defaulttemplates/1/dc68eb4c-228c-4a78-84fa-b80ae178fbfd.vhd -P /opt/storage/secondary/template/tmpl/1/1/':
+    creates => '/opt/storage/secondary/template/tmpl/1/1/dc68eb4c-228c-4a78-84fa-b80ae178fbfd.vhd',
+    require => File['/opt/storage/secondary/template/tmpl/1/1/'],
+    timeout => '0',
   }
 
-  exec { "wget-default-template-1-props":
-    command => "/usr/bin/wget --output-document=/opt/storage/secondary/template/tmpl/1/1/template.properties http://download.cloud.com/templates/devcloud/defaulttemplates/1/template.properties",
-    creates => "/opt/storage/secondary/template/tmpl/1/1/template.properties",
-    requires => File['/opt/storage/secondary/template/tmpl/1/1'],
-    cwd     => '/',
+  exec { '/usr/bin/wget http://download.cloud.com/templates/devcloud/defaulttemplates/1/template.properties -P /opt/storage/secondary/template/tmpl/1/1/':
+    creates => '/opt/storage/secondary/template/tmpl/1/1/template.properties',
+    require => File['/opt/storage/secondary/template/tmpl/1/1/'],
   }
 
-  exec { "wget-default-template-5-vhd":
-    command => "/usr/bin/wget --output-document=/opt/storage/secondary/template/tmpl/1/5/ce5b212e-215a-3461-94fb-814a635b2215.vhd http://download.cloud.com/templates/devcloud/defaulttemplates/5/ce5b212e-215a-3461-94fb-814a635b2215.vhd",
-    creates => "/opt/storage/secondary/template/tmpl/1/5/ce5b212e-215a-3461-94fb-814a635b2215.vhd",
-    requires => File['/opt/storage/secondary/template/tmpl/1/5'],
-    cwd     => '/',
+  exec { '/usr/bin/wget http://download.cloud.com/templates/devcloud/defaulttemplates/5/ce5b212e-215a-3461-94fb-814a635b2215.vhd -P /opt/storage/secondary/template/tmpl/1/5/':
+    creates => '/opt/storage/secondary/template/tmpl/1/5/ce5b212e-215a-3461-94fb-814a635b2215.vhd',
+    require => File['/opt/storage/secondary/template/tmpl/1/5/'],
+    timeout => '0',
   }
 
-  exec { "wget-default-template-5-props":
-    command => "/usr/bin/wget --output-document=/opt/storage/secondary/template/tmpl/1/5/template.properties http://download.cloud.com/templates/devcloud/defaulttemplates/5/template.properties",
-    creates => "/opt/storage/secondary/template/tmpl/1/5/template.properties",
-    requires => File['/opt/storage/secondary/template/tmpl/1/5'],
-    cwd     => '/',
+  exec { '/usr/bin/wget http://download.cloud.com/templates/devcloud/defaulttemplates/5/template.properties -P /opt/storage/secondary/template/tmpl/1/5/':
+    creates => '/opt/storage/secondary/template/tmpl/1/5/template.properties',
+    require => File['/opt/storage/secondary/template/tmpl/1/5/'],
+  }
+
+  exec { 'getecho':
+    command => '/usr/bin/wget http://download.cloud.com/templates/devcloud/echo -P /usr/lib/xcp/plugins/',
+    creates => '/usr/lib/xcp/plugins/echo',
+  }
+
+  exec { '/bin/chmod -R 777 /usr/lib/xcp':
+    require => Exec['getecho'],
   }
 
   file { '/opt/storage/primary':
@@ -122,15 +163,142 @@ class puppet-devcloud {
     group  => '0',
     mode   => '755',
     owner  => '0',
-    type   => 'directory',
+  }
+
+  file { '/tmp/configlocalstorage.sh':
+    ensure  => 'file',
+    group   => '0',
+    mode    => '777',
+    owner   => '0',
+    source  => 'puppet:///modules/puppet-devcloud/configlocalstorage.sh',
   }
 
   exec { "configlocal":
-    requires => File['/opt/storage/primary'],
-    unless  => 'xe sr-list | grep local-storage',
-    command => "hostuuid=`xe host-list |grep uuid|awk '{print $5}'`; xe sr-create host-uuid=$hostuuid name-label=local-storage shared=false type=file device-config:location=/opt/storage/primary",
+    require => [
+      File['/opt/storage/primary'],
+      File['/tmp/configlocalstorage.sh']
+      ],
+    command => '/tmp/configlocalstorage.sh',
     cwd     => '/',
   }
 
+  file { '/tmp/configvnc.sh':
+    ensure  => 'file',
+    source  => 'puppet:///modules/puppet-devcloud/configvnc.sh',
+    mode    => '777',
+    group   => '0',
+    owner   => '0',
+  }
+
+  exec { "configvnc":
+    require => File['/tmp/configvnc.sh'],
+    command => '/tmp/configvnc.sh',
+    cwd     => '/',
+  }
+
+  package { 'git':
+    ensure  => latest,
+  }
+
+  package { 'unzip':
+    ensure  => latest,
+  }
+
+  package { 'mysql-server':
+    ensure  => latest,
+  }
+
+  package { 'ant':
+    ensure  => latest,
+  }
+
+  package { 'openjdk-6-jdk':
+    ensure  => latest,
+  }
+
+  file { '/opt/cloudstack':
+    ensure  => 'directory',
+    group   => '0',
+    mode    => '755',
+    owner   => '0',
+  }
+
+  file { '/tmp/updatecode.sh':
+    ensure  => 'file',
+    source  => 'puppet:///modules/puppet-devcloud/updatecode.sh',
+    mode    => '777',
+    owner   => '0',
+    group   => '0',
+  }
+
+  exec { 'get_code':
+    require => [
+      Package['git'],
+      File['/opt/cloudstack/'],
+      File['/tmp/updatecode.sh']
+      ],
+    command => '/tmp/updatecode.sh',
+    cwd     => '/opt/cloudstack/',
+    timeout => '0',
+  }
+
+  file { '/opt/cloudstack/incubator-cloudstack/target':
+    ensure      => 'directory',
+    group       => '0',
+    mode        => '755',
+    owner       => '0',
+    require    => Exec['get_code'],
+  }
+
+  file { '/opt/cloudstack/incubator-cloudstack/dist':
+    ensure      => 'directory',
+    group       => '0',
+    mode        => '755',
+    owner       => '0',
+    require    => Exec['get_code'],
+  }
+
+  exec { 'downloadtomcat':
+    command => '/usr/bin/wget http://archive.apache.org/dist/tomcat/tomcat-6/v6.0.32/bin/apache-tomcat-6.0.32.zip -P /opt/cloudstack/',
+    creates => '/opt/cloudstack/apache-tomcat-6.0.32.zip',
+    require => File['/opt/cloudstack/'],
+    timeout => '0',
+  }
+
+  exec { "unziptomcat":
+    require => [
+      Package['unzip'],
+      Exec["downloadtomcat"]
+      ],
+    creates => "/opt/cloudstack/apache-tomcat-6.0.32",
+    command => "/usr/bin/unzip apache-tomcat-6.0.32.zip",
+    cwd     => "/opt/cloudstack",
+    timeout => '0',
+  }
+
+  exec { "catalina_home":
+    require => Exec["unziptomcat"],
+    unless  => '/bin/grep CATALINA_HOME /root/.bashrc',
+    command => '/bin/echo "export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32" >> /root/.bashrc',
+    cwd     => '/',
+  }
+
+  exec { "build_cloudstack":
+    require => [
+      Package['ant'],
+      Exec["catalina_home"],
+      File['/opt/cloudstack/incubator-cloudstack/dist'],
+      File['/opt/cloudstack/incubator-cloudstack/target']
+      ],
+    command => "/usr/bin/ant clean-all build-all deploy-server deploydb",
+    cwd     => "/opt/cloudstack/incubator-cloudstack/",
+    timeout => '0',
+  }
+
+#  exec { "start_cloudstack":
+#    require => Exec["build_cloudstack"],
+#    command => "/usr/bin/ant debug",
+#    cwd     => "/opt/cloudstack/incubator-cloudstack",
+#  }
 
 }
