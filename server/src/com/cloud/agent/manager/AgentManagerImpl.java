@@ -88,7 +88,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
+import com.cloud.hypervisor.kvm.discover.KvmDummyResourceBase;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;

@@ -532,6 +532,7 @@ fi
 %files agent-libs
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-agent.jar
+%{_javadir}/%{name}-kvm.jar
 
 %files agent
 %defattr(0644,root,root,0755)
