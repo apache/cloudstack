@@ -553,7 +553,7 @@
             label: 'Edit',
             action: function(args) {
               var array1 = [];							
-							if(args.data.displayname != args.context.instances[0].name)
+							if(args.data.displayname != args.context.instances[0].displayname)
                 array1.push("&displayName=" + args.data.displayname);
 								
               array1.push("&group=" + args.data.group);
