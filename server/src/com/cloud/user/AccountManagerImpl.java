@@ -74,16 +74,22 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.RemoteAccessVpnVO;
+import com.cloud.network.Site2SiteCustomerGatewayVO;
+import com.cloud.network.Site2SiteVpnConnectionVO;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
+import com.cloud.network.dao.Site2SiteVpnConnectionDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpn.RemoteAccessVpnService;
+import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectInvitationVO;
@@ -211,6 +217,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private VpcManager _vpcMgr;
     @Inject
     private DomainRouterDao _routerDao;
+    @Inject
+    Site2SiteVpnManager _vpnMgr;
 
     private Adapters<UserAuthenticator> _userAuthenticators;
 
@@ -562,7 +570,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 s_logger.warn("Failed to cleanup remote access vpn resources as a part of account id=" + accountId + " cleanup due to Exception: ", ex);
                 accountCleanupNeeded = true;
             }
-
+            
             // Cleanup security groups
             int numRemoved = _securityGroupDao.removeByAccountId(accountId);
             s_logger.info("deleteAccount: Deleted " + numRemoved + " network groups for account " + accountId);
@@ -611,6 +619,12 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                     accountCleanupNeeded = true;
                     }
                 }
+            }
+
+            // Delete Site 2 Site VPN customer gateway
+            s_logger.debug("Deleting site-to-site VPN customer gateways for account " + accountId);
+            if (!_vpnMgr.deleteCustomerGatewayByAccount(accountId)) {
+                s_logger.warn("Fail to delete site-to-site VPN customer gateways for account " + accountId);
             }
 
             // delete account specific Virtual vlans (belong to system Public Network) - only when networks are cleaned

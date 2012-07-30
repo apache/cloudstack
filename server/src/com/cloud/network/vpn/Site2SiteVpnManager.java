@@ -10,4 +10,5 @@ public interface Site2SiteVpnManager extends Site2SiteVpnService {
     boolean cleanupVpnGatewayByVpc(long vpcId);
     void markDisconnectVpnConnByVpc(long vpcId);
     List<Site2SiteVpnConnectionVO> getConnectionsForRouter(DomainRouterVO router);
+    boolean deleteCustomerGatewayByAccount(long accountId);
 }

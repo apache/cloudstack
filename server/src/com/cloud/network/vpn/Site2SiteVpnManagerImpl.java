@@ -50,7 +50,6 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -207,10 +206,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
                     + vpnGatewayId + " already existed!");
         }
         if (_vpnConnectionDao.findByCustomerGatewayId(customerGatewayId) != null) {
-            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
-//            idList.add(new IdentityProxy(customerGateway, customerGatewayId, "customerGatewayId"));
-//            throw new InvalidParameterValueException("The vpn connection with specified customer gateway id " +
-//                    " already exists!", idList);
+            throw new InvalidParameterValueException("The vpn connection with specified customer gateway id " + customerGatewayId +
+                    " already exists!");
         }
         Site2SiteVpnConnectionVO conn = new Site2SiteVpnConnectionVO(owner.getAccountId(), owner.getDomainId(), vpnGatewayId, customerGatewayId);
         conn.setState(State.Pending);
@@ -263,9 +260,14 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         }
         _accountMgr.checkAccess(caller, null, false, customerGateway);
         
+        return doDeleteCustomerGateway(customerGateway);
+    }
+
+    protected boolean doDeleteCustomerGateway(Site2SiteCustomerGateway gw) {
+        long id = gw.getId();
         List<Site2SiteVpnConnectionVO> vpnConnections = _vpnConnectionDao.listByCustomerGatewayId(id);
         if (vpnConnections != null && vpnConnections.size() != 0) {
-            throw new InvalidParameterValueException("Unable to delete VPN customer gateway " + id + " because there is still related VPN connections!");
+            throw new InvalidParameterValueException("Unable to delete VPN customer gateway with id " + id + " because there is still related VPN connections!");
         }
         _customerGatewayDao.remove(id);
         return true;
@@ -595,5 +597,15 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         }
         conns.addAll(_vpnConnectionDao.listByVpcId(vpcId));
         return conns;
+    }
+
+    @Override
+    public boolean deleteCustomerGatewayByAccount(long accountId) {
+        boolean result = true;;
+        List<Site2SiteCustomerGatewayVO> gws = _customerGatewayDao.listByAccountId(accountId);
+        for (Site2SiteCustomerGatewayVO gw : gws) {
+            result = result & doDeleteCustomerGateway(gw);
+        }
+        return result;
     }
 }
