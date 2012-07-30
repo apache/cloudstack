@@ -29,6 +29,7 @@ import com.cloud.api.response.Site2SiteCustomerGatewayResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.user.Account;
+import com.cloud.user.UserContext;
 
 @Implementation(description="Update site to site vpn customer gateway", responseObject=Site2SiteCustomerGatewayResponse.class)
 public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
@@ -46,9 +47,6 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="public ip address id of the customer gateway")
     private String gatewayIp;
 
-    @Parameter(name=ApiConstants.GUEST_IP, type=CommandType.STRING, required=true, description="guest ip of the customer gateway")
-    private String guestIp;
-
     @Parameter(name=ApiConstants.CIDR_LIST, type=CommandType.STRING, required=true, description="guest cidr of the customer gateway")
     private String guestCidrList;
 
@@ -64,6 +62,14 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.LIFETIME, type=CommandType.LONG, required=false, description="Lifetime of vpn connection to the customer gateway, in seconds")
     private Long lifetime;
 
+    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the gateway. Must be used with the domainId parameter.")
+    private String accountName;
+    
+    @IdentityMapper(entityTableName="domain")
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the gateway. " +
+    		"If used with the account parameter returns the gateway associated with the account for the specified domain.")
+    private Long domainId;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -82,10 +88,6 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
 
     public String getGuestCidrList() {
         return guestCidrList;
-    }
-
-    public String getGuestIp() {
-        return guestIp;
     }
 
     public String getGatewayIp() {
@@ -116,7 +118,11 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
 
 	@Override
 	public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+        Long accountId = finalyzeAccountId(accountName, domainId, null, true);
+        if (accountId == null) {
+            accountId = UserContext.current().getCaller().getId();
+        }
+        return accountId;
     }
 
 	@Override
