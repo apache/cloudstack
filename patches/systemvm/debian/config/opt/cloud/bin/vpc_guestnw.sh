@@ -115,7 +115,7 @@ desetup_usage() {
 create_guest_network() {
   logger -t cloud " $(basename $0): Create network on interface $dev,  gateway $gw, network $ip/$mask "
   # setup ip configuration
-  sudo ip addr add dev $dev $ip/$mask
+  sudo ip addr add dev $dev $ip/$mask brd +
   sudo ip link set $dev up
   sudo arping -c 3 -I $dev -A -U -s $ip $ip
   # setup rules to allow dhcp/dns request

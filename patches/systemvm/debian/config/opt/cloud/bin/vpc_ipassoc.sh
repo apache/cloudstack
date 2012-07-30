@@ -58,7 +58,7 @@ add_an_ip () {
   sudo ip link show $ethDev | grep "state DOWN" > /dev/null
   local old_state=$?
 
-  sudo ip addr add dev $ethDev $pubIp/$mask
+  sudo ip addr add dev $ethDev $pubIp/$mask brd +
   if [ $old_state -eq 0 ]
   then
     sudo ip link set $ethDev up
@@ -76,7 +76,7 @@ add_an_ip () {
 
 remove_an_ip () {
   logger -t cloud "$(basename $0):Removing ip $pubIp on interface $ethDev"
-  local existingIpMask=$(sudo ip addr show dev $ethDev | grep "inet " | awk '{print $2}')
+  local existingIpMask=$(sudo ip addr show dev $ethDev | grep -v "inet6" | grep "inet " | awk '{print $2}')
 
   sudo ip addr del dev $ethDev $pubIp/$mask
   # reapply IPs in this interface
@@ -86,7 +86,7 @@ remove_an_ip () {
     then
       continue
     fi
-    sudo ip addr add dev $ethDev $ipMask
+    sudo ip addr add dev $ethDev $ipMask brd +
   done
 
   remove_routing
@@ -148,14 +148,14 @@ fi
 
 if [ "$Aflag" == "1" ]
 then
-  add_an_ip  $publicIp  &&
+  add_an_ip
   unlock_exit $? $lock $locked
 fi
 
 
 if [ "$Dflag" == "1" ]
 then
-  remove_an_ip  $publicIp &&
+  remove_an_ip
   unlock_exit $? $lock $locked
 fi
 
