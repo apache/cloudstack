@@ -49,4 +49,6 @@ public interface AutoScaleVmGroup extends ControlledEntity {
 
     String getState();
 
+    String getUuid();
+
 }

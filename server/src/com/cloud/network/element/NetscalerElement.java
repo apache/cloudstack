@@ -99,7 +99,7 @@ import com.google.gson.Gson;
 
 @Local(value = NetworkElement.class)
 public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager, IpDeployer,
-StaticNatServiceProvider {
+        StaticNatServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(NetscalerElement.class);
 
@@ -150,7 +150,7 @@ StaticNatServiceProvider {
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException,
-    InsufficientNetworkCapacityException {
+            InsufficientNetworkCapacityException {
 
         if (!canHandle(guestConfig, Service.Lb)) {
             return false;
@@ -163,7 +163,7 @@ StaticNatServiceProvider {
         }
 
         if (isBasicZoneNetwok(guestConfig)) {
-            // in basic zone  there is nothing to be implemented/shutdown on the NetScaler appliance
+            // in basic zone there is nothing to be implemented/shutdown on the NetScaler appliance
             return true;
         }
 
@@ -176,7 +176,7 @@ StaticNatServiceProvider {
 
     @Override
     public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-    InsufficientNetworkCapacityException, ResourceUnavailableException {
+            InsufficientNetworkCapacityException, ResourceUnavailableException {
         return true;
     }
 
@@ -192,9 +192,9 @@ StaticNatServiceProvider {
         }
 
         if (isBasicZoneNetwok(guestConfig)) {
-            // in basic zone  there is nothing to be implemented/shutdown on the NetScaler appliance
+            // in basic zone there is nothing to be implemented/shutdown on the NetScaler appliance
             return true;
-       }
+        }
 
         try {
             return manageGuestNetworkWithExternalLoadBalancer(false, guestConfig);
@@ -523,7 +523,7 @@ StaticNatServiceProvider {
 
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
-    ResourceUnavailableException {
+            ResourceUnavailableException {
         // TODO reset the configuration on all of the netscaler devices in this physical network
         return true;
     }
@@ -616,8 +616,8 @@ StaticNatServiceProvider {
             List<LbDestination> destinations = rule.getDestinations();
 
             if ((destinations != null && !destinations.isEmpty()) || rule.isAutoScaleConfig()) {
-                LoadBalancerTO loadBalancer = new LoadBalancerTO(rule.getId(), srcIp, srcPort, protocol, algorithm, revoked, false, destinations, rule.getStickinessPolicies());
-                if(rule.isAutoScaleConfig()) {
+                LoadBalancerTO loadBalancer = new LoadBalancerTO(rule.getUuid(), srcIp, srcPort, protocol, algorithm, revoked, false, destinations, rule.getStickinessPolicies());
+                if (rule.isAutoScaleConfig()) {
                     loadBalancer.setAutoScaleVmGroup(rule.getAutoScaleVmGroup());
                 }
                 loadBalancersToApply.add(loadBalancer);

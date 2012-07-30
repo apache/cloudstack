@@ -106,6 +106,8 @@ import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
@@ -194,6 +196,10 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
     @Inject
     ResourceTagDao _resourceTagDao;
     @Inject
+    VMTemplateDao _templateDao;
+    @Inject
+    ServiceOfferingDao _offeringsDao;
+    @Inject
     CounterDao _counterDao;
     @Inject
     ConditionDao _conditionDao;
@@ -262,20 +268,24 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         String apiKey = user.getApiKey();
         String secretKey = user.getSecretKey();
         String csUrl = _configDao.getValue(Config.EndpointeUrl.key());
+        String zoneId = _dcDao.findById(autoScaleVmProfile.getZoneId()).getUuid();
+        String domainId = _domainDao.findById(autoScaleVmProfile.getDomainId()).getUuid();
+        String serviceOfferingId = _offeringsDao.findById(autoScaleVmProfile.getServiceOfferingId()).getUuid();
+        String templateId = _templateDao.findById(autoScaleVmProfile.getTemplateId()).getUuid();
 
-        if(apiKey == null) {
+        if (apiKey == null) {
             throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it", null);
         }
 
-        if(secretKey == null) {
+        if (secretKey == null) {
             throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it", null);
         }
 
-        if(csUrl == null || csUrl.contains("localhost")) {
+        if (csUrl == null || csUrl.contains("localhost")) {
             throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point", null);
         }
 
-        LbAutoScaleVmProfile lbAutoScaleVmProfile = new LbAutoScaleVmProfile(autoScaleVmProfile, apiKey, secretKey, csUrl);
+        LbAutoScaleVmProfile lbAutoScaleVmProfile = new LbAutoScaleVmProfile(autoScaleVmProfile, apiKey, secretKey, csUrl, zoneId, domainId, serviceOfferingId, templateId);
         return new LbAutoScaleVmGroup(vmGroup, autoScalePolicies, lbAutoScaleVmProfile);
     }
 
@@ -1547,7 +1557,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
 
     protected void removeLBRule(LoadBalancerVO rule) {
 
-        //remove the rule
+        // remove the rule
         _lbDao.remove(rule.getId());
 
         // if the rule is the last one for the ip address assigned to VPC, unassign it from the network
