@@ -980,7 +980,7 @@
 											ikepolicy: { label: 'IKE policy' },
 											esppolicy: { label: 'ESP policy' },
 											lifetime: { label: 'Lifetime (second)' },
-																				 
+										        state: {label: 'State' },										 
 											created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }										
 										}
 									],
