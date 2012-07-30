@@ -2553,6 +2553,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     throw new InvalidParameterValueException("Only Account specific Isolated network with sourceNat service disabled are allowed in security group enabled zone");
                 }
             }
+            
+            //don't allow eip/elb networks in Advance zone
+            if (ntwkOff.getElasticIp() || ntwkOff.getElasticLb()) {
+                throw new InvalidParameterValueException("Elastic IP and Elastic LB services are supported in zone of type " + NetworkType.Basic);
+            }
         }
 
         // VlanId can be specified only when network offering supports it
