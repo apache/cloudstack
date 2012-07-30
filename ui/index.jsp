@@ -1638,6 +1638,8 @@ under the License.
     <script type="text/javascript" src="scripts/ui-custom/projects.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/cloudStack.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/lbStickyPolicy.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/ui-custom/autoscaler.js?t=<%=now%>"></script>
+    <script type="text/javascript" src="scripts/autoscaler.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/zoneChart.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui-custom/dashboard.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/installWizard.js?t=<%=now%>"></script>

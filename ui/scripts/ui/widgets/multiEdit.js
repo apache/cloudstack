@@ -129,13 +129,20 @@
               $td.attr('title', data[fieldName]);
             }
           } else if (field.select) {
-            $td.append($('<span>').html(_s(
-              // Get matching option text
-              $multi.find('select').filter(function() {
-                return $(this).attr('name') == fieldName;
-              }).find('option').filter(function() {
-                return $(this).val() == data[fieldName];
-              }).html())));
+            // Get matching option text
+            var $matchingSelect = $multi.find('select')
+                  .filter(function() {
+                    return $(this).attr('name') == fieldName;
+                  });
+            var $matchingOption = $matchingSelect.find('option')
+                  .filter(function() {
+                    return $(this).val() == data[fieldName];
+                  });
+
+            var matchingValue = $matchingOption.size() ?
+                  $matchingOption.html() : data[fieldName];
+            
+            $td.append($('<span>').html(_s(matchingValue)));
           } else if (field.addButton && !options.noSelect) {
             if (options.multipleAdd) {
               $addButton.click(function() {
@@ -180,9 +187,14 @@
               if ($td.hasClass('disabled')) return false;
               
               var $button = $(this);
+              var context = $.extend(true, {},
+                                     options.context ?
+                                     options.context : cloudStack.context, {
+                                       multiRules: [data]
+                                     });
 
               field.custom.action({
-                context: options.context ? options.context : cloudStack.context,
+                context: context,
                 data: $td.data('multi-custom-data'),
                 $item: $td,
                 response: {
@@ -814,6 +826,7 @@
             var formData = getMultiData($multi);
             
             field.custom.action({
+              formData: formData,
               context: context,
               data: $td.data('multi-custom-data'),
               response: {
@@ -1024,7 +1037,7 @@
     }
 
     // Get existing data
-    getData();
+    setTimeout(function() { getData(); });
 
     var fullRefreshEvent = function(event) {
       if ($multi.is(':visible')) {
