@@ -1038,7 +1038,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             try {
                 Pair<Boolean, String> sshResult = SshHelper.sshExecute(routerIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, 
-                        "/opt/cloud/bin/vpc_portforwarding " + args);
+                        "/opt/cloud/bin/vpc_portforwarding.sh " + args);
     
                 if (!sshResult.first()) {
                     results[i++] = "Failed";
