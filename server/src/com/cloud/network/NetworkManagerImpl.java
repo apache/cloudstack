@@ -6186,6 +6186,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             success = false;
         }
 
+        //release all static nats for the network
+        if (!_rulesMgr.applyStaticNatForNetwork(networkId, false, caller, true)) {
+            s_logger.warn("Failed to disable static nats as part of shutdownNetworkRules for network id " + networkId);
+            success = false;
+        }
 
         // Get all ip addresses, mark as releasing and release them on the backend
         Network network = getNetwork(networkId);
