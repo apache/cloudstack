@@ -218,6 +218,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -945,6 +946,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         zoneResponse.setId(dataCenter.getId());
         zoneResponse.setName(dataCenter.getName());
         zoneResponse.setSecurityGroupsEnabled(ApiDBUtils.isSecurityGroupEnabledInZone(dataCenter.getId()));
+        zoneResponse.setLocalStorageEnabled(dataCenter.isLocalStorageEnabled());
 
         if ((dataCenter.getDescription() != null) && !dataCenter.getDescription().equalsIgnoreCase("null")) {
             zoneResponse.setDescription(dataCenter.getDescription());
@@ -3296,6 +3298,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             tagResponses.add(tagResponse);
         }
         userVmResponse.setTags(tagResponses);
+
+        UserVmDetailVO userVmDetail = ApiDBUtils.findPublicKeyByVmId(userVmData.getId());
+        if (userVmDetail != null && userVmDetail.getValue() != null) {
+            String keyPairName = ApiDBUtils.getKeyPairName(userVmDetail.getValue());
+            userVmResponse.setKeyPairName(keyPairName);
+        }
 
         return userVmResponse;
     }

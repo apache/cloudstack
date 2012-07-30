@@ -23,6 +23,7 @@ import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ZoneResponse;
 import com.cloud.dc.DataCenter;
 import com.cloud.user.Account;
@@ -77,7 +78,10 @@ public class UpdateZoneCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.DNS_SEARCH_ORDER, type=CommandType.LIST, collectionType = CommandType.STRING, description="the dns search order list")
     private List<String> dnsSearchOrder;   
-    
+
+    @Parameter(name=ApiConstants.LOCAL_STORAGE_EANBLED, type=CommandType.BOOLEAN, description="true if local storage offering enabled, false otherwise")
+    private Boolean localStorageEnabled;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -133,6 +137,14 @@ public class UpdateZoneCmd extends BaseCmd {
     public List<String> getDnsSearchOrder() {
         return dnsSearchOrder;
     }   
+
+    public Boolean getLocalStorageEnabled() {
+        if (localStorageEnabled == null) {
+            return false;
+        }
+        return localStorageEnabled;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

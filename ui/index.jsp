@@ -2430,6 +2430,7 @@ dictionary = {
 'label.load.balancer': '<fmt:message key="label.load.balancer" />',
 'label.loading': '<fmt:message key="label.loading" />',
 'label.local': '<fmt:message key="label.local" />',
+'label.local.storage.enabled': '<fmt:message key="label.local.storage.enabled" />',
 'label.login': '<fmt:message key="label.login" />',
 'label.logout': '<fmt:message key="label.logout" />',
 'label.lun': '<fmt:message key="label.lun" />',

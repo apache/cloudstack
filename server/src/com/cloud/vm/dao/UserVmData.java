@@ -66,6 +66,7 @@ public class UserVmData {
     private Long publicIpId;
     private String publicIp;
     private String instanceName;
+    private String sshPublicKey;
     
     private boolean initialized;
     
@@ -705,6 +706,14 @@ public class UserVmData {
 
     public void setInstanceName(String instanceName) {
         this.instanceName = instanceName;
+    }
+    
+    public String getSshPublicKey() {
+        return sshPublicKey;
+    }
+
+    public void setSshPublicKey(String sshPublicKey) {
+        this.sshPublicKey = sshPublicKey;
     }
 }
 

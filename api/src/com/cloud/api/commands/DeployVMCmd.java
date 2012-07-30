@@ -372,10 +372,20 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
                 throw new InvalidParameterValueException("Unable to use template " + templateId, null);
             }
 
+            DiskOffering diskOffering = null;
             if (diskOfferingId != null) {
-                DiskOffering diskOffering = _configService.getDiskOffering(diskOfferingId);
+                diskOffering = _configService.getDiskOffering(diskOfferingId);
                 if (diskOffering == null) {
                     throw new InvalidParameterValueException("Unable to find disk offering by id", null);
+                }
+            }
+
+            if (!zone.isLocalStorageEnabled()) {
+                if (serviceOffering.getUseLocalStorage()) {
+                    throw new InvalidParameterValueException("Zone is not configured to use local storage but service offering " + serviceOffering.getName() + " uses it", null);
+                }
+                if (diskOffering != null && diskOffering.getUseLocalStorage()) {
+                    throw new InvalidParameterValueException("Zone is not configured to use local storage but disk offering " + diskOffering.getName() + " uses it", null);
                 }
             }
 

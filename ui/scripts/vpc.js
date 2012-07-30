@@ -902,16 +902,60 @@
  										fields: {
 											    zoneid: {
                                                                                                        label:'Zone',
- 													validation:{required:true}
+ 													validation:{required:true},
+ 													select: function(args) {                                     
+                                                                                                $.ajax({
+                                                                                                        url: createURL('listZones'),
+                                                                                                        data: {
+                                                                                                          available: true
+                                                                                                        },
+                                                                                                        success: function(json) {
+                                                                                                                var zones = json.listzonesresponse.zone;
+                                                                                                                args.response.success({
+                                                                                                                        data: $.map(zones, function(zone) {
+                                                                                                                                return {
+                                                                                                                                        id: zone.id,
+                                                                                                                                        description: zone.name
+                                                                                                                                };
+                                                                                                                        })
+                                                                                                                });
+                                                                                                        }
+                                                                                                });
+                                                                                        }
+
                                                                                                    },
   											    vpcid:{
 												      label:'VPC',	
-                                                                                                      validation:{ required:true}
+                                                                                                      validation:{ required:true},
+ 												      dependsOn: 'zoneid',
+                                                                                        select: function(args) {
+                                                                                                $.ajax({
+                                                                                                  url: createURL('listVPCs'),
+                                                                                                        data: {
+                                                                                                          zoneid: args.zoneid,
+                                                                                                          listAll: true
+                                                                                                        },
+                                                                                                        success: function(json) {                                    
+                                                                                                                var items = json.listvpcsresponse.vpc;
+                                                                                                                var data;
+                                                                                                                if(items != null && items.length > 0) {
+                                                                                                                  data = $.map(items, function(item) {               
+                                                                                                                          return {
+                                                                                                                                  id: item.id,
+                                                                                                                                        description: item.name
+                                                                                                                                }
+                                                                                                                        });                                          
+                                                                                                                }
+                                                                                                                args.response.success({ data: data });
+                                                                                                        }
+                                                                                                });
+                                                                                         }
+
 									       		     	}						
 											 }
                                                        			 },
                                                                action:function(args) {
-
+                                                                          // Code for passing the customer gateway ID and VPN id
                                                                          
                                                                    }
                                                  	 }
