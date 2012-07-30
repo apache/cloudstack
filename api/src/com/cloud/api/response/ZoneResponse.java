@@ -82,6 +82,9 @@ public class ZoneResponse extends BaseResponse {
     @SerializedName("capacity")  @Param(description="the capacity of the Zone", responseObject = CapacityResponse.class)
     private List<CapacityResponse> capacitites;
 
+    @SerializedName(ApiConstants.LOCAL_STORAGE_EANBLED) @Param(description="true if local storage offering enabled, false otherwise")
+    private boolean localStorageEnabled;
+
     public void setId(Long id) {
         this.id.setValue(id);
     }
@@ -161,4 +164,8 @@ public class ZoneResponse extends BaseResponse {
 	public void setDomainName(String domainName) {
 		this.domainName = domainName;
 	}
+
+    public void setLocalStorageEnabled(boolean localStorageEnabled) {
+        this.localStorageEnabled = localStorageEnabled;
+    }
 }

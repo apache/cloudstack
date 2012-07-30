@@ -69,6 +69,9 @@ public class CreateZoneCmd extends BaseCmd {
     @Parameter(name=ApiConstants.SECURITY_GROUP_EANBLED, type=CommandType.BOOLEAN, description="true if network is security group enabled, false otherwise")
     private Boolean securitygroupenabled;
 
+    @Parameter(name=ApiConstants.LOCAL_STORAGE_EANBLED, type=CommandType.BOOLEAN, description="true if local storage offering enabled, false otherwise")
+    private Boolean localStorageEnabled;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -119,8 +122,14 @@ public class CreateZoneCmd extends BaseCmd {
         }
         return securitygroupenabled;
     }
-    
-    
+
+    public Boolean getLocalStorageEnabled() {
+        if (localStorageEnabled == null) {
+            return false;
+        }
+        return localStorageEnabled;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     @Override
