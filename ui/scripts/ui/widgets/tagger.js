@@ -1,13 +1,26 @@
 (function($, cloudStack) {
+  var isFormValid = function($form) {
+    var key = $form.find('input[name=key]').val();
+    var value = $form.find('input[name=value]').val();
+
+    if (!key || !value) {
+      cloudStack.dialog.notice({ message: 'Please specify a tag key and value' });
+      
+      return false;
+    }
+
+    return true;
+  };
+  
   var elems = {
     inputArea: function(args) {
       var $form = $('<form>').addClass('tag-input');
       var $keyField = $('<div>').addClass('field key');
       var $keyLabel = $('<label>').attr('for', 'key').html('Key:');
-      var $key = $('<input>').addClass('key required').attr('name', 'key');
+      var $key = $('<input>').addClass('key').attr('name', 'key');
       var $valueField = $('<div>').addClass('field value');
       var $valueLabel = $('<label>').attr('for', 'value').html('Value:');
-      var $value = $('<input>').addClass('value required').attr('name', 'value');
+      var $value = $('<input>').addClass('value').attr('name', 'value');
       var $submit = $('<input>').attr('type', 'submit').val('Add');
 
       $keyField.append($keyLabel, $key);
@@ -22,7 +35,7 @@
       $form.submit(
         args.onSubmit ?
           function() {
-            if (!$form.valid()) return false;
+            if (!isFormValid($form)) return false;
             
             args.onSubmit({
               data: cloudStack.serializeForm($form),
