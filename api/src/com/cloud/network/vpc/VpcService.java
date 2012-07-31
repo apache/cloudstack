@@ -23,13 +23,17 @@ import java.util.Set;
 import com.cloud.api.commands.ListPrivateGatewaysCmd;
 import com.cloud.api.commands.ListStaticRoutesCmd;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.user.Account;
+import com.cloud.user.User;
 
 public interface VpcService {
     
@@ -221,4 +225,19 @@ public interface VpcService {
      * @return
      */
     VpcGateway getVpcGateway(long id);
+    
+    /**
+     * @param ipId
+     * @param vpcId
+     * @return
+     * @throws ResourceAllocationException
+     * @throws ResourceUnavailableException
+     * @throws InsufficientAddressCapacityException
+     * @throws ConcurrentOperationException
+     */
+    IpAddress associateIPToVpc(long ipId, long vpcId) throws ResourceAllocationException, ResourceUnavailableException,
+        InsufficientAddressCapacityException, ConcurrentOperationException;
+    
+    public Network updateVpcGuestNetwork(long networkId, String name, String displayText, Account callerAccount, 
+            User callerUser, String domainSuffix, Long ntwkOffId, Boolean changeCidr);
 }

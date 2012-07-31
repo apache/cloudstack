@@ -47,7 +47,6 @@ import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
@@ -274,8 +273,6 @@ public interface NetworkManager extends NetworkService {
 
     public boolean checkIpForService(IPAddressVO ip, Service service, Long networkId);
 
-    void checkVirtualNetworkCidrOverlap(Long zoneId, String cidr);
-
     void checkCapabilityForProvider(Set<Provider> providers, Service service,
             Capability cap, String capValue);
 
@@ -317,16 +314,6 @@ public interface NetworkManager extends NetworkService {
      * @throws InsufficientAddressCapacityException 
      */
     PublicIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) throws InsufficientAddressCapacityException, ConcurrentOperationException;
-
-
-    /**
-     * @param owner
-     * @param vpc
-     * @return
-     * @throws ConcurrentOperationException 
-     * @throws InsufficientAddressCapacityException 
-     */
-    PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException;
 
 
     /**
@@ -410,13 +397,6 @@ public interface NetworkManager extends NetworkService {
 
 
     /**
-     * @param ipId
-     * @param networkId TODO
-     */
-    void unassignIPFromVpcNetwork(long ipId, long networkId);
-
-
-    /**
      * @param vm
      * @param networkId
      * @param broadcastUri TODO
@@ -479,9 +459,21 @@ public interface NetworkManager extends NetworkService {
 
 
     /**
-     * @param ip
-     * @return
+     * @param addr
      */
-    boolean ipUsedInVpc(IpAddress ip);
+    void markPublicIpAsAllocated(IPAddressVO addr);
+
+
+    /**
+     * @param owner
+     * @param guestNtwkId
+     * @param vpcId
+     * @param dcId
+     * @param isSourceNat
+     * @return
+     * @throws ConcurrentOperationException
+     * @throws InsufficientAddressCapacityException
+     */
+    PublicIp assignDedicateIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId, boolean isSourceNat) throws ConcurrentOperationException, InsufficientAddressCapacityException;
 
 }

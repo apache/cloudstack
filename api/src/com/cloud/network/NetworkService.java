@@ -138,16 +138,15 @@ public interface NetworkService {
     boolean isVmPartOfNetwork(long vmId, long ntwkId);
 
     /**
-     * @param entityId
      * @param networkId
-     * @param vpcId
+     * @param entityId
      * @return
      * @throws ConcurrentOperationException 
      * @throws ResourceUnavailableException 
      * @throws ResourceAllocationException 
      * @throws InsufficientAddressCapacityException 
      */
-    IpAddress associateIP(long ipId, Long networkId, Long vpcId) throws InsufficientAddressCapacityException,
+    IpAddress associateIPToNetwork(long ipId, long networkId) throws InsufficientAddressCapacityException,
         ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException;
 
     /**

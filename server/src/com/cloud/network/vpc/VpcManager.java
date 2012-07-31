@@ -18,9 +18,16 @@ package com.cloud.network.vpc;
 
 import java.util.List;
 
+import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.offering.NetworkOffering;
+import com.cloud.network.IpAddress;
+import com.cloud.network.Network;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 
@@ -28,7 +35,7 @@ import com.cloud.vm.DomainRouterVO;
 public interface VpcManager extends VpcService{
 
     /**
-     * @param guestNtwkOff
+     * @param ntwkOffId
      * @param cidr
      * @param networkDomain
      * @param networkOwner
@@ -37,7 +44,7 @@ public interface VpcManager extends VpcService{
      * @param gateway TODO
      * @return
      */
-    void validateGuestNtkwForVpc(NetworkOffering guestNtwkOff, String cidr, String networkDomain, Account networkOwner, 
+    void validateNtkwOffForVpc(long ntwkOffId, String cidr, String networkDomain, Account networkOwner, 
             Vpc vpc, Long networkId, String gateway);
 
     
@@ -68,5 +75,56 @@ public interface VpcManager extends VpcService{
      * @return
      */
     VpcGateway getPrivateGatewayForVpc(long vpcId);
+
+
+    /**
+     * @param ip
+     * @return
+     */
+    boolean ipUsedInVpc(IpAddress ip);
+
+
+    /**
+     * @param ipId
+     * @param networkId
+     */
+    void unassignIPFromVpcNetwork(long ipId, long networkId);
+
+
+    /**
+     * @param ntwkOffId
+     * @param name
+     * @param displayText
+     * @param gateway
+     * @param cidr
+     * @param vlanId
+     * @param networkDomain
+     * @param owner
+     * @param domainId
+     * @param pNtwk
+     * @param zoneId
+     * @param aclType
+     * @param subdomainAccess
+     * @param vpcId
+     * @param caller
+     * @return
+     * @throws ConcurrentOperationException
+     * @throws InsufficientCapacityException
+     * @throws ResourceAllocationException
+     */
+    Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, 
+            String vlanId, String networkDomain, Account owner, Long domainId, PhysicalNetwork pNtwk, long zoneId,
+            ACLType aclType, Boolean subdomainAccess, long vpcId, Account caller) 
+                    throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
+
+
+    /**
+     * @param owner
+     * @param vpc
+     * @return
+     * @throws InsufficientAddressCapacityException
+     * @throws ConcurrentOperationException
+     */
+    PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException;
 
 }

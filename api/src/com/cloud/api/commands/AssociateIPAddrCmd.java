@@ -238,9 +238,13 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
         UserContext.current().setEventDetails("Ip Id: " + getEntityId());
 
         IpAddress result = null;
-        
-        result = _networkService.associateIP(getEntityId(), getNetworkId(), getVpcId());        
 
+        if (getVpcId() != null) {
+            result = _vpcService.associateIPToVpc(getEntityId(), getVpcId());
+        } else if (getNetworkId() != null) {
+            result = _networkService.associateIPToNetwork(getEntityId(), getNetworkId()); 
+        }
+        
         if (result != null) {
             IPAddressResponse ipResponse = _responseGenerator.createIPAddressResponse(result);
             ipResponse.setResponseName(getCommandName());

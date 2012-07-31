@@ -83,6 +83,7 @@ import com.cloud.network.rules.LbStickinessMethod.LbStickinessMethodParam;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.rules.StickinessPolicy;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag.TaggedResourceType;
@@ -165,6 +166,8 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
     NetworkServiceMapDao _ntwkSrvcDao;
     @Inject
     ResourceTagDao _resourceTagDao;
+    @Inject
+    VpcManager _vpcMgr;
 
     private String getLBStickinessCapability(long networkid) {
         Map<Service, Map<Capability, String>> serviceCapabilitiesMap = _networkMgr.getNetworkCapabilities(networkid);
@@ -780,8 +783,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 // release ip address if ipassoc was perfored
                 if (performedIpAssoc) {
                     ipVO = _ipAddressDao.findById(ipVO.getId());
-                    _networkMgr.unassignIPFromVpcNetwork(ipVO.getId(), lb.getNetworkId());
-                    
+                    _vpcMgr.unassignIPFromVpcNetwork(ipVO.getId(), lb.getNetworkId());
                 }
             }
         }
@@ -1351,6 +1353,6 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         
         //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
         IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
-        _networkMgr.unassignIPFromVpcNetwork(ip.getId(), rule.getNetworkId());
+        _vpcMgr.unassignIPFromVpcNetwork(ip.getId(), rule.getNetworkId());
     }
 }

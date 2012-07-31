@@ -116,14 +116,26 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws InsufficientCapacityException, ConcurrentOperationException{
         User callerUser = _accountService.getActiveUser(UserContext.current().getCallerUserId());
-        Account callerAccount = _accountService.getActiveAccountById(callerUser.getAccountId());      
-        Network result = _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount,
-                callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr());
+        Account callerAccount = _accountService.getActiveAccountById(callerUser.getAccountId());
+        Network network = _networkService.getNetwork(id);
+        if (network == null) {
+            throw new InvalidParameterValueException("Couldn't find network by id", null);
+        }
+        
+        Network result = null;
+        if (network.getVpcId() != null) {
+            result = _vpcService.updateVpcGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount,
+                    callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr());
+        } else {
+            result = _networkService.updateGuestNetwork(getId(), getNetworkName(), getDisplayText(), callerAccount,
+                    callerUser, getNetworkDomain(), getNetworkOfferingId(), getChangeCidr());
+        }
+        
         if (result != null) {
             NetworkResponse response = _responseGenerator.createNetworkResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
-        }else {
+        } else {
             throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Failed to update network");
         }
     }

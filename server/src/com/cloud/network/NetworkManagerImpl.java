@@ -160,7 +160,6 @@ import com.cloud.network.rules.StaticNatRuleImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.PrivateIpVO;
-import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.Dao.PrivateIpDao;
 import com.cloud.network.vpn.RemoteAccessVpnService;
@@ -472,7 +471,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @DB
-    protected void markPublicIpAsAllocated(IPAddressVO addr) {
+    @Override
+    public void markPublicIpAsAllocated(IPAddressVO addr) {
 
         assert (addr.getState() == IpAddress.State.Allocating || addr.getState() == IpAddress.State.Free) :
             "Unable to transition from state " + addr.getState() + " to " + IpAddress.State.Allocated;
@@ -503,25 +503,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         txn.commit();
     }
-    
-    
-    @Override
-    public PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException {
-        long dcId = vpc.getZoneId();
-        
-        IPAddressVO sourceNatIp = getExistingSourceNat(owner.getId(), null, vpc.getId());
-        
-        PublicIp ipToReturn = null;
-        
-        if (sourceNatIp != null) {
-            ipToReturn = new PublicIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()), 
-                    NetUtils.createSequenceBasedMacAddress(sourceNatIp.getMacAddress()));
-        } else {
-            ipToReturn = assignDedicateIpAddress(owner, null, vpc.getId(), dcId, true);
-        }
-        
-        return ipToReturn;
-    } 
+
     
     @Override
     public PublicIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) 
@@ -529,9 +511,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         assert (guestNetwork.getTrafficType() != null) : "You're asking for a source nat but your network " +
         		"can't participate in source nat.  What do you have to say for yourself?";
         long dcId = guestNetwork.getDataCenterId();
-        
-        IPAddressVO sourceNatIp = getExistingSourceNat(owner.getId(), guestNetwork.getId(), guestNetwork.getVpcId());
-                
+
+        IPAddressVO sourceNatIp = getExistingSourceNatInNetwork(owner.getId(), guestNetwork.getId());
+
         PublicIp ipToReturn = null;
         if (sourceNatIp != null) {
             ipToReturn = new PublicIp(sourceNatIp, _vlanDao.findById(sourceNatIp.getVlanId()), 
@@ -550,6 +532,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
 
     @DB
+    @Override
     public PublicIp assignDedicateIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId, boolean isSourceNat) 
             throws ConcurrentOperationException, InsufficientAddressCapacityException {
 
@@ -1118,15 +1101,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return ip;
     }
 
-    protected IPAddressVO getExistingSourceNat(long ownerId, Long networkId, Long vpcId) {
-        
-        List<IPAddressVO> addrs = null;
-        if (vpcId != null) {
-            addrs = listPublicIpsAssignedToVpc(ownerId, true, vpcId);
-        } else if (networkId != null) {
-            addrs = listPublicIpsAssignedToGuestNtwk(ownerId, networkId, true);
-        }
-        
+    
+    protected IPAddressVO getExistingSourceNatInNetwork(long ownerId, Long networkId) {
+
+        List<IPAddressVO> addrs = listPublicIpsAssignedToGuestNtwk(ownerId, networkId, true);
+
         IPAddressVO sourceNatIp = null;
         if (addrs.isEmpty()) {
             return null;
@@ -1140,7 +1119,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             }
 
             assert (sourceNatIp != null) : "How do we get a bunch of ip addresses but none of them are source nat? " +
-                    "account=" + ownerId + "; networkId=" + networkId + "; vpcId=" + vpcId;
+                    "account=" + ownerId + "; networkId=" + networkId;
         } 
         
         return sourceNatIp;
@@ -1203,7 +1182,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         boolean sharedSourceNat = offering.getSharedSourceNat();
         boolean isSourceNat = false;
         if (!sharedSourceNat) {
-            if (getExistingSourceNat(owner.getId(), networkId, null) == null) {
+            if (getExistingSourceNatInNetwork(owner.getId(), networkId) == null) {
                 if (network.getGuestType() == GuestType.Isolated && network.getVpcId() == null) {
                     isSourceNat = true;
                 }
@@ -1244,54 +1223,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 }
             }
         }
-    }
-    
-    
-    @DB
-    protected IpAddress associateIPToVpc(long ipId, long vpcId) throws ResourceAllocationException, ResourceUnavailableException, 
-    InsufficientAddressCapacityException, ConcurrentOperationException {
-        Account caller = UserContext.current().getCaller();
-        Account owner = null;
-
-        IpAddress ipToAssoc = getIp(ipId);
-        if (ipToAssoc != null) {
-            _accountMgr.checkAccess(caller, null, true, ipToAssoc);
-            owner = _accountMgr.getAccount(ipToAssoc.getAllocatedToAccountId());
-        } else {
-            s_logger.debug("Unable to find ip address by id: " + ipId);
-            return null;
-        }
-        
-        Vpc vpc = _vpcMgr.getVpc(vpcId);
-        if (vpc == null) {
-            throw new InvalidParameterValueException("Invalid VPC id " + vpcId);
-        }
-        
-        // check permissions
-        _accountMgr.checkAccess(caller, null, true, owner, vpc);
-                
-        boolean isSourceNat = false;
-        if (getExistingSourceNat(owner.getId(), null, vpcId) == null) {
-            isSourceNat = true;
-        }
-        
-        s_logger.debug("Associating ip " + ipToAssoc + " to vpc " + vpc);
-        
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
-        IPAddressVO ip = _ipAddressDao.findById(ipId);
-        //update ip address with networkId
-        ip.setVpcId(vpcId);
-        ip.setSourceNat(isSourceNat);
-        _ipAddressDao.update(ipId, ip);
-        
-        //mark ip as allocated
-        markPublicIpAsAllocated(ip);
-        txn.commit();
-                
-        s_logger.debug("Successfully assigned ip " + ipToAssoc + " to vpc " + vpc);
-
-        return _ipAddressDao.findById(ipId);
     }
     
 
@@ -1658,19 +1589,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         return _ipAddressDao.search(sc, null);
     }
-    
-    protected List<IPAddressVO> listPublicIpsAssignedToVpc(long accountId, Boolean sourceNat, long vpcId) {
-        SearchCriteria<IPAddressVO> sc = IpAddressSearch.create();
-        sc.setParameters("accountId", accountId);
-        sc.setParameters("vpcId", vpcId);
 
-        if (sourceNat != null) {
-            sc.addAnd("sourceNat", SearchCriteria.Op.EQ, sourceNat);
-        }
-        sc.setJoinParameters("virtualNetworkVlanSB", "vlanType", VlanType.VirtualNetwork);
-
-        return _ipAddressDao.search(sc, null);
-    }
 
     @Override
     public List<NetworkVO> setupNetwork(Account owner, NetworkOfferingVO offering, DeploymentPlan plan, String name, 
@@ -2082,24 +2001,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 && !sharedSourceNat) {
             
             List<IPAddressVO> ips = null;
-            Vpc vpc = null;
             if (network.getVpcId() != null) {
-                vpc = _vpcMgr.getVpc(network.getVpcId());
-                ips = _ipAddressDao.listByAssociatedVpc(vpc.getId(), true);
+                ips = _ipAddressDao.listByAssociatedVpc(network.getVpcId(), true);
+                if (ips.isEmpty()) {
+                    throw new CloudRuntimeException("Vpc is not implemented; there is no source nat ip");
+                }
             } else {
                 ips = _ipAddressDao.listByAssociatedNetwork(network.getId(), true);
             }
-            
 
             if (ips.isEmpty()) {
-                String target = vpc != null ? vpc.toString() : network.toString();
-                s_logger.debug("Creating a source nat ip for " + target);
+                s_logger.debug("Creating a source nat ip for network " + network);
                 Account owner = _accountMgr.getAccount(network.getAccountId());
-                if (vpc != null) {
-                    assignSourceNatIpAddressToVpc(owner, vpc);
-                } else {
-                    assignSourceNatIpAddressToGuestNetwork(owner, network);
-                }
+                assignSourceNatIpAddressToGuestNetwork(owner, network);
             }
         }
 
@@ -2537,50 +2451,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             _nicDao.expunge(nic.getId());
         }
     }
-    
-    
-    @Override
-    public void checkVirtualNetworkCidrOverlap(Long zoneId, String cidr) {
-        if (zoneId == null) {
-            return;
-        }
-        if (cidr == null) {
-            return;
-        }
-        List<NetworkVO> networks = _networksDao.listByZone((long) zoneId);
-        Map<Long, String> networkToCidr = new HashMap<Long, String>();
-        for (NetworkVO network : networks) {
-            if (network.getGuestType() != GuestType.Isolated) {
-                continue;
-            }
-            if (network.getCidr() != null) {
-                networkToCidr.put(network.getId(), network.getCidr());
-            }
-        }
-        if (networkToCidr == null || networkToCidr.isEmpty()) {
-            return;
-        }
-
-        String currCidrAddress = getCidrAddress(cidr);
-        int currCidrSize = getCidrSize(cidr);
-
-        for (long networkId : networkToCidr.keySet()) {
-            String ntwkCidr = networkToCidr.get(networkId);
-            String ntwkCidrAddress = getCidrAddress(ntwkCidr);
-            int ntwkCidrSize = getCidrSize(ntwkCidr);
-
-            long cidrSizeToUse = currCidrSize < ntwkCidrSize ? currCidrSize : ntwkCidrSize;
-
-            String ntwkCidrSubnet = NetUtils.getCidrSubNet(ntwkCidrAddress, cidrSizeToUse);
-            String cidrSubnet = NetUtils.getCidrSubNet(currCidrAddress, cidrSizeToUse);
-
-            if (cidrSubnet.equals(ntwkCidrSubnet)) {
-            	InvalidParameterValueException ex = new InvalidParameterValueException("Warning: The specified existing network has conflict CIDR subnets with new network!");
-            	ex.addProxyObject("networks", networkId, "networkId");
-            	throw ex;
-            }
-        }
-    }
 
     @Override
     @DB
@@ -2645,17 +2515,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         	PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation since specified Zone is currently disabled");
         	ex.addProxyObject(zone, zoneId, "zoneId");
             throw ex;        	
-        }
-        
-        //validate vpc
-        if (vpcId != null) {
-            Vpc vpc = _vpcMgr.getActiveVpc(vpcId);
-            if (vpc == null) {
-                InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find Enabled VPC ");
-                ex.addProxyObject("vpc", vpcId, "VPC");
-                throw ex;
-            }
-            _accountMgr.checkAccess(caller, null, false, vpc);
         }
 
         // Only domain and account ACL types are supported in Acton.
@@ -2835,8 +2694,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             if (!_configMgr.isOfferingForVpc(ntwkOff)){
                 throw new InvalidParameterValueException("Network offering can't be used for VPC networks");
             }
-            network = createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, 
-                    networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId);
+            network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, 
+                    networkDomain, owner, sharedDomainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId, caller);
         } else {
             if (_configMgr.isOfferingForVpc(ntwkOff)){
                 throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
@@ -2854,30 +2713,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         txn.commit();
 
         return network;
-    }
-    
-    @DB
-    protected Network createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, 
-            String cidr, String vlanId, String networkDomain, Account owner, Long domainId,
-            PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId) 
-                    throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
-        
-        Vpc vpc = _vpcMgr.getActiveVpc(vpcId);
-        if (networkDomain == null) {
-            networkDomain = vpc.getNetworkDomain();
-        }
-        
-        if (vpc.getZoneId() != zoneId) {
-            throw new InvalidParameterValueException("New network doesn't belong to vpc zone", null);
-        }
-        
-        //1) Validate if network can be created for VPC
-        _vpcMgr.validateGuestNtkwForVpc(_configMgr.getNetworkOffering(ntwkOffId), cidr, networkDomain, owner, vpc, null, gateway);
-        //2) Create network
-        Network guestNetwork = createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, 
-                networkDomain, owner, domainId, pNtwk, zoneId, aclType, subdomainAccess, vpcId);
-        
-        return guestNetwork;
     }
 
     @Override
@@ -4730,20 +4565,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 String errMsg = forVpcNew ? "a vpc offering " : "not a vpc offering";
                 throw new InvalidParameterValueException("Can't update as the new offering is " + errMsg);
             }
-            
-            //can't update from vpc to non-vpc network offering
-            boolean forVpcNew = _configMgr.isOfferingForVpc(networkOffering);
-            boolean vorVpcOriginal = _configMgr.isOfferingForVpc(_configMgr.getNetworkOffering(oldNetworkOfferingId));
-            if (forVpcNew != vorVpcOriginal) {
-                String errMsg = forVpcNew ? "a vpc offering " : "not a vpc offering";
-                throw new InvalidParameterValueException("Can't update as the new offering is " + errMsg);
-            }
-
-            //perform below validation if the network is vpc network
-            if (network.getVpcId() != null) {
-                Vpc vpc = _vpcMgr.getVpc(network.getVpcId());
-                _vpcMgr.validateGuestNtkwForVpc(networkOffering, null, null, null,vpc, networkId, null);
-            }
 
             if (networkOfferingId != oldNetworkOfferingId) {
                 if (networkOfferingIsConfiguredForExternalNetworking(networkOfferingId) != networkOfferingIsConfiguredForExternalNetworking(oldNetworkOfferingId)
@@ -6117,7 +5938,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 IPAddressVO ip = markIpAsUnavailable(ipToRelease.getId());
                 assert (ip != null) : "Unable to mark the ip address id=" + ipToRelease.getId() + " as unavailable.";
             } else {
-                unassignIPFromVpcNetwork(ipToRelease.getId(), network.getId());
+                _vpcMgr.unassignIPFromVpcNetwork(ipToRelease.getId(), network.getId());
             }
         }
 
@@ -7113,7 +6934,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 // allocate ip
                 ip = allocateIP(owner, true, guestNetwork.getDataCenterId());
                 // apply ip associations
-                ip = associateIP(ip.getId(), networkId, null);
+                ip = associateIPToNetwork(ip.getId(), networkId);
             } catch (ResourceAllocationException ex) {
                 throw new CloudRuntimeException("Failed to allocate system ip due to ", ex);
             } catch (ConcurrentOperationException ex) {
@@ -7288,69 +7109,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "associating Ip", async = true)
-    public IpAddress associateIP(long ipId, Long networkId, Long vpcId) throws InsufficientAddressCapacityException,
-        ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException {
-        if (vpcId != null) {
-            return associateIPToVpc(ipId, vpcId);
-        }
-        
-        if (networkId != null) {
-            Network network = _networksDao.findById(networkId);
-            if (network == null) {
-                throw new InvalidParameterValueException("Invalid network id is given");
-            }
-            
-            if (network.getVpcId() != null) {
-                throw new InvalidParameterValueException("Can't assign ip to the network directly when network belongs" +
-                		" to VPC.Specify vpcId to associate ip address to VPC");
-            }
-            return associateIPToGuestNetwork(ipId, networkId, true);
-        }
-        
-        return null;
-    }
+    public IpAddress associateIPToNetwork(long ipId, long networkId) throws InsufficientAddressCapacityException,
+    ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException {
 
+        Network network = _networksDao.findById(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Invalid network id is given");
+        }
+
+        if (network.getVpcId() != null) {
+            throw new InvalidParameterValueException("Can't assign ip to the network directly when network belongs" +
+                    " to VPC.Specify vpcId to associate ip address to VPC");
+        }
+        return associateIPToGuestNetwork(ipId, networkId, true);
+        
+    }
     
-    @Override
-    public void unassignIPFromVpcNetwork(long ipId, long networkId) {
-        IPAddressVO ip = _ipAddressDao.findById(ipId);
-
-        if (ipUsedInVpc(ip)) {
-            return;
-        }
-        
-        if (ip == null || ip.getVpcId() == null) {
-            return;
-        }
-        
-        s_logger.debug("Releasing VPC ip address " + ip + " from vpc network id=" + networkId);
-
-        long  vpcId = ip.getVpcId();
-        boolean success = false;
-        try {
-            //unassign ip from the VPC router
-            success = applyIpAssociations(getNetwork(networkId), true);
-        } catch (ResourceUnavailableException ex) {
-            throw new CloudRuntimeException("Failed to apply ip associations for network id=" + networkId + 
-                    " as a part of unassigning ip " + ipId + " from vpc", ex);
-        }
-
-        if (success) {
-            ip.setAssociatedWithNetworkId(null);
-            _ipAddressDao.update(ipId, ip);
-            s_logger.debug("IP address " + ip + " is no longer associated with the network inside vpc id=" + vpcId);
-        } else {
-            throw new CloudRuntimeException("Failed to apply ip associations for network id=" + networkId + 
-                    " as a part of unassigning ip " + ipId + " from vpc");
-        }
-        s_logger.debug("Successfully released VPC ip address " + ip + " back to VPC pool ");
-    }
-
-    @Override
-    public boolean ipUsedInVpc(IpAddress ip) {
-        return (ip != null && ip.getVpcId() != null && 
-                (ip.isOneToOneNat() || !_firewallDao.listByIp(ip.getId()).isEmpty()));
-    }
 
     @Override @DB
     public Network createPrivateNetwork(String networkName, String displayText, long physicalNetworkId, 

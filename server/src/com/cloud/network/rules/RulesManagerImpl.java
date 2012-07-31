@@ -50,6 +50,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag.TaggedResourceType;
@@ -114,6 +115,8 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     NicDao _nicDao;
     @Inject
     ResourceTagDao _resourceTagDao;
+    @Inject
+    VpcManager _vpcMgr;
 
     @Override
     public void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller) {
@@ -289,7 +292,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             if (performedIpAssoc) {
                 //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
                 IpAddress ip = _ipAddressDao.findById(ipAddress.getId());
-                _networkMgr.unassignIPFromVpcNetwork(ip.getId(), networkId);  
+                _vpcMgr.unassignIPFromVpcNetwork(ip.getId(), networkId);  
             }
         }
     }
@@ -468,7 +471,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 if (performedIpAssoc) {
                     //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
                     IpAddress ip = _ipAddressDao.findById(ipAddress.getId());
-                    _networkMgr.unassignIPFromVpcNetwork(ip.getId(), networkId);
+                    _vpcMgr.unassignIPFromVpcNetwork(ip.getId(), networkId);
                 }
             }
         }
@@ -1208,7 +1211,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
                 ipAddress.setSystem(false);
             }
             _ipAddressDao.update(ipAddress.getId(), ipAddress);
-            _networkMgr.unassignIPFromVpcNetwork(ipAddress.getId(), networkId);
+            _vpcMgr.unassignIPFromVpcNetwork(ipAddress.getId(), networkId);
 
             if (isIpSystem && releaseIpIfElastic && !_networkMgr.handleSystemIpRelease(ipAddress)) {
                 s_logger.warn("Failed to release system ip address " + ipAddress);
@@ -1398,6 +1401,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         
         //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
         IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
-        _networkMgr.unassignIPFromVpcNetwork(ip.getId(), rule.getNetworkId());   
+        _vpcMgr.unassignIPFromVpcNetwork(ip.getId(), rule.getNetworkId());   
     }
 }
