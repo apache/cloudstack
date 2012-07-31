@@ -85,6 +85,7 @@
 									diskOfferingId: null, //???
 									snmpCommunity: autoscaleVmProfile.snmpcommunity,
 									snmpPort: autoscaleVmProfile.snmpport,
+									username: autoscaleVmProfile.autoscaleuserid
 									//isAdvanced: false // Set this to true if any advanced field data is present
 								};
 										
