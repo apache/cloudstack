@@ -996,7 +996,7 @@ public class ManagementServerImpl implements ManagementServer {
         SearchBuilder<HostTagVO> hostTagSearch = null;
         if (haHosts != null && haTag != null && !haTag.isEmpty()) {
             hostTagSearch = _hostTagsDao.createSearchBuilder();
-            if ((Boolean)haHosts) {
+            if ((Boolean) haHosts) {
                 hostTagSearch.and().op("tag", hostTagSearch.entity().getTag(), SearchCriteria.Op.EQ);
             } else {
                 hostTagSearch.and().op("tag", hostTagSearch.entity().getTag(), SearchCriteria.Op.NEQ);
@@ -1004,7 +1004,7 @@ public class ManagementServerImpl implements ManagementServer {
             }
 
             hostTagSearch.cp();
-            sb.join("hostTagSearch", hostTagSearch, sb.entity().getId(), hostTagSearch.entity().getHostId(), JoinBuilder.JoinType.LEFTOUTER); 
+            sb.join("hostTagSearch", hostTagSearch, sb.entity().getId(), hostTagSearch.entity().getHostId(), JoinBuilder.JoinType.LEFTOUTER);
         }
 
         SearchCriteria<HostVO> sc = sb.create();
@@ -1285,7 +1285,7 @@ public class ManagementServerImpl implements ManagementServer {
         boolean showDomr = ((templateFilter != TemplateFilter.selfexecutable) && (templateFilter != TemplateFilter.featured));
         HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
 
-        return listTemplates(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null, 
+        return listTemplates(id, cmd.getTemplateName(), cmd.getKeyword(), templateFilter, false, null,
                 cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), hypervisorType, showDomr,
                 cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria, tags);
     }
@@ -1329,11 +1329,11 @@ public class ManagementServerImpl implements ManagementServer {
         Set<Pair<Long, Long>> templateZonePairSet = new HashSet<Pair<Long, Long>>();
         if (_swiftMgr.isSwiftEnabled()) {
             if (template == null) {
-                templateZonePairSet = _templateDao.searchSwiftTemplates(name, keyword, templateFilter, isIso, 
+                templateZonePairSet = _templateDao.searchSwiftTemplates(name, keyword, templateFilter, isIso,
                         hypers, bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
                         permittedAccounts, caller, tags);
                 Set<Pair<Long, Long>> templateZonePairSet2 = new HashSet<Pair<Long, Long>>();
-                templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, 
+                templateZonePairSet2 = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers,
                         bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
                         permittedAccounts, caller, listProjectResourcesCriteria, tags);
 
@@ -1353,7 +1353,7 @@ public class ManagementServerImpl implements ManagementServer {
             }
         } else {
             if (template == null) {
-                templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers, 
+                templateZonePairSet = _templateDao.searchTemplates(name, keyword, templateFilter, isIso, hypers,
                         bootable, domain, pageSize, startIndex, zoneId, hyperType, onlyReady, showDomr,
                         permittedAccounts, caller, listProjectResourcesCriteria, tags);
             } else {
@@ -1621,9 +1621,9 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (forVpc != null) {
             if (forVpc) {
-                sb.and("forVpc", sb.entity().getVpcId(), SearchCriteria.Op.NNULL); 
+                sb.and("forVpc", sb.entity().getVpcId(), SearchCriteria.Op.NNULL);
             } else {
-                sb.and("forVpc", sb.entity().getVpcId(), SearchCriteria.Op.NULL); 
+                sb.and("forVpc", sb.entity().getVpcId(), SearchCriteria.Op.NULL);
             }
         }
 
@@ -1700,7 +1700,6 @@ public class ManagementServerImpl implements ManagementServer {
         Long vpcId = cmd.getVpcId();
         Map<String, String> tags = cmd.getTags();
 
-
         Boolean isAllocated = cmd.isAllocatedOnly();
         if (isAllocated == null) {
             isAllocated = Boolean.TRUE;
@@ -1715,15 +1714,15 @@ public class ManagementServerImpl implements ManagementServer {
         if (isAllocated) {
             Account caller = UserContext.current().getCaller();
 
-            Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = 
+            Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject =
                     new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
-            _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(), 
+            _accountMgr.buildACLSearchParameters(caller, cmd.getId(), cmd.getAccountName(), cmd.getProjectId(),
                     permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
             domainId = domainIdRecursiveListProject.first();
             isRecursive = domainIdRecursiveListProject.second();
             listProjectResourcesCriteria = domainIdRecursiveListProject.third();
             _accountMgr.buildACLSearchBuilder(sb, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
-        }      
+        }
 
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("address", sb.entity().getAddress(), SearchCriteria.Op.EQ);
@@ -1734,6 +1733,7 @@ public class ManagementServerImpl implements ManagementServer {
         sb.and("isSourceNat", sb.entity().isSourceNat(), SearchCriteria.Op.EQ);
         sb.and("isStaticNat", sb.entity().isOneToOneNat(), SearchCriteria.Op.EQ);
         sb.and("vpcId", sb.entity().getVpcId(), SearchCriteria.Op.EQ);
+        sb.and("isSystem", sb.entity().getSystem(), SearchCriteria.Op.EQ);
 
         if (forLoadBalancing != null && forLoadBalancing) {
             SearchBuilder<LoadBalancerVO> lbSearch = _loadbalancerDao.createSearchBuilder();
@@ -1747,7 +1747,7 @@ public class ManagementServerImpl implements ManagementServer {
 
         if (tags != null && !tags.isEmpty()) {
             SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
-            for (int count=0; count < tags.size(); count++) {
+            for (int count = 0; count < tags.size(); count++) {
                 tagSearch.or().op("key" + String.valueOf(count), tagSearch.entity().getKey(), SearchCriteria.Op.EQ);
                 tagSearch.and("value" + String.valueOf(count), tagSearch.entity().getValue(), SearchCriteria.Op.EQ);
                 tagSearch.cp();
@@ -1756,7 +1756,6 @@ public class ManagementServerImpl implements ManagementServer {
             sb.groupBy(sb.entity().getId());
             sb.join("tagSearch", tagSearch, sb.entity().getId(), tagSearch.entity().getResourceId(), JoinBuilder.JoinType.INNER);
         }
-
 
         SearchBuilder<VlanVO> vlanSearch = _vlanDao.createSearchBuilder();
         vlanSearch.and("vlanType", vlanSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
@@ -1791,6 +1790,9 @@ public class ManagementServerImpl implements ManagementServer {
                 count++;
             }
         }
+
+        // We should not display public IPs assigned to System VMs which is a case in Basic Zone with EIP/ELB
+        sc.setParameters("isSystem", false);
 
         if (zone != null) {
             sc.setParameters("dataCenterId", zone);
@@ -2220,9 +2222,9 @@ public class ManagementServerImpl implements ManagementServer {
         } else if (zoneId != null) {
             dcList.add(ApiDBUtils.findZoneById(zoneId));
         } else {
-            if (clusterId != null){
+            if (clusterId != null) {
                 zoneId = ApiDBUtils.findClusterById(clusterId).getDataCenterId();
-            }else{
+            } else {
                 zoneId = ApiDBUtils.findPodById(podId).getDataCenterId();
             }
             if (capacityType == null || capacityType == Capacity.CAPACITY_TYPE_STORAGE) {
@@ -2899,7 +2901,8 @@ public class ManagementServerImpl implements ManagementServer {
         if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk dont have any template dependence.
 
             VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
-            if (template != null) { // For ISO based volumes template = null and we allow extraction of all ISO based volumes
+            if (template != null) { // For ISO based volumes template = null and we allow extraction of all ISO based
+// volumes
                 boolean isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
                 if (!isExtractable && account != null && account.getType() != Account.ACCOUNT_TYPE_ADMIN) { // Global
 // admins are always allowed to extract
@@ -3487,14 +3490,13 @@ public class ManagementServerImpl implements ManagementServer {
         }
     }
 
-
     @Override
     public VirtualMachine upgradeSystemVM(UpgradeSystemVMCmd cmd) {
         Long systemVmId = cmd.getId();
         Long serviceOfferingId = cmd.getServiceOfferingId();
         Account caller = UserContext.current().getCaller();
 
-        VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(systemVmId, VirtualMachine.Type.ConsoleProxy, 
+        VMInstanceVO systemVm = _vmInstanceDao.findByIdTypes(systemVmId, VirtualMachine.Type.ConsoleProxy,
                 VirtualMachine.Type.SecondaryStorageVm);
         if (systemVm == null) {
             throw new InvalidParameterValueException("Unable to find SystemVm by id", null);
