@@ -4108,7 +4108,7 @@
                 action: function(args) {
                     var array1 = [];
                     array1.push("&gateway=" + args.context.vpnCustomerGateway[0].gateway);
-                    array1.push("&ipsecpsk=" + todb(args.context.vpnCustomerGateway[0].ipsecpsk));
+                    array1.push("&ipsecpsk=" + todb(args.data.ipsecpsk));
                     array1.push("&cidrlist=" + args.context.vpnCustomerGateway[0].cidrlist);
                     array1.push("&ikepolicy=" + args.context.vpnCustomerGateway[0].ikepolicy);
                     array1.push("&esppolicy=" + args.context.vpnCustomerGateway[0].esppolicy);
