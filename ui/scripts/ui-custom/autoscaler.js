@@ -66,7 +66,11 @@
         };
         $.each(topfields, setDefaultFields);
         $.each(bottomfields, setDefaultFields);
-
+				
+				$.extend(context, {
+				  originalAutoscaleData: args.data
+				})
+								
         // Create and append top fields
         // -- uses create form to generate fields
         topFieldForm = cloudStack.dialog.createForm({
