@@ -75,7 +75,7 @@
 
   <property name="deps.dir" location="${top.dir}/deps" />
   
-  <property name="kvm.jar" value="cloud-kvm.jar" />
+  <property name="kvm.jar" value="cloud-plugin-hypervisor-kvm.jar" />
   <property name="scripts.target.dir" location="${target.dir}/scripts"/>
   <property name="kvm.scripts.dir" location="${base.dir}/plugins/hypervisors/kvm/scripts" />
 	

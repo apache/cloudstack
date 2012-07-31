@@ -294,7 +294,7 @@
   <target name="package-kvm" depends="package-agent">
     <zip destfile="${dist.dir}/agent.zip" update="true">
     	<zipfileset dir="${jar.dir}">
-    	   <include name="cloud-kvm.jar"/>
+    	   <include name="cloud-plugin-hypervisor-kvm.jar"/>
     	</zipfileset>
     	<zipfileset dir="${deps.dir}">
     	   <include name="libvirt-0.4.8.jar"/>
