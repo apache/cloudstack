@@ -59,12 +59,9 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.dao.FirewallRulesDao;
-import com.cloud.network.Site2SiteVpnGateway;
-import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.Site2SiteVpnConnectionDao;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.vpc.VpcOffering.State;
@@ -271,11 +268,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
                
         return createVpcOffering(name, displayText, svcProviderMap, false, null);
     }
+
     
-    
-    @Override
     @DB
-    public VpcOffering createVpcOffering(String name, String displayText, Map<Network.Service, 
+    protected VpcOffering createVpcOffering(String name, String displayText, Map<Network.Service, 
             Set<Network.Provider>> svcProviderMap, boolean isDefault, State state) {
         Transaction txn = Transaction.currentTxn();
         txn.start();
@@ -407,12 +403,12 @@ public class VpcManagerImpl implements VpcManager, Manager{
             return offerings;
         }
     }
-    
-    @Override
-    public boolean areServicesSupportedByVpcOffering(long vpcOffId, Service... services) {
+
+
+    protected boolean areServicesSupportedByVpcOffering(long vpcOffId, Service... services) {
         return (_vpcOffSvcMapDao.areServicesSupportedByNetworkOffering(vpcOffId, services));
     }
-
+    
     
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_DELETE, eventDescription = "deleting vpc offering")
@@ -539,9 +535,9 @@ public class VpcManagerImpl implements VpcManager, Manager{
         
         return false;
     }
-    
-    @Override
-    public Vpc createVpc(long zoneId, long vpcOffId, Account vpcOwner, String vpcName, String displayText, String cidr, 
+
+
+    protected Vpc createVpc(long zoneId, long vpcOffId, Account vpcOwner, String vpcName, String displayText, String cidr, 
             String networkDomain) {
         
         if (!vpcProviderEnabledInZone(zoneId)) {
@@ -778,21 +774,21 @@ public class VpcManagerImpl implements VpcManager, Manager{
             return vpcs;
         }
     }
+
     
-    @Override
-    public List<Service> getSupportedServices() {
-       List<Service> services = new ArrayList<Service>();
-       services.add(Network.Service.Dhcp);
-       services.add(Network.Service.Dns);
-       services.add(Network.Service.UserData);
-       services.add(Network.Service.NetworkACL);
-       services.add(Network.Service.PortForwarding);
-       services.add(Network.Service.Lb);
-       services.add(Network.Service.SourceNat);
-       services.add(Network.Service.StaticNat);
-       services.add(Network.Service.Gateway);
-       services.add(Network.Service.Vpn);
-       return services;
+    protected List<Service> getSupportedServices() {
+        List<Service> services = new ArrayList<Service>();
+        services.add(Network.Service.Dhcp);
+        services.add(Network.Service.Dns);
+        services.add(Network.Service.UserData);
+        services.add(Network.Service.NetworkACL);
+        services.add(Network.Service.PortForwarding);
+        services.add(Network.Service.Lb);
+        services.add(Network.Service.SourceNat);
+        services.add(Network.Service.StaticNat);
+        services.add(Network.Service.Gateway);
+        services.add(Network.Service.Vpn);
+        return services;
     }
     
     @Override
@@ -870,8 +866,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
         //shutdown provider
         boolean success = getVpcElement().shutdownVpc(vpc);
-        
-        //FIXME - once more features are added to vpc (gateway/firewall rules, etc - cleanup them here)
+
+        //TODO - cleanup all vpc resources here (ACLs, gateways, etc)
         if (success) {
             s_logger.debug("Vpc " + vpc + " has been shutdown succesfully");
         } else {
@@ -996,9 +992,9 @@ public class VpcManagerImpl implements VpcManager, Manager{
             _vpcDao.releaseFromLockTable(locked.getId());
         }
     }
-     
-    @Override
-    public VpcProvider getVpcElement() {
+
+
+    protected VpcProvider getVpcElement() {
         if (vpcElement == null) {
             vpcElement = ((VpcProvider)_ntwkMgr.getElementImplementingProvider(Provider.VPCVirtualRouter.getName()));
         }
@@ -1618,9 +1614,4 @@ public class VpcManagerImpl implements VpcManager, Manager{
     public VpcGateway getPrivateGatewayForVpc(long vpcId) {
         return _vpcGatewayDao.getPrivateGatewayForVpc(vpcId);
     }
-    
-    public int getMaxNetworksPerVpc() {
-        return _maxNetworks;
-    }
-    
 }

@@ -17,53 +17,15 @@
 package com.cloud.network.vpc;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.Network.Provider;
-import com.cloud.network.Network.Service;
-import com.cloud.network.element.VpcProvider;
-import com.cloud.network.vpc.VpcOffering.State;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 
 
 public interface VpcManager extends VpcService{
-
-    /**
-     * @param name
-     * @param displayText
-     * @param svcProviderMap
-     * @param isDefault
-     * @param state TODO
-     * @return
-     */
-    VpcOffering createVpcOffering(String name, String displayText, Map<Service, Set<Provider>> svcProviderMap, 
-            boolean isDefault, State state);
-
-    /**
-     * @param vpcOffId
-     * @param services
-     * @return
-     */
-    boolean areServicesSupportedByVpcOffering(long vpcOffId, Service[] services);
-
-    /**
-     * @param zoneId
-     * @param vpcOffId
-     * @param vpcOwner
-     * @param vpcName
-     * @param displayText
-     * @param cidr
-     * @param networkDomain TODO
-     * @return
-     */
-    Vpc createVpc(long zoneId, long vpcOffId, Account vpcOwner, String vpcName, String displayText, String cidr, String networkDomain);
-    
-    List<Service> getSupportedServices();
 
     /**
      * @param guestNtwkOff
@@ -78,10 +40,6 @@ public interface VpcManager extends VpcService{
     void validateGuestNtkwForVpc(NetworkOffering guestNtwkOff, String cidr, String networkDomain, Account networkOwner, 
             Vpc vpc, Long networkId, String gateway);
 
-    /**
-     * @return
-     */
-    VpcProvider getVpcElement();
     
     List<? extends Vpc> getVpcsForAccount(long accountId);
 
@@ -111,8 +69,4 @@ public interface VpcManager extends VpcService{
      */
     VpcGateway getPrivateGatewayForVpc(long vpcId);
 
-    /**
-     * @return
-     */
-    int getMaxNetworksPerVpc();
 }

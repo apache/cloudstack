@@ -694,7 +694,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         return sendCommandsToRouter(router, cmds);
     }
     
-    private void createNetworkACLsCommands(List<? extends FirewallRule> rules, VirtualRouter router, Commands cmds, long guestNetworkId) {
+    private void createNetworkACLsCommands(List<? extends FirewallRule> rules, VirtualRouter router, Commands cmds, 
+            long guestNetworkId) {
         List<NetworkACLTO> rulesTO = null;
         String guestVlan = null;
         Network guestNtwk = _networkDao.findById(guestNetworkId);
@@ -721,7 +722,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
         cmds.addCommand(cmd);
     }
-    
+
     @Override
     public boolean finalizeCommandsOnStart(Commands cmds, VirtualMachineProfile<DomainRouterVO> profile) {
         DomainRouterVO router = profile.getVirtualMachine();
@@ -783,7 +784,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     }
                 }
                 
-                PlugNicCommand plugNicCmd = new PlugNicCommand(getNicTO(router, publicNic.getNetworkId(), publicNic.getBroadcastUri().toString()), router.getInstanceName());
+                PlugNicCommand plugNicCmd = new PlugNicCommand(getNicTO(router, publicNic.getNetworkId(), 
+                        publicNic.getBroadcastUri().toString()), router.getInstanceName());
                 cmds.addCommand(plugNicCmd); 
             }
             
