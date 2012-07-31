@@ -121,7 +121,7 @@ postsetup() {
         mkdir incubator-cloudstack/dist
         wget http://archive.apache.org/dist/tomcat/tomcat-6/v6.0.32/bin/apache-tomcat-6.0.32.zip -P /opt/cloudstack/
         unzip apache-tomcat-6.0.32.zip
-        echo "exportCATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32" >> /root/.bashrc
+        echo "export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32" >> /root/.bashrc
         cd ~
     fi
 
