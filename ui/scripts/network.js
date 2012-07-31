@@ -871,7 +871,7 @@
                             if('vpc' in args.context)
                               networkid = args.context.multiData.tier;
                             else
-                              networkid = args.context.ipAddresses[0].associatednetworkid;
+                              networkid = args.context.networks[0].id;
 
                             var data = {
                               page: args.page,
