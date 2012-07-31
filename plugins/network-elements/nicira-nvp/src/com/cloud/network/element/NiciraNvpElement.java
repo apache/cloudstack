@@ -90,7 +90,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 
 @Local(value = NetworkElement.class)
-public class NiciraNvpElement extends AdapterBase implements NetworkElement, NiciraNvpElementService, ResourceStateAdapter {
+public class NiciraNvpElement extends AdapterBase implements ConnectivityProvider, NiciraNvpElementService, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(NiciraNvpElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();

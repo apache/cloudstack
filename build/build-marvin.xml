@@ -40,7 +40,7 @@
 
     <target name="build-marvin" depends="build-apidocs" description="generates the cloudstackAPIs for marvin">
         <echo message="Generating Marvin API Classes"/>
-        <exec dir="${marvin.src.dir}" executable="python">
+        <exec dir="${marvin.src.dir}" executable="python" failonerror="true">
             <arg value="codegenerator.py" />
             <arg value="-s" />
             <arg value="${dist.dir}/commands.xml" />
@@ -50,7 +50,7 @@
 
     <target name="package-marvin" depends="build-marvin" description="create a distributable tarball of Marvin">
         <echo message="Packaging Marvin"/>
-        <exec dir="${marvin.dir}" executable="python">
+        <exec dir="${marvin.dir}" executable="python" failonerror="true">
             <arg value="setup.py" />
             <arg value="sdist" />
         </exec>

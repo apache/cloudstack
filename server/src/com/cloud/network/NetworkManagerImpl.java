@@ -127,6 +127,7 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
+import com.cloud.network.element.ConnectivityProvider;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.FirewallServiceProvider;
 import com.cloud.network.element.IpDeployer;
@@ -959,6 +960,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     deployer = ((PortForwardingServiceProvider) element).getIpDeployer(network);
                 } else if (element instanceof RemoteAccessVPNServiceProvider) {
                     deployer = ((RemoteAccessVPNServiceProvider) element).getIpDeployer(network);
+                } else if (element instanceof ConnectivityProvider) {
+                    // Nothing to do
+                    s_logger.debug("ConnectivityProvider " + element.getClass().getSimpleName() + " has no ip associations");
+                    continue;
                 } else {
                     throw new CloudRuntimeException("Fail to get ip deployer for element: " + element);
                 }
@@ -2970,6 +2975,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                     		"service disabled are allowed in security group enabled zone");
                 }
             }
+            
+            //don't allow eip/elb networks in Advance zone
+            if (ntwkOff.getElasticIp() || ntwkOff.getElasticLb()) {
+                throw new InvalidParameterValueException("Elastic IP and Elastic LB services are supported in zone of type " + NetworkType.Basic);
+            }
         }
 
         // VlanId can be specified only when network offering supports it
@@ -3273,11 +3283,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
                                 physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter,
                         permittedAccounts));
-            } else if (domainId == null || listAll) {
+            } else if (domainId == null) {
                 networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
                                 physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter, path,
                         isRecursive));
+                networksToReturn.addAll(listDomainSpecificNetworksByDomainPath(
+                        buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter, path,
+                                isRecursive));
             }
         } else {
             networksToReturn = _networksDao.search(buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId,
@@ -3445,6 +3459,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     private List<NetworkVO> listAccountSpecificNetworksByDomainPath(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path, boolean isRecursive) {
         SearchCriteria<NetworkVO> accountSC = _networksDao.createSearchCriteria();
         accountSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Account.toString());
+
+        if (path != null) {
+            if (isRecursive) {
+                sc.setJoinParameters("domainSearch", "path", path + "%");
+            } else {
+                sc.setJoinParameters("domainSearch", "path", path);
+            }
+        }
+
+        sc.addAnd("id", SearchCriteria.Op.SC, accountSC);
+        return _networksDao.search(sc, searchFilter);
+    }
+
+    private List<NetworkVO> listDomainSpecificNetworksByDomainPath(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path, boolean isRecursive) {
+        SearchCriteria<NetworkVO> accountSC = _networksDao.createSearchCriteria();
+        accountSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Domain.toString());
 
         if (path != null) {
             if (isRecursive) {
@@ -3657,7 +3687,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         s_logger.debug("Sending destroy to " + element);
                     }
 
-                    element.destroy(network);
+                    if (!element.destroy(network)) {
+                        success = false;
+                        s_logger.warn("Unable to complete destroy of the network: failed to destroy network element " + element.getName());
+                    }
                 } catch (ResourceUnavailableException e) {
                     s_logger.warn("Unable to complete destroy of the network due to element: " + element.getName(), e);
                     success = false;
@@ -6223,6 +6256,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             success = false;
         }
         
+        //release all static nats for the network
+        if (!_rulesMgr.applyStaticNatForNetwork(networkId, false, caller, true)) {
+            s_logger.warn("Failed to disable static nats as part of shutdownNetworkRules for network id " + networkId);
+            success = false;
+        }
 
         // Get all ip addresses, mark as releasing and release them on the backend
         Network network = getNetwork(networkId);

@@ -1,1 +1,0 @@
-include puppet-devcloudinitial

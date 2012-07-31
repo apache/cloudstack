@@ -198,9 +198,14 @@
 
   <!-- ===================== Hypervisors ========================= -->
 
-  <target name="compile-hypervisors" depends="compile-ovm, compile-xen, compile-vmware" description="Compile all hypervisors"/>
-  <target name="build-hypervisors" depends="build-ovm, build-xen, build-vmware" description="Builds all hypervisors"/>
+  <target name="compile-hypervisors" depends="compile-kvm, compile-ovm, compile-xen, compile-vmware" description="Compile all hypervisors"/>
+  <target name="build-hypervisors" depends="build-kvm, build-ovm, build-xen, build-vmware" description="Builds all hypervisors"/>
 
+  <target name="compile-kvm" depends="-init, compile-core, compile-agent" description="Compile KVM">
+  	<ant antfile="${base.dir}/plugins/hypervisors/kvm/build.xml" target="build"/>
+  </target>
+  <target name="build-kvm" depends="compile-kvm" />
+  
   <target name="compile-ovm" depends="-init, compile-server" description="Compile OVM">
   	<ant antfile="${base.dir}/plugins/hypervisors/ovm/build.xml" target="build"/>
   </target>

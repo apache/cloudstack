@@ -18,10 +18,11 @@
 
 from distutils.core import setup
 from sys import version
+import sys
 
 if version < "2.7":
     print "Marvin needs at least python 2.7, found : \n%s"%version
-    raise
+    sys.exit(1)
 
 setup(name="Marvin",
       version="0.1.0",
@@ -36,8 +37,8 @@ setup(name="Marvin",
       packages=["marvin", "marvin.cloudstackAPI", "marvin.sandbox", "marvin.sandbox.advanced", "marvin.sandbox.basic", "marvin.pymysql", "marvin.pymysql.constants", "marvin.pymysql.tests"],
       license="LICENSE.txt",
       install_requires=[
-          "Python>=2.7",
           "paramiko",
-          "nose"
+          "nose",
+          "unittest-xml-reporting"
       ],         
      )

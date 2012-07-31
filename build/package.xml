@@ -82,7 +82,6 @@
         <include name="cloud-commons-collections-3.2.1.jar" />
         <include name="cloud-commons-codec-1.4.jar" />
         <include name="cloud-commons-pool-1.4.jar" />
-        <include name="libvirt-0.4.8.jar" />
         <include name="cloud-jna.jar" />
         <include name="cloud-cglib.jar" />
         <include name="jetty-6.1.26.jar" />
@@ -93,6 +92,7 @@
         <include name="${utils.jar}" />
         <include name="${core.jar}" />
         <include name="${api.jar}" />
+        <include name="${kvm.jar}" />
       </zipfileset>
 
       <zipfileset dir="${agent.dist.dir}" filemode="770">
@@ -112,7 +112,7 @@
   </target>
 
 
-  <target name="package-agent" depends="-init-package, package-oss-systemvm,  build-systemvm-patch, package-agent-common">
+  <target name="package-agent" depends="-init-package, package-oss-systemvm,  build-systemvm-patch, package-agent-common, build-kvm">
     <zip destfile="${dist.dir}/agent.zip" duplicate="preserve" update="true">
       <zipfileset dir="${dist.dir}" prefix="vms">
         <include name="patch.tgz" />
@@ -291,6 +291,17 @@
     </zip>
   </target>
 
+  <target name="package-kvm" depends="package-agent">
+    <zip destfile="${dist.dir}/agent.zip" update="true">
+    	<zipfileset dir="${jar.dir}">
+    	   <include name="cloud-plugin-hypervisor-kvm.jar"/>
+    	</zipfileset>
+    	<zipfileset dir="${deps.dir}">
+    	   <include name="libvirt-0.4.8.jar"/>
+    	</zipfileset>
+    </zip>
+  </target>
+	
   <target name="clean-zip">
     <delete dir="${dist.dir}">
       <include name="*.zip" />

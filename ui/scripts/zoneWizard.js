@@ -550,7 +550,14 @@
       },
 
       basicPhysicalNetwork: { //"Netscaler" now
-			  preFilter: cloudStack.preFilter.addLoadBalancerDevice,	
+        preFilter: function(args) {
+          if (args.data['network-model'] == 'Basic' && (selectedNetworkOfferingHavingELB || selectedNetworkOfferingHavingEIP)) {
+            args.$form.find('[rel=dedicated]').hide();
+          } else {
+            args.$form.find('[rel=dedicated]').show();
+          };
+          cloudStack.preFilter.addLoadBalancerDevice
+        },
         fields: {
          ip: {
             label: 'label.ip.address'

@@ -56,7 +56,6 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.api.ApiConstants;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.kvm.resource.KvmDummyResourceBase;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;

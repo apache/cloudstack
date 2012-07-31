@@ -19,10 +19,10 @@
 -- Schema upgrade from 3.0.3 to 4.0.0;
 --;
 
-# RBD Primary Storage pool support (commit: 406fd95d87bfcdbb282d65589ab1fb6e9fd0018a)
+-- RBD Primary Storage pool support (commit: 406fd95d87bfcdbb282d65589ab1fb6e9fd0018a)
 ALTER TABLE `storage_pool` ADD `user_info` VARCHAR( 255 ) NULL COMMENT 'Authorization information for the storage pool. Used by network filesystems' AFTER `host_address`;
 
-# Resource tags (commit: 62d45b9670520a1ee8b520509393d4258c689b50)
+-- Resource tags (commit: 62d45b9670520a1ee8b520509393d4258c689b50)
 CREATE TABLE `cloud`.`resource_tags` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
@@ -41,7 +41,7 @@ CREATE TABLE `cloud`.`resource_tags` (
   CONSTRAINT `uc_resource_tags__uuid` UNIQUE (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-# Nicira Integration (commit: 79c7da07abd4294f150851aa0c2d06a28564c5a9)
+-- Nicira Integration (commit: 79c7da07abd4294f150851aa0c2d06a28564c5a9)
 CREATE TABLE `cloud`.`external_nicira_nvp_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
@@ -61,3 +61,21 @@ CREATE TABLE `cloud`.`nicira_nvp_nic_map` (
   `nic` varchar(255) UNIQUE COMMENT 'cloudstack uuid of the nic connected to this logical switch port',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- rrq 5839
+-- Remove the unique constraint on physical_network_id, provider_name from physical_network_service_providers
+-- Because the name of this contraint is not set we need this roundabout way
+-- The key is also used by the foreign key constraint so drop and recreate that one
+ALTER TABLE physical_network_service_providers DROP FOREIGN KEY fk_pnetwork_service_providers__physical_network_id;
+
+SET @constraintname = (select CONCAT(CONCAT('DROP INDEX ', A.CONSTRAINT_NAME), ' ON physical_network_service_providers' )
+from information_schema.key_column_usage A
+JOIN information_schema.key_column_usage B ON B.table_name = 'physical_network_service_providers' AND B.COLUMN_NAME = 'provider_name' AND A.COLUMN_NAME ='physical_network_id' AND B.CONSTRAINT_NAME=A.CONSTRAINT_NAME
+where A.table_name = 'physical_network_service_providers');
+
+PREPARE stmt1 FROM @constraintname; 
+EXECUTE stmt1; 
+DEALLOCATE PREPARE stmt1; 
+
+AlTER TABLE physical_network_service_providers ADD CONSTRAINT `fk_pnetwork_service_providers__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE
+

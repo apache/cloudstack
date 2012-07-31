@@ -417,4 +417,10 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
         return null;
     }
 
+	@Override
+	public void prepareStop(VirtualMachineProfile<UserVmVO> profile) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

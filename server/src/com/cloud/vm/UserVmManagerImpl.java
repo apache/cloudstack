@@ -344,7 +344,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     SecurityGroupVMMapDao _securityGroupVMMapDao;
     @Inject
     protected ItWorkDao _workDao;
-    VolumeHostDao _volumeHostDao;
+    @Inject
+    protected VolumeHostDao _volumeHostDao;
     @Inject
     ResourceTagDao _resourceTagDao;
 

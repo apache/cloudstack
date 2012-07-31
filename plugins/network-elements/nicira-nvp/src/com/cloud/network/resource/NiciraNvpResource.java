@@ -170,7 +170,7 @@ public class NiciraNvpResource implements ServerResource {
     
     private Answer executeRequest(CreateLogicalSwitchCommand cmd) {
         LogicalSwitch logicalSwitch = new LogicalSwitch();
-        logicalSwitch.setDisplay_name("lswitch-" + cmd.getOwnerName());
+        logicalSwitch.setDisplay_name("lswitch-" + cmd.getName());
         logicalSwitch.setPort_isolation_enabled(false);
 
         // Set transport binding

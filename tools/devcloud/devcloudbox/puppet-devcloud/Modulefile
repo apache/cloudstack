@@ -1,0 +1,8 @@
+name    'puppet-devcloud'
+version '0.0.1'
+source ''
+author 'Apache Software Foundation'
+license 'Apache 2.0'
+summary 'CloudStack DevCloud configuration module'
+description 'Devcloud setup module.'
+project_page 'http://cloudstack.org'
