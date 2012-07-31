@@ -1693,6 +1693,7 @@ dictionary = {
 'state.Enabled': '<fmt:message key="state.Enabled"/>',
 'label.system.wide.capacity': '<fmt:message key="label.system.wide.capacity"/>',
 'label.management': '<fmt:message key="label.management"/>',
+'label.management.ips': '<fmt:message key="label.management.ips"/>',
 'label.guest': '<fmt:message key="label.guest"/>',
 'label.network.service.providers': '<fmt:message key="label.network.service.providers"/>',
 'message.launch.zone': '<fmt:message key="message.launch.zone"/>',
