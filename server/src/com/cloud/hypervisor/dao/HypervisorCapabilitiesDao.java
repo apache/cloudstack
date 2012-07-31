@@ -24,6 +24,7 @@ public interface HypervisorCapabilitiesDao extends GenericDao<HypervisorCapabili
     
     HypervisorCapabilitiesVO findByHypervisorTypeAndVersion(HypervisorType hypervisorType, String hypervisorVersion);
     
-    Long getMaxGuestsLimit(HypervisorType hypervisorType, String hypervisorVersion); 
-    
+    Long getMaxGuestsLimit(HypervisorType hypervisorType, String hypervisorVersion);
+
+    Integer getMaxDataVolumesLimit(HypervisorType hypervisorType, String hypervisorVersion);
 }

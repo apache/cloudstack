@@ -33,6 +33,7 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
     protected final SearchBuilder<HypervisorCapabilitiesVO> HypervisorTypeSearch;
     protected final SearchBuilder<HypervisorCapabilitiesVO> HypervisorTypeAndVersionSearch;
     protected final GenericSearchBuilder<HypervisorCapabilitiesVO, Long> MaxGuestLimitByHypervisorSearch;
+    protected final GenericSearchBuilder<HypervisorCapabilitiesVO, Integer> MaxDataVolumesLimitByHypervisorSearch;
     
     private static final String DEFAULT_VERSION = "default";
     
@@ -50,7 +51,13 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
         MaxGuestLimitByHypervisorSearch.selectField(MaxGuestLimitByHypervisorSearch.entity().getMaxGuestsLimit());
         MaxGuestLimitByHypervisorSearch.and("hypervisorType", MaxGuestLimitByHypervisorSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         MaxGuestLimitByHypervisorSearch.and("hypervisorVersion", MaxGuestLimitByHypervisorSearch.entity().getHypervisorVersion(), SearchCriteria.Op.EQ);
-        MaxGuestLimitByHypervisorSearch.done();        
+        MaxGuestLimitByHypervisorSearch.done();
+        
+        MaxDataVolumesLimitByHypervisorSearch = createSearchBuilder(Integer.class);
+        MaxDataVolumesLimitByHypervisorSearch.selectField(MaxDataVolumesLimitByHypervisorSearch.entity().getMaxDataVolumesLimit());
+        MaxDataVolumesLimitByHypervisorSearch.and("hypervisorType", MaxDataVolumesLimitByHypervisorSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        MaxDataVolumesLimitByHypervisorSearch.and("hypervisorVersion", MaxDataVolumesLimitByHypervisorSearch.entity().getHypervisorVersion(), SearchCriteria.Op.EQ);
+        MaxDataVolumesLimitByHypervisorSearch.done();
     }
 
     @Override
@@ -97,6 +104,36 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
         }
         if(result == null){
             return defaultLimit;
+        }
+        return result;
+    }
+
+    @Override
+    public Integer getMaxDataVolumesLimit(HypervisorType hypervisorType, String hypervisorVersion) {
+        Integer result = null;
+        boolean useDefault = false;
+        if (hypervisorVersion != null) {
+            SearchCriteria<Integer> sc = MaxDataVolumesLimitByHypervisorSearch.create();
+            sc.setParameters("hypervisorType", hypervisorType);
+            sc.setParameters("hypervisorVersion", hypervisorVersion);
+            List<Integer> limitList = customSearch(sc, null);
+            if (!limitList.isEmpty()) {
+                result = limitList.get(0);
+            } else {
+                useDefault = true;
+            }
+        } else {
+            useDefault = true;
+        }
+        // If data is not available for a specific hypervisor version then use 'default' as the version
+        if (useDefault) {
+            SearchCriteria<Integer> sc = MaxDataVolumesLimitByHypervisorSearch.create();
+            sc.setParameters("hypervisorType", hypervisorType);
+            sc.setParameters("hypervisorVersion", DEFAULT_VERSION);
+            List<Integer> limitList = customSearch(sc, null);
+            if (!limitList.isEmpty()) {
+                result = limitList.get(0);
+            }
         }
         return result;
     }

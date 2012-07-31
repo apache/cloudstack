@@ -132,6 +132,7 @@ def choose_category(fn):
             return v
     raise Exception('Need to add a category for %s to %s:known_categories' %
                     (fn, __file__))
+    sys.exit(1)
 
 
 for f in sys.argv:

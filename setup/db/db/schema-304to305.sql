@@ -342,3 +342,6 @@ CREATE TABLE `cloud`.`s2s_vpn_connection` (
 
 ALTER TABLE `cloud`.`data_center` ADD COLUMN `is_local_storage_enabled` tinyint NOT NULL DEFAULT 0 COMMENT 'Is local storage offering enabled for this data center; 1: enabled, 0: not';
 UPDATE `cloud`.`data_center` SET `is_local_storage_enabled` = IF ((SELECT `value` FROM `cloud`.`configuration` WHERE `name`='use.local.storage')='true', 1, 0) WHERE `removed` IS NULL;
+
+ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `max_data_volumes_limit` int unsigned DEFAULT 6 COMMENT 'Max. data volumes per VM supported by hypervisor';
+UPDATE TABLE `cloud`.`hypervisor_capabilities` SET `max_data_volumes_limit`=13 WHERE `hypervisor_type`='XenServer' AND (`hypervisor_version`='6.0' OR `hypervisor_version`='6.0.2');

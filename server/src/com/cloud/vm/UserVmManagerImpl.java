@@ -508,6 +508,24 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
     }
 
+    private int getMaxDataVolumesSupported(UserVmVO vm) {
+        Long hostId = vm.getHostId();
+        if (hostId == null) {
+            hostId = vm.getLastHostId();
+        }
+        HostVO host = _hostDao.findById(hostId);
+        Integer maxDataVolumesSupported = null;
+        if (host != null) {
+            _hostDao.loadDetails(host);
+            maxDataVolumesSupported = _hypervisorCapabilitiesDao.getMaxDataVolumesLimit(host.getHypervisorType(), host.getDetail("product_version"));
+        }
+        if (maxDataVolumesSupported == null) {
+            maxDataVolumesSupported = 6;  // 6 data disks by default if nothing is specified in 'hypervisor_capabilities' table
+        }
+
+        return maxDataVolumesSupported.intValue();
+    }
+    
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_ATTACH, eventDescription = "attaching volume", async = true)
     public Volume attachVolumeToVM(AttachVolumeCmd command) {
@@ -551,10 +569,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
         }
 
-        // Check that the VM has less than 6 data volumes attached
+        // Check that the number of data volumes attached to VM is less than that supported by hypervisor
         List<VolumeVO> existingDataVolumes = _volsDao.findByInstanceAndType(vmId, Volume.Type.DATADISK);
-        if (existingDataVolumes.size() >= 6) {
-            throw new InvalidParameterValueException("The specified VM already has the maximum number of data disks (6). Please specify another VM.", null);
+        int maxDataVolumesSupported = getMaxDataVolumesSupported(vm);
+        if (existingDataVolumes.size() >= maxDataVolumesSupported) {
+            throw new InvalidParameterValueException("The specified VM already has the maximum number of data disks (" + maxDataVolumesSupported + "). Please specify another VM.", null);
         }
 
         // Check that the VM and the volume are in the same zone

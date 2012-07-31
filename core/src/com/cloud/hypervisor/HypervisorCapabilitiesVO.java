@@ -51,6 +51,9 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities, Identit
     @Column(name="uuid")
     private String uuid;
 
+    @Column(name="max_data_volumes_limit")
+    private Integer maxDataVolumesLimit;
+
     protected HypervisorCapabilitiesVO() {
     	this.uuid = UUID.randomUUID().toString();
     }
@@ -138,6 +141,15 @@ public class HypervisorCapabilitiesVO implements HypervisorCapabilities, Identit
     
     public void setUuid(String uuid) {
     	this.uuid = uuid;
+    }
+
+    @Override
+    public Integer getMaxDataVolumesLimit() {
+        return maxDataVolumesLimit;
+    }
+
+    public void setMaxDataVolumesLimit(Integer maxDataVolumesLimit) {
+        this.maxDataVolumesLimit = maxDataVolumesLimit;
     }
 
     @Override
