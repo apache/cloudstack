@@ -70,6 +70,17 @@
 									};
 									scaleDownPolicy.conditions.push(condition);
 								});
+																							
+								var diskOfferingId, securityGroups;
+                var otherdeployparams = autoscaleVmProfile.otherdeployparams;
+								var array1 = otherdeployparams.split('&');
+								$(array1).each(function(){								 
+									var array2 = this.split('=');
+									if(array2[0] == 'diskofferingid')
+									  diskOfferingId= array2[1];
+									if(array2[0] == 'securitygroupids')
+									  securityGroups = array2[1];									
+								});								                				
 										
 								var sampleData = {
 									templateNames: autoscaleVmProfile.templateid,
@@ -81,8 +92,8 @@
 									interval: autoscaleVmGroup.interval, 
 									quietTime: autoscaleVmGroup.scaleuppolicies[0].quiettime, 
 									destroyVMgracePeriod: autoscaleVmProfile.destroyvmgraceperiod,
-									securityGroups: null, //???
-									diskOfferingId: null, //???
+									securityGroups: securityGroups, //???
+									diskOfferingId: diskOfferingId, //???
 									snmpCommunity: autoscaleVmProfile.snmpcommunity,
 									snmpPort: autoscaleVmProfile.snmpport,
 									username: autoscaleVmProfile.autoscaleuserid
