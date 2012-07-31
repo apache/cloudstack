@@ -21,6 +21,19 @@
   var selectedClusterObj, selectedZoneObj, selectedPublicNetworkObj, selectedManagementNetworkObj, selectedPhysicalNetworkObj, selectedGuestNetworkObj; 
   var nspMap = {}; //from listNetworkServiceProviders API 
 	var nspHardcodingArray = []; //for service providers listView (hardcoding, not from listNetworkServiceProviders API) 
+
+  // Add router type to virtual router
+  // -- can be either Project, VPC, or System (standard)
+  var mapRouterType = function(index, router) {
+    var routerType = _l('label.menu.system');
+
+    if (router.projectid) routerType = _l('label.project');
+    if (router.vpcid) routerType = 'VPC';
+
+    return $.extend(router, {
+      routerType: routerType
+    });
+  };
 	
   cloudStack.publicIpRangeAccount = {
     dialog: function(args) {      
@@ -1933,6 +1946,9 @@
                   fields: {
                     name: { label: 'label.name' },
                     zonename: { label: 'label.zone' },
+                    routerType: {
+                      label: 'label.type'
+                    },
                     state: {
                       converter: function(str) {
                         // For localization
@@ -1959,35 +1975,36 @@
 											}
 										}
 
+                    var routers = [];
                     $.ajax({
                       url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                       dataType: 'json',
-											data: {
-											  forvpc: false
-											},
                       async: true,
                       success: function(json) {
-                        var items = json.listroutersresponse.router;
-                        args.response.success({
-                          actionFilter: routerActionfilter,
-                          data: items
-                        });
-                      }
-                    });
+                        var items = json.listroutersresponse.router ?
+                              json.listroutersresponse.router : [];
 
-                    // Get project routers
-                    $.ajax({
-                      url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
-                      dataType: 'json',
-                      data: {
-											  forvpc: false
-											},
-                      async: true,
-                      success: function(json) {
-                        var items = json.listroutersresponse.router;
-                        args.response.success({
-                          actionFilter: routerActionfilter,
-                          data: items
+                        $(items).map(function(index, item) {
+                          routers.push(item); 
+                        });
+
+                        // Get project routers
+                        $.ajax({
+                          url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                          dataType: 'json',
+                          async: true,
+                          success: function(json) {
+                            var items = json.listroutersresponse.router ?
+                                  json.listroutersresponse.router : [];
+                            
+                            $(items).map(function(index, item) {
+                              routers.push(item); 
+                            });
+                            args.response.success({
+                              actionFilter: routerActionfilter,
+                              data: $(routers).map(mapRouterType)
+                            });
+                          }
                         });
                       }
                     });
@@ -4575,14 +4592,37 @@
                   var searchByArgs = args.filterBy.search.value.length ?
                     '&name=' + args.filterBy.search.value : '';
 
+                  var routers = [];
                   $.ajax({
-                    url: createURL('listRouters' + searchByArgs),
-                    data: { page: args.page, pageSize: pageSize, listAll: true },
-                    success: function (json) {
-                      args.response.success({ data: json.listroutersresponse.router });
-                    },
-                    error: function (json) {
-                      args.response.error(parseXMLHttpResponse(json));
+                    url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + searchByArgs),
+                    dataType: 'json',
+                    async: true,
+                    success: function(json) {
+                      var items = json.listroutersresponse.router ?
+                            json.listroutersresponse.router : [];
+
+                      $(items).map(function(index, item) {
+                        routers.push(item); 
+                      });
+                      
+                      // Get project routers
+                      $.ajax({
+                        url: createURL("listRouters&listAll=true&page=" + args.page + "&pagesize=" + pageSize + "&projectid=-1"),
+                        dataType: 'json',
+                        async: true,
+                        success: function(json) {
+                          var items = json.listroutersresponse.router ?
+                                json.listroutersresponse.router : [];
+                          
+                          $(items).map(function(index, item) {
+                            routers.push(item); 
+                          });
+                          args.response.success({
+                            actionFilter: routerActionfilter,
+                            data: $(routers).map(mapRouterType)
+                          });
+                        }
+                      });
                     }
                   });
                 },
@@ -4623,6 +4663,9 @@
           fields: {
             name: { label: 'label.name' },
             zonename: { label: 'label.zone' },
+            routerType: {
+              label: 'label.type'
+            },
             state: {
               converter: function(str) {
                 // For localization
@@ -4649,29 +4692,35 @@
               }
             }
 
+            var routers = [];
             $.ajax({
               url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: 'json',
               async: true,
               success: function(json) {
-                var items = json.listroutersresponse.router;
-                args.response.success({
-                  actionFilter: routerActionfilter,
-                  data: items
-                });
-              }
-            });
+                var items = json.listroutersresponse.router ?
+                      json.listroutersresponse.router : [];
 
-            // Get project routers
-            $.ajax({
-              url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
-              dataType: 'json',
-              async: true,
-              success: function(json) {
-                var items = json.listroutersresponse.router;
-                args.response.success({
-                  actionFilter: routerActionfilter,
-                  data: items
+                $(items).map(function(index, item) {
+                  routers.push(item); 
+                });
+                // Get project routers
+                $.ajax({
+                  url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+                  dataType: 'json',
+                  async: true,
+                  success: function(json) {
+                    var items = json.listroutersresponse.router ?
+                          json.listroutersresponse.router : [];
+                    
+                    $(items).map(function(index, item) {
+                      routers.push(item); 
+                    });
+                    args.response.success({
+                      actionFilter: routerActionfilter,
+                      data: $(routers).map(mapRouterType)
+                    });
+                  }
                 });
               }
             });
