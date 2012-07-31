@@ -195,7 +195,8 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         }
 
         if (network.getTrafficType() != Networks.TrafficType.Guest) {
-            throw new InvalidParameterValueException("Network ACL can be created just for networks of type " + Networks.TrafficType.Guest, null);
+            throw new InvalidParameterValueException("Network ACL can be created just for networks of type " 
+                                                            + Networks.TrafficType.Guest, null);
         }
 
         // Verify that the network guru supports the protocol specified
@@ -212,6 +213,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         }
     }
 
+    
     protected void detectNetworkACLConflict(FirewallRuleVO newRule) throws NetworkRuleConflictException {
         if (newRule.getPurpose() != Purpose.NetworkACL) {
             return;
@@ -249,7 +251,8 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
                 }
             }
 
-            if (newRule.getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO) && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol())) {
+            if (newRule.getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO) 
+                    && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol())) {
                 if (newRule.getIcmpCode().longValue() == rule.getIcmpCode().longValue() 
                         && newRule.getIcmpType().longValue() == rule.getIcmpType().longValue()
                         && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()) && duplicatedCidrs) {
@@ -264,10 +267,14 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
             if (!notNullPorts) {
                 continue;
             } else if (duplicatedCidrs
-                    && ((rule.getSourcePortStart().intValue() <= newRule.getSourcePortStart().intValue() && rule.getSourcePortEnd().intValue() >= newRule.getSourcePortStart().intValue())
-                            || (rule.getSourcePortStart().intValue() <= newRule.getSourcePortEnd().intValue() && rule.getSourcePortEnd().intValue() >= newRule.getSourcePortEnd().intValue())
-                            || (newRule.getSourcePortStart().intValue() <= rule.getSourcePortStart().intValue() && newRule.getSourcePortEnd().intValue() >= rule.getSourcePortStart().intValue())
-                            || (newRule.getSourcePortStart().intValue() <= rule.getSourcePortEnd().intValue() && newRule.getSourcePortEnd().intValue() >= rule.getSourcePortEnd().intValue()))) {
+                    && ((rule.getSourcePortStart().intValue() <= newRule.getSourcePortStart().intValue() 
+                    && rule.getSourcePortEnd().intValue() >= newRule.getSourcePortStart().intValue())
+                            || (rule.getSourcePortStart().intValue() <= newRule.getSourcePortEnd().intValue() 
+                            && rule.getSourcePortEnd().intValue() >= newRule.getSourcePortEnd().intValue())
+                            || (newRule.getSourcePortStart().intValue() <= rule.getSourcePortStart().intValue() 
+                            && newRule.getSourcePortEnd().intValue() >= rule.getSourcePortStart().intValue())
+                            || (newRule.getSourcePortStart().intValue() <= rule.getSourcePortEnd().intValue() 
+                            && newRule.getSourcePortEnd().intValue() >= rule.getSourcePortEnd().intValue()))) {
 
                 throw new NetworkRuleConflictException("The range specified, " + newRule.getSourcePortStart() + "-" 
                         + newRule.getSourcePortEnd() + ", conflicts with rule " + rule.getId()
@@ -277,7 +284,8 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         }
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("No network rule conflicts detected for " + newRule + " against " + (rules.size() - 1) + " existing network ACLs");
+            s_logger.debug("No network rule conflicts detected for " + newRule + " against " + (rules.size() - 1) 
+                    + " existing network ACLs");
         }
     }
 
@@ -312,6 +320,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         return success;
     }
 
+    
     @Override
     public FirewallRule getNetworkACL(long ACLId) {
         FirewallRule rule = _firewallDao.findById(ACLId);
@@ -321,6 +330,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         return null;
     }
 
+    
     @Override
     public List<? extends FirewallRule> listNetworkACLs(ListNetworkACLsCmd cmd) {
         Long networkId = cmd.getNetworkId();
@@ -396,6 +406,7 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         return _firewallDao.listByNetworkAndPurpose(guestNtwkId, Purpose.NetworkACL);
     }
 
+    
     @Override
     public boolean revokeAllNetworkACLsForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException {
 
@@ -422,7 +433,8 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         boolean success = _firewallMgr.applyFirewallRules(ACLsToRevoke, false, caller);
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Successfully released Network ACLs for network id=" + networkId + " and # of rules now = " + ACLs.size());
+            s_logger.debug("Successfully released Network ACLs for network id=" + networkId + " and # of rules now = " 
+                                + ACLs.size());
         }
 
         return success;
