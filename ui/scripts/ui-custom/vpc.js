@@ -200,6 +200,7 @@
             maximizeIfSelected: true,
             complete: function($panel) {
               $panel.detailView($.extend(true, {}, detailView, {
+                $browser: $browser,
                 context: context
               }));
             }
