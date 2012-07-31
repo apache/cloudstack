@@ -2834,6 +2834,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (networkDomain == null) {
             networkDomain = vpc.getNetworkDomain();
         }
+        
+        if (vpc.getZoneId() != zoneId) {
+            throw new InvalidParameterValueException("New network doesn't belong to vpc zone", null);
+        }
+        
         //1) Validate if network can be created for VPC
         _vpcMgr.validateGuestNtkwForVpc(_configMgr.getNetworkOffering(ntwkOffId), cidr, networkDomain, owner, vpc, null, gateway);
 
