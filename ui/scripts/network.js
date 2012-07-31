@@ -1253,15 +1253,27 @@
 
               var disabledTabs = [];
               var ipAddress = args.context.ipAddresses[0];
-              if (!ipAddress.vpnenabled) {
-                disabledTabs.push('vpn');
-              }
-              if(ipAddress.issystem == true) {
-                disabledTabs.push('vpn');
+              var disableVpn = false, disableIpRules = false;
 
-                if(ipAddress.isstaticnat == true || ipAddress.virtualmachineid != null)
-                  disabledTabs.push('ipRules');
+              if (!ipAddress.vpnenabled) {
+                disableVpn = true;
               }
+              
+              if (ipAddress.issystem == true) {
+                disableVpn = true;
+                
+                if (ipAddress.isstaticnat == true || ipAddress.virtualmachineid != null) {
+                  disableIpRules = true;
+                }
+              }
+
+              if (ipAddress.vpcid && ipAddress.issourcenat) {
+                disableIpRules = true;
+              }
+
+              if (disableVpn) disabledTabs.push('vpn');
+              if (disableIpRules) disabledTabs.push('ipRules');
+              
               return disabledTabs;
             },
             actions: {
