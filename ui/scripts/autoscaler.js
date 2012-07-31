@@ -23,65 +23,80 @@
       totalScaleUpCondition = 0;
       scaleDownData = [];
       totalScaleDownCondition = 0;
-
-      var sampleData = null;
-      /*
-       var sampleData = {
-       templateNames: '58d3f4b2-e847-4f93-993d-1ab1505129b6', //(will set this value to dropdown)
-       serviceOfferingId: '4aa823f3-27ec-46af-9e07-b023d7a7a6f1', //(will set this value to dropdown)
-       minInstance: 1,
-       maxInstance: 10,
-       scaleUpPolicy: {
-       id: 12345,
-       duration: 1000,
-       conditions: [
-       {
-       id: 1,
-       counterid: 'cpu',
-       relationaloperator: "GE",
-       threshold: 100
-       },
-       {
-       id: 2,
-       counterid: 'memory',
-       relationaloperator: "LT",
-       threshold: 200
-       }
-
-       ]
-       },
-       scaleDownPolicy: {
-       id: 6789,
-       duration: 500,
-       conditions: [
-       {
-       id: 1,
-       counterid: 'cpu',
-       relationaloperator: "LT",
-       threshold: 30
-       },
-       {
-       id: 2,
-       counterid: 'cpu',
-       relationaloperator: "LT",
-       threshold: 50
-       }
-
-       ]
-       },
-       interval: 200,
-       quietTime: 300,
-       destroyVMgracePeriod: null,
-       securityGroups: null, // (will set this value to dropdown)
-       diskOfferingId: 'a21c9aa4-ef7e-41dd-91eb-70b2182816b0', // (will set this value to dropdown)
-       snmpCommunity: 1,
-       snmpPort: 225,
-
-       isAdvanced: false // Set this to true if any advanced field data is present
-       };
-       */
-
-      args.response.success({ data: sampleData });
+      
+			if('multiRules' in args.context) { //from an existing LB	 
+				$.ajax({
+				  url: createURL('listAutoScaleVmGroups'),
+					data: {
+					  lbruleid: args.context.multiRules[0].id
+					},					
+					success: function(json) {					  
+						var autoscaleVmGroup = json.listautoscalevmgroupsresponse.autoscalevmgroup[0];
+						
+						$.ajax({
+						  url: createURL('listAutoScaleVmProfiles'),
+							data: {
+							  id: autoscaleVmGroup.vmprofileid
+							}, 
+							success: function(json) {							  
+								var autoscaleVmProfile = json.listautoscalevmprofilesresponse.autoscalevmprofile[0];
+																
+								var scaleUpPolicy = {
+								  id: autoscaleVmGroup.scaleuppolicies[0].id,
+									duration: autoscaleVmGroup.scaleuppolicies[0].duration,
+									conditions: []
+								};								
+								$(autoscaleVmGroup.scaleuppolicies[0].conditions).each(function(){								  
+									var condition = {
+									  id: this.id,
+										counterid: this.counter.name,
+										relationaloperator: this.relationaloperator,
+										threshold: this.threshold
+									};
+									scaleUpPolicy.conditions.push(condition);
+								});
+										
+                var scaleDownPolicy = {
+								  id: autoscaleVmGroup.scaledownpolicies[0].id,
+									duration: autoscaleVmGroup.scaledownpolicies[0].duration,
+									conditions: []
+								};								
+								$(autoscaleVmGroup.scaledownpolicies[0].conditions).each(function(){								  
+									var condition = {
+									  id: this.id,
+										counterid: this.counter.name,
+										relationaloperator: this.relationaloperator,
+										threshold: this.threshold
+									};
+									scaleDownPolicy.conditions.push(condition);
+								});
+										
+								var sampleData = {
+									templateNames: autoscaleVmProfile.templateid,
+									serviceOfferingId: autoscaleVmProfile.serviceofferingid,
+									minInstance: autoscaleVmGroup.minmembers, 
+									maxInstance: autoscaleVmGroup.maxmembers, 
+									scaleUpPolicy: scaleUpPolicy,
+									scaleDownPolicy: scaleDownPolicy,
+									interval: autoscaleVmGroup.interval, 
+									quietTime: autoscaleVmGroup.scaleuppolicies[0].quiettime, 
+									destroyVMgracePeriod: autoscaleVmProfile.destroyvmgraceperiod,
+									securityGroups: null, //???
+									diskOfferingId: null, //???
+									snmpCommunity: autoscaleVmProfile.snmpcommunity,
+									snmpPort: autoscaleVmProfile.snmpport,
+									//isAdvanced: false // Set this to true if any advanced field data is present
+								};
+										
+								args.response.success({ data: sampleData });								
+							}						
+						});						
+					}				  
+				});		
+			}   
+      else { //from a new LB 
+			  args.response.success({ data: null });		
+      }			
     },
 
     // --
