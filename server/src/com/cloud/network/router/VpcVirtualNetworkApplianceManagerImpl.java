@@ -207,7 +207,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 }
             }
             
-            PublicIp sourceNatIp = _networkMgr.assignSourceNatIpAddressToVpc(owner, vpc);
+            PublicIp sourceNatIp = _vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc);
             
             DomainRouterVO router = deployVpcRouter(owner, dest, plan, params, false, vpcVrProvider, offeringId,
                     vpc.getId(), sourceNatIp);
@@ -1209,7 +1209,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             PublicIp publicIp = new PublicIp(ip, _vlanDao.findById(ip.getVlanId()), 
                     NetUtils.createSequenceBasedMacAddress(ip.getMacAddress()));
             if ((ip.getState() == IpAddress.State.Allocated || ip.getState() == IpAddress.State.Allocating) 
-                    && _networkMgr.ipUsedInVpc(ip)&& !publicVlans.contains(publicIp.getVlanTag())) {
+                    && _vpcMgr.ipUsedInVpc(ip)&& !publicVlans.contains(publicIp.getVlanTag())) {
                 s_logger.debug("Allocating nic for router in vlan " + publicIp.getVlanTag());
                 NicProfile publicNic = new NicProfile();
                 publicNic.setDefaultNic(false);
@@ -1278,7 +1278,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             long publicNtwkId = ip.getNetworkId();
             
             //if ip is not associated to any network, and there are no firewall rules, release it on the backend
-            if (!_networkMgr.ipUsedInVpc(ip)) {
+            if (!_vpcMgr.ipUsedInVpc(ip)) {
                 ip.setState(IpAddress.State.Releasing);
             }
                          
@@ -1298,7 +1298,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             long publicNtwkId = ip.getNetworkId();
             
             //if ip is not associated to any network, and there are no firewall rules, release it on the backend
-            if (!_networkMgr.ipUsedInVpc(ip)) {
+            if (!_vpcMgr.ipUsedInVpc(ip)) {
                 ip.setState(IpAddress.State.Releasing);
             }
                          

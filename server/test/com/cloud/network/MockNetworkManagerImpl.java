@@ -865,7 +865,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      * @see com.cloud.network.NetworkService#associateIP(long, java.lang.Long, java.lang.Long)
      */
     @Override
-    public IpAddress associateIP(long ipId, Long networkId, Long vpcId) throws InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException {
+    public IpAddress associateIPToNetwork(long ipId, long networkId) throws InsufficientAddressCapacityException, ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }

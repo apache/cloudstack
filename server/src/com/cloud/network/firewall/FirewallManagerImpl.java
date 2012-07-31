@@ -53,6 +53,7 @@ import com.cloud.network.rules.FirewallRule.State;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.tags.ResourceTagVO;
@@ -108,6 +109,8 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     UserVmDao _vmDao;
     @Inject
     ResourceTagDao _resourceTagDao;
+    @Inject
+    VpcManager _vpcMgr;
 
     private boolean _elbEnabled = false;
 
@@ -465,7 +468,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         if (rule.getSourceIpAddressId() != null) {
             //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
             IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
-            _networkMgr.unassignIPFromVpcNetwork(ip.getId(), rule.getNetworkId());
+            _vpcMgr.unassignIPFromVpcNetwork(ip.getId(), rule.getNetworkId());
         }
     }
 
