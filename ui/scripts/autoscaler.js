@@ -630,7 +630,7 @@
     },
 
     actions: {
-      add: function(args) {
+      apply: function(args) {
         //validation (begin) *****
         if(isAdmin() || isDomainAdmin()) { //only admin and domain-admin has access to listUers API
           var havingApiKeyAndSecretKey = false;

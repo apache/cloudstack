@@ -238,7 +238,7 @@
               var data = cloudStack.serializeForm($('.ui-dialog .autoscaler form'));
 
               $loading.appendTo($autoscalerDialog);
-              cloudStack.autoscaler.actions.add({
+              cloudStack.autoscaler.actions.apply({
                 formData: formData,
                 context: context,
                 data: data,
