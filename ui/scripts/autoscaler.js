@@ -928,9 +928,10 @@
             privateport: args.formData.privateport,
             publicport: args.formData.publicport,
             openfirewall: false,
-            networkid: networkid,
-            publicipid: args.context.ipAddresses[0].id
+            networkid: networkid
           };
+          if(args.context.ipAddresses != undefined)
+            data = $.extend(data, {publicipid: args.context.ipAddresses[0].id});
 
           $.ajax({
             url: createURL('createLoadBalancerRule'),
