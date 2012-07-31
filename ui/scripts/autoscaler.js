@@ -99,7 +99,11 @@
 									diskOfferingId: diskOfferingId, 
 									snmpCommunity: autoscaleVmProfile.snmpcommunity,
 									snmpPort: autoscaleVmProfile.snmpport,
-									username: autoscaleVmProfile.autoscaleuserid
+									username: autoscaleVmProfile.autoscaleuserid,
+									context: {
+									  autoscaleVmGroup: autoscaleVmGroup,
+										autoscaleVmProfile: autoscaleVmProfile
+									}
 									//isAdvanced: false // Set this to true if any advanced field data is present
 								};
 								
@@ -985,6 +989,8 @@
 					else { //from an existing LB
 					  apiCmd = 'updateAutoScaleVmProfile';
 						apiCmdRes = 'updateautoscalevmprofileresponse';
+						
+						array1.push("&id=" + args.context.originalAutoscaleData.context.autoscaleVmProfile.id);
 					}
 					
 					//apply to both create and update
