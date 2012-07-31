@@ -2241,9 +2241,12 @@
                     fieldPreFilter: function(args) {
                       var context = args.context;
                       var fields = args.fields;
-
-                      // Returns fields to be hidden
-                      return [];
+                      
+											var hiddenFields = [];
+											if('vpc' in args.context) { //from VPC section
+											  hiddenFields.push('autoScale');
+											}																					
+                      return hiddenFields; // Returns fields to be hidden
                     },
                     fields: {
                       'name': { edit: true, label: 'label.name', isEditable: true },
