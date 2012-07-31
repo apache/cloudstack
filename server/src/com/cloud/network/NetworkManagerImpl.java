@@ -2834,6 +2834,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (networkDomain == null) {
             networkDomain = vpc.getNetworkDomain();
         }
+        
+        if (vpc.getZoneId() != zoneId) {
+            throw new InvalidParameterValueException("New network doesn't belong to vpc zone", null);
+        }
+        
         //1) Validate if network can be created for VPC
         _vpcMgr.validateGuestNtkwForVpc(_configMgr.getNetworkOffering(ntwkOffId), cidr, networkDomain, owner, vpc, null, gateway);
 
@@ -3248,8 +3253,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
                                 physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter,
                                 permittedAccounts));
-            } else if (domainId == null || listAll) {
+            } else if (domainId == null) {
                 networksToReturn.addAll(listAccountSpecificNetworksByDomainPath(
+                        buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
+                                physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter, path,
+                                isRecursive));
+                networksToReturn.addAll(listDomainSpecificNetworksByDomainPath(
                         buildNetworkSearchCriteria(sb, keyword, id, isSystem, zoneId, guestIpType, trafficType, 
                                 physicalNetworkId, aclType, skipProjectNetworks, restartRequired, specifyIpRanges, vpcId, tags), searchFilter, path,
                                 isRecursive));
@@ -3419,6 +3428,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     private List<NetworkVO> listAccountSpecificNetworksByDomainPath(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path, boolean isRecursive) {
         SearchCriteria<NetworkVO> accountSC = _networksDao.createSearchCriteria();
         accountSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Account.toString());
+
+        if (path != null) {
+            if (isRecursive) {
+                sc.setJoinParameters("domainSearch", "path", path + "%");
+            } else {
+                sc.setJoinParameters("domainSearch", "path", path);
+            }
+        }
+
+        sc.addAnd("id", SearchCriteria.Op.SC, accountSC);
+        return _networksDao.search(sc, searchFilter);
+    }
+    
+    private List<NetworkVO> listDomainSpecificNetworksByDomainPath(SearchCriteria<NetworkVO> sc, Filter searchFilter, String path, boolean isRecursive) {
+        SearchCriteria<NetworkVO> accountSC = _networksDao.createSearchCriteria();
+        accountSC.addAnd("aclType", SearchCriteria.Op.EQ, ACLType.Domain.toString());
 
         if (path != null) {
             if (isRecursive) {
