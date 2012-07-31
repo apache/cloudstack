@@ -4130,7 +4130,10 @@
 									{
 										cidrlist: { label: 'CIDR list' },
 										ipsecpsk: { label: 'IPsec Preshared-Key' }, 										
-										id: { label: 'label.id' },										
+										id: { label: 'label.id' },
+                                                                                ikepolicy: { label: 'IKE policy'},
+                                                                                esppolicy:{ label: 'ESP policy'},
+                                                                                lifetime :{label: 'Lifetime (second)'},
 										domain: { label: 'label.domain' },
 										account: { label: 'label.account' }												
                   }
