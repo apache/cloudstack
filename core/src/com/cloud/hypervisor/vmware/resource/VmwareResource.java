@@ -139,6 +139,8 @@ import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
 import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.SetStaticRouteAnswer;
+import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
@@ -447,6 +449,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((Site2SiteVpnCfgCommand) cmd);
             } else if (clz == CheckS2SVpnConnectionsCommand.class) {
                 answer = execute((CheckS2SVpnConnectionsCommand) cmd);
+            } else if (clz == SetStaticRouteCommand.class) {
+                answer = execute((SetStaticRouteCommand) cmd); 
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -508,6 +512,57 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
         return answer;
+    }
+
+    private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource SetStaticRouteCommand: " + _gson.toJson(cmd));
+        }
+
+        boolean endResult = true;
+
+        String controlIp = getRouterSshControlIp(cmd);
+        String args = "";
+        String[] results = new String[cmd.getStaticRoutes().length];
+        int i = 0;
+
+        if ( cmd.isEmpty() ) {
+            s_logger.error("SetStaticRoute failed since incoming command is empty");
+            return new SetStaticRouteAnswer(cmd, false, null);
+        }
+
+        // Extract and build the arguments for the command to be sent to the VR.
+        String [][] rules = cmd.generateSRouteRules();
+        StringBuilder sb = new StringBuilder();
+        String[] srRules = rules[0];
+        for (int j = 0; j < srRules.length; j++) {
+            sb.append(srRules[j]).append(',');
+        }
+        args += " -a " + sb.toString();
+
+        // Send over the command for execution, via ssh, to the VR.
+        try {
+            VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+            Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null,
+                    "/opt/cloud/bin/vpc_staticroute.sh " + args);
+
+            if (s_logger.isDebugEnabled())
+                s_logger.debug("Executing script on domain router " + controlIp + ": /opt/cloud/bin/vpc_staticroute.sh " + args);
+
+            if (!result.first()) {
+                s_logger.error("SetStaticRouteCommand failure on setting one rule. args: " + args);
+                results[i++] = "Failed";
+                endResult = false;
+            } else {
+                results[i++] = null;
+            }
+        } catch (Throwable e) {
+            s_logger.error("SetStaticRouteCommand(args: " + args + ") failed on setting one rule due to " + VmwareHelper.getExceptionMessage(e), e);
+            results[i++] = "Failed";
+            endResult = false;
+        }
+        return new SetStaticRouteAnswer(cmd, endResult, results);
+
     }
 
     protected Answer execute(SetPortForwardingRulesCommand cmd) {
