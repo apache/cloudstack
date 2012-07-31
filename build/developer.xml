@@ -241,7 +241,7 @@
     </condition>
   	
     <echo message="deploydb ${server-setup.file} ${templates.file} ${DBROOTPW}" />
-    <exec dir="${db.scripts.dir}" executable="bash">
+    <exec dir="${db.scripts.dir}" executable="bash" failonerror="true">
       <arg value="deploy-db-dev.sh" />
       <arg value="${server-setup.file}" />
       <arg value="${templates.file}" />
@@ -269,7 +269,7 @@
     </condition>
   	
     <echo message="deploydb ${server-setup.file} ${templates.file} ${DBROOTPW}" />
-    <exec dir="${db.scripts.dir}" executable="bash">
+    <exec dir="${db.scripts.dir}" executable="bash" failonerror="true">
       <arg value="deploy-db-simulator.sh" />
       <arg value="${server-setup.file}" />
       <arg value="${templates.file}" />
@@ -401,7 +401,7 @@
   	  <property name="commands.vr.file" location="${dist.dir}/client/conf/virtualrouter_commands.properties" />
   
 	<echo message="build-apidocs" />
-    <exec dir="${apidoc.scripts.dir}" executable="bash">
+    <exec dir="${apidoc.scripts.dir}" executable="bash" failonerror="true">
       <arg value="build-apidoc.sh" />
       <arg value="${target.dir}/jar" />
       <arg value="${deps.dir}" />
