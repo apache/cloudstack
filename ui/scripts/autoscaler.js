@@ -368,7 +368,7 @@
               $.ajax({
                 url: createURL("listCounters"),
                 dataType: "json",
-                async: true,
+                async: false,
                 success: function(json) {
                   var counters = json.counterresponse.counter;
 
@@ -504,7 +504,7 @@
               $.ajax({
                 url: createURL("listCounters"),
                 dataType: "json",
-                async: true,
+                async: false,
                 success: function(json) {
                   var counters = json.counterresponse.counter;
 
