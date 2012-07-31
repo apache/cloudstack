@@ -4103,6 +4103,43 @@
                 }
               },
 
+              edit: {
+                label: 'label.edit',
+                action: function(args) {
+                    var array1 = [];
+                    array1.push("&gateway=" + args.context.vpnCustomerGateway[0].gateway);
+                    array1.push("&ipsecpsk=" + todb(args.context.vpnCustomerGateway[0].ipsecpsk));
+                    array1.push("&cidrlist=" + args.context.vpnCustomerGateway[0].cidrlist);
+                    array1.push("&ikepolicy=" + args.context.vpnCustomerGateway[0].ikepolicy);
+                    array1.push("&esppolicy=" + args.context.vpnCustomerGateway[0].esppolicy);
+                    $.ajax({
+                    url: createURL("updateVpnCustomerGateway&id=" + args.context.vpnCustomerGateway[0].id + array1.join("")),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                        var jobId = json.updatecustomergatewayresponse.jobid;
+                        args.response.success(
+                            {_custom:
+                                {
+                                  jobId: jobId,
+                                  getUpdatedItem: function(json) {
+                                    var item = json.queryasyncjobresultresponse.jobresult.vpncustomergateway;
+                                    return {data: item};
+                                  }
+                                }
+                            }
+                        );
+                    },
+                    error: function(json) {
+                        args.response.error('Could not edit Vpn Customer Gateway information; please ensure all fields are valid.');
+                    }
+                    });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+
               remove: {
                 label: 'delete VPN Customer Gateway',
                 messages: {
