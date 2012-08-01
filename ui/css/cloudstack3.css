@@ -5295,7 +5295,8 @@ label.error {
 
 .multi-wizard.instance-wizard .select-network .select table {
   width: 405px;
-  margin: 21px 12px 0;
+  margin: 4px 12px 0;
+  float: left;
 }
 
 .multi-wizard.instance-wizard .select-network .select table thead {
