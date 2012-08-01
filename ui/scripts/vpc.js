@@ -1900,7 +1900,9 @@
 					dataType: "json",
 					data: {
 					  vpcid: args.context.vpc[0].id,
-						listAll: true
+						//listAll: true,  //do not pass listAll to listNetworks under VPC
+						domainid: args.context.vpc[0].domainid,
+						account: args.context.vpc[0].account
 					},
 					async: true,
 					success: function(json) {					  

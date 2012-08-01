@@ -1383,8 +1383,10 @@
                           async: false,
                           data: {
                             vpcid: args.context.vpc[0].id,
-                            listAll: true,
-														supportedservices: 'StaticNat'
+                            //listAll: true,  //do not pass listAll to listNetworks under VPC
+														domainid: args.context.vpc[0].domainid,
+						                account: args.context.vpc[0].account,
+                            supportedservices: 'StaticNat'
                           },
                           success: function(json) {
                             var networks = json.listnetworksresponse.network;
@@ -2208,12 +2210,14 @@
                         select: function(args) {	
 													if('vpc' in args.context) {		
                             var data = {
-														  listAll: true,
+														  //listAll: true,  //do not pass listAll to listNetworks under VPC
 															supportedservices: 'Lb'
 														};
 														if(args.context.ipAddresses[0].associatednetworkid == null) {
 														  $.extend(data, {
-															  vpcid: args.context.vpc[0].id
+															  vpcid: args.context.vpc[0].id,
+																domainid: args.context.vpc[0].domainid,
+						                    account: args.context.vpc[0].account
 															});
 														}
 														else {
@@ -2615,12 +2619,14 @@
                         select: function(args) {
 													if('vpc' in args.context) {		
                             var data = {
-														  listAll: true,
+														  //listAll: true,  //do not pass listAll to listNetworks under VPC
 															supportedservices: 'PortForwarding'
 														};
 														if(args.context.ipAddresses[0].associatednetworkid == null) {
 														  $.extend(data, {
-															  vpcid: args.context.vpc[0].id
+															  vpcid: args.context.vpc[0].id,
+																domainid: args.context.vpc[0].domainid,
+						                    account: args.context.vpc[0].account
 															});
 														}
 														else {
