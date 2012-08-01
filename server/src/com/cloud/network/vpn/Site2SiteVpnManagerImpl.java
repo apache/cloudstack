@@ -214,10 +214,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         String vpcCidr = _vpcDao.findById(vpnGateway.getVpcId()).getCidr();
         for (String cidr : cidrList) {
             if (NetUtils.isNetworksOverlap(vpcCidr, cidr)) {
-                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
-                idList.add(new IdentityProxy(customerGateway, customerGatewayId, "customerGatewayId"));
-                throw new InvalidParameterValueException("The subnet of customer gateway " + cidr + " is overlapped with VPC cidr " +
-                        vpcCidr + "!", idList);
+                throw new InvalidParameterValueException("The subnet of customer gateway " + customerGatewayId + "'s subnet " + cidr + " is overlapped with VPC cidr " +
+                        vpcCidr + "!");
             }
         }
 
