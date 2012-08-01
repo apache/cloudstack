@@ -1387,7 +1387,7 @@
                           },
                           success: function(json) {
                             var networks = json.listnetworksresponse.network;
-                            var items = [{ id: -1, description: '' }];
+                            var items = [{ id: -1, description: 'Please select a tier' }];
                             $(networks).each(function(){
                               items.push({id: this.id, description: this.displaytext});
                             });
