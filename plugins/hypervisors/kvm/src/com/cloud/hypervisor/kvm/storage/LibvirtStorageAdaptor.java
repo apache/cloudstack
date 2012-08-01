@@ -446,25 +446,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return pool;
     }
 
-    private void getStats(LibvirtStoragePool pool) {
-        Script statsScript = new Script("/bin/bash", s_logger);
-        statsScript.add("-c");
-        statsScript.add("stats=$(df --total " + pool.getLocalPath()
-                + " |grep total|awk '{print $2,$3}');echo $stats");
-        final OutputInterpreter.OneLineParser statsParser = new OutputInterpreter.OneLineParser();
-        String result = statsScript.execute(statsParser);
-        if (result == null) {
-            String stats = statsParser.getLine();
-            if (stats != null && !stats.isEmpty()) {
-                String sizes[] = stats.trim().split(" ");
-                if (sizes.length == 2) {
-                    pool.setCapacity(Long.parseLong(sizes[0]) * 1024);
-                    pool.setUsed(Long.parseLong(sizes[1]) * 1024);
-                }
-            }
-        }
-    }
-
     @Override
     public KVMStoragePool getStoragePool(String uuid) {
         StoragePool storage = null;
@@ -503,12 +484,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 }
             }
 
-            if (pool.getType() == StoragePoolType.RBD) {
-                pool.setCapacity(storage.getInfo().capacity);
-                pool.setUsed(storage.getInfo().allocation);
-            } else {
-                getStats(pool);
-            }
+            pool.refresh();
+            pool.setCapacity(storage.getInfo().capacity);
+            pool.setUsed(storage.getInfo().allocation);
 
             return pool;
         } catch (LibvirtException e) {
@@ -593,12 +571,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 pool.setLocalPath("");
             }
 
-            if (pool.getType() == StoragePoolType.RBD) {
-                pool.setCapacity(sp.getInfo().capacity);
-                pool.setUsed(sp.getInfo().allocation);
-            } else {
-                getStats(pool);
-            }
+            pool.setCapacity(sp.getInfo().capacity);
+            pool.setUsed(sp.getInfo().allocation);
+  
             return pool;
         } catch (LibvirtException e) {
             throw new CloudRuntimeException(e.toString());
