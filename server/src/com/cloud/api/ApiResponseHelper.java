@@ -3765,6 +3765,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             tagResponses.add(tagResponse);
         }
         response.setTags(tagResponses);
+        populateOwner(response, vpc);
 
         response.setObjectName("vpc");
         return response;
