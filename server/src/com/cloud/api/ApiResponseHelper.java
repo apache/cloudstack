@@ -3721,6 +3721,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         
         response.setNetworks(networkResponses);
         response.setServices(serviceResponses);
+        populateOwner(response, vpc);
+
         response.setObjectName("vpc");
         return response;
     }
