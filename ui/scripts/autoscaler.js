@@ -1030,8 +1030,43 @@
 												if(!('multiRules' in args.context)) { //from a new LB 	
                           loadBalancer(args);
 												}
-												else { //from an existing LB
-												  args.response.success(); //modification completes here
+												else { //from an existing LB					
+													//if original state of autoscaleVmGroup is enabled, we enable it back.
+													if(args.context.originalAutoscaleData.context.autoscaleVmGroup.state == 'enabled') {													  												
+														$.ajax({
+															url: createURL('enableAutoScaleVmGroup'),
+															data: {
+																id: args.context.originalAutoscaleData.context.autoscaleVmGroup.id
+															},
+															success: function(json) {								
+																var disableAutoScaleVmGroupIntervalID = setInterval(function() { 	
+																	$.ajax({
+																		url: createURL("queryAsyncJobResult&jobid=" + json.enableautoscalevmGroupresponse.jobid),
+																		dataType: "json",
+																		success: function(json) {
+																			var result = json.queryasyncjobresultresponse;
+																			if(result.jobstatus == 0) {
+																				return;
+																			}
+																			else {                                    
+																				clearInterval(disableAutoScaleVmGroupIntervalID); 											
+																				if(result.jobstatus == 1) {																		 
+																					//json.queryasyncjobresultresponse.jobresult.autoscalevmgroup //do NOT update args.context.originalAutoscaleData.context.autoscaleVmGroup. So, we have original data before making API calls.
+																			    args.response.success(); //modification is completed here
+																				}
+																				else if(result.jobstatus == 2) {
+																					args.response.error(_s(result.jobresult.errortext));
+																				}
+																			}
+																		}
+																	});                            
+																}, 3000); 									
+															}
+														});		
+													}		
+                          else {														  
+														args.response.success(); //modification is completed here  
+													}
 												}
                       }
                       else if (result.jobstatus == 2) {
@@ -1151,7 +1186,46 @@
           });
         };
 
-        scaleUp(args);
+				if(!('multiRules' in args.context)) { //from a new LB 
+          scaleUp(args);
+				}
+				else { //from an existing LB			
+					if(args.context.originalAutoscaleData.context.autoscaleVmGroup.state == 'disabled') {
+					  scaleUp(args);
+					}
+					else {					
+						$.ajax({
+							url: createURL('disableAutoScaleVmGroup'),
+							data: {
+								id: args.context.originalAutoscaleData.context.autoscaleVmGroup.id
+							},
+							success: function(json) {								
+								var disableAutoScaleVmGroupIntervalID = setInterval(function() { 	
+									$.ajax({
+										url: createURL("queryAsyncJobResult&jobid=" + json.disableautoscalevmGroupresponse.jobid),
+										dataType: "json",
+										success: function(json) {
+											var result = json.queryasyncjobresultresponse;
+											if(result.jobstatus == 0) {
+												return;
+											}
+											else {                                    
+												clearInterval(disableAutoScaleVmGroupIntervalID); 											
+												if(result.jobstatus == 1) {																		 
+													//json.queryasyncjobresultresponse.jobresult.autoscalevmgroup //do NOT update args.context.originalAutoscaleData.context.autoscaleVmGroup. So, we have original data before making API calls.
+									        scaleUp(args);
+												}
+												else if(result.jobstatus == 2) {
+													args.response.error(_s(result.jobresult.errortext));
+												}
+											}
+										}
+									});                            
+								}, 3000); 									
+							}
+						});
+					}					
+				}
 
         //setTimeout(function() { args.response.success(); }, 1000);
         //setTimeout(function() { args.response.error('Error!'); }, 1000);
