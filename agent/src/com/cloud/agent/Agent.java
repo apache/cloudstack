@@ -466,20 +466,17 @@ public class Agent implements HandlerFactory, IAgentControl {
                 final Command cmd = cmds[i];
                 Answer answer;
                 try {
-                    if (s_logger.isDebugEnabled()) {
-                        // this is a hack to make sure we do NOT log the ssh keys
-                        if ((cmd instanceof ModifySshKeysCommand)) {
-                            s_logger.debug("Received the request for command: ModifySshKeysCommand");
-                        } else {
-                            if (!requestLogged) // ensures request is logged only once per method call
-                            {
-                                s_logger.debug("Request:" + request.toString());
-                                requestLogged = true;
-                            }
-                        }
-
-                        s_logger.debug("Processing command: " + cmd.toString());
-                    }
+                	if (s_logger.isDebugEnabled()) {
+                		if (!requestLogged) // ensures request is logged only once per method call
+                		{
+                			String requestMsg = request.toString();
+                			if (requestMsg != null) {
+                				s_logger.debug("Request:" + requestMsg);
+                			}
+                			requestLogged = true;
+                		}
+                		s_logger.debug("Processing command: " + cmd.toString());
+                	}
 
                     if (cmd instanceof CronCommand) {
                         final CronCommand watch = (CronCommand) cmd;
