@@ -15,10 +15,10 @@
  */
 package com.cloud.bridge.persist.dao;
 
+import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.bridge.persist.EntityDao;
-import com.cloud.stack.models.CloudStackConfiguration;
 import com.cloud.stack.models.CloudStackServiceOffering;
 
 
@@ -29,10 +29,9 @@ public class CloudStackSvcOfferingDao extends EntityDao<CloudStackServiceOfferin
 	    super(CloudStackServiceOffering.class, true);
 	}
 
-
-	public CloudStackServiceOffering getSvcOfferingByName( String name ){
-		return queryEntity("from CloudStackServiceOffering where name=?", new Object[] {name});
-	}
+    public List<CloudStackServiceOffering> getSvcOfferingByName( String name ){
+        return queryEntities("from CloudStackServiceOffering where name=?", new Object[] {name});
+    }
 
     public CloudStackServiceOffering getSvcOfferingById( String id ){
         return queryEntity("from CloudStackServiceOffering where id=?", new Object[] {id});
