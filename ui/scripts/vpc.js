@@ -1888,14 +1888,26 @@
       },
 
       // Get tiers
-      dataProvider: function(args) {		
+      dataProvider: function(args) {	
+        var data = { vpcid: args.context.vpc[0].id };
+
+        if (isDomainAdmin()) {
+          $.extend(data, {
+            account: args.context.users[0].account,
+            domainid: args.context.users[0].domainid
+                   });
+             }
+         else {
+          $.extend(data, {
+            listAll: true
+          });
+        }
+
+ 	
 				$.ajax({
 					url: createURL("listNetworks"),
 					dataType: "json",
-					data: {
-					  vpcid: args.context.vpc[0].id,
-						listAll: true
-					},
+					data: data,
 					async: true,
 					success: function(json) {					  
 						var networks = json.listnetworksresponse.network;												
