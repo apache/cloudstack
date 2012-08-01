@@ -1311,7 +1311,7 @@
       allowedActions.push("recurringSnapshot");
     }
     if(jsonObj.state != "Allocated") {
-      if((jsonObj.vmstate == "Stopped" || jsonObj.virtualmachineid == null) && jsonObj.state != "Ready") {
+      if((jsonObj.vmstate == "Stopped" || jsonObj.virtualmachineid == null) && jsonObj.state == "Ready") {
         allowedActions.push("downloadVolume");
       }
     }
