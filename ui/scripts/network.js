@@ -843,7 +843,8 @@
                 dataProvider: function(args) {
                   $.ajax({
                     url: createURL("listNetworks&id=" + args.context.networks[0].id), //pass "&listAll=true" to "listNetworks&id=xxxxxxxx" for now before API gets fixed.
-                    dataType: "json",
+                    data: { listAll: true },
+										dataType: "json",
                     async: true,
                     success: function(json) {
                       var jsonObj = json.listnetworksresponse.network[0];
