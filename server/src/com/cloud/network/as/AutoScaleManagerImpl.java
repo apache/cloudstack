@@ -173,7 +173,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         for (Counter counter : counters) {
             if (!supportedCounters.contains(counter.getSource().name().toString())) {
                 throw new InvalidParameterException("AutoScale counter with source='" + counter.getSource() + "' is not supported " +
-                "in the network where lb is configured");
+                        "in the network where lb is configured");
             }
         }
     }
@@ -272,15 +272,15 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         String secretKey = user.getSecretKey();
         String csUrl = _configDao.getValue(Config.EndpointeUrl.key());
 
-        if(apiKey == null) {
+        if (apiKey == null) {
             throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it", null);
         }
 
-        if(secretKey == null) {
+        if (secretKey == null) {
             throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it", null);
         }
 
-        if(csUrl == null || csUrl.contains("localhost")) {
+        if (csUrl == null || csUrl.contains("localhost")) {
             throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point", null);
         }
 
@@ -324,7 +324,6 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         if (autoscaleUserId == null) {
             autoscaleUserId = UserContext.current().getCallerUserId();
         }
-
 
         AutoScaleVmProfileVO profileVO = new AutoScaleVmProfileVO(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getServiceOfferingId(), cmd.getTemplateId(), cmd.getOtherDeployParams(),
                 cmd.getSnmpCommunity(), cmd.getSnmpPort(), cmd.getDestroyVmGraceperiod(), autoscaleUserId);
@@ -566,7 +565,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
             Account caller = UserContext.current().getCaller();
 
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
-            ListProjectResourcesCriteria>(domainId, isRecursive, null);
+                    ListProjectResourcesCriteria>(domainId, isRecursive, null);
             _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject,
                     listAll, false);
             domainId = domainIdRecursiveListProject.first();
@@ -657,7 +656,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         List<AutoScaleVmGroupPolicyMapVO> vmGroupPolicyList = _autoScaleVmGroupPolicyMapDao.listByPolicyId(policyId);
         for (AutoScaleVmGroupPolicyMapVO vmGroupPolicy : vmGroupPolicyList) {
             AutoScaleVmGroupVO vmGroupVO = _autoScaleVmGroupDao.findById(vmGroupPolicy.getVmGroupId());
-            if(vmGroupVO == null) {
+            if (vmGroupVO == null) {
                 s_logger.warn("Stale database entry! There is an entry in VmGroupPolicyMap but the vmGroup is missing:" + vmGroupPolicy.getVmGroupId());
 
                 continue;
@@ -836,7 +835,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         }
 
         if (maxMembers < 0) {
-            throw new InvalidParameterValueException(ApiConstants.MAX_MEMBERS + " is an invalid value: " + minMembers, null);
+            throw new InvalidParameterValueException(ApiConstants.MAX_MEMBERS + " is an invalid value: " + maxMembers, null);
         }
 
         if (minMembers > maxMembers) {
