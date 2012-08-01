@@ -388,6 +388,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         accountResponse.setNetworkLimit(networkLimitDisplay);
         accountResponse.setNetworkTotal(networkTotal);
         accountResponse.setNetworkAvailable(networkAvail);
+        
+        //get resource limits for vpcs
+        Long vpcLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.vpc, account.getId());
+        String vpcLimitDisplay = (accountIsAdmin || vpcLimit == -1) ? "Unlimited" : String.valueOf(vpcLimit);
+        Long vpcTotal = ApiDBUtils.getResourceCount(ResourceType.vpc, account.getId());
+        String vpcAvail = (accountIsAdmin || vpcLimit == -1) ? "Unlimited" : String.valueOf(vpcLimit - vpcTotal);
+        accountResponse.setNetworkLimit(vpcLimitDisplay);
+        accountResponse.setNetworkTotal(vpcTotal);
+        accountResponse.setNetworkAvailable(vpcAvail);
 
         // adding all the users for an account as part of the response obj
         List<UserVO> usersForAccount = ApiDBUtils.listUsersByAccount(account.getAccountId());

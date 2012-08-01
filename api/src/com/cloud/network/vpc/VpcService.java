@@ -75,8 +75,9 @@ public interface VpcService {
      * @param cidr
      * @param networkDomain TODO
      * @return
+     * @throws ResourceAllocationException TODO
      */
-    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain);
+    public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, String networkDomain) throws ResourceAllocationException;
 
     /**
      * @param vpcId
