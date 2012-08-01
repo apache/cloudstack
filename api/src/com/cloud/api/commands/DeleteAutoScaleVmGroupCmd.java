@@ -65,7 +65,7 @@ public class DeleteAutoScaleVmGroupCmd extends BaseAsyncCmd {
         }
 
         return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are
-// tracked
+        // tracked
     }
 
     @Override
@@ -94,6 +94,6 @@ public class DeleteAutoScaleVmGroupCmd extends BaseAsyncCmd {
 
     @Override
     public AsyncJob.Type getInstanceType() {
-        return AsyncJob.Type.AutoScalePolicy;
+        return AsyncJob.Type.AutoScaleVmGroup;
     }
 }

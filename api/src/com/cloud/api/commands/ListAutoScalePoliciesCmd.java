@@ -44,7 +44,7 @@ public class ListAutoScalePoliciesCmd extends BaseListAccountResourcesCmd {
     @Parameter(name = ApiConstants.CONDITION_ID, type = CommandType.LONG, description = "the ID of the condition of the policy")
     private Long conditionId;
 
-    @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, required = true, description = "the action to be executed if all the conditions evaluate to true for the specified duration.")
+    @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "the action to be executed if all the conditions evaluate to true for the specified duration.")
     private String action;
 
     @IdentityMapper(entityTableName="autoscale_vmgroups")
