@@ -368,7 +368,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
 
         List<AutoScaleVmGroupVO> vmGroupList = _autoScaleVmGroupDao.listByAll(null, profileId);
         for (AutoScaleVmGroupVO vmGroupVO : vmGroupList) {
-            if (vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
+            if (!vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
                 throw new InvalidParameterValueException("The AutoScale Vm Profile can be updated only if the Vm Group it is associated with is disabled in state", null);
             }
         }
