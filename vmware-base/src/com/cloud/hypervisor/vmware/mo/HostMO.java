@@ -29,6 +29,7 @@ import com.vmware.vim25.HostIpRouteEntry;
 import com.vmware.vim25.HostListSummaryQuickStats;
 import com.vmware.vim25.HostNetworkInfo;
 import com.vmware.vim25.HostNetworkPolicy;
+import com.vmware.vim25.HostNetworkSecurityPolicy;
 import com.vmware.vim25.HostNetworkTrafficShapingPolicy;
 import com.vmware.vim25.HostPortGroup;
 import com.vmware.vim25.HostPortGroupSpec;
@@ -353,7 +354,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		return false;
 	}
 	
-	public void createPortGroup(HostVirtualSwitch vSwitch, String portGroupName, Integer vlanId, HostNetworkTrafficShapingPolicy shapingPolicy) throws Exception {
+	public void createPortGroup(HostVirtualSwitch vSwitch, String portGroupName, Integer vlanId, HostNetworkSecurityPolicy secPolicy, HostNetworkTrafficShapingPolicy shapingPolicy) throws Exception {
 		assert(portGroupName != null);
 		HostNetworkSystemMO hostNetMo = getHostNetworkSystemMO();
 		assert(hostNetMo != null);
@@ -364,13 +365,15 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		if(vlanId != null)
 			spec.setVlanId(vlanId.intValue());
 		HostNetworkPolicy policy = new HostNetworkPolicy();
+		if (secPolicy != null)
+			policy.setSecurity(secPolicy);
 		policy.setShapingPolicy(shapingPolicy);
 		spec.setPolicy(policy);
 		spec.setVswitchName(vSwitch.getName());
 		hostNetMo.addPortGroup(spec);
 	}
 	
-	public void updatePortGroup(HostVirtualSwitch vSwitch, String portGroupName, Integer vlanId, HostNetworkTrafficShapingPolicy shapingPolicy) throws Exception {
+	public void updatePortGroup(HostVirtualSwitch vSwitch, String portGroupName, Integer vlanId, HostNetworkSecurityPolicy secPolicy, HostNetworkTrafficShapingPolicy shapingPolicy) throws Exception {
 		assert(portGroupName != null);
 		HostNetworkSystemMO hostNetMo = getHostNetworkSystemMO();
 		assert(hostNetMo != null);
@@ -381,6 +384,8 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		if(vlanId != null)
 			spec.setVlanId(vlanId.intValue());
 		HostNetworkPolicy policy = new HostNetworkPolicy();
+		if (secPolicy != null)
+			policy.setSecurity(secPolicy);
 		policy.setShapingPolicy(shapingPolicy);
 		spec.setPolicy(policy);
 		spec.setVswitchName(vSwitch.getName());

@@ -191,6 +191,8 @@ import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.HostFirewallInfo;
 import com.vmware.vim25.HostFirewallRuleset;
+import com.vmware.vim25.HostNetworkPolicy;
+import com.vmware.vim25.HostNetworkSecurityPolicy;
 import com.vmware.vim25.HostNetworkTrafficShapingPolicy;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.ManagedObjectReference;

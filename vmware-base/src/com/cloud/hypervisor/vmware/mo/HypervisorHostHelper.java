@@ -17,6 +17,8 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.net.NetUtils;
 import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.HostNetworkPolicy;
+import com.vmware.vim25.HostNetworkSecurityPolicy;
 import com.vmware.vim25.HostNetworkTrafficShapingPolicy;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.HostVirtualSwitch;
@@ -117,15 +119,18 @@ public class HypervisorHostHelper {
 			// allow 5 seconds of burst transfer
 			shapingPolicy.setBurstSize(5*shapingPolicy.getAverageBandwidth()/8);
 		}
-		
+//		HostNetworkSecurityPolicy secPolicy = new HostNetworkSecurityPolicy();
+//		secPolicy.setAllowPromiscuous(Boolean.FALSE);
+//		secPolicy.setForgedTransmits(Boolean.TRUE);
+//		secPolicy.setMacChanges(Boolean.TRUE);
 		boolean bWaitPortGroupReady = false;
 		if (!hostMo.hasPortGroup(vSwitch, networkName)) {
-			hostMo.createPortGroup(vSwitch, networkName, vid, shapingPolicy);
+			hostMo.createPortGroup(vSwitch, networkName, vid, null, shapingPolicy);
 			bWaitPortGroupReady = true;
 		} else {
 			HostPortGroupSpec spec = hostMo.getPortGroupSpec(networkName);
 			if(!isSpecMatch(spec, vid, shapingPolicy)) {
-				hostMo.updatePortGroup(vSwitch, networkName, vid, shapingPolicy);
+				hostMo.updatePortGroup(vSwitch, networkName, vid, null, shapingPolicy);
 				bWaitPortGroupReady = true;
 			}
 		}
@@ -198,11 +203,15 @@ public class HypervisorHostHelper {
 		
 		String networkName;
 		networkName = composeCloudNetworkName("cloud.private", vlanId == null ? null : String.valueOf(vlanId), null, vSwitchName);
-				
+		HostNetworkSecurityPolicy secPolicy = new HostNetworkSecurityPolicy();
+		secPolicy.setAllowPromiscuous(Boolean.TRUE);
+		secPolicy.setForgedTransmits(Boolean.TRUE);
+		secPolicy.setMacChanges(Boolean.TRUE);
 		if (!hostMo.hasPortGroup(vSwitch, networkName)) {
-			hostMo.createPortGroup(vSwitch, networkName, vlanId, null);
+			hostMo.createPortGroup(vSwitch, networkName, vlanId, secPolicy, null);
+		} else {
+			hostMo.updatePortGroup(vSwitch, networkName, vlanId, secPolicy, null);
 		}
-
 		ManagedObjectReference morNetwork = waitForNetworkReady(hostMo, networkName, timeOutMs);
 		if (morNetwork == null) {
 			String msg = "Failed to create private network";
@@ -274,12 +283,12 @@ public class HypervisorHostHelper {
 
 		boolean bWaitPortGroupReady = false;
 		if (!hostMo.hasPortGroup(vSwitch, networkName)) {
-			hostMo.createPortGroup(vSwitch, networkName, vid, shapingPolicy);
+			hostMo.createPortGroup(vSwitch, networkName, vid, null, shapingPolicy);
 			bWaitPortGroupReady = true;
 		} else {
 			HostPortGroupSpec spec = hostMo.getPortGroupSpec(networkName);
 			if(!isSpecMatch(spec, vid, shapingPolicy)) {
-				hostMo.updatePortGroup(vSwitch, networkName, vid, shapingPolicy);
+				hostMo.updatePortGroup(vSwitch, networkName, vid, null, shapingPolicy);
 				bWaitPortGroupReady = true;
 			}
 		}
