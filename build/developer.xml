@@ -35,6 +35,7 @@
   <property name="unittest.dir" location="${base.dir}/unittest"/>
   <property name="unittest.target.dir" location="${unittest.dir}/classes"/>
   <property name="unittest.jar.dir" location="${unittest.dir}/jar"/>
+  <property name="unittest.formatter" value="plain" />
   <property name="ovm.dir" location="${base.dir}/ovm" />
   
   <!-- directories for api doc -->
@@ -318,7 +319,7 @@
       <classpath refid="test.classpath"/>
       <jvmarg value="${debug.jvmarg}"/>
       <batchtest todir="${unittest.dir}">
-        <formatter type="plain"/>
+        <formatter type="${unittest.formatter}"/>
         <fileset dir="${utils.test.dir}">
           <include name="**/*Test.java"/>
         </fileset>
@@ -347,7 +348,7 @@
       <jvmarg value="-Xms1024m"/>
       <jvmarg value="-Xmx1024m"/>
       <batchtest todir="${unittest.dir}">
-        <formatter type="plain"/>
+        <formatter type="${unittest.formatter}"/>
         <fileset dir="${utils.test.dir}">
           <include name="**/${test}.java"/>
         </fileset>
@@ -374,7 +375,7 @@
       <jvmarg value="-Xrunjdwp:transport=dt_socket,address=8787,server=y,suspend=y"/>
       <jvmarg value="${assertion}"/>
       <batchtest todir="${unittest.dir}">
-        <formatter type="plain"/>
+        <formatter type="${unittest.formatter}"/>
         <fileset dir="${utils.test.dir}">
           <include name="**/${test}.java"/>
         </fileset>
