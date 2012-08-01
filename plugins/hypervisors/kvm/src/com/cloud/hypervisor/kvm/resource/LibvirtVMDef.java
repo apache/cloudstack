@@ -665,6 +665,13 @@ public class LibvirtVMDef {
             _model = model;
         }
 
+        public void defEthernet(String targetName, String macAddr,  nicModel model) {
+            _netType = guestNetType.ETHERNET;
+            _networkName = targetName;
+            _macAddr = macAddr;
+            _model = model;
+         }
+
         public void setHostNetType(hostNicType hostNetType) {
             _hostNetType = hostNetType;
         }
