@@ -40,6 +40,7 @@ import com.cloud.utils.db.Transaction;
 public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
     final GenericSearchBuilder<VpcVO, Integer> CountByOfferingId;
     final SearchBuilder<VpcVO> AllFieldsSearch;
+    final GenericSearchBuilder<VpcVO, Long> CountByAccountId;
     ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
 
     protected VpcDaoImpl() {
@@ -56,6 +57,12 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
         AllFieldsSearch.and("state", AllFieldsSearch.entity().getState(), Op.EQ);
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), Op.EQ);
         AllFieldsSearch.done();
+        
+        CountByAccountId = createSearchBuilder(Long.class);
+        CountByAccountId.select(null, Func.COUNT, CountByAccountId.entity().getId());
+        CountByAccountId.and("offeringId", CountByAccountId.entity().getAccountId(), Op.EQ);
+        CountByAccountId.and("removed", CountByAccountId.entity().getRemoved(), Op.NULL);
+        CountByAccountId.done();
     }
     
     
@@ -101,6 +108,14 @@ public class VpcDaoImpl extends GenericDaoBase<VpcVO, Long> implements VpcDao{
         boolean result = super.remove(id);
         txn.commit();
         return result;
+    }
+    
+    @Override
+    public long countByAccountId(long accountId) {
+        SearchCriteria<Long> sc = CountByAccountId.create();
+        sc.setParameters("accountId", accountId);
+        List<Long> results = customSearch(sc, null);
+        return results.get(0);
     }
 }
 

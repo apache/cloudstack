@@ -36,6 +36,7 @@ import com.cloud.api.commands.ListPrivateGatewaysCmd;
 import com.cloud.api.commands.ListStaticRoutesCmd;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan.VlanType;
@@ -89,6 +90,7 @@ import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.utils.NumbersUtil;
@@ -158,6 +160,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
     Site2SiteVpnManager _s2sVpnMgr;
     @Inject
     VlanDao _vlanDao = null;
+    @Inject
+    ResourceLimitService _resourceLimitMgr;
 
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
@@ -510,13 +514,16 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VPC_CREATE, eventDescription = "creating vpc", create=true)
     public Vpc createVpc(long zoneId, long vpcOffId, long vpcOwnerId, String vpcName, String displayText, String cidr, 
-            String networkDomain) {
+            String networkDomain) throws ResourceAllocationException {
         Account caller = UserContext.current().getCaller();
         Account owner = _accountMgr.getAccount(vpcOwnerId);
         
         //Verify that caller can perform actions in behalf of vpc owner
         _accountMgr.checkAccess(caller, null, false, owner);
         
+        //check resource limit
+        _resourceLimitMgr.checkResourceLimit(owner, ResourceType.vpc);
+
         // Validate vpc offering
         VpcOfferingVO vpcOff = _vpcOffDao.findById(vpcOffId);
         if (vpcOff == null) {
@@ -561,7 +568,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
         return false;
     }
 
-
+    
+    @DB
     protected Vpc createVpc(long zoneId, long vpcOffId, Account vpcOwner, String vpcName, String displayText, String cidr, 
             String networkDomain) {
         
@@ -593,16 +601,17 @@ public class VpcManagerImpl implements VpcManager, Manager{
                         " that overlaps the cidr specified: " + cidr);
             }
         }
-        
+
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
         VpcVO vpc = new VpcVO (zoneId, vpcName, displayText, vpcOwner.getId(), vpcOwner.getDomainId(), vpcOffId, cidr, 
                 networkDomain);
         vpc = _vpcDao.persist(vpc);
-        
-        if (vpc != null) {
-            s_logger.debug("Created VPC " + vpc);
-        } else {
-            s_logger.debug("Failed to create VPC");
-        }
+        _resourceLimitMgr.incrementResourceCount(vpcOwner.getId(), ResourceType.vpc);
+        txn.commit();
+
+        s_logger.debug("Created VPC " + vpc);
+
         return vpc; 
     }
     
@@ -625,6 +634,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     }
 
     @Override
+    @DB
     public boolean destroyVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException {
         UserContext ctx = UserContext.current();
         
@@ -633,13 +643,22 @@ public class VpcManagerImpl implements VpcManager, Manager{
         if (networksCount > 0) {
             throw new InvalidParameterValueException("Can't delete VPC " + vpc + " as its used by " + networksCount + " networks");
         }
-        
-        //mark VPC as disabled
-        s_logger.debug("Updating VPC " + vpc + " with state " + Vpc.State.Inactive + " as a part of vpc delete");
-        VpcVO vpcVO = _vpcDao.findById(vpc.getId());
-        vpcVO.setState(Vpc.State.Inactive);
-        _vpcDao.update(vpc.getId(), vpcVO);
 
+        //mark VPC as inactive
+        if (vpc.getState() != Vpc.State.Inactive) {
+            s_logger.debug("Updating VPC " + vpc + " with state " + Vpc.State.Inactive + " as a part of vpc delete");
+            VpcVO vpcVO = _vpcDao.findById(vpc.getId());
+            vpcVO.setState(Vpc.State.Inactive);
+            
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
+            _vpcDao.update(vpc.getId(), vpcVO);
+            
+            //decrement resource count
+            _resourceLimitMgr.decrementResourceCount(vpc.getAccountId(), ResourceType.vpc);
+            txn.commit();
+        }
+        
         //shutdown VPC
         if (!shutdownVpc(vpc.getId())) {
             s_logger.warn("Failed to shutdown vpc " + vpc + " as a part of vpc destroy process");

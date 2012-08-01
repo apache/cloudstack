@@ -27,7 +27,8 @@ public interface Resource {
         snapshot("snapshot", 3, ResourceOwnerType.Account, ResourceOwnerType.Domain),
         template("template", 4, ResourceOwnerType.Account, ResourceOwnerType.Domain),
         project("project", 5, ResourceOwnerType.Account, ResourceOwnerType.Domain),
-        network("network", 6, ResourceOwnerType.Account, ResourceOwnerType.Domain);
+        network("network", 6, ResourceOwnerType.Account, ResourceOwnerType.Domain),
+        vpc("vpc", 7, ResourceOwnerType.Account, ResourceOwnerType.Domain);
 
         private String name;
         private ResourceOwnerType[] supportedOwners;

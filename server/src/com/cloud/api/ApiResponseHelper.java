@@ -265,6 +265,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         accountResponse.setDomainName(ApiDBUtils.findDomainById(account.getDomainId()).getName());
         accountResponse.setState(account.getState().toString());
         accountResponse.setNetworkDomain(account.getNetworkDomain());
+        accountResponse.setDefaultZone(account.getDefaultZoneId());
 
         // get network stat
         List<UserStatisticsVO> stats = ApiDBUtils.listUserStatsBy(account.getId());
@@ -361,7 +362,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         accountResponse.setVmStopped(vmStopped);
         accountResponse.setVmRunning(vmRunning);
         accountResponse.setObjectName("account");
-        
+
         //get resource limits for projects
         Long projectLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.project, account.getId());
         String projectLimitDisplay = (accountIsAdmin || projectLimit == -1) ? "Unlimited" : String.valueOf(projectLimit);
@@ -370,7 +371,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         accountResponse.setProjectLimit(projectLimitDisplay);
         accountResponse.setProjectTotal(projectTotal);
         accountResponse.setProjectAvailable(projectAvail);
-        
+
         //get resource limits for networks
         Long networkLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.network, account.getId());
         String networkLimitDisplay = (accountIsAdmin || networkLimit == -1) ? "Unlimited" : String.valueOf(networkLimit);
@@ -379,7 +380,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         accountResponse.setNetworkLimit(networkLimitDisplay);
         accountResponse.setNetworkTotal(networkTotal);
         accountResponse.setNetworkAvailable(networkAvail);
-      
+        
+        //get resource limits for vpcs
+        Long vpcLimit = ApiDBUtils.findCorrectResourceLimit(ResourceType.vpc, account.getId());
+        String vpcLimitDisplay = (accountIsAdmin || vpcLimit == -1) ? "Unlimited" : String.valueOf(vpcLimit);
+        Long vpcTotal = ApiDBUtils.getResourceCount(ResourceType.vpc, account.getId());
+        String vpcAvail = (accountIsAdmin || vpcLimit == -1) ? "Unlimited" : String.valueOf(vpcLimit - vpcTotal);
+        accountResponse.setNetworkLimit(vpcLimitDisplay);
+        accountResponse.setNetworkTotal(vpcTotal);
+        accountResponse.setNetworkAvailable(vpcAvail);
+
         // adding all the users for an account as part of the response obj
         List<UserVO> usersForAccount = ApiDBUtils.listUsersByAccount(account.getAccountId());
         List<UserResponse> userResponseList = new ArrayList<UserResponse>();
@@ -392,7 +402,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         accountResponse.setDetails(ApiDBUtils.getAccountDetails(account.getId()));
         return accountResponse;
     }
-
+    
+    
     @Override
     public UserResponse createUserResponse(UserAccount user) {
         UserResponse userResponse = new UserResponse();
