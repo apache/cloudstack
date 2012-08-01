@@ -80,5 +80,10 @@ DEALLOCATE PREPARE stmt1;
 AlTER TABLE physical_network_service_providers ADD CONSTRAINT `fk_pnetwork_service_providers__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE;
 UPDATE `cloud`.`configuration` SET description='In second, timeout for creating volume from snapshot' WHERE name='create.volume.from.snapshot.wait';
 
+ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `max_data_volumes_limit` int unsigned DEFAULT 6 COMMENT 'Max. data volumes per VM supported by hypervisor';
+SET SQL_SAFE_UPDATES=0;
+UPDATE `cloud`.`hypervisor_capabilities` SET `max_data_volumes_limit`=13 WHERE `hypervisor_type`='XenServer' AND (`hypervisor_version`='6.0' OR `hypervisor_version`='6.0.2');
+SET SQL_SAFE_UPDATES=1;
+
 
 
