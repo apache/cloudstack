@@ -965,7 +965,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         AutoScaleVmGroupVO vmGroup = getEntityInDatabase(UserContext.current().getCaller(), "AutoScale Vm Group", id, _autoScaleVmGroupDao);
         boolean success = false;
         if (!vmGroup.getState().equals(AutoScaleVmGroup.State_Enabled)) {
-            throw new InvalidParameterValueException("Only a AutoScale Vm Group which is in Disabled state can be disabled.", null);
+            throw new InvalidParameterValueException("Only a AutoScale Vm Group which is in Enabled state can be disabled.", null);
         }
 
         try {
