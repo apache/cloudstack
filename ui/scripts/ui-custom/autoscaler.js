@@ -270,10 +270,21 @@
             $loading.remove();
             renderDialogContent(args);
 
-            if (args.data && args.data.isAdvanced) {
-              $autoscalerDialog.find('input[type=checkbox]').trigger('click');
-              $autoscalerDialog.find('input[type=checkbox]').attr('checked', 'checked');
-            }
+            if (args.data == null) { //from a new LB rule						  
+							$autoscalerDialog.find('select[name=serviceOfferingId]').removeAttr('disabled');
+							$autoscalerDialog.find('select[name=securityGroups]').removeAttr('disabled');
+							$autoscalerDialog.find('select[name=diskOfferingId]').removeAttr('disabled');
+						}
+						else { //from an existing LB rule
+						  $autoscalerDialog.find('select[name=serviceOfferingId]').attr('disabled', true);
+							$autoscalerDialog.find('select[name=securityGroups]').attr('disabled', true);
+							$autoscalerDialog.find('select[name=diskOfferingId]').attr('disabled', true);
+						
+						  if(args.data.isAdvanced != null) {
+								$autoscalerDialog.find('input[type=checkbox]').trigger('click');
+								$autoscalerDialog.find('input[type=checkbox]').attr('checked', 'checked');
+							}
+            }						
           }
         }
       });
