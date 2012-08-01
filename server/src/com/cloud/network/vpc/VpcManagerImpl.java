@@ -188,7 +188,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 if (svc == Service.Lb) {
                     Set<Provider> lbProviders = new HashSet<Provider>();
                     lbProviders.add(Provider.VPCVirtualRouter);
-                    lbProviders.add(Provider.Netscaler);
                     svcProviderMap.put(svc, lbProviders);
                 } else {
                     svcProviderMap.put(svc, defaultProviders);
