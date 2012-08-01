@@ -350,3 +350,4 @@ UPDATE `cloud`.`hypervisor_capabilities` SET `max_data_volumes_limit`=13 WHERE `
 SET SQL_SAFE_UPDATES=1;
 UPDATE `cloud`.`configuration` SET description='In second, timeout for creating volume from snapshot' WHERE name='create.volume.from.snapshot.wait';
 
+ALTER TABLE `cloud`.`host_details` ADD CONSTRAINT UNIQUE KEY (`host_id`, `name`);
