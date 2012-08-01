@@ -5340,8 +5340,10 @@ label.error {
 }
 
 .multi-wizard.instance-wizard .select-network .main-desc {
-  top: 7px;
+  width: 252px;
+  top: 12px;
   left: 12px;
+  float: left;
 }
 
 .multi-wizard.instance-wizard .select-network .select .secondary-input {
@@ -5380,7 +5382,21 @@ label.error {
   margin: 21px 15px 0px;
 }
 
-/**** New network*/
+.multi-wizard.instance-wizard .select-network .select-vpc {
+  float: left;
+  padding: 3px;
+  margin: 7px 0px 7px 7px;
+}
+
+.multi-wizard.instance-wizard .select-network .select-vpc select {
+  width: 124px;
+}
+
+.multi-wizard.instance-wizard .select-network .select-vpc label {
+  font-size: 10px;
+}
+
+/**** New networ*/
 .multi-wizard.instance-wizard .select-network .select.new-network {
 }
 

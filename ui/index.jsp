@@ -142,7 +142,6 @@
                   </div>
                 </div>
               </div>
-
               <!-- Select ISO -->
               <div class="wizard-step-conditional select-iso">
                 <div class="main-desc">
@@ -169,7 +168,6 @@
                 </div>
               </div>
             </div>
-
             <!-- Step 3: Service Offering -->
             <div class="step service-offering" wizard-step-id="service-offering">
               <div class="content">
@@ -177,7 +175,6 @@
                 </div>
               </div>
             </div>
-
             <!-- Step 4: Data Disk Offering -->
             <div class="step data-disk-offering" wizard-step-id="data-disk-offering">
               <div class="content">
@@ -185,15 +182,12 @@
                   <input type="radio" name="diskofferingid" value="0" />
                   <label><fmt:message key="label.no.thanks"/></label>
                 </div>
-
                 <!-- Existing offerings -->
                 <div class="select-container">
                 </div>
-
                 <!-- Custom size slider -->
                 <div class="section custom-size">
                   <label><fmt:message key="label.disk.size"/></label>
-
                   <!-- Slider -->
                   <label class="size">1 GB</label>
                   <div class="slider custom-size"></div>
@@ -204,7 +198,6 @@
                 </div>
               </div>
             </div>
-
             <!-- Step 5: Network -->
             <div class="step network" wizard-step-id="network">
               <!-- 5a: Network description -->
@@ -213,11 +206,16 @@
 								<p id="from_instance_page_2"><fmt:message key="message.please.proceed"/></p>
 								<p id="from_vpc_tier"></p>                
               </div>
-
               <!-- 5b: Select network -->
               <div class="wizard-step-conditional select-network">
                 <div class="content">
                   <div class="main-desc"><fmt:message key="message.please.select.networks"/></div>
+                  <div class="select-vpc">
+                    <label>VPC:</label>
+                    <select name="vpc-filter">
+                      <option value="-1">No VPC</option>
+                    </select>
+                  </div>
                   <div class="select my-networks">
                     <table>
                       <thead>
@@ -1656,7 +1654,6 @@
     <script type="text/javascript" src="scripts/domains.js?t=<%=now%>"></script>   
   </body>
 </html>
-
 <script language="javascript">
 dictionary = {
 'label.network.rate.megabytes': '<fmt:message key="label.network.rate.megabytes"/>',
