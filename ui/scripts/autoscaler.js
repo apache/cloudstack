@@ -636,6 +636,13 @@
     actions: {
       apply: function(args) {
         //validation (begin) *****
+				if(!('multiRules' in args.context)) { //from a new LB 			
+				  if(args.formData.name == '' || args.formData.publicport == '' || args.formData.privateport == '') {
+					  args.response.error('Name, Public Port, Private Port of Load Balancing are required. Please close this dialog box and fill Name, Public Port, Private Port first.');
+            return;
+					}
+				}				
+				
         if(isAdmin() || isDomainAdmin()) { //only admin and domain-admin has access to listUers API
           var havingApiKeyAndSecretKey = false;
           $.ajax({
