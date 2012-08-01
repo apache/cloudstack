@@ -1027,7 +1027,12 @@
                       clearInterval(autoscaleVmProfileTimer);
                       if (result.jobstatus == 1) { 
                         scaleVmProfileResponse = result.jobresult.autoscalevmprofile;
-                        loadBalancer(args);
+												if(!('multiRules' in args.context)) { //from a new LB 	
+                          loadBalancer(args);
+												}
+												else { //from an existing LB
+												  args.response.success(); //modification completes here
+												}
                       }
                       else if (result.jobstatus == 2) {
                         args.response.error(_s(result.jobresult.errortext));
