@@ -73,17 +73,20 @@
       return $(this).hasClass(sectionID);
     });
     var data = args.sections[sectionID];
+    
     data.$browser = $browser;
-
     $navItem.siblings().removeClass('active');
     $navItem.addClass('active');
 
     // Reset browser panels
     $browser.cloudBrowser('removeAllPanels');
     $browser.cloudBrowser('addPanel', {
-      title: _l(data.title),
+      title: '<span class="section">' + _l(data.title) + '</span>' + '<span class="subsection"></span>',
       data: '',
-      complete: function($panel) {
+      complete: function($panel, $breadcrumb) {
+        $breadcrumb.attr('title', _l(data.title));
+        data.$breadcrumb = $breadcrumb;
+        
         // Hide breadcrumb if this is the home section
         if (args.home === sectionID) {
           $('#breadcrumbs').find('li:first, div.end:last').hide();
