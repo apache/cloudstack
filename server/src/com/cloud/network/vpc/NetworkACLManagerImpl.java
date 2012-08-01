@@ -219,8 +219,8 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
                 "network conflicts so we should at least have one rule at this point.";
 
         for (FirewallRuleVO rule : rules) {
-            if (rule.getId() == newRule.getId()) {
-                continue; // Skips my own rule.
+            if (rule.getId() == newRule.getId() || !rule.getProtocol().equalsIgnoreCase(newRule.getProtocol())) {
+                continue; // Skips my own rule and skip the rule if the protocol is different
             }
 
             // if one cidr overlaps another, do port veirficatino
