@@ -169,25 +169,4 @@ public class LibvirtNetworkDef {
         netBuilder.append("</network>\n");
         return netBuilder.toString();
     }
-
-    /**
-     * @param args
-     */
-    public static void main(String[] args) {
-        LibvirtNetworkDef net = new LibvirtNetworkDef("cloudPrivate", null,
-                "cloud.com");
-        net.defNATNetwork("cloudbr0", false, 0, null, "192.168.168.1",
-                "255.255.255.0");
-        net.adddhcpIPRange("192.168.168.100", "192.168.168.220");
-        net.adddhcpIPRange("192.168.168.10", "192.168.168.50");
-        net.adddhcpMapping("branch0.cloud.com", "00:16:3e:77:e2:ed",
-                "192.168.168.100");
-        net.adddhcpMapping("branch1.cloud.com", "00:16:3e:77:e2:ef",
-                "192.168.168.101");
-        net.adddhcpMapping("branch2.cloud.com", "00:16:3e:77:e2:f0",
-                "192.168.168.102");
-        System.out.println(net.toString());
-
-    }
-
 }

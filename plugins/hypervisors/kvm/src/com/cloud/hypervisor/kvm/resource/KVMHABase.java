@@ -186,34 +186,4 @@ public class KVMHABase {
 
         return result;
     }
-
-    public static void main(String[] args) {
-
-        NfsStoragePool pool = new KVMHAMonitor.NfsStoragePool(null, null, null,
-                null, PoolType.PrimaryStorage);
-
-        KVMHAMonitor haWritter = new KVMHAMonitor(pool, "192.168.1.163", null);
-        Thread ha = new Thread(haWritter);
-        ha.start();
-
-        KVMHAChecker haChecker = new KVMHAChecker(haWritter.getStoragePools(),
-                "192.168.1.163");
-
-        ExecutorService exe = Executors.newFixedThreadPool(1);
-        Future<Boolean> future = exe.submit((Callable<Boolean>) haChecker);
-        try {
-            for (int i = 0; i < 10; i++) {
-                System.out.println(future.get());
-                future = exe.submit((Callable<Boolean>) haChecker);
-            }
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-
-    }
-
 }

@@ -81,24 +81,4 @@ public class LibvirtStorageVolumeXMLParser {
         Element node = (Element) tagNode.item(0);
         return node.getAttribute(attr);
     }
-
-    public static void main(String[] args) {
-        s_logger.addAppender(new org.apache.log4j.ConsoleAppender(
-                new org.apache.log4j.PatternLayout(), "System.out"));
-        String storagePool = "<pool type='dir'>" + "<name>test</name>"
-                + "<uuid>bf723c83-4b95-259c-7089-60776e61a11f</uuid>"
-                + "<capacity>20314165248</capacity>"
-                + "<allocation>1955450880</allocation>"
-                + "<available>18358714368</available>" + "<source>"
-                + "<host name='nfs1.lab.vmops.com'/>"
-                + "<dir path='/export/home/edison/kvm/primary'/>"
-                + "<format type='auto'/>" + "</source>" + "<target>"
-                + "<path>/media</path>" + "<permissions>" + "<mode>0700</mode>"
-                + "<owner>0</owner>" + "<group>0</group>" + "</permissions>"
-                + "</target>" + "</pool>";
-
-        LibvirtStoragePoolXMLParser parser = new LibvirtStoragePoolXMLParser();
-        LibvirtStoragePoolDef pool = parser.parseStoragePoolXML(storagePool);
-        s_logger.debug(pool.toString());
-    }
 }
