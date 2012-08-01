@@ -412,6 +412,9 @@
             $.ajax({
               url: createURL("listNetworks&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
               dataType: 'json',
+							data: {
+							  listAll: true
+							},
               async: false,
               success: function(data) {
                 args.response.success({
