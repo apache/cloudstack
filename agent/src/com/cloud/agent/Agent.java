@@ -542,7 +542,10 @@ public class Agent implements HandlerFactory, IAgentControl {
             response = new Response(request, answers);
         } finally {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(response != null ? response.toString() : "response is null");
+            	String responseMsg = response.toString();
+            	if (responseMsg != null) {
+            		s_logger.debug(response.toString());
+            	}
             }
 
             if (response != null) {
