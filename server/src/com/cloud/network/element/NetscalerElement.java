@@ -161,6 +161,11 @@ StaticNatServiceProvider {
             return false;
         }
 
+        if (isBasicZoneNetwok(guestConfig)) {
+            // in basic zone  there is nothing to be implemented/shutdown on the NetScaler appliance
+            return true;
+        }
+
         try {
             return manageGuestNetworkWithExternalLoadBalancer(true, guestConfig);
         } catch (InsufficientCapacityException capacityException) {
@@ -184,6 +189,11 @@ StaticNatServiceProvider {
         if (!canHandle(guestConfig, Service.Lb)) {
             return false;
         }
+
+        if (isBasicZoneNetwok(guestConfig)) {
+            // in basic zone  there is nothing to be implemented/shutdown on the NetScaler appliance
+            return true;
+       }
 
         try {
             return manageGuestNetworkWithExternalLoadBalancer(false, guestConfig);
