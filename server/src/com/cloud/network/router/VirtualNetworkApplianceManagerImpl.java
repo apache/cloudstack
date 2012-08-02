@@ -2379,7 +2379,7 @@ VirtualMachineGuru<DomainRouterVO>, Listener {
         }
 
         //find domR's nic in the network
-        NicVO domrDefaultNic = _nicDao.findByNetworkIdAndType(defaultNic.getNetworkId(), VirtualMachine.Type.DomainRouter);
+        NicVO domrDefaultNic = _nicDao.findByNetworkIdTypeAndGateway(defaultNic.getNetworkId(), VirtualMachine.Type.DomainRouter, defaultNic.getGateway());
         return domrDefaultNic.getIp4Address();
     }
 
