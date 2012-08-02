@@ -1,6 +1,30 @@
-This folder contains various scripts used to build the devcloud image.
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
 
-Folders:
-puppet - puppet conf files and module directories for the various build phases
-vagrant - basic vagrant configuration for a devcloud box (and a puppet manifest to help configure the system to be a valid vagrant box)
-ubuntu_install - ubuntu installation / initial configuration
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+
+===========================================================
+
+NOTE - This folder is a work in progress.  The project has not determined
+how to best establish a nightly DevCloud build process, or how to distribute
+the image.
+
+This folder contains various scripts used to build the devcloud image.
+devcloudsetup.sh - the origional devcloud build script (assumes an Ubuntu 12.04 VM image)
+
+build_vagrant_basebox.sh - a script that uses VirtualBox, VeeWee, Vagrant (patched) and puppet to create a devcloud basebox
+veewee - configuration files used to build a basic Ubuntu 12.04 vagrant box via VeeWee
+basebuild - The Vagrantfile and puppet module that gets applied to the basic Ubuntu 12.04 box
+devcloudbox - The Vagrantfile and puppet module that is used with the [hopefully] distributed devcloud base box
