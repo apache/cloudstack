@@ -13,4 +13,4 @@
 
 #Schema upgrade from 3.0.3 to 3.0.4;
 
-ALTER TABLE `cloud`.`host_details` ADD CONSTRAINT UNIQUE KEY (`host_id`, `name`);
+ALTER TABLE `cloud`.`host_details` ADD CONSTRAINT UNIQUE KEY `uk_host_id_name` (`host_id`, `name`);
