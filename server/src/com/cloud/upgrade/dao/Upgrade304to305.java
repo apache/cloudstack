@@ -53,6 +53,7 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
+        addHostDetailsUniqueKey(conn);
         addVpcProvider(conn);
         updateRouterNetworkRef(conn);
     }
@@ -170,5 +171,37 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
             }
         }
         s_logger.debug("Done updating router/network references");        
+    }
+    
+    private void addHostDetailsUniqueKey(Connection conn) {
+        s_logger.debug("Checking if host_details unique key exists, if not we will add it");
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement("SHOW INDEX FROM `cloud`.`host_details` WHERE KEY_NAME = 'uk_host_id_name'");
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                s_logger.debug("Unique key already exists on host_details - not adding new one");
+            }else{
+                //add the key
+                PreparedStatement pstmtUpdate = conn.prepareStatement("ALTER TABLE `cloud`.`host_details` ADD CONSTRAINT UNIQUE KEY `uk_host_id_name` (`host_id`, `name`)");
+                pstmtUpdate.executeUpdate();
+                s_logger.debug("Unique key did not exist on host_details -  added new one");
+                pstmtUpdate.close();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to check/update the host_details unique key ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
     }
 }
