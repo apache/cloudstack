@@ -11,7 +11,9 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
     private String ipsecPsk;
     private String ikePolicy;
     private String espPolicy;
-    private long lifetime;
+    private long ikeLifetime;
+    private long espLifetime;
+    private boolean dpd;
     
 	@Override
     public boolean executeInSequence() {
@@ -22,8 +24,8 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
         this.create = false;
     }
     
-    public Site2SiteVpnCfgCommand (boolean create, String localPublicIp, String localPublicGateway, String localGuestCidr, 
-            String peerGatewayIp, String peerGuestCidrList, String ikePolicy, String espPolicy, long lifetime, String ipsecPsk) {
+    public Site2SiteVpnCfgCommand (boolean create, String localPublicIp, String localPublicGateway, String localGuestCidr, String peerGatewayIp,
+            String peerGuestCidrList, String ikePolicy, String espPolicy, String ipsecPsk, Long ikeLifetime, Long espLifetime, Boolean dpd) {
         this.create = create;
         this.setLocalPublicIp(localPublicIp);
         this.setLocalPublicGateway(localPublicGateway);
@@ -33,7 +35,9 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
         this.ipsecPsk = ipsecPsk;
         this.ikePolicy = ikePolicy;
         this.espPolicy = espPolicy;
-        this.lifetime = lifetime;
+        this.ikeLifetime = ikeLifetime;
+        this.espLifetime = espLifetime;
+        this.dpd = dpd;
     }
     
     public boolean isCreate() {
@@ -68,12 +72,28 @@ public class Site2SiteVpnCfgCommand extends NetworkElementCommand {
         this.espPolicy = espPolicy;
     }
 
-    public long getLifetime() {
-        return lifetime;
+    public long getIkeLifetime() {
+        return ikeLifetime;
     }
 
-    public void setLifetime(long lifetime) {
-        this.lifetime = lifetime;
+    public void setikeLifetime(long ikeLifetime) {
+        this.ikeLifetime = ikeLifetime;
+    }
+
+    public long getEspLifetime() {
+        return espLifetime;
+    }
+
+    public void setEspLifetime(long espLifetime) {
+        this.espLifetime = espLifetime;
+    }
+
+    public Boolean getDpd() {
+        return dpd;
+    }
+
+    public void setDpd(Boolean dpd) {
+        this.dpd = dpd;
     }
 
     public String getLocalPublicIp() {

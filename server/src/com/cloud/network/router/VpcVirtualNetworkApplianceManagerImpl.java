@@ -1135,10 +1135,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         String ipsecPsk = gw.getIpsecPsk();
         String ikePolicy = gw.getIkePolicy();
         String espPolicy = gw.getEspPolicy();
-        Long lifetime = gw.getLifetime();
+        Long ikeLifetime = gw.getIkeLifetime();
+        Long espLifetime = gw.getEspLifetime();
+        Boolean dpd = gw.getDpd();
 
         Site2SiteVpnCfgCommand cmd = new Site2SiteVpnCfgCommand(isCreate, localPublicIp, localPublicGateway, localGuestCidr,
-                peerGatewayIp, peerGuestCidrList, ikePolicy, espPolicy, lifetime, ipsecPsk);
+                peerGatewayIp, peerGuestCidrList, ikePolicy, espPolicy, ipsecPsk, ikeLifetime, espLifetime, dpd);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());

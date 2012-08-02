@@ -3927,7 +3927,9 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setIpsecPsk(result.getIpsecPsk());
         response.setIkePolicy(result.getIkePolicy());
         response.setEspPolicy(result.getEspPolicy());
-        response.setLifetime(result.getLifetime());
+        response.setIkeLifetime(result.getIkeLifetime());
+        response.setEspLifetime(result.getEspLifetime());
+        response.setDpd(result.getDpd());
         
         response.setRemoved(result.getRemoved());
         response.setObjectName("vpncustomergateway");
@@ -3962,7 +3964,9 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setIpsecPsk(customerGateway.getIpsecPsk());
             response.setIkePolicy(customerGateway.getIkePolicy());
             response.setEspPolicy(customerGateway.getEspPolicy());
-            response.setLifetime(customerGateway.getLifetime());
+            response.setIkeLifetime(customerGateway.getIkeLifetime());
+            response.setEspLifetime(customerGateway.getEspLifetime());
+            response.setDpd(customerGateway.getDpd());
         }
 
         populateAccount(response, result.getAccountId());

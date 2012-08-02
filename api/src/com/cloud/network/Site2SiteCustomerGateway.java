@@ -11,7 +11,9 @@ public interface Site2SiteCustomerGateway extends ControlledEntity {
     public String getIpsecPsk();
     public String getIkePolicy();
     public String getEspPolicy();
-    public Long getLifetime();
+    public Long getIkeLifetime();
+    public Long getEspLifetime();
+    public Boolean getDpd();
     public Date getRemoved();
     String getName();
 }
