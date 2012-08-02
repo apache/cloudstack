@@ -109,6 +109,7 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         AccountSearch.join("accounts", join, AccountSearch.entity().getId(), join.entity().getNetworkId(), JoinBuilder.JoinType.INNER);
         AccountSearch.and("datacenter", AccountSearch.entity().getDataCenterId(), Op.EQ);
         AccountSearch.and("cidr", AccountSearch.entity().getCidr(), Op.EQ);
+        AccountSearch.and("vpcId", AccountSearch.entity().getVpcId(), Op.EQ);
         AccountSearch.done();
 
         RelatedConfigSearch = createSearchBuilder();
@@ -236,11 +237,14 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
     }
 
     @Override
-    public List<NetworkVO> listBy(long accountId, long dataCenterId, String cidr) {
+    public List<NetworkVO> listBy(long accountId, long dataCenterId, String cidr, boolean skipVpc) {
         SearchCriteria<NetworkVO> sc = AccountSearch.create();
         sc.setJoinParameters("accounts", "account", accountId);
         sc.setParameters("datacenter", dataCenterId);
         sc.setParameters("cidr", cidr);
+        if (skipVpc) {
+            sc.setParameters("vpcId", (Object)null);
+        }
 
         return listBy(sc);
     }
