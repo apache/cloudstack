@@ -172,6 +172,13 @@ public class NiciraNvpApi {
         return lsp.getUuid();
     }
     
+    public ControlClusterStatus getControlClusterStatus() throws NiciraNvpApiException {
+        String uri = "/ws.v1/control-cluster/status";
+        ControlClusterStatus ccs = executeRetrieveObject(new TypeToken<ControlClusterStatus>(){}.getType(), uri, null);
+
+        return ccs;
+    }
+
     private <T> void executeUpdateObject(T newObject, String uri, Map<String,String> parameters) throws NiciraNvpApiException {
         String url;
         try {
@@ -272,11 +279,13 @@ public class NiciraNvpApi {
             
         GetMethod gm = new GetMethod(url);
         gm.setRequestHeader("Content-Type", "application/json");
-        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(parameters.size());
-        for (Entry<String,String> e : parameters.entrySet()) {
-            nameValuePairs.add(new NameValuePair(e.getKey(), e.getValue()));
+        if (parameters != null && !parameters.isEmpty()) {
+	        List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(parameters.size());
+	        for (Entry<String,String> e : parameters.entrySet()) {
+	            nameValuePairs.add(new NameValuePair(e.getKey(), e.getValue()));
+	        }
+	        gm.setQueryString(nameValuePairs.toArray(new NameValuePair[0]));
         }
-        gm.setQueryString(nameValuePairs.toArray(new NameValuePair[0]));
                 
         executeMethod(gm);
         

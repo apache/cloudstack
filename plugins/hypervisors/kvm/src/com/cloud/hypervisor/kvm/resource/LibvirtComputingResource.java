@@ -698,7 +698,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		}
 
 		try {
-			createControlNetwork(conn);
+            createControlNetwork();
 		} catch (LibvirtException e) {
 			throw new ConfigurationException(e.getMessage());
 		}
@@ -1220,7 +1220,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 			nicTO.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanId));
 		}
 
-		InterfaceDef nic = createVif(conn, nicTO, InterfaceDef.nicModel.VIRTIO);
+        InterfaceDef nic = createVif(nicTO, InterfaceDef.nicModel.VIRTIO);
 		Domain vm = getDomain(conn, vmName);
 		vm.attachDevice(nic.toString());
 	}
@@ -2122,7 +2122,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 					}
 				} else if (nic.getType() == TrafficType.Control) {
 					/* Make sure the network is still there */
-					createControlNetwork(conn);
+                    createControlNetwork();
 				} else if (nic.getType() == TrafficType.Public) {
 					if (nic.getBroadcastType() == BroadcastDomainType.Vlan
 							&& !vlanId.equalsIgnoreCase("untagged")) {
@@ -2518,13 +2518,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		return vm;
 	}
 
-	protected void createVifs(Connect conn, VirtualMachineTO vmSpec,
+    protected void createVifs(VirtualMachineTO vmSpec,
 			LibvirtVMDef vm) throws InternalErrorException, LibvirtException {
 		NicTO[] nics = vmSpec.getNics();
 		for (int i = 0; i < nics.length; i++) {
 			for (NicTO nic : vmSpec.getNics()) {
 				if (nic.getDeviceId() == i) {
-					createVif(conn, vm, nic);
+                    createVif(vm, nic);
 				}
 			}
 		}
@@ -2548,7 +2548,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
 			createVbd(conn, vmSpec, vmName, vm);
 
-			createVifs(conn, vmSpec, vm);
+            createVifs(vmSpec, vm);
 
 			s_logger.debug("starting " + vmName + ": " + vm.toString());
 			startDomain(conn, vmName, vm.toString());
@@ -2736,7 +2736,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		return brName;
 	}
 
-	private InterfaceDef createVif(Connect conn, NicTO nic,
+    private InterfaceDef createVif(NicTO nic,
 			InterfaceDef.nicModel model) throws InternalErrorException,
 			LibvirtException {
 		InterfaceDef intf = new InterfaceDef();
@@ -2757,7 +2757,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 			}
 		} else if (nic.getType() == TrafficType.Control) {
 			/* Make sure the network is still there */
-			createControlNetwork(conn);
+            createControlNetwork();
 			intf.defBridgeNet(_linkLocalBridgeName, null, nic.getMac(), model);
 		} else if (nic.getType() == TrafficType.Public) {
 			if (nic.getBroadcastType() == BroadcastDomainType.Vlan
@@ -2778,10 +2778,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		return intf;
 	}
 
-	private void createVif(Connect conn, LibvirtVMDef vm, NicTO nic)
+    private void createVif(LibvirtVMDef vm, NicTO nic)
 			throws InternalErrorException, LibvirtException {
 		vm.getDevices().addDevice(
-				createVif(conn, nic, getGuestNicModel(vm.getGuestOSType())));
+                createVif(nic, getGuestNicModel(vm.getGuestOSType())));
 	}
 
 	protected CheckSshAnswer execute(CheckSshCommand cmd) {
@@ -4100,7 +4100,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		return new Pair<Double, Double>(rx, tx);
 	}
 
-	private void createControlNetwork(Connect conn) throws LibvirtException {
+    private void createControlNetwork() throws LibvirtException {
 		_virtRouterResource.createControlNetwork(_linkLocalBridgeName);
 	}
 

@@ -293,7 +293,7 @@ msclasspath = [ in_javadir("%s-%s.jar"%(conf.env.PACKAGE,x)) for x in "utils api
 conf.env.MSCLASSPATH = pathsep.join(msclasspath)
 
 # the agent and simulator classpaths point to JARs required to run these two applications
-agentclasspath = [ in_javadir("%s-%s.jar"%(conf.env.PACKAGE,x)) for x in "utils api core server server-extras agent console-common console-proxy core-extras agent-extras".split() ]
+agentclasspath = [ in_javadir("%s-%s.jar"%(conf.env.PACKAGE,x)) for x in "utils api core server server-extras agent console-common console-proxy core-extras agent-extras plugin-hypervisor-kvm".split() ]
 agentclasspath.append(in_javadir("jna.jar"))
 conf.env.AGENTCLASSPATH = pathsep.join(agentclasspath)
 conf.env.AGENTSIMULATORCLASSPATH = pathsep.join(agentclasspath+[in_javadir("%s-agent-simulator.jar"%conf.env.PACKAGE)])

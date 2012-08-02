@@ -28,6 +28,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupNiciraNvpCommand;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
+import com.cloud.network.nicira.ControlClusterStatus;
 import com.cloud.network.nicira.LogicalSwitch;
 import com.cloud.network.nicira.LogicalSwitchPort;
 import com.cloud.network.nicira.NiciraNvpApi;
@@ -46,6 +47,7 @@ public class NiciraNvpResource implements ServerResource {
     private String _adminpass;
     private String _guid;
     private String _zoneId;
+    private int _numRetries;
     
     private NiciraNvpApi _niciraNvpApi;
     
@@ -83,6 +85,8 @@ public class NiciraNvpResource implements ServerResource {
             throw new ConfigurationException("Unable to find zone");
         }
         
+        _numRetries = 2;
+
         try {
             _niciraNvpApi = new NiciraNvpApi(_ip, _adminuser, _adminpass);
         } catch (NiciraNvpApiException e) {
@@ -126,13 +130,28 @@ public class NiciraNvpResource implements ServerResource {
         return new StartupCommand[] { sc };
     }
 
-    @Override
-    public PingCommand getCurrentStatus(long id) {
+	@Override
+	public PingCommand getCurrentStatus(long id) {
+        try {
+            ControlClusterStatus ccs = _niciraNvpApi.getControlClusterStatus();
+            if (!"stable".equals(ccs.getClusterStatus())) {
+            	s_logger.error("ControlCluster state is not stable: "
+            			+ ccs.getClusterStatus());
+            	return null;
+            }
+        } catch (NiciraNvpApiException e) {
+        	s_logger.error("getControlClusterStatus failed", e);
+        	return null;
+        }
         return new PingCommand(Host.Type.L2Networking, id);
-    }
+	}
 
     @Override
     public Answer executeRequest(Command cmd) {
+        return executeRequest(cmd, _numRetries);
+    }
+
+    public Answer executeRequest(Command cmd, int numRetries) {
         if (cmd instanceof ReadyCommand) {
             return executeRequest((ReadyCommand) cmd);
         }
@@ -140,16 +159,16 @@ public class NiciraNvpResource implements ServerResource {
             return executeRequest((MaintainCommand)cmd);
         }
         else if (cmd instanceof CreateLogicalSwitchCommand) {
-            return executeRequest((CreateLogicalSwitchCommand)cmd);
+            return executeRequest((CreateLogicalSwitchCommand)cmd, numRetries);
         }
         else if (cmd instanceof DeleteLogicalSwitchCommand) {
-            return executeRequest((DeleteLogicalSwitchCommand) cmd);
+            return executeRequest((DeleteLogicalSwitchCommand) cmd, numRetries);
         }
         else if (cmd instanceof CreateLogicalSwitchPortCommand) {
-            return executeRequest((CreateLogicalSwitchPortCommand) cmd);
+            return executeRequest((CreateLogicalSwitchPortCommand) cmd, numRetries);
         }
         else if (cmd instanceof DeleteLogicalSwitchPortCommand) {
-            return executeRequest((DeleteLogicalSwitchPortCommand) cmd);
+            return executeRequest((DeleteLogicalSwitchPortCommand) cmd, numRetries);
         }
         s_logger.debug("Received unsupported command " + cmd.toString());
         return Answer.createUnsupportedCommandAnswer(cmd);
@@ -168,7 +187,7 @@ public class NiciraNvpResource implements ServerResource {
     public void setAgentControl(IAgentControl agentControl) {
     }
     
-    private Answer executeRequest(CreateLogicalSwitchCommand cmd) {
+    private Answer executeRequest(CreateLogicalSwitchCommand cmd, int numRetries) {
         LogicalSwitch logicalSwitch = new LogicalSwitch();
         logicalSwitch.setDisplay_name("lswitch-" + cmd.getName());
         logicalSwitch.setPort_isolation_enabled(false);
@@ -187,21 +206,31 @@ public class NiciraNvpResource implements ServerResource {
             logicalSwitch = _niciraNvpApi.createLogicalSwitch(logicalSwitch);
             return new CreateLogicalSwitchAnswer(cmd, true, "Logicalswitch " + logicalSwitch.getUuid() + " created", logicalSwitch.getUuid());
         } catch (NiciraNvpApiException e) {
-            return new CreateLogicalSwitchAnswer(cmd, e);
+        	if (numRetries > 0) {
+        		return retry(cmd, --numRetries);
+        	} 
+        	else {
+        		return new CreateLogicalSwitchAnswer(cmd, e);
+        	}
         }
         
     }
     
-    private Answer executeRequest(DeleteLogicalSwitchCommand cmd) {
+    private Answer executeRequest(DeleteLogicalSwitchCommand cmd, int numRetries) {
         try {
             _niciraNvpApi.deleteLogicalSwitch(cmd.getLogicalSwitchUuid());
             return new DeleteLogicalSwitchAnswer(cmd, true, "Logicalswitch " + cmd.getLogicalSwitchUuid() + " deleted");
         } catch (NiciraNvpApiException e) {
-            return new DeleteLogicalSwitchAnswer(cmd, e);
+        	if (numRetries > 0) {
+        		return retry(cmd, --numRetries);
+        	} 
+        	else {
+        		return new DeleteLogicalSwitchAnswer(cmd, e);
+        	}
         }
     }
     
-    private Answer executeRequest(CreateLogicalSwitchPortCommand cmd) {
+    private Answer executeRequest(CreateLogicalSwitchPortCommand cmd, int numRetries) {
         String logicalSwitchUuid = cmd.getLogicalSwitchUuid();
         String attachmentUuid = cmd.getAttachmentUuid();
         
@@ -215,17 +244,27 @@ public class NiciraNvpResource implements ServerResource {
             _niciraNvpApi.modifyLogicalSwitchPortAttachment(cmd.getLogicalSwitchUuid(), newPort.getUuid(), new VifAttachment(attachmentUuid));
             return new CreateLogicalSwitchPortAnswer(cmd, true, "Logical switch port " + newPort.getUuid() + " created", newPort.getUuid());
         } catch (NiciraNvpApiException e) {
-            return new CreateLogicalSwitchPortAnswer(cmd, e);
+        	if (numRetries > 0) {
+        		return retry(cmd, --numRetries);
+        	} 
+        	else {
+        		return new CreateLogicalSwitchPortAnswer(cmd, e);
+        	}
         }
         
     }
     
-    private Answer executeRequest(DeleteLogicalSwitchPortCommand cmd) {
+    private Answer executeRequest(DeleteLogicalSwitchPortCommand cmd, int numRetries) {
         try {
             _niciraNvpApi.deleteLogicalSwitchPort(cmd.getLogicalSwitchUuid(), cmd.getLogicalSwitchPortUuid());
             return new DeleteLogicalSwitchPortAnswer(cmd, true, "Logical switch port " + cmd.getLogicalSwitchPortUuid() + " deleted");
         } catch (NiciraNvpApiException e) {
-            return new DeleteLogicalSwitchPortAnswer(cmd, e);
+        	if (numRetries > 0) {
+        		return retry(cmd, --numRetries);
+        	} 
+        	else {
+        		return new DeleteLogicalSwitchPortAnswer(cmd, e);
+        	}
         }
     }
 
@@ -236,5 +275,11 @@ public class NiciraNvpResource implements ServerResource {
     private Answer executeRequest(MaintainCommand cmd) {
         return new MaintainAnswer(cmd);
     }    
- 
+
+    private Answer retry(Command cmd, int numRetries) {
+        int numRetriesRemaining = numRetries - 1;
+        s_logger.warn("Retrying " + cmd.getClass().getSimpleName() + ". Number of retries remaining: " + numRetriesRemaining);
+        return executeRequest(cmd, numRetriesRemaining);
+    }
+    
 }

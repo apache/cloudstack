@@ -1,6 +1,6 @@
-# CloudStack 
+# Apache CloudStack 
 
-CloudStack is a massively scalable free/libre open source Infrastructure as a Service cloud platform. 
+Apache CloudStack is a massively scalable free/libre open source Infrastructure as a Service cloud platform. 
 
 Visit us at [cloudstack.org](http://cloudstack.org) or join #cloudstack on irc.freenode.net
 
