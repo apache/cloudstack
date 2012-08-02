@@ -33,6 +33,8 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Site2SiteVpnConnection;
+import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -53,14 +55,6 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.S2S_CUSTOMER_GATEWAY_ID, type=CommandType.LONG, required=true, description="id of the customer gateway")
     private Long customerGatewayId;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the connection. Must be used with the domainId parameter.")
-    private String accountName;
-    
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the connection. " +
-    		"If used with the account parameter returns the connection associated with the account for the specified domain.")
-    private Long domainId;
-    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -77,14 +71,6 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
         return customerGatewayId;
     }
 
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -97,11 +83,8 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, null, true);
-        if (accountId == null) {
-            accountId = UserContext.current().getCaller().getId();
-        }
-        return accountId;
+        Vpc vpc = _vpcService.getVpc(getVpnGateway().getVpcId());
+        return vpc.getAccountId();
     }
 
     @Override
@@ -155,14 +138,10 @@ public class CreateVpnConnectionCmd extends BaseAsyncCreateCmd {
 
     @Override
     public Long getSyncObjId() {
-        return getIp().getVpcId();
+        return getVpnGateway().getVpcId();
     }
 
-    private IpAddress getIp() {
-        IpAddress ip = _s2sVpnService.getVpnGatewayIp(vpnGatewayId);
-        if (ip == null) {
-            throw new InvalidParameterValueException("Unable to find ip address by vpn gateway id " + vpnGatewayId);
-        }
-        return ip;
+    private Site2SiteVpnGateway getVpnGateway() {
+        return _s2sVpnService.getVpnGateway(vpnGatewayId);
     }
 }

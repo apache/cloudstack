@@ -265,10 +265,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     }
 
     @Override
-    public IpAddress getVpnGatewayIp(Long vpnGatewayId) {
-        Site2SiteVpnGatewayVO gateway = _vpnGatewayDao.findById(vpnGatewayId);
-        IpAddress ip = _networkMgr.getIp(gateway.getAddrId());
-        return ip;
+    public Site2SiteVpnGateway getVpnGateway(Long vpnGatewayId) {
+        return _vpnGatewayDao.findById(vpnGatewayId);
     }
 
     @Override
