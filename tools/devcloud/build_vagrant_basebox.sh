@@ -18,6 +18,7 @@
 
 # Assumes that rvm is installed and you have ruby 1.9.2 installed
 # Assumes that you have virtual box installed
+# Assumes that you have wget installed
 
 mkdir ~/builddevcloud
 cd ~/builddevcloud
@@ -27,7 +28,10 @@ git clone https://github.com/jedi4ever/veewee.git
 #      host it within the ASF git repo
 git clone https://github.com/chipchilders/vagrant.git
 export rvm_trust_rvmrcs_flag=1
-cd veewee
+cd vagrant
+bundle install
+rake install
+cd ../veewee
 bundle install
 rake install
 vagrant basebox define 'devcloudbase' 'ubuntu-12.04-server-i386'
@@ -38,6 +42,24 @@ vagrant basebox build 'devcloudbase' -f -a -n
 # possibly use -r here too ^
 vagrant basebox export 'devcloudbase' -f
 vagrant basebox destroy 'devcloudbase' -f
-vagrant box add 'devcloud' 'devcloudbase.box' -f
+vagrant box add 'devcloudbase' 'devcloudbase.box' -f
 rm -f devcloudbase.box
+cd ../vagrant
+mkdir devcloudbase
+cd devcloudbase
+mkdir puppet-devcloudinitial
+mkdir puppet-devcloudinitial/files
+mkdir puppet-devcloudinitial/manifests
+wget --no-check-certificate -O Vagrantfile https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/Vagrantfile;hb=HEAD
+wget --no-check-certificate -O puppet-devcloudinitial/init.pp https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/init.pp;hb=HEAD
+wget --no-check-certificate -O puppet-devcloudinitial/Modulefile https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/Modulefile;hb=HEAD
+wget --no-check-certificate -O puppet-devcloudinitial/files/grub https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/files/grub;hb=HEAD
+wget --no-check-certificate -O puppet-devcloudinitial/files/interfaces https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/files/interfaces;hb=HEAD
+wget --no-check-certificate -O puppet-devcloudinitial/files/network.conf https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf;hb=HEAD
+wget --no-check-certificate -O puppet-devcloudinitial/files/xen-defaults https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/files/xen-defaults;hb=HEAD
+wget --no-check-certificate -O puppet-devcloudinitial/files/xend https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/files/xend;hb=HEAD
+wget --no-check-certificate -O puppet-devcloudinitial/manifests/init.pp https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/manifests/init.pp;hb=HEAD
+vagrant up
+vagrant halt
+cd ..
 
