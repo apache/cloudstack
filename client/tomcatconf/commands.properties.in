@@ -351,7 +351,6 @@ addNetworkDevice=com.cloud.api.commands.AddNetworkDeviceCmd;1
 listNetworkDevice=com.cloud.api.commands.ListNetworkDeviceCmd;1
 deleteNetworkDevice=com.cloud.api.commands.DeleteNetworkDeviceCmd;1
 
-<<<<<<< HEAD
 ### Network Devices commands
 addNetworkDevice=com.cloud.api.commands.AddNetworkDeviceCmd;1
 listNetworkDevice=com.cloud.api.commands.ListNetworkDeviceCmd;1
