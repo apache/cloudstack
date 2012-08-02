@@ -131,6 +131,7 @@
   <property name="console-proxy.jar" value="cloud-console-proxy.jar" />
   <property name="api.jar" value="cloud-api.jar"/>
   <property name="vmware-base.jar" value="cloud-vmware-base.jar" />
+  <property name="vmware.jar" value="cloud-vmware.jar" />
 
   <!--
 		Import information about the build version and company information
