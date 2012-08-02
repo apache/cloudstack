@@ -254,6 +254,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
 
     private void populateConfigValuesForValidationSet() {
         configValuesForValidation = new HashSet<String>();
+        configValuesForValidation.add("event.purge.interval");
         configValuesForValidation.add("account.cleanup.interval");
         configValuesForValidation.add("alert.wait");
         configValuesForValidation.add("consoleproxy.capacityscan.interval");

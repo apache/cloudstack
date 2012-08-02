@@ -392,7 +392,7 @@ public class ManagementServerImpl implements ManagementServer {
             s_logger.error("Unable to find HostAllocators");
         }
 
-        String value = _configs.get("account.cleanup.interval");
+        String value = _configs.get("event.purge.interval");
         int cleanup = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
 
         _statsCollector = StatsCollector.getInstance(_configs);

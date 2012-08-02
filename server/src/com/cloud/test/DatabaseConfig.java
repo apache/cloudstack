@@ -247,6 +247,7 @@ public class DatabaseConfig {
         s_configurationComponents.put("capacity.check.period", "management-server");
         s_configurationComponents.put("network.throttling.rate", "management-server");
         s_configurationComponents.put("multicast.throttling.rate", "management-server");
+        s_configurationComponents.put("event.purge.interval", "management-server");
         s_configurationComponents.put("account.cleanup.interval", "management-server");
         s_configurationComponents.put("expunge.delay", "UserVmManager");
         s_configurationComponents.put("expunge.interval", "UserVmManager");
@@ -330,6 +331,7 @@ public class DatabaseConfig {
         s_defaultConfigurationValues.put("restart.retry.interval", "600");
         s_defaultConfigurationValues.put("investigate.retry.interval", "60");
         s_defaultConfigurationValues.put("migrate.retry.interval", "120");
+        s_defaultConfigurationValues.put("event.purge.interval", "86400");
         s_defaultConfigurationValues.put("account.cleanup.interval", "86400");
         s_defaultConfigurationValues.put("system.vm.use.local.storage", "false");
         s_defaultConfigurationValues.put("use.local.storage", "false");
