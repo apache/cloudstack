@@ -23,6 +23,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
 
 public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade303to304.class);
@@ -44,7 +45,12 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
 
     @Override
     public File[] getPrepareScripts() {
-        return null;
+        String script = Script.findScript("", "db/schema-303to304.sql");
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find db/schema-303to304.sql");
+        }
+
+        return new File[] { new File(script) };
     }
 
     @Override
