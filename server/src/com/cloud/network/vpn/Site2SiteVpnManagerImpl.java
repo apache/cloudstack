@@ -344,9 +344,13 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
                 }
             }
         }
+        String name = cmd.getName();
         String gatewayIp = cmd.getGatewayIp();
         if (!NetUtils.isValidIp(gatewayIp)) {
             throw new InvalidParameterValueException("The customer gateway ip " + gatewayIp + " is invalid!");
+        }
+        if (name == null) {
+            name = "VPN-" + gatewayIp;
         }
         String guestCidrList = cmd.getGuestCidrList();
         if (!NetUtils.validateGuestCidrList(guestCidrList)) {
@@ -382,6 +386,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         if (dpd == null) {
             dpd = false;
         }
+
+        gw.setName(name);
         gw.setGatewayIp(gatewayIp);
         gw.setGuestCidrList(guestCidrList);
         gw.setIkePolicy(ikePolicy);
