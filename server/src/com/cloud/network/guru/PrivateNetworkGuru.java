@@ -183,7 +183,8 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
             PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(network.getDataCenterId(), network.getId(), null);
             String vlanTag = network.getBroadcastUri().getHost();
             String netmask = NetUtils.getCidrNetmask(network.getCidr());
-            PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, ipVO.getMacAddress());
+            PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, 
+                    NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress())));
 
             nic.setIp4Address(ip.getIpAddress());
             nic.setGateway(ip.getGateway());
