@@ -1,14 +1,33 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
 <section id="configure-usage-server">
     <title>Configuring the Usage Server</title>
     <para>To configure the usage server:</para>
     <orderedlist>
-        <listitem><para>Be sure the Usage Server has been installed. This requires extra steps beyond just installing the CloudPlatform software. See Installing the Usage Server (Optional) in the Advanced Installation Guide.</para></listitem>
-        <listitem><para>Log in to the CloudPlatform UI as administrator.</para></listitem>
+        <listitem><para>Be sure the Usage Server has been installed. This requires extra steps beyond just installing the &PRODUCT; software. See Installing the Usage Server (Optional) in the Advanced Installation Guide.</para></listitem>
+        <listitem><para>Log in to the &PRODUCT; UI as administrator.</para></listitem>
         <listitem><para>Click Global Settings.</para></listitem>
         <listitem><para>In Search, type usage. Find the configuration parameter that controls the behavior you want to set. See the table below for a description of the available parameters.</para></listitem>
         <listitem><para>In Actions, click the Edit icon.</para></listitem>
@@ -56,13 +75,13 @@ usage.aggregation.timezone = GMT
                 <row>
                     <entry><para>usage.stats.job.aggregation.range</para></entry>
                     <entry><para>The time period in minutes between Usage Server processing jobs. For example, if you set it to 1440, the Usage Server will run once per day. If you set it to 600, it will run every ten hours. In general, when a Usage Server job runs, it processes all events generated since usage was last run.</para>
-                        <para>There is special handling for the case of 1440 (once per day). In this case the Usage Server does not necessarily process all records since Usage was last run. CloudPlatform assumes that you require processing once per day for the previous, complete day’s records. For example, if the current day is October 7, then it is assumed you would like to process records for October 6, from midnight to midnight. CloudPlatform assumes this “midnight to midnight” is relative to the usage.execution.timezone.</para>
+                        <para>There is special handling for the case of 1440 (once per day). In this case the Usage Server does not necessarily process all records since Usage was last run. &PRODUCT; assumes that you require processing once per day for the previous, complete day’s records. For example, if the current day is October 7, then it is assumed you would like to process records for October 6, from midnight to midnight. &PRODUCT; assumes this "midnight to midnight" is relative to the usage.execution.timezone.</para>
                         <para>Default: 1440</para>
                     </entry>                    
                 </row>
                 <row>
                     <entry><para>usage.stats.job.exec.time</para></entry>
-                    <entry><para>The time when the Usage Server processing will start. It is specified in 24-hour format (HH:MM) in the time zone of the server, which should be GMT. For example, to start the Usage job at 10:30 GMT, enter “10:30”.</para>
+                    <entry><para>The time when the Usage Server processing will start. It is specified in 24-hour format (HH:MM) in the time zone of the server, which should be GMT. For example, to start the Usage job at 10:30 GMT, enter "10:30".</para>
                     <para>If usage.stats.job.aggregation.range is also set, and its value is not 1440, then its value will be added to usage.stats.job.exec.time to get the time to run the Usage Server job again. This is repeated until 24 hours have elapsed, and the next day's processing begins again at usage.stats.job.exec.time.</para>
                         <para>Default: 00:15.</para>
                     </entry>                    

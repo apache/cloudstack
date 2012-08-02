@@ -1,3 +1,21 @@
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
 	<section id="cloudstack_system_requirements">
 		<title>Minimum System Requirements</title>
 		<para>
@@ -27,19 +45,18 @@
 			<listitem><para>At least 1 NIC</para></listitem>
 			<listitem><para>Statically allocated IP Address</para></listitem>
 			<listitem><para>Latest hotfixes applied to hypervisor software</para></listitem>
-			<listitem><para>When you deploy CloudStack, the hypervisor host must not have any VMs already running</para></listitem>
+			<listitem><para>When you deploy &PRODUCT;, the hypervisor host must not have any VMs already running</para></listitem>
 		</itemizedlist>
 		<para>Hosts have additional requirements depending on the hypervisor. See the requirements listed at the top of the Installation section for your chosen hypervisor:</para>
 		<itemizedlist>
-			<listitem><para>Citrix XenServer Installation for CloudStack</para></listitem>
+			<listitem><para>Citrix XenServer Installation for &PRODUCT;</para></listitem>
 			<listitem><para>VMware vSphere Installation and Configuration</para></listitem>
 			<listitem><para>KVM Installation and Configuration</para></listitem>
 			<listitem><para>Oracle VM (OVM) Installation and Configuration</para></listitem>
 		</itemizedlist>
 		<warning>
 			<para>
-				Be sure you fulfill the additional hypervisor requirements and installation steps provided in this Guide. Hypervisor hosts must be properly prepared to work with CloudStack. For example, the requirements for XenServer are listed under Citrix XenServer Installation for CloudStack.
+				Be sure you fulfill the additional hypervisor requirements and installation steps provided in this Guide. Hypervisor hosts must be properly prepared to work with &PRODUCT;. For example, the requirements for XenServer are listed under Citrix XenServer Installation for &PRODUCT;.
 			</para>
 		</warning>
 	</section>
-
