@@ -3871,7 +3871,8 @@
           id: 'vpnCustomerGateway',
           label: 'VPN Customer Gateway',
           fields: {
-            gateway: { label: 'label.gateway' },
+            name: { label: 'label.name' },
+						gateway: { label: 'label.gateway' },
             cidrlist: { label: 'CIDR list' },
 						ipsecpsk: { label: 'IPsec Preshared-Key' }
           },
@@ -3909,7 +3910,11 @@
 							},
 							createForm: {
 								title: 'add VPN Customer Gateway',
-								fields: {										
+								fields: {		
+                  name: {
+									  label: 'label.name',
+										validation: { required: true }
+									},								
 									gateway: { 
 										label: 'label.gateway',
 										validation: { required: true }
@@ -3928,12 +3933,10 @@
 											var items = [];
 											items.push({id: '3des-md5', description: '3des-md5'});
 											items.push({id: 'aes-md5', description: 'aes-md5'});
-											items.push({id: 'aes128-md5', description: 'aes128-md5'});
-											items.push({id: 'des-md5', description: 'des-md5'});											
+											items.push({id: 'aes128-md5', description: 'aes128-md5'});																
 											items.push({id: '3des-sha1', description: '3des-sha1'});
 											items.push({id: 'aes-sha1', description: 'aes-sha1'});
-											items.push({id: 'aes128-sha1', description: 'aes128-sha1'});
-											items.push({id: 'des-sha1', description: 'des-sha1'});
+											items.push({id: 'aes128-sha1', description: 'aes128-sha1'});											
 											args.response.success({data: items});
 										}
 									},
@@ -3943,8 +3946,7 @@
 											var items = [];
 											items.push({id: '3des-md5', description: '3des-md5'});
 											items.push({id: 'aes-md5', description: 'aes-md5'});
-											items.push({id: 'aes128-md5', description: 'aes128-md5'});
-																						
+											items.push({id: 'aes128-md5', description: 'aes128-md5'});																						
 											items.push({id: '3des-sha1', description: '3des-sha1'});
 											items.push({id: 'aes-sha1', description: 'aes-sha1'});
 											items.push({id: 'aes128-sha1', description: 'aes128-sha1'});											
@@ -3962,6 +3964,7 @@
 								$.ajax({
 									url: createURL('createVpnCustomerGateway'),
 									data: {
+									  name: args.data.name,
 										gateway: args.data.gateway,
 										cidrlist: args.data.cidrlist,
 										ipsecpsk: args.data.ipsecpsk,
