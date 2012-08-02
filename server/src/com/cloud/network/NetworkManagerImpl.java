@@ -4783,7 +4783,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOffering ntwkOff = _configMgr.getNetworkOffering(network.getNetworkOfferingId());
 
         // For default userVm Default network and domR guest/public network, get rate information from the service
-// offering; for other situations get information
+        // offering; for other situations get information
         // from the network offering
         boolean isUserVmsDefaultNetwork = false;
         boolean isDomRGuestOrPublicNetwork = false;

@@ -842,7 +842,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     Network network = _networkDao.findById(guestNic.getNetworkId());
                     String vlanTag = network.getBroadcastUri().getHost();
                     String netmask = NetUtils.getCidrNetmask(network.getCidr());
-                    PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, ipVO.getMacAddress());
+                    PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, guestNic.getMacAddress());
                     
                     List<PrivateIpAddress> privateIps = new ArrayList<PrivateIpAddress>(1);
                     privateIps.add(ip);
@@ -970,7 +970,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             Network network = _networkDao.findById(privateNic.getNetworkId());
             String vlanTag = network.getBroadcastUri().getHost();
             String netmask = NetUtils.getCidrNetmask(network.getCidr());
-            PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, ipVO.getMacAddress());
+            PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, privateNic.getMacAddress());
             
             List<PrivateIpAddress> privateIps = new ArrayList<PrivateIpAddress>(1);
             privateIps.add(ip);
@@ -1249,24 +1249,36 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
     @DB
     protected NicProfile createPrivateNicProfileForGateway(VpcGateway privateGateway) {
-        Network network = _networkMgr.getNetwork(privateGateway.getNetworkId());
-        PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(network.getDataCenterId(), network.getId(), privateGateway.getIp4Address());
+        Network privateNetwork = _networkMgr.getNetwork(privateGateway.getNetworkId());
+        PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(privateNetwork.getDataCenterId(), privateNetwork.getId(), privateGateway.getIp4Address());
+        Nic privateNic = _nicDao.findByIp4AddressAndNetworkId(ipVO.getIpAddress(), privateNetwork.getId());
         
-        NicProfile privateNic = new NicProfile();
-        String vlanTag = network.getBroadcastUri().getHost();
-        String netmask = NetUtils.getCidrNetmask(network.getCidr());
-        PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, network.getGateway(), netmask, ipVO.getMacAddress());
+        NicProfile privateNicProfile = new NicProfile();
         
-        privateNic.setIp4Address(ip.getIpAddress());
-        privateNic.setGateway(ip.getGateway());
-        privateNic.setNetmask(ip.getNetmask());
-        privateNic.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
-        privateNic.setBroadcastUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
-        privateNic.setBroadcastType(BroadcastDomainType.Vlan);
-        privateNic.setFormat(AddressFormat.Ip4);
-        privateNic.setReservationId(String.valueOf(ip.getVlanTag()));
-        privateNic.setMacAddress(ip.getMacAddress());
-        return privateNic;
+        if (privateNic != null) {
+            VirtualMachine vm = _vmDao.findById(privateNic.getId());
+            privateNicProfile = new NicProfile(privateNic, privateNetwork, privateNic.getBroadcastUri(), privateNic.getIsolationUri(), 
+                    _networkMgr.getNetworkRate(privateNetwork.getId(), vm.getId()), 
+                    _networkMgr.isSecurityGroupSupportedInNetwork(privateNetwork), 
+                    _networkMgr.getNetworkTag(vm.getHypervisorType(), privateNetwork));
+        } else {
+            String vlanTag = privateNetwork.getBroadcastUri().getHost();
+            String netmask = NetUtils.getCidrNetmask(privateNetwork.getCidr());
+            PrivateIpAddress ip = new PrivateIpAddress(ipVO, vlanTag, privateNetwork.getGateway(), netmask,
+                    NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress())));
+            
+            privateNicProfile.setIp4Address(ip.getIpAddress());
+            privateNicProfile.setGateway(ip.getGateway());
+            privateNicProfile.setNetmask(ip.getNetmask());
+            privateNicProfile.setIsolationUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
+            privateNicProfile.setBroadcastUri(IsolationType.Vlan.toUri(ip.getVlanTag()));
+            privateNicProfile.setBroadcastType(BroadcastDomainType.Vlan);
+            privateNicProfile.setFormat(AddressFormat.Ip4);
+            privateNicProfile.setReservationId(String.valueOf(ip.getVlanTag()));
+            privateNicProfile.setMacAddress(ip.getMacAddress());
+        }
+       
+        return privateNicProfile;
     }
    
     protected NicProfile createGuestNicProfileForVpcRouter(Network guestNetwork) {
