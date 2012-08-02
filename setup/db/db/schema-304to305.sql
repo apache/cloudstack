@@ -313,7 +313,7 @@ CREATE TABLE `cloud`.`s2s_customer_gateway` (
   `ike_policy` varchar(30) NOT NULL,
   `esp_policy` varchar(30) NOT NULL,
   `ike_lifetime` int NOT NULL DEFAULT 86400,
-  `esp_lifetime` int NOT NULL DEFAULT 86400,
+  `esp_lifetime` int NOT NULL DEFAULT 3600,
   `dpd` int(1) NOT NULL DEFAULT 0,
   `domain_id` bigint unsigned NOT NULL,
   `account_id` bigint unsigned NOT NULL,

@@ -36,7 +36,7 @@ public interface Site2SiteVpnService {
     Site2SiteVpnGateway createVpnGateway(CreateVpnGatewayCmd cmd);
     Site2SiteCustomerGateway createCustomerGateway(CreateVpnCustomerGatewayCmd cmd);
     Site2SiteVpnConnection startVpnConnection(long id) throws ResourceUnavailableException;
-    IpAddress getVpnGatewayIp(Long vpnGatewayId);
+    Site2SiteVpnGateway getVpnGateway(Long vpnGatewayId);
     Site2SiteVpnConnection createVpnConnection(CreateVpnConnectionCmd cmd) throws NetworkRuleConflictException;
     boolean deleteCustomerGateway(DeleteVpnCustomerGatewayCmd deleteVpnCustomerGatewayCmd);
     boolean deleteVpnGateway(DeleteVpnGatewayCmd deleteVpnGatewayCmd);

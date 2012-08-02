@@ -175,7 +175,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
             // Default value of lifetime is 1 day
             espLifetime = (long) 3600;
         }
-        if (espLifetime > 3600) {
+        if (espLifetime > 86400) {
             throw new InvalidParameterValueException("The ESP lifetime " + espLifetime + " of vpn connection is invalid!", null);
         }
         
@@ -278,10 +278,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     }
 
     @Override
-    public IpAddress getVpnGatewayIp(Long vpnGatewayId) {
-        Site2SiteVpnGatewayVO gateway = _vpnGatewayDao.findById(vpnGatewayId);
-        IpAddress ip = _networkMgr.getIp(gateway.getAddrId());
-        return ip;
+    public Site2SiteVpnGateway getVpnGateway(Long vpnGatewayId) {
+        return _vpnGatewayDao.findById(vpnGatewayId);
     }
 
     @Override
@@ -398,7 +396,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
             // Default value of lifetime is 1 day
             espLifetime = (long) 3600;
         }
-        if (espLifetime > 3600) {
+        if (espLifetime > 86400) {
             throw new InvalidParameterValueException("The ESP lifetime " + espLifetime + " of vpn connection is invalid!", null);
         }
         
