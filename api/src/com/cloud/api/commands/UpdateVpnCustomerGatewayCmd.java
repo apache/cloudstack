@@ -40,6 +40,9 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="id of customer gateway")
     private Long id;
     
+    @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=false, description="name of this customer gateway")
+    private String name;
+    
     @Parameter(name=ApiConstants.GATEWAY, type=CommandType.STRING, required=true, description="public ip address id of the customer gateway")
     private String gatewayIp;
 
@@ -84,6 +87,10 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
         return id;
     }
     
+    public String getName() {
+        return name;
+    }
+
     public String getIpsecPsk() {
         return ipsecPsk;
     }
