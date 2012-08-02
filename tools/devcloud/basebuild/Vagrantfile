@@ -19,7 +19,7 @@
 # under the License.
 
 Vagrant::Config.run do |config|
-  config.vm.box = "devcloud" 
+  config.vm.box = "devcloudbase" 
   # TODO: Get a URL to host the base image
   # config.vm.box_url = "http://domain.com/path/to/above.box"
   config.vm.guest = :xen
