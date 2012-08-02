@@ -149,6 +149,14 @@
                   domainObj["templateLimit"] = args.data.templateLimit;
                 }
               });
+              $.ajax({
+                url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=7&max=" + args.data.vpcLimit),
+                dataType: "json",
+                async: false,
+                success: function(json) {
+                  domainObj["vpcLimit"] = args.data.vpcLimit;
+                }
+              });
 
               args.response.success({data: domainObj});
             }
@@ -266,6 +274,10 @@
                   label: 'label.template.limits',
                   isEditable: true
                 },
+                vpcLimit: {
+                  label: 'VPC limits',
+                  isEditable: true
+                },
                 accountTotal: { label: 'label.accounts' },
                 vmTotal: { label: 'label.instances' },
                 volumeTotal: { label: 'label.volumes' }
@@ -328,21 +340,24 @@
                     for (var i = 0; i < limits.length; i++) {
                       var limit = limits[i];
                       switch (limit.resourcetype) {
-                        case "0":
-                          domainObj["vmLimit"] = limit.max;
-                          break;
-                        case "1":
-                          domainObj["ipLimit"] = limit.max;
-                          break;
-                        case "2":
-                          domainObj["volumeLimit"] = limit.max;
-                          break;
-                        case "3":
-                          domainObj["snapshotLimit"] = limit.max;
-                          break;
-                        case "4":
-                          domainObj["templateLimit"] = limit.max;
-                          break;
+                      case "0":
+                        domainObj["vmLimit"] = limit.max;
+                        break;
+                      case "1":
+                        domainObj["ipLimit"] = limit.max;
+                        break;
+                      case "2":
+                        domainObj["volumeLimit"] = limit.max;
+                        break;
+                      case "3":
+                        domainObj["snapshotLimit"] = limit.max;
+                        break;
+                      case "4":
+                        domainObj["templateLimit"] = limit.max;
+                        break;
+                      case "7":
+                        domainObj["vpcLimit"] = limit.max;
+                        break;
                       }
                     }
                   }
