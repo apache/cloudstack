@@ -26,11 +26,11 @@ import com.citrix.netscaler.nitro.exception.nitro_exception;
 import com.citrix.netscaler.nitro.resource.base.base_response;
 import com.citrix.netscaler.nitro.resource.config.basic.server_service_binding;
 import com.citrix.netscaler.nitro.resource.config.basic.servicegroup;
+import com.citrix.netscaler.nitro.resource.config.basic.servicegroup_lbmonitor_binding;
 import com.citrix.netscaler.nitro.resource.config.lb.lbmetrictable;
 import com.citrix.netscaler.nitro.resource.config.lb.lbmetrictable_metric_binding;
 import com.citrix.netscaler.nitro.resource.config.lb.lbmonitor;
-import com.citrix.netscaler.nitro.resource.config.lb.lbmonitor_lbmetrictable_binding;
-import com.citrix.netscaler.nitro.resource.config.lb.lbmonitor_servicegroup_binding;
+import com.citrix.netscaler.nitro.resource.config.lb.lbmonitor_metric_binding;
 import com.citrix.netscaler.nitro.resource.config.lb.lbvserver;
 import com.citrix.netscaler.nitro.resource.config.lb.lbvserver_service_binding;
 import com.citrix.netscaler.nitro.resource.config.lb.lbvserver_servicegroup_binding;
@@ -1782,15 +1782,15 @@ public class NetscalerResource implements ServerResource {
                                 if(!isCleanUp) throw e;
                             }
 
-                            // Bind servicegroup to monitor. TODO: This will change later to bind Monitor to ServiceGroup.
+                            // Bind monitor to servicegroup.
                             // bind lb monitor lb_metric_table_mon lb_autoscaleGroup -passive
-                            lbmonitor_servicegroup_binding monitor_servicegroup_binding = new lbmonitor_servicegroup_binding();
+                            servicegroup_lbmonitor_binding servicegroup_monitor_binding = new servicegroup_lbmonitor_binding();
                             try {
-                                monitor_servicegroup_binding.set_monitorname(monitorName);
-                                monitor_servicegroup_binding.set_servicegroupname(serviceGroupName);
-                                monitor_servicegroup_binding.set_passive(true); // Mark the monitor to do only collect
+                                servicegroup_monitor_binding.set_servicegroupname(serviceGroupName);
+                                servicegroup_monitor_binding.set_monitor_name(monitorName);
                                 // metrics, basically use it for autoscaling purpose only.
-                                monitor_servicegroup_binding.add(_netscalerService, monitor_servicegroup_binding);
+                                servicegroup_monitor_binding.set_passive(true);
+                                servicegroup_lbmonitor_binding.add(_netscalerService, servicegroup_monitor_binding);
                             } catch (Exception e) {
                                 // Ignore Exception on cleanup
                                 if(!isCleanUp) throw e;
@@ -1818,12 +1818,13 @@ public class NetscalerResource implements ServerResource {
                             }
 
                             // bind lb monitor lb_metric_table_mon -metric cpu -metricThreshold 1
-                            lbmonitor_lbmetrictable_binding monitor_metrictable_binding = new lbmonitor_lbmetrictable_binding();
+                            //                            lbmonitor_lbmetrictable_binding monitor_metrictable_binding = new lbmonitor_lbmetrictable_binding();
+                            lbmonitor_metric_binding monitor_metric_binding = new lbmonitor_metric_binding();;
                             try {
-                                monitor_metrictable_binding.set_monitorname(monitorName);
-                                monitor_metrictable_binding.set_metric(counterName);
-                                monitor_metrictable_binding.set_metricthreshold(1); // 1 is a dummy threshold
-                                monitor_metrictable_binding.add(_netscalerService, monitor_metrictable_binding);
+                                monitor_metric_binding.set_monitorname(monitorName);
+                                monitor_metric_binding.set_metric(counterName);
+                                monitor_metric_binding.set_metricthreshold(1);
+                                monitor_metric_binding.add(_netscalerService, monitor_metric_binding);
                             } catch (Exception e) {
                                 // Ignore Exception on cleanup
                                 if(!isCleanUp) throw e;
@@ -1964,11 +1965,11 @@ public class NetscalerResource implements ServerResource {
             }
 
             if(isSnmp) {
-                com.citrix.netscaler.nitro.resource.config.lb.lbmonitor_servicegroup_binding monitor_servicegroup_binding = new com.citrix.netscaler.nitro.resource.config.lb.lbmonitor_servicegroup_binding();
+                servicegroup_lbmonitor_binding servicegroup_monitor_binding = new servicegroup_lbmonitor_binding();
                 try {
-                    monitor_servicegroup_binding.set_monitorname(monitorName);
-                    monitor_servicegroup_binding.set_servicegroupname(serviceGroupName);
-                    monitor_servicegroup_binding.delete(_netscalerService, monitor_servicegroup_binding);
+                    servicegroup_monitor_binding.set_monitor_name(monitorName);
+                    servicegroup_monitor_binding.set_servicegroupname(serviceGroupName);
+                    servicegroup_lbmonitor_binding.delete(_netscalerService, servicegroup_monitor_binding);
                 } catch (Exception e) {
                     // Ignore Exception on cleanup
                     if(!isCleanUp) throw e;
@@ -2037,8 +2038,7 @@ public class NetscalerResource implements ServerResource {
         try {
             timer_policy_binding.set_name(timerName);
             timer_policy_binding.set_policyname(policyName);
-            // timer_policy_binding.set_vserver(nsVirtualServerName);
-            timer_policy_binding.set_global("DEFAULT"); // vserver name is present at the expression
+            //            timer_policy_binding.set_global("DEFAULT"); // vserver name is present in the expression, this is default now
             timer_policy_binding.set_samplesize(sampleSize);
             timer_policy_binding.set_thresholdsize(sampleSize); // We are not exposing this parameter as of now.
             // i.e. n(m) is not exposed to CS user. So thresholdSize == sampleSize
@@ -2057,7 +2057,7 @@ public class NetscalerResource implements ServerResource {
         try {
             timer_policy_binding.set_name(timerName);
             timer_policy_binding.set_policyname(policyName);
-            timer_policy_binding.set_global("DEFAULT");
+            //            timer_policy_binding.set_global("DEFAULT"); // by default only global bank
             timer_policy_binding.delete(_netscalerService, timer_policy_binding);
         } catch (Exception e) {
             // Ignore Exception on cleanup
