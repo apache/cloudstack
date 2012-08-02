@@ -1147,4 +1147,24 @@ public class NetUtils {
         }
         return true;
     }
+    
+    public static boolean validateIcmpType(int icmpType) {
+        //Source - http://www.erg.abdn.ac.uk/~gorry/course/inet-pages/icmp-code.html
+        if(!(icmpType >=0 && icmpType <=255)) {
+            s_logger.warn("impcType is not within 0-255 range");
+            return false;
+        }
+        return true;
+    }
+    
+    public static boolean validateIcmpCode(int icmpCode) {
+        
+        //Source - http://www.erg.abdn.ac.uk/~gorry/course/inet-pages/icmp-code.html
+        if(!(icmpCode >=0 && icmpCode <=15)) {
+            s_logger.warn("Icmp code should be within 0-15 range");
+            return false;
+        }
+        
+        return true;
+    }
 }

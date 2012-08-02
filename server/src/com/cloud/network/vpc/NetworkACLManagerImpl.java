@@ -151,7 +151,20 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
 
         if (protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (portStart != null || portEnd != null)) {
             throw new InvalidParameterValueException("Can't specify start/end port when protocol is ICMP", null);
-        } 
+        }
+        
+        //validate icmp code and type
+        if (icmpType != null) {
+            if (!NetUtils.validateIcmpType(icmpType)) {
+                throw new InvalidParameterValueException("Invalid icmp type; should belong to [0-255] range", null);
+            }
+            if (icmpCode != null) {
+                if (!NetUtils.validateIcmpCode(icmpCode)) {
+                    throw new InvalidParameterValueException("Invalid icmp code; should belong to [0-15] range and can" +
+                            " be defined when icmpType belongs to [0-40] range", null);
+                }
+            }
+        }
 
         validateNetworkACL(caller, network, portStart, portEnd, protocol);
 
