@@ -173,7 +173,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         for (Counter counter : counters) {
             if (!supportedCounters.contains(counter.getSource().name().toString())) {
                 throw new InvalidParameterException("AutoScale counter with source='" + counter.getSource() + "' is not supported " +
-                        "in the network where lb is configured");
+                "in the network where lb is configured");
             }
         }
     }
@@ -565,7 +565,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
             Account caller = UserContext.current().getCaller();
 
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
-                    ListProjectResourcesCriteria>(domainId, isRecursive, null);
+            ListProjectResourcesCriteria>(domainId, isRecursive, null);
             _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject,
                     listAll, false);
             domainId = domainIdRecursiveListProject.first();
@@ -829,6 +829,10 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         List<Counter> counters = new ArrayList<Counter>();
         List<AutoScalePolicyVO> policies = new ArrayList<AutoScalePolicyVO>();
         List<Long> policyIds = new ArrayList<Long>();
+        List<Long> bakupScaleUpPolicyIds = new ArrayList<Long>();
+        List<Long> bakupScaleDownPolicyIds = new ArrayList<Long>();
+        if(vmGroup.getCreated() != null)
+            ApiDBUtils.getAutoScaleVmGroupPolicyIds(vmGroup.getId(), bakupScaleUpPolicyIds, bakupScaleDownPolicyIds);
 
         if (minMembers < 0) {
             throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " is an invalid value: " + minMembers, null);
@@ -848,10 +852,20 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
 
         if (scaleUpPolicyIds != null) {
             policies.addAll(getAutoScalePolicies("scaleuppolicyid", scaleUpPolicyIds, counters, interval, true));
+            policyIds.addAll(scaleUpPolicyIds);
+        } else {
+            // Run the interval check for existing policies
+            getAutoScalePolicies("scaleuppolicyid", bakupScaleUpPolicyIds, counters, interval, true);
+            policyIds.addAll(bakupScaleUpPolicyIds);
         }
 
         if (scaleDownPolicyIds != null) {
             policies.addAll(getAutoScalePolicies("scaledownpolicyid", scaleDownPolicyIds, counters, interval, false));
+            policyIds.addAll(scaleDownPolicyIds);
+        } else {
+            // Run the interval check for existing policies
+            getAutoScalePolicies("scaledownpolicyid", bakupScaleDownPolicyIds, counters, interval, true);
+            policyIds.addAll(bakupScaleDownPolicyIds);
         }
 
         LoadBalancerVO loadBalancer = getEntityInDatabase(UserContext.current().getCaller(), ApiConstants.LBID, vmGroup.getLoadBalancerId(), _lbDao);
@@ -869,20 +883,6 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         vmGroup = _autoScaleVmGroupDao.persist(vmGroup);
 
         if (scaleUpPolicyIds != null || scaleDownPolicyIds != null) {
-            List<Long> bakupScaleUpPolicyIds = new ArrayList<Long>();
-            List<Long> bakupScaleDownPolicyIds = new ArrayList<Long>();
-            ApiDBUtils.getAutoScaleVmGroupPolicyIds(vmGroup.getId(), bakupScaleUpPolicyIds, bakupScaleDownPolicyIds);
-            if (scaleUpPolicyIds == null) {
-                policyIds.addAll(bakupScaleUpPolicyIds);
-            } else {
-                policyIds.addAll(scaleUpPolicyIds);
-            }
-            if (scaleDownPolicyIds == null) {
-                policyIds.addAll(bakupScaleDownPolicyIds);
-            } else {
-                policyIds.addAll(scaleDownPolicyIds);
-            }
-
             _autoScaleVmGroupPolicyMapDao.removeByGroupId(vmGroup.getId());
 
             for (Long policyId : policyIds) {
