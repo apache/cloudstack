@@ -3957,12 +3957,10 @@
                       var items = [];
                       items.push({id: '3des-md5', description: '3des-md5'});
                       items.push({id: 'aes-md5', description: 'aes-md5'});
-                      items.push({id: 'aes128-md5', description: 'aes128-md5'});
-                      items.push({id: 'des-md5', description: 'des-md5'});
+                      items.push({id: 'aes128-md5', description: 'aes128-md5'});                     
                       items.push({id: '3des-sha1', description: '3des-sha1'});
                       items.push({id: 'aes-sha1', description: 'aes-sha1'});
-                      items.push({id: 'aes128-sha1', description: 'aes128-sha1'});
-                      items.push({id: 'des-sha1', description: 'des-sha1'});
+                      items.push({id: 'aes128-sha1', description: 'aes128-sha1'});                     
                       args.response.success({data: items});
                     }
                   },
@@ -3973,7 +3971,6 @@
                       items.push({id: '3des-md5', description: '3des-md5'});
                       items.push({id: 'aes-md5', description: 'aes-md5'});
                       items.push({id: 'aes128-md5', description: 'aes128-md5'});
-
                       items.push({id: '3des-sha1', description: '3des-sha1'});
                       items.push({id: 'aes-sha1', description: 'aes-sha1'});
                       items.push({id: 'aes128-sha1', description: 'aes128-sha1'});
@@ -4026,35 +4023,36 @@
             actions: {              
               edit: {
                 label: 'label.edit',
-                action: function(args) {
-                    var array1 = [];
-                    array1.push("&gateway=" + args.context.vpnCustomerGateway[0].gateway);
-                    array1.push("&ipsecpsk=" + todb(args.data.ipsecpsk));
-                    array1.push("&cidrlist=" + args.context.vpnCustomerGateway[0].cidrlist);
-                    array1.push("&ikepolicy=" + args.context.vpnCustomerGateway[0].ikepolicy);
-                    array1.push("&esppolicy=" + args.context.vpnCustomerGateway[0].esppolicy);
-                    $.ajax({
-                    url: createURL("updateVpnCustomerGateway&id=" + args.context.vpnCustomerGateway[0].id + array1.join("")),
-                    dataType: "json",
-                    async: true,
-                    success: function(json) {
-                        var jobId = json.updatecustomergatewayresponse.jobid;
-                        args.response.success(
-                            {_custom:
-                                {
-                                  jobId: jobId,
-                                  getUpdatedItem: function(json) {
-                                    var item = json.queryasyncjobresultresponse.jobresult.vpncustomergateway;
-                                    return {data: item};
-                                  }
-                                }
-                            }
-                        );
-                    },
-                    error: function(json) {
-                        args.response.error('Could not edit Vpn Customer Gateway information; please ensure all fields are valid.');
+                action: function(args) {                  							
+									var data = {
+									  id: args.context.vpnCustomerGateway[0].id,
+										name: args.data.name,
+										gateway: args.data.gateway,
+										cidrlist: args.data.cidrlist,
+										ipsecpsk: args.data.ipsecpsk,
+										ikepolicy: args.data.ikepolicy,
+										esppolicy: args.data.esppolicy,
+										lifetime: args.data.lifetime
+									};
+									
+                  $.ajax({
+                    url: createURL('updateVpnCustomerGateway'),     
+                    data: data,										
+                    success: function(json) {										 
+											var jobId = json.updatecustomergatewayresponse.jobid;
+											args.response.success(
+												{_custom:
+													{
+														jobId: jobId,
+														getUpdatedItem: function(json) {														  
+															var item = json.queryasyncjobresultresponse.jobresult.vpncustomergateway;
+															args.response.success({ data: item });
+														}
+													}
+												}
+											);
                     }
-                    });
+                  });
                 },
                 notification: {
                   poll: pollAsyncJobResult
@@ -4100,16 +4098,61 @@
                 title: 'label.details',
                 fields: [
                   {
-									  name: { label: 'label.name' }                    
+									  name: { 
+										  label: 'label.name',
+										  isEditable: true,
+					            validation: { required: true } 
+										}                    
                   },
                   {
-									  gateway: { label: 'label.gateway' },
-                    cidrlist: { label: 'CIDR list' },
-                    ipsecpsk: { label: 'IPsec Preshared-Key' },
-                    id: { label: 'label.id' },
-                    ikepolicy: { label: 'IKE policy'},
-                    esppolicy:{ label: 'ESP policy'},
-                    lifetime :{label: 'Lifetime (second)'},
+									  gateway: { 
+										  label: 'label.gateway',
+                      isEditable: true,
+					            validation: { required: true }
+										},
+                    cidrlist: { 
+										  label: 'CIDR list',
+                      isEditable: true,
+					            validation: { required: true } 
+										},
+                    ipsecpsk: { 
+										  label: 'IPsec Preshared-Key',
+                      isEditable: true,
+					            validation: { required: true } 
+										},                    
+                    ikepolicy: { 
+										  label: 'IKE policy',
+                      isEditable: true,											
+											select: function(args) {
+												var items = [];
+												items.push({id: '3des-md5', description: '3des-md5'});
+												items.push({id: 'aes-md5', description: 'aes-md5'});
+												items.push({id: 'aes128-md5', description: 'aes128-md5'});												
+												items.push({id: '3des-sha1', description: '3des-sha1'});
+												items.push({id: 'aes-sha1', description: 'aes-sha1'});
+												items.push({id: 'aes128-sha1', description: 'aes128-sha1'});												
+												args.response.success({data: items});
+											}
+										},
+                    esppolicy:{ 
+										  label: 'ESP policy',
+                      isEditable: true,											
+											select: function(args) {
+												var items = [];
+												items.push({id: '3des-md5', description: '3des-md5'});
+												items.push({id: 'aes-md5', description: 'aes-md5'});
+												items.push({id: 'aes128-md5', description: 'aes128-md5'});
+												items.push({id: '3des-sha1', description: '3des-sha1'});
+												items.push({id: 'aes-sha1', description: 'aes-sha1'});
+												items.push({id: 'aes128-sha1', description: 'aes128-sha1'});
+												args.response.success({data: items});
+											}											
+										},
+                    lifetime :{
+										  label: 'Lifetime (second)',
+                      isEditable: true
+										},
+										id: { label: 'label.id' },
                     domain: { label: 'label.domain' },
                     account: { label: 'label.account' }
                   }
