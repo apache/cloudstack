@@ -168,17 +168,18 @@ public class XenServer56Resource extends CitrixResourceBase {
         try {
             Connection conn = getConnection();
             String option = cmd.getOption();
-            String guestIp = cmd.getGuestNic().getIp();
+            String publicIp = cmd.getGatewayIP();
 
-            String args = "vpc_netusage.sh " + cmd.getPrivateIP() + " ";
+            String args = "vpc_netusage.sh " + cmd.getPrivateIP();
+            args += " -l " + publicIp+ " ";
             if (option.equals("get")) {
                 args += "-g";
-                args += " -l " + guestIp;
             } else if (option.equals("create")) {
                 args += "-c";
+                String vpcCIDR = cmd.getVpcCIDR();
+                args += " -v " + vpcCIDR;
             } else if (option.equals("reset")) {
                 args += "-r";
-                args += " -l " + guestIp;
             } else {
                 return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
             }

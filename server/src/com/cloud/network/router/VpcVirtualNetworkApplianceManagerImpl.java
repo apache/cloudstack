@@ -25,7 +25,9 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager.OnError;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetDomRVersionCmd;
+import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.SetupGuestNetworkAnswer;
@@ -94,6 +96,7 @@ import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.Dao.PrivateIpDao;
 import com.cloud.network.vpc.Dao.StaticRouteDao;
 import com.cloud.network.vpc.Dao.VpcDao;
@@ -101,6 +104,7 @@ import com.cloud.network.vpc.Dao.VpcOfferingDao;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
+import com.cloud.user.UserStatisticsVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
@@ -772,6 +776,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             }
         }
         
+        List<Command> usageCmds = new ArrayList<Command>();
+        
         //3) PREPARE PLUG NIC COMMANDS
         try {
             //add VPC router to public networks
@@ -795,16 +801,27 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                         _routerDao.update(routerVO.getId(), routerVO);
                     }
                 }
-                
-                PlugNicCommand plugNicCmd = new PlugNicCommand(getNicTO(router, publicNic.getNetworkId(), 
-                        publicNic.getBroadcastUri().toString()), router.getInstanceName());
+                PlugNicCommand plugNicCmd = new PlugNicCommand(getNicTO(router, publicNic.getNetworkId(), publicNic.getBroadcastUri().toString()), router.getInstanceName());
                 cmds.addCommand(plugNicCmd); 
+                VpcVO vpc = _vpcDao.findById(router.getVpcId());
+                NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(router.getPrivateIpAddress(), router.getInstanceName(), true, publicNic.getIp4Address(), vpc.getCidr());
+                usageCmds.add(netUsageCmd);
+                UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn(), 
+                		publicNtwk.getId(), publicNic.getIp4Address(), router.getId(), router.getType().toString());
+                if (stats == null) {
+                    stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), publicNic.getIp4Address(), router.getId(),
+                            router.getType().toString(), publicNtwk.getId());
+                    _userStatsDao.persist(stats);
+                }
             }
             
             // create ip assoc for source nat
             if (!sourceNat.isEmpty()) {
                 createVpcAssociatePublicIPCommands(router, sourceNat, cmds, vlanMacAddress);
             }
+            
+            //Add network usage commands
+            cmds.addCommands(usageCmds);
             
             //add VPC router to guest networks
             for (Pair<Nic, Network> nicNtwk : guestNics) {

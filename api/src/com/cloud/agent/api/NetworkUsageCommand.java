@@ -13,26 +13,26 @@
 package com.cloud.agent.api;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
-import com.cloud.agent.api.to.NicTO;
 
-@LogLevel(Log4jLevel.Trace)
+@LogLevel(Log4jLevel.Debug)
 public class NetworkUsageCommand extends Command {
     private String privateIP;
     private String domRName;
     private String option;
     boolean forVpc = false;
-    NicTO guestNic;
+    private String gatewayIP;
+    private String vpcCIDR;
 
     protected NetworkUsageCommand() {
 
     }
 
-    public NetworkUsageCommand(String privateIP, String domRName, boolean forVpc, NicTO guestNic)
+    public NetworkUsageCommand(String privateIP, String domRName, boolean forVpc, String gatewayIP)
     {
         this.privateIP = privateIP;
         this.domRName = domRName;
         this.forVpc = forVpc;
-        this.guestNic = guestNic;
+        this.gatewayIP = gatewayIP;
         this.option = "get";
     }
 
@@ -44,6 +44,16 @@ public class NetworkUsageCommand extends Command {
         this.forVpc = forVpc;
     }
 
+    public NetworkUsageCommand(String privateIP, String domRName, boolean forVpc, String gatewayIP, String vpcCIDR)
+    {
+        this.privateIP = privateIP;
+        this.domRName = domRName;
+        this.forVpc = forVpc;
+        this.gatewayIP = gatewayIP;
+        this.option = "create";
+        this.vpcCIDR = vpcCIDR;
+    }
+    
     public String getPrivateIP() {
         return privateIP;
     }
@@ -60,9 +70,13 @@ public class NetworkUsageCommand extends Command {
         return forVpc;
     }
 
-    public NicTO getGuestNic() {
-        return guestNic;
-    }
+	public String getVpcCIDR() {
+		return vpcCIDR;
+	}
+
+	public String getGatewayIP() {
+		return gatewayIP;
+	}
 
     @Override
     public boolean executeInSequence() {

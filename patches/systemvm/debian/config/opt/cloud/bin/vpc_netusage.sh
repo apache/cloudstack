@@ -27,21 +27,23 @@ usage() {
 }
 
 create_usage_rules () {
-  iptables-save|grep "NETWORK_STATS_$guestIp -i $ethDev" > /dev/null
+  iptables -N NETWORK_STATS_$ethDev > /dev/null
+  iptables -I FORWARD -j NETWORK_STATS_$ethDev > /dev/null
+  iptables-save|grep "NETWORK_STATS_$ethDev -i $ethDev" > /dev/null
   if [ $? -gt 0 ]
   then 
-    iptables -A NETWORK_STATS_$guestIp -i $ethDev -s ! zcidr > /dev/null
+    iptables -A NETWORK_STATS_$ethDev -i $ethDev -d $vcidr > /dev/null
   fi
-  iptables-save|grep "NETWORK_STATS_$guestIp -o $ethDev" > /dev/null
+  iptables-save|grep "NETWORK_STATS_$ethDev -o $ethDev" > /dev/null
   if [ $? -gt 0 ]
   then 
-    iptables -A NETWORK_STATS_$guestIp -o $ethDev -d ! zcidr > /dev/null
+    iptables -A NETWORK_STATS_$ethDev -o $ethDev -s $vcidr > /dev/null
   fi
   return $?
 }
 
 get_usage () {
-  iptables -t mangle -L NETWORK_STATS_$ethDev -n -v -x | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
+  iptables -L NETWORK_STATS_$ethDev -n -v -x | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
   if [ $? -gt 0 ]
   then
      printf $?
@@ -50,7 +52,7 @@ get_usage () {
 }
 
 reset_usage () {
-  iptables -t mangle -Z NETWORK_STATS_$ethDev > /dev/null
+  iptables -Z NETWORK_STATS_$ethDev > /dev/null
   if [ $? -gt 0  -a $? -ne 2 ]
   then
      return 1
@@ -65,7 +67,7 @@ rflag=
 lflag=
 
 
-while getopts 'cgrl:' OPTION
+while getopts 'cgrl:v:' OPTION
 do
   case $OPTION in
   c)	cflag=1
@@ -75,7 +77,10 @@ do
   r)	rflag=1
 	;;
   l)    lflag=1
-        guestIp="$OPTARG"
+        publicIp="$OPTARG"
+        ;;
+  v)    vflag=1
+        vcidr="$OPTARG"
         ;;
   i)    #Do nothing, since it's parameter for host script
         ;;
@@ -85,12 +90,13 @@ do
   esac
 done
 
+ethDev=$(getEthByIp $publicIp)
 if [ "$cflag" == "1" ] 
 then
+  create_usage_rules
   unlock_exit 0 $lock $locked
 fi
 
-ethDev=$(getEthByIp $guestIp)
 if [ "$gflag" == "1" ] 
 then
   get_usage 
