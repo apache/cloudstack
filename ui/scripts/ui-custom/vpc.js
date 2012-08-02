@@ -18,6 +18,7 @@
   var elems = {
     vpcConfigureTooltip: function(args) {
       var $browser = args.$browser;
+      var $chart = args.$chart;
       var ipAddresses = args.ipAddresses;
       var gateways = args.gateways;
       var siteToSiteVPN = args.siteToSiteVPN;
@@ -63,14 +64,59 @@
             });
             break;
           case 'site-to-site-vpn':
-            $browser.cloudBrowser('addPanel', {
-              title: 'Site-to-site VPNs',
-              maximizeIfSelected: true,
-              complete: function($panel) {
-                //siteToSiteVPN is an object
-                $panel.listView(siteToSiteVPN, {context: siteToSiteVPN.context});
-              }
-            });
+            //siteToSiteVPN is an object
+            var addAction = siteToSiteVPN.add;
+            var isVPNPresent = addAction.preCheck({ context: siteToSiteVPN.context });
+            var showVPNListView = function() {
+              $browser.cloudBrowser('addPanel', {
+                title: 'Site-to-site VPNs',
+                maximizeIfSelected: true,
+                complete: function($panel) {
+                  $panel.listView(siteToSiteVPN, {context: siteToSiteVPN.context});
+                }
+              });
+            };
+
+            if (isVPNPresent) {
+              showVPNListView();
+            } else {
+              cloudStack.dialog.confirm({
+                message: 'Please confirm that you want to add a VPN gateway.',
+                action: function() {
+                  var $loading = $('<div>').addClass('loading-overlay').appendTo($chart);
+                  var error = function(message) {
+                    $loading.remove();
+                    cloudStack.dialog.notice({ message: message });
+                  };
+
+                  addAction.action({
+                    context: siteToSiteVPN.context,
+                    response: {
+                      success: function(args) {
+                        var _custom = args._custom;
+                        var notification = {
+                          poll: addAction.notification.poll,
+                          _custom: _custom,
+                          desc: addAction.messages.notification()
+                        };
+                        var success = function(args) {
+                          if (!$chart.is(':visible')) return;
+                          
+                          $loading.remove();
+                          showVPNListView();
+                        };
+                        
+                        cloudStack.ui.notifications.add(
+                          notification,
+                          success, {},
+                          error, {}
+                        );
+                      }
+                    }
+                  });
+                }
+              });
+            }
             break;
           }
         });
@@ -98,6 +144,7 @@
     },
     vpcConfigureArea: function(args) {
       var $browser = args.$browser;
+      var $chart = args.$chart;
       var ipAddresses = args.ipAddresses;
       var gateways = args.gateways;
       var siteToSiteVPN = args.siteToSiteVPN;
@@ -110,6 +157,7 @@
       $configIcon.mouseover(function() {
         var $tooltip = elems.vpcConfigureTooltip({
           $browser: $browser,
+          $chart: $chart,
           ipAddresses: ipAddresses,
           gateways: gateways,
           siteToSiteVPN: siteToSiteVPN
@@ -300,6 +348,7 @@
             .append(
               elems.vpcConfigureArea({
                 $browser: $browser,
+                $chart: $chart,
                 ipAddresses: $.extend(ipAddresses, {context: context}),
                 gateways: $.extend(gateways, {context: context}),
                 siteToSiteVPN: $.extend(siteToSiteVPN, {context: context})
