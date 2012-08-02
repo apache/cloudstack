@@ -913,80 +913,91 @@
                 }
               });
             },
-
-            actions:{
-              add: {
-                label:'add VPN connection',
-                messages: {
-
-                  notification:function(args) {
-                    return 'add VPN connection';
+            
+						actions:{             
+							add: {               
+                label: 'Create VPN Connection',
+                messages: {                 
+                  notification: function(args) {
+                    return 'Create VPN Connection';
                   }
                 },
                 createForm: {
-
-                  title:'add VPN connection',
-                  fields: {
-                    zoneid: {
-                      label:'Zone',
-                      validation:{required:true},
-                      select: function(args) {
-                        $.ajax({
-                          url: createURL('listZones'),
-                          data: {
-                            available: true
-                          },
-                          success: function(json) {
-                            var zones = json.listzonesresponse.zone;
-                            args.response.success({
-                              data: $.map(zones, function(zone) {
-                                return {
-                                  id: zone.id,
-                                  description: zone.name
-                                };
-                              })
-                            });
-                          }
-                        });
-                      }
-
-                    },
-                    vpcid:{
-                      label:'VPC',
-                      validation:{ required:true},
-                      dependsOn: 'zoneid',
-                      select: function(args) {
-                        $.ajax({
-                          url: createURL('listVPCs'),
-                          data: {
-                            zoneid: args.zoneid,
-                            listAll: true
-                          },
-                          success: function(json) {
-                            var items = json.listvpcsresponse.vpc;
-                            var data;
-                            if(items != null && items.length > 0) {
-                              data = $.map(items, function(item) {
+                  title: 'Create VPN Connection',
+                  fields: {                    
+										vpncustomergatewayid: {
+                      label: 'VPN Customer Gateway',
+                      validation: { required: true },
+                      select: function(args) {											 
+												$.ajax({
+													url: createURL("listVpnCustomerGateways"),
+													data: {
+														listAll: true
+													},
+													success: function(json) {
+														var items = json.listvpncustomergatewaysresponse.vpncustomergateway;
+														args.response.success({
+														  data: $.map(items, function(item) {
                                 return {
                                   id: item.id,
                                   description: item.name
-                                }
-                              });
-                            }
-                            args.response.success({ data: data });
-                          }
-                        });
+                                };
+                              })
+															
+														});
+													}
+												});												
                       }
-
-                    }
+                    }			                    
                   }
                 },
-                action:function(args) {
-                  // Code for passing the customer gateway ID and VPN id
-
+                action: function(args) {
+                  var vpngatewayid = null;
+                  $.ajax({
+                    url: createURL('listVpnGateways'),
+                    data: {
+                      vpcid: args.data.vpcid
+                    },
+                    async: false,
+                    success: function(json) {
+                      var items = json.listvpngatewaysresponse.vpngateway;
+                      if(items != null && items.length > 0) {
+                        vpngatewayid = items[0].id;
+                      }
+                    }
+                  });
+                  if(vpngatewayid == null) {
+                    args.response.error('The selected VPC does not have a VPN gateway. Please create a VPN gateway for the VPC first.');
+                    return;
+                  }
+                 
+                  $.ajax({
+                    url: createURL('createVpnConnection'),
+                    data: {
+										  s2svpngatewayid: vpngatewayid,
+                      s2scustomergatewayid: args.data.vpncustomergatewayid
+                    },
+                    success: function(json) {										  
+                      var jid = json.createvpnconnectionresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,													 
+													  getUpdatedItem: function(json) {
+														  debugger;
+														  return json.queryasyncjobresultresponse.jobresult.vpnconnection;
+													  }													 
+                          }
+                        }
+                      );
+                    }
+                  });
+                },								
+                notification: {
+                  poll: pollAsyncJobResult
                 }
-              }
-            },
+              }										
+            },												
 
             detailView: {
               name: 'label.details',
