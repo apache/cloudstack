@@ -326,6 +326,15 @@
                       accountObj["templateLimit"] = args.data.templateLimit;
                     }
                   });
+                  
+                  $.ajax({
+                    url: createURL("updateResourceLimit&resourceType=7&max=" + todb(args.data.vpcLimit) + "&account=" + accountObj.name + "&domainid=" + accountObj.domainid),
+                    dataType: "json",
+                    async: false,
+                    success: function(json) {
+                      accountObj["vpcLimit"] = args.data.vpcLimit;
+                    }
+                  });
 
                   if(errorMsg == "")
                   args.response.success({data: accountObj});
@@ -555,6 +564,10 @@
                       label: 'label.template.limits',
                       isEditable: true
                     },
+                    vpcLimit: {
+                      label: 'VPC limits',
+                      isEditable: true
+                    },
 
                     vmtotal: { label: 'label.total.of.vm' },
                     iptotal: { label: 'label.total.of.ip' },
@@ -595,21 +608,24 @@
 														for (var i = 0; i < limits.length; i++) {
 															var limit = limits[i];
 															switch (limit.resourcetype) {
-																case "0":
-																	accountObj["vmLimit"] = limit.max;
-																	break;
-																case "1":
-																	accountObj["ipLimit"] = limit.max;
-																	break;
-																case "2":
-																	accountObj["volumeLimit"] = limit.max;
-																	break;
-																case "3":
-																	accountObj["snapshotLimit"] = limit.max;
-																	break;
-																case "4":
-																	accountObj["templateLimit"] = limit.max;
-																	break;
+															case "0":
+																accountObj["vmLimit"] = limit.max;
+																break;
+															case "1":
+																accountObj["ipLimit"] = limit.max;
+																break;
+															case "2":
+																accountObj["volumeLimit"] = limit.max;
+																break;
+															case "3":
+																accountObj["snapshotLimit"] = limit.max;
+																break;
+															case "4":
+																accountObj["templateLimit"] = limit.max;
+																break;
+                              case "7":
+																accountObj["vpcLimit"] = limit.max;
+																break;
 															}
 														}
 													}																										
