@@ -87,7 +87,14 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.DETAILS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of host details requested, " +
     		"value can be a list of [all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min]. If no parameter is passed in, the details will be defaulted to all" )
     private List<String> viewDetails; 
-   
+
+    @IdentityMapper(entityTableName="vm_template")
+    @Parameter(name=ApiConstants.TEMPLATE_ID, type=CommandType.LONG, description="list vms by template")
+    private Long templateId;
+    
+    @IdentityMapper(entityTableName="vm_template")
+    @Parameter(name=ApiConstants.ISO_ID, type=CommandType.LONG, description="list vms by iso")
+    private Long isoId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -140,7 +147,15 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     public Long getStorageId() {
         return storageId;
     }
+
+    public Long getTemplateId() {
+        return templateId;
+    }
     
+    public Long getIsoId() {
+        return isoId;
+    }
+
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {
         EnumSet<VMDetails> dv;
         if (viewDetails==null || viewDetails.size() <=0){

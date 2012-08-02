@@ -183,6 +183,7 @@ public class ApiConstants {
     public static final String TARGET_IQN = "targetiqn";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";
+    public static final String ISO_ID = "isoid";
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
     public static final String TYPE = "type";
@@ -364,6 +365,7 @@ public class ApiConstants {
     public static final String NICIRA_NVP_DEVICE_ID = "nvpdeviceid";
     public static final String NICIRA_NVP_TRANSPORT_ZONE_UUID = "transportzoneuuid";
     public static final String NICIRA_NVP_DEVICE_NAME = "niciradevicename";
+    
 
     
     public enum HostDetails {

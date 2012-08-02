@@ -2931,6 +2931,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         c.addCriteria(Criteria.GROUPID, cmd.getGroupId());
         c.addCriteria(Criteria.FOR_VIRTUAL_NETWORK, cmd.getForVirtualNetwork());
         c.addCriteria(Criteria.NETWORKID, cmd.getNetworkId());
+        c.addCriteria(Criteria.TEMPLATE_ID, cmd.getTemplateId());
+        c.addCriteria(Criteria.ISO_ID, cmd.getIsoId());
 
         if (domainId != null) {
             c.addCriteria(Criteria.DOMAINID, domainId);
@@ -2980,6 +2982,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Object networkId = c.getCriteria(Criteria.NETWORKID);
         Object hypervisor = c.getCriteria(Criteria.HYPERVISOR);
         Object storageId = c.getCriteria(Criteria.STORAGE_ID);
+        Object templateId = c.getCriteria(Criteria.TEMPLATE_ID);
+        Object isoId = c.getCriteria(Criteria.ISO_ID);
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -2992,6 +2996,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("hostIdEQ", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         sb.and("hostIdIN", sb.entity().getHostId(), SearchCriteria.Op.IN);
+        sb.and("templateId", sb.entity().getTemplateId(), SearchCriteria.Op.EQ);
+        sb.and("isoId", sb.entity().getTemplateId(), SearchCriteria.Op.EQ);
 
         if (groupId != null && (Long) groupId == -1) {
             SearchBuilder<InstanceGroupVMMapVO> vmSearch = _groupVMMapDao.createSearchBuilder();
@@ -3064,6 +3070,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         if (id != null) {
             sc.setParameters("id", id);
+        }
+        
+        if (templateId != null) {
+            sc.setParameters("templateId", templateId);
+        }
+        
+        if (isoId != null) {
+            sc.setParameters("isoId", isoId);
         }
 
         if (networkId != null) {
