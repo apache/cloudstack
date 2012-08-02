@@ -1628,9 +1628,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         return configs;
                     }
                 }
-            } else if (predefined != null && predefined.getCidr() != null && predefined.getBroadcastUri() == null) {
+            } else if (predefined != null && predefined.getCidr() != null && predefined.getBroadcastUri() == null && vpcId == null) {
                 // don't allow to have 2 networks with the same cidr in the same zone for the account
-                List<NetworkVO> configs = _networksDao.listBy(owner.getId(), plan.getDataCenterId(), predefined.getCidr());
+                List<NetworkVO> configs = _networksDao.listBy(owner.getId(), plan.getDataCenterId(), predefined.getCidr(), true);
                 if (configs.size() > 0) {
                     if (s_logger.isDebugEnabled()) {
                         s_logger.debug("Found existing network configuration for offering " + offering + ": " + configs.get(0));

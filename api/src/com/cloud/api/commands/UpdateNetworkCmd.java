@@ -119,7 +119,7 @@ public class UpdateNetworkCmd extends BaseAsyncCmd {
         Account callerAccount = _accountService.getActiveAccountById(callerUser.getAccountId());
         Network network = _networkService.getNetwork(id);
         if (network == null) {
-            throw new InvalidParameterValueException("Couldn't find network by id", null);
+            throw new InvalidParameterValueException("Couldn't find network by id");
         }
         
         Network result = null;

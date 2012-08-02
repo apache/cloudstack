@@ -590,16 +590,16 @@ public class VpcManagerImpl implements VpcManager, Manager{
                     "the digits '0' through '9', "
                             + "and the hyphen ('-'); can't start or end with \"-\"");
         }
-        
-        
-        //don't allow overlapping CIDRS for the VPCs of the same account
-        List<? extends Vpc> vpcs = getVpcsForAccount(vpcOwner.getId());
-        for (Vpc vpc : vpcs) {
-            if (NetUtils.isNetworksOverlap(cidr, vpc.getCidr())) {
-                throw new InvalidParameterValueException("Account already has vpc with cidr " + vpc.getCidr() + 
-                        " that overlaps the cidr specified: " + cidr);
-            }
-        }
+
+
+//        //don't allow overlapping CIDRS for the VPCs of the same account
+//        List<? extends Vpc> vpcs = getVpcsForAccount(vpcOwner.getId());
+//        for (Vpc vpc : vpcs) {
+//            if (NetUtils.isNetworksOverlap(cidr, vpc.getCidr())) {
+//                throw new InvalidParameterValueException("Account already has vpc with cidr " + vpc.getCidr() + 
+//                        " that overlaps the cidr specified: " + cidr, null);
+//            }
+//        }
 
         Transaction txn = Transaction.currentTxn();
         txn.start();
