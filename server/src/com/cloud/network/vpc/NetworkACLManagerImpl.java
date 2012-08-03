@@ -155,11 +155,11 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
         
         //validate icmp code and type
         if (icmpType != null) {
-            if (!NetUtils.validateIcmpType(icmpType)) {
+            if (icmpType.longValue() != -1 && !NetUtils.validateIcmpType(icmpType.longValue())) {
                 throw new InvalidParameterValueException("Invalid icmp type; should belong to [0-255] range");
             }
             if (icmpCode != null) {
-                if (!NetUtils.validateIcmpCode(icmpCode)) {
+                if (icmpCode.longValue() != -1 && !NetUtils.validateIcmpCode(icmpCode.longValue())) {
                     throw new InvalidParameterValueException("Invalid icmp code; should belong to [0-15] range and can" +
                             " be defined when icmpType belongs to [0-40] range");
                 }
@@ -264,8 +264,10 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
 
             if (newRule.getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO) 
                     && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol())) {
-                if (newRule.getIcmpCode().longValue() == rule.getIcmpCode().longValue() 
-                        && newRule.getIcmpType().longValue() == rule.getIcmpType().longValue()
+                if ((newRule.getIcmpCode().longValue() == rule.getIcmpCode().longValue() 
+                        || rule.getIcmpCode().longValue() == -1 || newRule.getIcmpCode().longValue() == -1)
+                        && (newRule.getIcmpType().longValue() == rule.getIcmpType().longValue() 
+                        || rule.getIcmpType().longValue() == -1 || newRule.getIcmpType().longValue() == -1)
                         && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()) && duplicatedCidrs) {
                     throw new InvalidParameterValueException("New network ACL conflicts with existing network ACL id=" + rule.getId());
                 }
