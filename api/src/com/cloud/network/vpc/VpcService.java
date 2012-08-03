@@ -169,11 +169,12 @@ public interface VpcService {
 
     /**
      * @param gatewayId
+     * @param destroyOnFailure TODO
      * @return
      * @throws ResourceUnavailableException 
      * @throws ConcurrentOperationException 
      */
-    public PrivateGateway applyVpcPrivateGateway(Long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException;
+    public PrivateGateway applyVpcPrivateGateway(long gatewayId, boolean destroyOnFailure) throws ConcurrentOperationException, ResourceUnavailableException;
     
     /**
      * @param id
@@ -181,7 +182,7 @@ public interface VpcService {
      * @throws ResourceUnavailableException 
      * @throws ConcurrentOperationException 
      */
-    boolean deleteVpcPrivateGateway(Long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException;
+    boolean deleteVpcPrivateGateway(long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException;
 
     /**
      * @param listPrivateGatewaysCmd

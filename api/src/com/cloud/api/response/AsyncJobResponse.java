@@ -18,13 +18,11 @@ package com.cloud.api.response;
 
 import java.util.Date;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.api.ApiConstants;
-import com.cloud.utils.IdentityProxy;
 import com.cloud.api.ResponseObject;
 import com.cloud.async.AsyncJob;
 import com.cloud.serializer.Param;
+import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 
 @SuppressWarnings("unused")
@@ -129,6 +127,10 @@ public class AsyncJobResponse extends BaseResponse {
                 this.jobInstanceId.setTableName("account");
             } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.User.toString())) {
                 this.jobInstanceId.setTableName("user");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.StaticRoute.toString())) {
+                this.jobInstanceId.setTableName("static_routes");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.PrivateGateway.toString())) {
+                this.jobInstanceId.setTableName("vpc_gateways");
             } else if (!jobInstanceType.equalsIgnoreCase(AsyncJob.Type.None.toString())){
         		// TODO : when we hit here, we need to add instanceType -> UUID entity table mapping
         		assert(false);
