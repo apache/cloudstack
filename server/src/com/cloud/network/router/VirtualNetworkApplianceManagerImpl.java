@@ -909,6 +909,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         }
     }
 
+    @DB
     protected void updateSite2SiteVpnConnectionState(List<DomainRouterVO> routers) {
         for (DomainRouterVO router : routers) {
             List<Site2SiteVpnConnectionVO> conns = _s2sVpnMgr.getConnectionsForRouter(router);
@@ -958,26 +959,34 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                     continue;
                 }
                 for (Site2SiteVpnConnectionVO conn : conns) {
-                    if (conn.getState() != Site2SiteVpnConnection.State.Connected &&
-                            conn.getState() != Site2SiteVpnConnection.State.Disconnected) {
-                        continue;
+                    Site2SiteVpnConnectionVO lock = _s2sVpnConnectionDao.acquireInLockTable(conn.getId());
+                    if (lock == null) {
+                        throw new CloudRuntimeException("Unable to acquire lock on " + lock);
                     }
-                    Site2SiteVpnConnection.State oldState = conn.getState();
-                    Site2SiteCustomerGateway gw = _s2sCustomerGatewayDao.findById(conn.getCustomerGatewayId());
-                    if (answer.isConnected(gw.getGatewayIp())) {
-                        conn.setState(Site2SiteVpnConnection.State.Connected);
-                    } else {
-                        conn.setState(Site2SiteVpnConnection.State.Disconnected);
-                    }
-                    _s2sVpnConnectionDao.persist(conn);
-                    if (oldState != conn.getState()) {
-                        String title = "Site-to-site Vpn Connection to " + gw.getName() +
-                                " just switch from " + oldState + " to " + conn.getState();
-                        String context = "Site-to-site Vpn Connection to " + gw.getName() + " on router " + router.getHostName() + 
-                                "(id: " + router.getId() + ") " + " just switch from " + oldState + " to " + conn.getState();
-                        s_logger.info(context);
-                        _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
-                                router.getDataCenterIdToDeployIn(), router.getPodIdToDeployIn(), title, context);
+                    try {
+                        if (conn.getState() != Site2SiteVpnConnection.State.Connected &&
+                                conn.getState() != Site2SiteVpnConnection.State.Disconnected) {
+                            continue;
+                        }
+                        Site2SiteVpnConnection.State oldState = conn.getState();
+                        Site2SiteCustomerGateway gw = _s2sCustomerGatewayDao.findById(conn.getCustomerGatewayId());
+                        if (answer.isConnected(gw.getGatewayIp())) {
+                            conn.setState(Site2SiteVpnConnection.State.Connected);
+                        } else {
+                            conn.setState(Site2SiteVpnConnection.State.Disconnected);
+                        }
+                        _s2sVpnConnectionDao.persist(conn);
+                        if (oldState != conn.getState()) {
+                            String title = "Site-to-site Vpn Connection to " + gw.getName() +
+                                    " just switch from " + oldState + " to " + conn.getState();
+                            String context = "Site-to-site Vpn Connection to " + gw.getName() + " on router " + router.getHostName() + 
+                                    "(id: " + router.getId() + ") " + " just switch from " + oldState + " to " + conn.getState();
+                            s_logger.info(context);
+                            _alertMgr.sendAlert(AlertManager.ALERT_TYPE_DOMAIN_ROUTER,
+                                    router.getDataCenterIdToDeployIn(), router.getPodIdToDeployIn(), title, context);
+                        }
+                    } finally {
+                        _s2sVpnConnectionDao.releaseFromLockTable(lock.getId());
                     }
                 }
             }
@@ -2320,6 +2329,11 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting router " + router);
         if (_itMgr.start(router, params, user, caller, planToDeploy) != null) {
+            // We don't want the failure of VPN Connection affect the status of router, so we try to make connection only after router start successfully
+            Long vpcId = router.getVpcId();
+            if (vpcId != null) {
+                _s2sVpnMgr.reconnectDisconnectedVpnByVpc(vpcId);
+            }
             return _routerDao.findById(router.getId());
         } else {
             return null;

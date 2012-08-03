@@ -53,6 +53,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.JoinBuilder;
@@ -240,28 +241,37 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     }
 
     @Override
+    @DB
     public Site2SiteVpnConnection startVpnConnection(long id) throws ResourceUnavailableException {
-        Site2SiteVpnConnectionVO conn = _vpnConnectionDao.findById(id);
-        if (conn.getState() != State.Pending && conn.getState() != State.Disconnected) {
-            throw new InvalidParameterValueException("Site to site VPN connection " + id + " not in correct state(pending or disconnected) to process!");
+        Site2SiteVpnConnectionVO conn = _vpnConnectionDao.acquireInLockTable(id);
+        if (conn == null) {
+            throw new CloudRuntimeException("Unable to acquire lock on " + conn);
         }
+        try {
+            if (conn.getState() != State.Pending && conn.getState() != State.Disconnected) {
+                throw new InvalidParameterValueException("Site to site VPN connection with specified connectionId not in correct state(pending or disconnected) to process!");
+            }
 
-        conn.setState(State.Pending);
-        _vpnConnectionDao.persist(conn);
-        List <? extends Site2SiteVpnServiceProvider> elements = _networkMgr.getSite2SiteVpnElements();
-        boolean result = true;
-        for (Site2SiteVpnServiceProvider element : elements) {
-            result = result & element.startSite2SiteVpn(conn);
-        }
-
-        if (result) {
-            conn.setState(State.Connected);
+            conn.setState(State.Pending);
             _vpnConnectionDao.persist(conn);
-            return conn;
+
+            List <? extends Site2SiteVpnServiceProvider> elements = _networkMgr.getSite2SiteVpnElements();
+            boolean result = true;
+            for (Site2SiteVpnServiceProvider element : elements) {
+                result = result & element.startSite2SiteVpn(conn);
+            }
+
+            if (result) {
+                conn.setState(State.Connected);
+                _vpnConnectionDao.persist(conn);
+                return conn;
+            }
+            conn.setState(State.Error);
+            _vpnConnectionDao.persist(conn);
+            throw new ResourceUnavailableException("Failed to apply site-to-site VPN", Site2SiteVpnConnection.class, id);
+        } finally {
+            _vpnConnectionDao.releaseFromLockTable(conn.getId());
         }
-        conn.setState(State.Error);
-        _vpnConnectionDao.persist(conn);
-        throw new ResourceUnavailableException("Failed to apply site-to-site VPN", Site2SiteVpnConnection.class, id);
     }
 
     @Override
@@ -419,24 +429,33 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         return true;
     }
 
+    @DB
     private void stopVpnConnection(Long id) throws ResourceUnavailableException {
-        Site2SiteVpnConnectionVO conn = _vpnConnectionDao.findById(id);
-        if (conn.getState() != State.Connected && conn.getState() != State.Error) {
-            throw new InvalidParameterValueException("Site to site VPN connection " + id + " not in correct state(connected) to process disconnect!");
+        Site2SiteVpnConnectionVO conn = _vpnConnectionDao.acquireInLockTable(id);
+        if (conn == null) {
+            throw new CloudRuntimeException("Unable to acquire lock on " + conn);
         }
+        try {
+            if (conn.getState() != State.Connected && conn.getState() != State.Error) {
+                throw new InvalidParameterValueException("Site to site VPN connection with specified id is not in correct state(connected) to process disconnect!");
+            }
 
-        List <? extends Site2SiteVpnServiceProvider> elements = _networkMgr.getSite2SiteVpnElements();
-        boolean result = true;
-        conn.setState(State.Disconnected);
-        _vpnConnectionDao.persist(conn);
-        for (Site2SiteVpnServiceProvider element : elements) {
-            result = result & element.stopSite2SiteVpn(conn);
-        }
-
-        if (!result) {
-            conn.setState(State.Error);
+            conn.setState(State.Disconnected);
             _vpnConnectionDao.persist(conn);
-            throw new ResourceUnavailableException("Failed to apply site-to-site VPN", Site2SiteVpnConnection.class, id);
+            
+            List <? extends Site2SiteVpnServiceProvider> elements = _networkMgr.getSite2SiteVpnElements();
+            boolean result = true;
+            for (Site2SiteVpnServiceProvider element : elements) {
+                result = result & element.stopSite2SiteVpn(conn);
+            }
+
+            if (!result) {
+                conn.setState(State.Error);
+                _vpnConnectionDao.persist(conn);
+                throw new ResourceUnavailableException("Failed to apply site-to-site VPN", Site2SiteVpnConnection.class, id);
+            }
+        } finally {
+            _vpnConnectionDao.releaseFromLockTable(conn.getId());
         }
     }
 
@@ -617,15 +636,24 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     }
     
     @Override
+    @DB
     public void markDisconnectVpnConnByVpc(long vpcId) {
         List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByVpcId(vpcId);
         for (Site2SiteVpnConnectionVO conn : conns) {
             if (conn == null) {
                 continue;
             }
-            if (conn.getState() == Site2SiteVpnConnection.State.Connected) {
-                conn.setState(Site2SiteVpnConnection.State.Disconnected);
-                _vpnConnectionDao.persist(conn);
+            Site2SiteVpnConnectionVO lock = _vpnConnectionDao.acquireInLockTable(conn.getId());
+            if (lock == null) {
+                throw new CloudRuntimeException("Unable to acquire lock on " + conn);
+            }
+            try {
+                if (conn.getState() == Site2SiteVpnConnection.State.Connected) {
+                    conn.setState(Site2SiteVpnConnection.State.Disconnected);
+                    _vpnConnectionDao.persist(conn);
+                }
+            } finally {
+                _vpnConnectionDao.releaseFromLockTable(lock.getId());
             }
         }
     }
@@ -650,5 +678,23 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
             result = result & doDeleteCustomerGateway(gw);
         }
         return result;
+    }
+
+    @Override
+    public void reconnectDisconnectedVpnByVpc(Long vpcId) {
+        List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByVpcId(vpcId);
+        for (Site2SiteVpnConnectionVO conn : conns) {
+            if (conn == null) {
+                continue;
+            }
+            if (conn.getState() == Site2SiteVpnConnection.State.Disconnected) {
+                try {
+                    startVpnConnection(conn.getId());
+                } catch (ResourceUnavailableException e) {
+                    Site2SiteCustomerGatewayVO gw = _customerGatewayDao.findById(conn.getCustomerGatewayId());
+                    s_logger.warn("Site2SiteVpnManager: Fail to re-initiate VPN connection " + conn.getId() + " which connect to " + gw.getName());
+                }
+            }
+        }
     }
 }
