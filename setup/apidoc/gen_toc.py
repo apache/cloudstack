@@ -120,6 +120,9 @@ known_categories = {
     'VPC': 'VPC', 
     'PrivateGateway': 'VPC',
     'StaticRoute': 'VPC',
+    'AutoScale': 'AutoScale',
+    'Counter': 'AutoScale',
+    'Condition': 'AutoScale'
     }
 
 

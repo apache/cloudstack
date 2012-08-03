@@ -29,8 +29,8 @@ import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmVO;
@@ -46,7 +46,7 @@ public class UserVmDomRInvestigator extends AbstractInvestigatorImpl {
     @Inject private final UserVmDao _userVmDao = null;
     @Inject private final AgentManager _agentMgr = null;
     @Inject private final NetworkManager _networkMgr = null;
-    @Inject private final VirtualNetworkApplianceManager _vnaMgr = null;
+    @Inject private final VpcVirtualNetworkApplianceManager _vnaMgr = null;
 
     @Override
     public Boolean isVmAlive(VMInstanceVO vm, HostVO host) {

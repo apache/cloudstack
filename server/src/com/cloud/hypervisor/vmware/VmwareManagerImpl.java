@@ -70,7 +70,6 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.network.CiscoNexusVSMDeviceVO;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.serializer.GsonHelper;
@@ -92,7 +91,6 @@ import com.cloud.vm.DomainRouterVO;
 import com.google.gson.Gson;
 import com.vmware.apputils.vim25.ServiceUtil;
 import com.vmware.vim25.HostConnectSpec;
-import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.ManagedObjectReference;
 
 @Local(value = {VmwareManager.class})
@@ -117,7 +115,6 @@ public class VmwareManagerImpl implements VmwareManager, VmwareStorageMount, Lis
     @Inject CommandExecLogDao _cmdExecLogDao;
     @Inject ClusterManager _clusterMgr;
     @Inject CheckPointManager _checkPointMgr;
-    @Inject VirtualNetworkApplianceManager _routerMgr;
     @Inject SecondaryStorageVmManager _ssvmMgr;
     @Inject CiscoNexusVSMDeviceDao _nexusDao;
     @Inject ClusterVSMMapDao _vsmMapDao;

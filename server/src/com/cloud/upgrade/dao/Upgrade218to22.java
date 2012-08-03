@@ -37,7 +37,7 @@ import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventVO;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
+import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -1404,7 +1404,7 @@ public class Upgrade218to22 implements DbUpgrade {
             pstmt.close();
 
             int proxyRamSize = NumbersUtil.parseInt(getConfigValue(conn, "consoleproxy.ram.size"), ConsoleProxyManager.DEFAULT_PROXY_VM_RAMSIZE);
-            int domrRamSize = NumbersUtil.parseInt(getConfigValue(conn, "router.ram.size"), VirtualNetworkApplianceManager.DEFAULT_ROUTER_VM_RAMSIZE);
+            int domrRamSize = NumbersUtil.parseInt(getConfigValue(conn, "router.ram.size"), VpcVirtualNetworkApplianceManager.DEFAULT_ROUTER_VM_RAMSIZE);
             int ssvmRamSize = NumbersUtil.parseInt(getConfigValue(conn, "secstorage.vm.ram.size"), SecondaryStorageVmManager.DEFAULT_SS_VM_RAMSIZE);
 
             pstmt = conn
@@ -1563,7 +1563,7 @@ public class Upgrade218to22 implements DbUpgrade {
             pstmt.close();
 
             int proxyCpuMhz = NumbersUtil.parseInt(getConfigValue(conn, "consoleproxy.cpu.mhz"), ConsoleProxyManager.DEFAULT_PROXY_VM_CPUMHZ);
-            int domrCpuMhz = NumbersUtil.parseInt(getConfigValue(conn, "router.cpu.mhz"), VirtualNetworkApplianceManager.DEFAULT_ROUTER_CPU_MHZ);
+            int domrCpuMhz = NumbersUtil.parseInt(getConfigValue(conn, "router.cpu.mhz"), VpcVirtualNetworkApplianceManager.DEFAULT_ROUTER_CPU_MHZ);
             int ssvmCpuMhz = NumbersUtil.parseInt(getConfigValue(conn, "secstorage.vm.cpu.mhz"), SecondaryStorageVmManager.DEFAULT_SS_VM_CPUMHZ);
 
             pstmt = conn
