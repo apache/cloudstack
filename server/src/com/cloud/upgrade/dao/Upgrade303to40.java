@@ -17,9 +17,6 @@
 
 package com.cloud.upgrade.dao;
 
-/**
- * @author Alena Prokharchyk
- */
 import java.io.File;
 import java.sql.Connection;
 

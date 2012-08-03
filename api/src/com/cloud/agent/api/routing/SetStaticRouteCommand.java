@@ -25,9 +25,6 @@ import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.utils.net.NetUtils;
 
-/**
- * @author Alena Prokharchyk
- */
 public class SetStaticRouteCommand extends NetworkElementCommand{
     StaticRouteProfile[] staticRoutes;
     
