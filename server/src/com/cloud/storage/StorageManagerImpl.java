@@ -740,7 +740,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     	// Find a suitable storage to create volume on 
     	StoragePoolVO destPool = findStoragePool(dskCh, dc, pod, clusterId, vm, avoidPools);
     	
-    	// Copy the volume from secondary storage to the destination storage pool    	  	
+    	// Copy the volume from secondary storage to the destination storage pool
+    	stateTransitTo(volume, Event.CopyRequested);
     	VolumeHostVO volumeHostVO = _volumeHostDao.findByVolumeId(volume.getId());
     	HostVO secStorage = _hostDao.findById(volumeHostVO.getHostId());
     	String secondaryStorageURL = secStorage.getStorageUrl();
