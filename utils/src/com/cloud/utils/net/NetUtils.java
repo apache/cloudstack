@@ -1148,7 +1148,7 @@ public class NetUtils {
         return true;
     }
     
-    public static boolean validateIcmpType(int icmpType) {
+    public static boolean validateIcmpType(long icmpType) {
         //Source - http://www.erg.abdn.ac.uk/~gorry/course/inet-pages/icmp-code.html
         if(!(icmpType >=0 && icmpType <=255)) {
             s_logger.warn("impcType is not within 0-255 range");
@@ -1157,7 +1157,7 @@ public class NetUtils {
         return true;
     }
     
-    public static boolean validateIcmpCode(int icmpCode) {
+    public static boolean validateIcmpCode(long icmpCode) {
         
         //Source - http://www.erg.abdn.ac.uk/~gorry/course/inet-pages/icmp-code.html
         if(!(icmpCode >=0 && icmpCode <=15)) {
