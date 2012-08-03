@@ -3865,6 +3865,16 @@
                     cidr: { label: 'label.cidr' },
                     networkdomain: { label: 'label.network.domain' },
                     state: { label: 'label.state' },
+                    restartrequired: {
+                      label: 'label.restart.required',
+                      converter: function(booleanValue) {
+                        if (booleanValue == true) {
+                          return "<font color='red'>Yes</font>";
+                        }
+                        
+                        return "No";
+                      }
+                    },
                     id: { label: 'label.id' }
                   }
                 ],
