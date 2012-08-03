@@ -23,7 +23,7 @@ vpnconfdir="/etc/ipsec.d"
 vpnoutmark="0x525"
 
 usage() {
-    printf "Usage: %s: (-A|-D) -l <left-side vpn peer> -n <left-side guest cidr> -g <left-side gateway> -r <right-side vpn peer> -N <right-side private subnets> -e <esp policy> -i <ike policy> -t <lifetime> -s <pre-shared secret> \n" $(basename $0) >&2
+    printf "Usage: %s: (-A|-D) -l <left-side vpn peer> -n <left-side guest cidr> -g <left-side gateway> -r <right-side vpn peer> -N <right-side private subnets> -e <esp policy> -i <ike policy> -t <ike lifetime> -T <esp lifetime> -s <pre-shared secret> -d <dpd 0 or 1> \n" $(basename $0) >&2
 }
 
 #set -x
@@ -122,7 +122,7 @@ ipsec_tunnel_add() {
 
   logger -t cloud "$(basename $0): creating configuration for ipsec tunnel: left peer=$leftpeer \
     left net=$leftnet left gateway=$leftgw right peer=$rightpeer right network=$rightnets phase1 policy=$ikepolicy \
-    phase2 policy=$esppolicy lifetime=$time secret=$secret"
+    phase2 policy=$esppolicy secret=$secret"
 
   [ "$op" == "-A" ] && ipsec_tunnel_del
 
@@ -137,19 +137,22 @@ ipsec_tunnel_add() {
     sudo echo "  type=tunnel" >> $vpnconffile &&
     sudo echo "  authby=secret" >> $vpnconffile &&
     sudo echo "  keyexchange=ike" >> $vpnconffile &&
-    sudo echo "  pfs=no" >> $vpnconffile &&
-    sudo echo "  esp=$esppolicy" >> $vpnconffile &&
-    sudo echo "  salifetime=${time}s" >> $vpnconffile &&
     sudo echo "  ike=$ikepolicy" >> $vpnconffile &&
-    sudo echo "  ikelifetime=${time}s" >> $vpnconffile &&
+    sudo echo "  ikelifetime=${ikelifetime}s" >> $vpnconffile &&
+    sudo echo "  esp=$esppolicy" >> $vpnconffile &&
+    sudo echo "  salifetime=${esplifetime}s" >> $vpnconffile &&
+    sudo echo "  pfs=$pfs" >> $vpnconffile &&
     sudo echo "  keyingtries=3" >> $vpnconffile &&
-    sudo echo "  dpddelay=30" >> $vpnconffile &&
-    sudo echo "  dpdtimeout=120" >> $vpnconffile &&
-    sudo echo "  dpdaction=restart" >> $vpnconffile &&
     sudo echo "  auto=add" >> $vpnconffile &&
     sudo echo "$leftpeer $rightpeer: PSK \"$secret\"" > $vpnsecretsfile &&
-
     sudo chmod 0400 $vpnsecretsfile
+
+    if [ $dpd -ne 0 ]
+    then
+        sudo echo "  dpddelay=30" >> $vpnconffile &&
+        sudo echo "  dpdtimeout=120" >> $vpnconffile &&
+        sudo echo "  dpdaction=restart" >> $vpnconffile
+    fi
 
     enable_iptables_subnets
 
@@ -192,7 +195,7 @@ Iflag=
 sflag=
 op=""
 
-while getopts 'ADl:n:g:r:N:e:i:t:s:' OPTION
+while getopts 'ADl:n:g:r:N:e:i:t:T:s:d:' OPTION
 do
   case $OPTION in
   A)    opflag=1
@@ -223,10 +226,16 @@ do
         ikepolicy="$OPTARG"
         ;;
   t)    tflag=1
-        time="$OPTARG"
+        ikelifetime="$OPTARG"
+        ;;
+  T)    Tflag=1
+        esplifetime="$OPTARG"
         ;;
   s)    sflag=1
         secret="$OPTARG"
+        ;;
+  d)    dflag=1
+        dpd="$OPTARG"
         ;;
   ?)    usage
         unlock_exit 2 $lock $locked
@@ -249,6 +258,12 @@ do
 done < /tmp/iflist
 
 rightnets=${rightnets//,/ }
+pfs="no"
+echo "$esppolicy" | grep "modp" > /dev/null
+if [ $? -eq 0 ]
+then
+    pfs="yes"
+fi
 
 ret=0
 #Firewall ports for one-to-one/static NAT

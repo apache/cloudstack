@@ -371,7 +371,9 @@ public class ApiConstants {
     public static final String REMOVED = "removed";
     public static final String IKE_POLICY = "ikepolicy";
     public static final String ESP_POLICY = "esppolicy";
-    public static final String LIFETIME = "lifetime";
+    public static final String IKE_LIFETIME = "ikelifetime";
+    public static final String ESP_LIFETIME = "esplifetime";
+    public static final String DPD = "dpd";
     public static final String FOR_VPC = "forvpc";
     public static final String SOURCE = "source";
     public static final String COUNTER_ID = "counterid";

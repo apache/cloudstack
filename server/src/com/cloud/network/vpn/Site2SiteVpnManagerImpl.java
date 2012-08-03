@@ -161,14 +161,29 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         if (!NetUtils.isValidS2SVpnPolicy(espPolicy)) {
             throw new InvalidParameterValueException("The customer gateway ESP policy " + espPolicy + " is invalid!", null);
         }
-        Long lifetime = cmd.getLifetime();
-        if (lifetime == null) {
+        
+        Long ikeLifetime = cmd.getIkeLifetime();
+        if (ikeLifetime == null) {
             // Default value of lifetime is 1 day
-            lifetime = (long) 86400;
+            ikeLifetime = (long) 86400;
         }
-        if (lifetime > 86400) {
-            throw new InvalidParameterValueException("The lifetime " + lifetime + " of vpn connection is invalid!", null);
+        if (ikeLifetime > 86400) {
+            throw new InvalidParameterValueException("The IKE lifetime " + ikeLifetime + " of vpn connection is invalid!", null);
         }
+        Long espLifetime = cmd.getEspLifetime();
+        if (espLifetime == null) {
+            // Default value of lifetime is 1 day
+            espLifetime = (long) 3600;
+        }
+        if (espLifetime > 86400) {
+            throw new InvalidParameterValueException("The ESP lifetime " + espLifetime + " of vpn connection is invalid!", null);
+        }
+        
+        Boolean dpd = cmd.getDpd();
+        if (dpd == null) {
+            dpd = false;
+        }
+        
         if (_customerGatewayDao.findByGatewayIp(gatewayIp) != null) {
             throw new InvalidParameterValueException("The customer gateway with ip " + gatewayIp + " already existed!", null);
         }
@@ -176,7 +191,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
             throw new InvalidParameterValueException("The customer gateway with name " + name + " already existed!", null);
         }
         Site2SiteCustomerGatewayVO gw = new Site2SiteCustomerGatewayVO(name, owner.getAccountId(), owner.getDomainId(), gatewayIp, guestCidrList, ipsecPsk,
-                ikePolicy, espPolicy, lifetime);
+                ikePolicy, espPolicy, ikeLifetime, espLifetime, dpd);
         _customerGatewayDao.persist(gw);
         return gw;
     }
@@ -263,10 +278,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     }
 
     @Override
-    public IpAddress getVpnGatewayIp(Long vpnGatewayId) {
-        Site2SiteVpnGatewayVO gateway = _vpnGatewayDao.findById(vpnGatewayId);
-        IpAddress ip = _networkMgr.getIp(gateway.getAddrId());
-        return ip;
+    public Site2SiteVpnGateway getVpnGateway(Long vpnGatewayId) {
+        return _vpnGatewayDao.findById(vpnGatewayId);
     }
 
     @Override
@@ -348,9 +361,13 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
                 }
             }
         }
+        String name = cmd.getName();
         String gatewayIp = cmd.getGatewayIp();
         if (!NetUtils.isValidIp(gatewayIp)) {
             throw new InvalidParameterValueException("The customer gateway ip " + gatewayIp + " is invalid!", null);
+        }
+        if (name == null) {
+            name = "VPN-" + gatewayIp;
         }
         String guestCidrList = cmd.getGuestCidrList();
         if (!NetUtils.validateGuestCidrList(guestCidrList)) {
@@ -365,20 +382,38 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         if (!NetUtils.isValidS2SVpnPolicy(espPolicy)) {
             throw new InvalidParameterValueException("The customer gateway ESP policy" + espPolicy + " is invalid!", null);
         }
-        Long lifetime = cmd.getLifetime();
-        if (lifetime == null) {
+        
+        Long ikeLifetime = cmd.getIkeLifetime();
+        if (ikeLifetime == null) {
             // Default value of lifetime is 1 day
-            lifetime = (long) 86400;
+            ikeLifetime = (long) 86400;
         }
-        if (lifetime > 86400) {
-            throw new InvalidParameterValueException("The lifetime " + lifetime + " of vpn connection is invalid!", null);
+        if (ikeLifetime > 86400) {
+            throw new InvalidParameterValueException("The IKE lifetime " + ikeLifetime + " of vpn connection is invalid!", null);
         }
+        Long espLifetime = cmd.getEspLifetime();
+        if (espLifetime == null) {
+            // Default value of lifetime is 1 day
+            espLifetime = (long) 3600;
+        }
+        if (espLifetime > 86400) {
+            throw new InvalidParameterValueException("The ESP lifetime " + espLifetime + " of vpn connection is invalid!", null);
+        }
+        
+        Boolean dpd = cmd.getDpd();
+        if (dpd == null) {
+            dpd = false;
+        }
+        
+        gw.setName(name);
         gw.setGatewayIp(gatewayIp);
         gw.setGuestCidrList(guestCidrList);
         gw.setIkePolicy(ikePolicy);
         gw.setEspPolicy(espPolicy);
         gw.setIpsecPsk(ipsecPsk);
-        gw.setLifetime(lifetime);
+        gw.setIkeLifetime(ikeLifetime);
+        gw.setEspLifetime(espLifetime);
+        gw.setDpd(dpd);
         _customerGatewayDao.persist(gw);
         return gw;
     }

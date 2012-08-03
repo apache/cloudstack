@@ -136,6 +136,10 @@ public class AsyncJobResponse extends BaseResponse {
                 this.jobInstanceId.setTableName("autoscale_vmprofiles");
             } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.AutoScaleVmGroup.toString())) {
                 this.jobInstanceId.setTableName("autoscale_vmgroups");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.StaticRoute.toString())) {
+                this.jobInstanceId.setTableName("static_routes");
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.PrivateGateway.toString())) {
+                this.jobInstanceId.setTableName("vpc_gateways");
             } else if (!jobInstanceType.equalsIgnoreCase(AsyncJob.Type.None.toString())){
                 // TODO : when we hit here, we need to add instanceType -> UUID entity table mapping
                 assert(false);

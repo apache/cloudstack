@@ -41,8 +41,14 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     @Column(name="esp_policy")
     private String espPolicy;
 
-    @Column(name="lifetime")
-    private long lifetime;
+    @Column(name="ike_lifetime")
+    private long ikeLifetime;
+
+    @Column(name="esp_lifetime")
+    private long espLifetime;
+
+    @Column(name="dpd")
+    private boolean dpd;
 
     @Column(name="domain_id")
     private Long domainId;
@@ -55,14 +61,17 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
 
     public Site2SiteCustomerGatewayVO() { }
 
-    public Site2SiteCustomerGatewayVO(String name, long accountId, long domainId, String gatewayIp, String guestCidrList, String ipsecPsk, String ikePolicy, String espPolicy, long lifetime) {
+    public Site2SiteCustomerGatewayVO(String name, long accountId, long domainId, String gatewayIp, String guestCidrList, String ipsecPsk, String ikePolicy, String espPolicy,
+            long ikeLifetime, long espLifetime, boolean dpd) {
         this.name = name;
         this.gatewayIp = gatewayIp;
         this.guestCidrList = guestCidrList;
         this.ipsecPsk = ipsecPsk;
         this.ikePolicy = ikePolicy;
         this.espPolicy = espPolicy;
-        this.lifetime = lifetime;
+        this.ikeLifetime = ikeLifetime;
+        this.espLifetime = espLifetime;
+        this.dpd = dpd;
         this.uuid = UUID.randomUUID().toString();
         this.accountId = accountId;
         this.domainId = domainId;
@@ -119,12 +128,21 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
     }
 
     @Override
-    public Long getLifetime() {
-        return lifetime;
+    public Long getIkeLifetime() {
+        return ikeLifetime;
     }
 
-    public void setLifetime(long lifetime) {
-        this.lifetime = lifetime;
+    public void setIkeLifetime(long ikeLifetime) {
+        this.ikeLifetime = ikeLifetime;
+    }
+
+    @Override
+    public Long getEspLifetime() {
+        return espLifetime;
+    }
+
+    public void setEspLifetime(long espLifetime) {
+        this.espLifetime = espLifetime;
     }
 
     @Override
@@ -143,6 +161,15 @@ public class Site2SiteCustomerGatewayVO implements Site2SiteCustomerGateway {
 
     public void setEspPolicy(String espPolicy) {
         this.espPolicy = espPolicy;
+    }
+
+    @Override
+    public Boolean getDpd() {
+        return dpd;
+    }
+
+    public void setDpd(boolean dpd) {
+        this.dpd = dpd;
     }
 
     public String getUuid() {

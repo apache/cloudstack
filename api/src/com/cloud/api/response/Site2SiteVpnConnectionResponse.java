@@ -48,8 +48,14 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     @SerializedName(ApiConstants.ESP_POLICY) @Param(description="ESP policy of the customer gateway") //from CustomerGateway
     private String espPolicy;
 
-    @SerializedName(ApiConstants.LIFETIME) @Param(description="Lifetime of vpn connection to the customer gateway, in seconds") //from CustomerGateway
-    private Long lifetime;
+    @SerializedName(ApiConstants.IKE_LIFETIME) @Param(description="Lifetime of IKE SA of customer gateway") //from CustomerGateway
+    private Long ikeLifetime;
+    
+    @SerializedName(ApiConstants.ESP_LIFETIME) @Param(description="Lifetime of ESP SA of customer gateway") //from CustomerGateway
+    private Long espLifetime;
+    
+    @SerializedName(ApiConstants.DPD) @Param(description="if DPD is enabled for customer gateway") //from CustomerGateway
+    private Boolean dpd;
     
     @SerializedName(ApiConstants.STATE) @Param(description="State of vpn connection")
     private String state;
@@ -111,9 +117,17 @@ public class Site2SiteVpnConnectionResponse extends BaseResponse implements Cont
     	this.espPolicy = espPolicy;
     }
     
-    public void setLifetime(Long lifetime) {
-    	this.lifetime = lifetime;
-    }     
+    public void setIkeLifetime(Long ikeLifetime) {
+        this.ikeLifetime = ikeLifetime;
+    }	
+    
+    public void setEspLifetime(Long espLifetime) {
+        this.espLifetime = espLifetime;
+    }	
+    
+    public void setDpd(Boolean dpd) {
+        this.dpd= dpd;
+    }	
     
     public void setState(String state) {
         this.state = state;

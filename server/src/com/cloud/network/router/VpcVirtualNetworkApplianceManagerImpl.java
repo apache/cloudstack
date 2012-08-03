@@ -859,15 +859,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         List<StaticRouteProfile> staticRouteProfiles = new ArrayList<StaticRouteProfile>(routes.size());
         Map<Long, VpcGateway> gatewayMap = new HashMap<Long, VpcGateway>();
         for (StaticRoute route : routes) {
-            if (route.getState() != StaticRoute.State.Revoke) {
-                //skip static route in revoke state
-                VpcGateway gateway = gatewayMap.get(route.getVpcGatewayId());
-                if (gateway == null) {
-                    gateway = _vpcMgr.getVpcGateway(route.getVpcGatewayId());
-                    gatewayMap.put(gateway.getId(), gateway);
-                }
-                staticRouteProfiles.add(new StaticRouteProfile(route, gateway));
+            VpcGateway gateway = gatewayMap.get(route.getVpcGatewayId());
+            if (gateway == null) {
+                gateway = _vpcMgr.getVpcGateway(route.getVpcGatewayId());
+                gatewayMap.put(gateway.getId(), gateway);
             }
+            staticRouteProfiles.add(new StaticRouteProfile(route, gateway)); 
         }
         
         s_logger.debug("Found " + staticRouteProfiles.size() + " static routes to apply as a part of vpc route " 
@@ -1046,16 +1043,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             return true;
         }
         
-        //exclude static route in Revoke state
-        Iterator<StaticRouteProfile> it = staticRoutes.iterator();
-        while (it.hasNext()) {
-            StaticRouteProfile profile = it.next();
-            if (profile.getState() == StaticRoute.State.Revoke) {
-                s_logger.debug("Not sending static route " + profile + " because its in " + StaticRoute.State.Revoke + " state");
-                it.remove();
-            }
-        }
-        
         boolean result = true;
         for (VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
@@ -1135,10 +1122,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         String ipsecPsk = gw.getIpsecPsk();
         String ikePolicy = gw.getIkePolicy();
         String espPolicy = gw.getEspPolicy();
-        Long lifetime = gw.getLifetime();
+        Long ikeLifetime = gw.getIkeLifetime();
+        Long espLifetime = gw.getEspLifetime();
+        Boolean dpd = gw.getDpd();
 
         Site2SiteVpnCfgCommand cmd = new Site2SiteVpnCfgCommand(isCreate, localPublicIp, localPublicGateway, localGuestCidr,
-                peerGatewayIp, peerGuestCidrList, ikePolicy, espPolicy, lifetime, ipsecPsk);
+                peerGatewayIp, peerGuestCidrList, ikePolicy, espPolicy, ipsecPsk, ikeLifetime, espLifetime, dpd);
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());

@@ -24,13 +24,14 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.Site2SiteVpnGatewayResponse;
 import com.cloud.event.EventTypes;
 import com.cloud.network.Site2SiteVpnGateway;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Creates site to site vpn local gateway", responseObject=Site2SiteVpnGatewayResponse.class)
 public class CreateVpnGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(CreateVpnGatewayCmd.class.getName());
-
+    
     private static final String s_name = "createvpngatewayresponse";
 
     /////////////////////////////////////////////////////
@@ -40,14 +41,6 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, required=true, description="public ip address id of the vpn gateway")
     private Long vpcId;
 
-    @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the connection. Must be used with the domainId parameter.")
-    private String accountName;
-    
-    @IdentityMapper(entityTableName="domain")
-    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the domain ID associated with the connection. " +
-    		"If used with the account parameter returns the connection associated with the account for the specified domain.")
-    private Long domainId;
-    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -58,14 +51,6 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
 
     public Long getVpcId() {
         return vpcId;
-    }
-
-    public String getAccountName() {
-        return accountName;
-    }
-
-    public Long getDomainId() {
-        return domainId;
     }
 
     /////////////////////////////////////////////////////
@@ -80,11 +65,8 @@ public class CreateVpnGatewayCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, null, true);
-        if (accountId == null) {
-            accountId = UserContext.current().getCaller().getId();
-        }
-        return accountId;
+        Vpc vpc = _vpcService.getVpc(vpcId);
+        return vpc.getAccountId();
     }
 
     @Override

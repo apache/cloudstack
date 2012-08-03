@@ -592,9 +592,17 @@ public class VirtualRoutingResource implements Manager {
             args += " -i ";
 	        args += "\"" + cmd.getIkePolicy() + "\"";
             args += " -t ";
-	        args += Long.toString(cmd.getLifetime());
+	        args += Long.toString(cmd.getIkeLifetime());
+            args += " -T ";
+	        args += Long.toString(cmd.getEspLifetime());
             args += " -s ";
 	        args += "\"" + cmd.getIpsecPsk() + "\"";
+	        args += " -d ";
+	        if (cmd.getDpd()) {
+	            args += "1";
+	        } else {
+	            args += "0";
+	        }
         } else {
             args = "-D";
             args += " -r ";
