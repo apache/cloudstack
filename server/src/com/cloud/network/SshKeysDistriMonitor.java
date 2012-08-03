@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.network;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -38,8 +35,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
-
 
 
 public class SshKeysDistriMonitor implements Listener {

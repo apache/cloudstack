@@ -53,7 +53,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.Purpose;
@@ -90,7 +89,6 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
     @Inject VpnUserDao _vpnUsersDao;
     @Inject RemoteAccessVpnDao _remoteAccessVpnDao;
     @Inject IPAddressDao _ipAddressDao;
-    @Inject VirtualNetworkApplianceManager _routerMgr;
     @Inject AccountManager _accountMgr;
     @Inject DomainManager _domainMgr;
     @Inject NetworkManager _networkMgr;

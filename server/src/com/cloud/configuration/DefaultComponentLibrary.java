@@ -104,7 +104,6 @@ import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VirtualRouterElementService;
 import com.cloud.network.firewall.FirewallManagerImpl;
 import com.cloud.network.lb.LoadBalancingRulesManagerImpl;
-import com.cloud.network.router.VirtualNetworkApplianceManagerImpl;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl;
 import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
@@ -373,7 +372,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("Snapshot Manager", SnapshotManagerImpl.class);
         addManager("SnapshotScheduler", SnapshotSchedulerImpl.class);
         addManager("SecurityGroupManager", SecurityGroupManagerImpl2.class);
-        addManager("DomainRouterManager", VirtualNetworkApplianceManagerImpl.class);
         addManager("EntityManager", EntityManagerImpl.class);
         addManager("LoadBalancingRulesManager", LoadBalancingRulesManagerImpl.class);
         addManager("RulesManager", RulesManagerImpl.class);

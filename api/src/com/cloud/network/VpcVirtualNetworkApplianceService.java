@@ -21,7 +21,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.router.VirtualRouter;
 
-public interface VpcVirtualNetworkApplianceService {
+public interface VpcVirtualNetworkApplianceService extends VirtualNetworkApplianceService{
 
     /**
      * @param router
