@@ -3859,6 +3859,8 @@
                   },
                   {
                     displaytext: { label: 'label.description', isEditable: true },
+                    account: { label: 'label.account' },
+                    domain: { label: 'label.domain' },
                     zonename: { label: 'label.zone' },
                     cidr: { label: 'label.cidr' },
                     networkdomain: { label: 'label.network.domain' },
