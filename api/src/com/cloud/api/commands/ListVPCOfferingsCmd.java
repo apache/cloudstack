@@ -24,11 +24,13 @@ import org.apache.log4j.Logger;
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseListCmd;
 import com.cloud.api.IdentityMapper;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VpcOfferingResponse;
 import com.cloud.network.vpc.VpcOffering;
 
+@Implementation(description="Lists VPC offerings", responseObject=VpcOfferingResponse.class)
 public class ListVPCOfferingsCmd extends BaseListCmd{
     public static final Logger s_logger = Logger.getLogger(ListVPCOfferingsCmd.class.getName());
     private static final String _name = "listvpcofferingsresponse";
