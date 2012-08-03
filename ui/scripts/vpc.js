@@ -476,10 +476,10 @@
           title: 'Add new gateway',
           desc: 'Please specify the information to add a new gateway to this VPC.',
           fields: {
+            vlan: { label: 'label.vlan', validation: { required: true }},
             ipaddress: { label: 'label.ip.address', validation: { required: true }},
             gateway: { label: 'label.gateway', validation: { required: true }},
-            netmask: { label: 'label.netmask', validation: { required: true }},
-            vlan: { label: 'label.vlan', validation: { required: true }}
+            netmask: { label: 'label.netmask', validation: { required: true }}
           }
         },
         action: function(args) {
