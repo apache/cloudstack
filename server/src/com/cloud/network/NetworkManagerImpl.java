@@ -1013,21 +1013,29 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "allocating Ip", create = true)
-    public IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId)
+    public IpAddress allocateIP(Account ipOwner,  long zoneId)
+    		throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
+    	    return allocateIP(ipOwner, false,  zoneId);
+    }
+  
+    private IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId)
             throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         Account caller = UserContext.current().getCaller();
         long callerUserId = UserContext.current().getCallerUserId();
 
         // check permissions
         _accountMgr.checkAccess(caller, null, false, ipOwner);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
+        }
 
         DataCenter zone = _configMgr.getZone(zoneId);
 
-        return allocateIp(ipOwner, isSystem, caller, callerUserId, zone);
+        return allocateIp(ipOwner, isSystem, caller, zone);
     }
 
     @DB
-    public IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerUserId, DataCenter zone) 
+    public IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, DataCenter zone) 
             throws ConcurrentOperationException, ResourceAllocationException,
             InsufficientAddressCapacityException {
 
@@ -1046,9 +1054,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         Transaction txn = Transaction.currentTxn();
         Account accountToLock = null;
         try {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Associate IP address called by the user " + callerUserId + " account " + ipOwner.getId());
-            }
             accountToLock = _accountDao.acquireInLockTable(ipOwner.getId());
             if (accountToLock == null) {
                 s_logger.warn("Unable to lock account: " + ipOwner.getId());
@@ -6981,7 +6986,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 // allocate ip
                 ip = allocateIP(owner, true, guestNetwork.getDataCenterId());
                 // apply ip associations
-                ip = associateIPToNetwork(ip.getId(), networkId);
+                ip = associateIpToNetwork(ip.getId(), networkId);
             } catch (ResourceAllocationException ex) {
                 throw new CloudRuntimeException("Failed to allocate system ip due to ", ex);
             } catch (ConcurrentOperationException ex) {
@@ -7143,7 +7148,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @ActionEvent(eventType = EventTypes.EVENT_NET_IP_ASSIGN, eventDescription = "associating Ip", async = true)
     public IpAddress associateIPToNetwork(long ipId, long networkId) throws InsufficientAddressCapacityException,
     ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException {
+    	    return associateIpToNetwork(ipId, networkId);
+    }
 
+    	 private IpAddress associateIpToNetwork(long ipId, long networkId) throws InsufficientAddressCapacityException,
+    	    ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException {
         Network network = _networksDao.findById(networkId);
         if (network == null) {
             throw new InvalidParameterValueException("Invalid network id is given", null);

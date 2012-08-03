@@ -382,7 +382,11 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ENABLE_STATIC_NAT, eventDescription = "enabling static nat")
-    public boolean enableStaticNat(long ipId, long vmId, long networkId, boolean isSystemVm) 
+    public boolean enableStaticNat(long ipId, long vmId, long networkId) throws NetworkRuleConflictException, ResourceUnavailableException {
+    	    return enableStaticNat(ipId, vmId, networkId, false);
+    }
+ 
+    private boolean enableStaticNat(long ipId, long vmId, long networkId, boolean isSystemVm) 
             throws NetworkRuleConflictException, ResourceUnavailableException {
         UserContext ctx = UserContext.current();
         Account caller = ctx.getCaller();
