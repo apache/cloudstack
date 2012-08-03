@@ -27,7 +27,7 @@ Vagrant::Config.run do |config|
 
   # Uncomment this line to enable the console for debugging the 
   # build process.
-  config.vm.boot_mode = :gui
+  #config.vm.boot_mode = :gui
 
   # Setup port forwarding
   config.vm.forward_port 22, 2222

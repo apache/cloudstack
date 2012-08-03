@@ -31,20 +31,20 @@ export rvm_trust_rvmrcs_flag=1
 cd vagrant
 bundle install
 rake install
-cd ../veewee
+cd ~/builddevcloud/veewee
 bundle install
 rake install
-vagrant basebox define 'devcloudbase' 'ubuntu-12.04-server-i386'
+bundle exec vagrant basebox define 'devcloudbase' 'ubuntu-12.04-server-i386'
 wget --no-check-certificate -O ./definitions/devcloudbase/definition.rb https://git-wip-us.apache.org/repos/asf\?p\=incubator-cloudstack.git\;a\=blob_plain\;f\=tools/devcloud/veewee/definition.rb\;hb\=HEAD
 wget --no-check-certificate -O ./definitions/devcloudbase/postinstall.sh https://git-wip-us.apache.org/repos/asf\?p\=incubator-cloudstack.git\;a\=blob_plain\;f\=tools/devcloud/veewee/postinstall.sh\;hb\=HEAD
 wget --no-check-certificate -O ./definitions/devcloudbase/preseed.cfg https://git-wip-us.apache.org/repos/asf\?p\=incubator-cloudstack.git\;a\=blob_plain\;f\=tools/devcloud/veewee/preseed.cfg\;hb\=HEAD
-vagrant basebox build 'devcloudbase' -f -a -n
+bundle exec vagrant basebox build 'devcloudbase' -f -a -n
 # possibly use -r here too ^
-vagrant basebox export 'devcloudbase' -f
-vagrant basebox destroy 'devcloudbase' -f
-vagrant box add 'devcloudbase' 'devcloudbase.box' -f
+bundle exec vagrant basebox export 'devcloudbase' -f
+bundle exec vagrant basebox destroy 'devcloudbase' -f
+bundle exec vagrant box add 'devcloudbase' 'devcloudbase.box' -f
 rm -f devcloudbase.box
-cd ../vagrant
+cd ~/builddevcloud/vagrant
 mkdir devcloudbase
 cd devcloudbase
 mkdir puppet-devcloudinitial
@@ -62,5 +62,8 @@ wget --no-check-certificate -O puppet-devcloudinitial/manifests/init.pp "https:/
 
 vagrant up
 vagrant halt
-cd ..
+vagrant package default --output ~/devcloud.box
+vagrant destroy -f
+vagrant box remove devcloudbase virtualbox
 
+echo "Your new devcloud base box is stored in ~/devcloud.box"
