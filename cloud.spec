@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 %define __os_install_post %{nil}
 %global debug_package %{nil}
 
@@ -432,6 +449,9 @@ fi
 %{_javadir}/%{name}-plugin-nicira-nvp.jar
 %{_javadir}/%{name}-plugin-elb.jar
 %{_javadir}/%{name}-plugin-netapp.jar
+%{_javadir}/%{name}-plugin-hypervisor-kvm.jar
+   /usr/share/java/libvirt-0.4.8.jar
+
 %config(noreplace) %{_sysconfdir}/%{name}/server/*
 
 %files agent-scripts
@@ -456,7 +476,6 @@ fi
 %{_javadir}/%{name}-ehcache.jar
 %{_javadir}/%{name}-email.jar
 %{_javadir}/%{name}-httpcore-4.0.jar
-%{_javadir}/%{name}-libvirt-0.4.5.jar
 %{_javadir}/%{name}-log4j.jar
 %{_javadir}/%{name}-trilead-ssh2-build213.jar
 %{_javadir}/%{name}-cglib.jar
@@ -480,6 +499,7 @@ fi
 %{_javadir}/%{name}-jasypt-1.8.jar
 %{_javadir}/%{name}-commons-configuration-1.8.jar
 %{_javadir}/%{name}-commons-lang-2.6.jar
+%{_javadir}/libvirt-0.4.8.jar
 
 
 %files core
@@ -532,7 +552,6 @@ fi
 %files agent-libs
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-agent.jar
-%{_javadir}/%{name}-kvm.jar
 
 %files agent
 %defattr(0644,root,root,0755)
@@ -542,7 +561,6 @@ fi
 %config(noreplace)  %{_sysconfdir}/%{name}/agent/environment.properties
 %config(noreplace) %{_sysconfdir}/%{name}/agent/log4j-%{name}.xml
 %attr(0755,root,root) %{_initrddir}/%{name}-agent
-%attr(0755,root,root) %{_libexecdir}/agent-runner
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/agent
 %attr(0755,root,root) %{_bindir}/mycloud-setup-agent
@@ -563,7 +581,6 @@ fi
 %defattr(0644,root,root,0775)
 %{_javadir}/%{name}-usage.jar
 %attr(0755,root,root) %{_initrddir}/%{name}-usage
-%attr(0755,root,root) %{_libexecdir}/usage-runner
 %dir %attr(0770,root,%{name}) %{_localstatedir}/log/%{name}/usage
 %config(noreplace) %{_sysconfdir}/%{name}/usage/usage-components.xml
 %config(noreplace) %{_sysconfdir}/%{name}/usage/log4j-%{name}_usage.xml

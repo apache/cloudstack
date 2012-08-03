@@ -1,8 +1,27 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
 <section id="change-to-behavior-of-list-commands">
 		<title>Change to Behavior of List Commands</title>
 		<para>There was a major change in how our List* API commands work in CloudStack 3.0 compared to 2.2.x. The rules below apply only for managed resources – those that belong to an account, domain, or project. They are irrelevant for the List* commands displaying unmanaged (system) resources, such as hosts, clusters, and external network resources.</para>
@@ -66,5 +85,5 @@
 				</tbody>
 				</tgroup>
 		</informaltable>	
-		<para>The CloudPlatform UI on a general view will display all resources that the logged-in user is authorized to see, except for project resources. To see the project resources, select the project view.</para>
+		<para>The &PRODUCT; UI on a general view will display all resources that the logged-in user is authorized to see, except for project resources. To see the project resources, select the project view.</para>
 	</section>

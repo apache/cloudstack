@@ -1,10 +1,28 @@
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
 	<section id="added-API-commands">
 		<title>Added API commands</title>
 			<para>Added in 3.0.3:</para>
 			<itemizedlist>
-				<listitem><para>enableCiscoNexusVSM (Enables Nexus 1000v dvSwitch in CloudPlatform.)</para></listitem>
-				<listitem><para>disableCiscoNexusVSM (Disables Nexus 1000v dvSwitch in CloudPlatform.)</para></listitem>
-				<listitem><para>deleteCiscoNexusVSM (Deletes Nexus 1000v dvSwitch in CloudPlatform.)</para></listitem>
+				<listitem><para>enableCiscoNexusVSM (Enables Nexus 1000v dvSwitch in &PRODUCT;.)</para></listitem>
+				<listitem><para>disableCiscoNexusVSM (Disables Nexus 1000v dvSwitch in &PRODUCT;.)</para></listitem>
+				<listitem><para>deleteCiscoNexusVSM (Deletes Nexus 1000v dvSwitch in &PRODUCT;.)</para></listitem>
 				<listitem><para>listCiscoNexusVSMs (Lists the control VLAN ID, packet VLAN ID, and data VLAN ID, as well as the IP address of the Nexus 1000v dvSwitch.)</para></listitem>
 			</itemizedlist>
 			<para>Added in 3.0.2:</para>
@@ -79,7 +97,7 @@
 					<row>
 						<entry><para>listPhysicalNetworks (Lists physical networks)</para></entry>
 						<entry><para>updatePhysicalNetwork (Updates a physical network)</para></entry>
-						<entry><para>listSupportedNetworkServices (Lists all network services provided by CloudPlatform or for the given Provider.)</para></entry>
+						<entry><para>listSupportedNetworkServices (Lists all network services provided by &PRODUCT; or for the given Provider.)</para></entry>
 					</row>
 					<row>
 						<entry><para>addNetworkServiceProvider (Adds a network serviceProvider to a physical network)</para></entry>
@@ -140,4 +158,3 @@
 			</tgroup>
 		</informaltable>
 	</section>
-

@@ -1321,7 +1321,7 @@
       }
     }
     else if (jsonObj.state == 'Starting') {
-      allowedActions.push("stop");
+    //  allowedActions.push("stop");
     }
     else if (jsonObj.state == 'Error') {
       allowedActions.push("destroy");

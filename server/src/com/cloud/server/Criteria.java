@@ -79,6 +79,8 @@ public class Criteria {
     public static final String NETWORKID = "networkId";
     public static final String HYPERVISOR = "hypervisor";
     public static final String STORAGE_ID="storageid";
+    public static final String TEMPLATE_ID = "templateid";
+    public static final String ISO_ID = "isoid";
 
 	public Criteria(String orderBy, Boolean ascending, Long offset, Long limit) {
 		this.offset = offset;

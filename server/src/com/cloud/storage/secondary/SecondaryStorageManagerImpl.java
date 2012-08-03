@@ -1066,7 +1066,7 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             if (profile.getHypervisorType() == HypervisorType.Hyperv) {
                 buf.append(" resource=com.cloud.storage.resource.CifsSecondaryStorageResource");
             } else {
-                buf.append(" resource=com.cloud.storage.resource.NfsSecondaryStorageResource");
+                buf.append(" resource=com.cloud.storage.resource.PremiumSecondaryStorageResource");
             }
         } else {
             buf.append(" resource=com.cloud.storage.resource.NfsSecondaryStorageResource");

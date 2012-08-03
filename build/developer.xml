@@ -325,6 +325,7 @@
         </fileset>
         <fileset dir="${server.test.dir}">
           <include name="**/*Test.java"/>
+          <exclude name="**/upgrade/*.java"/>
         </fileset>
       </batchtest>
     </junit>
@@ -354,6 +355,7 @@
         </fileset>
         <fileset dir="${server.test.dir}">
           <include name="**/${test}.java"/>
+          <exclude name="**/upgrade/*.java"/>
         </fileset>
       </batchtest>
     </junit>

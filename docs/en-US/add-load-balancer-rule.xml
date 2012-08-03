@@ -1,12 +1,31 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
 <section id="add-load-balancer-rule">
 	<title>Adding a Load Balancer Rule</title>
 	<orderedlist>
-		<listitem><para>Log in to the CloudPlatform UI as an administrator or end user. </para></listitem>
+		<listitem><para>Log in to the &PRODUCT; UI as an administrator or end user. </para></listitem>
 		<listitem><para>In the left navigation, choose Network.</para></listitem>
 		<listitem><para>Click the name of the network where you want to load balance the traffic.</para></listitem>
 		<listitem><para>Click View IP Addresses.</para></listitem>
@@ -17,7 +36,7 @@
 			<listitem><para>Name. A name for the load balancer rule.</para></listitem>			
 			<listitem><para>Public Port. The port receiving incoming traffic to be balanced.</para></listitem>
 			<listitem><para>Private Port. The port that the VMs will use to receive the traffic.</para></listitem>
-			<listitem><para>Algorithm. Choose the load balancing algorithm you want CloudPlatform to use. CloudPlatform supports a variety of well-known algorithms. If you are not familiar with these choices, you will find plenty of information about them on the Internet.</para></listitem>
+			<listitem><para>Algorithm. Choose the load balancing algorithm you want &PRODUCT; to use. &PRODUCT; supports a variety of well-known algorithms. If you are not familiar with these choices, you will find plenty of information about them on the Internet.</para></listitem>
 			<listitem><para>Stickiness. (Optional) Click Configure and choose the algorithm for the stickiness policy. See Sticky Session Policies for Load Balancer Rules.</para></listitem>
 		</itemizedlist></listitem>	
 		<listitem><para>Click Add VMs, then select two or more VMs that will divide the load of incoming traffic, and click Apply.</para>

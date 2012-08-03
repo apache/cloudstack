@@ -1,6 +1,24 @@
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
 <section id="added-cloudPlatform-error-codes">
-		<title>Added CloudPlatform Error Codes</title>
-			<para>You can now find the CloudPlatform-specific error code in the exception response for each type of exception. The following list of error codes is added to the new class named CSExceptionErrorCode.  These codes are applicable in CloudPlatform 3.0.3 and later versions.</para>
+		<title>Added &PRODUCT; Error Codes</title>
+			<para>You can now find the &PRODUCT;-specific error code in the exception response for each type of exception. The following list of error codes is added to the new class named CSExceptionErrorCode.  These codes are applicable in &PRODUCT; 3.0.3 and later versions.</para>
 	<informaltable frame="all">
 		<tgroup cols="3" align="left" colsep="1" rowsep="1">
 			<colspec colname="c1" />

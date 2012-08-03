@@ -282,7 +282,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         String[] userInfoTemp = userInfo.split(":");
         if (userInfoTemp.length == 2) {
-            s_logger.debug("libvirt secret information found. id: " + userInfoTemp[0] + " secret: " + userInfoTemp[1]);
             LibvirtSecretDef sd = new LibvirtSecretDef(usage.CEPH, uuid);
 
             Secret s = null;
@@ -302,7 +301,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     } catch (LibvirtException l) {
                         s_logger.debug("Failed to define secret with: " + l.toString());
                         }
-                    }
+                }
             }
             spd = new LibvirtStoragePoolDef(poolType.RBD, uuid, uuid, host, port, path, userInfoTemp[0], authType.CEPH, uuid);
         } else {

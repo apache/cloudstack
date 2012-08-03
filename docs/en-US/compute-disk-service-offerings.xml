@@ -1,8 +1,27 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
 <section id="compute-disk-service-offerings">
     <title>Compute and Disk Service Offerings</title>
     <para>A service offering is a set of virtual hardware features such as CPU core count and speed, memory, and disk size. The CloudPlatform administrator can set up various offerings, and then end users choose from the available offerings when they create a new VM. A service offering includes the following elements:</para>
@@ -12,7 +31,7 @@
          <listitem><para>How the resource usage is charged</para></listitem>
          <listitem><para>How often the charges are generated</para></listitem>
         </itemizedlist>
-    <para>For example,  one service offering might allow users to create a virtual machine instance that is equivalent to a 1 GHz Intel® Core™ 2 CPU, with 1 GB memory at $0.20/hour, with network traffic metered at $0.10/GB. Based on the user’s selected offering, CloudPlatform emits usage records that can be integrated with billing systems. CloudPlatform separates service offerings into compute offerings and disk offerings. The computing service offering specifies:</para>
+    <para>For example,  one service offering might allow users to create a virtual machine instance that is equivalent to a 1 GHz Intel Core 2 CPU, with 1 GB memory at $0.20/hour, with network traffic metered at $0.10/GB. Based on the user’s selected offering, CloudPlatform emits usage records that can be integrated with billing systems. CloudPlatform separates service offerings into compute offerings and disk offerings. The computing service offering specifies:</para>
     <itemizedlist>
         <listitem><para>Guest CPU</para></listitem>
         <listitem><para>Guest RAM</para></listitem>
@@ -25,5 +44,3 @@
         <listitem><para>Tags on the data disk</para></listitem>
     </itemizedlist>
 </section>
-
-    

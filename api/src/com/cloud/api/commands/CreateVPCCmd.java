@@ -17,10 +17,12 @@
 package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
+
 import com.cloud.api.ApiConstants;
 import com.cloud.api.BaseAsyncCreateCmd;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.IdentityMapper;
+import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.VpcResponse;
@@ -31,6 +33,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.UserContext;
+
+@Implementation(description="Creates a VPC", responseObject=VpcResponse.class)
 public class CreateVPCCmd extends BaseAsyncCreateCmd{
     public static final Logger s_logger = Logger.getLogger(CreateVPCCmd.class.getName());
     private static final String s_name = "createvpcresponse";
