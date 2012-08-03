@@ -138,7 +138,7 @@ public class ListVPCsCmd extends BaseListTaggedResourcesCmd{
         List<? extends Vpc> vpcs = _vpcService.listVpcs(getId(), getVpcName(), getDisplayText(),
                 getSupportedServices(), getCidr(), getVpcOffId(), getState(), getAccountName(), getDomainId(), 
                 this.getKeyword(), this.getStartIndex(), this.getPageSizeVal(), getZoneId(), this.isRecursive(), 
-                this.listAll(), getRestartRequired(), getTags());
+                this.listAll(), getRestartRequired(), getTags(), getProjectId());
         ListResponse<VpcResponse> response = new ListResponse<VpcResponse>();
         List<VpcResponse> offeringResponses = new ArrayList<VpcResponse>();
         for (Vpc vpc : vpcs) {
