@@ -1388,11 +1388,12 @@ public class VpcManagerImpl implements VpcManager, Manager{
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
         String state = cmd.getState();
+        Long projectId = cmd.getProjectId();
 
         Filter searchFilter = new Filter(VpcGatewayVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, 
                 ListProjectResourcesCriteria>(domainId, isRecursive, null);
-        _accountMgr.buildACLSearchParameters(caller, null, accountName, null, permittedAccounts, domainIdRecursiveListProject,
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
                 listAll, false);
         domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
@@ -1564,8 +1565,18 @@ public class VpcManagerImpl implements VpcManager, Manager{
         if (!NetUtils.isValidCIDR(cidr)){
             throw new InvalidParameterValueException("Invalid format for cidr " + cidr, null);
         }
+        
+        //validate the cidr
+        //1) CIDR should be outside of VPC cidr for guest networks
+        if (NetUtils.isNetworksOverlap(vpc.getCidr(), cidr)) {
+            throw new InvalidParameterValueException("CIDR should be outside of VPC cidr " + vpc.getCidr(), null);
+        }
+        
+        //2) CIDR should be outside of link-local cidr
+        if (NetUtils.isNetworksOverlap(vpc.getCidr(), NetUtils.getLinkLocalCIDR())) {
+            throw new InvalidParameterValueException("CIDR should be outside of link local cidr " + NetUtils.getLinkLocalCIDR(), null);
+        }
 
-        //TODO - check cidr for the conflicts
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
@@ -1597,10 +1608,11 @@ public class VpcManagerImpl implements VpcManager, Manager{
         Account caller = UserContext.current().getCaller();
         List<Long> permittedAccounts = new ArrayList<Long>();
         Map<String, String> tags = cmd.getTags();
+        Long projectId = cmd.getProjectId();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, 
                 ListProjectResourcesCriteria>(domainId, isRecursive, null);
-        _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject,
+        _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
                 listAll, false);
         domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();

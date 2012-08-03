@@ -52,6 +52,10 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
     		"If used with the account parameter returns the VPC associated with the account for the specified domain.")
     private Long domainId;
     
+    @IdentityMapper(entityTableName="projects")
+    @Parameter(name=ApiConstants.PROJECT_ID, type=CommandType.LONG, description="create VPC for the project")
+    private Long projectId;
+    
     @IdentityMapper(entityTableName="data_center")
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, required=true, description="the ID of the availability zone")
     private Long zoneId;
@@ -72,7 +76,8 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
     @Parameter(name=ApiConstants.VPC_OFF_ID, type=CommandType.LONG, required=true, description="the ID of the VPC offering")
     private Long vpcOffering;
     
-    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="network domain")
+    @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, 
+            description="VPC network domain. All networks inside the VPC will belong to this domain")
     private String networkDomain;
     
     /////////////////////////////////////////////////////
@@ -174,7 +179,7 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd{
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = finalyzeAccountId(accountName, domainId, null, true);
+        Long accountId = finalyzeAccountId(accountName, domainId, projectId, true);
         if (accountId == null) {
             return UserContext.current().getCaller().getId();
         }
