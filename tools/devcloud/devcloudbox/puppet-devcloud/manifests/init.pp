@@ -127,6 +127,8 @@ class puppet-devcloud {
     enable => 'true',
   }
 
+# TODO - it would be great to have an MD5 sum to check for each of these downloads, so that the files can be re-downloaded if they have been changed.
+
   exec { '/usr/bin/wget http://download.cloud.com/templates/devcloud/defaulttemplates/1/dc68eb4c-228c-4a78-84fa-b80ae178fbfd.vhd -P /opt/storage/secondary/template/tmpl/1/1/':
     creates => '/opt/storage/secondary/template/tmpl/1/1/dc68eb4c-228c-4a78-84fa-b80ae178fbfd.vhd',
     require => File['/opt/storage/secondary/template/tmpl/1/1/'],

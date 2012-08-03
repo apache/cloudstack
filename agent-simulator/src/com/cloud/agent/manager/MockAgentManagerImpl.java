@@ -45,10 +45,9 @@ import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
-import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.host.Host;
-import com.cloud.host.Host.Type;
 import com.cloud.resource.AgentResourceBase;
 import com.cloud.resource.AgentRoutingResource;
 import com.cloud.resource.AgentStorageResource;
@@ -340,7 +339,11 @@ public class MockAgentManagerImpl implements MockAgentManager {
 
 
     @Override
-    public PrepareForMigrationAnswer PrepareForMigration(PrepareForMigrationCommand cmd) {
+    public PrepareForMigrationAnswer prepareForMigrate(PrepareForMigrationCommand cmd) {
+    	VirtualMachineTO vm = cmd.getVirtualMachine();
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Preparing host for migrating " + vm);
+        }
         return new PrepareForMigrationAnswer(cmd);
     }
 
@@ -364,7 +367,7 @@ public class MockAgentManagerImpl implements MockAgentManager {
 
 
     @Override
-    public MaintainAnswer MaintainCommand(com.cloud.agent.api.MaintainCommand cmd) {
+    public MaintainAnswer maintain(com.cloud.agent.api.MaintainCommand cmd) {
         return new MaintainAnswer(cmd);
     }
 

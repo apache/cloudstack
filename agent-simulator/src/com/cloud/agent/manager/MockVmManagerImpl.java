@@ -243,8 +243,8 @@ public class MockVmManagerImpl implements MockVmManager {
     }
 
     @Override
-    public CheckVirtualMachineAnswer checkVmState(CheckVirtualMachineCommand cmd, String hostGuid) {
-        MockVMVO vm = _mockVmDao.findByVmNameAndHost(cmd.getVmName(), hostGuid);
+    public CheckVirtualMachineAnswer checkVmState(CheckVirtualMachineCommand cmd) {
+        MockVMVO vm = _mockVmDao.findByVmName(cmd.getVmName());
         if (vm == null) {
             return new CheckVirtualMachineAnswer(cmd, "can't find vm:" + cmd.getVmName());
         }

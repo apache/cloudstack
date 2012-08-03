@@ -36,7 +36,7 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
         Snapshotting("There is a snapshot created on this volume, not backed up to secondary storage yet"),
         Expunging("The volume is being expunging"),
         Destroy("The volume is destroyed, and can't be recovered."),        
-        UploadOp ("The volume upload operation is in progress");            
+        UploadOp ("The volume upload operation is in progress or in short the volume is on secondary storage");            
 
         String _description;
 
@@ -61,9 +61,10 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
             s_fsm.addTransition(Creating, Event.OperationSucceeded, Ready);
             s_fsm.addTransition(Creating, Event.DestroyRequested, Destroy);
             s_fsm.addTransition(Creating, Event.CreateRequested, Creating);            
-            s_fsm.addTransition(Allocated, Event.UploadRequested, UploadOp);         
+            s_fsm.addTransition(Allocated, Event.UploadRequested, UploadOp);
+            s_fsm.addTransition(UploadOp, Event.CopyRequested, Creating);// CopyRequested for volume from sec to primary storage            
             s_fsm.addTransition(Creating, Event.CopySucceeded, Ready);
-            s_fsm.addTransition(UploadOp, Event.CopySucceeded, Ready);
+            s_fsm.addTransition(Creating, Event.CopyFailed, UploadOp);// Copying volume from sec to primary failed.  
             s_fsm.addTransition(UploadOp, Event.DestroyRequested, Destroy);
             s_fsm.addTransition(Ready, Event.DestroyRequested, Destroy);
             s_fsm.addTransition(Destroy, Event.ExpungingRequested, Expunging);
