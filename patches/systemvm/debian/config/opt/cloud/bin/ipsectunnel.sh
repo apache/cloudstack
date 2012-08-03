@@ -141,7 +141,7 @@ ipsec_tunnel_add() {
     sudo echo "  ikelifetime=${ikelifetime}s" >> $vpnconffile &&
     sudo echo "  esp=$esppolicy" >> $vpnconffile &&
     sudo echo "  salifetime=${esplifetime}s" >> $vpnconffile &&
-    sudo echo "  pfs=no" >> $vpnconffile &&
+    sudo echo "  pfs=$pfs" >> $vpnconffile &&
     sudo echo "  keyingtries=3" >> $vpnconffile &&
     sudo echo "  auto=add" >> $vpnconffile &&
     sudo echo "$leftpeer $rightpeer: PSK \"$secret\"" > $vpnsecretsfile &&
@@ -258,6 +258,12 @@ do
 done < /tmp/iflist
 
 rightnets=${rightnets//,/ }
+pfs="no"
+echo "$esppolicy" | grep "modp" > /dev/null
+if [ $? -eq 0 ]
+then
+    pfs="yes"
+fi
 
 ret=0
 #Firewall ports for one-to-one/static NAT
