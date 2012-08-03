@@ -984,13 +984,11 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         IPAddressVO ipAddr = _ipAddressDao.findById(sourceIpId);
         // make sure ip address exists
         if (ipAddr == null || !ipAddr.readyToUse()) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id specified", null);
-            ex.addProxyObject(ipAddr, sourceIpId, "sourceIpId");
-            throw ex;
+            throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id specified", null);
         } else if (ipAddr.isOneToOneNat()) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule; specified sourceip id has static nat enabled", null);
-            ex.addProxyObject(ipAddr, sourceIpId, "sourceIpId");
-            throw ex;
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(ipAddr, sourceIpId, "sourceIpId"));
+            throw new InvalidParameterValueException("Unable to create load balancer rule; specified sourceip id has static nat enabled", idList);
         }
 
         _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPortStart, srcPortEnd, lb.getProtocol(),
