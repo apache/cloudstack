@@ -33,6 +33,7 @@ import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
+import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
@@ -85,8 +86,6 @@ public class AgentRoutingResource extends AgentStorageResource {
                 return execute((StartCommand) cmd);
             } else if (cmd instanceof StopCommand) {
                 return execute((StopCommand) cmd);
-            } else if (cmd instanceof PrepareForMigrationCommand) {
-                return execute((PrepareForMigrationCommand) cmd);
             } else if (cmd instanceof CheckVirtualMachineCommand) {
                 return execute((CheckVirtualMachineCommand) cmd);
             } else if (cmd instanceof ReadyCommand) {
@@ -191,7 +190,7 @@ public class AgentRoutingResource extends AgentStorageResource {
 		String vmName = vmSpec.getName();
 		if (this.totalCpu < (vmSpec.getCpus() * vmSpec.getSpeed() + this.usedCpu) ||
 			this.totalMem < (vmSpec.getMaxRam() + this.usedMem)) {
-			return new StartAnswer(cmd, "No enough resource to start the vm"); 
+			return new StartAnswer(cmd, "Not enough resource to start the vm"); 
 		}
 		State state = State.Stopped;
 		synchronized (_vms) {
