@@ -1405,9 +1405,10 @@
                         args.$tierSelect.hide();
                       }
 
-                    //  args.$tierSelect.change(function() {
+                      args.$tierSelect.change(function() {
                         args.$tierSelect.closest('.list-view').listView('refresh');
-                   //   });
+                      });
+                      args.$tierSelect.closest('.list-view').listView('refresh');
                     },
 
                     listView: $.extend(true, {}, cloudStack.sections.instances, {
