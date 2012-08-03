@@ -42,25 +42,22 @@ public class SetStaticRouteCommand extends NetworkElementCommand{
         return staticRoutes;
     }
 
-    public boolean isEmpty() {
-        if(staticRoutes == null || staticRoutes.length == 0 ) {
-            return true;
-        }
-        return false;
-    }
     public String[][] generateSRouteRules() {
         String [][] result = new String [2][];
         Set<String> toAdd = new HashSet<String>();
         for (StaticRouteProfile route: staticRoutes) {
             /*  example  :  ip:gateway:cidr,
              */
-            if( route.getState() == StaticRoute.State.Active || route.getState() == StaticRoute.State.Add ) {
-                String cidr = route.getCidr();
-                String subnet = NetUtils.getCidrSubNet(cidr);
-                String cidrSize =  cidr.split("\\/")[1];
-                String entry = route.getIp4Address()+ ":" + route.getGateway() + ":" + subnet + "/" + cidrSize;
-                toAdd.add(entry);
+            String cidr = route.getCidr();
+            String subnet = NetUtils.getCidrSubNet(cidr);
+            String cidrSize = cidr.split("\\/")[1];
+            String entry;
+            if (route.getState() == StaticRoute.State.Active || route.getState() == StaticRoute.State.Add) {
+                entry = route.getIp4Address() + ":" + route.getGateway() + ":" + subnet + "/" + cidrSize;
+            } else {
+                entry = "Revoke:" + route.getGateway() + ":" + subnet + "/" + cidrSize;
             }
+            toAdd.add(entry);
         }
         result[0] = toAdd.toArray(new String[toAdd.size()]);
         return result;
