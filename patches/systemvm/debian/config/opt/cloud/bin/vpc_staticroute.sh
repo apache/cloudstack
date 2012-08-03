@@ -60,11 +60,11 @@ restore_table() {
 
 static_route() {
   local rule=$1
-  if [ "$rule" == "none" ]
+  local ip=$(echo $rule | cut -d: -f1)
+  if [ $ip == "Revoke" ]
   then
     return 0
   fi
-  local ip=$(echo $rule | cut -d: -f1)
   local gateway=$(echo $rule | cut -d: -f2)
   local cidr=$(echo $rule | cut -d: -f3)
   logger -t cloud "$(basename $0): static route: public ip=$ip \

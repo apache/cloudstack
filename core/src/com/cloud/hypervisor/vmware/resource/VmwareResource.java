@@ -526,11 +526,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String[] results = new String[cmd.getStaticRoutes().length];
         int i = 0;
 
-        if ( cmd.isEmpty() ) {
-            s_logger.error("SetStaticRoute failed since incoming command is empty");
-            return new SetStaticRouteAnswer(cmd, false, null);
-        }
-
         // Extract and build the arguments for the command to be sent to the VR.
         String [][] rules = cmd.generateSRouteRules();
         StringBuilder sb = new StringBuilder();
