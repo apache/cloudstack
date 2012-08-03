@@ -50,15 +50,16 @@ cd devcloudbase
 mkdir puppet-devcloudinitial
 mkdir puppet-devcloudinitial/files
 mkdir puppet-devcloudinitial/manifests
-wget --no-check-certificate -O Vagrantfile https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/Vagrantfile;hb=HEAD
-wget --no-check-certificate -O puppet-devcloudinitial/init.pp https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/init.pp;hb=HEAD
-wget --no-check-certificate -O puppet-devcloudinitial/Modulefile https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/Modulefile;hb=HEAD
-wget --no-check-certificate -O puppet-devcloudinitial/files/grub https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/files/grub;hb=HEAD
-wget --no-check-certificate -O puppet-devcloudinitial/files/interfaces https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/files/interfaces;hb=HEAD
-wget --no-check-certificate -O puppet-devcloudinitial/files/network.conf https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf;hb=HEAD
-wget --no-check-certificate -O puppet-devcloudinitial/files/xen-defaults https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/files/xen-defaults;hb=HEAD
-wget --no-check-certificate -O puppet-devcloudinitial/files/xend https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/files/xend;hb=HEAD
-wget --no-check-certificate -O puppet-devcloudinitial/manifests/init.pp https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/manifests/init.pp;hb=HEAD
+wget --no-check-certificate -O Vagrantfile "https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/Vagrantfile;hb=HEAD"
+wget --no-check-certificate -O puppet-devcloudinitial/init.pp "https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/init.pp;hb=HEAD"
+wget --no-check-certificate -O puppet-devcloudinitial/Modulefile "https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/Modulefile;hb=HEAD"
+wget --no-check-certificate -O puppet-devcloudinitial/files/grub "https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/files/grub;hb=HEAD"
+wget --no-check-certificate -O puppet-devcloudinitial/files/interfaces "https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/files/interfaces;hb=HEAD"
+wget --no-check-certificate -O puppet-devcloudinitial/files/network.conf "https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf;hb=HEAD"
+wget --no-check-certificate -O puppet-devcloudinitial/files/xen-defaults "https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/files/xen-defaults;hb=HEAD"
+wget --no-check-certificate -O puppet-devcloudinitial/files/xend "https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/files/xend;hb=HEAD"
+wget --no-check-certificate -O puppet-devcloudinitial/manifests/init.pp "https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/basebuild/puppet-devcloudinitial/manifests/init.pp;hb=HEAD"
+
 vagrant up
 vagrant halt
 cd ..
