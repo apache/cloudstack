@@ -18,13 +18,18 @@ package com.cloud.agent.api;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
 
-public class PrepareForMigrationCommand extends StartCommand {
-    
+public class PrepareForMigrationCommand extends Command {
+    VirtualMachineTO vm;
+	
     protected PrepareForMigrationCommand() {
     }
     
     public PrepareForMigrationCommand(VirtualMachineTO vm) {
-        super(vm);
+    	this.vm = vm;
+    }
+    
+    public VirtualMachineTO getVirtualMachine() {
+    	return vm;
     }
     
     @Override
