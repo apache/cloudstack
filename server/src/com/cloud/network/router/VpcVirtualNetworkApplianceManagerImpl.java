@@ -831,15 +831,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         List<StaticRouteProfile> staticRouteProfiles = new ArrayList<StaticRouteProfile>(routes.size());
         Map<Long, VpcGateway> gatewayMap = new HashMap<Long, VpcGateway>();
         for (StaticRoute route : routes) {
-            if (route.getState() != StaticRoute.State.Revoke) {
-                //skip static route in revoke state
-                VpcGateway gateway = gatewayMap.get(route.getVpcGatewayId());
-                if (gateway == null) {
-                    gateway = _vpcMgr.getVpcGateway(route.getVpcGatewayId());
-                    gatewayMap.put(gateway.getId(), gateway);
-                }
-                staticRouteProfiles.add(new StaticRouteProfile(route, gateway));
+            VpcGateway gateway = gatewayMap.get(route.getVpcGatewayId());
+            if (gateway == null) {
+                gateway = _vpcMgr.getVpcGateway(route.getVpcGatewayId());
+                gatewayMap.put(gateway.getId(), gateway);
             }
+            staticRouteProfiles.add(new StaticRouteProfile(route, gateway)); 
         }
         
         s_logger.debug("Found " + staticRouteProfiles.size() + " static routes to apply as a part of vpc route " 
@@ -1016,16 +1013,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         if (staticRoutes == null || staticRoutes.isEmpty()) {
             s_logger.debug("No static routes to apply");
             return true;
-        }
-        
-        //exclude static route in Revoke state
-        Iterator<StaticRouteProfile> it = staticRoutes.iterator();
-        while (it.hasNext()) {
-            StaticRouteProfile profile = it.next();
-            if (profile.getState() == StaticRoute.State.Revoke) {
-                s_logger.debug("Not sending static route " + profile + " because its in " + StaticRoute.State.Revoke + " state");
-                it.remove();
-            }
         }
         
         boolean result = true;
