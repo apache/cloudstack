@@ -121,7 +121,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -292,8 +291,6 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     protected UserDao _userDao;
     @Inject
     protected ClusterDao _clusterDao;
-    @Inject
-    protected VirtualNetworkApplianceManager _routerMgr;
     @Inject
     protected UsageEventDao _usageEventDao;
     @Inject

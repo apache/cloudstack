@@ -128,6 +128,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplianceManagerImpl implements VpcVirtualNetworkApplianceManager{
     private static final Logger s_logger = Logger.getLogger(VpcVirtualNetworkApplianceManagerImpl.class);
 
+    String _name;
     @Inject
     VpcDao _vpcDao;
     @Inject
@@ -1348,4 +1349,5 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             _s2sVpnMgr.markDisconnectVpnConnByVpc(vpcId);
         }
     }
+    
 }
