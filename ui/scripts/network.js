@@ -3833,13 +3833,15 @@
                   {				
                     name: { label: 'label.name', isEditable: true }
                   },
-                  {	
-										displaytext: { label: 'label.description', isEditable: true },										
-										zonename: { label: 'label.zone' },
-										cidr: { label: 'label.cidr' },
-										networkdomain: { label: 'label.network.domain' },
-										state: { label: 'label.state' },
-                    id: { label: 'label.id' }										
+                  {
+                    displaytext: { label: 'label.description', isEditable: true },
+                    account: { label: 'label.account' },
+                    domain: { label: 'label.domain' },
+                    zonename: { label: 'label.zone' },
+                    cidr: { label: 'label.cidr' },
+                    networkdomain: { label: 'label.network.domain' },
+                    state: { label: 'label.state' },
+                    id: { label: 'label.id' }
                   }
                 ],
 
