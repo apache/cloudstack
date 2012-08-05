@@ -766,12 +766,12 @@ VirtualMachineGuru<DomainRouterVO>, Listener {
         				List<? extends Nic> routerNics = _nicDao.listByVmId(router.getId());
         				for (Nic routerNic : routerNics) {
         					Network network = _networkMgr.getNetwork(routerNic.getNetworkId());
-        					if (network.getTrafficType() == TrafficType.Public) {
-        						boolean forVpc = router.getVpcId() != null;
+        					boolean forVpc = router.getVpcId() != null;
+        					if ((forVpc && network.getTrafficType() == TrafficType.Public) || (!forVpc && network.getTrafficType() == TrafficType.Guest)) {
         						final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(),
         								forVpc, routerNic.getIp4Address());
         						UserStatisticsVO previousStats = _statsDao.findBy(router.getAccountId(), 
-        								router.getDataCenterIdToDeployIn(), network.getId(), null, router.getId(), router.getType().toString());
+        								router.getDataCenterIdToDeployIn(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), router.getType().toString());
         						NetworkUsageAnswer answer = null;
         						try {
         							answer = (NetworkUsageAnswer) _agentMgr.easySend(router.getHostId(), usageCmd);
@@ -793,7 +793,7 @@ VirtualMachineGuru<DomainRouterVO>, Listener {
         								}
         								txn.start();
         								UserStatisticsVO stats = _statsDao.lock(router.getAccountId(), 
-        										router.getDataCenterIdToDeployIn(), network.getId(), routerNic.getIp4Address(), router.getId(), router.getType().toString());
+        										router.getDataCenterIdToDeployIn(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), router.getType().toString());
         								if (stats == null) {
         									s_logger.warn("unable to find stats for account: " + router.getAccountId());
         									continue;
@@ -3296,12 +3296,12 @@ VirtualMachineGuru<DomainRouterVO>, Listener {
     		List<? extends Nic> routerNics = _nicDao.listByVmId(router.getId());
     		for (Nic routerNic : routerNics) {
     			Network network = _networkMgr.getNetwork(routerNic.getNetworkId());
-    			if (network.getTrafficType() == TrafficType.Public) {
-    				boolean forVpc = router.getVpcId() != null;
+    			boolean forVpc = router.getVpcId() != null;
+    			if ((forVpc && network.getTrafficType() == TrafficType.Public) || (!forVpc && network.getTrafficType() == TrafficType.Guest)) {
     				final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(),
     						forVpc, routerNic.getIp4Address());
     				UserStatisticsVO previousStats = _statsDao.findBy(router.getAccountId(), 
-    						router.getDataCenterIdToDeployIn(), network.getId(), null, router.getId(), router.getType().toString());
+    						router.getDataCenterIdToDeployIn(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), router.getType().toString());
     				NetworkUsageAnswer answer = null;
     				try {
     					answer = (NetworkUsageAnswer) _agentMgr.easySend(router.getHostId(), usageCmd);
@@ -3323,7 +3323,7 @@ VirtualMachineGuru<DomainRouterVO>, Listener {
     						}
     						txn.start();
     						UserStatisticsVO stats = _statsDao.lock(router.getAccountId(), 
-    								router.getDataCenterIdToDeployIn(), network.getId(), null, router.getId(), router.getType().toString());
+    								router.getDataCenterIdToDeployIn(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), router.getType().toString());
     						if (stats == null) {
     							s_logger.warn("unable to find stats for account: " + router.getAccountId());
     							continue;
