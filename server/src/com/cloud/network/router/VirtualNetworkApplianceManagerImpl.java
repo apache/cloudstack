@@ -132,6 +132,7 @@ import com.cloud.network.RemoteAccessVpn;
 import com.cloud.network.Site2SiteCustomerGateway;
 import com.cloud.network.Site2SiteVpnConnection;
 import com.cloud.network.Site2SiteVpnConnectionVO;
+import com.cloud.network.Site2SiteVpnGatewayVO;
 import com.cloud.network.SshKeysDistriMonitor;
 import com.cloud.network.VirtualNetworkApplianceService;
 import com.cloud.network.VirtualRouterProvider;
@@ -763,10 +764,10 @@ VirtualMachineGuru<DomainRouterVO>, Listener {
         			String privateIP = router.getPrivateIpAddress();
 
         			if (privateIP != null) {
+        				boolean forVpc = router.getVpcId() != null;
         				List<? extends Nic> routerNics = _nicDao.listByVmId(router.getId());
         				for (Nic routerNic : routerNics) {
         					Network network = _networkMgr.getNetwork(routerNic.getNetworkId());
-        					boolean forVpc = router.getVpcId() != null;
         					if ((forVpc && network.getTrafficType() == TrafficType.Public) || (!forVpc && network.getTrafficType() == TrafficType.Guest)) {
         						final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(),
         								forVpc, routerNic.getIp4Address());
@@ -836,6 +837,81 @@ VirtualMachineGuru<DomainRouterVO>, Listener {
         										+ " Rx: " + answer.getBytesReceived() + "; Tx: " + answer.getBytesSent());
         							} finally {
         								txn.close();
+        							}
+        						}
+        						if(forVpc){
+        							//Get VPN gateway
+        							Site2SiteVpnGatewayVO s2sVpn = _s2sVpnGatewayDao.findByVpcId(router.getVpcId());
+        							if(s2sVpn != null){
+        								final NetworkUsageCommand vpnUsageCmd = new NetworkUsageCommand(privateIP, router.getHostName(), "vpn", forVpc, routerNic.getIp4Address());
+        								previousStats = _statsDao.findBy(s2sVpn.getAccountId(), router.getDataCenterIdToDeployIn(), network.getId(), 
+        																			routerNic.getIp4Address(), s2sVpn.getId(), "VPNGateway");
+        								answer = null;
+        								try {
+        									answer = (NetworkUsageAnswer) _agentMgr.easySend(router.getHostId(), vpnUsageCmd);
+        								} catch (Exception e) {
+        									s_logger.warn("Error while collecting vpn network stats from router: "+router.getInstanceName()+" from host: "+router.getHostId(), e);
+        									continue;
+        								}
+
+        								if (answer != null) {
+        									if (!answer.getResult()) {
+        										s_logger.warn("Error while collecting vpn network stats from router: "+router.getInstanceName()+" from host: "+router.getHostId() + "; details: " + answer.getDetails());
+        										continue;
+        									}
+        									Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+        									try {
+        										if ((answer.getBytesReceived() == 0) && (answer.getBytesSent() == 0)) {
+        											s_logger.debug("Recieved and Sent bytes are both 0. Not updating user_statistics");
+        											continue;
+        										}
+        										txn.start();
+        										UserStatisticsVO stats = _statsDao.lock(s2sVpn.getAccountId(), router.getDataCenterIdToDeployIn(), network.getId(), 
+        																				routerNic.getIp4Address(), s2sVpn.getId(), "VPNGateway");
+        										if (stats == null) {
+        											s_logger.warn("unable to find vpn stats for account: " + router.getAccountId()+" vpc Id: "+router.getVpcId());
+        											continue;
+        										}
+
+        										if(previousStats != null 
+        												&& ((previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived()) 
+        														|| (previousStats.getCurrentBytesSent() != stats.getCurrentBytesSent()))){
+        											s_logger.debug("Router stats changed from the time NetworkUsageCommand was sent. " +
+        													"Ignoring current answer. Router: "+answer.getRouterName()+" Rcvd: " + 
+        													answer.getBytesReceived()+ "Sent: " +answer.getBytesSent());
+        											continue;
+        										}
+
+        										if (stats.getCurrentBytesReceived() > answer.getBytesReceived()) {
+        											if (s_logger.isDebugEnabled()) {
+        												s_logger.debug("Received # of bytes that's less than the last one.  " +
+        														"Assuming something went wrong and persisting it. Router: " + 
+        														answer.getRouterName()+" Reported: " + answer.getBytesReceived()
+        														+ " Stored: " + stats.getCurrentBytesReceived());
+        											}
+        											stats.setNetBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
+        										}
+        										stats.setCurrentBytesReceived(answer.getBytesReceived());
+        										if (stats.getCurrentBytesSent() > answer.getBytesSent()) {
+        											if (s_logger.isDebugEnabled()) {
+        												s_logger.debug("Received # of bytes that's less than the last one.  " +
+        														"Assuming something went wrong and persisting it. Router: " + 
+        														answer.getRouterName()+" Reported: " + answer.getBytesSent()
+        														+ " Stored: " + stats.getCurrentBytesSent());
+        											}
+        											stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
+        										}
+        										stats.setCurrentBytesSent(answer.getBytesSent());
+        										_statsDao.update(stats.getId(), stats);
+        										txn.commit();
+        									} catch (Exception e) {
+        										txn.rollback();
+        										s_logger.warn("Unable to update user statistics for account: " + router.getAccountId()
+        												+ " Rx: " + answer.getBytesReceived() + "; Tx: " + answer.getBytesSent());
+        									} finally {
+        										txn.close();
+        									}
+        								}
         							}
         						}
         					}

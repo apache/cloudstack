@@ -49,7 +49,9 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
+import com.cloud.user.UserStatisticsVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
@@ -77,7 +79,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     @Inject AccountDao _accountDao;
     @Inject VpcManager _vpcMgr;
     @Inject AccountManager _accountMgr;
-
+    @Inject UserStatisticsDao _statsDao = null;
     String _name;
 
     @Override
@@ -129,6 +131,13 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
 
         Site2SiteVpnGatewayVO gw = new Site2SiteVpnGatewayVO(owner.getAccountId(), owner.getDomainId(), ips.get(0).getId(), vpcId);
         _vpnGatewayDao.persist(gw);
+    	UserStatisticsVO stats = _statsDao.findBy(owner.getAccountId(), vpc.getZoneId(), ips.get(0).getSourceNetworkId(), 
+    			ips.get(0).getAddress().toString(), gw.getId(), "VPNGateway");
+    	if (stats == null) {
+    		stats = new UserStatisticsVO(owner.getAccountId(), vpc.getZoneId(), ips.get(0).getAddress().toString(), gw.getId(),
+    				"VPNGateway", ips.get(0).getSourceNetworkId());
+    		_statsDao.persist(stats);
+    	}
         return gw;
     }
 
