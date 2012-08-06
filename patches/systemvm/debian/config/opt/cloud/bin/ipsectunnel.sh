@@ -67,6 +67,7 @@ check_and_enable_iptables() {
   if [ $? -ne 0 ]
   then
       sudo iptables -A INPUT -i $outIf -p udp -m udp --dport 500 -j ACCEPT
+      sudo iptables -A INPUT -i $outIf -p udp -m udp --dport 4500 -j ACCEPT
       # Prevent NAT on "marked" VPN traffic, so need to be the first one on POSTROUTING chain
       sudo iptables -t nat -I POSTROUTING -t nat -o $outIf -m mark --mark $vpnoutmark -j ACCEPT
   fi
@@ -90,6 +91,7 @@ check_and_disable_iptables() {
   then
     #Nobody else use s2s vpn now, so delete the iptables rules
     sudo iptables -D INPUT -i $outIf -p udp -m udp --dport 500 -j ACCEPT
+    sudo iptables -D INPUT -i $outIf -p udp -m udp --dport 4500 -j ACCEPT
     sudo iptables -t nat -D POSTROUTING -t nat -o $outIf -m mark --mark $vpnoutmark -j ACCEPT
   fi
   return 0
