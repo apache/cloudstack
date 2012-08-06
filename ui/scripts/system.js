@@ -2389,6 +2389,9 @@
                   fields: {
                     name: { label: 'label.name' },
                     zonename: { label: 'label.zone' },
+										routerType: {
+											label: 'label.type'
+										},
                     state: {
                       converter: function(str) {
                         // For localization
@@ -2415,6 +2418,7 @@
 											}
 										}
 
+										var routers = [];
                     $.ajax({
                       url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                       dataType: 'json',
@@ -2423,28 +2427,30 @@
 											},
                       async: true,
                       success: function(json) {
-                        var items = json.listroutersresponse.router;
-                        args.response.success({
-                          actionFilter: routerActionfilter,
-                          data: items
-                        });
-                      }
-                    });
-
-                    // Get project routers
-                    $.ajax({
-                      url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
-                      dataType: 'json',
-											data: {
-											  forvpc: true
-											},
-                      async: true,
-                      success: function(json) {
-                        var items = json.listroutersresponse.router;
-                        args.response.success({
-                          actionFilter: routerActionfilter,
-                          data: items
-                        });
+                        var items = json.listroutersresponse.router;												
+												$(items).map(function(index, item) {
+													routers.push(item); 
+												});
+												
+												// Get project routers
+												$.ajax({
+													url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
+													dataType: 'json',
+													data: {
+														forvpc: true
+													},
+													async: true,
+													success: function(json) {
+														var items = json.listroutersresponse.router;														
+														$(items).map(function(index, item) {
+															routers.push(item); 
+														});														
+														args.response.success({
+															actionFilter: routerActionfilter,
+															data: $(routers).map(mapRouterType)
+														});
+													}
+												});												                    
                       }
                     });
                   },
