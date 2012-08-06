@@ -611,7 +611,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
         if (clusterId != null) {
             ClusterVO cluster = _clusterDao.findById(clusterId);
             if (cluster == null) {
-                InvalidParameterValueException ex = new InvalidParameterValueException("can not find cluster by Id", null);
+                throw new InvalidParameterValueException("can not find cluster", null);
             } else {
                 if (cluster.getGuid() == null) {
                     List<HostVO> hosts = listAllHostsInCluster(clusterId);

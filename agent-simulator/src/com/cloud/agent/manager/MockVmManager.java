@@ -51,7 +51,7 @@ public interface MockVmManager extends Manager {
     public Answer stopVM(StopCommand cmd);
 	public Answer rebootVM(RebootCommand cmd);
     
-    public Answer checkVmState(CheckVirtualMachineCommand cmd, String hostGuid);
+    public Answer checkVmState(CheckVirtualMachineCommand cmd);
     public Map<String, State> getVmStates(String hostGuid);
     public Answer getVncPort(GetVncPortCommand cmd);
 

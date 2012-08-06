@@ -53,8 +53,8 @@ import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
@@ -102,7 +102,7 @@ LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServ
     @Inject
     NetworkOfferingDao _networkOfferingDao;
     @Inject
-    VirtualNetworkApplianceManager _routerMgr;
+    VpcVirtualNetworkApplianceManager _routerMgr;
     @Inject
     ConfigurationManager _configMgr;
     @Inject

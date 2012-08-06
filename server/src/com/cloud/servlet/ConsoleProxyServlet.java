@@ -332,7 +332,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 			param.setClientTunnelSession(parsedHostInfo.third());
 		}
 		
-		sb.append("/ajax?token=" + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
+		sb.append("/ajaximg?token=" + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
 		sb.append("&w=").append(w).append("&h=").append(h);
 		
 		if(s_logger.isDebugEnabled()) {

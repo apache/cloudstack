@@ -469,6 +469,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         diskOfferingResponse.setTags(offering.getTags());
         diskOfferingResponse.setCustomized(offering.isCustomized());
+        diskOfferingResponse.setStorageType(offering.getUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
         diskOfferingResponse.setObjectName("diskoffering");
         return diskOfferingResponse;
     }

@@ -77,6 +77,7 @@ public class EC2ServiceException extends RuntimeException {
 		InvalidPermission_Malformed("Client.InvalidPermission.Malformed", 400),
 		InvalidReservationID_Malformed("Client.InvalidReservationID.Malformed", 400),
 		InvalidReservationID_NotFound("Client.InvalidReservationID.NotFound", 400),
+		InvalidResourceId_Format("Client.InvalidResourceId.Format", 400),
 		InvalidSnapshotID_Malformed("Client.InvalidSnapshotID.Malformed", 400),
 		InvalidSnapshot_NotFound("Client.InvalidSnapshot.NotFound", 400),
 		InvalidUserID_Malformed("Client.InvalidUserID.Malformed", 400),

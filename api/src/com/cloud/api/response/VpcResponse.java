@@ -74,10 +74,10 @@ public class VpcResponse extends BaseResponse implements ControlledEntityRespons
     @SerializedName(ApiConstants.NETWORK) @Param(description="the list of networks belongign to the VPC", responseObject = NetworkResponse.class)
     private List<NetworkResponse> networks;
     
-    @SerializedName(ApiConstants.RESTART_REQUIRED) @Param(description="true network requires restart")
+    @SerializedName(ApiConstants.RESTART_REQUIRED) @Param(description="true VPC requires restart")
     private Boolean restartRequired;
     
-    @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain")
+    @SerializedName(ApiConstants.NETWORK_DOMAIN) @Param(description="the network domain of the VPC")
     private String networkDomain;
     
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with the project", responseObject = ResourceTagResponse.class)

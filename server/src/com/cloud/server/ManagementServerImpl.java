@@ -1303,9 +1303,9 @@ public class ManagementServerImpl implements ManagementServer {
             }// If ISO requested then it should be ISO.
             if (isIso && template.getFormat() != ImageFormat.ISO) {
                 s_logger.error("Template Id " + templateId + " is not an ISO");
-                InvalidParameterValueException ex = new InvalidParameterValueException("Specified Template Id is not an ISO", null);
-                ex.addProxyObject(template, templateId, "templateId");
-                throw ex;
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(template, templateId, "templateId"));
+                throw new InvalidParameterValueException("Specified Template Id is not an ISO", idList);
             }// If ISO not requested then it shouldn't be an ISO.
             if (!isIso && template.getFormat() == ImageFormat.ISO) {
                 s_logger.error("Incorrect format of the template id " + templateId);

@@ -54,6 +54,15 @@ public class NetworkUsageCommand extends Command {
         this.vpcCIDR = vpcCIDR;
     }
     
+    public NetworkUsageCommand(String privateIP, String domRName, String option, boolean forVpc, String gatewayIP)
+    {
+        this.privateIP = privateIP;
+        this.domRName = domRName;
+        this.forVpc = forVpc;
+        this.gatewayIP = gatewayIP;
+        this.option = option;
+    }
+    
     public String getPrivateIP() {
         return privateIP;
     }

@@ -741,7 +741,95 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new SetStaticNatRulesAnswer(cmd, results, endResult);
     }
 
+    protected Answer VPCLoadBalancerConfig(final LoadBalancerConfigCommand cmd) {
+        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+        File keyFile = mgr.getSystemVMKeyFile();
+
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String controlIp = getRouterSshControlIp(cmd);
+
+        assert(controlIp != null);
+
+        LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
+        String[] config = cfgtr.generateConfiguration(cmd);
+
+        String tmpCfgFilePath = "/etc/haproxy/haproxy.cfg.new";
+        String tmpCfgFileContents = "";
+        for (int i = 0; i < config.length; i++) {
+            tmpCfgFileContents += config[i];
+            tmpCfgFileContents += "\n";
+        }
+
+        try {
+            SshHelper.scpTo(controlIp, DEFAULT_DOMR_SSHPORT, "root", keyFile, null, "/etc/haproxy/", tmpCfgFileContents.getBytes(), "haproxy.cfg.new", null);
+
+            try {
+                String[][] rules = cfgtr.generateFwRules(cmd);
+
+                String[] addRules = rules[LoadBalancerConfigurator.ADD];
+                String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
+                String[] statRules = rules[LoadBalancerConfigurator.STATS];
+
+                String args = "";
+                String ip = cmd.getNic().getIp();
+                args += " -i " + ip;
+                StringBuilder sb = new StringBuilder();
+                if (addRules.length > 0) {
+                    for (int i = 0; i < addRules.length; i++) {
+                        sb.append(addRules[i]).append(',');
+                    }
+
+                    args += " -a " + sb.toString();
+                }
+
+                sb = new StringBuilder();
+                if (removeRules.length > 0) {
+                    for (int i = 0; i < removeRules.length; i++) {
+                        sb.append(removeRules[i]).append(',');
+                    }
+
+                    args += " -d " + sb.toString();
+                }
+
+                sb = new StringBuilder();
+                if (statRules.length > 0) {
+                    for (int i = 0; i < statRules.length; i++) {
+                        sb.append(statRules[i]).append(',');
+                    }
+
+                    args += " -s " + sb.toString();
+                }
+
+                // Invoke the command
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_loadbalancer.sh " + args);
+
+                if (!result.first()) {
+                    String msg = "LoadBalancerConfigCommand on domain router " + routerIp + " failed. message: " + result.second();
+                    s_logger.error(msg);
+
+                    return new Answer(cmd, false, msg);
+                }
+
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("VPCLoadBalancerConfigCommand on domain router " + routerIp + " completed");
+                }
+            } finally {
+                SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "rm " + tmpCfgFilePath);
+            }
+            return new Answer(cmd);
+        } catch (Throwable e) {
+            s_logger.error("Unexpected exception: " + e.toString(), e);
+            return new Answer(cmd, false, "VPCLoadBalancerConfigCommand failed due to " + VmwareHelper.getExceptionMessage(e));
+        }
+
+
+    }
+
     protected Answer execute(final LoadBalancerConfigCommand cmd) {
+        if ( cmd.getVpcId() != null ) {
+            return VPCLoadBalancerConfig(cmd);
+        }
+
         VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         File keyFile = mgr.getSystemVMKeyFile();
 
@@ -869,7 +957,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     //      eth0:xx.xx.xx.xx
     //
     // list IP with eth devices
-    //  ifconfig ethx |grep -B1 "inet addr" | awk '{ if ( $1 == "inet" ) { print $2 } else if ( $2 == "Link" ) { printf "%s:" ,$1 } }' 
+    //  ifconfig ethx |grep -B1 "inet addr" | awk '{ if ( $1 == "inet" ) { print $2 } else if ( $2 == "Link" ) { printf "%s:" ,$1 } }'
     //     | awk -F: '{ print $1 ": " $3 }'
     //
     //

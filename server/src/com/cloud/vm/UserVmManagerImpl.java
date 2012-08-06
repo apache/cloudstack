@@ -525,7 +525,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         return maxDataVolumesSupported.intValue();
     }
-    
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_ATTACH, eventDescription = "attaching volume", async = true)
     public Volume attachVolumeToVM(AttachVolumeCmd command) {
@@ -2928,9 +2928,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // Verify input parameters
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null || vm.getRemoved() != null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find a virtual machine with specified vmId", null);
-            ex.addProxyObject(vm, vmId, "vmId");
-            throw ex;
+            throw new InvalidParameterValueException("Unable to find a virtual machine with specified vmId", null);
         } 
 
         if (vm.getState() == State.Destroyed || vm.getState() == State.Expunging) {
@@ -3138,11 +3136,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (id != null) {
             sc.setParameters("id", id);
         }
-        
+
         if (templateId != null) {
             sc.setParameters("templateId", templateId);
         }
-        
+
         if (isoId != null) {
             sc.setParameters("isoId", isoId);
         }
@@ -3314,9 +3312,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
             }
-            InvalidParameterValueException ex = new InvalidParameterValueException("VM is not Running, unable to migrate the vm with specified id", null);
-            ex.addProxyObject(vm, vmId, "vmId");
-            throw ex;
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(vm, vmId, "vmId"));
+            throw new InvalidParameterValueException("VM is not Running, unable to migrate the vm with specified id", idList);
         }
         if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM) && !vm.getHypervisorType().equals(HypervisorType.Ovm)) {
             if (s_logger.isDebugEnabled()) {
@@ -3396,9 +3394,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
         //don't allow to move the vm from the project
         if (oldAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Specified Vm id belongs to the project and can't be moved", null);
-            ex.addProxyObject(vm, cmd.getVmId(), "vmId");
-            throw ex;
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(vm, cmd.getVmId(), "vmId"));
+            throw new InvalidParameterValueException("Specified Vm id belongs to the project and can't be moved", idList);
         }
         Account newAccount = _accountService.getActiveAccountByName(cmd.getAccountName(), cmd.getDomainId());
         if (newAccount == null || newAccount.getType() == Account.ACCOUNT_TYPE_PROJECT) {
@@ -3680,9 +3678,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         long vmId = cmd.getVmId();
         UserVmVO vm = _vmDao.findById(vmId);
         if (vm == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Cann not find VM by ID ", null);
-            ex.addProxyObject(vm, vmId, "vmId");
-            throw ex;
+            throw new InvalidParameterValueException("Cann not find VM", null);
         }
 
         Account owner = _accountDao.findById(vm.getAccountId());
