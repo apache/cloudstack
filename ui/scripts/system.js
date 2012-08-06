@@ -4917,62 +4917,64 @@
                 }
               },
 
-              /*
-               changeService: {
-               label: 'label.change.service.offering',
-               createForm: {
-               title: 'label.change.service.offering',
-               desc: '',
-               fields: {
-               serviceOfferingId: {
-               label: 'label.compute.offering',
-               select: function(args) {
-               $.ajax({
-               url: createURL("listServiceOfferings&issystem=true&systemvmtype=domainrouter"),
-               dataType: "json",
-               async: true,
-               success: function(json) {
-               var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
-               var items = [];
-               $(serviceofferings).each(function() {
-               if(this.id != args.context.routers[0].serviceofferingid) {
-               items.push({id: this.id, description: this.displaytext});
-               }
-               });
-               args.response.success({data: items});
-               }
-               });
-               }
-               }
-               }
-               },
-               messages: {
-               notification: function(args) {
-               return 'label.change.service.offering';
-               }
-               },
-               action: function(args) {
-               $.ajax({
-               url: createURL("changeServiceForRouter&id=" + args.context.routers[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
-               dataType: "json",
-               async: true,
-               success: function(json) {
-               var jsonObj = json.changeserviceforrouterresponse.domainrouter;
-               args.response.success({data: jsonObj});
-               },
-               error: function(XMLHttpResponse) {
-               var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
-               args.response.error(errorMsg);
-               }
-               });
-               },
-               notification: {
-               poll: function(args) {
-               args.complete();
-               }
-               }
-               },
-               */
+              //???						  
+							changeService: {
+								label: 'label.change.service.offering',
+								createForm: {
+									title: 'label.change.service.offering',
+									desc: '',
+									fields: {
+										serviceOfferingId: {
+											label: 'label.compute.offering',
+											select: function(args) {																															
+												$.ajax({
+													url: createURL('listServiceOfferings'),
+													data: {
+														issystem: true,
+														systemvmtype: 'domainrouter'
+													},
+													success: function(json) {
+														var serviceofferings = json.listserviceofferingsresponse.serviceoffering;
+														var items = [];
+														$(serviceofferings).each(function() {																		
+															if(this.id != args.context.routers[0].serviceofferingid) {
+																items.push({id: this.id, description: this.name});  //default one (i.e. "System Offering For Software Router") doesn't have displaytext property. So, got to use name property instead.
+															}
+														});
+														args.response.success({data: items});
+													}
+												});
+											}
+										}
+									}
+								},
+								messages: {
+									notification: function(args) {
+										return 'label.change.service.offering';
+									}
+								},
+								action: function(args) {												  
+									$.ajax({
+										url: createURL("changeServiceForRouter&id=" + args.context.routers[0].id + "&serviceofferingid=" + args.data.serviceOfferingId),
+										dataType: "json",
+										async: true,
+										success: function(json) {
+											var jsonObj = json.changeserviceforrouterresponse.domainrouter;
+											args.response.success({data: jsonObj});
+										},
+										error: function(XMLHttpResponse) {
+											var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+											args.response.error(errorMsg);
+										}
+									});
+								},
+								notification: {
+									poll: function(args) {
+										args.complete();
+									}
+								}
+							},	
+						  //???
 
               migrate: {
                 label: 'label.action.migrate.router',
