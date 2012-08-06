@@ -84,7 +84,7 @@ under the License.
    <!-- ================ -->
 
    <category name="com.cloud">
-     <priority value="TRACE"/>
+     <priority value="DEBUG"/>
    </category>
    
    <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->

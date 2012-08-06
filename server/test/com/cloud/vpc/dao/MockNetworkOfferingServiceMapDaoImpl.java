@@ -14,9 +14,7 @@ package com.cloud.vpc.dao;
 
 import javax.ejb.Local;
 
-import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
-import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl;
 import com.cloud.utils.db.DB;
@@ -26,20 +24,12 @@ import com.cloud.utils.db.DB;
 public class MockNetworkOfferingServiceMapDaoImpl extends NetworkOfferingServiceMapDaoImpl{
     
     @Override
-    public NetworkOfferingServiceMapVO findById(Long id) {
-        NetworkOfferingServiceMapVO vo = null;
-        System.out.println("hello alena");
-        if (id.longValue() == 0) {
-            vo = new NetworkOfferingServiceMapVO(1, Service.SourceNat, Provider.VPCVirtualRouter);
-        } else if (id.longValue() == 2) {
-            vo = new NetworkOfferingServiceMapVO(2, Service.Firewall, Provider.VirtualRouter);
-        } else if (id.longValue() == 3) {
-            vo = new NetworkOfferingServiceMapVO(3, Service.SourceNat, Provider.VPCVirtualRouter);
-        } else if (id.longValue() == 4) {
-            vo = new NetworkOfferingServiceMapVO(4, Service.SourceNat, Provider.VPCVirtualRouter);
+    public boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services) {
+        if (services.length > 0 && services[0] == Service.SourceNat && networkOfferingId != 2) {
+            return true;
+        } else if (services.length > 0 && services[0] == Service.Lb && networkOfferingId != 2) {
+            return true;
         }
-        
-        return vo;
+        return false;
     }
-
 }

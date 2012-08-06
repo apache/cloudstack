@@ -89,20 +89,4 @@ public class MockNetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceM
         // TODO Auto-generated method stub
         return null;
     }
-
-    @Override
-    public NetworkServiceMapVO findById(Long id) {
-        NetworkServiceMapVO vo = null;
-        if (id.longValue() == 1) {
-            vo = new NetworkServiceMapVO(1, Service.SourceNat, Provider.VPCVirtualRouter);
-        } else if (id.longValue() == 2) {
-            vo = new NetworkServiceMapVO(2, Service.Firewall, Provider.VirtualRouter);
-        } else if (id.longValue() == 3) {
-            vo = new NetworkServiceMapVO(3, Service.SourceNat, Provider.VPCVirtualRouter);
-        } else if (id.longValue() == 4) {
-            vo = new NetworkServiceMapVO(4, Service.SourceNat, Provider.VPCVirtualRouter);
-        }
-        
-        return vo;
-    }
 }

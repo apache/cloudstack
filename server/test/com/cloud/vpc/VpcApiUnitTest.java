@@ -49,7 +49,6 @@ public class VpcApiUnitTest extends TestCase{
     MockComponentLocator _locator;
     VpcManager _vpcService;
 
-    
     @Override
     @Before
     public void setUp() throws Exception {
@@ -94,53 +93,76 @@ public class VpcApiUnitTest extends TestCase{
         try {
             _vpcService.validateNtkwOffForVpc(1, "0.0.0.0", "111-", new AccountVO(), _vpcService.getVpc(1), 2L, "10.1.1.1");
             result = true;
-            s_logger.debug("Test1 passed, the offering is valid for vpc creation");
+            s_logger.debug("Test passed: the offering is valid for vpc creation");
         } catch (Exception ex) {
-            s_logger.warn("Test1 failed due to exc ", ex);
+            s_logger.warn("TEST FAILED due to exc ", ex);
         }
         
         
         //2) invalid offering - source nat is not included
         result = false;
+        String msg = null;
         try {
             _vpcService.validateNtkwOffForVpc(2, "0.0.0.0", "111-", new AccountVO(), _vpcService.getVpc(1), 2L, "10.1.1.1");
             result = true;
         } catch (InvalidParameterValueException ex) {
+            msg = ex.getMessage();
         } finally {
             if (!result) {
-                s_logger.debug("Test2 passed, can't use network offering without SourceNat service");
+                s_logger.debug("Test passed: "  + msg);
             } else {
-                s_logger.warn("Test2 failed, can't use network offering without SourceNat service");
+                s_logger.warn("TEST FAILED, can't use network offering without SourceNat service");
             }
         }
         
         //3) invalid offering - conserve mode is off
         result = false;
+        msg = null;
         try {
             _vpcService.validateNtkwOffForVpc(3, "0.0.0.0", "111-", new AccountVO(), _vpcService.getVpc(1), 2L, "10.1.1.1");
             result = true;
         } catch (InvalidParameterValueException ex) {
+            msg = ex.getMessage();
         } finally {
             if (!result) {
-                s_logger.debug("Test3 passed, can't use network offering without conserve mode = true");
+                s_logger.debug("Test passed: " + msg);
             } else {
-                s_logger.warn("Test3 failed, can't use network offering without conserve mode = true");
+                s_logger.warn("TEST FAILED, can't use network offering without conserve mode = true");
             }
         }
         
-       //3) invalid offering - guest type shared
+        //4) invalid offering - guest type shared
         result = false;
         try {
             _vpcService.validateNtkwOffForVpc(4, "0.0.0.0", "111-", new AccountVO(), _vpcService.getVpc(1), 2L, "10.1.1.1");
             result = true;
-        } catch (InvalidParameterValueException ex) { 
+        } catch (InvalidParameterValueException ex) {
+            msg = ex.getMessage();
         } finally {
             if (!result) {
-                s_logger.debug("Test4 passed, can't use network offering with guest type = Shared");
+                s_logger.debug("Test passed: " + msg);
             } else {
-                s_logger.warn("Test4 failed, can't use network offering with guest type = Shared");
+                s_logger.warn("TEST FAILED, can't use network offering with guest type = Shared");
             }
         }
+        
+        //5) Invalid offering - no redundant router supportresult = false;
+        try {
+            _vpcService.validateNtkwOffForVpc(5, "0.0.0.0", "111-", new AccountVO(), _vpcService.getVpc(1), 2L, "10.1.1.1");
+            result = true;
+        } catch (InvalidParameterValueException ex) {
+            msg = ex.getMessage();
+        } finally {
+            if (!result) {
+                s_logger.debug("Test passed: " + msg);
+            } else {
+                s_logger.warn("TEST FAILED, can't use network offering with guest type = Shared");
+            }
+        }
+        
+        //6) Only one network in the VPC can support LB service - positive scenario
+        
+        //7) Only one netowrk in the VPC can support LB service - negative scenario
     }
 
 }
