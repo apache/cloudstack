@@ -20,7 +20,7 @@ import com.cloud.network.router.VirtualRouter;
 /**
  * @author Alena Prokharchyk
  */
-public interface VpcVirtualNetworkApplianceService {
+public interface VpcVirtualNetworkApplianceService extends VirtualNetworkApplianceService{
 
     /**
      * @param router

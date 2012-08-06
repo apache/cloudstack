@@ -9651,6 +9651,13 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   overflow: auto;
 }
 
+/*Acl multi-edit*/
+div.ui-dialog div.acl div.multi-edit div.data div.data-body {
+
+width:100%;
+}
+
+
 /*Autoscaler*/
 .ui-dialog div.autoscaler {
   overflow: auto;

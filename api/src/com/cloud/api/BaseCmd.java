@@ -36,7 +36,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.NetworkService;
 import com.cloud.network.StorageNetworkService;
-import com.cloud.network.VirtualNetworkApplianceService;
+import com.cloud.network.VpcVirtualNetworkApplianceService;
 import com.cloud.network.as.AutoScaleService;
 import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.firewall.NetworkACLService;
@@ -117,7 +117,7 @@ public abstract class BaseCmd {
     public static SecurityGroupService _securityGroupService;
     public static SnapshotService _snapshotService;
     public static ConsoleProxyService _consoleProxyService;
-    public static VirtualNetworkApplianceService _routerService;
+    public static VpcVirtualNetworkApplianceService _routerService;
     public static ResponseGenerator _responseGenerator;
     public static EntityManager _entityMgr;
     public static RulesService _rulesService;
@@ -149,7 +149,7 @@ public abstract class BaseCmd {
         _securityGroupService = locator.getManager(SecurityGroupService.class);
         _snapshotService = locator.getManager(SnapshotService.class);
         _consoleProxyService = locator.getManager(ConsoleProxyService.class);
-        _routerService = locator.getManager(VirtualNetworkApplianceService.class);
+        _routerService = locator.getManager(VpcVirtualNetworkApplianceService.class);
         _entityMgr = locator.getManager(EntityManager.class);
         _rulesService = locator.getManager(RulesService.class);
         _lbService = locator.getManager(LoadBalancingRulesService.class);

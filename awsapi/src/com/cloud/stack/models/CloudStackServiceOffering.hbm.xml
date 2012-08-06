@@ -11,6 +11,9 @@
   		<property name="domainId">
      		<column name="domain_id" />
   		</property>
+        <property name="removed">
+            <column name="removed" />
+        </property>
  	</class>
 </hibernate-mapping>
 

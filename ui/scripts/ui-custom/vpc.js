@@ -18,7 +18,7 @@
       var siteToSiteVPN = args.siteToSiteVPN;
       var links = {
         'ip-addresses': 'IP Addresses',
-        'gateways': 'Gateways',
+        'gateways': 'Private Gateway',
         'site-to-site-vpn': 'Site-to-site VPN'
       };
       var $links = $('<ul>').addClass('links');
@@ -48,14 +48,62 @@
             });
             break;
           case 'gateways':
-            $browser.cloudBrowser('addPanel', {
-              title: 'Gateways',
-              maximizeIfSelected: true,
-              complete: function($panel) {
-                //ipAddresses.listView is a function
-                $panel.listView(gateways.listView(), {context: gateways.context});
-              }
-            });
+            //siteToSiteVPN is an object
+            var addAction = gateways.add;
+            var isGatewayPresent = addAction.preCheck({ context: gateways.context });
+            var showGatewayListView = function() {
+              $browser.cloudBrowser('addPanel', {
+                title: 'Private Gateway',
+                maximizeIfSelected: true,
+                complete: function($panel) {
+                  $panel.listView(gateways.listView(), { context: gateways.context });
+                }
+              });
+            };
+
+            if (isGatewayPresent) {
+              showGatewayListView();
+            } else {
+              cloudStack.dialog.createForm({
+                form: addAction.createForm,
+                after: function(args) {
+                  var data = args.data;
+                  var $loading = $('<div>').addClass('loading-overlay').appendTo($chart);
+                  var error = function(message) {
+                    $loading.remove();
+                    cloudStack.dialog.notice({ message: message });
+                  };
+
+                  addAction.action({
+                    data: data,
+                    context: gateways.context,
+                    response: {
+                      success: function(args) {
+                        var _custom = args._custom;
+                        var notification = {
+                          poll: addAction.notification.poll,
+                          _custom: _custom,
+                          desc: addAction.messages.notification()
+                        };
+                        var success = function(args) {
+                          if (!$chart.is(':visible')) return;
+                          
+                          $loading.remove();
+                          showGatewayListView();
+                        };
+                        
+                        cloudStack.ui.notifications.add(
+                          notification,
+                          success, {},
+                          error, {}
+                        );
+                      },
+                      error: error
+                    }
+                  });
+                }
+              });
+            }
             break;
           case 'site-to-site-vpn':
             //siteToSiteVPN is an object
@@ -63,7 +111,7 @@
             var isVPNPresent = addAction.preCheck({ context: siteToSiteVPN.context });
             var showVPNListView = function() {
               $browser.cloudBrowser('addPanel', {
-                title: 'Site-to-site VPNs',
+                title: 'Site-to-site VPN',
                 maximizeIfSelected: true,
                 complete: function($panel) {
                   $panel.listView(siteToSiteVPN, {context: siteToSiteVPN.context});
@@ -105,7 +153,8 @@
                           success, {},
                           error, {}
                         );
-                      }
+                      },
+                      error: error
                     }
                   });
                 }
@@ -534,7 +583,7 @@
       break;
     case 'acl':
       // Show ACL dialog
-      $('<div>').multiEdit(
+      $('<div>').addClass('acl').multiEdit(
         $.extend(true, {}, actionArgs.multiEdit, {
           context: context
         })

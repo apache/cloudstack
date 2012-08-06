@@ -142,7 +142,7 @@ ipsec_tunnel_add() {
     sudo echo "  esp=$esppolicy" >> $vpnconffile &&
     sudo echo "  salifetime=${esplifetime}s" >> $vpnconffile &&
     sudo echo "  pfs=$pfs" >> $vpnconffile &&
-    sudo echo "  keyingtries=3" >> $vpnconffile &&
+    sudo echo "  keyingtries=2" >> $vpnconffile &&
     sudo echo "  auto=add" >> $vpnconffile &&
     sudo echo "$leftpeer $rightpeer: PSK \"$secret\"" > $vpnsecretsfile &&
     sudo chmod 0400 $vpnsecretsfile
@@ -162,8 +162,8 @@ ipsec_tunnel_add() {
 
   logger -t cloud "$(basename $0): done ipsec tunnel entry for right peer=$rightpeer right networks=$rightnets"
 
-  #20 seconds for checking if it's ready
-  for i in {1..4}
+  #5 seconds for checking if it's ready
+  for i in {1..5}
   do
     logger -t cloud "$(basename $0): checking connection status..."
     /opt/cloud/bin/checks2svpn.sh $rightpeer
@@ -172,7 +172,7 @@ ipsec_tunnel_add() {
     then
         break
     fi
-    sleep 5
+    sleep 1
   done
   if [ $result -eq 0 ]
   then

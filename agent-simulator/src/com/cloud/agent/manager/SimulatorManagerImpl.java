@@ -15,7 +15,6 @@ package com.cloud.agent.manager;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.ejb.Local;
@@ -29,6 +28,7 @@ import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.BackupSnapshotCommand;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
+import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.ClusterSyncCommand;
 import com.cloud.agent.api.Command;
@@ -50,6 +50,7 @@ import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
@@ -76,7 +77,6 @@ import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadProgressCommand;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
-import com.cloud.agent.mockvm.MockVm;
 import com.cloud.simulator.MockConfigurationVO;
 import com.cloud.simulator.MockHost;
 import com.cloud.simulator.MockVMVO;
@@ -193,12 +193,16 @@ public class SimulatorManagerImpl implements SimulatorManager {
                 return _mockAgentMgr.checkHealth((CheckHealthCommand)cmd);
             } else if (cmd instanceof PingTestCommand) {
                 return _mockAgentMgr.pingTest((PingTestCommand)cmd);
+            } else if (cmd instanceof PrepareForMigrationCommand) {
+            	return _mockAgentMgr.prepareForMigrate((PrepareForMigrationCommand)cmd);
             } else if (cmd instanceof MigrateCommand) {
                 return _mockVmMgr.Migrate((MigrateCommand)cmd, info);
             } else if (cmd instanceof StartCommand) {
                 return _mockVmMgr.startVM((StartCommand)cmd, info);
             } else if (cmd instanceof CheckSshCommand) {
                 return _mockVmMgr.checkSshCommand((CheckSshCommand)cmd);
+            } else if (cmd instanceof CheckVirtualMachineCommand) {
+            	return _mockVmMgr.checkVmState((CheckVirtualMachineCommand)cmd);
             } else if (cmd instanceof SetStaticNatRulesCommand) {
                 return _mockVmMgr.SetStaticNatRules((SetStaticNatRulesCommand)cmd);
             } else if (cmd instanceof SetFirewallRulesCommand) {
@@ -278,7 +282,7 @@ public class SimulatorManagerImpl implements SimulatorManager {
             } else if (cmd instanceof CreatePrivateTemplateFromVolumeCommand) {
                 return _mockStorageMgr.CreatePrivateTemplateFromVolume((CreatePrivateTemplateFromVolumeCommand)cmd);
             } else if (cmd instanceof MaintainCommand) {
-                return _mockAgentMgr.MaintainCommand((MaintainCommand)cmd);
+                return _mockAgentMgr.maintain((MaintainCommand)cmd);
             } else if (cmd instanceof GetVmStatsCommand) {
                 return _mockVmMgr.getVmStats((GetVmStatsCommand)cmd);
             } else if (cmd instanceof GetDomRVersionCmd) {

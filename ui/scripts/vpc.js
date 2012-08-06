@@ -437,6 +437,76 @@
       }
     },
     gateways: {
+      add: {
+        preCheck: function(args) {
+          var items;
+          
+          $.ajax({
+            url: createURL('listPrivateGateways'),
+            async: false,
+            data: {
+              vpcid: args.context.vpc[0].id,
+              listAll: true
+            },
+            success: function(json) {
+              items = json.listprivategatewaysresponse.privategateway;
+              args.response.success({ data: items });
+            }
+          });
+
+          if (items && items.length) {
+            return true;
+          }
+
+          return false;
+        },
+        label: 'Add new gateway',
+        messages: {
+          notification: function(args) {
+            return 'Add new gateway';
+          }
+        },
+        createForm: {
+          title: 'Add new gateway',
+          desc: 'Please specify the information to add a new gateway to this VPC.',
+          fields: {
+            vlan: { label: 'label.vlan', validation: { required: true }},
+            ipaddress: { label: 'label.ip.address', validation: { required: true }},
+            gateway: { label: 'label.gateway', validation: { required: true }},
+            netmask: { label: 'label.netmask', validation: { required: true }}
+          }
+        },
+        action: function(args) {
+          $.ajax({
+            url: createURL('createPrivateGateway'),
+            data: {
+              vpcid: args.context.vpc[0].id,
+              ipaddress: args.data.ipaddress,
+              gateway: args.data.gateway,
+              netmask: args.data.netmask,
+              vlan: args.data.vlan
+            },
+            success: function(json) {
+              var jid = json.createprivategatewayresponse.jobid;
+              args.response.success(
+                {_custom:
+                 {jobId: jid,
+                  getUpdatedItem: function(json) {
+                    return json.queryasyncjobresultresponse.jobresult.privategateway;
+                  }
+                 }
+                }
+              );
+            },
+            error: function(json) {
+              args.response.error(parseXMLHttpResponse(json));
+            }
+          });
+        },
+        notification: {
+          poll: pollAsyncJobResult
+        }
+      },
       listView: function() {
         return {
           listView: {
@@ -446,62 +516,6 @@
               gateway: { label: 'label.gateway', validation: { required: true }},
               netmask: { label: 'label.netmask', validation: { required: true }},
               vlan: { label: 'label.vlan', validation: { required: true }}
-            },
-            actions: {
-              add: {
-                label: 'Add new gateway',
-                preFilter: function(args) {
-                  if(isAdmin())
-                    return true;
-                  else
-                    return false;
-                },
-                messages: {
-                  notification: function(args) {
-                    return 'Add new gateway';
-                  }
-                },
-                createForm: {
-                  title: 'Add new gateway',
-                  desc: 'Please specify the information to add a new gateway to this VPC.',
-                  fields: {
-                    ipaddress: { label: 'label.ip.address', validation: { required: true }},
-                    gateway: { label: 'label.gateway', validation: { required: true }},
-                    netmask: { label: 'label.netmask', validation: { required: true }},
-                    vlan: { label: 'label.vlan', validation: { required: true }}
-                  }
-                },
-                action: function(args) {
-                  $.ajax({
-                    url: createURL('createPrivateGateway'),
-                    data: {
-                      vpcid: args.context.vpc[0].id,
-                      ipaddress: args.data.ipaddress,
-                      gateway: args.data.gateway,
-                      netmask: args.data.netmask,
-                      vlan: args.data.vlan
-                    },
-                    success: function(json) {
-                      var jid = json.createprivategatewayresponse.jobid;
-                      args.response.success(
-                        {_custom:
-                         {jobId: jid,
-                          getUpdatedItem: function(json) {
-                            return json.queryasyncjobresultresponse.jobresult.privategateway;
-                          }
-                         }
-                        }
-                      );
-                    },
-                    error: function(json) {
-                      args.response.error(parseXMLHttpResponse(json));
-                    }
-                  });
-                },
-                notification: {
-                  poll: pollAsyncJobResult
-                }
-              }
             },
             dataProvider: function(args) {
               $.ajax({

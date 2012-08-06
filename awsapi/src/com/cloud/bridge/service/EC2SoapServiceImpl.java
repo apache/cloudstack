@@ -258,6 +258,10 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             List<String> resourceTypeList = new ArrayList<String>();
             if (items != null) {
                 for( int i=0; i < items.length; i++ ) {
+                    if (!items[i].getResourceId().contains(":") || items[i].getResourceId().split(":").length != 2) {
+                        throw new EC2ServiceException( ClientError.InvalidResourceId_Format,
+                                "Invalid Format. ResourceId format is resource-type:resource-uuid");
+                    }
                     String resourceType = items[i].getResourceId().split(":")[0];
                     if (resourceTypeList.isEmpty())
                         resourceTypeList.add(resourceType);

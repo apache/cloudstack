@@ -15,6 +15,7 @@
 source /root/func.sh
 source /opt/cloud/bin/vpc_func.sh
 
+vpnoutmark="0x525"
 lock="biglock"
 locked=$(getLockFile $lock)
 if [ "$locked" != "1" ]
@@ -42,6 +43,22 @@ create_usage_rules () {
   return $?
 }
 
+create_vpn_usage_rules () {
+  iptables -N VPN_STATS_$ethDev > /dev/null
+  iptables -I FORWARD -j VPN_STATS_$ethDev > /dev/null
+  iptables-save|grep "VPN_STATS_$ethDev -i $ethDev" > /dev/null
+  if [ $? -gt 0 ]
+  then 
+    iptables -A VPN_STATS_$ethDev -i $ethDev -m mark --mark $vpnoutmark > /dev/null
+  fi
+  iptables-save|grep "VPN_STATS_$ethDev -o $ethDev" > /dev/null
+  if [ $? -gt 0 ]
+  then 
+    iptables -A VPN_STATS_$ethDev -o $ethDev -m mark --mark $vpnoutmark > /dev/null
+  fi
+  return $?
+}
+
 get_usage () {
   iptables -L NETWORK_STATS_$ethDev -n -v -x | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
   if [ $? -gt 0 ]
@@ -50,6 +67,16 @@ get_usage () {
      return 1
   fi
 }
+
+get_vpn_usage () {
+  iptables -L VPN_STATS_$ethDev -n -v -x | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
+  if [ $? -gt 0 ]
+  then
+     printf $?
+     return 1
+  fi
+}
+
 
 reset_usage () {
   iptables -Z NETWORK_STATS_$ethDev > /dev/null
@@ -65,9 +92,10 @@ cflag=
 gflag=
 rflag=
 lflag=
+vflag=
+nflag=
 
-
-while getopts 'cgrl:v:' OPTION
+while getopts 'cgnrl:v:' OPTION
 do
   case $OPTION in
   c)	cflag=1
@@ -82,6 +110,8 @@ do
   v)    vflag=1
         vcidr="$OPTARG"
         ;;
+  n)	nflag=1
+	;;        
   i)    #Do nothing, since it's parameter for host script
         ;;
   ?)	usage
@@ -94,12 +124,19 @@ ethDev=$(getEthByIp $publicIp)
 if [ "$cflag" == "1" ] 
 then
   create_usage_rules
+  create_vpn_usage_rules
   unlock_exit 0 $lock $locked
 fi
 
 if [ "$gflag" == "1" ] 
 then
   get_usage 
+  unlock_exit $? $lock $locked
+fi
+
+if [ "$nflag" == "1" ] 
+then
+  get_vpn_usage 
   unlock_exit $? $lock $locked
 fi
 

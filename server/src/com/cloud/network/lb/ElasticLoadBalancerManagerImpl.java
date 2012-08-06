@@ -89,7 +89,6 @@ import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.dao.ElasticLbVmMapDao;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -148,8 +147,6 @@ ElasticLoadBalancerManager, Manager,  VirtualMachineGuru<DomainRouterVO> {
     LoadBalancerDao _loadBalancerDao = null;
     @Inject
     LoadBalancingRulesManager _lbMgr;
-    @Inject
-    VirtualNetworkApplianceManager _routerMgr;
     @Inject
     DomainRouterDao _routerDao = null;
     @Inject

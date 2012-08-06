@@ -103,6 +103,14 @@
                       .click(function() {
                         var $radio = $(this).closest('.select').find('input[type=radio]');
 
+                        if ($(this).attr('type') == 'checkbox') {
+                          if ($(this).closest('.select-container').hasClass('single-select')) {
+                            $(this).closest('.select').siblings().find('input[type=checkbox]')
+                              .attr('checked', false);
+                            $(this).closest('.select').find('input[type=radio]').click();
+                          }
+                        }
+                        
                         if ($radio.is(':checked') && !$(this).is(':checked')) {
                           if (!$radio.closest('.select').index()) {
                             return false;
@@ -121,7 +129,8 @@
                     $('<div>').addClass('select-desc')
                       .append($('<div>').addClass('name').html(this[fields.name]))
                       .append($('<div>').addClass('desc').html(this[fields.desc]))
-                  );
+                  )
+                  .data('json-obj', this);
 
             $selects.append($select);
 
@@ -138,6 +147,11 @@
 
                     if (!$checkbox.is(':checked')) {
                       $checkbox.attr('checked', true);
+                    }
+
+                    if ($(this).closest('.select-container').hasClass('single-select')) {
+                      $(this).closest('.select').siblings().find('input[type=checkbox]')
+                        .attr('checked', false);
                     }
                   })
                   .after(
@@ -480,9 +494,81 @@
             // Show relevant conditional sub-step if present
             $step.find('.wizard-step-conditional').hide();
 
+            // Filter network list by VPC ID
+            var filterNetworkList = function(vpcID) {
+              var $selects = $step.find('.my-networks .select-container .select');
+              var $visibleSelects = $($.grep($selects, function(select) {
+                var $select = $(select);
+                
+                return args.vpcFilter($select.data('json-obj'), vpcID);
+              }));
+              var $addNetworkForm = $step.find('.select.new-network');
+              var $addNewNetworkCheck = $addNetworkForm.find('input[name=new-network]');
+
+              // VPC networks cannot be created via instance wizard
+              if (vpcID != -1) {
+                $step.find('.my-networks .select-container').addClass('single-select');
+                $addNetworkForm.hide();
+
+                if ($addNewNetworkCheck.is(':checked')) {
+                  $addNewNetworkCheck.click();
+                  $addNewNetworkCheck.attr('checked', false);
+                }
+              } else {
+                $step.find('.my-networks .select-container').removeClass('single-select');
+                $addNetworkForm.show();
+              }
+              
+              $selects.find('input[type=checkbox]').attr('checked', false);
+              $selects.hide();
+              $visibleSelects.show();
+
+              // Select first visible item by default
+              $visibleSelects.filter(':first')
+                .find('input[type=radio]')
+                .click();
+
+              cloudStack.evenOdd($visibleSelects, 'div.select', {
+                even: function($elem) {
+                  $elem.removeClass('odd');
+                  $elem.addClass('even');
+                },
+                odd: function($elem) {
+                  $elem.removeClass('even');
+                  $elem.addClass('odd');
+                }
+              });
+            };
+
+            var $vpcSelect = $step.find('select[name=vpc-filter]');
+
+            $vpcSelect.unbind('change');
+            $vpcSelect.change(function() {
+              filterNetworkList($vpcSelect.val());
+            });
+
             return {
               response: {
                 success: function(args) {
+                  var vpcs = args.data.vpcs;
+
+                  // Populate VPC drop-down
+                  $vpcSelect.html('');
+                  $(vpcs).map(function(index, vpc) {
+                    var $option = $('<option>');
+                    var id = vpc.id;
+                    var description = vpc.name;
+
+                    $option.attr('value', id);
+                    $option.html(description);
+                    $option.appendTo($vpcSelect);
+                  });
+
+                  // 'No VPC' option
+                  $('<option>').attr('value', '-1').html('None').prependTo($vpcSelect);
+
+                  $vpcSelect.val(-1);
+                  
                   // Populate network offering drop-down
                   $(args.data.networkOfferings).each(function() {
                     $('<option>')
@@ -515,6 +601,9 @@
                       }
                     })
                   );
+
+                  // Show non-VPC networks by default
+                  filterNetworkList(-1);
 
                   // Security groups (alt. page)
                   $step.find('.security-groups .select-container').append(
