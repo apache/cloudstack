@@ -2543,7 +2543,43 @@
                         notification: {
                           poll: pollAsyncJobResult
                         }
-                      },
+                      },																			  
+											
+											restart: {
+												label: 'label.action.reboot.router',
+												messages: {
+													confirm: function(args) {
+														return 'message.action.reboot.router';
+													},
+													notification: function(args) {
+														return 'label.action.reboot.router';
+													}
+												},
+												action: function(args) {
+													$.ajax({
+														url: createURL('rebootRouter&id=' + args.context.routers[0].id),
+														dataType: 'json',
+														async: true,
+														success: function(json) {
+															var jid = json.rebootrouterresponse.jobid;
+															args.response.success({
+																_custom: {
+																	jobId: jid,
+																	getUpdatedItem: function(json) {
+																		return json.queryasyncjobresultresponse.jobresult.domainrouter;
+																	},
+																	getActionFilter: function() {
+																		return routerActionfilter;
+																	}
+																}
+															});
+														}
+													});
+												},
+												notification: {
+													poll: pollAsyncJobResult
+												}
+											},							        																
 										
 											changeService: {
 												label: 'label.change.service.offering',
@@ -4916,8 +4952,7 @@
                   poll: pollAsyncJobResult
                 }
               },
-
-              //???						  
+          			  
 							changeService: {
 								label: 'label.change.service.offering',
 								createForm: {
@@ -4973,8 +5008,7 @@
 										args.complete();
 									}
 								}
-							},	
-						  //???
+							},							  
 
               migrate: {
                 label: 'label.action.migrate.router',
@@ -9615,10 +9649,9 @@
 
     if (jsonObj.state == 'Running') {
       allowedActions.push("stop");
-      allowedActions.push("restart");
-			
+      			
 			if(jsonObj.vpcid != null) 
-        allowedActions.push("changeService");
+        allowedActions.push("restart");
 				
       allowedActions.push("viewConsole");
       if (isAdmin())
