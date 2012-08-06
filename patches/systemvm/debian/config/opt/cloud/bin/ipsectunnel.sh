@@ -21,6 +21,7 @@ fi
 
 vpnconfdir="/etc/ipsec.d"
 vpnoutmark="0x525"
+vpninmark="0x524"
 
 usage() {
     printf "Usage: %s: (-A|-D) -l <left-side vpn peer> -n <left-side guest cidr> -g <left-side gateway> -r <right-side vpn peer> -N <right-side private subnets> -e <esp policy> -i <ike policy> -t <ike lifetime> -T <esp lifetime> -s <pre-shared secret> -d <dpd 0 or 1> \n" $(basename $0) >&2
@@ -55,6 +56,8 @@ enable_iptables_subnets() {
   do
     sudo iptables -A FORWARD -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
     sudo iptables -A OUTPUT -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
+    sudo iptables -A FORWARD -t mangle -s $net -d $leftnet -j MARK --set-mark $vpninmark
+    sudo iptables -A INPUT -t mangle -s $net -d $leftnet -j MARK --set-mark $vpninmark
   done
   return 0
 }
@@ -75,6 +78,8 @@ disable_iptables_subnets() {
   do
     sudo iptables -D FORWARD -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
     sudo iptables -D OUTPUT -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
+    sudo iptables -D FORWARD -t mangle -s $net -d $leftnet -j MARK --set-mark $vpninmark
+    sudo iptables -D INPUT -t mangle -s $net -d $leftnet -j MARK --set-mark $vpninmark
   done
   return 0
 }
