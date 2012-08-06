@@ -960,7 +960,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
             throw new InvalidParameterValueException("Only networks of type " + GuestType.Isolated + " with service "
                     + Service.SourceNat.getName() +
-                    " can be added as a part of VPC " + guestNtwkOff, null);
+                    " can be added as a part of VPC ", null);
         }
 
         //3) No redundant router support

@@ -98,19 +98,6 @@ public class MockNetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO
             //network offering valid for vpc
             vo = new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false,
                     Availability.Optional, null, Network.GuestType.Isolated, false, false);
-            Class<?> c = vo.getClass();
-
-            try {
-                Field f = c.getDeclaredField("id");
-                f.setAccessible(true);
-                f.setLong(vo, 1L);
-            } catch (NoSuchFieldException ex) {
-               s_logger.warn(ex);
-               return null;
-            } catch (IllegalAccessException ex) {
-                s_logger.warn(ex);
-                return null;
-            }            
         } else if (id.longValue() == 2) {
             //invalid offering - source nat is not included
             vo = new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false,
@@ -123,9 +110,36 @@ public class MockNetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO
             //network offering invalid for vpc (Shared)
             vo = new NetworkOfferingVO("non vpc", "non vpc", TrafficType.Guest, false, true, null, null, false,
                     Availability.Optional, null, Network.GuestType.Shared, false, false);
+        } else if (id.longValue() == 5) {
+            //network offering invalid for vpc (Shared)
+            vo = new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false,
+                    Availability.Optional, null, Network.GuestType.Isolated, false, false);
+            vo.setRedundantRouter(true);
+        }
+        
+        if (vo != null) {
+            vo = setId(vo, id);
         }
         
         return vo;
+    }
+    
+    private NetworkOfferingVO setId(NetworkOfferingVO vo, long id) {
+        NetworkOfferingVO voToReturn = vo;
+        Class<?> c = voToReturn.getClass();
+        try {
+            Field f = c.getDeclaredField("id");
+            f.setAccessible(true);
+            f.setLong(voToReturn, id);
+        } catch (NoSuchFieldException ex) {
+           s_logger.warn(ex);
+           return null;
+        } catch (IllegalAccessException ex) {
+            s_logger.warn(ex);
+            return null;
+        }
+        
+        return voToReturn;
     }
 
 }
