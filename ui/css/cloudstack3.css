@@ -9638,27 +9638,34 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 /*Configure ACL dialog*/
-.ui-dialog.configure-acl {
+.ui-dialog.configure-acl .multi-edit {
+  width: 866px;
+}
+
+.ui-dialog.configure-acl .multi-edit table {
+  max-width: none;
 }
 
 .ui-dialog.configure-acl .ui-dialog-buttonpane {
-  /*+placement:shift 709px -2px;*/
+  /*+placement:shift 798px -2px;*/
   position: relative;
-  left: 709px;
+  left: 798px;
   top: -2px;
 }
 
 .ui-dialog.configure-acl .multi-edit .data {
-  width: 807px;
+  width: 901px;
+  padding: 0;
+  margin: 0;
   height: 370px;
   overflow: auto;
+  overflow-x: hidden;
 }
 
-/*Acl multi-edit*/
-div.ui-dialog div.acl div.multi-edit div.data div.data-body {
-    width:100%;
+.ui-dialog.configure-acl .multi-edit .data .multi-actions {
+  min-width: none !important;
+  max-width: none !important;
 }
-
 
 /*Action icons*/
 .action.edit .icon {
