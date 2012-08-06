@@ -589,7 +589,7 @@
       break;
     case 'acl':
       // Show ACL dialog
-      $('<div>').multiEdit(
+      $('<div>').addClass('acl').multiEdit(
         $.extend(true, {}, actionArgs.multiEdit, {
           context: context
         })
