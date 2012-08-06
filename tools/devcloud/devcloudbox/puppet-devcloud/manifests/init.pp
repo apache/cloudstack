@@ -289,16 +289,25 @@ class puppet-devcloud {
     ensure  => latest,
   }
 
+  file { '/opt/cloudstack/buildcloudstack.sh':
+    ensure  => 'file',
+    source  => 'puppet:///modules/puppet-devcloud/builddevcloud.sh',
+    mode    => '777',
+    owner   => '0',
+    group   => '0',
+  }
+
   exec { "build_cloudstack":
     require => [
       Package['ant'],
       Exec["catalina_home"],
       File['/opt/cloudstack/incubator-cloudstack/dist'],
       File['/opt/cloudstack/incubator-cloudstack/target'],
-      Package['mkisofs']
+      Package['mkisofs'],
+      File['/opt/cloudstack/buildcloudstack.sh']
       ],
-    command => "/usr/bin/ant clean-all build-all deploy-server deploydb",
-    cwd     => "/opt/cloudstack/incubator-cloudstack/",
+    command => "/opt/cloudstack/buildcloudstack.sh",
+    cwd     => "/opt/cloudstack/",
     timeout => '0',
   }
 
