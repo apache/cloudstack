@@ -61,6 +61,9 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
 		String tag = queryMap.get("tag");
 		String ticket = queryMap.get("ticket");
 		String keyStr = queryMap.get("key");
+		String console_url = queryMap.get("consoleurl");
+		String console_host_session = queryMap.get("sessionref");
+	
 		int key = 0;
 		
 		if(tag == null)
@@ -90,8 +93,14 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
 		param.setClientHostPassword(sid);
 		param.setClientTag(tag);
 		param.setTicket(ticket);
+		param.setClientTunnelUrl(console_url);
+		param.setClientTunnelSession(console_host_session);
+		
 		ConsoleProxyClient viewer = ConsoleProxy.getVncViewer(param);
-		byte[] img = viewer.getAjaxImageCache().getImage(key);
+		AjaxFIFOImageCache imageCache =viewer.getAjaxImageCache();
+		
+		byte[] img = imageCache.getImage(imageCache.getKey() - 1);
+
 		if(img != null) {
 			Headers hds = t.getResponseHeaders();
 			hds.set("Content-Type", "image/jpeg");
