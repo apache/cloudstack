@@ -126,11 +126,7 @@ public class AsyncJobResponse extends BaseResponse {
                 this.jobInstanceId.setTableName("account");
             } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.User.toString())) {
                 this.jobInstanceId.setTableName("user");
-            }else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.PrivateGateway.toString())) {
-                this.jobInstanceId.setTableName("vpc_gateways");
-            }else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.StaticRoute.toString())) {
-                this.jobInstanceId.setTableName("static_routes");
-            }else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Counter.toString())) {
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Counter.toString())) {
                 this.jobInstanceId.setTableName("counter");
             } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Condition.toString())) {
                 this.jobInstanceId.setTableName("conditions");
