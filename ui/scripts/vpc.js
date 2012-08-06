@@ -113,19 +113,6 @@
       }
     },
     actions: {
-      edit: {
-        label: 'label.edit',
-
-        // Blank -- edit is just for tags right now
-        action: function(args) {
-          args.response.success({
-            notification: {
-              label: 'Edit ACL item',
-              poll: function(args) { args.complete(); }
-            }
-          });
-        }
-      },
       destroy: {
         label: 'Remove ACL',
         action: function(args) {
@@ -655,19 +642,6 @@
                         }
                       },
                       actions: {
-                        edit: {
-                          label: 'label.edit',
-
-                          // Blank -- edit is just for tags right now
-                          action: function(args) {
-                            args.response.success({
-                              notification: {
-                                label: 'Edit static route',
-                                poll: function(args) { args.complete(); }
-                              }
-                            });
-                          }
-                        },
                         destroy: {
                           label: 'Remove static route',
                           action: function(args) {

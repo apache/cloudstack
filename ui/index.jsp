@@ -43,7 +43,6 @@ under the License.
   <body>
     <!-- CloudStack widget content -->
     <div id="cloudStack3-container"></div>
-
     <!-- Templates -->
     <div id="template">
       <!-- Login form -->
@@ -131,7 +130,6 @@ under the License.
                 </div>
               </div>
             </div>
-
             <!-- Step 2: Select ISO -->
             <div class="step select-iso" wizard-step-id="select-iso">
               <!-- Select template -->
@@ -1631,8 +1629,6 @@ under the License.
     <script src="lib/flot/jquery.flot.stack.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.flot.symbol.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.flot.threshold.js" type="text/javascript"></script>
-
-		
     <!-- CloudStack -->
     <script type="text/javascript" src="scripts/ui/core.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui/utils.js?t=<%=now%>"></script>
@@ -1688,6 +1684,7 @@ under the License.
 
 <script language="javascript">
 dictionary = {
+'label.edit.tags': '<fmt:message key="label.edit.tags"/>',  
 'label.action.enable.physical.network': '<fmt:message key="label.action.enable.physical.network"/>',
 'label.action.disable.physical.network': '<fmt:message key="label.action.disable.physical.network"/>',
 'message.action.enable.physical.network': '<fmt:message key="message.action.enable.physical.network"/>',
