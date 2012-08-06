@@ -1983,8 +1983,9 @@
                     var routers = [];
                     $.ajax({
                       url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-                      dataType: 'json',
-                      async: true,
+                      data: {
+											  forvpc: false
+											},
                       success: function(json) {
                         var items = json.listroutersresponse.router ?
                               json.listroutersresponse.router : [];
@@ -1996,8 +1997,9 @@
                         // Get project routers
                         $.ajax({
                           url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
-                          dataType: 'json',
-                          async: true,
+                          data: {
+														forvpc: false
+													},
                           success: function(json) {
                             var items = json.listroutersresponse.router ?
                                   json.listroutersresponse.router : [];
@@ -2679,7 +2681,7 @@
                             project: { label: 'label.project' }
                           },
                           {
-                            id: { label: 'label.id' },
+                            id: { label: 'label.id' },														
                             projectid: { label: 'label.project.id' },
                             state: { label: 'label.state' },
                             publicip: { label: 'label.public.ip' },
@@ -2695,7 +2697,8 @@
                               label: 'label.redundant.router',
                               converter: cloudStack.converters.toBooleanText
                             },
-                            redundantRouterState: { label: 'label.redundant.state' }
+                            redundantRouterState: { label: 'label.redundant.state' },
+														vpcid: { label: 'VPC ID' }
                           }
                         ],
                         dataProvider: function(args) {												  
@@ -4717,8 +4720,9 @@
             var routers = [];
             $.ajax({
               url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              dataType: 'json',
-              async: true,
+              data: {
+							  forvpc: false
+							},
               success: function(json) {
                 var items = json.listroutersresponse.router ?
                       json.listroutersresponse.router : [];
@@ -4729,8 +4733,9 @@
                 // Get project routers
                 $.ajax({
                   url: createURL("listRouters&zoneid=" + selectedZoneObj.id + "&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + "&projectid=-1"),
-                  dataType: 'json',
-                  async: true,
+                  data: {
+										forvpc: false
+									},
                   success: function(json) {
                     var items = json.listroutersresponse.router ?
                           json.listroutersresponse.router : [];
@@ -5045,7 +5050,8 @@
                       label: 'label.redundant.router',
                       converter: cloudStack.converters.toBooleanText
                     },
-                    redundantRouterState: { label: 'label.redundant.state' }
+                    redundantRouterState: { label: 'label.redundant.state' },
+										vpcid: { label: 'VPC ID' }
                   }
                 ],
                 dataProvider: function(args) {
