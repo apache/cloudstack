@@ -917,8 +917,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
             if (router.getState() != State.Running) {
                 for (Site2SiteVpnConnectionVO conn : conns) {
-                    conn.setState(Site2SiteVpnConnection.State.Disconnected);
-                    _s2sVpnConnectionDao.persist(conn);
+                    if (conn.getState() != Site2SiteVpnConnection.State.Error) {
+                        conn.setState(Site2SiteVpnConnection.State.Disconnected);
+                        _s2sVpnConnectionDao.persist(conn);
+                    }
                 }
                 continue;
             }

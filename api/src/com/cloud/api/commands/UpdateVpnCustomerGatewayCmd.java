@@ -59,8 +59,14 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ESP_POLICY, type=CommandType.STRING, required=true, description="ESP policy of the customer gateway")
     private String espPolicy;
 
-    @Parameter(name=ApiConstants.LIFETIME, type=CommandType.LONG, required=false, description="Lifetime of vpn connection to the customer gateway, in seconds")
-    private Long lifetime;
+    @Parameter(name=ApiConstants.IKE_LIFETIME, type=CommandType.LONG, required=false, description="Lifetime of phase 1 VPN connection to the customer gateway, in seconds")
+    private Long ikeLifetime;
+    
+    @Parameter(name=ApiConstants.ESP_LIFETIME, type=CommandType.LONG, required=false, description="Lifetime of phase 2 VPN connection to the customer gateway, in seconds")
+    private Long espLifetime;
+
+    @Parameter(name=ApiConstants.DPD, type=CommandType.BOOLEAN, required=false, description="If DPD is enabled for VPN connection")
+    private Boolean dpd;
 
     @Parameter(name=ApiConstants.ACCOUNT, type=CommandType.STRING, description="the account associated with the gateway. Must be used with the domainId parameter.")
     private String accountName;
@@ -102,8 +108,16 @@ public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
         return espPolicy;
     }
 
-    public Long getLifetime() {
-        return lifetime;
+    public Long getIkeLifetime() {
+        return ikeLifetime;
+    }
+
+    public Long getEspLifetime() {
+        return espLifetime;
+    }
+
+    public Boolean getDpd() {
+        return dpd;
     }
 
     /////////////////////////////////////////////////////

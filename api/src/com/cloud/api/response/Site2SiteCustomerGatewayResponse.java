@@ -49,8 +49,14 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
     @SerializedName(ApiConstants.ESP_POLICY) @Param(description="IPsec policy of customer gateway")
     private String espPolicy;
     
-    @SerializedName(ApiConstants.LIFETIME) @Param(description="Lifetime of IKE and IPsec policy of customer gateway")
-    private Long lifetime;
+    @SerializedName(ApiConstants.IKE_LIFETIME) @Param(description="Lifetime of IKE SA of customer gateway")
+    private Long ikeLifetime;
+    
+    @SerializedName(ApiConstants.ESP_LIFETIME) @Param(description="Lifetime of ESP SA of customer gateway")
+    private Long espLifetime;
+    
+    @SerializedName(ApiConstants.DPD) @Param(description="if DPD is enabled for customer gateway")
+    private Boolean dpd;
     
     @SerializedName(ApiConstants.ACCOUNT) @Param(description="the owner")
     private String accountName;
@@ -102,8 +108,16 @@ public class Site2SiteCustomerGatewayResponse extends BaseResponse implements Co
         this.espPolicy = espPolicy;
     }	
     
-    public void setLifetime(Long lifetime) {
-        this.lifetime = lifetime;
+    public void setIkeLifetime(Long ikeLifetime) {
+        this.ikeLifetime = ikeLifetime;
+    }	
+    
+    public void setEspLifetime(Long espLifetime) {
+        this.espLifetime = espLifetime;
+    }	
+    
+    public void setDpd(Boolean dpd) {
+        this.dpd= dpd;
     }	
     
     public void setRemoved(Date removed) {
