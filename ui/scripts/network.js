@@ -3986,8 +3986,8 @@
                       args.response.success({data: items});
                     }
                   },									
-									ikepolicy: {
-                    label: 'IKE policy',
+									ikeDh: {
+                    label: 'IKE DH',
                     select: function(args) {
                       var items = [];
                       items.push({id: '', description: ''});
@@ -4059,8 +4059,8 @@
 								};
 																
 								var ikepolicy = args.data.ikeEncryption + '-' + args.data.ikeHash;
-								if(args.data.ikepolicy != null && args.data.ikepolicy.length > 0)
-								  ikepolicy += ';' + args.data.ikepolicy;
+								if(args.data.ikeDh != null && args.data.ikeDh.length > 0)
+								  ikepolicy += ';' + args.data.ikeDh;
 								
 								$.extend(data, {
 								  ikepolicy: ikepolicy
@@ -4200,39 +4200,96 @@
 										  label: 'IPsec Preshared-Key',
                       isEditable: true,
 					            validation: { required: true } 
-										},                    
-                    ikepolicy: { 
-										  label: 'IKE policy',
-                      isEditable: true,											
+										},   					
+										
+										//IKE Policy									
+										ikeEncryption: {
+											label: 'IKE Encryption',
+											isEditable: true,
 											select: function(args) {
 												var items = [];
-												items.push({id: '3des-md5', description: '3des-md5'});
-												items.push({id: 'aes-md5', description: 'aes-md5'});
-												items.push({id: 'aes128-md5', description: 'aes128-md5'});												
-												items.push({id: '3des-sha1', description: '3des-sha1'});
-												items.push({id: 'aes-sha1', description: 'aes-sha1'});
-												items.push({id: 'aes128-sha1', description: 'aes128-sha1'});												
+												items.push({id: '3des', description: '3des'});
+												items.push({id: 'aes128', description: 'aes128'});
+												items.push({id: 'aes192', description: 'aes192'});
+												items.push({id: 'aes256', description: 'aes256'});             
 												args.response.success({data: items});
 											}
-										},
-                    esppolicy:{ 
-										  label: 'ESP policy',
-                      isEditable: true,											
+										},									
+										ikeHash: {
+											label: 'IKE Hash',
+											isEditable: true,
 											select: function(args) {
 												var items = [];
-												items.push({id: '3des-md5', description: '3des-md5'});
-												items.push({id: 'aes-md5', description: 'aes-md5'});
-												items.push({id: 'aes128-md5', description: 'aes128-md5'});
-												items.push({id: '3des-sha1', description: '3des-sha1'});
-												items.push({id: 'aes-sha1', description: 'aes-sha1'});
-												items.push({id: 'aes128-sha1', description: 'aes128-sha1'});
+												items.push({id: 'md5', description: 'md5'});
+												items.push({id: 'sha1', description: 'sha1'});               
 												args.response.success({data: items});
-											}											
+											}
+										},									
+										ikeDh: {
+											label: 'IKE DH',
+											isEditable: true,
+											select: function(args) {
+												var items = [];
+												items.push({id: '', description: ''});
+												items.push({id: 'modp1024', description: 'modp1024'});
+												items.push({id: 'modp1536', description: 'modp1536'});										 
+												args.response.success({data: items});
+											}
+										},						
+										
+										//ESP Policy
+										espEncryption: {
+											label: 'ESP Encryption',
+											isEditable: true,
+											select: function(args) {
+												var items = [];
+												items.push({id: '3des', description: '3des'});
+												items.push({id: 'aes128', description: 'aes128'});
+												items.push({id: 'aes192', description: 'aes192'});
+												items.push({id: 'aes256', description: 'aes256'});             
+												args.response.success({data: items});
+											}
+										},									
+										espHash: {
+											label: 'ESP Hash',
+											isEditable: true,
+											select: function(args) {
+												var items = [];
+												items.push({id: 'md5', description: 'md5'});
+												items.push({id: 'sha1', description: 'sha1'});               
+												args.response.success({data: items});
+											}
+										},									
+										perfectForwardSecrecy: {
+											label: 'Perfect Forward Secrecy',
+											isEditable: true,
+											select: function(args) {
+												var items = [];
+												items.push({id: '', description: ''});
+												items.push({id: 'modp1024', description: 'modp1024'});
+												items.push({id: 'modp1536', description: 'modp1536'});										 
+												args.response.success({data: items});
+											}
+										},	           
+									 
+									 	ikelifetime: {
+											label: 'IKE lifetime (second)',
+											defaultValue: '86400',
+											validation: { required: false, number: true }
 										},
-                    lifetime :{
-										  label: 'Lifetime (second)',
-                      isEditable: true
+										esplifetime: {
+											label: 'ESP Lifetime (second)',
+											defaultValue: '3600',
+											validation: { required: false, number: true }
 										},
+										
+										dpd: {
+											label: 'Dead Peer Detection',											
+                      isBoolean: true,
+                      isEditable: true,
+                      converter:cloudStack.converters.toBooleanText
+										},  									 
+									 
 										id: { label: 'label.id' },
                     domain: { label: 'label.domain' },
                     account: { label: 'label.account' }
@@ -4246,6 +4303,31 @@
                     },
                     success: function(json) {
                       var item = json.listvpncustomergatewaysresponse.vpncustomergateway[0];
+											
+                      //IKE POlicy											
+											var a1 = item.ikepolicy.split('-');  //e.g. item.ikepolicy == '3des-md5' or '3des-md5;modp1024'
+											item.ikeEncryption = a1[0];
+											if(a1[1].indexOf(';') == -1) {
+											  item.ikeHash = a1[1];
+											}
+											else {
+											  var a2 = a1[1].split(';');
+												item.ikeHash = a2[0];
+												item.ikeDh = a2[1];
+											}
+											
+											//ESP Policy											
+											var a1 = item.esppolicy.split('-');  //e.g. item.esppolicy == '3des-md5' or '3des-md5;modp1024'
+											item.espEncryption = a1[0];
+											if(a1[1].indexOf(';') == -1) {
+											  item.espHash = a1[1];
+											}
+											else {
+											  var a2 = a1[1].split(';');
+												item.espHash = a2[0];
+												item.perfectForwardSecrecy = a2[1];
+											}
+											
                       args.response.success({data: item});
                     }
                   });
