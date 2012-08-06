@@ -946,6 +946,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     /* (non-Javadoc)
+<<<<<<< HEAD
      * @see com.cloud.network.NetworkManager#getDefaultPublicTrafficLabel(long, com.cloud.hypervisor.Hypervisor.HypervisorType)
      */
     @Override
@@ -956,6 +957,9 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#assignSourceNatIpAddressToGuestNetwork(com.cloud.user.Account, com.cloud.network.Network)
+=======
+     * @see com.cloud.network.NetworkManager#getNicProfile(com.cloud.vm.VirtualMachine, long)
+>>>>>>> ddb9e49... VPC: unittest preparation
      */
     @Override
     public PublicIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) throws InsufficientAddressCapacityException, ConcurrentOperationException {
@@ -981,7 +985,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         // TODO Auto-generated method stub
         return null;
     }
-
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#assignPublicIpAddress(long, java.lang.Long, com.cloud.user.Account, com.cloud.dc.Vlan.VlanType, java.lang.Long, java.lang.String, boolean)
@@ -1011,6 +1014,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     /* (non-Javadoc)
+<<<<<<< HEAD
      * @see com.cloud.network.NetworkManager#getSite2SiteVpnElements()
      */
     @Override
@@ -1021,6 +1025,9 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#isPrivateGateway(com.cloud.vm.Nic)
+=======
+     * @see com.cloud.network.NetworkService#canUseForDeploy(com.cloud.network.Network)
+>>>>>>> ddb9e49... VPC: unittest preparation
      */
     @Override
     public boolean isPrivateGateway(Nic guestNic) {
@@ -1104,15 +1111,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#getIsolatedNetworksWithSourceNATOwnedByAccountInZone(long, com.cloud.user.Account)
-     */
-    @Override
-    public List<? extends Network> getIsolatedNetworksWithSourceNATOwnedByAccountInZone(long zoneId, Account owner) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#markPublicIpAsAllocated(com.cloud.network.IPAddressVO)
      */
     @Override
@@ -1126,6 +1124,15 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      */
     @Override
     public PublicIp assignDedicateIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId, boolean isSourceNat) throws ConcurrentOperationException, InsufficientAddressCapacityException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkService#getIsolatedNetworksWithSourceNATOwnedByAccountInZone(long, com.cloud.user.Account)
+     */
+    @Override
+    public List<? extends Network> getIsolatedNetworksWithSourceNATOwnedByAccountInZone(long zoneId, Account owner) {
         // TODO Auto-generated method stub
         return null;
     }

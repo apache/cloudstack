@@ -947,6 +947,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
             Account networkOwner, Vpc vpc, Long networkId, String gateway) {
         
         NetworkOffering guestNtwkOff = _configMgr.getNetworkOffering(ntwkOffId);
+        
+        if (guestNtwkOff == null) {
+            throw new InvalidParameterValueException("Can't find network offering by id specified");
+        }
 
         if (networkId == null) {
             //1) Validate attributes that has to be passed in when create new guest network
@@ -998,7 +1002,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 }
             }
         }
-        
     }
 
     @DB
