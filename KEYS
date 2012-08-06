@@ -1,0 +1,82 @@
+This file contains the PGP keys of various developers.
+
+Users: pgp < KEYS
+       gpg --import KEYS
+Developers: 
+    pgp -kxa <your name> and append it to this file.
+    (pgpk -ll <your name> && pgpk -xa <your name>)
+    >> this file.
+    (gpg --list-sigs <your name>
+         && gpg --armor --export <your name>) >>
+         this file.
+Type Bits/KeyID    Date       User ID
+pub   4096R/CC56CEA8 2012-08-06 [expires: 2016-08-06]
+uid                  Chip Childers <chipchilders@apache.org>
+sig 3        CC56CEA8 2012-08-06  Chip Childers <chipchilders@apache.org>
+sub   4096R/A99A5D58 2012-08-06 [expires: 2016-08-06]
+sig          CC56CEA8 2012-08-06  Chip Childers <chipchilders@apache.org>
+
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+Version: GnuPG/MacGPG2 v2.0.18 (Darwin)
+Comment: GPGTools - http://gpgtools.org
+
+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
+=eCNG
+-----END PGP PUBLIC KEY BLOCK-----
