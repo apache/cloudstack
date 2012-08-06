@@ -944,6 +944,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
             Account networkOwner, Vpc vpc, Long networkId, String gateway) {
 
         NetworkOffering guestNtwkOff = _configMgr.getNetworkOffering(ntwkOffId);
+        
+        if (guestNtwkOff == null) {
+            throw new InvalidParameterValueException("Can't find network offering by id specified", null);
+        }
 
         if (networkId == null) {
             //1) Validate attributes that has to be passed in when create new guest network
@@ -956,7 +960,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
             throw new InvalidParameterValueException("Only networks of type " + GuestType.Isolated + " with service "
                     + Service.SourceNat.getName() +
-                    " can be added as a part of VPC", null);
+                    " can be added as a part of VPC " + guestNtwkOff, null);
         }
 
         //3) No redundant router support
@@ -1000,7 +1004,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
                 }
             }
         }
-
     }
 
     @DB
