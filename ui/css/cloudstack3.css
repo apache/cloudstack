@@ -9156,6 +9156,19 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 /** Dialog tagger*/
 .ui-dialog .tagger {
+  width: 375px;
+}
+
+.ui-dialog .tagger .tag-info {
+  display: none;
+}
+
+.ui-dialog.editTags .ui-button {
+  float: right;
+}
+
+.ui-dialog.editTags .ui-dialog-buttonpane {
+  float: right;
 }
 
 .ui-dialog .tagger .field {
@@ -10255,5 +10268,13 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .uploadVolume:hover .icon {
   background-position: -230px -615px;
+}
+
+.editTags .icon {
+  background-position: -228px -65px;
+}
+
+.editTags:hover .icon {
+  background-position: -228px -646px;
 }
 

@@ -25,7 +25,6 @@
   <body>
     <!-- CloudStack widget content -->
     <div id="cloudStack3-container"></div>
-
     <!-- Templates -->
     <div id="template">
       <!-- Login form -->
@@ -113,7 +112,6 @@
                 </div>
               </div>
             </div>
-
             <!-- Step 2: Select ISO -->
             <div class="step select-iso" wizard-step-id="select-iso">
               <!-- Select template -->
@@ -1598,8 +1596,6 @@
     <script src="lib/flot/jquery.flot.stack.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.flot.symbol.js" type="text/javascript"></script>
     <script src="lib/flot/jquery.flot.threshold.js" type="text/javascript"></script>
-
-		
     <!-- CloudStack -->
     <script type="text/javascript" src="scripts/ui/core.js?t=<%=now%>"></script>
     <script type="text/javascript" src="scripts/ui/utils.js?t=<%=now%>"></script>
@@ -1656,6 +1652,7 @@
 </html>
 <script language="javascript">
 dictionary = {
+'label.edit.tags': '<fmt:message key="label.edit.tags"/>',
 'label.network.rate.megabytes': '<fmt:message key="label.network.rate.megabytes"/>',
 'message.setup.physical.network.during.zone.creation.basic': '<fmt:message key="message.setup.physical.network.during.zone.creation.basic"/>',
 'label.traffic.label': '<fmt:message key="label.traffic.label"/>',
