@@ -1069,8 +1069,7 @@ public class NetUtils {
             if (policy.isEmpty()) {
                 return false;
             }
-            //String cipherHash = policy.split(";")[0];
-            String cipherHash = policy;
+            String cipherHash = policy.split(";")[0];
             if (cipherHash.isEmpty()) {
                 return false;
             }
@@ -1086,7 +1085,6 @@ public class NetUtils {
             if (!hash.matches("md5|sha1")) {
                 return false;
             }
-            /*  Disable pfsGroup support, see CS-15511
             String pfsGroup = null;
             if (!policy.equals(cipherHash)) {
                 pfsGroup = policy.split(";")[1];
@@ -1094,7 +1092,6 @@ public class NetUtils {
             if (pfsGroup != null && !pfsGroup.matches("modp1024|modp1536")) {
                 return false;
             }
-            */
         }
         return true;
     }
