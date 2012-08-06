@@ -3947,52 +3947,120 @@
                   ipsecpsk: {
                     label: 'IPsec Preshared-Key',
                     validation: { required: true }
-                  },
-                  ikepolicy: {
+                  },                 								
+									
+                  //IKE Policy									
+									ikeEncryption: {
+                    label: 'IKE Encryption',
+                    select: function(args) {
+                      var items = [];
+                      items.push({id: '3des', description: '3des'});
+                      items.push({id: 'aes128', description: 'aes128'});
+                      items.push({id: 'aes192', description: 'aes192'});
+                      items.push({id: 'aes256', description: 'aes256'});             
+                      args.response.success({data: items});
+                    }
+                  },									
+									ikeHash: {
+                    label: 'IKE Hash',
+                    select: function(args) {
+                      var items = [];
+                      items.push({id: 'md5', description: 'md5'});
+                      items.push({id: 'sha1', description: 'sha1'});               
+                      args.response.success({data: items});
+                    }
+                  },									
+									ikepolicy: {
                     label: 'IKE policy',
                     select: function(args) {
                       var items = [];
-                      items.push({id: '3des-md5', description: '3des-md5'});
-                      items.push({id: 'aes-md5', description: 'aes-md5'});
-                      items.push({id: 'aes128-md5', description: 'aes128-md5'});                     
-                      items.push({id: '3des-sha1', description: '3des-sha1'});
-                      items.push({id: 'aes-sha1', description: 'aes-sha1'});
-                      items.push({id: 'aes128-sha1', description: 'aes128-sha1'});                     
+                      items.push({id: '', description: ''});
+                      items.push({id: 'modp1024', description: 'modp1024'});
+                      items.push({id: 'modp1536', description: 'modp1536'});										 
                       args.response.success({data: items});
                     }
-                  },
-                  esppolicy: {
-                    label: 'ESP policy',
+                  },																
+									
+									//ESP Policy
+                  espEncryption: {
+                    label: 'ESP Encryption',
                     select: function(args) {
                       var items = [];
-                      items.push({id: '3des-md5', description: '3des-md5'});
-                      items.push({id: 'aes-md5', description: 'aes-md5'});
-                      items.push({id: 'aes128-md5', description: 'aes128-md5'});
-                      items.push({id: '3des-sha1', description: '3des-sha1'});
-                      items.push({id: 'aes-sha1', description: 'aes-sha1'});
-                      items.push({id: 'aes128-sha1', description: 'aes128-sha1'});
+                      items.push({id: '3des', description: '3des'});
+                      items.push({id: 'aes128', description: 'aes128'});
+                      items.push({id: 'aes192', description: 'aes192'});
+                      items.push({id: 'aes256', description: 'aes256'});             
                       args.response.success({data: items});
                     }
-                  },
-                  lifetime: {
-                    label: 'Lifetime (second)',
+                  },									
+									espHash: {
+                    label: 'ESP Hash',
+                    select: function(args) {
+                      var items = [];
+                      items.push({id: 'md5', description: 'md5'});
+                      items.push({id: 'sha1', description: 'sha1'});               
+                      args.response.success({data: items});
+                    }
+                  },									
+									perfectForwardSecrecy: {
+                    label: 'Perfect Forward Secrecy',
+                    select: function(args) {
+                      var items = [];
+                      items.push({id: '', description: ''});
+                      items.push({id: 'modp1024', description: 'modp1024'});
+                      items.push({id: 'modp1536', description: 'modp1536'});										 
+                      args.response.success({data: items});
+                    }
+                  },																	
+									
+									ikelifetime: {
+                    label: 'IKE lifetime (second)',
                     defaultValue: '86400',
                     validation: { required: false, number: true }
-                  }
+                  },
+									esplifetime: {
+                    label: 'ESP Lifetime (second)',
+                    defaultValue: '3600',
+                    validation: { required: false, number: true }
+                  },
+									
+									dpd: {
+									  label: 'Dead Peer Detection',
+										isBoolean: true,
+										isChecked: false
+									}                 
                 }
               },
               action: function(args) {
+							  var data = {
+									name: args.data.name,
+									gateway: args.data.gateway,
+									cidrlist: args.data.cidrlist,
+									ipsecpsk: args.data.ipsecpsk,									
+									ikelifetime: args.data.ikelifetime,
+									esplifetime: args.data.esplifetime,
+									dpd: (args.data.dpd == "on")
+								};
+																
+								var ikepolicy = args.data.ikeEncryption + '-' + args.data.ikeHash;
+								if(args.data.ikepolicy != null && args.data.ikepolicy.length > 0)
+								  ikepolicy += ';' + args.data.ikepolicy;
+								
+								$.extend(data, {
+								  ikepolicy: ikepolicy
+								});																
+								
+								var esppolicy = args.data.espEncryption + '-' + args.data.espHash;
+								if(args.data.perfectForwardSecrecy != null && args.data.perfectForwardSecrecy.length > 0)
+								  esppolicy += ';' + args.data.perfectForwardSecrecy;
+								
+								$.extend(data, {
+								  esppolicy: esppolicy
+								});															
+							
                 $.ajax({
                   url: createURL('createVpnCustomerGateway'),
-                  data: {
-									  name: args.data.name,
-                    gateway: args.data.gateway,
-                    cidrlist: args.data.cidrlist,
-                    ipsecpsk: args.data.ipsecpsk,
-                    ikepolicy: args.data.ikepolicy,
-                    esppolicy: args.data.esppolicy,
-                    lifetime: args.data.lifetime
-                  },
+                  data: data,
                   dataType: 'json',
                   success: function(json) {
                     var jid = json.createvpncustomergatewayresponse.jobid;
