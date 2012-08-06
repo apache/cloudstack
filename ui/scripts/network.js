@@ -4088,18 +4088,34 @@
             actions: {              
               edit: {
                 label: 'label.edit',
-                action: function(args) {                  							
+                action: function(args) {									
 									var data = {
 									  id: args.context.vpnCustomerGateway[0].id,
 										name: args.data.name,
 										gateway: args.data.gateway,
 										cidrlist: args.data.cidrlist,
-										ipsecpsk: args.data.ipsecpsk,
-										ikepolicy: args.data.ikepolicy,
-										esppolicy: args.data.esppolicy,
-										lifetime: args.data.lifetime
+										ipsecpsk: args.data.ipsecpsk,									
+										ikelifetime: args.data.ikelifetime,
+										esplifetime: args.data.esplifetime,
+										dpd: (args.data.dpd == "on")
 									};
+																	
+									var ikepolicy = args.data.ikeEncryption + '-' + args.data.ikeHash;
+									if(args.data.ikeDh != null && args.data.ikeDh.length > 0)
+										ikepolicy += ';' + args.data.ikeDh;
 									
+									$.extend(data, {
+										ikepolicy: ikepolicy
+									});																
+									
+									var esppolicy = args.data.espEncryption + '-' + args.data.espHash;
+									if(args.data.perfectForwardSecrecy != null && args.data.perfectForwardSecrecy.length > 0)
+										esppolicy += ';' + args.data.perfectForwardSecrecy;
+									
+									$.extend(data, {
+										esppolicy: esppolicy
+									});							
+																	
                   $.ajax({
                     url: createURL('updateVpnCustomerGateway'),     
                     data: data,										
@@ -4258,12 +4274,12 @@
 									 
 									 	ikelifetime: {
 											label: 'IKE lifetime (second)',
-											defaultValue: '86400',
+											isEditable: true,											
 											validation: { required: false, number: true }
 										},
 										esplifetime: {
 											label: 'ESP Lifetime (second)',
-											defaultValue: '3600',
+											isEditable: true,											
 											validation: { required: false, number: true }
 										},
 										
