@@ -216,6 +216,10 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         }
         _accountMgr.checkAccess(caller, null, false, vpnGateway);
         
+        if (customerGateway.getAccountId() != vpnGateway.getAccountId() || customerGateway.getDomainId() != vpnGateway.getDomainId()) {
+            throw new InvalidParameterValueException("VPN connection can only be esitablished between same account's VPN gateway and customer gateway!");
+        }
+
         if (_vpnConnectionDao.findByVpnGatewayIdAndCustomerGatewayId(vpnGatewayId, customerGatewayId) != null) {
             throw new InvalidParameterValueException("The vpn connection with customer gateway id " + customerGatewayId + " or vpn gateway id " 
                     + vpnGatewayId + " already existed!");
