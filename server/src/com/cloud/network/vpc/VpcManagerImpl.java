@@ -633,7 +633,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
     @DB
     public boolean destroyVpc(Vpc vpc) throws ConcurrentOperationException, ResourceUnavailableException {
         UserContext ctx = UserContext.current();
-
+        s_logger.debug("Destroying vpc " + vpc);
         //don't allow to delete vpc if it's in use by existing networks
         int networksCount = _ntwkDao.getNetworkCountByVpcId(vpc.getId());
         if (networksCount > 0) {
@@ -671,9 +671,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
         //update the instance with removed flag only when the cleanup is executed successfully
         if (_vpcDao.remove(vpc.getId())) {
-            s_logger.debug("Vpc " + vpc + " is removed succesfully");
+            s_logger.debug("Vpc " + vpc + " is destroyed succesfully");
             return true;
         } else {
+            s_logger.warn("Vpc " + vpc + " failed to destroy");
             return false;
         }
     }
@@ -927,9 +928,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
         _accountMgr.checkAccess(caller, null, false, vpc);
 
         //shutdown provider
+        s_logger.debug("Shutting down vpc " + vpc);
         boolean success = getVpcElement().shutdownVpc(vpc);
 
-        //TODO - cleanup all vpc resources here (ACLs, gateways, etc)
+        //TODO - shutdown all vpc resources here (ACLs, gateways, etc)
         if (success) {
             s_logger.debug("Vpc " + vpc + " has been shutdown succesfully");
         } else {
@@ -1088,6 +1090,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
             vpcElement = ((VpcProvider)_ntwkMgr.getElementImplementingProvider(Provider.VPCVirtualRouter.getName()));
         }
 
+        if (vpcElement == null) {
+            throw new CloudRuntimeException("Failed to initialize vpc element");
+        }
+        
         return vpcElement;
     }
 
