@@ -35,9 +35,9 @@ cd ~/builddevcloud/veewee
 bundle install
 rake install
 bundle exec vagrant basebox define 'devcloudbase' 'ubuntu-12.04-server-i386'
-wget --no-check-certificate -O ./definitions/devcloudbase/definition.rb https://git-wip-us.apache.org/repos/asf\?p\=incubator-cloudstack.git\;a\=blob_plain\;f\=tools/devcloud/veewee/definition.rb\;hb\=HEAD
-wget --no-check-certificate -O ./definitions/devcloudbase/postinstall.sh https://git-wip-us.apache.org/repos/asf\?p\=incubator-cloudstack.git\;a\=blob_plain\;f\=tools/devcloud/veewee/postinstall.sh\;hb\=HEAD
-wget --no-check-certificate -O ./definitions/devcloudbase/preseed.cfg https://git-wip-us.apache.org/repos/asf\?p\=incubator-cloudstack.git\;a\=blob_plain\;f\=tools/devcloud/veewee/preseed.cfg\;hb\=HEAD
+wget --no-check-certificate -O ./definitions/devcloudbase/definition.rb "https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/veewee/definition.rb;hb=HEAD"
+wget --no-check-certificate -O ./definitions/devcloudbase/postinstall.sh "https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/veewee/postinstall.sh;hb=HEAD"
+wget --no-check-certificate -O ./definitions/devcloudbase/preseed.cfg "https://git-wip-us.apache.org/repos/asf?p=incubator-cloudstack.git;a=blob_plain;f=tools/devcloud/veewee/preseed.cfg;hb=HEAD"
 bundle exec vagrant basebox build 'devcloudbase' -f -a -n
 # possibly use -r here too ^
 bundle exec vagrant basebox export 'devcloudbase' -f
