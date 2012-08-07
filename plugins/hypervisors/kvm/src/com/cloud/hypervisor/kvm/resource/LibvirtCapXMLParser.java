@@ -35,6 +35,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
     private boolean _osType = false;
     private boolean _domainTypeKVM = false;
     private boolean _emulatorFlag = false;
+    private boolean _archTypex86_64 = false;
     private final StringBuffer _emulator = new StringBuffer();
     private final StringBuffer _capXML = new StringBuffer();
     private static final Logger s_logger = Logger
@@ -54,7 +55,8 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
             _domainTypeKVM = false;
         } else if (qName.equalsIgnoreCase("emulator")) {
             _emulatorFlag = false;
-
+        } else if (qName.equalsIgnoreCase("arch")) {
+            _archTypex86_64 = false;
         } else if (_host) {
             _capXML.append("<").append("/").append(qName).append(">");
         }
@@ -68,6 +70,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
         } else if (_osType) {
             guestOsTypes.add(new String(ch, start, length));
         } else if (_emulatorFlag) {
+            s_logger.debug("Found " + new String(ch, start, length) + " as a suiteable emulator");
             _emulator.append(ch, start, length);
         }
     }
@@ -83,6 +86,13 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
             if (_guest) {
                 _osType = true;
             }
+        } else if (qName.equalsIgnoreCase("arch")) {
+            for (int i = 0; i < attributes.getLength(); i++) {
+                if (attributes.getQName(i).equalsIgnoreCase("name")
+                        && attributes.getValue(i).equalsIgnoreCase("x86_64")) {
+                    _archTypex86_64 = true;
+                }
+            }
         } else if (qName.equalsIgnoreCase("domain")) {
             for (int i = 0; i < attributes.getLength(); i++) {
                 if (attributes.getQName(i).equalsIgnoreCase("type")
@@ -90,7 +100,7 @@ public class LibvirtCapXMLParser extends LibvirtXMLParser {
                     _domainTypeKVM = true;
                 }
             }
-        } else if (qName.equalsIgnoreCase("emulator") && _domainTypeKVM) {
+        } else if (qName.equalsIgnoreCase("emulator") && _domainTypeKVM && _archTypex86_64) {
             _emulatorFlag = true;
             _emulator.delete(0, _emulator.length());
         } else if (_host) {
