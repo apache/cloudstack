@@ -2549,6 +2549,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     private void validateUserData(String userData) {
         byte[] decodedUserData = null;
         if (userData != null) {
+            if ( !userData.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$")) {
+                throw new InvalidParameterValueException("User data is not base64 encoded", null);
+            }
             if (userData.length() >= 2 * MAX_USER_DATA_LENGTH_BYTES) {
                 throw new InvalidParameterValueException("User data is too long", null);
             }
