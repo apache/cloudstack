@@ -20,63 +20,74 @@
     // UI actions to appear in dialog
     autoscaleActions: {
       enable: {
-        label: 'Enable Autoscaler',
-        action: function(args) {
-          args.response.success({
-            _custom: { jobId: 12345 },
-            notification: {
-              poll: function(args) {
-                args.complete({
-                  data: { state: 'Enabled' }
-                });
-              }
-            }
-          });
+        label: 'Enable Autoscale VM Group',
+        action: function(args) {				
+				  $.ajax({
+					  url: createURL('enableAutoScaleVmGroup'),
+						data: {
+						  id: args.context.originalAutoscaleData.context.autoscaleVmGroup.id
+						},
+						success: function(json) {						  				
+							var jid = json.enableautoscalevmGroupresponse.jobid;
+							args.response.success({
+							  _custom: {
+								  jobId: jid,
+									getUpdatedItem: function(json) {									  
+										return json.queryasyncjobresultresponse.jobresult.autoscalevmgroup;
+									},
+									getActionFilter: function() {									  
+										return cloudStack.autoscaler.actionFilter;										
+									}
+								},								
+								notification: {
+									poll: pollAsyncJobResult
+								}								
+							});															
+						}
+					});          
         }
       },
       disable: {
-        label: 'Disable Autoscaler',
-        action: function(args) {
-          args.response.success({
-            _custom: { jobId: 12345 },
-            notification: {
-              poll: function(args) {
-                args.complete({
-                  data: { state: 'Disabled' }
-                });
-              }
-            }
-          });
-        }
-      },
-      restart: {
-        label: 'Restart Autoscaler',
-        action: function(args) {
-          args.response.success({
-            _custom: { jobId: 12345 },
-            notification: {
-              poll: function(args) {
-                args.complete({
-                  data: { state: 'Enabled' }
-                });
-              }
-            }
-          });
+        label: 'Disable Autoscale VM Group',
+        action: function(args) {				  
+				  $.ajax({
+					  url: createURL('disableAutoScaleVmGroup'),
+						data: {
+						  id: args.context.originalAutoscaleData.context.autoscaleVmGroup.id
+						},
+						success: function(json) {						  			
+							var jid = json.disableautoscalevmGroupresponse.jobid;
+							args.response.success({
+							  _custom: {
+								  jobId: jid,
+									getUpdatedItem: function(json) {									  
+										return json.queryasyncjobresultresponse.jobresult.autoscalevmgroup;
+									},
+									getActionFilter: function() {									  
+										return cloudStack.autoscaler.actionFilter;										
+									}
+								},								
+								notification: {
+									poll: pollAsyncJobResult
+								}								
+							});															
+						}
+					});          
         }
       }
     },
-    actionFilter: function(args) {
-      var data = $.isArray(args.context.originalAutoscaleData) ?
-            args.context.originalAutoscaleData[0] : {};
-
-      if (data.state == 'Enabled') {
-        return ['disable', 'restart'];
-      } else if (data.state == 'Disabled') {
-        return ['enable'];
-      }
-
-      // No existing data, so actions are not visible
-      return [];
+    actionFilter: function(args) {		  
+			var allowedActions = [];		
+			if(args.context.originalAutoscaleData == null) { //new LB rule
+			  //no actions  for new LB rule
+			}
+			else { //existing LB rule			 
+				if(args.context.originalAutoscaleData[0].context.autoscaleVmGroup.state == 'disabled')
+				  allowedActions.push('enable');
+				else if(args.context.originalAutoscaleData[0].context.autoscaleVmGroup.state == 'enabled')
+				  allowedActions.push('disable');				
+			}	
+			return allowedActions;      
     },
     dataProvider: function(args) {
       // Reset data
