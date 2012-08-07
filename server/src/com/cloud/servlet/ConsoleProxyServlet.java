@@ -406,7 +406,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 
             byte[] encryptedBytes = mac.doFinal();
 
-            return Base64.encodeBase64URLSafeString(encryptedBytes);
+            return Base64.encodeBase64String(encryptedBytes);
         } catch(Exception e) {
             s_logger.error("Unexpected exception ", e);
         }

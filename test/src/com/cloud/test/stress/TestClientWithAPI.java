@@ -1977,7 +1977,7 @@ public class TestClientWithAPI {
             mac.init(keySpec);
             mac.update(request.getBytes());
             byte[] encryptedBytes = mac.doFinal();
-            return org.apache.commons.codec.binary.Base64.encodeBase64URLSafeString(encryptedBytes);
+            return org.apache.commons.codec.binary.Base64.encodeBase64String(encryptedBytes);
         } catch (Exception ex) {
             s_logger.error("unable to sign request", ex);
         }

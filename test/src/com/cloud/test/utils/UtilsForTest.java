@@ -226,7 +226,7 @@ public class UtilsForTest {
             mac.update(request.getBytes());
             byte[] encryptedBytes = mac.doFinal();
             //System.out.println("HmacSHA1 hash: " + encryptedBytes);
-            return Base64.encodeBase64URLSafeString(encryptedBytes);
+            return Base64.encodeBase64String(encryptedBytes);
         } catch (Exception ex) {
             System.out.println("unable to sign request");
             ex.printStackTrace();

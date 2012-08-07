@@ -751,7 +751,7 @@ public class ApiServer implements HttpRequestHandler {
             mac.init(keySpec);
             mac.update(unsignedRequest.getBytes());
             byte[] encryptedBytes = mac.doFinal();
-            String computedSignature = Base64.encodeBase64URLSafeString(encryptedBytes);
+            String computedSignature = Base64.encodeBase64String(encryptedBytes);
             boolean equalSig = signature.equals(computedSignature);
             if (!equalSig) {
                 s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
@@ -843,7 +843,7 @@ public class ApiServer implements HttpRequestHandler {
             SecureRandom sesssionKeyRandom = new SecureRandom();
             byte sessionKeyBytes[] = new byte[20];
             sesssionKeyRandom.nextBytes(sessionKeyBytes);
-            String sessionKey = Base64.encodeBase64URLSafeString(sessionKeyBytes);
+            String sessionKey = Base64.encodeBase64String(sessionKeyBytes);
             session.setAttribute("sessionkey", sessionKey);
 
             return;

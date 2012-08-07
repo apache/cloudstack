@@ -1226,7 +1226,7 @@ public class StressTestDirectAttach {
             mac.init(keySpec);
             mac.update(request.getBytes());
             byte[] encryptedBytes = mac.doFinal();
-            return Base64.encodeBase64URLSafeString(encryptedBytes);
+            return Base64.encodeBase64String(encryptedBytes);
         } catch (Exception ex) {
             s_logger.error("unable to sign request", ex);
         }
