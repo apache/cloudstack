@@ -7435,6 +7435,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             args += " -D";
             args += " -r ";
             args += cmd.getPeerGatewayIp();
+            args += " -n ";
+            args += cmd.getLocalGuestCidr();
             args += " -N ";
             args += cmd.getPeerGuestCidrList();
         }
