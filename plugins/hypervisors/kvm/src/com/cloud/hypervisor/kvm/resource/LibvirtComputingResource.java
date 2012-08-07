@@ -155,6 +155,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.NfsStoragePool;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ConsoleDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuTuneDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DevicesDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef.diskProtocol;
@@ -2477,6 +2478,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		grd.setVcpuNum(vmTO.getCpus());
 		vm.addComp(grd);
 
+        CpuTuneDef ctd = new CpuTuneDef();
+        ctd.setShares(vmTO.getCpus() * vmTO.getSpeed());
+        vm.addComp(ctd);
+
 		FeaturesDef features = new FeaturesDef();
 		features.addFeatures("pae");
 		features.addFeatures("apic");
@@ -2552,9 +2557,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
 			s_logger.debug("starting " + vmName + ": " + vm.toString());
 			startDomain(conn, vmName, vm.toString());
-			Script.runSimpleBashScript("virsh schedinfo " + vmName
-					+ " --set cpu_shares=" + vmSpec.getCpus()
-					* vmSpec.getSpeed());
 
 			NicTO[] nics = vmSpec.getNics();
 			for (NicTO nic : nics) {

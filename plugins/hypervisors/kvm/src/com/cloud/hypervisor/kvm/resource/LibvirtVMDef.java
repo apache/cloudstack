@@ -35,7 +35,7 @@ public class LibvirtVMDef {
         }
 
         enum bootOrder {
-            HARDISK("hd"), CDROM("cdrom"), FLOOPY("fd"), NETWORK("network");
+            HARDISK("hd"), CDROM("cdrom"), FLOPPY("fd"), NETWORK("network");
             String _order;
 
             bootOrder(String order) {
@@ -323,7 +323,7 @@ public class LibvirtVMDef {
 
     public static class DiskDef {
         enum deviceType {
-            FLOOPY("floopy"), DISK("disk"), CDROM("cdrom");
+            FLOPPY("floppy"), DISK("disk"), CDROM("cdrom");
             String _type;
 
             deviceType(String type) {
@@ -749,6 +749,29 @@ public class LibvirtVMDef {
             }
             consoleBuilder.append("</console>\n");
             return consoleBuilder.toString();
+        }
+    }
+
+    public static class CpuTuneDef {
+        private int _shares = 0;
+
+        public void setShares(int shares) {
+            _shares = shares;
+        }
+
+        public int getShares() {
+            return _shares;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder cpuTuneBuilder = new StringBuilder();
+            cpuTuneBuilder.append("<cputune>\n");
+            if (_shares > 0) {
+                cpuTuneBuilder.append("<shares>" + _shares + "</shares>\n");
+            }
+            cpuTuneBuilder.append("</cputune>\n");
+            return cpuTuneBuilder.toString();
         }
     }
 

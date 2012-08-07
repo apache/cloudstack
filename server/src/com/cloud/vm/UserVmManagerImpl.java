@@ -3409,6 +3409,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         //VV 2: check if account/domain is with in resource limits to create a new vm
         _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.user_vm);
 
+        //VV 3: check if volumes are with in resource limits
+        _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.volume, _volsDao.findByInstance(cmd.getVmId()).size());
+        
         // VV 4: Check if new owner can use the vm template
         VirtualMachineTemplate template = _templateDao.findById(vm.getTemplateId());
         if (!template.isPublicTemplate()) {

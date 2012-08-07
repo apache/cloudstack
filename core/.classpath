@@ -19,7 +19,7 @@ under the License.
 -->
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="src" path="test"/>
+	<classpathentry excluding="com/cloud/hypervisor/vmware/util/TestVmwareUtil.java" kind="src" path="test"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/deps"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/utils"/>

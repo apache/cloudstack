@@ -134,8 +134,6 @@ public class F5BigIpResource implements ServerResource {
 	@Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
     	try {    		    		
-    		XTrustProvider.install();
-    		
     		_name = (String) params.get("name");
     		if (_name == null) {
     			throw new ConfigurationException("Unable to find name");

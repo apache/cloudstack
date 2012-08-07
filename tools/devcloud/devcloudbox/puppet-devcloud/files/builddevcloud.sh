@@ -1,3 +1,5 @@
+#!/bin/sh
+
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,4 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-v0.1.0 Tuesday, April 10 2012 -- Packaging Marvin
+export CATALINA_HOME=/opt/cloudstack/apache-tomcat-6.0.32
+cd /opt/cloudstack/incubator-cloudstack/
+/usr/bin/ant clean-all build-all deploy-server deploydb
