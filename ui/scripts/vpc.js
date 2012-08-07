@@ -958,7 +958,7 @@
                   $.ajax({
                     url: createURL('listVpnGateways'),
                     data: {
-                      vpcid: args.data.vpcid
+                      vpcid: args.context.vpc[0].id
                     },
                     async: false,
                     success: function(json) {
@@ -985,8 +985,7 @@
                         {_custom:
                           {
                             jobId: jid,													 
-													  getUpdatedItem: function(json) {
-														  debugger;
+													  getUpdatedItem: function(json) {														 
 														  return json.queryasyncjobresultresponse.jobresult.vpnconnection;
 													  }													 
                           }
