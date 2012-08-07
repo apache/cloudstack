@@ -18,7 +18,7 @@
   var aclMultiEdit = {
     noSelect: true,
     fields: {
-      'cidrlist': { edit: true, label: 'label.cidr.list' },
+      'cidrlist': { edit: true, label: 'label.cidr' },
       'protocol': {
         label: 'label.protocol',
         select: function(args) {
