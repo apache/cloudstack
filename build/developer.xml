@@ -241,7 +241,7 @@
     	<available file="${setup.db.dir}/override/templates.sql" />
     </condition>
   	
-    <echo message="deploydb ${server-setup.file} ${templates.file} ${DBROOTPW}" />
+    <echo message="${db.scripts.dir}\\deploy-db-dev.sh ${server-setup.file} ${templates.file} ${DBROOTPW}" />
     <exec dir="${db.scripts.dir}" executable="bash" failonerror="true">
       <arg value="deploy-db-dev.sh" />
       <arg value="${server-setup.file}" />

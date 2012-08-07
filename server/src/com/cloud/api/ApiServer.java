@@ -53,6 +53,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
 import org.apache.http.HttpRequest;
@@ -112,7 +113,6 @@ import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
-import com.cloud.utils.encoding.Base64;
 import com.cloud.utils.exception.CSExceptionErrorCode;
 import com.cloud.uuididentity.dao.IdentityDao;
 
@@ -432,31 +432,31 @@ public class ApiServer implements HttpRequestHandler {
             }
         } catch (Exception ex) {
             if (ex instanceof InvalidParameterValueException) {
-            	InvalidParameterValueException ref = (InvalidParameterValueException)ex;
-            	ServerApiException e = new ServerApiException(BaseCmd.PARAM_ERROR, ex.getMessage());            	
+                InvalidParameterValueException ref = (InvalidParameterValueException)ex;
+                ServerApiException e = new ServerApiException(BaseCmd.PARAM_ERROR, ex.getMessage());            	
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
                 ArrayList<IdentityProxy> idList = ref.getIdProxyList();
                 if (idList != null) {
-                	// Iterate through entire arraylist and copy over each proxy id.
-                	for (int i = 0 ; i < idList.size(); i++) {
-                		IdentityProxy obj = idList.get(i);
-                		e.addProxyObject(obj.getTableName(), obj.getValue(), obj.getidFieldName());
-                	}
+                    // Iterate through entire arraylist and copy over each proxy id.
+                    for (int i = 0 ; i < idList.size(); i++) {
+                        IdentityProxy obj = idList.get(i);
+                        e.addProxyObject(obj.getTableName(), obj.getValue(), obj.getidFieldName());
+                    }
                 }
                 // Also copy over the cserror code and the function/layer in which it was thrown.
-            	e.setCSErrorCode(ref.getCSErrorCode());
+                e.setCSErrorCode(ref.getCSErrorCode());
                 throw e;
             } else if (ex instanceof PermissionDeniedException) {
-            	PermissionDeniedException ref = (PermissionDeniedException)ex;
-            	ServerApiException e = new ServerApiException(BaseCmd.ACCOUNT_ERROR, ex.getMessage());
+                PermissionDeniedException ref = (PermissionDeniedException)ex;
+                ServerApiException e = new ServerApiException(BaseCmd.ACCOUNT_ERROR, ex.getMessage());
                 // copy over the IdentityProxy information as well and throw the serverapiexception.
-            	ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+                ArrayList<IdentityProxy> idList = ref.getIdProxyList();
                 if (idList != null) {
-                	// Iterate through entire arraylist and copy over each proxy id.
-                	for (int i = 0 ; i < idList.size(); i++) {
-                		IdentityProxy obj = idList.get(i);
-                		e.addProxyObject(obj.getTableName(), obj.getValue(), obj.getidFieldName());
-                	}
+                    // Iterate through entire arraylist and copy over each proxy id.
+                    for (int i = 0 ; i < idList.size(); i++) {
+                        IdentityProxy obj = idList.get(i);
+                        e.addProxyObject(obj.getTableName(), obj.getValue(), obj.getidFieldName());
+                    }
                 }
                 e.setCSErrorCode(ref.getCSErrorCode());
                 throw e;
@@ -751,7 +751,7 @@ public class ApiServer implements HttpRequestHandler {
             mac.init(keySpec);
             mac.update(unsignedRequest.getBytes());
             byte[] encryptedBytes = mac.doFinal();
-            String computedSignature = Base64.encodeBytes(encryptedBytes);
+            String computedSignature = Base64.encodeBase64URLSafeString(encryptedBytes);
             boolean equalSig = signature.equals(computedSignature);
             if (!equalSig) {
                 s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
@@ -765,7 +765,7 @@ public class ApiServer implements HttpRequestHandler {
         }
         return false;
     }
-    
+
     public Long fetchDomainId(String domainUUID){
         ComponentLocator locator = ComponentLocator.getLocator(ManagementServer.Name);
         IdentityDao identityDao = locator.getDao(IdentityDao.class);
@@ -816,19 +816,19 @@ public class ApiServer implements HttpRequestHandler {
             if(user.getUuid() != null){
                 session.setAttribute("user_UUID", user.getUuid());
             }
-            
+
             session.setAttribute("username", userAcct.getUsername());
             session.setAttribute("firstname", userAcct.getFirstname());
             session.setAttribute("lastname", userAcct.getLastname());
             session.setAttribute("accountobj", account);
             session.setAttribute("account", account.getAccountName());
-            
+
             session.setAttribute("domainid", account.getDomainId());
             DomainVO domain = (DomainVO) _domainMgr.getDomain(account.getDomainId());
             if(domain.getUuid() != null){
                 session.setAttribute("domain_UUID", domain.getUuid());
             }
-            
+
             session.setAttribute("type", Short.valueOf(account.getType()).toString());
             session.setAttribute("registrationtoken", userAcct.getRegistrationToken());
             session.setAttribute("registered", new Boolean(userAcct.isRegistered()).toString());
@@ -843,7 +843,7 @@ public class ApiServer implements HttpRequestHandler {
             SecureRandom sesssionKeyRandom = new SecureRandom();
             byte sessionKeyBytes[] = new byte[20];
             sesssionKeyRandom.nextBytes(sessionKeyBytes);
-            String sessionKey = Base64.encodeBytes(sessionKeyBytes);
+            String sessionKey = Base64.encodeBase64URLSafeString(sessionKeyBytes);
             session.setAttribute("sessionkey", sessionKey);
 
             return;
@@ -938,8 +938,8 @@ public class ApiServer implements HttpRequestHandler {
 
             _params = new BasicHttpParams();
             _params.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 30000).setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE, 8 * 1024)
-                    .setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK, false).setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true)
-                    .setParameter(CoreProtocolPNames.ORIGIN_SERVER, "HttpComponents/1.1");
+            .setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK, false).setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true)
+            .setParameter(CoreProtocolPNames.ORIGIN_SERVER, "HttpComponents/1.1");
 
             // Set up the HTTP protocol processor
             BasicHttpProcessor httpproc = new BasicHttpProcessor();
@@ -1053,44 +1053,44 @@ public class ApiServer implements HttpRequestHandler {
             // Exception. When invoked from ApiServlet's processRequest(), this can be
             // a standard exception like NumberFormatException. We'll leave the standard ones alone.
             if (ex != null) {
-            	if (ex instanceof ServerApiException || ex instanceof PermissionDeniedException
-            			|| ex instanceof InvalidParameterValueException) {
-            		// Cast the exception appropriately and retrieve the IdentityProxy
-            		if (ex instanceof ServerApiException) {
-            			ServerApiException ref = (ServerApiException) ex;
-            			ArrayList<IdentityProxy> idList = ref.getIdProxyList();
-            			if (idList != null) {
-            				for (int i=0; i < idList.size(); i++) {
-            					IdentityProxy id = idList.get(i);
-            					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
-            				}            				
-            			}
-            			// Also copy over the cserror code and the function/layer in which it was thrown.
-            			apiResponse.setCSErrorCode(ref.getCSErrorCode());
-            		} else if (ex instanceof PermissionDeniedException) {
-            			PermissionDeniedException ref = (PermissionDeniedException) ex;
-            			ArrayList<IdentityProxy> idList = ref.getIdProxyList();
-            			if (idList != null) {
-            				for (int i=0; i < idList.size(); i++) {
-            					IdentityProxy id = idList.get(i);
-            					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
-            				}            				
-            			}
-            			// Also copy over the cserror code and the function/layer in which it was thrown.
-            			apiResponse.setCSErrorCode(ref.getCSErrorCode());
-            		} else if (ex instanceof InvalidParameterValueException) {
-            			InvalidParameterValueException ref = (InvalidParameterValueException) ex;
-            			ArrayList<IdentityProxy> idList = ref.getIdProxyList();
-            			if (idList != null) {
-            				for (int i=0; i < idList.size(); i++) {
-            					IdentityProxy id = idList.get(i);
-            					apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
-            				}            				
-            			}
-            			// Also copy over the cserror code and the function/layer in which it was thrown.
-            			apiResponse.setCSErrorCode(ref.getCSErrorCode());
-            		}
-            	}
+                if (ex instanceof ServerApiException || ex instanceof PermissionDeniedException
+                        || ex instanceof InvalidParameterValueException) {
+                    // Cast the exception appropriately and retrieve the IdentityProxy
+                    if (ex instanceof ServerApiException) {
+                        ServerApiException ref = (ServerApiException) ex;
+                        ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+                        if (idList != null) {
+                            for (int i=0; i < idList.size(); i++) {
+                                IdentityProxy id = idList.get(i);
+                                apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
+                            }            				
+                        }
+                        // Also copy over the cserror code and the function/layer in which it was thrown.
+                        apiResponse.setCSErrorCode(ref.getCSErrorCode());
+                    } else if (ex instanceof PermissionDeniedException) {
+                        PermissionDeniedException ref = (PermissionDeniedException) ex;
+                        ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+                        if (idList != null) {
+                            for (int i=0; i < idList.size(); i++) {
+                                IdentityProxy id = idList.get(i);
+                                apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
+                            }            				
+                        }
+                        // Also copy over the cserror code and the function/layer in which it was thrown.
+                        apiResponse.setCSErrorCode(ref.getCSErrorCode());
+                    } else if (ex instanceof InvalidParameterValueException) {
+                        InvalidParameterValueException ref = (InvalidParameterValueException) ex;
+                        ArrayList<IdentityProxy> idList = ref.getIdProxyList();
+                        if (idList != null) {
+                            for (int i=0; i < idList.size(); i++) {
+                                IdentityProxy id = idList.get(i);
+                                apiResponse.addProxyObject(id.getTableName(), id.getValue(), id.getidFieldName());
+                            }            				
+                        }
+                        // Also copy over the cserror code and the function/layer in which it was thrown.
+                        apiResponse.setCSErrorCode(ref.getCSErrorCode());
+                    }
+                }
             }
             SerializationContext.current().setUuidTranslation(true);
             responseText = ApiResponseSerializer.toSerializedString(apiResponse, responseType);
