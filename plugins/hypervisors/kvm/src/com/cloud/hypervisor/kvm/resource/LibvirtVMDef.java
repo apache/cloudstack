@@ -752,6 +752,29 @@ public class LibvirtVMDef {
         }
     }
 
+    public static class CpuTuneDef {
+        private int _shares = 0;
+
+        public void setShares(int shares) {
+            _shares = shares;
+        }
+
+        public int getShares() {
+            return _shares;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder cpuTuneBuilder = new StringBuilder();
+            cpuTuneBuilder.append("<cputune>\n");
+            if (_shares > 0) {
+                cpuTuneBuilder.append("<shares>" + _shares + "</shares>\n");
+            }
+            cpuTuneBuilder.append("</cputune>\n");
+            return cpuTuneBuilder.toString();
+        }
+    }
+
     public static class SerialDef {
         private final String _type;
         private final String _source;
