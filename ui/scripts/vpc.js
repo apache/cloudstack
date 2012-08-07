@@ -456,8 +456,7 @@
               listAll: true
             },
             success: function(json) {
-              items = json.listprivategatewaysresponse.privategateway;
-              args.response.success({ data: items });
+              items = json.listprivategatewaysresponse.privategateway;              
             }
           });
 
