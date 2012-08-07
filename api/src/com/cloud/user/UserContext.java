@@ -16,13 +16,12 @@
 // under the License.
 package com.cloud.user;
 
-import com.cloud.server.ManagementService;
 import com.cloud.utils.component.ComponentLocator;
 
 public class UserContext {
 
     private static ThreadLocal<UserContext> s_currentContext = new ThreadLocal<UserContext>();
-    private static final ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
+    private static final ComponentLocator locator = ComponentLocator.getCurrentLocator();
     private static final AccountService _accountMgr = locator.getManager(AccountService.class);
 
     private long userId;

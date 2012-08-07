@@ -32,7 +32,9 @@ public class MockNetworkServiceMapDaoImpl extends GenericDaoBase<NetworkServiceM
      */
     @Override
     public boolean areServicesSupportedInNetwork(long networkId, Service... services) {
-        // TODO Auto-generated method stub
+        if (services.length > 0 && services[0] == Service.Lb) {
+            return true;
+        }
         return false;
     }
 

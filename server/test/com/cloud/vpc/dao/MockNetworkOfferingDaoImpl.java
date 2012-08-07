@@ -35,7 +35,6 @@ import com.cloud.utils.db.GenericDaoBase;
 public class MockNetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Long> implements NetworkOfferingDao {
     private static final Logger s_logger = Logger.getLogger(MockNetworkOfferingDaoImpl.class);
 
-
     /* (non-Javadoc)
      * @see com.cloud.offerings.dao.NetworkOfferingDao#findByUniqueName(java.lang.String)
      */
@@ -111,10 +110,14 @@ public class MockNetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO
             vo = new NetworkOfferingVO("non vpc", "non vpc", TrafficType.Guest, false, true, null, null, false,
                     Availability.Optional, null, Network.GuestType.Shared, false, false);
         } else if (id.longValue() == 5) {
-            //network offering invalid for vpc (Shared)
+            //network offering invalid for vpc (has redundant router)
             vo = new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false,
                     Availability.Optional, null, Network.GuestType.Isolated, false, false);
             vo.setRedundantRouter(true);
+        } else if (id.longValue() == 6) {
+            //network offering invalid for vpc (has lb service)   
+            vo = new NetworkOfferingVO("vpc", "vpc", TrafficType.Guest, false, true, null, null, false,
+                    Availability.Optional, null, Network.GuestType.Isolated, false, false);
         }
         
         if (vo != null) {

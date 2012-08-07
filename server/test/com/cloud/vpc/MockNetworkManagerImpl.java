@@ -13,12 +13,15 @@
 package com.cloud.vpc;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.api.commands.CreateNetworkCmd;
@@ -70,6 +73,7 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.Nic;
@@ -79,6 +83,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
+import com.cloud.vpc.dao.MockVpcVirtualRouterElement;
 
 @Local(value = { NetworkManager.class, NetworkService.class })
 public class MockNetworkManagerImpl implements NetworkManager, Manager{
@@ -86,21 +91,18 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     NetworkServiceMapDao  _ntwkSrvcDao;
     @Inject
     NetworkOfferingServiceMapDao  _ntwkOfferingSrvcDao;
+    @Inject(adapter = NetworkElement.class)
+    Adapters<NetworkElement> _networkElements;
+    
+    private static HashMap<String, String> s_providerToNetworkElementMap = new HashMap<String, String>();
+    private static final Logger s_logger = Logger.getLogger(MockNetworkManagerImpl.class);
+
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkService#getIsolatedNetworksOwnedByAccountInZone(long, com.cloud.user.Account)
      */
     @Override
     public List<? extends Network> getIsolatedNetworksOwnedByAccountInZone(long zoneId, Account owner) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#allocateIP(com.cloud.user.Account, long)
-     */
-    @Override
-    public IpAddress allocateIP(Account ipOwner, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -1163,15 +1165,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#checkVirtualNetworkCidrOverlap(java.lang.Long, java.lang.String)
-     */
-    @Override
-    public void checkVirtualNetworkCidrOverlap(Long zoneId, String cidr) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#checkCapabilityForProvider(java.util.Set, com.cloud.network.Network.Service, com.cloud.network.Network.Capability, java.lang.String)
      */
     @Override
@@ -1267,8 +1260,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
      */
     @Override
     public NetworkElement getElementImplementingProvider(String providerName) {
-        // TODO Auto-generated method stub
-        return null;
+        return new MockVpcVirtualRouterElement();
     }
 
     /* (non-Javadoc)
@@ -1451,7 +1443,17 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
      */
     @Override
     public boolean start() {
-        // TODO Auto-generated method stub
+        for (NetworkElement element : _networkElements) {
+            Provider implementedProvider = element.getProvider();
+            if (implementedProvider != null) {
+                if (s_providerToNetworkElementMap.containsKey(implementedProvider.getName())) {
+                    s_logger.error("Cannot start MapNetworkManager: Provider <-> NetworkElement must be a one-to-one map, " +
+                            "multiple NetworkElements found for Provider: " + implementedProvider.getName());
+                    return false;
+                }
+                s_providerToNetworkElementMap.put(implementedProvider.getName(), element.getName());
+            }
+        }
         return true;
     }
 
@@ -1469,6 +1471,24 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
      */
     @Override
     public String getName() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkService#allocateIP(com.cloud.user.Account, boolean, long)
+     */
+    @Override
+    public IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#translateZoneIdToPhysicalNetwork(long)
+     */
+    @Override
+    public PhysicalNetwork translateZoneIdToPhysicalNetwork(long zoneId) {
         // TODO Auto-generated method stub
         return null;
     }
