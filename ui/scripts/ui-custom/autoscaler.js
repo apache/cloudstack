@@ -115,6 +115,9 @@
             };
 
             action.action({
+						  context: {
+							  originalAutoscaleData: args.data,
+							},						  
               response: {
                 success: function(args) {
                   var notification = $.extend(args.notification, {
