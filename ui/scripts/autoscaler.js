@@ -1246,7 +1246,9 @@
 						  id: args.context.originalAutoscaleData.context.autoscaleVmGroup.id,
 							minmembers: args.data.minInstance,
 							maxmembers: args.data.maxInstance,
-							interval: args.data.interval
+							interval: args.data.interval,
+							scaleuppolicyids: args.context.originalAutoscaleData.scaleUpPolicy.id,
+							scaledownpolicyids: args.context.originalAutoscaleData.scaleDownPolicy.id
 						};
 						
 						$.ajax({
