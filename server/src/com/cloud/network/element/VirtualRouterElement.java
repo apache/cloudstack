@@ -812,11 +812,16 @@ public class VirtualRouterElement extends AdapterBase implements VirtualRouterEl
     }
 
     @Override
-    public boolean verifyServicesCombination(List<String> services) {
-        if (!services.contains("SourceNat")) {
-            if (services.contains("StaticNat") || services.contains("Firewall") || services.contains("Lb") || services.contains("PortForwarding") ||
-                    services.contains("Vpn")) {
-                s_logger.warn("Virtual router can't enable services " + services + " without source NAT service");
+    public boolean verifyServicesCombination(Set<Service> services) {
+        if (!services.contains(Service.SourceNat)) {
+            if (services.contains(Service.StaticNat) || services.contains(Service.Firewall) || services.contains(Service.Lb) || 
+                    services.contains(Service.PortForwarding) || services.contains(Service.Vpn)) {
+                String servicesList = "[";
+                for (Service service : services) {
+                    servicesList += service.getName() + " ";
+                }
+                servicesList += "]";
+                s_logger.warn("Virtual router can't enable services " + servicesList + " without source NAT service");
                 return false;
             }
         }

@@ -6355,14 +6355,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             l.add(service);
         }
 
-        for (String provider : providerSvcs.keySet()) {
-            NetworkElement element = getElementImplementingProvider(provider);
-            List<String> services = providerSvcs.get(provider);
-            if (!element.verifyServicesCombination(services)) {
-                throw new UnsupportedServiceException("Provider " + provider + " doesn't support services combination: " + services);
-            }
-        }
-
         return svcProviders;
     }
 
@@ -6459,11 +6451,16 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                                 + provider.getName());
                     }
                 }
+                List<String> serviceList = new ArrayList<String>();
                 for (Service service : enabledServices) {
                     // check if the service is provided by this Provider
                     if (!element.getCapabilities().containsKey(service)) {
                         throw new UnsupportedServiceException(provider.getName() + " Provider cannot provide service " + service.getName());
                     }
+                    serviceList.add(service.getName());
+                }
+                if (!element.verifyServicesCombination(enabledServices)) {
+                    throw new UnsupportedServiceException("Provider " + provider.getName() + " doesn't support services combination: " + serviceList);
                 }
             }
         }

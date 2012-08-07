@@ -18,6 +18,7 @@ package com.cloud.network.element;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 
@@ -122,7 +123,7 @@ public class BareMetalElement extends AdapterBase implements NetworkElement {
     }
     
     @Override
-    public boolean verifyServicesCombination(List<String> services) {
+    public boolean verifyServicesCombination(Set<Service> services) {
         return true;
     }
 }
