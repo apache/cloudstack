@@ -23,7 +23,6 @@ under the License.
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 <% long now = System.currentTimeMillis(); %>
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -35,7 +34,6 @@ under the License.
     <c:if test="${!empty cookie.lang && cookie.lang.value != 'en'}">
       <link type="text/css" rel="stylesheet" href="css/cloudstack3.${cookie.lang.value}.css" />
     </c:if>
-
     <!--[if IE 7]>
     <link type="text/css" rel="stylesheet" href="css/cloudstack3-ie7.css" />
     <![endif]-->
@@ -1641,6 +1639,7 @@ under the License.
 <script language="javascript">
 dictionary = {
 'label.edit.tags': '<fmt:message key="label.edit.tags"/>',  
+'label.tier.details': '<fmt:message key="label.tier.details"/>',
 'label.action.enable.physical.network': '<fmt:message key="label.action.enable.physical.network"/>',
 'label.action.disable.physical.network': '<fmt:message key="label.action.disable.physical.network"/>',
 'message.action.enable.physical.network': '<fmt:message key="message.action.enable.physical.network"/>',

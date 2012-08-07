@@ -1399,7 +1399,7 @@
         isMaximized: true,
         tabs: {
           details: {
-            title: 'label.details',
+            title: 'label.tier.details',
             preFilter: function(args) {
               var hiddenFields = [];
               var zone;
