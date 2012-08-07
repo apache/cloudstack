@@ -26,9 +26,7 @@ under the License.
 	<classpathentry combineaccessrules="false" kind="src" path="/server"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/utils"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/agent"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/console"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/console-proxy"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/console-viewer"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/deps"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/setup"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/test"/>

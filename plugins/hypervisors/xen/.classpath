@@ -25,5 +25,6 @@ under the License.
 	<classpathentry combineaccessrules="false" kind="src" path="/server"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/api"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/deps"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/ovs"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
