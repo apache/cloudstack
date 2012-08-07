@@ -1,0 +1,130 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Runbook\n"
+"Report-Msgid-Bugs-To: http://bugs.cloudstack.org/\n"
+"POT-Creation-Date: 2012-07-10T15:13:22\n"
+"PO-Revision-Date: 2012-08-03 09:27+0000\n"
+"Last-Translator: micexia <mice1982@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Overview"
+msgstr "概述"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Infrastructure-as-a-Service (IaaS) clouds can be a complex thing to build, "
+"and by definition they have a plethora of options, which often lead to "
+"confusion for even experienced admins who are newcomers to building cloud "
+"platforms. The goal for this runbook is to provide a straightforward set of "
+"instructions to get you up and running with CloudStack with a minimum amount"
+" of trouble."
+msgstr "搭建基础设施即服务 (Infrastructure-as-a-Service, IaaS)云平台是一件复杂的工作，它提供了过于多的选项，以至于甚至是经验丰富的管理员在刚开始搭建云平台时也会感到困惑。该操作手册的目标是提供一系列直观的说明以帮助您搭建并运行一个最简单的Cloudstack环境。"
+
+#. Tag: title
+#, no-c-format
+msgid "What exactly are we building?"
+msgstr "目标部署环境"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This runbook will focus on building a CloudStack cloud using KVM with CentOS"
+" 6.2 with NFS storage on a flat layer-2 network utilizing layer-3 network "
+"isolation (aka Security Groups), and doing it all on a single piece of "
+"hardware."
+msgstr "该操作手册将重点介绍如何搭建如下Cloudstack云平台:\n使用CentOS 6.2 KVM\n部署于扁平二层网络\n使用三层网络隔离（安全组）\n所有资源集中于一台物理主机"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"KVM, or Kernel-based Virtual Machine is a virtualization technology for the "
+"Linux kernel. KVM supports native virtualization atop processors with "
+"hardware virtualization extensions."
+msgstr "KVM (Kernel-based Virtual Machine) 是一种针对LInux内核的虚拟化技术。KVM支持本地虚拟化，主机的CPU处理器需支持硬件虚拟化扩展。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Security Groups act as distributed firewalls that control access to a group "
+"of virtual machines."
+msgstr "安全组起到类似分布式防火墙的作用，它可以对一组虚拟机进行访问控制。"
+
+#. Tag: title
+#, no-c-format
+msgid "High level overview of the process"
+msgstr "整体过程概述"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Before we actually get to installing CloudStack, we'll start with installing"
+" our base operating system, and then configuring that to act as an NFS "
+"server for several types of storage. We'll install the management server, "
+"download the systemVMs, and finally install the agent software. Finally "
+"we'll spend a good deal of time configuring the entire cloud in the "
+"CloudStack web interface."
+msgstr "在实际安装Cloudstack之前，需要先安装基本的操作系统，并将其配置为一台NFS服务器用于提供各类存储资源。接下来的步骤是安装管理服务器，下载系统虚拟机模板，安装agnet；最后将描述如何使用Cloudstack Web界面配置整个云平台。"
+
+#. Tag: title
+#, no-c-format
+msgid "Prerequisites"
+msgstr "先决条件"
+
+#. Tag: para
+#, no-c-format
+msgid "To complete this runbook you'll need the following items:"
+msgstr "完成此操作手册您需要以下资源："
+
+#. Tag: para
+#, no-c-format
+msgid "At least one computer which supports hardware virtualization."
+msgstr "至少一台支持硬件虚拟化的主机"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The <ulink "
+"url=\"http://mirrors.kernel.org/centos/6.2/isos/x86_64/CentOS-6.2-x86_64-minimal.iso\">"
+" CentOS 6.2 x86_64 minimal install CD </ulink>"
+msgstr "<ulink url=\"http://mirrors.kernel.org/centos/6.2/isos/x86_64/CentOS-6.2-x86_64-minimal.iso\"> CentOS 6.2 x86_64 minimal install CD </ulink>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"A /24 network with the gateway being at xxx.xxx.xxx.1, no DHCP should be on "
+"this network and none of the computers running CloudStack may have a dynamic"
+" address."
+msgstr "一个C类网络，网关为 xxx.xxx.xxx.1，网络中不能存在DHCP服务器，所有运行Cloudstack的主机需使用静态IP地址。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Copy of <ulink "
+"url=\"http://sourceforge.net/projects/cloudstack/files/CloudStack%20Acton/3.0.2"
+"/CloudStack-oss-3.0.2-1-rhel6.2.tar.gz/download\"> CloudStack 3.0.2 for RHEL"
+" and CentOS 6.2 </ulink>"
+msgstr "安装包 <ulink url=\"http://sourceforge.net/projects/cloudstack/files/CloudStack%20Acton/3.0.2/CloudStack-oss-3.0.2-1-rhel6.2.tar.gz/download\"> CloudStack 3.0.2 for RHEL and CentOS 6.2 </ulink>"

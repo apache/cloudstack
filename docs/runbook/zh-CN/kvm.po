@@ -1,0 +1,145 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Runbook\n"
+"Report-Msgid-Bugs-To: http://bugs.cloudstack.org/\n"
+"POT-Creation-Date: 2012-07-10T15:13:22\n"
+"PO-Revision-Date: 2012-08-03 09:24+0000\n"
+"Last-Translator: micexia <mice1982@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+
+#. Tag: title
+#, no-c-format
+msgid "KVM Setup and installation"
+msgstr "KVM配置和安装"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"KVM is the hypervisor we'll be using - we will recover the initial setup "
+"which has already been done on the hypervisor host and cover installation of"
+" the agent software, you can use the same steps to add additional KVM nodes "
+"to your CloudStack environment."
+msgstr "本文档使用KVM作为hypervisor，下文将回顾最如何配置hypervisor主机，其中大部分配置工作已在配置管理节点时完成；接下来描述如何安装agent。您可以应用相同的步骤添加额外的KVM节点到CloudStack环境中。"
+
+#. Tag: title
+#, no-c-format
+msgid "Prerequisites"
+msgstr "先决条件"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"We explicitly are using the management server as a compute node as well, "
+"which means that we have already performed many of the prerequisite steps "
+"when setting up the management server, but we will list them here for "
+"clarity. Those steps are:"
+msgstr "本文档描述的环境使用管理服务器同时作为计算节点，这意味着很多先决步骤已经在搭建管理服务器时完成；但为了清晰起见，仍然列出相关步骤："
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-Runbook-Environment-operatingsys-network\" />"
+msgstr "<xref linkend=\"sect-Runbook-Environment-operatingsys-network\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-Runbook-Environment-operatingsys-hostname\" />"
+msgstr "<xref linkend=\"sect-Runbook-Environment-operatingsys-hostname\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-Runbook-Environment-operatingsys-selinux\" />"
+msgstr "<xref linkend=\"sect-Runbook-Environment-operatingsys-selinux\" />"
+
+#. Tag: para
+#, no-c-format
+msgid "<xref linkend=\"sect-Runbook-Environment-operatingsys-ntp\" />"
+msgstr "<xref linkend=\"sect-Runbook-Environment-operatingsys-ntp\" />"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You shouldn't need to do that for the management server, of course, but any "
+"additional hosts will need for you to complete the above steps."
+msgstr "您不需要在管理服务器上执行这些步骤，当然，如果您需要添加额外的主机以上步骤仍然需要执行。"
+
+#. Tag: title
+#, no-c-format
+msgid "Installation"
+msgstr "安装"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You'll need to ensure that you are in the directory that was created when we"
+" extracted the the tarball. <xref linkend=\"sect-Runbook-Management-"
+"extraction\" />"
+msgstr "确认您已进入解压安装包后产生的目录。<xref linkend=\"sect-Runbook-Management-extraction\" />"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You'll be running <filename>./install.sh</filename> again and this time "
+"choosing <option>A</option> which will install the software necessary for "
+"managing a KVM node."
+msgstr "再次运行<filename>./install.sh</filename>，这一次选择安装选项<option>A</option>，这会安装管理KVM所需的相关软件包。"
+
+#. Tag: title
+#, no-c-format
+msgid "KVM Configuration"
+msgstr "KVM配置"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"KVM configuration is relatively simple at only a single item. We need to "
+"edit the QEMU VNC configuration. This is done by editing "
+"<filename>/etc/libvirt/qemu.conf</filename> and ensuring the following line "
+"is present and uncommented."
+msgstr "KVM的配置相对简单，仅需一项配置；编辑QEMU VNC配置文件<filename>/etc/libvirt/qemu.conf</filename>，并确保以下内容存在并且没有被注释掉。"
+
+#. Tag: screen
+#, no-c-format
+msgid "vnc_listen=0.0.0.0"
+msgstr "vnc_listen=0.0.0.0"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You can now just restart the libvirt daemon by issuing the following "
+"command:"
+msgstr "此时您可以重启libvirt服务，通过以下命令："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>service</command> libvirt "
+"restart</userinput>"
+msgstr "<prompt># </prompt><userinput><command>service</command> libvirt restart</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"That concludes our installation and configuration of KVM, and we'll now move"
+" to using the CloudStack UI for the actual configuration of our cloud."
+msgstr "以上内容是KVM的安装和配置，下面将介绍如何使用CloudStack用户界面配置云平台。"

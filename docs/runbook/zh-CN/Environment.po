@@ -1,0 +1,494 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Runbook\n"
+"Report-Msgid-Bugs-To: http://bugs.cloudstack.org/\n"
+"POT-Creation-Date: 2012-07-10T15:13:22\n"
+"PO-Revision-Date: 2012-08-03 05:51+0000\n"
+"Last-Translator: micexia <mice1982@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Environment"
+msgstr "环境准备"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Before you begin, you need to prepare the environment before you install "
+"CloudStack. We will go over the steps to prepare now."
+msgstr "在开始安装Cloudstack之前，需要准备环境，以下将详细分步骤描述各准备环节。"
+
+#. Tag: title
+#, no-c-format
+msgid "Operating System"
+msgstr "操作系统"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Using the CentOS 6.2 x86_64 minimal install ISO, you'll need to install "
+"CentOS on your hardware. The defaults will generally be acceptable for this "
+"installation."
+msgstr "使用 CentOS 6.2 x86_64 minimal install 镜像，在物理主机上安装CentOS，安装过程中接受默认选项。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Once this installation is complete, you'll want to connect to your freshly "
+"installed machine via SSH as the root user. Note that you should not allow "
+"root logins in a production environment, so be sure to turn off remote "
+"logins once you have finished the installation and configuration."
+msgstr "当安装完成后，需要以root身份通过SSH连接新安装的主机，注意不要以root账户登录生产环境，请在完成安装和配置后关闭远程登录。"
+
+#. Tag: title
+#, no-c-format
+msgid "Configuring the network"
+msgstr "配置网络"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"By default the network will not come up on your hardware and you will need "
+"to configure it to work in your environment. Since we specified that there "
+"will be no DHCP server in this environment we will be manually configuring "
+"your network interface. We will assume, for the purposes of this exercise, "
+"that eth0 is the only network interface that will be connected and used."
+msgstr "一般情况下网络不会在新安装的主机上启用，您需要根据环境进行配置。由于网络中不能存在任何DHCP服务器，您需要手工配置网络接口。为了快速简化安装的目的，这里假定主机上只有eth0一个网络接口。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Connecting via the console you should login as root. Check the file "
+"<filename>/etc/sysconfig/network-scripts/ifcfg-eth0</filename>, it will look"
+" like this by default:"
+msgstr "以root身份连接主机控制台，检查文件 <filename>/etc/sysconfig/network-scripts/ifcfg-eth0</filename>，默认情况，其内容如下所示："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"DEVICE=\"eth0\"\n"
+"HWADDR=\"52:54:00:B9:A6:C0\"\n"
+"NM_CONTROLLED=\"yes\"\n"
+"ONBOOT=\"no\"\n"
+"        "
+msgstr "\nDEVICE=\"eth0\"\nHWADDR=\"52:54:00:B9:A6:C0\"\nNM_CONTROLLED=\"yes\"\nONBOOT=\"no\"\n        "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Unfortunately, this configuration will not permit you to connect to the "
+"network, and is also unsuitable for our purposes with CloudStack. We want to"
+" configure that file so that it specifies the IP address, netmask, etc., as "
+"shown in the following example:"
+msgstr "但是根据以上配置您无法连接到网络，对于Cloudstack也同样不适合；您需修改配置文件，指定IP地址，网络掩码等信息，如下例所示："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"DEVICE=eth0\n"
+"HWADDR=52:54:00:B9:A6:C0\n"
+"NM_CONTROLLED=no\n"
+"ONBOOT=yes\n"
+"BOOTPROTO=none\n"
+"IPADDR=172.16.10.2\n"
+"NETMASK=255.255.255.0\n"
+"GATEWAY=172.16.10.1\n"
+"      "
+msgstr "\nDEVICE=eth0\nHWADDR=52:54:00:B9:A6:C0\nNM_CONTROLLED=no\nONBOOT=yes\nBOOTPROTO=none\nIPADDR=172.16.10.2\nNETMASK=255.255.255.0\nGATEWAY=172.16.10.1\n      "
+
+#. Tag: title
+#, no-c-format
+msgid "IP Addressing"
+msgstr "IP地址"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Throughout this document we are assuming that you will have a /24 network "
+"for your CloudStack implementation. This can be any RFC 1918 network. "
+"However, we are assuming that you will match the machine address that we are"
+" using. Thus we may use "
+"<userinput><replaceable>172.16.10</replaceable>.2</userinput> and because "
+"you might be using the 192.168.55.0/24 network you would use "
+"<userinput><replaceable>192.168.55</replaceable>.2</userinput>"
+msgstr "本文档假定您提供一个C类网络供Cloudstack使用；该网络可以是任何RFC 1918兼容的网络，但这里假定您使用的IP地址的最后一段与手册中使用的匹配，例如手册中使用<userinput><replaceable>172.16.10</replaceable>.2</userinput>，如果您使用192.168.55.0/24，请使用<userinput><replaceable>192.168.55</replaceable>.2</userinput>"
+
+#. Tag: title
+#, no-c-format
+msgid "Hardware Addresses"
+msgstr "物理地址"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You should not use the hardware address (aka MAC address) from our example "
+"for your configuration. It is network interface specific, so you should keep"
+" the address already provided in the HWADDR directive."
+msgstr "请不要使用网络配置例子中的MAC地址，该地址每个网卡唯一，请保留您配置文件中HWADDR段已提供的内容。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now that we have the configuration files properly set up, we need to run a "
+"few commands to start up the network"
+msgstr "配置文件准备完毕后，需要运行命令启动网络。"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>chkconfig</command> network "
+"on</userinput>"
+msgstr "<prompt># </prompt><userinput><command>chkconfig</command> network on</userinput>"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>service</command> network "
+"start</userinput>"
+msgstr "<prompt># </prompt><userinput><command>service</command> network start</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"This should bring the network up successfully, but we now need to enable "
+"name resolution. To do that we will edit "
+"<filename>/etc/resolv.conf</filename>. These instructions will add one of "
+"the nameservers from Google, though you are free to add a local nameserver "
+"if you wish. Your <filename>/etc/resolv.conf</filename> should modified to "
+"look like:"
+msgstr "以上命令应该会成功启用网络，接下来需要启用域名解析，编辑文件<filename>/etc/resolv.conf</filename>，以下指令将添加Google的DNS服务器，当然您也可以根据需要添加本地的域名服务器，<filename>/etc/resolv.conf</filename> 应更改为如下内容："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"nameserver 8.8.8.8\n"
+"      "
+msgstr "\nnameserver 8.8.8.8\n      "
+
+#. Tag: title
+#, no-c-format
+msgid "Hostname"
+msgstr "主机名"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Cloudstack requires that the hostname be properly set. If you used the "
+"default options in the installation, then your hostname is currently set to "
+"localhost.localdomain. To test this we will run:"
+msgstr "Cloudstack要求正确设置主机名，如果按照时您接受了默认选项，主机名为localhost.localdomain，输入如下命令可以进行验证"
+
+#. Tag: screen
+#, no-c-format
+msgid "<prompt># </prompt><userinput>hostname --fqdn</userinput>"
+msgstr "<prompt># </prompt><userinput>hostname --fqdn</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid "At this point it will likely return:"
+msgstr "此时应会返回："
+
+#. Tag: screen
+#, no-c-format
+msgid "localhost"
+msgstr "localhost"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To rectify this situation - we'll set the hostname by editing the "
+"<filename>/etc/hosts</filename> file so that it follows a similar format to "
+"this example:"
+msgstr "为了纠正这个问题，需设置主机名，通过编辑<filename>/etc/hosts</filename> 文件，将其更改为类似如下内容："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4\n"
+"172.16.10.2 srvr1.cloud.priv\n"
+msgstr "\n127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4\n172.16.10.2 srvr1.cloud.priv\n"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"After you've modified that file, go ahead and restart the network using:"
+msgstr "更改配置文件后，重启网络服务："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>service</command> network "
+"restart</userinput>"
+msgstr "<prompt># </prompt><userinput><command>service</command> network restart</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now recheck with the <command>hostname --fqdn</command> command and ensure "
+"that it returns a FQDN response"
+msgstr "通过命令<command>hostname --fqdn</command>重新检查主机名，此时应返回一个FQDN格式结果。"
+
+#. Tag: title
+#, no-c-format
+msgid "SELinux"
+msgstr "SELinux"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"At the moment, for CloudStack to work properly SELinux must be set to "
+"permissive. We want to both configure this for future boots and modify it in"
+" the current running system."
+msgstr "Cloudstack当前版本需要SELinux设置为permissive才能正常工作，你需要改变当前配置，同时将该配置持久化，使其在主机重启后仍然生效。"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To configure SELinux to be permissive in the running system we need to run "
+"the following command:"
+msgstr "将SELinux配置为permissive需执行如下命令："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>setenforce</command> 0</userinput>"
+msgstr "<prompt># </prompt><userinput><command>setenforce</command> 0</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"To ensure that it remains in that state we need to configure the file "
+"<filename>/etc/selinux/config</filename> to reflect the permissive state, as"
+" shown in this example:"
+msgstr "为确保其持久生效需更改配置文件<filename>/etc/selinux/config</filename>，设置为permissive，如下例所示："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"\n"
+"# This file controls the state of SELinux on the system.\n"
+"# SELINUX= can take one of these three values:\n"
+"#     enforcing - SELinux security policy is enforced.\n"
+"#     permissive - SELinux prints warnings instead of enforcing.\n"
+"#     disabled - No SELinux policy is loaded.\n"
+"SELINUX=permissive\n"
+"# SELINUXTYPE= can take one of these two values:\n"
+"#     targeted - Targeted processes are protected,\n"
+"#     mls - Multi Level Security protection.\n"
+"SELINUXTYPE=targeted\n"
+"      "
+msgstr "\n\n# This file controls the state of SELinux on the system.\n# SELINUX= can take one of these three values:\n#     enforcing - SELinux security policy is enforced.\n#     permissive - SELinux prints warnings instead of enforcing.\n#     disabled - No SELinux policy is loaded.\nSELINUX=permissive\n# SELINUXTYPE= can take one of these two values:\n#     targeted - Targeted processes are protected,\n#     mls - Multi Level Security protection.\nSELINUXTYPE=targeted\n      "
+
+#. Tag: title
+#, no-c-format
+msgid "NTP"
+msgstr "NTP"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"NTP configuration is a necessity for keeping all of the clocks in your cloud"
+" servers in sync. However, NTP is not installed by default. So we'll install"
+" and and configure NTP at this stage. Installation is accomplished as "
+"follows:"
+msgstr "为了同步云平台中主机的时间，需要配置NTP，但NTP默认没有安装。因此需要先安装NTP，然后进行配置。通过以下命令进行安装："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>yum</command> install ntp</userinput>"
+msgstr "<prompt># </prompt><userinput><command>yum</command> install ntp</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"The actual default configuration is fine for our purposes, so we merely need"
+" to enable it and set it to start on boot as follows:"
+msgstr "使用实际的默认配置文件即可满足本文档的要求，仅需启用NTP并设置为开机启动，如下所示："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>chkconfig</command> ntpd "
+"on</userinput>"
+msgstr "<prompt># </prompt><userinput><command>chkconfig</command> ntpd on</userinput>"
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>service</command> ntpd "
+"start</userinput>"
+msgstr "<prompt># </prompt><userinput><command>service</command> ntpd start</userinput>"
+
+#. Tag: title
+#, no-c-format
+msgid "NFS"
+msgstr "NFS"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Our configuration is going to use NFS for both primary and secondary "
+"storage. We are going to go ahead and setup two NFS shares for those "
+"purposes. We'll start out by installing <application>nfs-"
+"utils</application>."
+msgstr "本文档将配置的环境使用NFS做为主存储和次要存储，需配置两个NFS共享目挂载点，在此之前需先安装<application>nfs-utils</application>："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>yum</command> install nfs-"
+"utils</userinput>"
+msgstr "<prompt># </prompt><userinput><command>yum</command> install nfs-utils</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"We now need to configure NFS to serve up two different shares. This is "
+"handled comparatively easily in the <filename>/etc/exports</filename> file. "
+"You should ensure that it has the following content:"
+msgstr "接下来需配置NFS提供两个不同的挂载点，通过编辑<filename>/etc/exports</filename>文件即可简单实现，请确保其内容如下所示："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"/secondary *(rw,async,no_root_squash)\n"
+"/primary   *(rw,async,no_root_squash)\n"
+"    "
+msgstr "\n/secondary *(rw,async,no_root_squash)\n/primary   *(rw,async,no_root_squash)\n    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"You will note that we specified two directories that don't exist (yet) on "
+"the system. We'll go ahead and create those directories and set permissions "
+"appropriately on them with the following commands:"
+msgstr "注意配置文件中指定了两个系统中不存在的目录，下面需要创建这些目录并且设置合适的权限，对应的命令如下所示："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"<prompt># </prompt><userinput><command>mkdir</command> /primary</userinput>\n"
+"<prompt># </prompt><userinput><command>mkdir</command> /secondary</userinput>\n"
+"<prompt># </prompt><userinput><command>chmod</command> 777 /primary</userinput>\n"
+"<prompt># </prompt><userinput><command>chmod</command> 777 /secondary</userinput>\n"
+"    "
+msgstr "\n<prompt># </prompt><userinput><command>mkdir</command> /primary</userinput>\n<prompt># </prompt><userinput><command>mkdir</command> /secondary</userinput>\n<prompt># </prompt><userinput><command>chmod</command> 777 /primary</userinput>\n<prompt># </prompt><userinput><command>chmod</command> 777 /secondary</userinput>\n    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"CentOS 6.x releases use NFSv4 by default. NFSv4 requires that domain setting"
+" matches on all clients. In our case, the domain is cloud.priv, so ensure "
+"that the domain setting in <filename>/etc/idmapd.conf</filename> is "
+"uncommented and set as follows:"
+msgstr "CentOS 6.x 版本默认使用NFSv4，NFSv4要求所有客户端的域设置匹配，这里设置为cloud.priv为例，请确保文件<filename>/etc/idmapd.conf</filename>中的域设置没有被注释掉，并设置为以下内容："
+
+#. Tag: screen
+#, no-c-format
+msgid "Domain = cloud.priv"
+msgstr "Domain = cloud.priv"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now you'll need uncomment the configuration values in the file "
+"<filename>/etc/sysconfig/nfs</filename>"
+msgstr "然后您需要取消<filename>/etc/sysconfig/nfs</filename>文件中以下配置项的注释："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"LOCKD_TCPPORT=32803\n"
+"LOCKD_UDPPORT=32769\n"
+"MOUNTD_PORT=892\n"
+"RQUOTAD_PORT=875\n"
+"STATD_PORT=662\n"
+"STATD_OUTGOING_PORT=2020\n"
+"    "
+msgstr "\nLOCKD_TCPPORT=32803\nLOCKD_UDPPORT=32769\nMOUNTD_PORT=892\nRQUOTAD_PORT=875\nSTATD_PORT=662\nSTATD_OUTGOING_PORT=2020\n    "
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"Now we need to configure the firewall to permit incoming NFS connections. "
+"Edit the file <filename>/etc/sysconfig/iptables</filename>"
+msgstr "接下来还需配置防火墙，允许NFS连接。编辑文件<filename>/etc/sysconfig/iptables</filename>："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"-A INPUT -m state --state NEW -p udp --dport 111 -j ACCEPT\n"
+"-A INPUT -m state --state NEW -p tcp --dport 111 -j ACCEPT\n"
+"-A INPUT -m state --state NEW -p tcp --dport 2049 -j ACCEPT\n"
+"-A INPUT -m state --state NEW -p tcp --dport 32803 -j ACCEPT\n"
+"-A INPUT -m state --state NEW -p udp --dport 32769 -j ACCEPT\n"
+"-A INPUT -m state --state NEW -p tcp --dport 892 -j ACCEPT\n"
+"-A INPUT -m state --state NEW -p udp --dport 892 -j ACCEPT\n"
+"-A INPUT -m state --state NEW -p tcp --dport 875 -j ACCEPT\n"
+"-A INPUT -m state --state NEW -p udp --dport 875 -j ACCEPT\n"
+"-A INPUT -m state --state NEW -p tcp --dport 662 -j ACCEPT\n"
+"-A INPUT -m state --state NEW -p udp --dport 662 -j ACCEPT\n"
+"    "
+msgstr "\n-A INPUT -m state --state NEW -p udp --dport 111 -j ACCEPT\n-A INPUT -m state --state NEW -p tcp --dport 111 -j ACCEPT\n-A INPUT -m state --state NEW -p tcp --dport 2049 -j ACCEPT\n-A INPUT -m state --state NEW -p tcp --dport 32803 -j ACCEPT\n-A INPUT -m state --state NEW -p udp --dport 32769 -j ACCEPT\n-A INPUT -m state --state NEW -p tcp --dport 892 -j ACCEPT\n-A INPUT -m state --state NEW -p udp --dport 892 -j ACCEPT\n-A INPUT -m state --state NEW -p tcp --dport 875 -j ACCEPT\n-A INPUT -m state --state NEW -p udp --dport 875 -j ACCEPT\n-A INPUT -m state --state NEW -p tcp --dport 662 -j ACCEPT\n-A INPUT -m state --state NEW -p udp --dport 662 -j ACCEPT\n    "
+
+#. Tag: para
+#, no-c-format
+msgid "Now you can restart the iptables service with the following command:"
+msgstr "通过以下命令重新启动iptables服务："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"<prompt># </prompt><userinput><command>service</command> iptables "
+"restart</userinput>"
+msgstr "<prompt># </prompt><userinput><command>service</command> iptables restart</userinput>"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"We now need to configure nfs service to start on boot and actually start it "
+"on the host by executing the following commands:"
+msgstr "最后需要配置NFS服务为开机自启动："
+
+#. Tag: screen
+#, no-c-format
+msgid ""
+"\n"
+"      <prompt># </prompt><userinput><command>service</command> rpcbind start</userinput>\n"
+"      <prompt># </prompt><userinput><command>service</command> nfs start</userinput>\n"
+"      <prompt># </prompt><userinput><command>chkconfig</command> rpcbind on</userinput>\n"
+"      <prompt># </prompt><userinput><command>chkconfig</command> nfs on</userinput>\n"
+"    "
+msgstr "\n      <prompt># </prompt><userinput><command>service</command> rpcbind start</userinput>\n      <prompt># </prompt><userinput><command>service</command> nfs start</userinput>\n      <prompt># </prompt><userinput><command>chkconfig</command> rpcbind on</userinput>\n      <prompt># </prompt><userinput><command>chkconfig</command> nfs on</userinput>\n    "
