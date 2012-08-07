@@ -2465,9 +2465,19 @@ VirtualMachineGuru<DomainRouterVO>, Listener {
         if (offering.getRedundantRouter()) {
             return findGatewayIp(userVmId);
         }
+        
+        DataCenter dc = _dcDao.findById(_networkMgr.getNetwork(defaultNic.getNetworkId()).getDataCenterId());
+        boolean isZoneBasic = (dc.getNetworkType() == NetworkType.Basic);
 
         //find domR's nic in the network
-        NicVO domrDefaultNic = _nicDao.findByNetworkIdAndType(defaultNic.getNetworkId(), VirtualMachine.Type.DomainRouter);
+        NicVO domrDefaultNic;
+        if (isZoneBasic){
+        	domrDefaultNic = _nicDao.findByNetworkIdTypeAndGateway(defaultNic.getNetworkId(), VirtualMachine.Type.DomainRouter, defaultNic.getGateway());
+        }
+        else{
+        	domrDefaultNic = _nicDao.findByNetworkIdAndType(defaultNic.getNetworkId(), VirtualMachine.Type.DomainRouter);
+        }
+        
         return domrDefaultNic.getIp4Address();
     }
 
