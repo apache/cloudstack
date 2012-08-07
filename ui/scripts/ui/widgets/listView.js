@@ -62,7 +62,26 @@
           listViewArgs.activeSection
         ] = [$instanceRow.data('jsonObj')];
 
-        if (action.custom && !action.noAdd) {
+        var externalLinkAction = action.externalLink;
+        if (externalLinkAction) {
+          // Show popup immediately, do not proceed through normal action process
+          window.open(
+            // URL
+            externalLinkAction.url({
+              context: context
+            }),
+
+            // Title
+            externalLinkAction.title({
+              context: context
+            }),
+
+            // Window options
+            'menubar=0,resizable=0,'
+              + 'width=' + externalLinkAction.width + ','
+              + 'height=' + externalLinkAction.height
+          );
+        } else if (action.custom && !action.noAdd) {
           action.custom({
             data: data,
             ref: options.ref,
@@ -250,7 +269,8 @@
         listViewArgs.activeSection
       ] = [$instanceRow.data('jsonObj')];
 
-      if (!args.action.createForm &&
+      if (!args.action.action.externalLink &&
+          !args.action.createForm &&
           args.action.addRow != 'true' &&
           !action.custom && !action.uiCustom)
         cloudStack.dialog.confirm({
@@ -270,7 +290,26 @@
         var isHeader = args.action.isHeader;
         var createFormContext = $.extend({}, context);
 
-        if (args.action.createForm) {
+        var externalLinkAction = action.externalLink;
+        if (externalLinkAction) {
+          // Show popup immediately, do not proceed through normal action process
+          window.open(
+            // URL
+            externalLinkAction.url({
+              context: context
+            }),
+
+            // Title
+            externalLinkAction.title({
+              context: context
+            }),
+
+            // Window options
+            'menubar=0,resizable=0,'
+              + 'width=' + externalLinkAction.width + ','
+              + 'height=' + externalLinkAction.height
+          );
+        } else if (args.action.createForm) {
           cloudStack.dialog.createForm({
             form: args.action.createForm,
             after: function(args) {
