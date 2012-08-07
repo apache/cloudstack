@@ -17,6 +17,67 @@
   var totalScaleDownCondition = 0;
 
   cloudStack.autoscaler = {
+    // UI actions to appear in dialog
+    autoscaleActions: {
+      enable: {
+        label: 'Enable Autoscaler',
+        action: function(args) {
+          args.response.success({
+            _custom: { jobId: 12345 },
+            notification: {
+              poll: function(args) {
+                args.complete({
+                  data: { state: 'Enabled' }
+                });
+              }
+            }
+          });
+        }
+      },
+      disable: {
+        label: 'Disable Autoscaler',
+        action: function(args) {
+          args.response.success({
+            _custom: { jobId: 12345 },
+            notification: {
+              poll: function(args) {
+                args.complete({
+                  data: { state: 'Disabled' }
+                });
+              }
+            }
+          });
+        }
+      },
+      restart: {
+        label: 'Restart Autoscaler',
+        action: function(args) {
+          args.response.success({
+            _custom: { jobId: 12345 },
+            notification: {
+              poll: function(args) {
+                args.complete({
+                  data: { state: 'Enabled' }
+                });
+              }
+            }
+          });
+        }
+      }
+    },
+    actionFilter: function(args) {
+      var data = $.isArray(args.context.originalAutoscaleData) ?
+            args.context.originalAutoscaleData[0] : {};
+
+      if (data.state == 'Enabled') {
+        return ['disable', 'restart'];
+      } else if (data.state == 'Disabled') {
+        return ['enable'];
+      }
+
+      // No existing data, so actions are not visible
+      return [];
+    },
     dataProvider: function(args) {
       // Reset data
       scaleUpData = [];

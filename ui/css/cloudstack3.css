@@ -9683,6 +9683,19 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   max-height: 600px;
 }
 
+.ui-dialog div.autoscaler .detail-actions {
+}
+
+.ui-dialog div.autoscaler .detail-actions .buttons {
+  float: right;
+  margin-right: 6px;
+}
+
+.ui-dialog div.autoscaler .detail-actions .buttons .action {
+  width: 32px;
+  float: left;
+}
+
 .ui-dialog div.autoscaler div.form-container div.form-item[rel=securityGroups] {
   display: block;
   width: 370px;

@@ -18,6 +18,8 @@
     var scaleuppolicy = forms.scaleUpPolicy;
     var scaledownpolicy = forms.scaleDownPolicy;
     var dataProvider = cloudStack.autoscaler.dataProvider;
+    var actions = cloudStack.autoscaler.autoscaleActions;
+    var actionFilter = cloudStack.autoscaler.actionFilter;
 
     return function(args) {
       var context = args.data ?
@@ -51,6 +53,88 @@
           scaleDownPolicyTitleForm, $scaleDownPolicyTitleForm,
           scaleUpPolicyForm, scaleDownPolicyForm;
 
+      var renderActions = function(args) {
+        var data = args.data;
+        var context = args.context;
+        var $actions = $('<div>').addClass('detail-group');
+        var $actionsTable = $('<table>').append('<tr>');
+        var $detailActions = $('<td>').addClass('detail-actions');
+        var $buttons = $('<div>').addClass('buttons');
+        var visibleActions = actionFilter ?
+              actionFilter({
+                context: $.extend(true, {}, context, {
+                  originalAutoscaleData: data ? [data] : null
+                })
+              }) :
+              $.map(actions, function(value, key) { return key; });
+
+        $detailActions.append($buttons);
+        $actionsTable.find('tr').append($detailActions);
+        $actions.append($actionsTable);
+
+        $(visibleActions).map(function(index, actionID) {
+          var action = actions[actionID];
+          var label = _l(action.label);
+          var $action = $('<div>').addClass('action').addClass(actionID);
+          var $icon = $('<a>')
+                .attr({ href: '#', title: label })
+                .append($('<span>').addClass('icon'));
+          
+          if (visibleActions.length == 1) $action.addClass('single');
+          else if (!index) $action.addClass('first');
+          else if  (index == visibleActions.length - 1) $action.addClass('last');
+
+          // Perform action event
+          $action.click(function() {
+            var $loading = $('<div>').addClass('loading-overlay').appendTo($autoscalerDialog);
+            var success = function(args) {
+              $loading.remove();
+              cloudStack.dialog.notice({
+                message: _l('label.task.completed') + ': ' + label
+              });
+
+              // Reload actions
+              var $newActions = renderActions({
+                data: data ? $.extend(data, args.data) : args.data,
+                context: context
+              });
+
+              $actions.after($newActions);
+              $actions.remove();
+            };
+            var error = function(message) {
+              $loading.remove();
+              cloudStack.dialog.notice({ message: message });
+            };
+
+            action.action({
+              response: {
+                success: function(args) {
+                  var notification = $.extend(args.notification, {
+                    _custom: args._custom,
+                    desc: label
+                  });
+
+                  cloudStack.ui.notifications.add(
+                    notification,
+                    success, {},
+                    error, {}
+                  );
+                },
+                error: error
+              }
+            });
+          });
+          
+          $action.append($icon);
+          $action.appendTo($buttons);
+        });
+
+        if (!visibleActions || !visibleActions.length) $actions.hide();
+        
+        return $actions;
+      };
+      
       var renderDialogContent = function(args) {
         var data = args.data ? args.data : {};
 
@@ -69,7 +153,7 @@
 				
 				$.extend(context, {
 				  originalAutoscaleData: args.data
-				})
+				});
 								
         // Create and append top fields
         // -- uses create form to generate fields
@@ -207,6 +291,9 @@
 
         $autoscalerDialog.dialog('option', 'position', 'center');
         $autoscalerDialog.dialog('option', 'height', 'auto');
+
+        // Setup actions
+        renderActions(args).prependTo($autoscalerDialog);
       };
 
       var $loading = $('<div>').addClass('loading-overlay').appendTo($autoscalerDialog);
