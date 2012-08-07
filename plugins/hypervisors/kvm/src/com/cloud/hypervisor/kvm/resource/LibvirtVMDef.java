@@ -35,7 +35,7 @@ public class LibvirtVMDef {
         }
 
         enum bootOrder {
-            HARDISK("hd"), CDROM("cdrom"), FLOOPY("fd"), NETWORK("network");
+            HARDISK("hd"), CDROM("cdrom"), FLOPPY("fd"), NETWORK("network");
             String _order;
 
             bootOrder(String order) {
@@ -323,7 +323,7 @@ public class LibvirtVMDef {
 
     public static class DiskDef {
         enum deviceType {
-            FLOOPY("floopy"), DISK("disk"), CDROM("cdrom");
+            FLOPPY("floppy"), DISK("disk"), CDROM("cdrom");
             String _type;
 
             deviceType(String type) {
