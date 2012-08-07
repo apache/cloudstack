@@ -17,6 +17,78 @@
   var totalScaleDownCondition = 0;
 
   cloudStack.autoscaler = {
+    // UI actions to appear in dialog
+    autoscaleActions: {
+      enable: {
+        label: 'Enable Autoscale VM Group',
+        action: function(args) {				
+				  $.ajax({
+					  url: createURL('enableAutoScaleVmGroup'),
+						data: {
+						  id: args.context.originalAutoscaleData.context.autoscaleVmGroup.id
+						},
+						success: function(json) {						  				
+							var jid = json.enableautoscalevmGroupresponse.jobid;
+							args.response.success({
+							  _custom: {
+								  jobId: jid,
+									getUpdatedItem: function(json) {									  
+										return json.queryasyncjobresultresponse.jobresult.autoscalevmgroup;
+									},
+									getActionFilter: function() {									  
+										return cloudStack.autoscaler.actionFilter;										
+									}
+								},								
+								notification: {
+									poll: pollAsyncJobResult
+								}								
+							});															
+						}
+					});          
+        }
+      },
+      disable: {
+        label: 'Disable Autoscale VM Group',
+        action: function(args) {				  
+				  $.ajax({
+					  url: createURL('disableAutoScaleVmGroup'),
+						data: {
+						  id: args.context.originalAutoscaleData.context.autoscaleVmGroup.id
+						},
+						success: function(json) {						  			
+							var jid = json.disableautoscalevmGroupresponse.jobid;
+							args.response.success({
+							  _custom: {
+								  jobId: jid,
+									getUpdatedItem: function(json) {									  
+										return json.queryasyncjobresultresponse.jobresult.autoscalevmgroup;
+									},
+									getActionFilter: function() {									  
+										return cloudStack.autoscaler.actionFilter;										
+									}
+								},								
+								notification: {
+									poll: pollAsyncJobResult
+								}								
+							});															
+						}
+					});          
+        }
+      }
+    },
+    actionFilter: function(args) {		  
+			var allowedActions = [];		
+			if(args.context.originalAutoscaleData == null) { //new LB rule
+			  //no actions  for new LB rule
+			}
+			else { //existing LB rule			 
+				if(args.context.originalAutoscaleData[0].context.autoscaleVmGroup.state == 'disabled')
+				  allowedActions.push('enable');
+				else if(args.context.originalAutoscaleData[0].context.autoscaleVmGroup.state == 'enabled')
+				  allowedActions.push('disable');				
+			}	
+			return allowedActions;      
+    },
     dataProvider: function(args) {
       // Reset data
       scaleUpData = [];
@@ -31,6 +103,7 @@
 				$.ajax({
 				  url: createURL('listAutoScaleVmGroups'),
 					data: {
+					  listAll: true,
 					  lbruleid: args.context.multiRules[0].id
 					},					
 					success: function(json) {					  
@@ -39,6 +112,7 @@
 						$.ajax({
 						  url: createURL('listAutoScaleVmProfiles'),
 							data: {
+							  listAll: true,
 							  id: autoscaleVmGroup.vmprofileid
 							}, 
 							success: function(json) {							  
@@ -76,15 +150,17 @@
 																							
 								var diskOfferingId, securityGroups;
                 var otherdeployparams = autoscaleVmProfile.otherdeployparams;
-								var array1 = otherdeployparams.split('&');
-								$(array1).each(function(){								 
-									var array2 = this.split('=');
-									if(array2[0] == 'diskofferingid')
-									  diskOfferingId= array2[1];
-									if(array2[0] == 'securitygroupids')
-									  securityGroups = array2[1];									
-								});								                				
-										
+								if(otherdeployparams != null && otherdeployparams.length > 0) {
+									var array1 = otherdeployparams.split('&');
+									$(array1).each(function(){								 
+										var array2 = this.split('=');
+										if(array2[0] == 'diskofferingid')
+											diskOfferingId= array2[1];
+										if(array2[0] == 'securitygroupids')
+											securityGroups = array2[1];									
+									});								                				
+								}
+								
 								var originalAutoscaleData = {
 									templateNames: autoscaleVmProfile.templateid,
 									serviceOfferingId: autoscaleVmProfile.serviceofferingid,
@@ -337,25 +413,50 @@
           label: 'User',
           select: function(args) {
             var items = [];
-            if(isAdmin() || isDomainAdmin()) {
-              $.ajax({
-                url: createURL('listUsers'),
-                data: {
-                  domainid: g_domainid,
-                  account: g_account
-                },
-                success: function(json) {
-                  var users = json.listusersresponse.user;
-                  $(users).each(function(){
-                    items.push({id: this.id, description: this.username});
-                  });
-                  args.response.success({ data:  items });
-                }
-              });
-            }
-            else { //regular user doesn't have access to listUers API call.
-              items.push({id: "", description: ""});
-            }
+						if(args.context.originalAutoscaleData == null) { //new LB rule
+							if(isAdmin() || isDomainAdmin()) {
+								$.ajax({
+									url: createURL('listUsers'),
+									data: {
+										domainid: g_domainid,
+										account: g_account
+									},
+									success: function(json) {
+										var users = json.listusersresponse.user;
+										$(users).each(function(){
+											items.push({id: this.id, description: this.username});
+										});
+										args.response.success({ data: items });
+									}
+								});
+							}
+							else { //regular user doesn't have access to listUers API call.
+								items.push({id: "", description: ""});
+								args.response.success({ data: items });
+							}
+						}
+						else { //existing LB rule
+						  if(isAdmin() || isDomainAdmin()) {
+								$.ajax({
+									url: createURL('listUsers'),
+									data: {
+										domainid: args.context.originalAutoscaleData.context.autoscaleVmProfile.domainid,
+										account: args.context.originalAutoscaleData.context.autoscaleVmProfile.account
+									},
+									success: function(json) {
+										var users = json.listusersresponse.user;
+										$(users).each(function(){
+											items.push({id: this.id, description: this.username});
+										});
+										args.response.success({ data: items });
+									}
+								});
+							}
+							else { //regular user doesn't have access to listUers API call.
+								items.push({id: "", description: ""});
+								args.response.success({ data: items });
+							}
+						}
           }
         }
       },
@@ -1005,7 +1106,7 @@
 					array1.push("&destroyvmgraceperiod=" + args.data.destroyVMgracePeriod);
 					array1.push("&snmpcommunity=" + args.data.snmpCommunity);
 					array1.push("&snmpport=" + args.data.snmpPort);
-					 if(args.data.username != "")
+					if(args.data.username != null && args.data.username.length > 0)
             array1.push("&autoscaleuserid=" + args.data.username);
          
           $.ajax({
@@ -1156,7 +1257,9 @@
 						  id: args.context.originalAutoscaleData.context.autoscaleVmGroup.id,
 							minmembers: args.data.minInstance,
 							maxmembers: args.data.maxInstance,
-							interval: args.data.interval
+							interval: args.data.interval,
+							scaleuppolicyids: args.context.originalAutoscaleData.scaleUpPolicy.id,
+							scaledownpolicyids: args.context.originalAutoscaleData.scaleDownPolicy.id
 						};
 						
 						$.ajax({

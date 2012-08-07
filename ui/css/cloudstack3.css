@@ -9647,7 +9647,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   float: left;
 }
 
-/*Configure ACL dialog*/
+/*Configure ACL dialog / VM tier list view dialog*/
 .ui-dialog.configure-acl .multi-edit {
   width: 866px;
 }
@@ -9657,10 +9657,14 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 }
 
 .ui-dialog.configure-acl .ui-dialog-buttonpane {
-  /*+placement:shift 798px -2px;*/
+  /*+placement:shift 722px -2px;*/
   position: relative;
-  left: 798px;
+  left: 722px;
   top: -2px;
+}
+
+.ui-dialog.configure-acl div.view.list-view {
+  max-height: 474px;
 }
 
 .ui-dialog.configure-acl .multi-edit .data {
@@ -9677,10 +9681,28 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   max-width: none !important;
 }
 
+.ui-dialog.configure-acl .view.list-view table.body tr td.actions {
+  width: 184px !important;
+  max-width: 184px !important;
+}
+
 /*Autoscaler*/
 .ui-dialog div.autoscaler {
   overflow: auto;
   max-height: 600px;
+}
+
+.ui-dialog div.autoscaler .detail-actions {
+}
+
+.ui-dialog div.autoscaler .detail-actions .buttons {
+  float: right;
+  margin-right: 6px;
+}
+
+.ui-dialog div.autoscaler .detail-actions .buttons .action {
+  width: 32px;
+  float: left;
 }
 
 .ui-dialog div.autoscaler div.form-container div.form-item[rel=securityGroups] {
