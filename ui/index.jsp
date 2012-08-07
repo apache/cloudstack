@@ -5,7 +5,6 @@
 </c:if>
 <fmt:setBundle basename="resources/messages"/>
 <% long now = System.currentTimeMillis(); %>
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
@@ -17,7 +16,6 @@
     <c:if test="${!empty cookie.lang && cookie.lang.value != 'en'}">
       <link type="text/css" rel="stylesheet" href="css/cloudstack3.${cookie.lang.value}.css" />
     </c:if>
-
     <!--[if IE 7]>
     <link type="text/css" rel="stylesheet" href="css/cloudstack3-ie7.css" />
     <![endif]-->
@@ -1652,6 +1650,7 @@
 </html>
 <script language="javascript">
 dictionary = {
+'label.tier.details': '<fmt:message key="label.tier.details"/>',
 'label.edit.tags': '<fmt:message key="label.edit.tags"/>',
 'label.network.rate.megabytes': '<fmt:message key="label.network.rate.megabytes"/>',
 'message.setup.physical.network.during.zone.creation.basic': '<fmt:message key="message.setup.physical.network.during.zone.creation.basic"/>',
