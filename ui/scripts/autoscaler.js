@@ -137,15 +137,17 @@
 																							
 								var diskOfferingId, securityGroups;
                 var otherdeployparams = autoscaleVmProfile.otherdeployparams;
-								var array1 = otherdeployparams.split('&');
-								$(array1).each(function(){								 
-									var array2 = this.split('=');
-									if(array2[0] == 'diskofferingid')
-									  diskOfferingId= array2[1];
-									if(array2[0] == 'securitygroupids')
-									  securityGroups = array2[1];									
-								});								                				
-										
+								if(otherdeployparams != null && otherdeployparams.length > 0) {
+									var array1 = otherdeployparams.split('&');
+									$(array1).each(function(){								 
+										var array2 = this.split('=');
+										if(array2[0] == 'diskofferingid')
+											diskOfferingId= array2[1];
+										if(array2[0] == 'securitygroupids')
+											securityGroups = array2[1];									
+									});								                				
+								}
+								
 								var originalAutoscaleData = {
 									templateNames: autoscaleVmProfile.templateid,
 									serviceOfferingId: autoscaleVmProfile.serviceofferingid,
