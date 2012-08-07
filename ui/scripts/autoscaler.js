@@ -97,6 +97,7 @@
 				$.ajax({
 				  url: createURL('listAutoScaleVmGroups'),
 					data: {
+					  listAll: true,
 					  lbruleid: args.context.multiRules[0].id
 					},					
 					success: function(json) {					  
@@ -105,6 +106,7 @@
 						$.ajax({
 						  url: createURL('listAutoScaleVmProfiles'),
 							data: {
+							  listAll: true,
 							  id: autoscaleVmGroup.vmprofileid
 							}, 
 							success: function(json) {							  
