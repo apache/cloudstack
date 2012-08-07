@@ -1066,7 +1066,7 @@
 					array1.push("&destroyvmgraceperiod=" + args.data.destroyVMgracePeriod);
 					array1.push("&snmpcommunity=" + args.data.snmpCommunity);
 					array1.push("&snmpport=" + args.data.snmpPort);
-					 if(args.data.username != "")
+					if(args.data.username != null && args.data.username.length > 0)
             array1.push("&autoscaleuserid=" + args.data.username);
          
           $.ajax({
