@@ -1712,8 +1712,11 @@
 
                     if('networks' in args.context && args.context.networks[0].vpcid == null) { //a non-VPC network from Guest Network section
                       $.ajax({
-                        url: createURL("listNetworkOfferings&id=" + args.context.networks[0].networkofferingid),
-                        dataType: "json",
+                        url: createURL('listNetworkOfferings'),
+                        data: {
+												  listAll: true,
+													id: args.context.networks[0].networkofferingid
+												},
                         async: false,
                         success: function(json) {
                           var networkoffering = json.listnetworkofferingsresponse.networkoffering[0];
@@ -1745,7 +1748,11 @@
                       }
                       else { //IP is associated with a tier
                         $.ajax({
-                          url: createURL("listNetworks&id=" + args.context.ipAddresses[0].associatednetworkid),
+                          url: createURL('listNetworks'),
+													data: {
+													  listAll: true,
+														id: args.context.ipAddresses[0].associatednetworkid
+													},
                           async: false,
                           success: function(json) {
                             var networkObj = json.listnetworksresponse.network[0];
