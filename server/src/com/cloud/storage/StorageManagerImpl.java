@@ -649,6 +649,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(volume, snapshot);
         if (volumeDetails != null) {
             createdVolume = volumeDetails.first();
+        	UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(), createdVolume.getDataCenterId(), createdVolume.getId(), createdVolume.getName(), 
+        			                                   createdVolume.getDiskOfferingId(), null, createdVolume.getSize());
+        	_usageEventDao.persist(usageEvent);
         }
         return createdVolume;
     }
@@ -2019,8 +2022,11 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId());
 
         volume = _volsDao.persist(volume);
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size);
-        _usageEventDao.persist(usageEvent);
+        if(cmd.getSnapshotId() == null){
+        	//for volume created from snapshot, create usage event after volume creation
+        	UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size);
+        	_usageEventDao.persist(usageEvent);
+        }
 
         UserContext.current().setEventDetails("Volume Id: " + volume.getId());
 
