@@ -111,6 +111,7 @@ import com.cloud.vm.Nic.State;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+
 public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase implements ExternalLoadBalancerDeviceManager, ResourceStateAdapter {
 
     @Inject
@@ -147,6 +148,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     AccountManager _accountMgr;
     @Inject
     UserStatisticsDao _userStatsDao;
+    @Inject
+    LoadBalancerDao _lbDao;
     @Inject
     NetworkDao _networkDao;
     @Inject
@@ -795,7 +798,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             boolean revoked = (rule.getState().equals(FirewallRule.State.Revoke));
             String protocol = rule.getProtocol();
             String algorithm = rule.getAlgorithm();
-            Long lbId = rule.getId();
+            String uuid = rule.getUuid();
             String srcIp = _networkMgr.getIp(rule.getSourceIpAddressId()).getAddress().addr();
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
@@ -862,8 +865,8 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             }
 
             if ((destinations != null && !destinations.isEmpty()) || rule.isAutoScaleConfig()) {
-                LoadBalancerTO loadBalancer = new LoadBalancerTO(lbId, srcIp, srcPort, protocol, algorithm, revoked, false, destinations, rule.getStickinessPolicies());
-                if(rule.isAutoScaleConfig())
+                LoadBalancerTO loadBalancer = new LoadBalancerTO(uuid, srcIp, srcPort, protocol, algorithm, revoked, false, destinations, rule.getStickinessPolicies());
+                if (rule.isAutoScaleConfig())
                     loadBalancer.setAutoScaleVmGroup(rule.getAutoScaleVmGroup());
                 loadBalancersToApply.add(loadBalancer);
             }
