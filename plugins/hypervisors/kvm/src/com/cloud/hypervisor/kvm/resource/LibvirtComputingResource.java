@@ -617,7 +617,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
         _localStorageUUID = (String) params.get("local.storage.uuid");
         if (_localStorageUUID == null) {
-            throws new ConfigurationException("local.storage.uuid is not set! Please set this to a valid UUID");
+            throw new ConfigurationException("local.storage.uuid is not set! Please set this to a valid UUID");
         }
 
         value = (String) params.get("scripts.timeout");
@@ -643,9 +643,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         /* Does node support HVM guest? If not, exit */
         if (!IsHVMEnabled(conn)) {
             throw new ConfigurationException(
-                    "NO HVM support on this machine, pls make sure: "
+                    "NO HVM support on this machine, please make sure: "
                             + "1. VT/SVM is supported by your CPU, or is enabled in BIOS. "
-                            + "2. kvm modules is installed");
+                            + "2. kvm modules are loaded (kvm, kvm_amd|kvm_intel)");
         }
 
         _hypervisorPath = getHypervisorPath(conn);
