@@ -41,4 +41,5 @@ deps/cloud.userlibraries
 .DS_Store
 .idea
 *.iml
+git-remote-https.exe.stackdump
 *.swp
