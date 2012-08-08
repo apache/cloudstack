@@ -23,6 +23,8 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.utils.db.Encrypt;
+
 @Entity
 @Table(name="account_details")
 public class AccountDetailVO {
@@ -30,25 +32,26 @@ public class AccountDetailVO {
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private long id;
-    
+
     @Column(name="account_id")
     private long accountId;
-    
+
     @Column(name="name")
     private String name;
-    
-    @Column(name="value", encryptable=true)
+
+    @Encrypt
+    @Column(name="value")
     private String value;
-    
+
     protected AccountDetailVO() {
     }
-    
+
     public AccountDetailVO(long accountId, String name, String value) {
         this.accountId = accountId;
         this.name = name;
         this.value = value;
     }
- 
+
     public long getAccountId() {
         return accountId;
     }
