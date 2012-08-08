@@ -846,7 +846,7 @@
                   context: context
                 }) : true
             ) : true;
-      if ($actions.find('div.action').size() || (detailViewArgs.viewAll && showViewAll)) {
+      if ($actions && ($actions.find('div.action').size() || (detailViewArgs.viewAll && showViewAll))) {
         $actions.prependTo($firstRow.closest('div.detail-group').closest('.details'));
       }
       if (detailViewArgs.viewAll && showViewAll) {
