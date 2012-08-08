@@ -14,29 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.vpc.Dao;
+package com.cloud.network.vpc.dao;
 
-import java.util.List;
-
-import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.utils.db.GenericDao;
 
 
-public interface VpcDao extends GenericDao<VpcVO, Long>{
-
+public interface VpcOfferingDao extends GenericDao<VpcOfferingVO, Long>{
     /**
-     * @param offId
-     * @return
+     * Returns the VPC offering that matches the unique name.
+     * 
+     * @param uniqueName
+     *            name
+     * @return VpcOfferingVO
      */
-    int getVpcCountByOfferingId(long offId);
-    
-    Vpc getActiveVpcById(long vpcId);
-    
-    List<? extends Vpc> listByAccountId(long accountId);
-    
-    List<VpcVO> listInactiveVpcs();
-    
-    long countByAccountId(long accountId);
-
+    VpcOfferingVO findByUniqueName(String uniqueName);
 }

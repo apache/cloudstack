@@ -14,22 +14,29 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.vpc.Dao;
+package com.cloud.network.vpc.dao;
 
 import java.util.List;
 
-import com.cloud.network.vpc.StaticRoute;
-import com.cloud.network.vpc.StaticRouteVO;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface StaticRouteDao extends GenericDao<StaticRouteVO, Long>{
-    
-    boolean setStateToAdd(StaticRouteVO rule);
 
-    List<? extends StaticRoute> listByGatewayIdAndNotRevoked(long gatewayId);
+public interface VpcDao extends GenericDao<VpcVO, Long>{
+
+    /**
+     * @param offId
+     * @return
+     */
+    int getVpcCountByOfferingId(long offId);
     
-    List<StaticRouteVO> listByVpcId(long vpcId);
+    Vpc getActiveVpcById(long vpcId);
     
-    long countRoutesByGateway(long gatewayId);
+    List<? extends Vpc> listByAccountId(long accountId);
+    
+    List<VpcVO> listInactiveVpcs();
+    
+    long countByAccountId(long accountId);
 
 }

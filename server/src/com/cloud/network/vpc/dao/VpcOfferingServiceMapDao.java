@@ -14,8 +14,28 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.vm;
+package com.cloud.network.vpc.dao;
 
-public interface PluggableNics {
-    boolean canPlugNics();
+import java.util.List;
+
+import com.cloud.network.Network.Service;
+import com.cloud.network.vpc.VpcOfferingServiceMapVO;
+import com.cloud.utils.db.GenericDao;
+
+
+public interface VpcOfferingServiceMapDao extends GenericDao<VpcOfferingServiceMapVO, Long>{
+    
+    List<VpcOfferingServiceMapVO> listByVpcOffId(long vpcOffId);
+
+    /**
+     * @param networkOfferingId
+     * @param services
+     * @return
+     */
+    boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service[] services);
+    
+    List<String> listServicesForVpcOffering(long vpcOfferingId);
+    
+    VpcOfferingServiceMapVO findByServiceProviderAndOfferingId(String service, String provider, long vpcOfferingId);
+
 }

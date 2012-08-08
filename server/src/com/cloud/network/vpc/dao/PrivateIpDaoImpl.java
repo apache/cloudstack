@@ -14,12 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.vpc.Dao;
+package com.cloud.network.vpc.dao;
 
 import java.util.Date;
 import java.util.List;
+
 import javax.ejb.Local;
+
 import org.apache.log4j.Logger;
+
 import com.cloud.network.vpc.PrivateIpVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
