@@ -4331,27 +4331,25 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     @Override
     public boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkId) {
-        boolean netscalerInNetwork = isProviderForNetwork(Network.Provider.Netscaler, networkId);
-        boolean juniperInNetwork = isProviderForNetwork(Network.Provider.JuniperSRX, networkId);
-        boolean f5InNetwork = isProviderForNetwork(Network.Provider.F5BigIp, networkId);
-
-        if (netscalerInNetwork || juniperInNetwork || f5InNetwork) {
-            return true;
-        } else {
-            return false;
+        List<Provider> networkProviders = getNetworkProviders(networkId);
+        for(Provider provider : networkProviders){
+            if(provider.isExternal()){
+                return true;
+            }
         }
+        return false;
     }
+    
 
     public boolean networkOfferingIsConfiguredForExternalNetworking(long networkOfferingId) {
-        boolean netscalerInNetworkOffering = isProviderForNetworkOffering(Network.Provider.Netscaler, networkOfferingId);
-        boolean juniperInNetworkOffering = isProviderForNetworkOffering(Network.Provider.JuniperSRX, networkOfferingId);
-        boolean f5InNetworkOffering = isProviderForNetworkOffering(Network.Provider.F5BigIp, networkOfferingId);
-
-        if (netscalerInNetworkOffering || juniperInNetworkOffering || f5InNetworkOffering) {
-            return true;
-        } else {
-            return false;
+        List<Provider> networkOffProviders = getNtwkOffDistinctProviders(networkOfferingId);
+        for(Provider provider : networkOffProviders){
+            if(provider.isExternal()){
+                return true;
+            }
         }
+        return false;
+
     }
 
     @Override
@@ -6772,12 +6770,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
     private List<Provider> getNetworkProviders(long networkId) {
         List<String> providerNames = _ntwkSrvcDao.getDistinctProviders(networkId);
-        List<Provider> providers = new ArrayList<Provider>();
+        Map<String, Provider> providers = new HashMap<String, Provider>();
         for (String providerName : providerNames) {
-            providers.add(Network.Provider.getProvider(providerName));
+            if(!providers.containsKey(providerName)){
+                providers.put(providerName, Network.Provider.getProvider(providerName));
+            }
         }
 
-        return providers;
+        return new ArrayList<Provider>(providers.values());
     }
 
     @Override
@@ -7125,12 +7125,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Override
     public List<Provider> getNtwkOffDistinctProviders(long networkId) {
         List<String> providerNames = _ntwkOfferingSrvcDao.getDistinctProviders(networkId);
-        List<Provider> providers = new ArrayList<Provider>();
+        Map<String, Provider> providers = new HashMap<String, Provider>();
         for (String providerName : providerNames) {
-            providers.add(Network.Provider.getProvider(providerName));
+            if(!providers.containsKey(providerName)){
+                providers.put(providerName, Network.Provider.getProvider(providerName));
+            }
         }
 
-        return providers;
+        return new ArrayList<Provider>(providers.values());
     }
 
     @Override
