@@ -12,7 +12,7 @@
   var aclMultiEdit = {
     noSelect: true,
     fields: {
-      'cidrlist': { edit: true, label: 'label.cidr.list' },
+      'cidrlist': { edit: true, label: 'label.cidr' },
       'protocol': {
         label: 'label.protocol',
         select: function(args) {
@@ -107,19 +107,6 @@
       }
     },
     actions: {
-      edit: {
-        label: 'label.edit',
-
-        // Blank -- edit is just for tags right now
-        action: function(args) {
-          args.response.success({
-            notification: {
-              label: 'Edit ACL item',
-              poll: function(args) { args.complete(); }
-            }
-          });
-        }
-      },
       destroy: {
         label: 'Remove ACL',
         action: function(args) {
@@ -381,6 +368,21 @@
                 }
               });
             }
+          },
+          viewConsole: {
+            label: 'label.view.console',
+            action: {
+              externalLink: {
+                url: function(args) {
+                  return clientConsoleUrl + '?cmd=access&vm=' + args.context.vpcTierInstances[0].id;
+                },
+                title: function(args) {						
+                  return args.context.vpcTierInstances[0].id.substr(0,8);  //title in window.open() can't have space nor longer than 8 characters. Otherwise, IE browser will have error.
+                },
+                width: 820,
+                height: 640
+              }
+            }
           }
         },
         dataProvider: function(args) {
@@ -448,8 +450,7 @@
               listAll: true
             },
             success: function(json) {
-              items = json.listprivategatewaysresponse.privategateway;
-              args.response.success({ data: items });
+              items = json.listprivategatewaysresponse.privategateway;              
             }
           });
 
@@ -648,19 +649,6 @@
                         }
                       },
                       actions: {
-                        edit: {
-                          label: 'label.edit',
-
-                          // Blank -- edit is just for tags right now
-                          action: function(args) {
-                            args.response.success({
-                              notification: {
-                                label: 'Edit static route',
-                                poll: function(args) { args.complete(); }
-                              }
-                            });
-                          }
-                        },
                         destroy: {
                           label: 'Remove static route',
                           action: function(args) {
@@ -963,7 +951,7 @@
                   $.ajax({
                     url: createURL('listVpnGateways'),
                     data: {
-                      vpcid: args.data.vpcid
+                      vpcid: args.context.vpc[0].id
                     },
                     async: false,
                     success: function(json) {
@@ -990,8 +978,7 @@
                         {_custom:
                           {
                             jobId: jid,													 
-													  getUpdatedItem: function(json) {
-														  debugger;
+													  getUpdatedItem: function(json) {														 
 														  return json.queryasyncjobresultresponse.jobresult.vpnconnection;
 													  }													 
                           }
@@ -1403,7 +1390,7 @@
         isMaximized: true,
         tabs: {
           details: {
-            title: 'label.details',
+            title: 'label.tier.details',
             preFilter: function(args) {
               var hiddenFields = [];
               var zone;

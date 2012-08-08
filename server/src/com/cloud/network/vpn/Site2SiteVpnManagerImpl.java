@@ -228,6 +228,10 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
             throw new InvalidParameterValueException("Unable to find specified Site to Site VPN gateway by id", null);
         }
         _accountMgr.checkAccess(caller, null, false, vpnGateway);
+        
+        if (customerGateway.getAccountId() != vpnGateway.getAccountId() || customerGateway.getDomainId() != vpnGateway.getDomainId()) {
+            throw new InvalidParameterValueException("VPN connection can only be esitablished between same account's VPN gateway and customer gateway!", null);
+        }
 
         if (_vpnConnectionDao.findByVpnGatewayIdAndCustomerGatewayId(vpnGatewayId, customerGatewayId) != null) {
             List<IdentityProxy> idList = new ArrayList<IdentityProxy>();

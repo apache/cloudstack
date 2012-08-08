@@ -2549,6 +2549,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     private void validateUserData(String userData) {
         byte[] decodedUserData = null;
         if (userData != null) {
+            if ( !userData.matches("^([A-Za-z0-9+/]{4})*([A-Za-z0-9+/]{4}|[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)$")) {
+                throw new InvalidParameterValueException("User data is not base64 encoded", null);
+            }
             if (userData.length() >= 2 * MAX_USER_DATA_LENGTH_BYTES) {
                 throw new InvalidParameterValueException("User data is too long", null);
             }
@@ -3423,8 +3426,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             idList.add(new IdentityProxy(oldAccount, oldAccount.getAccountId(), "accountId"));
             throw new InvalidParameterValueException("The account with the specified id should be same domain for moving VM between two accounts.", idList);
         }
-
-
+        
         // don't allow to move the vm if there are existing PF/LB/Static Nat rules, or vm is assigned to static Nat ip
         List<PortForwardingRuleVO> pfrules = _portForwardingDao.listByVm(cmd.getVmId());
         if (pfrules != null && pfrules.size() > 0){
@@ -3453,6 +3455,9 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         //VV 2: check if account/domain is with in resource limits to create a new vm
         _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.user_vm);
+
+        //VV 3: check if volumes are with in resource limits 
+        _resourceLimitMgr.checkResourceLimit(newAccount, ResourceType.volume, _volsDao.findByInstance(cmd.getVmId()).size());
 
         // VV 4: Check if new owner can use the vm template
         VirtualMachineTemplate template = _templateDao.findById(vm.getTemplateId());

@@ -51,7 +51,6 @@ import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.StaticNat;
-import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.user.Account;
@@ -947,15 +946,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#unassignIPFromVpcNetwork(long)
-     */
-    @Override
-    public void unassignIPFromVpcNetwork(long ipId, long networkId) {
-        // TODO Auto-generated method stub
-        
-    }
-
-    /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#getNicProfile(com.cloud.vm.VirtualMachine, long)
      */
     @Override
@@ -971,16 +961,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     public boolean setupDns(Network network, Provider provider) {
         // TODO Auto-generated method stub
         return false;
-    }
-
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkService#allocateIP(com.cloud.user.Account, boolean, long)
-     */
-    @Override
-    public IpAddress allocateIP(Account ipOwner, boolean isSystem, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     /* (non-Javadoc)
@@ -1006,15 +986,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      */
     @Override
     public PublicIp assignSourceNatIpAddressToGuestNetwork(Account owner, Network guestNetwork) throws InsufficientAddressCapacityException, ConcurrentOperationException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#assignSourceNatIpAddressToVpc(com.cloud.user.Account, com.cloud.network.vpc.Vpc)
-     */
-    @Override
-    public PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
         return null;
     }
@@ -1085,11 +1056,29 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#ipUsedInVpc(com.cloud.network.IpAddress)
+     * @see com.cloud.network.NetworkService#allocateIP(com.cloud.user.Account, long)
      */
     @Override
-    public boolean ipUsedInVpc(IpAddress ip) {
+    public IpAddress allocateIP(Account ipOwner, long zoneId) throws ResourceAllocationException, InsufficientAddressCapacityException, ConcurrentOperationException {
         // TODO Auto-generated method stub
-        return false;
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#markPublicIpAsAllocated(com.cloud.network.IPAddressVO)
+     */
+    @Override
+    public void markPublicIpAsAllocated(IPAddressVO addr) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#assignDedicateIpAddress(com.cloud.user.Account, java.lang.Long, java.lang.Long, long, boolean)
+     */
+    @Override
+    public PublicIp assignDedicateIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId, boolean isSourceNat) throws ConcurrentOperationException, InsufficientAddressCapacityException {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

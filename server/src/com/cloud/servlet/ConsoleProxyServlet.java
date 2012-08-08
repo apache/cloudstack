@@ -176,6 +176,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 		}
 		
 		String rootUrl = _ms.getConsoleAccessUrlRoot(vmId);
+
 		if(rootUrl == null) {
 			sendResponse(resp, "");
 			return;
@@ -227,6 +228,8 @@ public class ConsoleProxyServlet extends HttpServlet {
 		}
 		
 		String rootUrl = _ms.getConsoleAccessUrlRoot(vmId);
+		//String rootUrl = "http://localhost:8099";
+		
 		if(rootUrl == null) {
 			sendResponse(resp, "<html><body><p>Console access will be ready in a few minutes. Please try it again later.</p></body></html>");
 			return;
@@ -322,6 +325,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 
 		ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(_ms.getHashKey());
 		ConsoleProxyClientParam param = new ConsoleProxyClientParam();
+		
 		param.setClientHostAddress(parsedHostInfo.first());
 		param.setClientHostPort(portInfo.second());
 		param.setClientHostPassword(sid);
@@ -331,9 +335,9 @@ public class ConsoleProxyServlet extends HttpServlet {
 			param.setClientTunnelUrl(parsedHostInfo.second());
 			param.setClientTunnelSession(parsedHostInfo.third());
 		}
-		
+		s_logger.debug("Thumbnail url params" + param.toString());
 		sb.append("/ajaximg?token=" + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
-		sb.append("&w=").append(w).append("&h=").append(h);
+		sb.append("&w=").append(w).append("&h=").append(h).append("&key=0");
 		
 		if(s_logger.isDebugEnabled()) {
             s_logger.debug("Compose thumbnail url: " + sb.toString());

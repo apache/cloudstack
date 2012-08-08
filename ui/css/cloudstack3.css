@@ -9156,6 +9156,19 @@ div.panel.ui-dialog div.list-view div.fixed-header {
 
 /** Dialog tagger*/
 .ui-dialog .tagger {
+  width: 375px;
+}
+
+.ui-dialog .tagger .tag-info {
+  display: none;
+}
+
+.ui-dialog.editTags .ui-button {
+  float: right;
+}
+
+.ui-dialog.editTags .ui-dialog-buttonpane {
+  float: right;
 }
 
 .ui-dialog .tagger .field {
@@ -9634,34 +9647,62 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   float: left;
 }
 
-/*Configure ACL dialog*/
-.ui-dialog.configure-acl {
+/*Configure ACL dialog / VM tier list view dialog*/
+.ui-dialog.configure-acl .multi-edit {
+  width: 866px;
+}
+
+.ui-dialog.configure-acl .multi-edit table {
+  max-width: none;
 }
 
 .ui-dialog.configure-acl .ui-dialog-buttonpane {
-  /*+placement:shift 709px -2px;*/
+  /*+placement:shift 722px -2px;*/
   position: relative;
-  left: 709px;
+  left: 722px;
   top: -2px;
 }
 
+.ui-dialog.configure-acl div.view.list-view {
+  max-height: 474px;
+}
+
 .ui-dialog.configure-acl .multi-edit .data {
-  width: 807px;
+  width: 901px;
+  padding: 0;
+  margin: 0;
   height: 370px;
   overflow: auto;
+  overflow-x: hidden;
 }
 
-/*Acl multi-edit*/
-div.ui-dialog div.acl div.multi-edit div.data div.data-body {
-
-width:100%;
+.ui-dialog.configure-acl .multi-edit .data .multi-actions {
+  min-width: none !important;
+  max-width: none !important;
 }
 
+.ui-dialog.configure-acl .view.list-view table.body tr td.actions {
+  width: 184px !important;
+  max-width: 184px !important;
+}
 
 /*Autoscaler*/
 .ui-dialog div.autoscaler {
   overflow: auto;
   max-height: 600px;
+}
+
+.ui-dialog div.autoscaler .detail-actions {
+}
+
+.ui-dialog div.autoscaler .detail-actions .buttons {
+  float: right;
+  margin-right: 6px;
+}
+
+.ui-dialog div.autoscaler .detail-actions .buttons .action {
+  width: 32px;
+  float: left;
 }
 
 .ui-dialog div.autoscaler div.form-container div.form-item[rel=securityGroups] {
@@ -10249,5 +10290,13 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .uploadVolume:hover .icon {
   background-position: -230px -615px;
+}
+
+.editTags .icon {
+  background-position: -228px -65px;
+}
+
+.editTags:hover .icon {
+  background-position: -228px -646px;
 }
 

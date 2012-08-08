@@ -458,7 +458,7 @@ public class F5ExternalLoadBalancerElement extends ExternalLoadBalancerDeviceMan
     }
 
     @Override
-    public boolean verifyServicesCombination(List<String> services) {
+    public boolean verifyServicesCombination(Set<Service> services) {
         return true;
     }
 

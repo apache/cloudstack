@@ -1274,6 +1274,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args += " -D";
             args += " -r ";
             args += cmd.getPeerGatewayIp();
+            args += " -n ";
+            args += cmd.getLocalGuestCidr();
             args += " -N ";
             args += cmd.getPeerGuestCidrList();
         }

@@ -347,9 +347,8 @@ UPDATE `cloud`.`data_center` SET `is_local_storage_enabled` = IF ((SELECT `value
 
 ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `max_data_volumes_limit` int unsigned DEFAULT 6 COMMENT 'Max. data volumes per VM supported by hypervisor';
 
-SET SQL_SAFE_UPDATES=0;
 UPDATE `cloud`.`hypervisor_capabilities` SET `max_data_volumes_limit`=13 WHERE `hypervisor_type`='XenServer' AND (`hypervisor_version`='6.0' OR `hypervisor_version`='6.0.2');
-SET SQL_SAFE_UPDATES=1;
+
 UPDATE `cloud`.`configuration` SET description='In second, timeout for creating volume from snapshot' WHERE name='create.volume.from.snapshot.wait';
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.vpcs', '20', 'The default maximum number of vpcs that can be created for an account');

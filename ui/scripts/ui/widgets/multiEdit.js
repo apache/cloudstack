@@ -345,20 +345,50 @@
                     } });
                   }
                 });
-
-                if (options.tags) {
-                  $(':ui-dialog:last').append(
-                    $('<div>').addClass('multi-edit-tags').tagger($.extend(true, {}, options.tags, {
-                      context: $.extend(true, {}, options.context, {
-                        multiRule: [multiRule]
-                      })
-                    }))
-                  );
-                }
               }
             })
         );
       });
+
+      // Add tagger action
+      if (options.tags) {
+        $actions.prepend(
+          $('<div></div>')
+            .addClass('action editTags')
+            .attr('title', _l('label.edit.tags'))
+            .append($('<span></span>').addClass('icon'))
+            .click(function() {
+              $('<div>')
+                .dialog({
+                  dialogClass: 'editTags',
+                  title: _l('label.edit.tags'),
+                  width: 400,
+                  buttons: [
+                    {
+                      text: _l('label.done'),
+                      'class': 'ok',
+                      click: function() {
+                        $(this).dialog('destroy');
+                        $('div.overlay:last').remove();
+
+                        return true;
+                      }
+                    }
+                  ]
+                })
+                .append(
+                  $('<div></div>').addClass('multi-edit-tags').tagger($.extend(true, {}, options.tags, {
+                    context: $.extend(true, {}, options.context, {
+                      multiRule: [multiRule]
+                    })
+                  }))
+                )
+                .closest('.ui-dialog').overlay();
+
+              return false;
+            })
+        )
+      }
 
       // Add expandable listing, for multiple-item
       if (options.multipleAdd) {
@@ -774,6 +804,9 @@
         $('<div>').addClass('button add-vm custom-action')
           .html(_l(field.custom.buttonLabel))
           .click(function() {
+            if (field.custom.requireValidation &&
+                !$multiForm.valid()) return false;
+            
             var formData = getMultiData($multi);
             
             field.custom.action({
@@ -786,6 +819,8 @@
                 }
               }
             });
+
+            return false;
           }).appendTo($td);
       } else if (field.addButton) {
         $addVM = $('<div>').addClass('button add-vm').html(

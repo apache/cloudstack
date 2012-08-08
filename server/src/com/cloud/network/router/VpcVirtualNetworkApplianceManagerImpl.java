@@ -113,6 +113,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -1119,7 +1120,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         String localGuestCidr = vpc.getCidr();
         String localPublicGateway = _vlanDao.findById(ip.getVlanId()).getVlanGateway();
         String peerGatewayIp = gw.getGatewayIp();
-        String peerGuestCidrList = gw.getGuestCidrList();
+        String peerGuestCidrList = gw.getGuestCidrList().replace(";", ",");
         String ipsecPsk = gw.getIpsecPsk();
         String ikePolicy = gw.getIkePolicy();
         String espPolicy = gw.getEspPolicy();
@@ -1326,10 +1327,19 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 Nic nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(publicNtwkId, router.getId(), 
                         broadcastUri.toString());
                 
-                if ((nic == null && nicsToPlug.get(ip.getVlanTag()) == null) || nicsToUnplug.get(ip.getVlanTag()) != null) {
+                if (nic == null && nicsToPlug.get(ip.getVlanTag()) == null) {
                     nicsToPlug.put(ip.getVlanTag(), ip);
                     s_logger.debug("Need to plug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + 
                             " in public network id =" + publicNtwkId);
+                } else {
+                    PublicIpAddress nicToUnplug = nicsToUnplug.get(ip.getVlanTag());
+                    if (nicToUnplug != null) {
+                        NicVO nicVO = _nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, router.getId(), nicToUnplug.getAddress().addr());
+                        nicVO.setIp4Address(ip.getAddress().addr());
+                        _nicDao.update(nicVO.getId(), nicVO);
+                        s_logger.debug("Updated the nic " + nicVO + " with the new ip address " + ip.getAddress().addr());
+                        nicsToUnplug.remove(ip.getVlanTag());
+                    } 
                 }
             }
         }

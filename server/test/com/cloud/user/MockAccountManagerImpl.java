@@ -39,7 +39,7 @@ import com.cloud.utils.db.SearchCriteria;
 
 
 @Local(value = { AccountManager.class, AccountService.class })
-public class MockAccountManagerImpl implements Manager, AccountManager {
+public class MockAccountManagerImpl implements Manager, AccountManager, AccountService {
 
 
     @Override
@@ -98,14 +98,12 @@ public class MockAccountManagerImpl implements Manager, AccountManager {
 
     @Override
     public Account getSystemAccount() {
-        // TODO Auto-generated method stub
-        return null;
+        return new AccountVO();
     }
 
     @Override
     public User getSystemUser() {
-        // TODO Auto-generated method stub
-        return null;
+        return new UserVO();
     }
 
     @Override

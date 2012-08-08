@@ -14,6 +14,7 @@ package com.cloud.network.element;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
@@ -133,5 +134,5 @@ public interface NetworkElement extends Adapter {
      * @param services
      * @return true/false
      */
-    boolean verifyServicesCombination(List<String> services);
+    boolean verifyServicesCombination(Set<Service> services);
 }
