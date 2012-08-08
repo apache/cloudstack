@@ -54,14 +54,15 @@
           scaleUpPolicyForm, scaleDownPolicyForm;
 
       var renderActions = function(args) {
+        var targetActionFilter = args.actionFilter ? args.actionFilter : actionFilter;
         var data = args.data;
         var context = args.context;
         var $actions = $('<div>').addClass('detail-group');
         var $actionsTable = $('<table>').append('<tr>');
         var $detailActions = $('<td>').addClass('detail-actions');
         var $buttons = $('<div>').addClass('buttons');
-        var visibleActions = actionFilter ?
-              actionFilter({
+        var visibleActions = targetActionFilter ?
+              targetActionFilter({
                 context: $.extend(true, {}, context, {
                   originalAutoscaleData: data ? [data] : null
                 })
@@ -96,6 +97,7 @@
               // Reload actions
               var $newActions = renderActions({
                 data: data ? $.extend(data, args.data) : args.data,
+                actionFilter: args.actionFilter,
                 context: context
               });
 
@@ -109,7 +111,7 @@
 
             action.action({
 						  context: {
-							  originalAutoscaleData: args.data,
+							  originalAutoscaleData: args.data
 							},						  
               response: {
                 success: function(args) {
