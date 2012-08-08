@@ -72,6 +72,7 @@
             } else {
               cloudStack.dialog.createForm({
                 form: addAction.createForm,
+								context: args.gateways.context,
                 after: function(args) {
                   var data = args.data;
                   var $loading = $('<div>').addClass('loading-overlay').appendTo($chart);
