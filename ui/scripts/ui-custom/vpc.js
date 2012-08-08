@@ -129,7 +129,7 @@
               showVPNListView();
             } else {
               cloudStack.dialog.confirm({
-                message: 'Please confirm that you want to add a VPN gateway.',
+                message: 'Please confirm that you want to add a Site-to-Site VPN gateway.',
                 action: function() {
                   var $loading = $('<div>').addClass('loading-overlay').appendTo($chart);
                   var error = function(message) {
