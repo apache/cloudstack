@@ -175,7 +175,6 @@
       id: 'vpcTierInstances',
       listView: {
         filters: {
-          mine: { label: 'My instances' },
           all: { label: 'All instances' },
           running: { label: 'Running instances' },
           destroyed: { label: 'Destroyed instances' }
