@@ -376,7 +376,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
     }
 
     protected void populateManagers() {
-        addManager("account manager", AccountManagerImpl.class);
         addManager("StackMaidManager", CheckPointManagerImpl.class);
         addManager("Cluster Manager", ClusterManagerImpl.class);
         addManager("ClusterFenceManager", ClusterFenceManagerImpl.class);
@@ -385,6 +384,7 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("AsyncJobManager", AsyncJobManagerImpl.class);
         addManager("AsyncJobExecutorContext", AsyncJobExecutorContextImpl.class);
         addManager("configuration manager", ConfigurationManagerImpl.class);
+        addManager("account manager", AccountManagerImpl.class);
         addManager("domain manager", DomainManagerImpl.class);
         addManager("resource limit manager", ResourceLimitManagerImpl.class);
         addManager("network manager", NetworkManagerImpl.class);
