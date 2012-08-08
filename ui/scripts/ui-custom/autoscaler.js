@@ -95,8 +95,12 @@
               });
 
               // Reload actions
+							if(data != null) { //data is originalAutoscaleData in \ui\scripts\autoscaler.js
+							  data['afterActionIsComplete'] = args.data;
+							}
+							
               var $newActions = renderActions({
-                data: data ? $.extend(data, args.data) : args.data,
+                data: data ? data: args.data,
                 actionFilter: args.actionFilter,
                 context: context
               });

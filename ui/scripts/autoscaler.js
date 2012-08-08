@@ -81,11 +81,19 @@
 			if(args.context.originalAutoscaleData == null) { //new LB rule
 			  //no actions  for new LB rule
 			}
-			else { //existing LB rule			 
-				if(args.context.originalAutoscaleData[0].context.autoscaleVmGroup.state == 'disabled')
-				  allowedActions.push('enable');
-				else if(args.context.originalAutoscaleData[0].context.autoscaleVmGroup.state == 'enabled')
-				  allowedActions.push('disable');				
+			else { //existing LB rule			  
+        if(args.context.originalAutoscaleData[0].afterActionIsComplete	== null) {	
+					if(args.context.originalAutoscaleData[0].context.autoscaleVmGroup.state == 'disabled')
+						allowedActions.push('enable');
+					else if(args.context.originalAutoscaleData[0].context.autoscaleVmGroup.state == 'enabled')
+						allowedActions.push('disable');		
+        }			
+        else {
+          if(args.context.originalAutoscaleData[0].afterActionIsComplete.state == 'disabled')
+						allowedActions.push('enable');
+					else if(args.context.originalAutoscaleData[0].afterActionIsComplete.state == 'enabled')
+						allowedActions.push('disable');		
+        }				
 			}	
 			return allowedActions;      
     },
