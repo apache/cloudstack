@@ -794,14 +794,33 @@
           }
         }
 				
+        //Scale Up Policy				
+				if(args.data.scaleUpDuration == null || args.data.scaleUpDuration.length == 0) {
+				  args.response.error("Duration of Scale Up Policy is required.");
+				  return;
+				}
 				if(args.data.scaleUpDuration < args.data.interval) {
 				  args.response.error("Duration of Scale Up Policy can not be less than Polling Interval.");
+				  return;
+				}				
+				if(scaleUpData.length == 0) {
+				  args.response.error("At least one condition is required in Scale Up Policy.");
+				  return;
+				}
+					
+        //Scale Down Policy					
+				if(args.data.scaleDownDuration == null || args.data.scaleDownDuration.length == 0) {
+				  args.response.error("Duration of Scale Down Policy is required.");
 				  return;
 				}
 				if(args.data.scaleDownDuration < args.data.interval) {
 				  args.response.error("Duration of Scale Down Policy can not be less than Polling Interval.");
 				  return;
-				}
+				}				
+				if(scaleDownData.length == 0) {
+				  args.response.error("At least one condition is required in Scale Down Policy.");
+				  return;
+				}		        
         //validation (end) *****
     
         var scaleVmProfileResponse = [];
