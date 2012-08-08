@@ -46,11 +46,11 @@ public interface MockAgentManager extends Manager {
     Answer checkHealth(CheckHealthCommand cmd);
     Answer pingTest(PingTestCommand cmd);
     
-    Answer PrepareForMigration(PrepareForMigrationCommand cmd);
+    Answer prepareForMigrate(PrepareForMigrationCommand cmd);
     
     MockHost getHost(String guid);
 
-    Answer MaintainCommand(MaintainCommand cmd);
+    Answer maintain(MaintainCommand cmd);
 
 	Answer checkNetworkCommand(CheckNetworkCommand cmd);
 }

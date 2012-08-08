@@ -719,14 +719,15 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         return vmGroup.getLoadBalancerId() != null;
     }
 
-    public boolean configureAutoScaleVmGroup(long vmGroupid) {
+    private boolean configureAutoScaleVmGroup(long vmGroupid) throws InvalidParameterValueException {
         AutoScaleVmGroup vmGroup = _autoScaleVmGroupDao.findById(vmGroupid);
 
         if (isLoadBalancerBasedAutoScaleVmGroup(vmGroup)) {
             try {
                 return _lbRulesMgr.configureLbAutoScaleVmGroup(vmGroupid);
-            } catch (RuntimeException re) {
-                s_logger.warn("Exception during configureLbAutoScaleVmGrouop in lb rules manager", re);
+            } catch (Exception e) {
+                s_logger.warn("Exception during configureLbAutoScaleVmGroup in lb rules manager", e);
+                return false;
             }
         }
 

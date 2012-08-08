@@ -1129,7 +1129,7 @@ public class NetUtils {
             if (!policy.equals(cipherHash)) {
                 pfsGroup = policy.split(";")[1];
             }
-            if (pfsGroup != null && !pfsGroup.matches("modp1024|modp1536|")) {
+            if (pfsGroup != null && !pfsGroup.matches("modp1024|modp1536")) {
                 return false;
             }
         }

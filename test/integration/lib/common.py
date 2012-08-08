@@ -185,6 +185,27 @@ def wait_for_ssvms(apiclient, zoneid, podid, interval=60):
                 break
     return
 
+def wait_for_vm(apiclient, virtualmachineid, interval=60):
+    """After setup wait for VM to come Up"""
+
+    time.sleep(interval)
+    timeout = 40
+    while True:
+            list_vm_response = list_virtual_machines(
+                                        apiclient,
+                                        id=virtualmachineid
+                                        )
+            vm = list_vm_response[0]
+            if vm.state != 'Running':
+                # Sleep to ensure VM is Up and Running
+                time.sleep(interval)
+                timeout = timeout - 1
+            elif vm.state == 'Running':
+                break
+            elif timeout == 0:
+                raise Exception("VM failed to come up")
+                break
+    return
 
 def download_builtin_templates(apiclient, zoneid, hypervisor, host,
                                                 linklocalip, interval=60):

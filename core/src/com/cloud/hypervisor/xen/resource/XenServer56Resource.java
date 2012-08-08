@@ -180,6 +180,10 @@ public class XenServer56Resource extends CitrixResourceBase {
                 args += " -v " + vpcCIDR;
             } else if (option.equals("reset")) {
                 args += "-r";
+            } else if (option.equals("vpn")) {
+                args += "-n";
+            } else if (option.equals("remove")) {
+                args += "-d";
             } else {
                 return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
             }

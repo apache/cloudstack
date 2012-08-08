@@ -122,7 +122,6 @@ import com.cloud.network.lb.dao.ElasticLbVmMapDaoImpl;
 import com.cloud.network.ovs.OvsTunnelManagerImpl;
 import com.cloud.network.ovs.dao.OvsTunnelInterfaceDaoImpl;
 import com.cloud.network.ovs.dao.OvsTunnelNetworkDaoImpl;
-import com.cloud.network.router.VirtualNetworkApplianceManagerImpl;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManagerImpl;
 import com.cloud.network.rules.RulesManagerImpl;
 import com.cloud.network.rules.dao.PortForwardingRulesDaoImpl;
@@ -401,7 +400,6 @@ public class DefaultComponentLibrary extends ComponentLibraryBase implements Com
         addManager("Snapshot Manager", SnapshotManagerImpl.class);
         addManager("SnapshotScheduler", SnapshotSchedulerImpl.class);
         addManager("SecurityGroupManager", SecurityGroupManagerImpl2.class);
-        addManager("DomainRouterManager", VirtualNetworkApplianceManagerImpl.class);
         addManager("EntityManager", EntityManagerImpl.class);
         addManager("LoadBalancingRulesManager", LoadBalancingRulesManagerImpl.class);
         addManager("AutoScaleManager", AutoScaleManagerImpl.class);

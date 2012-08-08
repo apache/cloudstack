@@ -216,6 +216,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
     @Inject
     VpcManager _vpcMgr;
 
+
     // Will return a string. For LB Stickiness this will be a json, for autoscale this will be "," separated values
     @Override
     public String getLBCapability(long networkid, String capabilityName) {
@@ -226,7 +227,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 serviceResponse.setName(service.getName());
                 if ("Lb".equalsIgnoreCase(service.getName())) {
                     Map<Capability, String> serviceCapabilities = serviceCapabilitiesMap
-                            .get(service);
+                    .get(service);
                     if (serviceCapabilities != null) {
                         for (Capability capability : serviceCapabilities
                                 .keySet()) {
@@ -278,7 +279,12 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         return new LbAutoScaleVmGroup(vmGroup, autoScalePolicies, lbAutoScaleVmProfile);
     }
 
-    private boolean applyAutoScaleConfig(LoadBalancerVO lb, LoadBalancingRule rule) throws ResourceUnavailableException {
+    private boolean applyAutoScaleConfig(LoadBalancerVO lb, AutoScaleVmGroupVO vmGroup) throws ResourceUnavailableException {
+        LbAutoScaleVmGroup lbAutoScaleVmGroup = getLbAutoScaleVmGroup(vmGroup);
+        /* Regular config like destinations need not be packed for applying autoscale config as of today.*/
+        LoadBalancingRule rule = new LoadBalancingRule(lb, null, null);
+        rule.setAutoScaleVmGroup(lbAutoScaleVmGroup);
+
         if (!isRollBackAllowedForProvider(lb)) {
             // this is for Netscalar type of devices. if their is failure the db entries will be rollbacked.
             return false;
@@ -314,12 +320,8 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             _lbDao.persist(loadBalancer);
         }
 
-        // LBTODO
         try {
-            LbAutoScaleVmGroup lbAutoScaleVmGroup = getLbAutoScaleVmGroup(vmGroup);
-            LoadBalancingRule rule = new LoadBalancingRule(loadBalancer, null, null);
-            rule.setAutoScaleVmGroup(lbAutoScaleVmGroup);
-            success = applyAutoScaleConfig(loadBalancer, rule);
+            success = applyAutoScaleConfig(loadBalancer, vmGroup);
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to configure AutoScaleVmGroup to the lb rule: " + loadBalancer.getId() + " because resource is unavaliable:", e);
         } finally {
@@ -839,9 +841,18 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
 
         if (apply) {
             try {
-                if (!applyLoadBalancerConfig(loadBalancerId)) {
-                    s_logger.warn("Unable to apply the load balancer config");
-                    return false;
+                if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancerId)) {
+                    // Get the associated VmGroup
+                    AutoScaleVmGroupVO vmGroup = _autoScaleVmGroupDao.listByAll(loadBalancerId, null).get(0);
+                    if (!applyAutoScaleConfig(lb, vmGroup)) {
+                        s_logger.warn("Unable to apply the autoscale config");
+                        return false;
+                    }
+                } else {
+                    if (!applyLoadBalancerConfig(loadBalancerId)) {
+                        s_logger.warn("Unable to apply the load balancer config");
+                        return false;
+                    }
                 }
             } catch (ResourceUnavailableException e) {
                 if (rollBack && isRollBackAllowedForProvider(lb)) {
@@ -925,7 +936,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             try {
                 if (ipVO.getAssociatedWithNetworkId() == null) {
                     boolean assignToVpcNtwk = network.getVpcId() != null
-                            && ipVO.getVpcId() != null && ipVO.getVpcId().longValue() == network.getVpcId();
+                    && ipVO.getVpcId() != null && ipVO.getVpcId().longValue() == network.getVpcId();
                     if (assignToVpcNtwk) {
                         // set networkId just for verification purposes
                         _networkMgr.checkIpForService(ipVO, Service.Lb, lb.getNetworkId());
@@ -984,13 +995,11 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         IPAddressVO ipAddr = _ipAddressDao.findById(sourceIpId);
         // make sure ip address exists
         if (ipAddr == null || !ipAddr.readyToUse()) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id specified", null);
-            ex.addProxyObject(ipAddr, sourceIpId, "sourceIpId");
-            throw ex;
+            throw new InvalidParameterValueException("Unable to create load balancer rule, invalid IP address id specified", null);
         } else if (ipAddr.isOneToOneNat()) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to create load balancer rule; specified sourceip id has static nat enabled", null);
-            ex.addProxyObject(ipAddr, sourceIpId, "sourceIpId");
-            throw ex;
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(ipAddr, sourceIpId, "sourceIpId"));
+            throw new InvalidParameterValueException("Unable to create load balancer rule; specified sourceip id has static nat enabled", idList);
         }
 
         _firewallMgr.validateFirewallRule(caller.getCaller(), ipAddr, srcPortStart, srcPortEnd, lb.getProtocol(),

@@ -945,7 +945,8 @@
                       }
                     },
                     tags: { label: 'label.storage.tags' },
-                    domain: { label: 'label.domain' }
+                    domain: { label: 'label.domain' },
+                    storagetype: { label: 'label.storage.type' }
                   }
                 ],
 

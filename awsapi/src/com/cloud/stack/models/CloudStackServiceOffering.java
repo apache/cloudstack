@@ -57,6 +57,8 @@ public class CloudStackServiceOffering {
 	private String systemVmType;
 	@SerializedName(ApiConstants.TAGS)
 	private String tags;
+    @SerializedName(ApiConstants.REMOVED)
+    private String removed;
 	
 	/**
 	 * 
@@ -196,4 +198,14 @@ public class CloudStackServiceOffering {
 		return tags;
 	}
 
+    /**
+     * @return the removed
+     */
+    public String getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(String removed) {
+        this.removed = removed;
+    }
 }

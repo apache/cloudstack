@@ -34,6 +34,17 @@
     $login.appendTo('html body');
     $('html body').addClass('login');
 
+    // Remove label if field was auto filled
+    $.each($form.find('label'), function() {
+      var $label = $(this);
+      var $input = $form.find('input').filter(function() {
+        return $(this).attr('name') == $label.attr('for');
+      });
+      if ($input.val()) {
+        $label.hide();
+      }
+    });
+
     // Form validation
     $form.validate();
 

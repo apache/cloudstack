@@ -113,6 +113,7 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -128,6 +129,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplianceManagerImpl implements VpcVirtualNetworkApplianceManager{
     private static final Logger s_logger = Logger.getLogger(VpcVirtualNetworkApplianceManagerImpl.class);
 
+    String _name;
     @Inject
     VpcDao _vpcDao;
     @Inject
@@ -333,15 +335,13 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 PlugNicCommand plugNicCmd = new PlugNicCommand(nic, vm.getName());
                 
                 Commands cmds = new Commands(OnError.Stop);
-                cmds.addCommand("plugnic", plugNicCmd);
+                cmds.addCommand("plugnic", plugNicCmd);                     
                 _agentMgr.send(dest.getHost().getId(), cmds);
-                
                 PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
                 if (!(plugNicAnswer != null && plugNicAnswer.getResult())) {
                     s_logger.warn("Unable to plug nic for vm " + vm.getHostName());
                     result = false;
                 } 
-
             } catch (OperationTimedoutException e) {
                 throw new AgentUnavailableException("Unable to plug nic for router " + vm.getHostName() + " in network " + network,
                         dest.getHost().getId(), e);
@@ -365,8 +365,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         
         if (router.getState() == State.Running) {
             try {
+                Commands cmds = new Commands(OnError.Stop);            	
+            	if(network.getTrafficType() == TrafficType.Public){
+            		NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(router.getPrivateIpAddress(), router.getInstanceName(), "remove", true, nic.getIp());
+            		cmds.addCommand(netUsageCmd);
+            	}            	
                 UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(nic, vm.getName());
-                Commands cmds = new Commands(OnError.Stop);
                 cmds.addCommand("unplugnic", unplugNicCmd);
                 _agentMgr.send(dest.getHost().getId(), cmds);
                 
@@ -374,8 +378,14 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 if (!(unplugNicAnswer != null && unplugNicAnswer.getResult())) {
                     s_logger.warn("Unable to unplug nic from router " + router);
                     result = false;
-                } 
-
+                } else {
+                	if(network.getTrafficType() == TrafficType.Public){
+                		NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(router.getPrivateIpAddress(), router.getInstanceName(), "remove", true, nic.getIp());
+                		cmds = new Commands(OnError.Stop);
+                		cmds.addCommand(netUsageCmd);
+                		_agentMgr.send(dest.getHost().getId(), cmds);
+                	}
+                }
             } catch (OperationTimedoutException e) {
                 throw new AgentUnavailableException("Unable to unplug nic from rotuer " + router + " from network " + network,
                         dest.getHost().getId(), e);
@@ -568,7 +578,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 return false;
             }
         }
-        
+
+        Commands netUsagecmds = new Commands(OnError.Continue);
+    	VpcVO vpc = _vpcDao.findById(router.getVpcId());
+    	
         //2) Plug the nics
         for (String vlanTag : nicsToPlug.keySet()) {
             PublicIpAddress ip = nicsToPlug.get(vlanTag);
@@ -603,6 +616,16 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     return false;
                 }
             }
+            //Create network usage commands. Send commands to router after IPAssoc
+            NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(router.getPrivateIpAddress(), router.getInstanceName(), true, defaultNic.getIp4Address(), vpc.getCidr());
+        	netUsagecmds.addCommand(netUsageCmd);
+        	UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn(), 
+            		publicNtwk.getId(), publicNic.getIp4Address(), router.getId(), router.getType().toString());
+            if (stats == null) {
+                stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), publicNic.getIp4Address(), router.getId(),
+                        router.getType().toString(), publicNtwk.getId());
+                _userStatsDao.persist(stats);
+            }
         }
         
         //3) apply the rules
@@ -634,7 +657,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 return sendCommandsToRouter(router, cmds);
             }
         });
-        
+        if(result && netUsagecmds.size() > 0){
+        	//After successful ipassoc, send commands to router
+        	sendCommandsToRouter(router, netUsagecmds);
+        }
         return result;
     }
     
@@ -1118,7 +1144,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         String localGuestCidr = vpc.getCidr();
         String localPublicGateway = _vlanDao.findById(ip.getVlanId()).getVlanGateway();
         String peerGatewayIp = gw.getGatewayIp();
-        String peerGuestCidrList = gw.getGuestCidrList();
+        String peerGuestCidrList = gw.getGuestCidrList().replace(";", ",");
         String ipsecPsk = gw.getIpsecPsk();
         String ikePolicy = gw.getIkePolicy();
         String espPolicy = gw.getEspPolicy();
@@ -1325,10 +1351,19 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 Nic nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(publicNtwkId, router.getId(), 
                         broadcastUri.toString());
                 
-                if ((nic == null && nicsToPlug.get(ip.getVlanTag()) == null) || nicsToUnplug.get(ip.getVlanTag()) != null) {
+                if (nic == null && nicsToPlug.get(ip.getVlanTag()) == null) {
                     nicsToPlug.put(ip.getVlanTag(), ip);
                     s_logger.debug("Need to plug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + 
                             " in public network id =" + publicNtwkId);
+                } else {
+                    PublicIpAddress nicToUnplug = nicsToUnplug.get(ip.getVlanTag());
+                    if (nicToUnplug != null) {
+                        NicVO nicVO = _nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, router.getId(), nicToUnplug.getAddress().addr());
+                        nicVO.setIp4Address(ip.getAddress().addr());
+                        _nicDao.update(nicVO.getId(), nicVO);
+                        s_logger.debug("Updated the nic " + nicVO + " with the new ip address " + ip.getAddress().addr());
+                        nicsToUnplug.remove(ip.getVlanTag());
+                    } 
                 }
             }
         }
@@ -1348,4 +1383,5 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             _s2sVpnMgr.markDisconnectVpnConnByVpc(vpcId);
         }
     }
+    
 }

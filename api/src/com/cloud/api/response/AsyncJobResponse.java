@@ -126,7 +126,7 @@ public class AsyncJobResponse extends BaseResponse {
                 this.jobInstanceId.setTableName("account");
             } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.User.toString())) {
                 this.jobInstanceId.setTableName("user");
-            }else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Counter.toString())) {
+            } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Counter.toString())) {
                 this.jobInstanceId.setTableName("counter");
             } else if (jobInstanceType.equalsIgnoreCase(AsyncJob.Type.Condition.toString())) {
                 this.jobInstanceId.setTableName("conditions");

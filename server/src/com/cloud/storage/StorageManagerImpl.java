@@ -121,7 +121,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -292,8 +291,6 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     protected UserDao _userDao;
     @Inject
     protected ClusterDao _clusterDao;
-    @Inject
-    protected VirtualNetworkApplianceManager _routerMgr;
     @Inject
     protected UsageEventDao _usageEventDao;
     @Inject
@@ -642,6 +639,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(volume, snapshot);
         if (volumeDetails != null) {
             createdVolume = volumeDetails.first();
+        	UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(), createdVolume.getDataCenterId(), createdVolume.getId(), createdVolume.getName(), 
+        			                                   createdVolume.getDiskOfferingId(), null, createdVolume.getSize());
+        	_usageEventDao.persist(usageEvent);
         }
         return createdVolume;
     }
@@ -1996,8 +1996,11 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         volume.setDomainId((caller == null) ? Domain.ROOT_DOMAIN : caller.getDomainId());
 
         volume = _volsDao.persist(volume);
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size);
-        _usageEventDao.persist(usageEvent);
+        if(cmd.getSnapshotId() == null){
+        	//for volume created from snapshot, create usage event after volume creation
+        	UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size);
+        	_usageEventDao.persist(usageEvent);
+        }
 
         UserContext.current().setEventDetails("Volume Id: " + volume.getId());
 
@@ -3223,7 +3226,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Mismatch in storage pool " + assignedPool + " assigned by deploymentPlanner and the one associated with volume " + vol);
                             }
-                            if (vm.getServiceOffering().getUseLocalStorage())
+                            DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
+                            if (diskOffering.getUseLocalStorage())
                             {
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug("Local volume " + vol + " will be recreated on storage pool " + assignedPool + " assigned by deploymentPlanner");
@@ -3234,10 +3238,12 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                                     s_logger.debug("Shared volume " + vol + " will be migrated on storage pool " + assignedPool + " assigned by deploymentPlanner");
                                 }
                                 try {
-                                    Volume migratedVol = migrateVolume(vol.getId(), assignedPool.getId());
-                                    vm.addDisk(new VolumeTO(migratedVol, assignedPool));
+                                    List<Volume> volumesToMigrate = new ArrayList<Volume>();
+                                    volumesToMigrate.add(vol);
+                                    migrateVolumes(volumesToMigrate, assignedPool);
+                                    vm.addDisk(new VolumeTO(vol, assignedPool));
                                 } catch (ConcurrentOperationException e) {
-                                    throw new StorageUnavailableException("Volume migration failed for " + vol, Volume.class, vol.getId());
+                                    throw new CloudRuntimeException("Migration of volume " + vol + " to storage pool " + assignedPool + " failed", e);
                                 }
                             }
                         } else {

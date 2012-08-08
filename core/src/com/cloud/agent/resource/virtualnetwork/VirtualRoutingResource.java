@@ -607,6 +607,8 @@ public class VirtualRoutingResource implements Manager {
             args = "-D";
             args += " -r ";
             args += cmd.getPeerGatewayIp();
+            args += " -n ";
+	        args += cmd.getLocalGuestCidr();
             args += " -N ";
             args += cmd.getPeerGuestCidrList();
         }

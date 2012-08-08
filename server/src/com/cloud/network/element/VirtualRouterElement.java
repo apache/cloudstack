@@ -53,8 +53,8 @@ import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
@@ -102,7 +102,7 @@ LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServ
     @Inject
     NetworkOfferingDao _networkOfferingDao;
     @Inject
-    VirtualNetworkApplianceManager _routerMgr;
+    VpcVirtualNetworkApplianceManager _routerMgr;
     @Inject
     ConfigurationManager _configMgr;
     @Inject
@@ -869,11 +869,16 @@ LoadBalancingServiceProvider, PortForwardingServiceProvider, RemoteAccessVPNServ
     }
 
     @Override
-    public boolean verifyServicesCombination(List<String> services) {
-        if (!services.contains("SourceNat")) {
-            if (services.contains("StaticNat") || services.contains("Firewall") || services.contains("Lb") || services.contains("PortForwarding") ||
-                    services.contains("Vpn")) {
-                s_logger.warn("Virtual router can't enable services " + services + " without source NAT service");
+    public boolean verifyServicesCombination(Set<Service> services) {
+        if (!services.contains(Service.SourceNat)) {
+            if (services.contains(Service.StaticNat) || services.contains(Service.Firewall) || services.contains(Service.Lb) || 
+                    services.contains(Service.PortForwarding) || services.contains(Service.Vpn)) {
+                String servicesList = "[";
+                for (Service service : services) {
+                    servicesList += service.getName() + " ";
+                }
+                servicesList += "]";
+                s_logger.warn("Virtual router can't enable services " + servicesList + " without source NAT service");
                 return false;
             }
         }

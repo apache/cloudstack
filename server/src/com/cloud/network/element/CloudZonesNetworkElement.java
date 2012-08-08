@@ -15,6 +15,7 @@ package com.cloud.network.element;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.ejb.Local;
 
@@ -43,7 +44,6 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.uservm.UserVm;
@@ -69,8 +69,6 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     NetworkDao _networkConfigDao;
     @Inject
     NetworkManager _networkMgr;
-    @Inject
-    VirtualNetworkApplianceManager _routerMgr;
     @Inject
     UserVmManager _userVmMgr;
     @Inject
@@ -236,7 +234,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     }
 
     @Override
-    public boolean verifyServicesCombination(List<String> services) {
+    public boolean verifyServicesCombination(Set<Service> services) {
         return true;
     }
 

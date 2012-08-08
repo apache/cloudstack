@@ -63,7 +63,7 @@ public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements
             List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
             idList.add(new IdentityProxy("pod", podId, "podId"));
             idList.add(new IdentityProxy(zone, zoneId, "zoneId"));
-            InvalidParameterValueException ex = new InvalidParameterValueException("Already had a PXE server in Pod with specified podId and zone with specified zoneId", idList);
+            throw new InvalidParameterValueException("Already had a PXE server in Pod with specified podId and zone with specified zoneId", idList);
         }
 
 

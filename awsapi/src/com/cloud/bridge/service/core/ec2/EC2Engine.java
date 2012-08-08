@@ -1775,8 +1775,12 @@ public class EC2Engine {
            if (null == instanceType) instanceType = "m1.small";                      
            
            CloudStackSvcOfferingDao dao = new CloudStackSvcOfferingDao();
-           return dao.getSvcOfferingByName(instanceType);
-           
+            List<CloudStackServiceOffering> svcOfferingList = dao.getSvcOfferingByName(instanceType);
+            for (CloudStackServiceOffering svcOffering : svcOfferingList) {
+                if (svcOffering.getRemoved() == null)
+                    return svcOffering;
+            }
+            return null;
         } catch(Exception e) {
             logger.error( "Error while retrieving ServiceOffering information by name - ", e);
             throw new EC2ServiceException(ServerError.InternalError, e.getMessage());

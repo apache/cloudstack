@@ -42,7 +42,6 @@ public class AjaxFIFOImageCache {
 		while(cache.size() >= cacheSize) {
 			Integer keyToRemove = fifoQueue.remove(0);
 			cache.remove(keyToRemove);
-			
 			if(s_logger.isTraceEnabled())
 				s_logger.trace("Remove image from cache, key: " + keyToRemove);
 		}
@@ -51,26 +50,30 @@ public class AjaxFIFOImageCache {
 		
 		if(s_logger.isTraceEnabled())
 			s_logger.trace("Add image to cache, key: " + key);
-		
+
 		cache.put(key, image);
 		fifoQueue.add(key);
 		return key;
 	}
 	
 	public synchronized byte[] getImage(int key) {
+		
 		if(cache.containsKey(key)) {
 			if(s_logger.isTraceEnabled())
 				s_logger.trace("Retrieve image from cache, key: " + key);
-			
+
 			return cache.get(key);
 		}
 		
-		if(s_logger.isTraceEnabled())
 			s_logger.trace("Image is no long in cache, key: " + key);
 		return null;
 	}
 	
 	public synchronized int getNextKey() {
 		return nextKey++;
+	}
+	
+	public synchronized int getKey() {
+		return nextKey;
 	}
 }

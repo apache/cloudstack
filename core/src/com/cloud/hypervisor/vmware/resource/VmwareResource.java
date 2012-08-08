@@ -496,6 +496,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(NetworkUsageCommand cmd) {
+    	if ( cmd.isForVpc() ) {
+            return VPCNetworkUsage(cmd);
+        }
+    	
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource NetworkUsageCommand " + _gson.toJson(cmd));
         }
@@ -508,6 +512,69 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
         return answer;
+    }
+
+    protected NetworkUsageAnswer VPCNetworkUsage(NetworkUsageCommand cmd) {
+    	String privateIp = cmd.getPrivateIP();
+    	String option = cmd.getOption();
+    	String publicIp = cmd.getGatewayIP();
+
+
+    	String args = "-l " + publicIp+ " ";
+    	if (option.equals("get")) {
+    		args += "-g";
+    	} else if (option.equals("create")) {
+    		args += "-c";
+    		String vpcCIDR = cmd.getVpcCIDR();
+    		args += " -v " + vpcCIDR;
+    	} else if (option.equals("reset")) {
+    		args += "-r";
+    	} else if (option.equals("vpn")) {
+    		args += "-n";
+    	} else if (option.equals("remove")) {
+    		args += "-d";
+    	} else {
+    		return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
+    	}
+
+    	try {
+    		if (s_logger.isTraceEnabled()) {
+    			s_logger.trace("Executing /opt/cloud/bin/vpc_netusage.sh " + args + " on DomR " + privateIp);
+    		}
+
+    		VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+
+    		Pair<Boolean, String> resultPair = SshHelper.sshExecute(privateIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_netusage.sh " + args);
+
+    		if (!resultPair.first()) {
+    			return null;
+    		}
+
+    		String result =  resultPair.second();
+    		
+    		if (option.equals("get")) {
+                long[] stats = new long[2];
+                if (result != null) {
+                    String[] splitResult = result.split(":");
+                    int i = 0;
+                    while (i < splitResult.length - 1) {
+                        stats[0] += (new Long(splitResult[i++])).longValue();
+                        stats[1] += (new Long(splitResult[i++])).longValue();
+                    }
+                    return new NetworkUsageAnswer(cmd, "success", stats[0], stats[1]);
+                }
+            }
+            if (result == null || result.isEmpty()) {
+                throw new Exception(" vpc network usage plugin call failed ");
+            }
+            return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
+    		
+    	} catch (Throwable e) {
+    		s_logger.error("Unable to execute NetworkUsage command on DomR (" + privateIp + "), domR may not be ready yet. failure due to " 
+    				+ VmwareHelper.getExceptionMessage(e), e);
+    	}
+
+    	return null;
     }
 
     private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
@@ -741,7 +808,95 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return new SetStaticNatRulesAnswer(cmd, results, endResult);
     }
 
+    protected Answer VPCLoadBalancerConfig(final LoadBalancerConfigCommand cmd) {
+        VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+        File keyFile = mgr.getSystemVMKeyFile();
+
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String controlIp = getRouterSshControlIp(cmd);
+
+        assert(controlIp != null);
+
+        LoadBalancerConfigurator cfgtr = new HAProxyConfigurator();
+        String[] config = cfgtr.generateConfiguration(cmd);
+
+        String tmpCfgFilePath = "/etc/haproxy/haproxy.cfg.new";
+        String tmpCfgFileContents = "";
+        for (int i = 0; i < config.length; i++) {
+            tmpCfgFileContents += config[i];
+            tmpCfgFileContents += "\n";
+        }
+
+        try {
+            SshHelper.scpTo(controlIp, DEFAULT_DOMR_SSHPORT, "root", keyFile, null, "/etc/haproxy/", tmpCfgFileContents.getBytes(), "haproxy.cfg.new", null);
+
+            try {
+                String[][] rules = cfgtr.generateFwRules(cmd);
+
+                String[] addRules = rules[LoadBalancerConfigurator.ADD];
+                String[] removeRules = rules[LoadBalancerConfigurator.REMOVE];
+                String[] statRules = rules[LoadBalancerConfigurator.STATS];
+
+                String args = "";
+                String ip = cmd.getNic().getIp();
+                args += " -i " + ip;
+                StringBuilder sb = new StringBuilder();
+                if (addRules.length > 0) {
+                    for (int i = 0; i < addRules.length; i++) {
+                        sb.append(addRules[i]).append(',');
+                    }
+
+                    args += " -a " + sb.toString();
+                }
+
+                sb = new StringBuilder();
+                if (removeRules.length > 0) {
+                    for (int i = 0; i < removeRules.length; i++) {
+                        sb.append(removeRules[i]).append(',');
+                    }
+
+                    args += " -d " + sb.toString();
+                }
+
+                sb = new StringBuilder();
+                if (statRules.length > 0) {
+                    for (int i = 0; i < statRules.length; i++) {
+                        sb.append(statRules[i]).append(',');
+                    }
+
+                    args += " -s " + sb.toString();
+                }
+
+                // Invoke the command
+                Pair<Boolean, String> result = SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_loadbalancer.sh " + args);
+
+                if (!result.first()) {
+                    String msg = "LoadBalancerConfigCommand on domain router " + routerIp + " failed. message: " + result.second();
+                    s_logger.error(msg);
+
+                    return new Answer(cmd, false, msg);
+                }
+
+                if (s_logger.isInfoEnabled()) {
+                    s_logger.info("VPCLoadBalancerConfigCommand on domain router " + routerIp + " completed");
+                }
+            } finally {
+                SshHelper.sshExecute(controlIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "rm " + tmpCfgFilePath);
+            }
+            return new Answer(cmd);
+        } catch (Throwable e) {
+            s_logger.error("Unexpected exception: " + e.toString(), e);
+            return new Answer(cmd, false, "VPCLoadBalancerConfigCommand failed due to " + VmwareHelper.getExceptionMessage(e));
+        }
+
+
+    }
+
     protected Answer execute(final LoadBalancerConfigCommand cmd) {
+        if ( cmd.getVpcId() != null ) {
+            return VPCLoadBalancerConfig(cmd);
+        }
+
         VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
         File keyFile = mgr.getSystemVMKeyFile();
 
@@ -869,7 +1024,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     //      eth0:xx.xx.xx.xx
     //
     // list IP with eth devices
-    //  ifconfig ethx |grep -B1 "inet addr" | awk '{ if ( $1 == "inet" ) { print $2 } else if ( $2 == "Link" ) { printf "%s:" ,$1 } }' 
+    //  ifconfig ethx |grep -B1 "inet addr" | awk '{ if ( $1 == "inet" ) { print $2 } else if ( $2 == "Link" ) { printf "%s:" ,$1 } }'
     //     | awk -F: '{ print $1 ": " $3 }'
     //
     //
@@ -1186,6 +1341,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             args += " -D";
             args += " -r ";
             args += cmd.getPeerGatewayIp();
+            args += " -n ";
+            args += cmd.getLocalGuestCidr();
             args += " -N ";
             args += cmd.getPeerGuestCidrList();
         }

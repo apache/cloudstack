@@ -21,6 +21,7 @@ fi
 
 vpnconfdir="/etc/ipsec.d"
 vpnoutmark="0x525"
+vpninmark="0x524"
 
 usage() {
     printf "Usage: %s: (-A|-D) -l <left-side vpn peer> -n <left-side guest cidr> -g <left-side gateway> -r <right-side vpn peer> -N <right-side private subnets> -e <esp policy> -i <ike policy> -t <ike lifetime> -T <esp lifetime> -s <pre-shared secret> -d <dpd 0 or 1> \n" $(basename $0) >&2
@@ -55,6 +56,8 @@ enable_iptables_subnets() {
   do
     sudo iptables -A FORWARD -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
     sudo iptables -A OUTPUT -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
+    sudo iptables -A FORWARD -t mangle -s $net -d $leftnet -j MARK --set-mark $vpninmark
+    sudo iptables -A INPUT -t mangle -s $net -d $leftnet -j MARK --set-mark $vpninmark
   done
   return 0
 }
@@ -64,6 +67,7 @@ check_and_enable_iptables() {
   if [ $? -ne 0 ]
   then
       sudo iptables -A INPUT -i $outIf -p udp -m udp --dport 500 -j ACCEPT
+      sudo iptables -A INPUT -i $outIf -p udp -m udp --dport 4500 -j ACCEPT
       # Prevent NAT on "marked" VPN traffic, so need to be the first one on POSTROUTING chain
       sudo iptables -t nat -I POSTROUTING -t nat -o $outIf -m mark --mark $vpnoutmark -j ACCEPT
   fi
@@ -75,6 +79,8 @@ disable_iptables_subnets() {
   do
     sudo iptables -D FORWARD -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
     sudo iptables -D OUTPUT -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
+    sudo iptables -D FORWARD -t mangle -s $net -d $leftnet -j MARK --set-mark $vpninmark
+    sudo iptables -D INPUT -t mangle -s $net -d $leftnet -j MARK --set-mark $vpninmark
   done
   return 0
 }
@@ -85,6 +91,7 @@ check_and_disable_iptables() {
   then
     #Nobody else use s2s vpn now, so delete the iptables rules
     sudo iptables -D INPUT -i $outIf -p udp -m udp --dport 500 -j ACCEPT
+    sudo iptables -D INPUT -i $outIf -p udp -m udp --dport 4500 -j ACCEPT
     sudo iptables -t nat -D POSTROUTING -t nat -o $outIf -m mark --mark $vpnoutmark -j ACCEPT
   fi
   return 0
@@ -142,7 +149,7 @@ ipsec_tunnel_add() {
     sudo echo "  esp=$esppolicy" >> $vpnconffile &&
     sudo echo "  salifetime=${esplifetime}s" >> $vpnconffile &&
     sudo echo "  pfs=$pfs" >> $vpnconffile &&
-    sudo echo "  keyingtries=3" >> $vpnconffile &&
+    sudo echo "  keyingtries=2" >> $vpnconffile &&
     sudo echo "  auto=add" >> $vpnconffile &&
     sudo echo "$leftpeer $rightpeer: PSK \"$secret\"" > $vpnsecretsfile &&
     sudo chmod 0400 $vpnsecretsfile
@@ -162,8 +169,8 @@ ipsec_tunnel_add() {
 
   logger -t cloud "$(basename $0): done ipsec tunnel entry for right peer=$rightpeer right networks=$rightnets"
 
-  #20 seconds for checking if it's ready
-  for i in {1..4}
+  #5 seconds for checking if it's ready
+  for i in {1..5}
   do
     logger -t cloud "$(basename $0): checking connection status..."
     /opt/cloud/bin/checks2svpn.sh $rightpeer
@@ -172,7 +179,7 @@ ipsec_tunnel_add() {
     then
         break
     fi
-    sleep 5
+    sleep 1
   done
   if [ $result -eq 0 ]
   then
