@@ -42,8 +42,8 @@ import com.citrix.netscaler.nitro.resource.config.network.vlan_nsip_binding;
 import com.citrix.netscaler.nitro.resource.config.ns.nsconfig;
 import com.citrix.netscaler.nitro.resource.config.ns.nshardware;
 import com.citrix.netscaler.nitro.resource.config.ns.nsip;
-import com.citrix.netscaler.nitro.resource.config.timer.timerpolicy;
-import com.citrix.netscaler.nitro.resource.config.timer.timertrigger_timerpolicy_binding;
+import com.citrix.netscaler.nitro.resource.config.ns.nstimer;
+import com.citrix.netscaler.nitro.resource.config.ns.nstimer_autoscalepolicy_binding;
 import com.citrix.netscaler.nitro.resource.config.autoscale.*;
 import com.citrix.netscaler.nitro.resource.stat.lb.lbvserver_stats;
 import com.citrix.netscaler.nitro.service.nitro_service;
@@ -238,7 +238,7 @@ public class NetscalerResource implements ServerResource {
             if (!_isSdx) {
                 _netscalerService = new com.citrix.netscaler.nitro.service.nitro_service(_ip, "https");
                 _netscalerService.set_credential(_username, _password);
-                //                _netscalerService.set_timeout(_timeout);
+                _netscalerService.set_timeout(_timeout);
                 apiCallResult = _netscalerService.login();
                 if (apiCallResult.errorcode != 0) {
                     throw new ExecutionException ("Failed to log in to Netscaler device at " + _ip + " due to error " + apiCallResult.errorcode + " and message " + apiCallResult.message);
@@ -701,7 +701,7 @@ public class NetscalerResource implements ServerResource {
                 try {
                     nitro_service _netscalerService = new nitro_service(cmd.getLoadBalancerIP(), "https");
                     _netscalerService.set_credential(username, password);
-                    //                    _netscalerService.set_timeout(_timeout);
+                    _netscalerService.set_timeout(_timeout);
                     apiCallResult = _netscalerService.login();
                     if (apiCallResult.errorcode == 0) {
                         nsServiceUp = true;
@@ -1367,15 +1367,15 @@ public class NetscalerResource implements ServerResource {
 
             boolean vserverExisis = false;
             lbvserver vserver = getVirtualServerIfExisits(virtualServerName);
-            if (vserver == null) {
-                vserver = new lbvserver();
-            } else {
+            if (vserver != null) {
                 if (!vserver.get_servicetype().equalsIgnoreCase(protocol)) {
                     throw new ExecutionException("Can not update virtual server:" + virtualServerName + " as current protocol:" + vserver.get_servicetype() + " of virtual server is different from the "
                             + " intended protocol:" + protocol);
                 }
                 vserverExisis = true;
             }
+            // Use new vserver always for configuration
+            vserver = new lbvserver();
             vserver.set_name(virtualServerName);
             vserver.set_ipv46(publicIp);
             vserver.set_port(publicPort);
@@ -1419,16 +1419,8 @@ public class NetscalerResource implements ServerResource {
                 // set session persistence timeout
                 vserver.set_timeout(timeout);
             } else {
-                if (vserver.get_persistencetype() != null) {
-                    // delete the LB stickyness policy
-                    vserver.set_persistencetype("NONE");
-                }
-            }
-            if(vmGroupTO != null) {
-                vserver.set_mysqlcharacterset(null);
-                vserver.set_mysqlprotocolversion(null);
-                vserver.set_mysqlservercapabilities(null);
-                vserver.set_mysqlserverversion(null);
+                // delete the LB stickyness policy
+                vserver.set_persistencetype("NONE");
             }
 
 
@@ -1557,7 +1549,9 @@ public class NetscalerResource implements ServerResource {
         String nsVirtualServerName  = generateNSVirtualServerName(srcIp, srcPort);
         String serviceGroupName  = generateAutoScaleServiceGroupName(srcIp, srcPort);
 
-        disableAutoScaleConfig(loadBalancerTO, false);
+        if(loadBalancerTO.getAutoScaleVmGroupTO().getState().equals("enabled")) {
+            disableAutoScaleConfig(loadBalancerTO, false);
+        }
 
         if(isServiceGroupBoundToVirtualServer(nsVirtualServerName, serviceGroupName)) {
             // UnBind autoscale service group
@@ -1648,7 +1642,7 @@ public class NetscalerResource implements ServerResource {
             }
 
             // Add Timer
-            com.citrix.netscaler.nitro.resource.config.timer.timertrigger timer = new com.citrix.netscaler.nitro.resource.config.timer.timertrigger();
+            nstimer timer = new nstimer();
             try {
                 timer.set_name(timerName);
                 timer.set_interval(interval);
@@ -1945,7 +1939,7 @@ public class NetscalerResource implements ServerResource {
             }
 
             // Delete Timer
-            com.citrix.netscaler.nitro.resource.config.timer.timertrigger timer = new com.citrix.netscaler.nitro.resource.config.timer.timertrigger();
+            nstimer timer = new nstimer();
             try {
                 timer.set_name(timerName);
                 timer.delete(_netscalerService, timer);
@@ -2017,7 +2011,7 @@ public class NetscalerResource implements ServerResource {
         // Adding a autoscale policy
         // add timer policy lb_policy_scaleUp_cpu_mem -rule - (SYS.CUR_VSERVER.METRIC_TABLE(cpu).AVG_VAL.GT(80)-
         // -action lb_scaleUpAction
-        timerpolicy timerPolicy = new timerpolicy();
+        autoscalepolicy timerPolicy = new autoscalepolicy();
         try {
             timerPolicy.set_name(policyName);
             timerPolicy.set_action(action);
@@ -2033,7 +2027,7 @@ public class NetscalerResource implements ServerResource {
         // bind timer trigger lb_astimer -policyName lb_policy_scaleUp -vserver lb -priority 1 -samplesize 5
         // TODO: later bind to lbvserver. bind timer trigger lb_astimer -policyName lb_policy_scaleUp -vserver lb -priority 1 -samplesize 5
         // -thresholdsize 5
-        timertrigger_timerpolicy_binding timer_policy_binding = new timertrigger_timerpolicy_binding();
+        nstimer_autoscalepolicy_binding timer_policy_binding = new nstimer_autoscalepolicy_binding();
         int sampleSize = duration/interval;
         try {
             timer_policy_binding.set_name(timerName);
@@ -2053,7 +2047,7 @@ public class NetscalerResource implements ServerResource {
     private void removeAutoScalePolicy(String timerName, String policyName, boolean isCleanUp) throws Exception {
         // unbind timer policy
         // unbbind timer trigger lb_astimer -policyName lb_policy_scaleUp
-        com.citrix.netscaler.nitro.resource.config.timer.timertrigger_timerpolicy_binding timer_policy_binding = new com.citrix.netscaler.nitro.resource.config.timer.timertrigger_timerpolicy_binding();
+        nstimer_autoscalepolicy_binding timer_policy_binding = new nstimer_autoscalepolicy_binding();
         try {
             timer_policy_binding.set_name(timerName);
             timer_policy_binding.set_policyname(policyName);
@@ -2066,7 +2060,7 @@ public class NetscalerResource implements ServerResource {
 
         // Removing Timer policy
         // rm timer policy lb_policy_scaleUp_cpu_mem
-        com.citrix.netscaler.nitro.resource.config.timer.timerpolicy timerPolicy = new com.citrix.netscaler.nitro.resource.config.timer.timerpolicy();
+        autoscalepolicy timerPolicy = new autoscalepolicy();
         try {
             timerPolicy.set_name(policyName);
             timerPolicy.delete(_netscalerService, timerPolicy);
@@ -2278,8 +2272,4 @@ public class NetscalerResource implements ServerResource {
     public void disconnected() {
         return;
     }
-
-
-
-
 }
