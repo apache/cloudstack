@@ -16,14 +16,11 @@
 // under the License.
 package com.cloud.user;
 
-import com.cloud.server.ManagementService;
-import com.cloud.utils.component.ComponentLocator;
 
 public class UserContext {
 
     private static ThreadLocal<UserContext> s_currentContext = new ThreadLocal<UserContext>();
-    private static final ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
-    private static final AccountService _accountMgr = locator.getManager(AccountService.class);
+    private static UserContext s_adminContext = null;
 
     private long userId;
     private String sessionId;
@@ -33,9 +30,7 @@ public class UserContext {
     private String eventDetails;
 
     private boolean apiServer;
-
-    private static UserContext s_adminContext = new UserContext(_accountMgr.getSystemUser().getId(), _accountMgr.getSystemAccount(), null, false);
-
+    
     public UserContext() {
     }
 
@@ -133,5 +128,11 @@ public class UserContext {
 
     public String getEventDetails() {
         return eventDetails;
+    }
+
+    public static synchronized void setAdminContext(UserContext adminContext) {
+        if (adminContext == null) {
+            UserContext.s_adminContext = adminContext;
+        }
     }
 }

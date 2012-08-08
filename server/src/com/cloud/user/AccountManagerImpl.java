@@ -239,6 +239,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (_userAuthenticators == null || !_userAuthenticators.isSet()) {
             s_logger.error("Unable to find an user authenticator.");
         }
+        
+        //initialize admin context
+        UserContext.setAdminContext(new UserContext(getSystemUser().getId(), getSystemAccount(), null, false));
 
         return true;
     }
