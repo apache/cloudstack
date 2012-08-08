@@ -157,7 +157,7 @@
   };
 
 	var networkOfferingObjs = [];
-	
+        var checkVpc=0; 	
   cloudStack.sections.network = {
     title: 'label.network',
     id: 'network',
@@ -1094,18 +1094,24 @@
               addRow: 'true',	
               preFilter: function(args) {
 							  if('networks' in args.context) { //from Guest Network section
-									if(args.context.networks[0].vpcid == null) //if it's a non-VPC network, show Acquire IP button
-										return true;
+									if(args.context.networks[0].vpcid == null) { //if it's a non-VPC network, show Acquire IP button
+								        checkVpc=0;
+                                                                 	return true;
+                                                                       }
 									else //if it's a VPC network, hide Acquire IP button
 										return false;
 								}
 								else { //from VPC section
+                                                                  checkVpc=1;
 								  return true; //show Acquire IP button
 								}
               },							
               messages: {   
                 confirm: function(args) {
-                  return 'message.acquire.new.ip';
+                  if(checkVpc == 1)
+                    return 'Please confirm that you would like to acquire a new IP for this VPC';
+                   else
+                    return 'message.acquire.new.ip';
                 },							
                 notification: function(args) {
                   return 'label.acquire.new.ip';
