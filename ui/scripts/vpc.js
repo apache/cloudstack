@@ -476,6 +476,25 @@
           title: 'Add new gateway',
           desc: 'Please specify the information to add a new gateway to this VPC.',
           fields: {
+					  physicalnetworkid: { 
+						  label: 'label.physical.network',
+              select: function(args) {               
+								$.ajax({
+									url: createURL("listPhysicalNetworks"),
+									data: {
+									  zoneid: args.context.vpc[0].zoneid
+									},
+									success: function(json) {
+										var objs = json.listphysicalnetworksresponse.physicalnetwork;
+										var items = [];										
+										$(objs).each(function() {										  
+											items.push({id: this.id, description: this.name});
+										});
+										args.response.success({data: items});
+									}
+								});
+              }							
+						},
             vlan: { label: 'label.vlan', validation: { required: true }},
             ipaddress: { label: 'label.ip.address', validation: { required: true }},
             gateway: { label: 'label.gateway', validation: { required: true }},
@@ -486,6 +505,7 @@
           $.ajax({
             url: createURL('createPrivateGateway'),
             data: {
+						  physicalnetworkid: args.data.physicalnetworkid,
               vpcid: args.context.vpc[0].id,
               ipaddress: args.data.ipaddress,
               gateway: args.data.gateway,
