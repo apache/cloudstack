@@ -633,8 +633,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         value = (String) params.get("host.reserved.mem.mb");
         _dom0MinMem = NumbersUtil.parseInt(value, 0) * 1024 * 1024;
 
-        value = (String) params.get("debug.mode");
-
         LibvirtConnection.initialize(_hypervisorURI);
         Connect conn = null;
         try {
