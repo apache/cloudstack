@@ -71,6 +71,11 @@
             text: _l('label.apply'),
             'class': 'ok',
             click: function() {
+              if ($dataList.find('.tier-select select').val() == -1) {
+                cloudStack.dialog.notice({ message: ('Please select a tier')});
+                 return false;
+               }
+
               if (!$dataList.find(
                 'input[type=radio]:checked, input[type=checkbox]:checked'
               ).size()) {
