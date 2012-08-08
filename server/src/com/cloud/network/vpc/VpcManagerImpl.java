@@ -294,7 +294,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
         
         svcProviderMap.put(Service.Gateway, defaultProviders);
                
-        return createVpcOffering(name, displayText, svcProviderMap, false, null);
+        VpcOffering offering = createVpcOffering(name, displayText, svcProviderMap, false, null);
+        UserContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
+        
+        return offering;
     }
 
     
@@ -328,7 +331,6 @@ public class VpcManagerImpl implements VpcManager, Manager{
         }
         txn.commit();
 
-        UserContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         return offering;
     }
     
