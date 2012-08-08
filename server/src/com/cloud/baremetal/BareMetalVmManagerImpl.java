@@ -403,6 +403,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	    
 		Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>();
 		params.put(Param.PxeSeverType, _pxeMgr.getPxeServerType(pxeServer));
+		s_logger.debug(String.format("Deploying a baremetal VM[instance id:%s, name: %s]", vm.getId(), vm.getInstanceName()));
 
 		return startVirtualMachine(cmd, params);
 	}
@@ -454,10 +455,10 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 	    
 	    PxeServerType pxeType = (PxeServerType) profile.getParameter(Param.PxeSeverType);
 	    if (pxeType == null) {
-	    	s_logger.debug("This is a normal IPMI start, skip prepartion of PXE server");
+	    	s_logger.debug(String.format("This is a normal IPMI start, skip prepartion of PXE server[vm instance id: %s, vm name: %s]", vm.getId(), vm.getInstanceName()));
 	    	return true;
 	    }
-	    s_logger.debug("This is a PXE start, prepare PXE server first");
+	    s_logger.debug(String.format("This is a PXE start, prepare PXE server first[vm instance id: %s, vm name: %s]", vm.getId(), vm.getInstanceName()));
 	    
 	    List<HostVO> servers = _hostDao.listBy(Host.Type.PxeServer, null, dest.getPod().getId(), dest.getDataCenter().getId()); 
 	    if (servers.size() == 0) {
