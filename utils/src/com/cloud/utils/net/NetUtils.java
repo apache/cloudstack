@@ -1137,7 +1137,7 @@ public class NetUtils {
     }
 
     public static boolean validateGuestCidrList(String guestCidrList) {
-        for (String guestCidr : guestCidrList.split(";")) {
+        for (String guestCidr : guestCidrList.split(",")) {
             if (!validateGuestCidr(guestCidr)) {
                 return false;
             }
