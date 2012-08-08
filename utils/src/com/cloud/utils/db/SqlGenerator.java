@@ -539,7 +539,12 @@ public class SqlGenerator {
         SecondaryTable[] sts = DbUtil.getSecondaryTables(clazz);
         ArrayList<String> secondaryTables = new ArrayList<String>();
         for (SecondaryTable st : sts) {
-            addPrimaryKeyJoinColumns(innerJoin, tableName, st.name(), "", st.pkJoinColumns());
+            JoinType jt = clazz.getAnnotation(JoinType.class);
+            String join = null;
+            if (jt != null) {
+                join = jt.type();
+            }
+            addPrimaryKeyJoinColumns(innerJoin, tableName, st.name(), join, st.pkJoinColumns());
             secondaryTables.add(st.name());
         }
 
