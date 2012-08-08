@@ -37,7 +37,7 @@ import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.vpc.PrivateIpAddress;
 import com.cloud.network.vpc.PrivateIpVO;
-import com.cloud.network.vpc.Dao.PrivateIpDao;
+import com.cloud.network.vpc.dao.PrivateIpDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
