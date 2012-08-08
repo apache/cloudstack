@@ -28,34 +28,34 @@ from cloudutils.networkConfig import networkConfig
 from cloudutils.syscfg import sysConfigFactory
 
 from optparse import OptionParser
-    
-def getUserInputs():
-    print "Welcome to Cloud Agent Setup:"
 
-    cfo = configFileOps("/etc/cloud/agent/agent.properties")
+def getUserInputs():
+    print "Welcome to the CloudStack Agent Setup:"
+
+    cfo = configFileOps("@AGENTSYSCONFDIR@/agent.properties")
     oldMgt = cfo.getEntry("host")
 
-    mgtSvr = raw_input("Please input the Management Server Name/IP:[%s]"%oldMgt)
+    mgtSvr = raw_input("Please input the Management Server Hostname/IP-Address:[%s]"%oldMgt)
     if mgtSvr == "":
         mgtSvr = oldMgt
     try:
         socket.getaddrinfo(mgtSvr, 443)
     except:
-        print "Failed to resolve %s. Please input correct server name or IP."%mgtSvr
+        print "Failed to resolve %s. Please input a valid hostname or IP-Address."%mgtSvr
         exit(1)
 
     oldToken = cfo.getEntry("zone")
     zoneToken = raw_input("Please input the Zone Id:[%s]"%oldToken)
-    
+
     if zoneToken == "":
         zoneToken = oldToken
 
     oldPod = cfo.getEntry("pod")
     podId = raw_input("Please input the Pod Id:[%s]"%oldPod)
-    
+
     if podId == "":
        podId  = oldToken
-    
+
     oldCluster = cfo.getEntry("cluster")
     clusterId = raw_input("Please input the Cluster Id:[%s]"%oldCluster)
     if clusterId == "":
@@ -66,7 +66,7 @@ def getUserInputs():
     except:
         print "Failed to get default route. Please configure your network to have a default route"
         exit(1)
-        
+
     defNic = defaultNic.name
     network = raw_input("Please choose which network used to create VM:[%s]"%defNic)
     if network == "":
@@ -79,21 +79,21 @@ def getUserInputs():
     return [mgtSvr, zoneToken, network, podId, clusterId]
 
 if __name__ == '__main__':
-    initLoging("/var/log/cloud/setupAgent.log")
+    initLoging("@AGENTLOGDIR@/setup.log")
     glbEnv = globalEnv()
 
     glbEnv.mode = "Agent"
     glbEnv.agentMode = "Agent"
     parser = OptionParser()
     parser.add_option("-a", action="store_true", dest="auto", help="auto mode")
-    parser.add_option("-m", "--host", dest="mgt", help="management server name or IP")
+    parser.add_option("-m", "--host", dest="mgt", help="Management server hostname or IP-Address")
     parser.add_option("-z", "--zone", dest="zone", help="zone id")
     parser.add_option("-p", "--pod", dest="pod", help="pod id")
     parser.add_option("-c", "--cluster", dest="cluster", help="cluster id")
     parser.add_option("-g", "--guid", dest="guid", help="guid")
-    parser.add_option("--pubNic", dest="pubNic", help="public nic")
-    parser.add_option("--prvNic", dest="prvNic", help="private nic")
-    parser.add_option("--guestNic", dest="guestNic", help="guest nic")
+    parser.add_option("--pubNic", dest="pubNic", help="Public traffic interface")
+    parser.add_option("--prvNic", dest="prvNic", help="Private traffic interface")
+    parser.add_option("--guestNic", dest="guestNic", help="Guest traffic interface")
 
     (options, args) = parser.parse_args()
     if options.auto is None:
@@ -104,7 +104,7 @@ if __name__ == '__main__':
         glbEnv.pod = userInputs[3]
         glbEnv.cluster = userInputs[4]
         #generate UUID
-        glbEnv.uuid = configFileOps("/etc/cloud/agent/agent.properties").getEntry("guid")
+        glbEnv.uuid = configFileOps("@AGENTSYSCONFDIR@/agent.properties").getEntry("guid")
         if glbEnv.uuid == "":
             glbEnv.uuid = bash("uuidgen").getStdout()
     else:
@@ -127,7 +127,7 @@ if __name__ == '__main__':
     syscfg = sysConfigFactory.getSysConfigFactory(glbEnv)
     try:
         syscfg.config()
-        print "Cloud Agent setup is Done!"
+        print "CloudStack Agent setup is done!"
     except (CloudRuntimeException,CloudInternalException), e:
         print e
         print "Try to restore your system:"
