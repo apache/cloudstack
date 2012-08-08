@@ -412,34 +412,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         return "scripts/storage/qcow2";
     }
 
-    private void saveProperties(Map<String, Object> params)
-            throws ConfigurationException {
-        final File file = PropertiesUtil.findConfigFile("agent.properties");
-        if (file == null) {
-            throw new ConfigurationException("Unable to find agent.properties.");
-        }
-
-        s_logger.info("agent.properties found at " + file.getAbsolutePath());
-
-        try {
-            Properties _properties = new Properties();
-            _properties.load(new FileInputStream(file));
-            Set<String> names = _properties.stringPropertyNames();
-            for (String key : params.keySet()) {
-                if (!names.contains(key)) {
-                    _properties.setProperty(key, (String) params.get(key));
-                }
-            }
-            _properties.store(new FileOutputStream(file), "");
-        } catch (final FileNotFoundException ex) {
-            throw new CloudRuntimeException("Cannot find the file: "
-                    + file.getAbsolutePath(), ex);
-        } catch (final IOException ex) {
-            throw new CloudRuntimeException("IOException in reading "
-                    + file.getAbsolutePath(), ex);
-        }
-    }
-
     @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
@@ -749,7 +721,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements
             }
             params.put("vm.migrate.speed", String.valueOf(_migrateSpeed));
         }
-        saveProperties(params);
 
         return true;
     }
