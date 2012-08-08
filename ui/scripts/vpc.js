@@ -1011,8 +1011,10 @@
                       ipsecpsk: { label: 'IPsec Preshared-Key' },
                       ikepolicy: { label: 'IKE policy' },
                       esppolicy: { label: 'ESP policy' },
-                      lifetime: { label: 'Lifetime (second)' },
-                            state: {label: 'State' },
+                      ikelifetime: { label: 'IKE Lifetime (second)' },
+                      esplifetime: {label: 'ESP Lifetime(second)' },
+                     // dpd: {label: 'Dead Peer Detection'},
+                      state: {label: 'State' },
                       created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
                     }
                   ],
