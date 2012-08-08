@@ -412,6 +412,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         return "scripts/storage/qcow2";
     }
 
+    protected String getDefaultKvmScriptsDir() {
+        return "scripts/vm/hypervisor/kvm";
+    }
+
+    protected String getDefaultDomrScriptsDir() {
+        return "scripts/network/domr/kvm";
+    }
+
     @Override
     public boolean configure(String name, Map<String, Object> params)
             throws ConfigurationException {
@@ -430,16 +438,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements
                     + "com.cloud.storage.JavaStorageLayer");
         }
 
-        _virtRouterResource = new VirtualRoutingResource();
 
-        // Set the domr scripts directory
-        params.put("domr.scripts.dir", "scripts/network/domr/kvm");
-
-        success = _virtRouterResource.configure(name, params);
+        String domrScriptsDir = (String) params.get("domr.scripts.dir");
+        if (domrScriptsDir == null) {
+            domrScriptsDir = getDefaultDomrScriptsDir();
+        }
 
         String kvmScriptsDir = (String) params.get("kvm.scripts.dir");
         if (kvmScriptsDir == null) {
-            kvmScriptsDir = "scripts/vm/hypervisor/kvm";
+            kvmScriptsDir = getDefaultKvmScriptsDir();
         }
 
         String networkScriptsDir = (String) params.get("network.scripts.dir");
@@ -451,6 +458,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         if (storageScriptsDir == null) {
             storageScriptsDir = getDefaultStorageScriptsDir();
         }
+
+        params.put("domr.scripts.dir", domrScriptsDir);
+
+        _virtRouterResource = new VirtualRoutingResource();
+        success = _virtRouterResource.configure(name, params);
 
         if (!success) {
             return false;
