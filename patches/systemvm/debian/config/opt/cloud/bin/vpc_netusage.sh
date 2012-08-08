@@ -16,6 +16,7 @@ source /root/func.sh
 source /opt/cloud/bin/vpc_func.sh
 
 vpnoutmark="0x525"
+vpninmark="0x524"
 lock="biglock"
 locked=$(getLockFile $lock)
 if [ "$locked" != "1" ]
@@ -24,48 +25,58 @@ then
 fi
 
 usage() {
-  printf "Usage: %s -[c|g|r] [-[a|d] <public interface>]\n" $(basename $0)  >&2
+  printf "Usage: %s -[c|g|r|n|d] [-l <public gateway>] [-v <vpc cidr>] \n" $(basename $0)  >&2
 }
 
 create_usage_rules () {
-  iptables -N NETWORK_STATS_$ethDev > /dev/null
-  iptables -I FORWARD -j NETWORK_STATS_$ethDev > /dev/null
-  iptables-save|grep "NETWORK_STATS_$ethDev -i $ethDev" > /dev/null
+  iptables-save|grep "NETWORK_STATS_$ethDev" > /dev/null
   if [ $? -gt 0 ]
   then 
-    iptables -A NETWORK_STATS_$ethDev -i $ethDev -d $vcidr > /dev/null
-  fi
-  iptables-save|grep "NETWORK_STATS_$ethDev -o $ethDev" > /dev/null
-  if [ $? -gt 0 ]
-  then 
-    iptables -A NETWORK_STATS_$ethDev -o $ethDev -s $vcidr > /dev/null
-  fi
+    iptables -N NETWORK_STATS_$ethDev > /dev/null;
+    iptables -I FORWARD -j NETWORK_STATS_$ethDev > /dev/null;
+    iptables -A NETWORK_STATS_$ethDev -i $ethDev -d $vcidr > /dev/null;
+    iptables -A NETWORK_STATS_$ethDev -o $ethDev -s $vcidr > /dev/null;
+  fi  
   return $?
 }
 
 create_vpn_usage_rules () {
-  iptables -N VPN_STATS_$ethDev > /dev/null
-  iptables -I FORWARD -j VPN_STATS_$ethDev > /dev/null
-  iptables-save|grep "VPN_STATS_$ethDev -i $ethDev" > /dev/null
+  iptables-save|grep "VPN_STATS_$ethDev" > /dev/null
   if [ $? -gt 0 ]
   then 
-    iptables -A VPN_STATS_$ethDev -i $ethDev -m mark --mark $vpnoutmark > /dev/null
+    iptables -N VPN_STATS_$ethDev > /dev/null;
+    iptables -I FORWARD -j VPN_STATS_$ethDev > /dev/null;
+    iptables -A VPN_STATS_$ethDev -i $ethDev -m mark --mark $vpninmark > /dev/null;
+    iptables -A VPN_STATS_$ethDev -o $ethDev -m mark --mark $vpnoutmark > /dev/null;
   fi
-  iptables-save|grep "VPN_STATS_$ethDev -o $ethDev" > /dev/null
-  if [ $? -gt 0 ]
-  then 
-    iptables -A VPN_STATS_$ethDev -o $ethDev -m mark --mark $vpnoutmark > /dev/null
-  fi
+  return $?
+}
+
+remove_usage_rules () {
+  echo $ethDev >> /root/removedVifs
   return $?
 }
 
 get_usage () {
   iptables -L NETWORK_STATS_$ethDev -n -v -x | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
-  if [ $? -gt 0 ]
+  if [ -f /root/removedVifs ]
   then
-     printf $?
-     return 1
-  fi
+    var=`cat /root/removedVifs`
+    # loop through vifs to be cleared
+    for i in $var; do
+      # Make sure vif doesn't exist
+      if [ ! -f /sys/class/net/$i ]
+      then
+        # flush rules and remove chain
+        iptables -F NETWORK_STATS_$i > /dev/null;
+        iptables -X NETWORK_STATS_$i > /dev/null;
+        iptables -F VPN_STATS_$i > /dev/null;
+        iptables -X VPN_STATS_$i > /dev/null;                            
+      fi
+    done
+    rm /root/removedVifs
+  fi     
+  return 1
 }
 
 get_vpn_usage () {
@@ -76,6 +87,7 @@ get_vpn_usage () {
      return 1
   fi
 }
+
 
 
 reset_usage () {
@@ -94,8 +106,9 @@ rflag=
 lflag=
 vflag=
 nflag=
+dflag=
 
-while getopts 'cgnrl:v:' OPTION
+while getopts 'cgndrl:v:' OPTION
 do
   case $OPTION in
   c)	cflag=1
@@ -111,7 +124,9 @@ do
         vcidr="$OPTARG"
         ;;
   n)	nflag=1
-	;;        
+	;;
+  d)	dflag=1
+	;;	        
   i)    #Do nothing, since it's parameter for host script
         ;;
   ?)	usage
@@ -123,9 +138,12 @@ done
 ethDev=$(getEthByIp $publicIp)
 if [ "$cflag" == "1" ] 
 then
-  create_usage_rules
-  create_vpn_usage_rules
-  unlock_exit 0 $lock $locked
+  if [ "$ethDev" != "" ]
+  then
+    create_usage_rules
+    create_vpn_usage_rules
+    unlock_exit 0 $lock $locked
+   fi 
 fi
 
 if [ "$gflag" == "1" ] 
@@ -138,6 +156,12 @@ if [ "$nflag" == "1" ]
 then
   get_vpn_usage 
   unlock_exit $? $lock $locked
+fi
+
+if [ "$dflag" == "1" ] 
+then
+  remove_usage_rules
+  unlock_exit 0 $lock $locked
 fi
 
 if [ "$rflag" == "1" ] 

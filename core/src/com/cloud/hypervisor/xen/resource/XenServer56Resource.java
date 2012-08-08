@@ -182,6 +182,8 @@ public class XenServer56Resource extends CitrixResourceBase {
                 args += "-r";
             } else if (option.equals("vpn")) {
                 args += "-n";
+            } else if (option.equals("remove")) {
+                args += "-d";
             } else {
                 return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
             }

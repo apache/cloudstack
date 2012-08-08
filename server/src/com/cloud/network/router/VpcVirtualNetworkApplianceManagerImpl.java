@@ -335,15 +335,13 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 PlugNicCommand plugNicCmd = new PlugNicCommand(nic, vm.getName());
                 
                 Commands cmds = new Commands(OnError.Stop);
-                cmds.addCommand("plugnic", plugNicCmd);
+                cmds.addCommand("plugnic", plugNicCmd);                     
                 _agentMgr.send(dest.getHost().getId(), cmds);
-                
                 PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
                 if (!(plugNicAnswer != null && plugNicAnswer.getResult())) {
                     s_logger.warn("Unable to plug nic for vm " + vm.getHostName());
                     result = false;
                 } 
-
             } catch (OperationTimedoutException e) {
                 throw new AgentUnavailableException("Unable to plug nic for router " + vm.getHostName() + " in network " + network,
                         dest.getHost().getId(), e);
@@ -367,8 +365,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         
         if (router.getState() == State.Running) {
             try {
+                Commands cmds = new Commands(OnError.Stop);            	
+            	if(network.getTrafficType() == TrafficType.Public){
+            		NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(router.getPrivateIpAddress(), router.getInstanceName(), "remove", true, nic.getIp());
+            		cmds.addCommand(netUsageCmd);
+            	}            	
                 UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(nic, vm.getName());
-                Commands cmds = new Commands(OnError.Stop);
                 cmds.addCommand("unplugnic", unplugNicCmd);
                 _agentMgr.send(dest.getHost().getId(), cmds);
                 
@@ -376,8 +378,14 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 if (!(unplugNicAnswer != null && unplugNicAnswer.getResult())) {
                     s_logger.warn("Unable to unplug nic from router " + router);
                     result = false;
-                } 
-
+                } else {
+                	if(network.getTrafficType() == TrafficType.Public){
+                		NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(router.getPrivateIpAddress(), router.getInstanceName(), "remove", true, nic.getIp());
+                		cmds = new Commands(OnError.Stop);
+                		cmds.addCommand(netUsageCmd);
+                		_agentMgr.send(dest.getHost().getId(), cmds);
+                	}
+                }
             } catch (OperationTimedoutException e) {
                 throw new AgentUnavailableException("Unable to unplug nic from rotuer " + router + " from network " + network,
                         dest.getHost().getId(), e);
@@ -570,7 +578,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 return false;
             }
         }
-        
+
+        Commands netUsagecmds = new Commands(OnError.Continue);
+    	VpcVO vpc = _vpcDao.findById(router.getVpcId());
+    	
         //2) Plug the nics
         for (String vlanTag : nicsToPlug.keySet()) {
             PublicIpAddress ip = nicsToPlug.get(vlanTag);
@@ -605,6 +616,16 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                     return false;
                 }
             }
+            //Create network usage commands. Send commands to router after IPAssoc
+            NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(router.getPrivateIpAddress(), router.getInstanceName(), true, defaultNic.getIp4Address(), vpc.getCidr());
+        	netUsagecmds.addCommand(netUsageCmd);
+        	UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn(), 
+            		publicNtwk.getId(), publicNic.getIp4Address(), router.getId(), router.getType().toString());
+            if (stats == null) {
+                stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), publicNic.getIp4Address(), router.getId(),
+                        router.getType().toString(), publicNtwk.getId());
+                _userStatsDao.persist(stats);
+            }
         }
         
         //3) apply the rules
@@ -636,7 +657,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 return sendCommandsToRouter(router, cmds);
             }
         });
-        
+        if(result && netUsagecmds.size() > 0){
+        	//After successful ipassoc, send commands to router
+        	sendCommandsToRouter(router, netUsagecmds);
+        }
         return result;
     }
     
