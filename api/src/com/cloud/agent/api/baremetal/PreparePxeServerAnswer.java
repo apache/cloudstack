@@ -21,6 +21,9 @@ package com.cloud.agent.api.baremetal;
 import com.cloud.agent.api.Answer;
 
 public class PreparePxeServerAnswer extends Answer {
+	public PreparePxeServerAnswer() {
+	}
+	
 	public PreparePxeServerAnswer(PreparePxeServerCommand cmd) {
 		super(cmd, true, "SUCCESS");
 	}
