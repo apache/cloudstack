@@ -793,6 +793,15 @@
             return;
           }
         }
+				
+				if(args.data.scaleUpDuration < args.data.interval) {
+				  args.response.error("Duration of Scale Up Policy can not be less than Polling Interval.");
+				  return;
+				}
+				if(args.data.scaleDownDuration < args.data.interval) {
+				  args.response.error("Duration of Scale Down Policy can not be less than Polling Interval.");
+				  return;
+				}
         //validation (end) *****
     
         var scaleVmProfileResponse = [];
