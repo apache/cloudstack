@@ -1092,7 +1092,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         String localGuestCidr = vpc.getCidr();
         String localPublicGateway = _vlanDao.findById(ip.getVlanId()).getVlanGateway();
         String peerGatewayIp = gw.getGatewayIp();
-        String peerGuestCidrList = gw.getGuestCidrList();
+        String peerGuestCidrList = gw.getGuestCidrList().replace(";", ",");
         String ipsecPsk = gw.getIpsecPsk();
         String ikePolicy = gw.getIkePolicy();
         String espPolicy = gw.getEspPolicy();
