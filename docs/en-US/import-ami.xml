@@ -1,11 +1,30 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
 <section id="import-ami">
 	<title>Importing Amazon Machine Images</title>
-	<para>The following procedures describe how to import an Amazon Machine Image (AMI) into CloudPlatform when using the XenServer hypervisor.</para>
+	<para>The following procedures describe how to import an Amazon Machine Image (AMI) into &PRODUCT; when using the XenServer hypervisor.</para>
 	<para>Assume you have an AMI file and this file is called CentOS_6.2_x64. Assume further that you are working on a CentOS host. If the AMI is a Fedora image, you need to be working on a Fedora host initially.</para>
 	<para>You need to have a XenServer host with a file-based storage repository (either a local ext3 SR or an NFS SR) to convert to a VHD once the image file has been customized on the Centos/Fedora host.</para>
 	<note><para>When copying and pasting a command, be sure the command has pasted as a single line before executing. Some document viewers may introduce unwanted line breaks in copied text.</para></note>
@@ -16,7 +35,7 @@
 		<listitem><para>Install the kernel-xen package into the image. This downloads the PV kernel and ramdisk to the image.</para><programlisting># yum -c /mnt/loop/centos54/etc/yum.conf --installroot=/mnt/loop/centos62/ -y install kernel-xen</programlisting></listitem>
 		<listitem><para>Create a grub entry in /boot/grub/grub.conf.</para><programlisting># mkdir -p /mnt/loop/centos62/boot/grub
 # touch /mnt/loop/centos62/boot/grub/grub.conf
-# echo "" > /mnt/loop/centos62/boot/grub/grub.conf
+# echo "" &gt; /mnt/loop/centos62/boot/grub/grub.conf
 </programlisting></listitem>
 		<listitem><para>Determine the name of the PV kernel that has been installed into the image.</para>
 			<programlisting># cd /mnt/loop/centos62
@@ -69,7 +88,7 @@ passwd: all authentication tokens updated successfully.
 PermitRootLogin yes
 PasswordAuthentication yes
 </programlisting></listitem>
-		<listitem><para>If you need the template to be enabled to reset passwords from the CloudPlatform UI or API,
+		<listitem><para>If you need the template to be enabled to reset passwords from the &PRODUCT; UI or API,
                                 install the password change script into the image at this point. See
 		        <xref linkend="add-password-management-to-templates"/>.</para></listitem>
 		<listitem><para>Unmount and delete loopback mount.</para><programlisting># umount /mnt/loop/centos54

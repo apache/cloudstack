@@ -1,0 +1,54 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+msgid ""
+msgstr ""
+"Project-Id-Version: Apache CloudStack Runbook\n"
+"Report-Msgid-Bugs-To: http://bugs.cloudstack.org/\n"
+"POT-Creation-Date: 2012-07-10T15:13:22\n"
+"PO-Revision-Date: 2012-08-03 06:28+0000\n"
+"Last-Translator: micexia <mice1982@gmail.com>\n"
+"Language-Team: None\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: zh_CN\n"
+"Plural-Forms: nplurals=1; plural=0\n"
+
+#. Tag: title
+#, no-c-format
+msgid "Runbook"
+msgstr "运行手册"
+
+#. Tag: subtitle
+#, no-c-format
+msgid "Prescriptive instructions for deploying Apache CloudStack"
+msgstr "部署Apache CloudStack规范指导"
+
+#. Tag: productname
+#, no-c-format
+msgid "Apache CloudStack"
+msgstr "Apache CloudStack"
+
+#. Tag: para
+#, no-c-format
+msgid ""
+"These runbooks are designed to provide a strict environment to guarantee a "
+"higher degree of success in initial deployments of Apache CloudStack. All of"
+" the elements of the environment will be provided to you. Apache CloudStack "
+"is capable of much more complex configurations, but they are beyond the "
+"scope of this document."
+msgstr "本安装手册用于提供在严格指定的环境中安装Apache CloudStack，以保证初始部署的高成功率，所有相关的资源和环境都会提供给您。Apache CloudStack的配置可以非常复杂，但这超出了本文档的范围。"

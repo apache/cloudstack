@@ -31,10 +31,9 @@ import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
 
-import com.cloud.utils.encoding.Base64;
 
 /**
-*
+ *
  *
  *
  *

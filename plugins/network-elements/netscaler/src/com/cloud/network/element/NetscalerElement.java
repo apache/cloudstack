@@ -15,6 +15,7 @@ package com.cloud.network.element;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -590,15 +591,19 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     }
 
     @Override
-    public boolean verifyServicesCombination(List<String> services) {
-        List<String> netscalerServices = new ArrayList<String>();
-        netscalerServices.add(Service.Lb.getName());
-        netscalerServices.add(Service.StaticNat.getName());
+    public boolean verifyServicesCombination(Set<Service> services) {
+        Set<Service> netscalerServices = new HashSet<Service>();
+        netscalerServices.add(Service.Lb);
+        netscalerServices.add(Service.StaticNat);
 
         // NetScaler can only act as Lb and Static Nat service provider
         if (services != null && !services.isEmpty() && !netscalerServices.containsAll(services)) {
+            String servicesList = "";
+            for (Service service : services) {
+                servicesList += service.getName() + " ";
+            }
             s_logger.warn("NetScaler network element can only support LB and Static NAT services and service combination " 
-                + services + " is not supported.");
+                + servicesList + " is not supported.");
             return false;
         }
 

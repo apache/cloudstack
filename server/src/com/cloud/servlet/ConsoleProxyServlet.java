@@ -58,61 +58,61 @@ import com.cloud.vm.VirtualMachineManager;
  * Authentication : /console?cmd=auth&vm=xxx&sid=xxx
  */
 public class ConsoleProxyServlet extends HttpServlet {
-	private static final long serialVersionUID = -5515382620323808168L;
-	public static final Logger s_logger = Logger.getLogger(ConsoleProxyServlet.class.getName());
-	private static final int DEFAULT_THUMBNAIL_WIDTH = 144;
-	private static final int DEFAULT_THUMBNAIL_HEIGHT = 110;
-	
-	private final static AccountManager _accountMgr = ComponentLocator.getLocator(ManagementServer.Name).getManager(AccountManager.class);
-	private final static VirtualMachineManager _vmMgr = ComponentLocator.getLocator(ManagementServer.Name).getManager(VirtualMachineManager.class);
-	private final static ManagementServer _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
-	private final static IdentityService _identityService = (IdentityService)ComponentLocator.getLocator(ManagementServer.Name).getManager(IdentityService.class); 
-	
-	@Override
+    private static final long serialVersionUID = -5515382620323808168L;
+    public static final Logger s_logger = Logger.getLogger(ConsoleProxyServlet.class.getName());
+    private static final int DEFAULT_THUMBNAIL_WIDTH = 144;
+    private static final int DEFAULT_THUMBNAIL_HEIGHT = 110;
+
+    private final static AccountManager _accountMgr = ComponentLocator.getLocator(ManagementServer.Name).getManager(AccountManager.class);
+    private final static VirtualMachineManager _vmMgr = ComponentLocator.getLocator(ManagementServer.Name).getManager(VirtualMachineManager.class);
+    private final static ManagementServer _ms = (ManagementServer)ComponentLocator.getComponent(ManagementServer.Name);
+    private final static IdentityService _identityService = ComponentLocator.getLocator(ManagementServer.Name).getManager(IdentityService.class); 
+
+    @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
-		doGet(req, resp);
-	}
-	
-	@Override
+        doGet(req, resp);
+    }
+
+    @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
-		
-		try {
-			if(_accountMgr == null || _vmMgr == null || _ms == null) {
-				sendResponse(resp, "Service is not ready");
-				return;
-			}
-			
-			if(_ms.getHashKey() == null) {
-	        	s_logger.debug("Console/thumbnail access denied. Ticket service is not ready yet");
-				sendResponse(resp, "Service is not ready");
-	        	return;
-			}
-				
+
+        try {
+            if(_accountMgr == null || _vmMgr == null || _ms == null) {
+                sendResponse(resp, "Service is not ready");
+                return;
+            }
+
+            if(_ms.getHashKey() == null) {
+                s_logger.debug("Console/thumbnail access denied. Ticket service is not ready yet");
+                sendResponse(resp, "Service is not ready");
+                return;
+            }
+
             String userId = null;
             String account = null;
             Account accountObj = null;
-            
+
             Map<String, Object[]> params = new HashMap<String, Object[]>();
             params.putAll(req.getParameterMap());
 
             HttpSession session = req.getSession(false);
             if(session == null) {
-            	if(verifyRequest(params)) {
+                if(verifyRequest(params)) {
                     userId = (String)params.get("userid")[0];
                     account = (String)params.get("account")[0];
                     accountObj = (Account)params.get("accountobj")[0];
-            	} else {
-					s_logger.debug("Invalid web session or API key in request, reject console/thumbnail access");
-					sendResponse(resp, "Access denied. Invalid web session or API key in request");
-					return;
-            	}
+                } else {
+                    s_logger.debug("Invalid web session or API key in request, reject console/thumbnail access");
+                    sendResponse(resp, "Access denied. Invalid web session or API key in request");
+                    return;
+                }
             } else {
-            	// adjust to latest API refactoring changes
-            	if(session.getAttribute("userid") != null) {
+                // adjust to latest API refactoring changes
+                if(session.getAttribute("userid") != null) {
                     userId = ((Long)session.getAttribute("userid")).toString();
                 }
-                
-            	accountObj = (Account)session.getAttribute("accountobj");
+
+                accountObj = (Account)session.getAttribute("accountobj");
                 if(accountObj != null) {
                     account = "" + accountObj.getId();
                 }
@@ -120,381 +120,381 @@ public class ConsoleProxyServlet extends HttpServlet {
 
             // Do a sanity check here to make sure the user hasn't already been deleted
             if ((userId == null) || (account == null) || (accountObj == null) || !verifyUser(Long.valueOf(userId))) {
-				s_logger.debug("Invalid user/account, reject console/thumbnail access");
-				sendResponse(resp, "Access denied. Invalid or inconsistent account is found");
-				return;
+                s_logger.debug("Invalid user/account, reject console/thumbnail access");
+                sendResponse(resp, "Access denied. Invalid or inconsistent account is found");
+                return;
             }
 
-			String cmd = req.getParameter("cmd");
-			if(cmd == null || !isValidCmd(cmd)) {
-				s_logger.debug("invalid console servlet command: " + cmd);
-				sendResponse(resp, "");
-				return;
-			}
+            String cmd = req.getParameter("cmd");
+            if(cmd == null || !isValidCmd(cmd)) {
+                s_logger.debug("invalid console servlet command: " + cmd);
+                sendResponse(resp, "");
+                return;
+            }
 
-			String vmIdString = req.getParameter("vm");
-			Long vmId = _identityService.getIdentityId("vm_instance", vmIdString);
-			if(vmId == null) {
-				s_logger.info("invalid console servlet command parameter: " + vmIdString);
-				sendResponse(resp, "");
-				return;
-			}
-			
-			if(!checkSessionPermision(req, vmId, accountObj)) {
-				sendResponse(resp, "Permission denied");
-				return;
-			}
-			
-			if(cmd.equalsIgnoreCase("thumbnail")) {
+            String vmIdString = req.getParameter("vm");
+            Long vmId = _identityService.getIdentityId("vm_instance", vmIdString);
+            if(vmId == null) {
+                s_logger.info("invalid console servlet command parameter: " + vmIdString);
+                sendResponse(resp, "");
+                return;
+            }
+
+            if(!checkSessionPermision(req, vmId, accountObj)) {
+                sendResponse(resp, "Permission denied");
+                return;
+            }
+
+            if(cmd.equalsIgnoreCase("thumbnail")) {
                 handleThumbnailRequest(req, resp, vmId);
             } else if(cmd.equalsIgnoreCase("access")) {
                 handleAccessRequest(req, resp, vmId);
             } else {
                 handleAuthRequest(req, resp, vmId);
             }
-		} catch (Throwable e) {
-			s_logger.error("Unexepected exception in ConsoleProxyServlet", e);
-			sendResponse(resp, "Server Internal Error");
-		}
-	}
-	
-	private void handleThumbnailRequest(HttpServletRequest req, HttpServletResponse resp, long vmId) {
-		VMInstanceVO vm = _vmMgr.findById(vmId);
-		if(vm == null) {
-			s_logger.warn("VM " + vmId + " does not exist, sending blank response for thumbnail request");
-			sendResponse(resp, "");
-			return;
-		}
-		
-		if(vm.getHostId() == null) {
-			s_logger.warn("VM " + vmId + " lost host info, sending blank response for thumbnail request");
-			sendResponse(resp, "");
-			return;
-		}
-		
-		HostVO host = _ms.getHostBy(vm.getHostId());
-		if(host == null) {
-			s_logger.warn("VM " + vmId + "'s host does not exist, sending blank response for thumbnail request");
-			sendResponse(resp, "");
-			return;
-		}
-		
-		String rootUrl = _ms.getConsoleAccessUrlRoot(vmId);
-		if(rootUrl == null) {
-			sendResponse(resp, "");
-			return;
-		}
-		
-		int w = DEFAULT_THUMBNAIL_WIDTH;
-		int h = DEFAULT_THUMBNAIL_HEIGHT;
-		
-		String value = req.getParameter("w");
-		try {
-			w = Integer.parseInt(value);
-		} catch(NumberFormatException e) {
-		}
-		
-		value = req.getParameter("h");
-		try {
-			h = Integer.parseInt(value);
-		} catch(NumberFormatException e) {
-		}
-		
-		try {
-			resp.sendRedirect(composeThumbnailUrl(rootUrl, vm, host, w, h));
-		} catch (IOException e) {
-			if(s_logger.isInfoEnabled()) {
+        } catch (Throwable e) {
+            s_logger.error("Unexepected exception in ConsoleProxyServlet", e);
+            sendResponse(resp, "Server Internal Error");
+        }
+    }
+
+    private void handleThumbnailRequest(HttpServletRequest req, HttpServletResponse resp, long vmId) {
+        VMInstanceVO vm = _vmMgr.findById(vmId);
+        if(vm == null) {
+            s_logger.warn("VM " + vmId + " does not exist, sending blank response for thumbnail request");
+            sendResponse(resp, "");
+            return;
+        }
+
+        if(vm.getHostId() == null) {
+            s_logger.warn("VM " + vmId + " lost host info, sending blank response for thumbnail request");
+            sendResponse(resp, "");
+            return;
+        }
+
+        HostVO host = _ms.getHostBy(vm.getHostId());
+        if(host == null) {
+            s_logger.warn("VM " + vmId + "'s host does not exist, sending blank response for thumbnail request");
+            sendResponse(resp, "");
+            return;
+        }
+
+        String rootUrl = _ms.getConsoleAccessUrlRoot(vmId);
+        if(rootUrl == null) {
+            sendResponse(resp, "");
+            return;
+        }
+
+        int w = DEFAULT_THUMBNAIL_WIDTH;
+        int h = DEFAULT_THUMBNAIL_HEIGHT;
+
+        String value = req.getParameter("w");
+        try {
+            w = Integer.parseInt(value);
+        } catch(NumberFormatException e) {
+        }
+
+        value = req.getParameter("h");
+        try {
+            h = Integer.parseInt(value);
+        } catch(NumberFormatException e) {
+        }
+
+        try {
+            resp.sendRedirect(composeThumbnailUrl(rootUrl, vm, host, w, h));
+        } catch (IOException e) {
+            if(s_logger.isInfoEnabled()) {
                 s_logger.info("Client may already close the connection");
             }
-		}
-	}
-	
-	private void handleAccessRequest(HttpServletRequest req, HttpServletResponse resp, long vmId) {
-		VMInstanceVO vm = _vmMgr.findById(vmId);
-		if(vm == null) {
-			s_logger.warn("VM " + vmId + " does not exist, sending blank response for console access request");
-			sendResponse(resp, "");
-			return;
-		}
-		
-		if(vm.getHostId() == null) {
-			s_logger.warn("VM " + vmId + " lost host info, sending blank response for console access request");
-			sendResponse(resp, "");
-			return;
-		}
-		
-		HostVO host = _ms.getHostBy(vm.getHostId());
-		if(host == null) {
-			s_logger.warn("VM " + vmId + "'s host does not exist, sending blank response for console access request");
-			sendResponse(resp, "");
-			return;
-		}
-		
-		String rootUrl = _ms.getConsoleAccessUrlRoot(vmId);
-		if(rootUrl == null) {
-			sendResponse(resp, "<html><body><p>Console access will be ready in a few minutes. Please try it again later.</p></body></html>");
-			return;
-		}
-		
-		String vmName = vm.getHostName();
-		if(vm.getType() == VirtualMachine.Type.User) {
-			UserVm userVm = (UserVm)_vmMgr.findByIdAndType(VirtualMachine.Type.User, vmId);
-			String displayName = userVm.getDisplayName();
-			if(displayName != null && !displayName.isEmpty() && !displayName.equals(vmName)) {
-	            vmName += "(" + displayName + ")";
-	        }
-		}
-		
-		StringBuffer sb = new StringBuffer();
-		sb.append("<html><title>").append(escapeHTML(vmName)).append("</title><frameset><frame src=\"").append(composeConsoleAccessUrl(rootUrl, vm, host));
-		sb.append("\"></frame></frameset></html>");
-		s_logger.debug("the console url is :: " + sb.toString());
-		sendResponse(resp, sb.toString());
-	}
-	
-	private void handleAuthRequest(HttpServletRequest req, HttpServletResponse resp, long vmId) {
-		
-		// TODO authentication channel between console proxy VM and management server needs to be secured, 
-		// the data is now being sent through private network, but this is apparently not enough
-		VMInstanceVO vm = _vmMgr.findById(vmId);
-		if(vm == null) {
-			s_logger.warn("VM " + vmId + " does not exist, sending failed response for authentication request from console proxy");
-			sendResponse(resp, "failed");
-			return;
-		}
-		
-		if(vm.getHostId() == null) {
-			s_logger.warn("VM " + vmId + " lost host info, failed response for authentication request from console proxy");
-			sendResponse(resp, "failed");
-			return;
-		}
-		
-		HostVO host = _ms.getHostBy(vm.getHostId());
-		if(host == null) {
-			s_logger.warn("VM " + vmId + "'s host does not exist, sending failed response for authentication request from console proxy");
-			sendResponse(resp, "failed");
-			return;
-		}
-		
-		String sid = req.getParameter("sid");
-		if(sid == null || !sid.equals(vm.getVncPassword())) {
-			s_logger.warn("sid " + sid + " in url does not match stored sid " + vm.getVncPassword());
-			sendResponse(resp, "failed");
-			return;
-		}
-		
-		sendResponse(resp, "success");
-	}
-	
-	// put the ugly stuff here
-	static public Ternary<String, String, String> parseHostInfo(String hostInfo) {
-		String host = null;
-		String tunnelUrl = null;
-		String tunnelSession = null;
-		
-		s_logger.info("Parse host info returned from executing GetVNCPortCommand. host info: " + hostInfo);
-		
-        if(hostInfo != null && hostInfo.startsWith("consoleurl")) {
-        	String tokens[] = hostInfo.split("&");
-        	
-        	if(hostInfo.length() > 19 && hostInfo.indexOf('/', 19) > 19) {
-	        	host = hostInfo.substring(19, hostInfo.indexOf('/', 19)).trim();
-	        	tunnelUrl = tokens[0].substring("consoleurl=".length());
-	        	tunnelSession = tokens[1].split("=")[1];
-        	} else {
-        		host = "";
-        	}
-        } else {
-        	host = hostInfo;
         }
-        
+    }
+
+    private void handleAccessRequest(HttpServletRequest req, HttpServletResponse resp, long vmId) {
+        VMInstanceVO vm = _vmMgr.findById(vmId);
+        if(vm == null) {
+            s_logger.warn("VM " + vmId + " does not exist, sending blank response for console access request");
+            sendResponse(resp, "");
+            return;
+        }
+
+        if(vm.getHostId() == null) {
+            s_logger.warn("VM " + vmId + " lost host info, sending blank response for console access request");
+            sendResponse(resp, "");
+            return;
+        }
+
+        HostVO host = _ms.getHostBy(vm.getHostId());
+        if(host == null) {
+            s_logger.warn("VM " + vmId + "'s host does not exist, sending blank response for console access request");
+            sendResponse(resp, "");
+            return;
+        }
+
+        String rootUrl = _ms.getConsoleAccessUrlRoot(vmId);
+        if(rootUrl == null) {
+            sendResponse(resp, "<html><body><p>Console access will be ready in a few minutes. Please try it again later.</p></body></html>");
+            return;
+        }
+
+        String vmName = vm.getHostName();
+        if(vm.getType() == VirtualMachine.Type.User) {
+            UserVm userVm = (UserVm)_vmMgr.findByIdAndType(VirtualMachine.Type.User, vmId);
+            String displayName = userVm.getDisplayName();
+            if(displayName != null && !displayName.isEmpty() && !displayName.equals(vmName)) {
+                vmName += "(" + displayName + ")";
+            }
+        }
+
+        StringBuffer sb = new StringBuffer();
+        sb.append("<html><title>").append(escapeHTML(vmName)).append("</title><frameset><frame src=\"").append(composeConsoleAccessUrl(rootUrl, vm, host));
+        sb.append("\"></frame></frameset></html>");
+        s_logger.debug("the console url is :: " + sb.toString());
+        sendResponse(resp, sb.toString());
+    }
+
+    private void handleAuthRequest(HttpServletRequest req, HttpServletResponse resp, long vmId) {
+
+        // TODO authentication channel between console proxy VM and management server needs to be secured, 
+        // the data is now being sent through private network, but this is apparently not enough
+        VMInstanceVO vm = _vmMgr.findById(vmId);
+        if(vm == null) {
+            s_logger.warn("VM " + vmId + " does not exist, sending failed response for authentication request from console proxy");
+            sendResponse(resp, "failed");
+            return;
+        }
+
+        if(vm.getHostId() == null) {
+            s_logger.warn("VM " + vmId + " lost host info, failed response for authentication request from console proxy");
+            sendResponse(resp, "failed");
+            return;
+        }
+
+        HostVO host = _ms.getHostBy(vm.getHostId());
+        if(host == null) {
+            s_logger.warn("VM " + vmId + "'s host does not exist, sending failed response for authentication request from console proxy");
+            sendResponse(resp, "failed");
+            return;
+        }
+
+        String sid = req.getParameter("sid");
+        if(sid == null || !sid.equals(vm.getVncPassword())) {
+            s_logger.warn("sid " + sid + " in url does not match stored sid " + vm.getVncPassword());
+            sendResponse(resp, "failed");
+            return;
+        }
+
+        sendResponse(resp, "success");
+    }
+
+    // put the ugly stuff here
+    static public Ternary<String, String, String> parseHostInfo(String hostInfo) {
+        String host = null;
+        String tunnelUrl = null;
+        String tunnelSession = null;
+
+        s_logger.info("Parse host info returned from executing GetVNCPortCommand. host info: " + hostInfo);
+
+        if(hostInfo != null && hostInfo.startsWith("consoleurl")) {
+            String tokens[] = hostInfo.split("&");
+
+            if(hostInfo.length() > 19 && hostInfo.indexOf('/', 19) > 19) {
+                host = hostInfo.substring(19, hostInfo.indexOf('/', 19)).trim();
+                tunnelUrl = tokens[0].substring("consoleurl=".length());
+                tunnelSession = tokens[1].split("=")[1];
+            } else {
+                host = "";
+            }
+        } else {
+            host = hostInfo;
+        }
+
         return new Ternary<String, String, String>(host, tunnelUrl, tunnelSession);
-	}
-	
-	private String composeThumbnailUrl(String rootUrl, VMInstanceVO vm, HostVO hostVo, int w, int h) {
-		StringBuffer sb = new StringBuffer(rootUrl);
+    }
 
-		String host = hostVo.getPrivateIpAddress();
-		
-		Pair<String, Integer> portInfo = _ms.getVncPort(vm);
-		Ternary<String, String, String> parsedHostInfo = parseHostInfo(portInfo.first());
-		
-		String sid = vm.getVncPassword();
-		String tag = String.valueOf(vm.getId());
-		tag = _identityService.getIdentityUuid("vm_instance", tag);
-		String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
+    private String composeThumbnailUrl(String rootUrl, VMInstanceVO vm, HostVO hostVo, int w, int h) {
+        StringBuffer sb = new StringBuffer(rootUrl);
 
-		ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(_ms.getHashKey());
-		ConsoleProxyClientParam param = new ConsoleProxyClientParam();
-		param.setClientHostAddress(parsedHostInfo.first());
-		param.setClientHostPort(portInfo.second());
-		param.setClientHostPassword(sid);
-		param.setClientTag(tag);
-		param.setTicket(ticket);
-		if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
-			param.setClientTunnelUrl(parsedHostInfo.second());
-			param.setClientTunnelSession(parsedHostInfo.third());
-		}
-		
-		sb.append("/ajax?token=" + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
-		sb.append("&w=").append(w).append("&h=").append(h);
-		
-		if(s_logger.isDebugEnabled()) {
+        String host = hostVo.getPrivateIpAddress();
+
+        Pair<String, Integer> portInfo = _ms.getVncPort(vm);
+        Ternary<String, String, String> parsedHostInfo = parseHostInfo(portInfo.first());
+
+        String sid = vm.getVncPassword();
+        String tag = String.valueOf(vm.getId());
+        tag = _identityService.getIdentityUuid("vm_instance", tag);
+        String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
+
+        ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(_ms.getHashKey());
+        ConsoleProxyClientParam param = new ConsoleProxyClientParam();
+        param.setClientHostAddress(parsedHostInfo.first());
+        param.setClientHostPort(portInfo.second());
+        param.setClientHostPassword(sid);
+        param.setClientTag(tag);
+        param.setTicket(ticket);
+        if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
+            param.setClientTunnelUrl(parsedHostInfo.second());
+            param.setClientTunnelSession(parsedHostInfo.third());
+        }
+
+        sb.append("/ajax?token=" + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
+        sb.append("&w=").append(w).append("&h=").append(h);
+
+        if(s_logger.isDebugEnabled()) {
             s_logger.debug("Compose thumbnail url: " + sb.toString());
         }
-		return sb.toString();
-	}
-	
-	private String composeConsoleAccessUrl(String rootUrl, VMInstanceVO vm, HostVO hostVo) {
-		StringBuffer sb = new StringBuffer(rootUrl);
-		String host = hostVo.getPrivateIpAddress();
-		
-		Pair<String, Integer> portInfo = _ms.getVncPort(vm);
-		if(s_logger.isDebugEnabled())
-			s_logger.debug("Port info " + portInfo.first());
+        return sb.toString();
+    }
 
-		Ternary<String, String, String> parsedHostInfo = parseHostInfo(portInfo.first());
+    private String composeConsoleAccessUrl(String rootUrl, VMInstanceVO vm, HostVO hostVo) {
+        StringBuffer sb = new StringBuffer(rootUrl);
+        String host = hostVo.getPrivateIpAddress();
 
-		String sid = vm.getVncPassword();
-		String tag = String.valueOf(vm.getId());
-		tag = _identityService.getIdentityUuid("vm_instance", tag);
-		String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
-		ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(_ms.getHashKey());
-		ConsoleProxyClientParam param = new ConsoleProxyClientParam();
-		param.setClientHostAddress(parsedHostInfo.first());
-		param.setClientHostPort(portInfo.second());
-		param.setClientHostPassword(sid);
-		param.setClientTag(tag);
-		param.setTicket(ticket);
-		if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
-			param.setClientTunnelUrl(parsedHostInfo.second());
-			param.setClientTunnelSession(parsedHostInfo.third());
-		}
-		
-		sb.append("/ajax?token=" + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
-		
-		// for console access, we need guest OS type to help implement keyboard
-		long guestOs = vm.getGuestOSId();
-		GuestOSVO guestOsVo = _ms.getGuestOs(guestOs);
-		if(guestOsVo.getCategoryId() == 6)
-			sb.append("&guest=windows");
-		
-		if(s_logger.isDebugEnabled()) {
+        Pair<String, Integer> portInfo = _ms.getVncPort(vm);
+        if(s_logger.isDebugEnabled())
+            s_logger.debug("Port info " + portInfo.first());
+
+        Ternary<String, String, String> parsedHostInfo = parseHostInfo(portInfo.first());
+
+        String sid = vm.getVncPassword();
+        String tag = String.valueOf(vm.getId());
+        tag = _identityService.getIdentityUuid("vm_instance", tag);
+        String ticket = genAccessTicket(host, String.valueOf(portInfo.second()), sid, tag);
+        ConsoleProxyPasswordBasedEncryptor encryptor = new ConsoleProxyPasswordBasedEncryptor(_ms.getHashKey());
+        ConsoleProxyClientParam param = new ConsoleProxyClientParam();
+        param.setClientHostAddress(parsedHostInfo.first());
+        param.setClientHostPort(portInfo.second());
+        param.setClientHostPassword(sid);
+        param.setClientTag(tag);
+        param.setTicket(ticket);
+        if(parsedHostInfo.second() != null  && parsedHostInfo.third() != null) {
+            param.setClientTunnelUrl(parsedHostInfo.second());
+            param.setClientTunnelSession(parsedHostInfo.third());
+        }
+
+        sb.append("/ajax?token=" + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
+
+        // for console access, we need guest OS type to help implement keyboard
+        long guestOs = vm.getGuestOSId();
+        GuestOSVO guestOsVo = _ms.getGuestOs(guestOs);
+        if(guestOsVo.getCategoryId() == 6)
+            sb.append("&guest=windows");
+
+        if(s_logger.isDebugEnabled()) {
             s_logger.debug("Compose console url: " + sb.toString());
         }
-		return sb.toString();
-	}
-	
-	public static String genAccessTicket(String host, String port, String sid, String tag) {
-		return genAccessTicket(host, port, sid, tag, new Date());
-	}
-	
-	public static String genAccessTicket(String host, String port, String sid, String tag, Date normalizedHashTime) {
-		String params = "host=" + host + "&port=" + port + "&sid=" + sid + "&tag=" + tag;
-		
-		try {
-	        Mac mac = Mac.getInstance("HmacSHA1");
-	        
-	        long ts = normalizedHashTime.getTime();
-	        ts = ts/60000;		// round up to 1 minute
-	        String secretKey = _ms.getHashKey();
-	        
-	        SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA1");
-	        mac.init(keySpec);
-	        mac.update(params.getBytes());
-	        mac.update(String.valueOf(ts).getBytes());
-	        
-	        byte[] encryptedBytes = mac.doFinal();
-	        
-	        return Base64.encodeBase64URLSafeString(encryptedBytes);
-		} catch(Exception e) {
-			s_logger.error("Unexpected exception ", e);
-		}
-		return "";
-	}
-	
-	private void sendResponse(HttpServletResponse resp, String content) {
-		try {
-			resp.setContentType("text/html");
-			resp.getWriter().print(content);
-		} catch(IOException e) {
-			if(s_logger.isInfoEnabled()) {
+        return sb.toString();
+    }
+
+    public static String genAccessTicket(String host, String port, String sid, String tag) {
+        return genAccessTicket(host, port, sid, tag, new Date());
+    }
+
+    public static String genAccessTicket(String host, String port, String sid, String tag, Date normalizedHashTime) {
+        String params = "host=" + host + "&port=" + port + "&sid=" + sid + "&tag=" + tag;
+
+        try {
+            Mac mac = Mac.getInstance("HmacSHA1");
+
+            long ts = normalizedHashTime.getTime();
+            ts = ts/60000;		// round up to 1 minute
+            String secretKey = _ms.getHashKey();
+
+            SecretKeySpec keySpec = new SecretKeySpec(secretKey.getBytes(), "HmacSHA1");
+            mac.init(keySpec);
+            mac.update(params.getBytes());
+            mac.update(String.valueOf(ts).getBytes());
+
+            byte[] encryptedBytes = mac.doFinal();
+
+            return Base64.encodeBase64String(encryptedBytes);
+        } catch(Exception e) {
+            s_logger.error("Unexpected exception ", e);
+        }
+        return "";
+    }
+
+    private void sendResponse(HttpServletResponse resp, String content) {
+        try {
+            resp.setContentType("text/html");
+            resp.getWriter().print(content);
+        } catch(IOException e) {
+            if(s_logger.isInfoEnabled()) {
                 s_logger.info("Client may already close the connection");
             }
-		}
-	}
-	
-	private boolean checkSessionPermision(HttpServletRequest req, long vmId, Account accountObj) {
+        }
+    }
+
+    private boolean checkSessionPermision(HttpServletRequest req, long vmId, Account accountObj) {
 
         VMInstanceVO vm = _vmMgr.findById(vmId);
         if(vm == null) {
-        	s_logger.debug("Console/thumbnail access denied. VM " + vmId + " does not exist in system any more");
-        	return false;
+            s_logger.debug("Console/thumbnail access denied. VM " + vmId + " does not exist in system any more");
+            return false;
         }
-		
+
         // root admin can access anything
-		if(accountObj.getType() == Account.ACCOUNT_TYPE_ADMIN)
-    		return true;
+        if(accountObj.getType() == Account.ACCOUNT_TYPE_ADMIN)
+            return true;
 
         switch(vm.getType())
         {
         case User :
-        	try {
-            	_accountMgr.checkAccess(accountObj, null, true, vm);
-        	} catch (PermissionDeniedException ex) {
-        		if (accountObj.getType() == Account.ACCOUNT_TYPE_NORMAL) {
-        			if (s_logger.isDebugEnabled()) {
-	                    s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() 
-		        			+ " does not match the account id in session " + accountObj.getId() + " and caller is a normal user");
-	                }
-        		} else if(accountObj.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || accountObj.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) {
-        			if(s_logger.isDebugEnabled()) {
-	                    s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() 
-		        			+ " does not match the account id in session " + accountObj.getId() + " and the domain-admin caller does not manage the target domain");
-	                }
-        		}
-        		return false;
-        	}
-        	break;
-        	
+            try {
+                _accountMgr.checkAccess(accountObj, null, true, vm);
+            } catch (PermissionDeniedException ex) {
+                if (accountObj.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() 
+                                + " does not match the account id in session " + accountObj.getId() + " and caller is a normal user");
+                    }
+                } else if(accountObj.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN || accountObj.getType() == Account.ACCOUNT_TYPE_READ_ONLY_ADMIN) {
+                    if(s_logger.isDebugEnabled()) {
+                        s_logger.debug("VM access is denied. VM owner account " + vm.getAccountId() 
+                                + " does not match the account id in session " + accountObj.getId() + " and the domain-admin caller does not manage the target domain");
+                    }
+                }
+                return false;
+            }
+            break;
+
         case DomainRouter:
         case ConsoleProxy :
         case SecondaryStorageVm:
-    		return false;
-    		
-    	default :
-    		s_logger.warn("Unrecoginized virtual machine type, deny access by default. type: " + vm.getType());
-    		return false;
+            return false;
+
+        default :
+            s_logger.warn("Unrecoginized virtual machine type, deny access by default. type: " + vm.getType());
+            return false;
         }
-        
-		return true;
-	}
-	
-	private boolean isValidCmd(String cmd) {
-		if(cmd.equalsIgnoreCase("thumbnail") || cmd.equalsIgnoreCase("access") || cmd.equalsIgnoreCase("auth")) {
+
+        return true;
+    }
+
+    private boolean isValidCmd(String cmd) {
+        if(cmd.equalsIgnoreCase("thumbnail") || cmd.equalsIgnoreCase("access") || cmd.equalsIgnoreCase("auth")) {
             return true;
         }
-		
-		return false;
-	}
-	
-    public boolean verifyUser(Long userId) {
-    	// copy from ApiServer.java, a bit ugly here
-    	User user = _accountMgr.getUserIncludingRemoved(userId);
-    	Account account = null;
-    	if (user != null) {
-    	    account = _accountMgr.getAccount(user.getAccountId());
-    	}
 
-    	if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.enabled) 
-    		|| (account == null) || !account.getState().equals(Account.State.enabled)) {
-    		s_logger.warn("Deleted/Disabled/Locked user with id=" + userId + " attempting to access public API");
-    		return false;
-    	}
-    	return true;
+        return false;
     }
-    
-	// copied and modified from ApiServer.java.
+
+    public boolean verifyUser(Long userId) {
+        // copy from ApiServer.java, a bit ugly here
+        User user = _accountMgr.getUserIncludingRemoved(userId);
+        Account account = null;
+        if (user != null) {
+            account = _accountMgr.getAccount(user.getAccountId());
+        }
+
+        if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.enabled) 
+                || (account == null) || !account.getState().equals(Account.State.enabled)) {
+            s_logger.warn("Deleted/Disabled/Locked user with id=" + userId + " attempting to access public API");
+            return false;
+        }
+        return true;
+    }
+
+    // copied and modified from ApiServer.java.
     // TODO need to replace the whole servlet with a API command
     private boolean verifyRequest(Map<String, Object[]> requestParameters) {
         try {
@@ -516,7 +516,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             for (String paramName : parameterNames) {
                 // parameters come as name/value pairs in the form String/String[]
                 String paramValue = ((String[])requestParameters.get(paramName))[0];
-                
+
                 if ("signature".equalsIgnoreCase(paramName)) {
                     signature = paramValue;
                 } else {
@@ -531,7 +531,7 @@ public class ConsoleProxyServlet extends HttpServlet {
                     }
                 }
             }
-            
+
 
             // if api/secret key are passed to the parameters
             if ((signature == null) || (apiKey == null)) {
@@ -573,16 +573,16 @@ public class ConsoleProxyServlet extends HttpServlet {
             mac.init(keySpec);
             mac.update(unsignedRequest.getBytes());
             byte[] encryptedBytes = mac.doFinal();
-            String computedSignature = com.cloud.utils.encoding.Base64.encodeBytes(encryptedBytes);
+            String computedSignature = Base64.encodeBase64URLSafeString(encryptedBytes);
             boolean equalSig = signature.equals(computedSignature);
             if (!equalSig) {
-            	s_logger.debug("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
+                s_logger.debug("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
             }
-            
+
             if(equalSig) {
-            	requestParameters.put("userid", new Object[] {String.valueOf(user.getId())});
-            	requestParameters.put("account", new Object[] {account.getAccountName()});
-            	requestParameters.put("accountobj", new Object[] { account });
+                requestParameters.put("userid", new Object[] {String.valueOf(user.getId())});
+                requestParameters.put("account", new Object[] {account.getAccountName()});
+                requestParameters.put("accountobj", new Object[] { account });
             }
             return equalSig;
         } catch (Exception ex) {
@@ -590,23 +590,23 @@ public class ConsoleProxyServlet extends HttpServlet {
         }
         return false;
     }
-    
+
     public static final String escapeHTML(String content){
         if(content == null || content.isEmpty())
             return content;
-        
+
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < content.length(); i++) {
-           char c = content.charAt(i);
-           switch (c) {
-              case '<': sb.append("&lt;"); break;
-              case '>': sb.append("&gt;"); break;
-              case '&': sb.append("&amp;"); break;
-              case '"': sb.append("&quot;"); break;
-              case ' ': sb.append("&nbsp;");break;         
-              default:  sb.append(c); break;
-           }
+            char c = content.charAt(i);
+            switch (c) {
+            case '<': sb.append("&lt;"); break;
+            case '>': sb.append("&gt;"); break;
+            case '&': sb.append("&amp;"); break;
+            case '"': sb.append("&quot;"); break;
+            case ' ': sb.append("&nbsp;");break;         
+            default:  sb.append(c); break;
+            }
         }
         return sb.toString();
-     }    
+    }    
 }

@@ -21,6 +21,9 @@ NOTE - This folder is a work in progress.  The project has not determined
 how to best establish a nightly DevCloud build process, or how to distribute
 the image.
 
+===========================================================
+Contents:
+
 This folder contains various scripts used to build the devcloud image.
 devcloudsetup.sh - the origional devcloud build script (assumes an Ubuntu 12.04 VM image)
 
@@ -28,3 +31,26 @@ build_vagrant_basebox.sh - a script that uses VirtualBox, VeeWee, Vagrant (patch
 veewee - configuration files used to build a basic Ubuntu 12.04 vagrant box via VeeWee
 basebuild - The Vagrantfile and puppet module that gets applied to the basic Ubuntu 12.04 box
 devcloudbox - The Vagrantfile and puppet module that is used with the [hopefully] distributed devcloud base box
+
+===========================================================
+Instructions:
+
+To build a "devcloud base box", run you need a system with VirtualBox and rvm
+installed (use ruby 1.9.2).  Run build_vagrant_basebox.sh to build the base box.
+
+To use the "devcloud base box" that is created in the previous step, you
+need to have installed a forked version of Vagrant (until we make the changes
+plugins instead of direct source patches) that can be found here:
+
+
+Once installed per the Vagrant installation process, run:
+
+vagrant box add devcloud [path to devcloud.box]
+
+Then, either go into the devcloudbox folder of your checked out 
+version of the CloudStack code (incubator-cloudstack/tools/devcloud/devcloudbox),
+or copy the contents of that folder to another location.
+
+Assuming the patched Vagrant installation is working, you then
+simply run "vagrant up" from within that directory.
+

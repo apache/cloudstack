@@ -31,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.acl.ControlledEntity.ACLType;
@@ -1364,12 +1365,12 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 throw new InvalidParameterValueException("Snapshot id=" + snapshotId + " is not in " + Snapshot.Status.BackedUp + " state yet and can't be used for template creation");
             }
 
-/*            
+            /*            
             // bug #11428. Operation not supported if vmware and snapshots parent volume = ROOT
             if(snapshot.getHypervisorType() == HypervisorType.VMware && snapshotVolume.getVolumeType() == Type.DATADISK){ 
                 throw new UnsupportedServiceException("operation not supported, snapshot with id " + snapshotId + " is created from Data Disk");
             }
-*/
+             */
             
             hyperType = snapshot.getHypervisorType();            
         }
@@ -2527,7 +2528,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if (userData.length() >= 2 * MAX_USER_DATA_LENGTH_BYTES) {
                 throw new InvalidParameterValueException("User data is too long");
             }
-            decodedUserData = org.apache.commons.codec.binary.Base64.decodeBase64(userData.getBytes());
+            decodedUserData = Base64.decodeBase64(userData.getBytes());
             if (decodedUserData.length > MAX_USER_DATA_LENGTH_BYTES) {
                 throw new InvalidParameterValueException("User data is too long");
             }

@@ -17,6 +17,7 @@
 package com.cloud.utils.component;
 
 
+
 /**
  * This interface defines methods for pluggable code within the Cloud Stack. 
  */
@@ -26,5 +27,5 @@ public interface PluggableService {
      * The config file name that lists API commands supported by this pluggable service
      */
     String getPropertiesFile();
-    
+
 }

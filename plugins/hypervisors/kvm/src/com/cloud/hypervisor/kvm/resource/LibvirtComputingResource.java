@@ -3599,24 +3599,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 	}
 
 	private String getHypervisorPath(Connect conn) {
-		File f = new File("/usr/bin/cloud-qemu-kvm");
-		if (f.exists()) {
-			return "/usr/bin/cloud-qemu-kvm";
-		} else {
-			f = new File("/usr/libexec/cloud-qemu-kvm");
-			if (f.exists()) {
-				return "/usr/libexec/cloud-qemu-kvm";
-			}
-
 			LibvirtCapXMLParser parser = new LibvirtCapXMLParser();
 			try {
 				parser.parseCapabilitiesXML(conn.getCapabilities());
 			} catch (LibvirtException e) {
-
+            s_logger.debug(e.getMessage());
 			}
 			return parser.getEmulator();
 		}
-	}
 
 	private String getGuestType(Connect conn, String vmName) {
 		LibvirtDomainXMLParser parser = new LibvirtDomainXMLParser();

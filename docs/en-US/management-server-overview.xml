@@ -1,57 +1,58 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
 <section id="management-server-overview">
 		<title>Management Server Overview</title>
-		<para>
-			The Management Server is the &PRODUCT; software that manages cloud resources. By interacting with the Management Server through its UI or API, you can configure and manage your cloud infrastructure.
+		<para>The Management Server is the &PRODUCT; software that manages cloud resources. By interacting with the Management Server through its UI or API, you can configure and manage your cloud infrastructure.
 		</para>
-		<para>
-			The Management Server runs on a dedicated server or VM. It controls allocation of virtual machines to hosts and assigns storage and IP addresses to the virtual machine instances. The Management Server runs in a Tomcat container and requires a MySQL database for persistence.
+		<para>The Management Server runs on a dedicated server or VM. It controls allocation of virtual machines to hosts and assigns storage and IP addresses to the virtual machine instances. The Management Server runs in a Tomcat container and requires a MySQL database for persistence.
 		</para>
-		<para>
-			The machine must meet the system requirements described in System Requirements.
+		<para>The machine must meet the system requirements described in System Requirements.
 		</para>
-		<para>
-			The Management Server:
+		<para>The Management Server:
 		</para>
 			<itemizedlist>
 				<listitem>
-					<para>
-						Provides the web user interface for the administrator and a reference user interface for end users.
-					</para>
+					<para>Provides the web user interface for the administrator and a reference user interface for end users.</para>
 				</listitem>
 				<listitem>
-					<para>
-						Provides the APIs for &PRODUCT;.
-					</para>
+					<para>Provides the APIs for &PRODUCT;.</para>
 				</listitem>
 				<listitem>
-					<para>
-						Manages the assignment of guest VMs to particular hosts.
-					</para>
+					<para>Manages the assignment of guest VMs to particular hosts.</para>
 				</listitem>
 				<listitem>
-					<para>
-						Manages the assignment of public and private IP addresses to particular accounts.
-					</para>
+					<para>Manages the assignment of public and private IP addresses to particular accounts.</para>
 				</listitem>
 				<listitem>
-					<para>
-						Manages the allocation of storage to guests as virtual disks.
-					</para>
+					<para>Manages the allocation of storage to guests as virtual disks.</para>
 				</listitem>
 				<listitem>
-					<para>
-						Manages snapshots, templates, and ISO images, possibly replicating them across data centers.
-					</para>
+					<para>Manages snapshots, templates, and ISO images, possibly replicating them across data centers.</para>
 				</listitem>
 				<listitem>
-					<para>
-						Provides a single point of configuration for the cloud.
-					</para>
+					<para>Provides a single point of configuration for the cloud.</para>
 				</listitem>
 			</itemizedlist>
 	</section>

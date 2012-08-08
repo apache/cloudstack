@@ -480,7 +480,7 @@
 
   <target name="build-servers" depends="-init, build-server" />
 
-  <target name="build-opensource" depends="-init, build-server, build-agent, build-scripts, build-ui, build-console-proxy, build-ovm, package-oss-systemvm-iso, build-netscaler, build-f5, build-srx, build-dp-user-dispersing, build-dp-user-concentrated-pod, build-host-allocator-random, build-user-authenticator-ldap">
+  <target name="build-opensource" depends="-init, build-server, build-agent, build-scripts, build-ui, build-console-proxy, build-ovm, build-vmware, package-oss-systemvm-iso, build-netscaler, build-f5, build-srx, build-dp-user-dispersing, build-dp-user-concentrated-pod, build-host-allocator-random, build-user-authenticator-ldap">
     <copy overwrite="true" todir="${dist.dir}">
       <fileset dir="${base.dir}/build/deploy/">
         <include name="deploy-agent.sh" />

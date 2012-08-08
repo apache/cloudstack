@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.ejb.Local;
@@ -297,7 +298,7 @@ public class NiciraNvpElement extends AdapterBase implements ConnectivityProvide
     }
 
     @Override
-    public boolean verifyServicesCombination(List<String> services) {
+    public boolean verifyServicesCombination(Set<Service> services) {
         return true;
     }
 
@@ -514,5 +515,5 @@ public class NiciraNvpElement extends AdapterBase implements ConnectivityProvide
         }
         return new DeleteHostAnswer(true);
     }
-    
+
 }

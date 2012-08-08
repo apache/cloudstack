@@ -49,7 +49,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-import com.cloud.utils.encoding.Base64;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Connection;
@@ -182,7 +181,7 @@ public class TestClientWithAPI {
                 if (arg.equals("-no")) {
                     networkOfferingId = iter.next();
                 }
-                
+
                 if (arg.equals("-pass")) {
                     vmPassword = iter.next();
                 }
@@ -210,6 +209,7 @@ public class TestClientWithAPI {
 
             for (int i = 0; i < numThreads; i++) {
                 new Thread(new Runnable() {
+                    @Override
                     public void run() {
                         do {
                             String username = null;
@@ -440,7 +440,7 @@ public class TestClientWithAPI {
                 for (int j = 0; j < childNodes.getLength(); j++) {
                     Node n = childNodes.item(j);
                     if ("id".equals(n.getNodeName())) {
-                //    if ("ipaddress".equals(n.getNodeName())) {
+                        //    if ("ipaddress".equals(n.getNodeName())) {
                         ipAddress = n.getTextContent();
                     } else if ("issourcenat".equals(n.getNodeName())) {
                         isSourceNat = Boolean.parseBoolean(n.getTextContent());
@@ -478,7 +478,7 @@ public class TestClientWithAPI {
                     }
                     else if("ipaddress".equals(n.getNodeName()))
                     {
-                    	ipAddress = n.getTextContent();
+                        ipAddress = n.getTextContent();
                     }
                     else if ("issourcenat".equals(n.getNodeName())) {
                         isSourceNat = Boolean.parseBoolean(n.getTextContent());
@@ -609,7 +609,7 @@ public class TestClientWithAPI {
             s_logger.error("Create virtual network failed for account " + username + " with error code :" + responseCode + ", aborting deployment test. The command was sent with url " + url);
             return -1;
         }
-/*
+        /*
         // ---------------------------------
         // CREATE DIRECT NETWORK
         // ---------------------------------
@@ -629,9 +629,9 @@ public class TestClientWithAPI {
             s_logger.error("Create direct network failed for account " + username + " with error code :" + responseCode + ", aborting deployment test. The command was sent with url " + url);
             return -1;
         }
-*/
-        
-        
+         */
+
+
         // ---------------------------------
         // DEPLOY LINUX VM
         // ---------------------------------
@@ -706,7 +706,7 @@ public class TestClientWithAPI {
                 } 
                 else
                 {
-                	s_logger.info("Associate IP Address response code: " + responseCode);
+                    s_logger.info("Associate IP Address response code: " + responseCode);
                     long publicIpId = Long.parseLong(values.get("id"));
                     s_logger.info("Associate IP's Id: " + publicIpId);
                     _publicIpId.set(values.get("id"));         
@@ -715,13 +715,13 @@ public class TestClientWithAPI {
                 s_logger.error("associate ip address for windows vm failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
-            
+
             String encodedPublicIpId = URLEncoder.encode(_publicIpId.get(), "UTF-8");
             requestToSign = "apikey=" + encodedApiKey + "&command=listPublicIpAddresses"+"&id="+ encodedPublicIpId;
             requestToSign = requestToSign.toLowerCase();
             signature = signRequest(requestToSign, _secretKey.get());
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
-            
+
             url = developerServer + "?command=listPublicIpAddresses&apikey=" + encodedApiKey + "&id=" + encodedPublicIpId + "&signature=" + encodedSignature;
             client = new HttpClient();
             method = new GetMethod(url);
@@ -730,9 +730,9 @@ public class TestClientWithAPI {
             s_logger.info("list ip addresses for user " + userId + " response code: " + responseCode);
             if (responseCode == 200) {
                 InputStream is = method.getResponseBodyAsStream();
-         //       InputStream ips = method.getResponseBodyAsStream();
+                //       InputStream ips = method.getResponseBodyAsStream();
                 List<String> ipAddressValues = getIPs(is, false);
-         //       List<String> ipAddressVals = getIPs(is, false, true);
+                //       List<String> ipAddressVals = getIPs(is, false, true);
                 if ((ipAddressValues != null) && !ipAddressValues.isEmpty()) {
                     _windowsIpId.set(ipAddressValues.get(0));
                     _windowsIP.set(ipAddressValues.get(1));
@@ -743,7 +743,7 @@ public class TestClientWithAPI {
                 s_logger.error("list ip addresses failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
-            
+
             // ---------------------------------
             // Use the SourceNat IP for linux
             // ---------------------------------
@@ -776,17 +776,17 @@ public class TestClientWithAPI {
                     return responseCode;
                 }
             }
-            
+
             //--------------------------------------------
             // Enable Static NAT for the Source NAT Ip
             //--------------------------------------------
             String encodedSourceNatPublicIpId = URLEncoder.encode(_linuxIpId.get(), "UTF-8");
-                   
-  /*          requestToSign = "apikey=" + encodedApiKey + "&command=enableStaticNat"+"&id=" + encodedSourceNatPublicIpId + "&virtualMachineId=" + encodedVmId;;
+
+            /*          requestToSign = "apikey=" + encodedApiKey + "&command=enableStaticNat"+"&id=" + encodedSourceNatPublicIpId + "&virtualMachineId=" + encodedVmId;;
             requestToSign = requestToSign.toLowerCase();
             signature = signRequest(requestToSign, _secretKey.get());
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
-            
+
             url = developerServer + "?command=enableStaticNat&apikey=" + encodedApiKey + "&signature=" + encodedSignature + "&id=" + encodedSourceNatPublicIpId + "&virtualMachineId=" + encodedVmId;
             client = new HttpClient();
             method = new GetMethod(url);
@@ -801,7 +801,7 @@ public class TestClientWithAPI {
                 s_logger.error("Enable Static NAT failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
-  */          
+             */          
             // -------------------------------------------------------------
             // CREATE IP FORWARDING RULE -- Linux VM
             // -------------------------------------------------------------
@@ -825,7 +825,7 @@ public class TestClientWithAPI {
                 long ipfwdid = Long.parseLong(values.get("id"));
                 s_logger.info("got Port Forwarding Rule's Id:" + ipfwdid);
                 _linipfwdid.set(values.get("id"));
-                
+
             } else {
                 s_logger.error("Port forwarding rule creation failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
@@ -882,7 +882,7 @@ public class TestClientWithAPI {
                     String encodedTemplateId = URLEncoder.encode("" + templateId, "UTF-8");
                     encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
                     String encodedNetworkIds = URLEncoder.encode(_networkId.get()+",206","UTF-8");
-                    
+
                     requestToSign = "apikey=" + encodedApiKey + "&command=deployVirtualMachine&diskofferingid=" + diskOfferingId + "&networkids=" + encodedNetworkIds + "&serviceofferingid=" + encodedServiceOfferingId + "&templateid=" + encodedTemplateId
                             + "&zoneid=" + encodedZoneId;
                     requestToSign = requestToSign.toLowerCase();
@@ -918,14 +918,14 @@ public class TestClientWithAPI {
                 //--------------------------------------------
                 // Enable Static NAT for the Non Source NAT Ip
                 //--------------------------------------------
-                
+
                 encodedVmId = URLEncoder.encode(_windowsVmId.get(), "UTF-8");
                 encodedPublicIpId = URLEncoder.encode(_publicIpId.get(), "UTF-8");
                 requestToSign = "apikey=" + encodedApiKey + "&command=enableStaticNat"+"&ipaddressid="+ encodedPublicIpId + "&virtualMachineId=" + encodedVmId;
                 requestToSign = requestToSign.toLowerCase();
                 signature = signRequest(requestToSign, _secretKey.get());
                 encodedSignature = URLEncoder.encode(signature, "UTF-8");
-                
+
                 url = developerServer + "?command=enableStaticNat&apikey=" + encodedApiKey + "&ipaddressid=" + encodedPublicIpId + "&signature=" + encodedSignature + "&virtualMachineId=" + encodedVmId;
                 client = new HttpClient();
                 method = new GetMethod(url);
@@ -941,7 +941,7 @@ public class TestClientWithAPI {
                     return responseCode;
                 }                                            
 
-                
+
                 // -------------------------------------------------------------
                 // CREATE IP FORWARDING RULE -- Windows VM
                 // -------------------------------------------------------------
@@ -972,7 +972,7 @@ public class TestClientWithAPI {
                     s_logger.error("Port forwarding rule creation failed with error code: " + responseCode + ". Following URL was sent: " + url);
                     return responseCode;
                 }
-           }
+            }
         }
         return responseCode;
     }
@@ -1178,7 +1178,7 @@ public class TestClientWithAPI {
         }
 
         // Create volume from the snapshot created on the previous step and attach it to the running vm
-  /*      encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
+        /*      encodedApiKey = URLEncoder.encode(_apiKey.get(), "UTF-8");
         requestToSign = "apikey=" + encodedApiKey + "&command=createVolume&name=" + _account.get() + "&snapshotid=" + _snapshot.get();
         requestToSign = requestToSign.toLowerCase();
         signature = signRequest(requestToSign, _secretKey.get());
@@ -1222,7 +1222,7 @@ public class TestClientWithAPI {
                 return responseCode;
             }
         }
-*/
+         */
         // -----------------------------
         // Execute reboot/stop/start commands for the VMs before deleting the account - made to exercise xen
         // -----------------------------
@@ -1896,7 +1896,7 @@ public class TestClientWithAPI {
                 InputStream input = method.getResponseBodyAsStream();
                 Element el = queryAsyncJobResult(server, input);
                 s_logger.info("IP forwarding rule was successfully deleted");        
-                
+
             } else {
                 s_logger.error("IP forwarding rule creation failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
@@ -1911,7 +1911,7 @@ public class TestClientWithAPI {
             requestToSign = requestToSign.toLowerCase();
             signature = signRequest(requestToSign, _secretKey.get());
             encodedSignature = URLEncoder.encode(signature, "UTF-8");
-            
+
             url = developerServer + "?command=disableStaticNat&apikey=" + encodedApiKey + "&id=" + encodedPublicIpId + "&signature=" + encodedSignature ;
             client = new HttpClient();
             method = new GetMethod(url);
@@ -1926,7 +1926,7 @@ public class TestClientWithAPI {
                 s_logger.error("Disable Static NAT failed with error code: " + responseCode + ". Following URL was sent: " + url);
                 return responseCode;
             }
-            
+
             // -----------------------------------------
             // DISASSOCIATE IP ADDRESSES
             // -----------------------------------------
@@ -1946,7 +1946,7 @@ public class TestClientWithAPI {
                         InputStream input = method.getResponseBodyAsStream();
                         Element disassocipel = queryAsyncJobResult(server, input);
                         Map<String, String> success = getSingleValueFromXML(disassocipel, new String[] {"success"});
-               //       Map<String, String> success = getSingleValueFromXML(input, new String[] { "success" });
+                        //       Map<String, String> success = getSingleValueFromXML(input, new String[] { "success" });
                         s_logger.info("disassociate ip address..success? " + success.get("success"));
                     } else {
                         s_logger.error("disassociate ip address failed with error code: " + responseCode + ". Following URL was sent: " + url);
@@ -1977,7 +1977,7 @@ public class TestClientWithAPI {
             mac.init(keySpec);
             mac.update(request.getBytes());
             byte[] encryptedBytes = mac.doFinal();
-            return Base64.encodeBytes(encryptedBytes);
+            return org.apache.commons.codec.binary.Base64.encodeBase64String(encryptedBytes);
         } catch (Exception ex) {
             s_logger.error("unable to sign request", ex);
         }
