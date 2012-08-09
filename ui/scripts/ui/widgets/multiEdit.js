@@ -1024,6 +1024,11 @@
                 $multi.find('th.add-user, td.add-user').detach();
                 $multiForm.find('tbody').detach();
             }
+            if (args.hideFields) {
+              $(args.hideFields).each(function() {
+                $multi.find('th.' + this + ',td.' + this).hide();
+              });
+            }
 
             _medit.refreshItemWidths($multi);
           },
