@@ -31,6 +31,17 @@ def describeResources(config):
     z.name = 'Sandbox-%s'%(config.get('cloudstack', 'hypervisor'))
     z.networktype = 'Basic'
     z.securitygroupenabled = 'true'
+    
+    sgprovider = provider()
+    sgprovider.broadcastdomainrange = 'Pod'
+    sgprovider.name = 'SecurityGroupProvider'
+    
+    pn = physical_network()
+    pn.name = "Sandbox-pnet"
+    pn.traffictypes = [traffictype("Guest"), traffictype("Management")]
+    pn.providers.append(sgprovider)
+    
+    z.physical_networks.append(pn)
 
     p = pod()
     p.name = 'POD0'
