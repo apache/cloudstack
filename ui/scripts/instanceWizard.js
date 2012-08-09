@@ -520,9 +520,12 @@
         if(checkedSecurityGroupIdArray.length > 0)
           array1.push("&securitygroupids=" + checkedSecurityGroupIdArray.join(","));
       }
-      else if (step5ContainerType == 'nothing-to-select') {		
-				if(args.context.networks != null) //from VPC tier
+      else if (step5ContainerType == 'nothing-to-select') {	  
+				if(args.context.networks != null) { //from VPC tier
 				  array1.push("&networkIds=" + args.context.networks[0].id);
+					array1.push("&domainid=" + args.context.vpc[0].domainid);
+					array1.push("&account=" + args.context.vpc[0].account);
+				}
 			}
 			
       var displayname = args.data.displayname;
