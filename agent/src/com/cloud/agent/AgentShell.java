@@ -292,7 +292,7 @@ public class AgentShell implements IAgentShell {
 
             if (tokens[0].equalsIgnoreCase("port")) {
                 port = tokens[1];
-            } else if (tokens[0].equalsIgnoreCase("threads")) {
+            } else if (tokens[0].equalsIgnoreCase("threads") || tokens[0].equalsIgnoreCase("workers")) {
                 workers = tokens[1];
             } else if (tokens[0].equalsIgnoreCase("host")) {
                 host = tokens[1];

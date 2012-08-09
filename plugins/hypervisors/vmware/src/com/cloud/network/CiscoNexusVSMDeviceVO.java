@@ -27,6 +27,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.api.Identity;
+import com.cloud.utils.db.Encrypt;
 
 /**
  * CiscoNexusVSMDeviceVO contains information on external Cisco Nexus 1000v VSM devices added into a deployment.
@@ -37,176 +38,192 @@ import com.cloud.api.Identity;
 @Entity
 @Table(name="virtual_supervisor_module")
 public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity{
-	
-	// We need to know what properties a VSM has. Put them here.
-	
+
+    // We need to know what properties a VSM has. Put them here.
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
 
     @Column(name="uuid")
-    private String uuid;
+    private final String uuid;
 
     @Column(name = "host_id")
     private long hostId;
 
     @Column(name = "vsm_name")
     private String vsmName;
-    
+
     @Column(name = "username")
     private String vsmUserName;
-    
-    @Column(name = "password", encryptable=true)
+
+    @Encrypt
+    @Column(name = "password")
     private String vsmPassword;
 
     @Column(name = "ipaddr")
     private String ipaddr;
-    
+
     @Column(name = "management_vlan")
     private int managementVlan;
 
     @Column(name = "control_vlan")
     private int controlVlan;
-    
+
     @Column(name = "packet_vlan")
     private int packetVlan;
-    
+
     @Column(name = "storage_vlan")
     private int storageVlan;
-    
+
     @Column(name = "vsm_domain_id")
     private long vsmDomainId;
-    
+
     @Column(name = "config_mode")
     private VSMConfigMode vsmConfigMode;
-    
+
     @Column(name = "config_state")
     private VSMConfigState vsmConfigState;
-    
+
     @Column(name = "vsm_device_state")
     private VSMDeviceState vsmDeviceState;
 
     // Accessor methods
+    @Override
     public long getId() {
         return id;
     }
 
+    @Override
     public String getvsmName() {
-    	return vsmName;
+        return vsmName;
     }
-    
+
+    @Override
     public long getHostId() {
         return hostId;
     }
-    
+
+    @Override
     public String getUserName() {
-    	return vsmUserName;
-    }
-    
-    public String getPassword() {
-    	return vsmPassword;
+        return vsmUserName;
     }
 
+    @Override
+    public String getPassword() {
+        return vsmPassword;
+    }
+
+    @Override
     public String getipaddr() {
-    	return ipaddr;
+        return ipaddr;
     }
-    
+
+    @Override
     public int getManagementVlan() {
-    	return managementVlan;
+        return managementVlan;
     }
-    
+
+    @Override
     public int getControlVlan() {
-    	return controlVlan;
+        return controlVlan;
     }
-    
+
+    @Override
     public int getPacketVlan() {
-    	return packetVlan;
+        return packetVlan;
     }  
 
+    @Override
     public int getStorageVlan() {
-    	return storageVlan;
+        return storageVlan;
     }
-    
+
+    @Override
     public long getvsmDomainId() {
-    	return vsmDomainId;
+        return vsmDomainId;
     }
-    
+
+    @Override
     public VSMConfigMode getvsmConfigMode() {
-    	return vsmConfigMode;
+        return vsmConfigMode;
     }
-    
+
+    @Override
     public VSMConfigState getvsmConfigState() {
-    	return vsmConfigState;
+        return vsmConfigState;
     }
-    
+
+    @Override
     public VSMDeviceState getvsmDeviceState() {
-    	return vsmDeviceState;
+        return vsmDeviceState;
     }
-    
+
+    @Override
     public String getUuid() {
         return uuid;
     }
-    
+
     // Setter methods
 
     public void setHostId(long hostid) {
         this.hostId = hostid;
     }
-    
+
     public void setVsmUserName(String username) {
-    	this.vsmUserName = username;
+        this.vsmUserName = username;
     }
-    
+
     public void setVsmName(String vsmName) {
-    	this.vsmName = vsmName;
+        this.vsmName = vsmName;
     }
-    
+
     public void setVsmPassword(String password) {
-    	this.vsmPassword = password;
+        this.vsmPassword = password;
     }
 
     public void setMgmtIpAddr(String ipaddr) {
-    	this.ipaddr = ipaddr;
+        this.ipaddr = ipaddr;
     }
-    
+
     public void setManagementVlan(int vlan) {
-    	this.managementVlan = vlan;
+        this.managementVlan = vlan;
     }
-    
+
     public void setControlVlan(int vlan) {
-    	this.controlVlan = vlan;
+        this.controlVlan = vlan;
     }
-    
+
     public void setPacketVlan(int vlan) {
-    	this.packetVlan = vlan;
+        this.packetVlan = vlan;
     }  
 
     public void setStorageVlan(int vlan) {
-    	this.storageVlan = vlan;
+        this.storageVlan = vlan;
     }
-    
+
     public void setVsmDomainId(long id) {
-    	this.vsmDomainId = id;
+        this.vsmDomainId = id;
     }
-    
+
     public void setVsmConfigMode(VSMConfigMode mode) {
-    	this.vsmConfigMode = mode;
+        this.vsmConfigMode = mode;
     }
-    
+
     public void setVsmConfigState(VSMConfigState state) {
-    	this.vsmConfigState = state;
+        this.vsmConfigState = state;
     }
-    
+
     public void setVsmDeviceState(VSMDeviceState devState) {
-    	this.vsmDeviceState = devState;
+        this.vsmDeviceState = devState;
     }
- 
-        
+
+
     // Constructors.
-    
+
     public CiscoNexusVSMDeviceVO(String vsmIpAddr, String username, String password) {    	
-    	// Set all the VSM's properties here.
+        // Set all the VSM's properties here.
         this.uuid = UUID.randomUUID().toString();
         this.setMgmtIpAddr(vsmIpAddr);
         this.setVsmUserName(username);
@@ -214,7 +231,7 @@ public class CiscoNexusVSMDeviceVO implements CiscoNexusVSMDevice, Identity{
         this.setVsmName(vsmName);
         this.setVsmDeviceState(VSMDeviceState.Enabled);
     }
-    
+
     public CiscoNexusVSMDeviceVO() {
         this.uuid = UUID.randomUUID().toString();
     }    

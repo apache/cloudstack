@@ -37,6 +37,7 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
 import com.cloud.utils.fsm.FiniteStateObject;
@@ -55,7 +56,8 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     @Column(name="name", updatable=false, nullable=false, length=255)
 	protected String hostName = null;
 
-    @Column(name="vnc_password", updatable=true, nullable=false, length=255, encryptable=true)
+    @Encrypt
+    @Column(name="vnc_password", updatable=true, nullable=false, length=255)
     protected String vncPassword;
     
     @Column(name="proxy_id", updatable=true, nullable=true)
@@ -146,7 +148,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     @Column(name="uuid")
     protected String uuid = UUID.randomUUID().toString();
-;
+    ;
     
     public VMInstanceVO(long id,
                         long serviceOfferingId,
@@ -412,6 +414,7 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 	    return this.reservationId;
 	}
 	
+    @Override
     public Map<String, String> getDetails() {
         return details;
     }

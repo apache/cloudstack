@@ -120,7 +120,7 @@ public class Attribute {
                 flags = Flag.AutoGV.setTrue(flags);
             }
         }
-        
+
         if (isEmbedded) {
             flags = Flag.Embedded.setTrue(flags);
         }
@@ -144,7 +144,8 @@ public class Attribute {
             if (column == null || column.nullable()) {
                 flags = Flag.Nullable.setTrue(flags);
             }
-            if (column != null && column.encryptable()) {
+            Encrypt encrypt = field.getAnnotation(Encrypt.class);
+            if (encrypt != null && encrypt.encrypt()) {
                 flags = Flag.Encrypted.setTrue(flags);
             }
         }
@@ -207,7 +208,7 @@ public class Attribute {
     public final boolean isEncrypted() {
         return Flag.Encrypted.check(flags);
     }
-    
+
     public Field getField() {
         return field;
     }

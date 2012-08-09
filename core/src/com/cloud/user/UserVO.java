@@ -17,7 +17,6 @@
 package com.cloud.user;
 
 import java.util.Date;
-import java.util.TimeZone;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -31,6 +30,7 @@ import javax.persistence.Table;
 
 import com.cloud.api.Identity;
 import com.cloud.user.Account.State;
+import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 
 /**
@@ -72,7 +72,8 @@ public class UserVO implements User, Identity {
     @Column(name = "api_key")
     private String apiKey = null;
 
-    @Column(name = "secret_key", encryptable=true)
+    @Encrypt
+    @Column(name = "secret_key")
     private String secretKey = null;
 
     @Column(name = GenericDao.CREATED_COLUMN)
@@ -83,25 +84,25 @@ public class UserVO implements User, Identity {
 
     @Column(name = "timezone")
     private String timezone;
-    
+
     @Column(name="registration_token")
     private String registrationToken = null;
-    
+
     @Column(name="is_registered")
     boolean registered;
-    
+
     @Column(name="uuid")
     private String uuid;
 
     public UserVO() {
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
-    
+
     public UserVO(long id) {
         this.id = id;
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
-    
+
     public UserVO(long accountId, String username, String password, String firstName, String lastName, String email, String timezone) {
         this.accountId = accountId;
         this.username = username;
@@ -111,7 +112,7 @@ public class UserVO implements User, Identity {
         this.email = email;
         this.timezone = timezone;
         this.state = State.enabled;
-    	this.uuid = UUID.randomUUID().toString();
+        this.uuid = UUID.randomUUID().toString();
     }
 
     @Override
@@ -228,22 +229,22 @@ public class UserVO implements User, Identity {
     public void setTimezone(String timezone) {
         this.timezone = timezone;
     }
-    
+
     @Override
-	public String getRegistrationToken(){
-    	return registrationToken;
+    public String getRegistrationToken(){
+        return registrationToken;
     }
-    
+
     public void setRegistrationToken(String registrationToken)
     {
-    	this.registrationToken = registrationToken; 
+        this.registrationToken = registrationToken; 
     }
-    
+
     @Override 
     public boolean isRegistered() {
         return registered;
     }
-    
+
     public void setRegistered(boolean registered) {
         this.registered = registered;
     }
@@ -252,13 +253,13 @@ public class UserVO implements User, Identity {
     public String toString() {
         return new StringBuilder("User[").append(id).append("-").append(username).append("]").toString();
     }
-    
+
     @Override
     public String getUuid() {
-    	return this.uuid;
+        return this.uuid;
     }
-    
+
     public void setUuid(String uuid) {
-    	this.uuid = uuid;
+        this.uuid = uuid;
     }
 }

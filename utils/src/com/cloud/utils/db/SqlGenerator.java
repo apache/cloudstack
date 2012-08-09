@@ -134,7 +134,7 @@ public class SqlGenerator {
             }
 
             Attribute attr = new Attribute(clazz, overrides, field, tableName, embedded, isId);
-            
+
             if (attr.getColumnName().equals(GenericDao.REMOVED_COLUMN)) {
                 attr.setColumnName(GenericDao.REMOVED);
                 attr.setTrue(Attribute.Flag.DaoGenerated);
@@ -279,7 +279,7 @@ public class SqlGenerator {
 
     public Attribute findAttribute(String name) {
         for (Attribute attr : _attributes) {
-           
+
             if (attr.columnName.equalsIgnoreCase(name)) {
                 if (attr.columnName.equalsIgnoreCase(GenericDao.REMOVED) && attr.isUpdatable()) {
                     return null;
@@ -315,8 +315,8 @@ public class SqlGenerator {
             }
             if (attrs.size() != 0) {
                 Pair<StringBuilder, Attribute[]> pair =
-                    new Pair<StringBuilder, Attribute[]>(buildUpdateSql(tableName, attrs), attrs.toArray(new Attribute[attrs.size()]));
-                    sqls.add(pair);
+                        new Pair<StringBuilder, Attribute[]>(buildUpdateSql(tableName, attrs), attrs.toArray(new Attribute[attrs.size()]));
+                        sqls.add(pair);
             }
         }
         return sqls;
@@ -539,7 +539,12 @@ public class SqlGenerator {
         SecondaryTable[] sts = DbUtil.getSecondaryTables(clazz);
         ArrayList<String> secondaryTables = new ArrayList<String>();
         for (SecondaryTable st : sts) {
-            addPrimaryKeyJoinColumns(innerJoin, tableName, st.name(), st.join(), st.pkJoinColumns());
+            JoinType jt = clazz.getAnnotation(JoinType.class);
+            String join = null;
+            if (jt != null) {
+                join = jt.type();
+            }
+            addPrimaryKeyJoinColumns(innerJoin, tableName, st.name(), join, st.pkJoinColumns());
             secondaryTables.add(st.name());
         }
 
@@ -566,7 +571,7 @@ public class SqlGenerator {
 
     public Pair<StringBuilder, Attribute[]> buildSelectSql(boolean enable_query_cache) {
         StringBuilder sql = new StringBuilder("SELECT ");
-        
+
         sql.append(enable_query_cache ? "SQL_CACHE ": "");
 
         ArrayList<Attribute> attrs = new ArrayList<Attribute>();

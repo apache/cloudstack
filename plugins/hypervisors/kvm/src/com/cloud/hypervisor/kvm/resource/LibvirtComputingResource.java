@@ -412,32 +412,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		return "scripts/storage/qcow2";
 	}
 
-	private void saveProperties(Map<String, Object> params)
-			throws ConfigurationException {
-		final File file = PropertiesUtil.findConfigFile("agent.properties");
-		if (file == null) {
-			throw new ConfigurationException("Unable to find agent.properties.");
+    protected String getDefaultKvmScriptsDir() {
+        return "scripts/vm/hypervisor/kvm";
 		}
 
-		s_logger.info("agent.properties found at " + file.getAbsolutePath());
-
-		try {
-			Properties _properties = new Properties();
-			_properties.load(new FileInputStream(file));
-			Set<String> names = _properties.stringPropertyNames();
-			for (String key : params.keySet()) {
-				if (!names.contains(key)) {
-					_properties.setProperty(key, (String) params.get(key));
-				}
-			}
-			_properties.store(new FileOutputStream(file), "");
-		} catch (final FileNotFoundException ex) {
-			throw new CloudRuntimeException("Cannot find the file: "
-					+ file.getAbsolutePath(), ex);
-		} catch (final IOException ex) {
-			throw new CloudRuntimeException("IOException in reading "
-					+ file.getAbsolutePath(), ex);
-		}
+    protected String getDefaultDomrScriptsDir() {
+        return "scripts/network/domr/kvm";
 	}
 
 	@Override
@@ -458,16 +438,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 					+ "com.cloud.storage.JavaStorageLayer");
 		}
 
-		_virtRouterResource = new VirtualRoutingResource();
 
-		// Set the domr scripts directory
-		params.put("domr.scripts.dir", "scripts/network/domr/kvm");
-
-		success = _virtRouterResource.configure(name, params);
+        String domrScriptsDir = (String) params.get("domr.scripts.dir");
+        if (domrScriptsDir == null) {
+            domrScriptsDir = getDefaultDomrScriptsDir();
+        }
 
 		String kvmScriptsDir = (String) params.get("kvm.scripts.dir");
 		if (kvmScriptsDir == null) {
-			kvmScriptsDir = "scripts/vm/hypervisor/kvm";
+            kvmScriptsDir = getDefaultKvmScriptsDir();
 		}
 
 		String networkScriptsDir = (String) params.get("network.scripts.dir");
@@ -479,6 +458,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		if (storageScriptsDir == null) {
 			storageScriptsDir = getDefaultStorageScriptsDir();
 		}
+
+        params.put("domr.scripts.dir", domrScriptsDir);
+
+        _virtRouterResource = new VirtualRoutingResource();
+        success = _virtRouterResource.configure(name, params);
 
 		if (!success) {
 			return false;
@@ -633,8 +617,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
 		_localStorageUUID = (String) params.get("local.storage.uuid");
 		if (_localStorageUUID == null) {
-			_localStorageUUID = UUID.randomUUID().toString();
-			params.put("local.storage.uuid", _localStorageUUID);
+            throw new ConfigurationException("local.storage.uuid is not set! Please set this to a valid UUID");
 		}
 
 		value = (String) params.get("scripts.timeout");
@@ -649,8 +632,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		value = (String) params.get("host.reserved.mem.mb");
 		_dom0MinMem = NumbersUtil.parseInt(value, 0) * 1024 * 1024;
 
-		value = (String) params.get("debug.mode");
-
 		LibvirtConnection.initialize(_hypervisorURI);
 		Connect conn = null;
 		try {
@@ -662,9 +643,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 		/* Does node support HVM guest? If not, exit */
 		if (!IsHVMEnabled(conn)) {
 			throw new ConfigurationException(
-					"NO HVM support on this machine, pls make sure: "
+                    "NO HVM support on this machine, please make sure: "
 							+ "1. VT/SVM is supported by your CPU, or is enabled in BIOS. "
-							+ "2. kvm modules is installed");
+                            + "2. kvm modules are loaded (kvm, kvm_amd|kvm_intel)");
 		}
 
 		_hypervisorPath = getHypervisorPath(conn);
@@ -749,7 +730,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 			}
 			params.put("vm.migrate.speed", String.valueOf(_migrateSpeed));
 		}
-		saveProperties(params);
 
 		return true;
 	}

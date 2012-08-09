@@ -4,10 +4,16 @@ Copyright 2012 The Apache Software Foundation
 This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
 
-This product includes WAF (http://code.google.com/p/waf/)
+This product includes JavaMail(TM) API Reference Implementation 
+(http://www.oracle.com/technetwork/java/javamail/index.html), 
+obtained from http://repo1.maven.org/maven2/javax/mail/mail/1.4/mail-1.4.jar
+under the COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0
+
+This product includes JUnit (http://www.junit.org/)
 under the BSD License: http://opensource.org/licenses/BSD-3-Clause
-Thomas Nagy, 2005-2010
+Copyright (c) 2000-2006, www.hamcrest.org
 
 This product includes Simple Logging Facade for Java or (SLF4J) (http://www.slf4j.org/)
 under the MIT license: http://www.slf4j.org/license.html
 Copyright (c) 2004-2011 QOS.ch
+

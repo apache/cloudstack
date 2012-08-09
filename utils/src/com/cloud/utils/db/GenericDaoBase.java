@@ -499,7 +499,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> implements Gene
                 byte[] bytes = rs.getBytes(index);
                 if(bytes != null) {
                     try {
-                        if(field.getAnnotation(Column.class).encryptable()){
+                        Encrypt encrypt = field.getAnnotation(Encrypt.class);
+                        if (encrypt != null && encrypt.encrypt()){
                             field.set(entity, DBEncryptionUtil.decrypt(new String(bytes, "UTF-8")));
                         } else {
                             field.set(entity, new String(bytes, "UTF-8"));
