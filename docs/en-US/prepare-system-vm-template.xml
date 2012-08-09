@@ -17,7 +17,7 @@
 					<programlisting># /usr/lib64/cloud/agent/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2 -h xenserver -s &lt;optional-management-server-secret-key&gt; -F</programlisting>
 				</listitem>
 				<listitem><para>For vSphere:</para>
-					<programlisting># /usr/lib64/cloud/agent/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.ova -h vmware -s &lt;optional-management-server-secret-key&gt;  -F</programlisting>
+					<programlisting># /usr/lib64/cloud/agent/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova -h vmware -s &lt;optional-management-server-secret-key&gt;  -F</programlisting>
 				</listitem>
 				<listitem><para>For KVM:</para>
 					<programlisting># /usr/lib64/cloud/agent/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -s &lt;optional-management-server-secret-key&gt; -F</programlisting>

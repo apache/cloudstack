@@ -247,7 +247,7 @@ cloudAPIPort=8080
 											<entry><para>VMware</para></entry>
 											<entry><para>Name: systemvm-vmware-3.0.0</para>
 												<para>Description: systemvm-vmware-3.0.0</para>
-												<para>URL: http://download.cloud.com/templates/acton/acton-systemvm-02062012.ova</para>
+												<para>URL: http://download.cloud.com/templates/burbank/burbank-systemvm-08012012.ova</para>
 												<para>Zone: Choose the zone where this hypervisor is used</para>
 												<para>Hypervisor: VMware</para>
 												<para>Format:  OVA</para>
