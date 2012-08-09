@@ -44,10 +44,10 @@ create_vpn_usage_rules () {
   iptables-save|grep "VPN_STATS_$ethDev" > /dev/null
   if [ $? -gt 0 ]
   then 
-    iptables -N VPN_STATS_$ethDev > /dev/null;
-    iptables -I FORWARD -j VPN_STATS_$ethDev > /dev/null;
-    iptables -A VPN_STATS_$ethDev -i $ethDev -m mark --mark $vpninmark > /dev/null;
-    iptables -A VPN_STATS_$ethDev -o $ethDev -m mark --mark $vpnoutmark > /dev/null;
+    iptables -t mangle -N VPN_STATS_$ethDev > /dev/null;
+    iptables -t mangle -I FORWARD -j VPN_STATS_$ethDev > /dev/null;
+    iptables -t mangle -A VPN_STATS_$ethDev -i $ethDev -m mark --mark $vpninmark > /dev/null;
+    iptables -t mangle -A VPN_STATS_$ethDev -o $ethDev -m mark --mark $vpnoutmark > /dev/null;
   fi
   return $?
 }
