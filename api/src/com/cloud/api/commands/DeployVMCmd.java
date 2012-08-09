@@ -46,6 +46,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.IdentityProxy;
 
 @Implementation(description="Creates and automatically starts a virtual machine based on a service offering, disk offering, and template.", responseObject=UserVmResponse.class)
 public class DeployVMCmd extends BaseAsyncCreateCmd {
@@ -369,7 +370,9 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             VirtualMachineTemplate template = _templateService.getTemplate(templateId);
             // Make sure a valid template ID was specified
             if (template == null) {
-                throw new InvalidParameterValueException("Unable to use template " + templateId, null);
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy("vm_template", templateId, "templateId"));            	
+                throw new InvalidParameterValueException("Unable to use template ", idList);
             }
 
             DiskOffering diskOffering = null;
