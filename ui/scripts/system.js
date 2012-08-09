@@ -8276,6 +8276,7 @@
                   },
                   {
                     id: { label: 'label.id' },
+                    zonename: { label: 'label.zone' },
                     created: { label: 'label.created', converter: cloudStack.converters.toLocalDate }
                   }
                 ],
