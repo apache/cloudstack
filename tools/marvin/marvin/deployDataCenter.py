@@ -83,7 +83,7 @@ class deployDataCenters():
             primarycmd.clusterid = clusterId
             self.apiClient.createStoragePool(primarycmd)
 
-    def createpods(self, pods, zone, zoneId, networkId=None):
+    def createpods(self, pods, zoneId, networkId=None):
         if pods is None:
             return
         for pod in pods:
@@ -135,7 +135,7 @@ class deployDataCenters():
             secondarycmd.zoneid = zoneId
             self.apiClient.addSecondaryStorage(secondarycmd)
 
-    def createnetworks(self, networks, zoneId, mode):
+    def createnetworks(self, networks, zoneId):
         if networks is None:
             return
         for network in networks:
@@ -157,13 +157,13 @@ class deployDataCenters():
             networkId = networkcmdresponse.id
             return networkId
 
-    def createPhysicalNetwork(self, name, zoneid, vlan=None):
+    def createPhysicalNetwork(self, net, zoneid):
         phynet = createPhysicalNetwork.createPhysicalNetworkCmd()
         phynet.zoneid = zoneid
-        phynet.name = name
-        if vlan:
-            phynet.vlan = vlan
-        return self.apiClient.createPhysicalNetwork(phynet)
+        phynet.name = net.name
+        phynetwrk = self.apiClient.createPhysicalNetwork(phynet)
+        self.addTrafficTypes(phynetwrk.id, net.traffictypes)
+        return phynetwrk
 
     def updatePhysicalNetwork(self, networkid, state="Enabled", vlan=None):
         upnet = updatePhysicalNetwork.updatePhysicalNetworkCmd()
@@ -172,75 +172,86 @@ class deployDataCenters():
         if vlan:
             upnet.vlan = vlan
         return self.apiClient.updatePhysicalNetwork(upnet)
-
-    def configureProviders(self, phynetwrk, zone):
-        pnetprov = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
-        pnetprov.physicalnetworkid = phynetwrk.id
-        pnetprov.state = "Disabled"
-        pnetprov.name = "VirtualRouter"
-        pnetprovres = self.apiClient.listNetworkServiceProviders(pnetprov)
-
-        vrprov = listVirtualRouterElements.listVirtualRouterElementsCmd()
-        vrprov.nspid = pnetprovres[0].id
-        vrprovresponse = self.apiClient.listVirtualRouterElements(vrprov)
-        vrprovid = vrprovresponse[0].id
-
-        vrconfig = \
-        configureVirtualRouterElement.configureVirtualRouterElementCmd()
-        vrconfig.enabled = "true"
-        vrconfig.id = vrprovid
-        vrconfigresponse = \
-        self.apiClient.configureVirtualRouterElement(vrconfig)
-        
+    
+    def enableProvider(self, provider_id):
         upnetprov = \
         updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
-        upnetprov.id = vrprov.nspid
+        upnetprov.id = provider_id
         upnetprov.state = "Enabled"
-        upnetprovresponse = \
         self.apiClient.updateNetworkServiceProvider(upnetprov)
 
-        if zone.networktype == "Basic" and zone.securitygroupenabled:
-            sgprovider = configGenerator.provider()
-            sgprovider.name = "SecurityGroupProvider"
-            zone.providers.append(sgprovider)
-            
-        if zone.networktype == "Advanced":
+    def configureProviders(self, phynetwrk, providers):
+        """
+        We will enable the virtualrouter elements for all zones. Other providers 
+        like NetScalers, SRX, etc are explicitly added/configured
+        """
+        
+        for provider in providers:
             pnetprov = listNetworkServiceProviders.listNetworkServiceProvidersCmd()
             pnetprov.physicalnetworkid = phynetwrk.id
             pnetprov.state = "Disabled"
-            pnetprov.name = "VpcVirtualRouter"
+            pnetprov.name = provider.name
             pnetprovres = self.apiClient.listNetworkServiceProviders(pnetprov)
-            
-            if len(pnetprovres) > 0:
-                vpcvrprov = listVirtualRouterElements.listVirtualRouterElementsCmd()
-                vpcvrprov.nspid = pnetprovres[0].id
-                vpcvrprovresponse = self.apiClient.listVirtualRouterElements(vpcvrprov)
-                vpcvrprovid = vpcvrprovresponse[0].id
+
+            if pnetprovres and len(pnetprovres) > 0: 
+                if provider.name == 'VirtualRouter'\
+                   or provider.name == 'VpcVirtualRouter':
+                    vrprov = listVirtualRouterElements.listVirtualRouterElementsCmd()
+                    vrprov.nspid = pnetprovres[0].id
+                    vrprovresponse = self.apiClient.listVirtualRouterElements(vrprov)
+                    vrprovid = vrprovresponse[0].id
         
-                vpcvrconfig = \
-                configureVirtualRouterElement.configureVirtualRouterElementCmd()
-                vpcvrconfig.enabled = "true"
-                vpcvrconfig.id = vpcvrprovid
-                vpcvrconfigresponse = \
-                self.apiClient.configureVirtualRouterElement(vpcvrconfig)
-                
-                upnetprov = \
-                updateNetworkServiceProvider.updateNetworkServiceProviderCmd()
-                upnetprov.id = vpcvrprov.nspid
-                upnetprov.state = "Enabled"
-                upnetprovresponse = \
-                self.apiClient.updateNetworkServiceProvider(upnetprov)
+                    vrconfig = \
+                    configureVirtualRouterElement.configureVirtualRouterElementCmd()
+                    vrconfig.enabled = "true"
+                    vrconfig.id = vrprovid
+                    self.apiClient.configureVirtualRouterElement(vrconfig)
+                    self.enableProvider(pnetprovres[0].id)
+            elif provider.name in ['Netscaler', 'JuniperSRX', 'F5BigIp']:
+                netprov = addNetworkServiceProvider.addNetworkServiceProviderCmd()
+                netprov.name = provider.name
+                netprov.physicalnetworkid = phynetwrk.id
+                result = self.apiClient.addNetworkServiceProvider(netprov)
+                for device in provider.devices:
+                    if provider.name == 'Netscaler':
+                        dev = addNetscalerLoadBalancer.addNetscalerLoadBalancerCmd()
+                        dev.username = device.username
+                        dev.password = device.password
+                        dev.networkdevicetype = device.networkdevicetype
+                        dev.url = configGenerator.getDeviceUrl(device)
+                        dev.physicalnetworkid = phynetwrk.id
+                        self.apiClient.addNetscalerLoadBalancer(dev)
+                    elif provider.name == 'JuniperSRX':
+                        dev = addSrxFirewall.addSrxFirewallCmd()
+                        dev.username = device.username
+                        dev.password = device.password
+                        dev.networkdevicetype = device.networkdevicetype
+                        dev.url = configGenerator.getDeviceUrl(device)
+                        dev.physicalnetworkid = phynetwrk.id
+                        self.apiClient.addSrxFirewall(dev)
+                    elif provider.name == 'F5BigIp':
+                        dev = addF5LoadBalancer.addF5LoadBalancerCmd()
+                        dev.username = device.username
+                        dev.password = device.password
+                        dev.networkdevicetype = device.networkdevicetype
+                        dev.url = configGenerator.getDeviceUrl(device)
+                        dev.physicalnetworkid = phynetwrk.id
+                        self.apiClient.addF5LoadBalancer(dev)
+                    else:
+                        print "Device %s doesn't match any know provider type"%device
+                self.enableProvider(result.id)
+            
+    def addTrafficTypes(self, physical_network_id, traffictypes):
+        [self.addTrafficType(physical_network_id, traffic_type) for traffic_type in traffictypes]
 
-    def addTrafficTypes(self, physical_network_id, traffictypes=None, \
-                        network_labels=None):
-        [self.addTrafficType(physical_network_id, traffictype) for \
-         traffictype in traffictypes]
-
-    def addTrafficType(self, physical_network_id, traffictype, \
-                       network_label=None):
+    def addTrafficType(self, physical_network_id, traffictype):
         traffic_type = addTrafficType.addTrafficTypeCmd()
         traffic_type.physicalnetworkid = physical_network_id
-        traffic_type.traffictype = traffictype
+        traffic_type.traffictype = traffictype.typ
+        if traffictype.labeldict:
+            traffic_type.kvmnetworklabel = traffictype.labeldict.xen
+            traffic_type.xennetworklabel = traffictype.labeldict.kvm
+            traffic_type.vmwarenetworklabel = traffictype.labeldict.vmware
         return self.apiClient.addTrafficType(traffic_type)
 
     def enableZone(self, zoneid, allocation_state="Enabled"):
@@ -260,24 +271,21 @@ class deployDataCenters():
             createzone.securitygroupenabled = zone.securitygroupenabled
             createzone.networktype = zone.networktype
             createzone.guestcidraddress = zone.guestcidraddress
-
+            
             zoneresponse = self.apiClient.createZone(createzone)
             zoneId = zoneresponse.id
 
-            phynetwrk = self.createPhysicalNetwork(zone.name + "-pnet", \
-                                                   zoneId)
-
-            self.configureProviders(phynetwrk, zone)
-            self.updatePhysicalNetwork(phynetwrk.id, "Enabled", vlan=zone.vlan)
+            for pnet in zone.physical_networks:
+                phynetwrk = self.createPhysicalNetwork(pnet, zoneId)
+                self.configureProviders(phynetwrk, pnet.providers)
+                self.updatePhysicalNetwork(phynetwrk.id, "Enabled", vlan=zone.vlan)
 
             if zone.networktype == "Basic":
-                self.addTrafficTypes(phynetwrk.id, ["Guest", "Management"])
+                listnetworkoffering = listNetworkOfferings.listNetworkOfferingsCmd()
                 
-                listnetworkoffering = \
-                listNetworkOfferings.listNetworkOfferingsCmd()
-
-                listnetworkoffering.name = \
-                "DefaultSharedNetworkOfferingWithSGService"
+                listnetworkoffering.name = "DefaultSharedNetscalerEIPandELBNetworkOffering" \
+                        if len(filter(lambda x : x.typ == 'Public', zone.physical_networks.traffictypes)) > 0 \
+                        else "DefaultSharedNetworkOfferingWithSGService"
 
                 listnetworkofferingresponse = \
                 self.apiClient.listNetworkOfferings(listnetworkoffering)
@@ -288,19 +296,26 @@ class deployDataCenters():
                 guestntwrk.zoneid = zoneId
                 guestntwrk.networkofferingid = \
                         listnetworkofferingresponse[0].id
-                networkid = self.createnetworks([guestntwrk], zoneId, zone.networktype)
-                self.createpods(zone.pods, zone, zoneId, networkid)
+                        
+                networkid = self.createnetworks([guestntwrk], zoneId)
+                self.createpods(zone.pods, zoneId, networkid)
+                if self.isEipElbZone(zone):
+                    self.createVlanIpRanges(zone.networktype, zone.ipranges, \
+                                        zoneId)
 
             if zone.networktype == "Advanced":
-                self.createpods(zone.pods, zone, zoneId)
-                self.addTrafficTypes(phynetwrk.id, ["Guest", "Public", \
-                                                    "Management"])
+                self.createpods(zone.pods, zoneId)
                 self.createVlanIpRanges(zone.networktype, zone.ipranges, \
                                         zoneId)
 
             self.createSecondaryStorages(zone.secondaryStorages, zoneId)
             self.enableZone(zoneId, "Enabled")
         return
+    
+    def isEipElbZone(self, zone):
+        if zone.networktype == "Basic" and len(filter(lambda x : x.typ == 'Public', zone.physical_networks.traffictypes)) > 0:
+            return True
+        return False
 
     def registerApiKey(self):
         listuser = listUsers.listUsersCmd()
