@@ -18,7 +18,7 @@ import javax.ejb.Local;
 
 import com.cloud.network.Network.Service;
 import com.cloud.network.vpc.VpcOfferingServiceMapVO;
-import com.cloud.network.vpc.Dao.VpcOfferingServiceMapDao;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 

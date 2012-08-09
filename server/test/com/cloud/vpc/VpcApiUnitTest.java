@@ -32,10 +32,10 @@ import com.cloud.network.dao.Site2SiteVpnGatewayDaoImpl;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcManagerImpl;
-import com.cloud.network.vpc.Dao.PrivateIpDaoImpl;
-import com.cloud.network.vpc.Dao.StaticRouteDaoImpl;
-import com.cloud.network.vpc.Dao.VpcGatewayDaoImpl;
-import com.cloud.network.vpc.Dao.VpcOfferingDaoImpl;
+import com.cloud.network.vpc.dao.PrivateIpDaoImpl;
+import com.cloud.network.vpc.dao.StaticRouteDaoImpl;
+import com.cloud.network.vpc.dao.VpcGatewayDaoImpl;
+import com.cloud.network.vpc.dao.VpcOfferingDaoImpl;
 import com.cloud.server.ManagementService;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.AccountVO;
@@ -98,8 +98,8 @@ public class VpcApiUnitTest extends TestCase{
     public void test() {
         s_logger.debug("Starting test for VpcService interface");
         //Vpc service methods
-        getActiveVpc();
-        deleteVpc();
+        //getActiveVpc();
+        //deleteVpc();
         
         //Vpc manager methods
         validateNtwkOffForVpc();

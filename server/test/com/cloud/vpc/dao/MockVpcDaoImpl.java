@@ -22,7 +22,7 @@ import org.apache.log4j.Logger;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.Vpc.State;
 import com.cloud.network.vpc.VpcVO;
-import com.cloud.network.vpc.Dao.VpcDao;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 
