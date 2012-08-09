@@ -1839,9 +1839,11 @@
             }
           },
           action: function(args) {
-            var dataObj = {
-              vpcid: args.context.vpc[0].id,
+            var dataObj = {              
               zoneId: args.context.vpc[0].zoneid,
+							vpcid: args.context.vpc[0].id,
+							domainid: args.context.vpc[0].domainid,
+							account: args.context.vpc[0].account,
               networkOfferingId: args.data.networkOfferingId,
               name: args.data.name,
               displayText: args.data.name,
