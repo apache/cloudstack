@@ -1033,7 +1033,12 @@
                       esppolicy: { label: 'ESP policy' },
                       ikelifetime: { label: 'IKE Lifetime (second)' },
                       esplifetime: {label: 'ESP Lifetime(second)' },
-                     // dpd: {label: 'Dead Peer Detection'},
+									    dpd: {
+									      label: 'Dead Peer Detection',
+                        converter: function(str) {
+                          return str ? 'Yes' : 'No';
+                        }
+									    },               
                       state: {label: 'State' },
                       created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
                     }
