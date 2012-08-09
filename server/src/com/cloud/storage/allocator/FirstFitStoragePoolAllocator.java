@@ -74,9 +74,10 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
         }
 
         List<StoragePoolVO> pools = null;
-        if (!dskCh.useLocalStorage() || vmProfile.getVirtualMachine().getHostId() == null) {
+        // volume is shared "or" vm is not known "or" no host associated then go here
+        if (!dskCh.useLocalStorage() || vmProfile.getVirtualMachine() == null || vmProfile.getVirtualMachine().getHostId() == null) {
             pools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags(), !dskCh.useLocalStorage());
-        } else {
+        } else { // volume is local and vm host id is known
             pools = new ArrayList<StoragePoolVO>();
             List<StoragePoolHostVO> hostPools = _poolHostDao.listByHostId(vmProfile.getVirtualMachine().getHostId());
             for (StoragePoolHostVO hostPool: hostPools) {
