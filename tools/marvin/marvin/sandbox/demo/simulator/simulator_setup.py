@@ -1,8 +1,9 @@
 #!/usr/bin/env python
 
+import marvin
 from ConfigParser import SafeConfigParser
 from optparse import OptionParser
-from configGenerator import *
+from marvin.configGenerator import *
 import random
 
 
@@ -24,6 +25,16 @@ def describeResources(config):
     z.networktype = 'Advanced'
     z.guestcidraddress = '10.1.1.0/24'
     z.vlan = config.get('cloudstack', 'zone.vlan')
+    
+    vpcprovider = provider()
+    vpcprovider.name = 'VpcVirtualRouter'
+    
+    pn = physical_network()
+    pn.name = "Sandbox-pnet"
+    pn.traffictypes = [traffictype("Guest"), traffictype("Management"), traffictype("Public")]
+    pn.providers.append(vpcprovider)
+    
+    z.physical_networks.append(pn)
 
     p = pod()
     p.name = 'POD0'
@@ -79,8 +90,9 @@ def describeResources(config):
 
     '''Add a database'''
     db = dbServer()
-    db.dbSvr = config.get('environment', 'dbhost')
-    db.passwd = config.get('environment', 'dbpasswd')
+    db.dbSvr = config.get('environment', 'mysql.host')
+    db.user = config.get('environment', 'mysql.cloud.user')
+    db.passwd = config.get('environment', 'mysql.cloud.passwd')
     zs.dbSvr = db
 
     '''Add some configuration'''
