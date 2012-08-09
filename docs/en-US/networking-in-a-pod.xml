@@ -8,9 +8,9 @@
 	<para>Figure 2 illustrates network setup within a single pod. The hosts are connected to a pod-level switch. At a minimum, the hosts should have one physical uplink to each switch. Bonded NICs are supported as well. The pod-level switch is a pair of redundant gigabit switches with 10 G uplinks.</para>
 	<mediaobject>
 		<imageobject>
-			<imagedata fileref="./images/.png" />
+			<imagedata fileref="./images/networking-in-a-pod.png" />
 		</imageobject>
-		<textobject><phrase>ReleaseIPButton.png: button to release an IP</phrase></textobject>
+		<textobject><phrase>networking-in-a-pod.png: Network setup in a pod</phrase></textobject>
 	</mediaobject>
 	<para>Servers are connected as follows:</para>
 	<itemizedlist>
