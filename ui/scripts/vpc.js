@@ -633,7 +633,7 @@
                       noSelect: true,
                       context: args.context,
                       fields: {
-                        cidr: { edit: true, label: 'label.cidr' },
+                        cidr: { edit: true, label: 'CIDR of destination networK' },
                         'add-rule': {
                           label: 'Add route',
                           addButton: true
