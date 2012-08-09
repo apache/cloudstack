@@ -906,7 +906,14 @@
             fields: {
               publicip: { label: 'label.ip.address' },
               gateway: { label: 'label.gateway' },
-              cidrlist: { label: 'CIDR list' },
+              state: {
+                label: 'label.state',
+                indicator: {
+                  'Connected': 'on',
+                  'Disconnected': 'off',
+                  'Error': 'off'
+                }
+              },
               ipsecpsk: { label: 'IPsec Preshared-Key' },
               ikepolicy: { label: 'IKE policy' },
               esppolicy: { label: 'ESP policy' }
@@ -1012,7 +1019,7 @@
                       );
                     }
                   });
-                },								
+                },
                 notification: {
                   poll: pollAsyncJobResult
                 }
