@@ -994,6 +994,12 @@
               ).appendTo($dataBody);
             });
 
+            if (args.hideFields) {
+              $(args.hideFields).each(function() {
+                $multi.find('th.' + this + ',td.' + this).hide();
+              });
+            }
+
             _medit.refreshItemWidths($multi);
           },
           error: cloudStack.dialog.error
