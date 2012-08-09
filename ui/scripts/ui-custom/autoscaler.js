@@ -345,7 +345,7 @@
                     $autoscalerDialog.closest(':ui-dialog').remove();
                     $('.overlay').remove();
                     cloudStack.dialog.notice({
-                      message: 'Autoscaler configured successfully.'
+                      message: 'Autoscale configured successfully.'
                     });
                   },
                   error: function(message) {
