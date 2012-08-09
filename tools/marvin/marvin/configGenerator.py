@@ -622,17 +622,31 @@ def get_setup_config(file):
     if not os.path.exists(file):
         raise IOError("config file %s not found. please specify a valid config file"%file)
     config = cloudstackConfiguration()
-    fp = open(file, 'r')
-    config = json.load(fp)
+    configLines = []
+    with open(file, 'r') as fp:
+        for line in fp:
+            ws = line.strip()
+            if not ws.startswith("#"):
+                configLines.append(ws)
+    config = json.loads("\n".join(configLines))
     return jsonHelper.jsonLoader(config)
 
 if __name__ == "__main__":
     parser = OptionParser()
   
+    parser.add_option("-i", "--input", action="store", default=None , dest="inputfile", help="input file")
+    parser.add_option("-a", "--advanced", action="store_true", default=False, dest="advanced", help="use advanced networking")
     parser.add_option("-o", "--output", action="store", default="./datacenterCfg", dest="output", help="the path where the json config file generated, by default is ./datacenterCfg")
     
     (options, args) = parser.parse_args()
-    config = describe_setup_in_basic_mode()
+    
+    if options.inputfile:
+        config = get_setup_config(options.inputfile)
+    if options.advanced:
+        config = describe_setup_in_advanced_mode()
+    else:
+        config = describe_setup_in_basic_mode()
+        
     generate_setup_config(config, options.output)
     
     

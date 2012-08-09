@@ -238,7 +238,7 @@ class deployDataCenters():
                         dev.physicalnetworkid = phynetwrk.id
                         self.apiClient.addF5LoadBalancer(dev)
                     else:
-                        print "Device %s doesn't match any know provider type"%device
+                        raise cloudstackException.InvalidParameterException("Device %s doesn't match any know provider type"%device)
                 self.enableProvider(result.id)
             
     def addTrafficTypes(self, physical_network_id, traffictypes):
@@ -343,7 +343,7 @@ class deployDataCenters():
             self.config = configGenerator.get_setup_config(self.configFile)
         except:
             raise cloudstackException.InvalidParameterException( \
-                            "Failed to load config %s" %sys.exc_info())
+                            "Failed to load config %s"%self.configFile)
 
         mgt = self.config.mgtSvr[0]
 
