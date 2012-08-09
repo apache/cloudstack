@@ -82,7 +82,7 @@
 			  //no actions  for new LB rule
 			}
 			else { //existing LB rule			  
-        if(args.context.originalAutoscaleData[0].afterActionIsComplete	== null) {	
+        if(args.context.originalAutoscaleData[0].afterActionIsComplete == null) {	
 					if(args.context.originalAutoscaleData[0].context.autoscaleVmGroup.state == 'disabled')
 						allowedActions.push('enable');
 					else if(args.context.originalAutoscaleData[0].context.autoscaleVmGroup.state == 'enabled')
@@ -693,64 +693,33 @@
           args.response.success({
             data: scaleDownData
           });
-        }
-        /*
-         actions: {
-         destroy: {
-         label: '',
-         action: function(args) {
-         $.ajax({
-         url: createURL("deleteCondition&id=" + args.context.multiRule[0].counterid),
-         dataType: 'json',
-         async: true,
-         success: function(data) {
-         var jobId = data.deleteconditionresponse.jobid;
-
-         args.response.success({
-         _custom: {
-         jobId: jobId
-         }
-         });
-         }
-         });
-         }
-         }
-         },
-         ignoreEmptyFields: true,
-         dataProvider: function(args) {
-         $.ajax({
-         url: createURL('listConditions'),
-         dataType: 'json',
-         async: true,
-         success: function(data) {
-         args.response.success({
-         data: $.map(
-         data.listconditionsresponse.condition ?
-         data.listconditionsresponse.condition : [],
-         function(elem) {
-         return {
-         counterid: elem.id,
-         relationaloperator: elem.relationaloperator,
-         threshold: elem.threshold
-         };
-         }
-         )
-         });
-         }
-         });
-         }*/
+        }        
       }
     },
 
     actions: {
       apply: function(args) {
-        //validation (begin) *****
+        //validation (begin) *****		        	
 				if(!('multiRules' in args.context)) { //from a new LB 			
 				  if(args.formData.name == '' || args.formData.publicport == '' || args.formData.privateport == '') {
 					  args.response.error('Name, Public Port, Private Port of Load Balancing are required. Please close this dialog box and fill Name, Public Port, Private Port first.');
             return;
 					}
-				}				
+				}			
+        else { //from an existing LB				  
+					if(args.context.originalAutoscaleData.afterActionIsComplete == null) {	
+						if(args.context.originalAutoscaleData.context.autoscaleVmGroup.state != 'disabled') {
+						  args.response.error('An Autoscale VM Group can be updated only if it is in disabled state. Please disable the Autoscale VM Group first.');
+              return;
+						}               
+					}			
+					else {
+						if(args.context.originalAutoscaleData.afterActionIsComplete.state != 'disabled') {
+						  args.response.error('An Autoscale VM Group can be updated only if it is in disabled state. Please disable the Autoscale VM Group first.');
+              return;
+						}
+					}		
+        }				
 				
         if(isAdmin() || isDomainAdmin()) { //only admin and domain-admin has access to listUers API
           var havingApiKeyAndSecretKey = false;
@@ -1333,49 +1302,8 @@
         };
 
 				//*** API calls start!!! ********
-				if(!('multiRules' in args.context)) { //from a new LB 
-          scaleUp(args);
-				}
-				else { //from an existing LB			
-					if(args.context.originalAutoscaleData.context.autoscaleVmGroup.state == 'disabled') {
-					  scaleUp(args);
-					}
-					else {					
-						$.ajax({
-							url: createURL('disableAutoScaleVmGroup'),
-							data: {
-								id: args.context.originalAutoscaleData.context.autoscaleVmGroup.id
-							},
-							success: function(json) {								
-								var disableAutoScaleVmGroupIntervalID = setInterval(function() { 	
-									$.ajax({
-										url: createURL("queryAsyncJobResult&jobid=" + json.disableautoscalevmGroupresponse.jobid),
-										dataType: "json",
-										success: function(json) {
-											var result = json.queryasyncjobresultresponse;
-											if(result.jobstatus == 0) {
-												return;
-											}
-											else {                                    
-												clearInterval(disableAutoScaleVmGroupIntervalID); 											
-												if(result.jobstatus == 1) {																		 
-													//json.queryasyncjobresultresponse.jobresult.autoscalevmgroup //do NOT update args.context.originalAutoscaleData.context.autoscaleVmGroup. So, we have original data before making API calls.
-									        scaleUp(args);
-												}
-												else if(result.jobstatus == 2) {
-													args.response.error(_s(result.jobresult.errortext));
-												}
-											}
-										}
-									});                            
-								}, 3000); 									
-							}
-						});
-					}					
-				}
-
-        //setTimeout(function() { args.response.success(); }, 1000);
-        //setTimeout(function() { args.response.error('Error!'); }, 1000);
+				scaleUp(args);
+				
       },
       destroy: function(args) {
         $.ajax({
