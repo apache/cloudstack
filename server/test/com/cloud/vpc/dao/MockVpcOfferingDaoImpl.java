@@ -15,7 +15,7 @@ package com.cloud.vpc.dao;
 import javax.ejb.Local;
 
 import com.cloud.network.vpc.VpcOfferingVO;
-import com.cloud.network.vpc.Dao.VpcOfferingDao;
+import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 

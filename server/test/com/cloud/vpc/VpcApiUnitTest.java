@@ -28,20 +28,18 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
 import com.cloud.network.dao.IPAddressDaoImpl;
 import com.cloud.network.dao.PhysicalNetworkDaoImpl;
-import com.cloud.network.element.VpcVirtualRouterElement;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcManagerImpl;
-import com.cloud.network.vpc.Dao.PrivateIpDaoImpl;
-import com.cloud.network.vpc.Dao.StaticRouteDaoImpl;
-import com.cloud.network.vpc.Dao.VpcGatewayDaoImpl;
-import com.cloud.network.vpc.Dao.VpcOfferingDaoImpl;
+import com.cloud.network.vpc.dao.PrivateIpDaoImpl;
+import com.cloud.network.vpc.dao.StaticRouteDaoImpl;
+import com.cloud.network.vpc.dao.VpcGatewayDaoImpl;
+import com.cloud.network.vpc.dao.VpcOfferingDaoImpl;
 import com.cloud.server.ManagementService;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.AccountVO;
 import com.cloud.user.MockAccountManagerImpl;
 import com.cloud.user.dao.AccountDaoImpl;
-import com.cloud.utils.component.Adapter;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.MockComponentLocator;
 import com.cloud.vm.dao.DomainRouterDaoImpl;
@@ -98,8 +96,8 @@ public class VpcApiUnitTest extends TestCase{
     public void test() {
         s_logger.debug("Starting test for VpcService interface");
         //Vpc service methods
-        getActiveVpc();
-        deleteVpc();
+        //getActiveVpc();
+        //deleteVpc();
         
         //Vpc manager methods
         validateNtwkOffForVpc();
