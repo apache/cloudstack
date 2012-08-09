@@ -370,9 +370,7 @@ public class DeployVMCmd extends BaseAsyncCreateCmd {
             VirtualMachineTemplate template = _templateService.getTemplate(templateId);
             // Make sure a valid template ID was specified
             if (template == null) {
-                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
-                idList.add(new IdentityProxy("vm_template", templateId, "templateId"));            	
-                throw new InvalidParameterValueException("Unable to use template ", idList);
+                throw new InvalidParameterValueException("Template id supplied doesn't exist", null);
             }
 
             DiskOffering diskOffering = null;
