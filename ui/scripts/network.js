@@ -1659,6 +1659,7 @@
                   },
                   {
                     id: { label: 'label.id' },
+                    networkname: { label: 'label.network.name' },
                     networkid: { label: 'label.network.id' },
                     associatednetworkid: { label: 'label.associated.network.id' },
                     state: { label: 'label.state' },
@@ -1691,10 +1692,19 @@
                     success: function(json) {
                       var ipObj = json.listpublicipaddressesresponse.publicipaddress[0];
                       getExtaPropertiesForIpObj(ipObj, args);
+                      
+                      var network = $.grep(
+                        args.context.vpc ?
+                          args.context.vpc[0].network : args.context.networks,
+                        function(network) {
+                          return network.id = ipObj.networkid;
+                        })[0];
 
                       args.response.success({
                         actionFilter: actionFilters.ipAddress,
-                        data: ipObj
+                        data: $.extend(ipObj, {
+                          networkname: network.name
+                        })
                       });
                     },
                     error: function(data) {
