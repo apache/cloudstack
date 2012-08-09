@@ -37,7 +37,7 @@
 	</itemizedlist>
 	<mediaobject>
 		<imageobject>
-			<imagedata fileref="./images/infrastructure_overview.png" />
+			<imagedata fileref="./images/infrastructure-overview.png" />
 		</imageobject>
 		<textobject><phrase>infrastructure_overview.png: Nested organization of a zone</phrase></textobject>
 	</mediaobject>

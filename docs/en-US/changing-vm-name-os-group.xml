@@ -39,7 +39,7 @@
 				</para></listitem>
 			<listitem><para>Click Edit <inlinemediaobject>
 				<imageobject>
-					<imagedata fileref="./images/edit.png" />
+					<imagedata fileref="./images/edit-icon.png" />
 				</imageobject>
 				<textobject><phrase>StopButton.png: button to edit the properties of a VM</phrase></textobject>
 			</inlinemediaobject>.</para></listitem>
