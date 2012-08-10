@@ -18,11 +18,6 @@ package com.cloud.agent.api.routing;
 
 import com.cloud.agent.api.to.IpAddressTO;
 
-
-/**
- * @author alena
- *
- */
 public class IpAssocCommand extends NetworkElementCommand {
     
 	IpAddressTO[] ipAddresses;
