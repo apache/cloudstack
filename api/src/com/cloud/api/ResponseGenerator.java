@@ -18,6 +18,7 @@ import java.util.List;
 
 import com.cloud.api.ApiConstants.HostDetails;
 import com.cloud.api.ApiConstants.VMDetails;
+import com.cloud.api.ApiConstants.VolumeDetails;
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.AsyncJobResponse;
@@ -198,6 +199,8 @@ public interface ResponseGenerator {
     ZoneResponse createZoneResponse(DataCenter dataCenter, Boolean showCapacities);
 
     VolumeResponse createVolumeResponse(Volume volume);
+    
+    VolumeResponse createVolumeResponse(Volume volume, EnumSet<VolumeDetails> details);
 
     InstanceGroupResponse createInstanceGroupResponse(InstanceGroup group);
 
