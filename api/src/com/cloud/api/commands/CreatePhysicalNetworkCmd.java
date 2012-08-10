@@ -59,15 +59,13 @@ public class CreatePhysicalNetworkCmd extends BaseAsyncCreateCmd {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="domain ID of the account owning a physical network")
     private Long domainId;
     
-    @Parameter(name=ApiConstants.BROADCAST_DOMAIN_RANGE, type=CommandType.STRING, description="the broadcast domain " +
-    		"range for the physical network[Pod or Zone]. In Acton release it can be Zone only in Advance zone, and Pod in Basic")
+    @Parameter(name=ApiConstants.BROADCAST_DOMAIN_RANGE, type=CommandType.STRING, description="the broadcast domain range for the physical network[Pod or Zone]. In Acton release it can be Zone only in Advance zone, and Pod in Basic")
     private String broadcastDomainRange;
     
     @Parameter(name=ApiConstants.TAGS, type=CommandType.LIST, collectionType=CommandType.STRING, description="Tag the physical network")
     private List<String> tags;
     
-    @Parameter(name=ApiConstants.ISOLATION_METHODS, type=CommandType.LIST, collectionType=CommandType.STRING, 
-            description="the isolation method for the physical network[VLAN/L3/GRE]")
+    @Parameter(name=ApiConstants.ISOLATION_METHODS, type=CommandType.LIST, collectionType=CommandType.STRING, description="the isolation method for the physical network[VLAN/L3/GRE]")
     private List<String> isolationMethods;
     
     @Parameter(name=ApiConstants.NAME, type=CommandType.STRING, required=true, description="the name of the physical network")
