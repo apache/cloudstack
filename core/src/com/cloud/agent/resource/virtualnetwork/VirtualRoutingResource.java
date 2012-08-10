@@ -639,6 +639,49 @@ public class VirtualRoutingResource implements Manager {
 
         return command.execute();
     }
+    
+    private void deletExitingLinkLocalRoutTable(String linkLocalBr) {
+        Script command = new Script("/bin/bash", _timeout);
+        command.add("-c");
+        command.add("ip route | grep " + NetUtils.getLinkLocalCIDR());
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String result = command.execute(parser);
+        boolean foundLinkLocalBr = false;
+        if (result == null && parser.getLines() != null) {
+            String[] lines = parser.getLines().split("\\n");
+            for (String line : lines) {
+                String[] tokens = line.split(" ");
+                if (!tokens[2].equalsIgnoreCase(linkLocalBr)) {
+                    Script.runSimpleBashScript("ip route del " + NetUtils.getLinkLocalCIDR());
+                } else {
+                    foundLinkLocalBr = true;
+                }
+            }
+        }
+        if (!foundLinkLocalBr) {
+            Script.runSimpleBashScript("ifconfig " + linkLocalBr + " 169.254.0.1;" + "ip route add " + NetUtils.getLinkLocalCIDR() + " dev " + linkLocalBr + " src " + NetUtils.getLinkLocalGateway());
+        }
+    }
+
+    public void createControlNetwork(String privBrName) {
+        deletExitingLinkLocalRoutTable(privBrName);
+        if (!isBridgeExists(privBrName)) {
+            Script.runSimpleBashScript("brctl addbr " + privBrName + "; ifconfig " + privBrName + " up; ifconfig " + privBrName + " 169.254.0.1", _timeout);
+        }
+    }
+
+    private boolean isBridgeExists(String bridgeName) {
+        Script command = new Script("/bin/sh", _timeout);
+        command.add("-c");
+        command.add("brctl show|grep " + bridgeName);
+        final OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
+        String result = command.execute(parser);
+        if (result != null || parser.getLine() == null) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 
     private void deleteBridge(String brName) {
         Script cmd = new Script("/bin/sh", _timeout);
@@ -664,6 +707,12 @@ public class VirtualRoutingResource implements Manager {
         cmd.add("-c");
         cmd.add("kill -9 `cat /var/run/libvirt/network/"  + dnsmasqName +".pid`");
         cmd.execute();
+    }
+
+    public void cleanupPrivateNetwork(String privNwName, String privBrName){
+        if (isBridgeExists(privBrName)) {
+            deleteBridge(privBrName);
+        }
     }
 
     //    protected Answer execute(final SetFirewallRuleCommand cmd) {
