@@ -31,6 +31,7 @@ import com.cloud.acl.ControlledEntity;
 import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.api.ApiConstants.HostDetails;
 import com.cloud.api.ApiConstants.VMDetails;
+import com.cloud.api.ApiConstants.VolumeDetails;
 import com.cloud.api.commands.QueryAsyncJobResultCmd;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.api.response.ApiResponseSerializer;
@@ -1045,8 +1046,14 @@ public class ApiResponseHelper implements ResponseGenerator {
         return capacityResponses;
     }
 
+
     @Override
     public VolumeResponse createVolumeResponse(Volume volume) {
+    	return createVolumeResponse(volume, EnumSet.of(VolumeDetails.all));
+    }
+
+    @Override
+    public VolumeResponse createVolumeResponse(Volume volume, EnumSet<VolumeDetails> details) {
         VolumeResponse volResponse = new VolumeResponse();
         volResponse.setId(volume.getId());
 
@@ -1057,124 +1064,134 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         volResponse.setZoneId(volume.getDataCenterId());
-        volResponse.setZoneName(ApiDBUtils.findZoneById(volume.getDataCenterId()).getName());
-
         volResponse.setVolumeType(volume.getVolumeType().toString());
         volResponse.setDeviceId(volume.getDeviceId());
-
-        Long instanceId = volume.getInstanceId();
-        if (instanceId != null && volume.getState() != Volume.State.Destroy) {
-            VMInstanceVO vm = ApiDBUtils.findVMInstanceById(instanceId);
-            if (vm != null) {
-                volResponse.setVirtualMachineId(vm.getId());
-                volResponse.setVirtualMachineName(vm.getHostName());
-                UserVm userVm = ApiDBUtils.findUserVmById(vm.getId());
-                if (userVm != null) {
-                    if (userVm.getDisplayName() != null) {
-                        volResponse.setVirtualMachineDisplayName(userVm.getDisplayName());
-                    } else {
-                        volResponse.setVirtualMachineDisplayName(userVm.getHostName());
-                    }
-                    volResponse.setVirtualMachineState(vm.getState().toString());
-                } else {
-                    s_logger.error("User Vm with Id: " + instanceId + " does not exist for volume " + volume.getId());
-                }
-            } else {
-                s_logger.error("Vm with Id: " + instanceId + " does not exist for volume " + volume.getId());
-            }
-        }
-
         // Show the virtual size of the volume
         volResponse.setSize(volume.getSize());
-
         volResponse.setCreated(volume.getCreated());
         volResponse.setState(volume.getState().toString());
-        if(volume.getState() == Volume.State.UploadOp){
-            com.cloud.storage.VolumeHostVO volumeHostRef = ApiDBUtils.findVolumeHostRef(volume.getId(), volume.getDataCenterId());
-            volResponse.setSize(volumeHostRef.getSize());
-            volResponse.setCreated(volumeHostRef.getCreated());
-            Account caller = UserContext.current().getCaller();
-            if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)
-                volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volumeHostRef.getFormat()).toString());
-            if (volumeHostRef.getDownloadState() != Status.DOWNLOADED) {
-                String volumeStatus = "Processing";
-                if (volumeHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
-                    if (volumeHostRef.getDownloadPercent() == 100) {
-                        volumeStatus = "Checking Volume";
-                    } else {
-                        volumeStatus = volumeHostRef.getDownloadPercent() + "% Uploaded";
-                    }
-                    volResponse.setState("Uploading");
-                } else {
-                    volumeStatus = volumeHostRef.getErrorString();
-                    if(volumeHostRef.getDownloadState() == VMTemplateHostVO.Status.NOT_DOWNLOADED){
-                        volResponse.setState("UploadNotStarted");
-                    }else {
-                        volResponse.setState("UploadError");
-                    }
-                }
-                volResponse.setStatus(volumeStatus);
-            } else if (volumeHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
-                volResponse.setStatus("Upload Complete");
-                volResponse.setState("Uploaded");
-            } else {
-                volResponse.setStatus("Successfully Installed");
-            }
+        volResponse.setAttached(volume.getAttached());
+        volResponse.setDestroyed(volume.getState() == Volume.State.Destroy);
+        
+        if (details.contains(VolumeDetails.vm) || details.contains(VolumeDetails.all)){
+        	volResponse.setZoneName(ApiDBUtils.findZoneById(volume.getDataCenterId()).getName());
+        	Long instanceId = volume.getInstanceId();
+	        if (instanceId != null && volume.getState() != Volume.State.Destroy) {
+	            VMInstanceVO vm = ApiDBUtils.findVMInstanceById(instanceId);
+	            if (vm != null) {
+	                volResponse.setVirtualMachineId(vm.getId());
+	                volResponse.setVirtualMachineName(vm.getHostName());
+	                UserVm userVm = ApiDBUtils.findUserVmById(vm.getId());
+	                if (userVm != null) {
+	                    if (userVm.getDisplayName() != null) {
+	                        volResponse.setVirtualMachineDisplayName(userVm.getDisplayName());
+	                    } else {
+	                        volResponse.setVirtualMachineDisplayName(userVm.getHostName());
+	                    }
+	                    volResponse.setVirtualMachineState(vm.getState().toString());
+	                } else {
+	                    s_logger.error("User Vm with Id: " + instanceId + " does not exist for volume " + volume.getId());
+	                }
+	            } else {
+	                s_logger.error("Vm with Id: " + instanceId + " does not exist for volume " + volume.getId());
+	            }
+	        }
         }
 
-        populateOwner(volResponse, volume);
+        if (details.contains(VolumeDetails.all)){
+	        if(volume.getState() == Volume.State.UploadOp){
+	            com.cloud.storage.VolumeHostVO volumeHostRef = ApiDBUtils.findVolumeHostRef(volume.getId(), volume.getDataCenterId());
+	            volResponse.setSize(volumeHostRef.getSize());
+	            volResponse.setCreated(volumeHostRef.getCreated());
+	            Account caller = UserContext.current().getCaller();
+	            if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN)
+	                volResponse.setHypervisor(ApiDBUtils.getHypervisorTypeFromFormat(volumeHostRef.getFormat()).toString());
+	            if (volumeHostRef.getDownloadState() != Status.DOWNLOADED) {
+	                String volumeStatus = "Processing";
+	                if (volumeHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOAD_IN_PROGRESS) {
+	                    if (volumeHostRef.getDownloadPercent() == 100) {
+	                        volumeStatus = "Checking Volume";
+	                    } else {
+	                        volumeStatus = volumeHostRef.getDownloadPercent() + "% Uploaded";
+	                    }
+	                    volResponse.setState("Uploading");
+	                } else {
+	                    volumeStatus = volumeHostRef.getErrorString();
+	                    if(volumeHostRef.getDownloadState() == VMTemplateHostVO.Status.NOT_DOWNLOADED){
+	                        volResponse.setState("UploadNotStarted");
+	                    }else {
+	                        volResponse.setState("UploadError");
+	                    }
+	                }
+	                volResponse.setStatus(volumeStatus);
+	            } else if (volumeHostRef.getDownloadState() == VMTemplateHostVO.Status.DOWNLOADED) {
+	                volResponse.setStatus("Upload Complete");
+	                volResponse.setState("Uploaded");
+	            } else {
+	                volResponse.setStatus("Successfully Installed");
+	            }
+	        }
+        }
+        
+        if (details.contains(VolumeDetails.account) || details.contains(VolumeDetails.all)){
+        	populateOwner(volResponse, volume);
+        }
 
         if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
             volResponse.setServiceOfferingId(volume.getDiskOfferingId());
         } else {
             volResponse.setDiskOfferingId(volume.getDiskOfferingId());
         }
-
-        DiskOfferingVO diskOffering = ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
-        if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
-            volResponse.setServiceOfferingName(diskOffering.getName());
-            volResponse.setServiceOfferingDisplayText(diskOffering.getDisplayText());
-        } else {
-            volResponse.setDiskOfferingName(diskOffering.getName());
-            volResponse.setDiskOfferingDisplayText(diskOffering.getDisplayText());
+        
+        if (details.contains(VolumeDetails.disk_offering) || details.contains(VolumeDetails.all)){
+	        DiskOfferingVO diskOffering = ApiDBUtils.findDiskOfferingById(volume.getDiskOfferingId());
+	        if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
+	            volResponse.setServiceOfferingName(diskOffering.getName());
+	            volResponse.setServiceOfferingDisplayText(diskOffering.getDisplayText());
+	        } else {
+	            volResponse.setDiskOfferingName(diskOffering.getName());
+	            volResponse.setDiskOfferingDisplayText(diskOffering.getDisplayText());
+	        }
+	        volResponse.setStorageType(diskOffering.getUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
         }
-        volResponse.setStorageType(diskOffering.getUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
-
-        Long poolId = volume.getPoolId();
-        String poolName = (poolId == null) ? "none" : ApiDBUtils.findStoragePoolById(poolId).getName();
-        volResponse.setStoragePoolName(poolName);
+        
+        if (details.contains(VolumeDetails.storage_type) || details.contains(VolumeDetails.all)){
+	        Long poolId = volume.getPoolId();
+	        String poolName = (poolId == null) ? "none" : ApiDBUtils.findStoragePoolById(poolId).getName();
+	        volResponse.setStoragePoolName(poolName);
+        }
         // volResponse.setSourceId(volume.getSourceId());
         // if (volume.getSourceType() != null) {
         // volResponse.setSourceType(volume.getSourceType().toString());
         // }
 
-        // return hypervisor for ROOT and Resource domain only
-        Account caller = UserContext.current().getCaller();
-        if ((caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) && volume.getState() != Volume.State.UploadOp) {
-            volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());
+        if (details.contains(VolumeDetails.all)){
+	        // return hypervisor for ROOT and Resource domain only
+	        Account caller = UserContext.current().getCaller();
+	        if ((caller.getType() == Account.ACCOUNT_TYPE_ADMIN || caller.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) && volume.getState() != Volume.State.UploadOp) {
+	            volResponse.setHypervisor(ApiDBUtils.getVolumeHyperType(volume.getId()).toString());
+	        }
+	
+	        boolean isExtractable = true;
+	        if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk dont have any template dependence.
+	            VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
+	            if (template != null) { // For ISO based volumes template = null and we allow extraction of all ISO based
+	                // volumes
+	                isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
+	            }
+	        }
+	        volResponse.setExtractable(isExtractable);
+	
+	        //set tag information
+	        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Volume, volume.getId());
+	        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+	        for (ResourceTag tag : tags) {
+	            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
+	            tagResponses.add(tagResponse);
+	        }
+	        volResponse.setTags(tagResponses);
         }
 
-        volResponse.setAttached(volume.getAttached());
-        volResponse.setDestroyed(volume.getState() == Volume.State.Destroy);
-        boolean isExtractable = true;
-        if (volume.getVolumeType() != Volume.Type.DATADISK) { // Datadisk dont have any template dependence.
-            VMTemplateVO template = ApiDBUtils.findTemplateById(volume.getTemplateId());
-            if (template != null) { // For ISO based volumes template = null and we allow extraction of all ISO based
-                // volumes
-                isExtractable = template.isExtractable() && template.getTemplateType() != Storage.TemplateType.SYSTEM;
-            }
-        }
-
-        //set tag information
-        List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(TaggedResourceType.Volume, volume.getId());
-        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
-        for (ResourceTag tag : tags) {
-            ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
-            tagResponses.add(tagResponse);
-        }
-        volResponse.setTags(tagResponses);
-
-        volResponse.setExtractable(isExtractable);
         volResponse.setObjectName("volume");
         return volResponse;
     }

@@ -409,6 +409,10 @@ public class ApiConstants {
     public enum VMDetails {
         all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min;
     }
+    
+    public enum VolumeDetails {
+        all, vm, account, storage_type, disk_offering, min;
+    }
 
     public enum LDAPParams {
         hostname, port, usessl, queryfilter, searchbase, dn, passwd, truststore, truststorepass;

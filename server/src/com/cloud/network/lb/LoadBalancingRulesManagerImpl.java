@@ -248,7 +248,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         return null;
     }
 
-    private LbAutoScaleVmGroup getLbAutoScaleVmGroup(AutoScaleVmGroup vmGroup) {
+    private LbAutoScaleVmGroup getLbAutoScaleVmGroup(AutoScaleVmGroup vmGroup, String currentState) {
         List<AutoScaleVmGroupPolicyMapVO> vmGroupPolicyMapList = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(vmGroup.getId());
         List<LbAutoScalePolicy> autoScalePolicies = new ArrayList<LbAutoScalePolicy>();
         for (AutoScaleVmGroupPolicyMapVO vmGroupPolicyMap : vmGroupPolicyMapList) {
@@ -286,11 +286,11 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         }
 
         LbAutoScaleVmProfile lbAutoScaleVmProfile = new LbAutoScaleVmProfile(autoScaleVmProfile, apiKey, secretKey, csUrl, zoneId, domainId, serviceOfferingId, templateId);
-        return new LbAutoScaleVmGroup(vmGroup, autoScalePolicies, lbAutoScaleVmProfile);
+        return new LbAutoScaleVmGroup(vmGroup, autoScalePolicies, lbAutoScaleVmProfile, currentState);
     }
 
-    private boolean applyAutoScaleConfig(LoadBalancerVO lb, AutoScaleVmGroupVO vmGroup) throws ResourceUnavailableException {
-        LbAutoScaleVmGroup lbAutoScaleVmGroup = getLbAutoScaleVmGroup(vmGroup);
+    private boolean applyAutoScaleConfig(LoadBalancerVO lb, AutoScaleVmGroupVO vmGroup, String currentState) throws ResourceUnavailableException {
+        LbAutoScaleVmGroup lbAutoScaleVmGroup = getLbAutoScaleVmGroup(vmGroup, currentState);
         /* Regular config like destinations need not be packed for applying autoscale config as of today.*/
         LoadBalancingRule rule = new LoadBalancingRule(lb, null, null);
         rule.setAutoScaleVmGroup(lbAutoScaleVmGroup);
@@ -312,7 +312,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
 
     @Override
     @DB
-    public boolean configureLbAutoScaleVmGroup(long vmGroupid) {
+    public boolean configureLbAutoScaleVmGroup(long vmGroupid, String currentState) throws ResourceUnavailableException {
         AutoScaleVmGroupVO vmGroup = _autoScaleVmGroupDao.findById(vmGroupid);
         boolean success = false;
 
@@ -331,17 +331,17 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         }
 
         try {
-            success = applyAutoScaleConfig(loadBalancer, vmGroup);
+            success = applyAutoScaleConfig(loadBalancer, vmGroup, currentState);
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to configure AutoScaleVmGroup to the lb rule: " + loadBalancer.getId() + " because resource is unavaliable:", e);
+            if (isRollBackAllowedForProvider(loadBalancer)) {
+                loadBalancer.setState(backupState);
+                _lbDao.persist(loadBalancer);
+                s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + " lb state rolback while creating AutoscaleVmGroup");
+            }
         } finally {
             if (!success) {
                 s_logger.warn("Failed to configure LB Auto Scale Vm Group with Id:" + vmGroupid);
-                if (isRollBackAllowedForProvider(loadBalancer)) {
-                    loadBalancer.setState(backupState);
-                    _lbDao.persist(loadBalancer);
-                    s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + " lb state rolback while creating AutoscaleVmGroup");
-                }
             }
         }
 
@@ -854,7 +854,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancerId)) {
                     // Get the associated VmGroup
                     AutoScaleVmGroupVO vmGroup = _autoScaleVmGroupDao.listByAll(loadBalancerId, null).get(0);
-                    if (!applyAutoScaleConfig(lb, vmGroup)) {
+                    if (!applyAutoScaleConfig(lb, vmGroup, vmGroup.getState())) {
                         s_logger.warn("Unable to apply the autoscale config");
                         return false;
                     }

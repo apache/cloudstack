@@ -13,6 +13,7 @@
 package com.cloud.api.commands;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -24,7 +25,9 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VolumeResponse;
+import com.cloud.api.ApiConstants.VolumeDetails;
 import com.cloud.async.AsyncJob;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.Volume;
 
 @Implementation(description="Lists all volumes.", responseObject=VolumeResponse.class)
@@ -63,6 +66,10 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.LONG, description="the ID of the availability zone")
     private Long zoneId;
     
+    @Parameter(name=ApiConstants.DETAILS, type=CommandType.LIST, collectionType=CommandType.STRING, description="comma separated list of volume details requested, " + 
+    				"value can be a comma separated list of [all, vm, account, storage_type, disk_offering, min]. If no parameter is passed in, the details will be defaulted to all" )
+    private List<String> viewDetails;
+        
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -96,6 +103,26 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
         return zoneId;
     }
     
+    public EnumSet<VolumeDetails> getDetails() throws InvalidParameterValueException {
+        EnumSet<VolumeDetails> dv;
+        if (viewDetails==null || viewDetails.size() <=0){
+            dv = EnumSet.of(VolumeDetails.all);
+        }
+        else {
+            try {
+                ArrayList<VolumeDetails> dc = new ArrayList<VolumeDetails>();
+                for (String detail: viewDetails){
+                    dc.add(VolumeDetails.valueOf(detail));
+                }
+                dv = EnumSet.copyOf(dc);
+            }
+            catch (IllegalArgumentException e){
+                throw new InvalidParameterValueException("The details parameter contains a non permitted value. The allowed values are " + EnumSet.allOf(VolumeDetails.class), null);
+            }
+        }
+        return dv;
+    }
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -117,7 +144,7 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
         ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
         List<VolumeResponse> volResponses = new ArrayList<VolumeResponse>();
         for (Volume volume : volumes) {
-            VolumeResponse volResponse = _responseGenerator.createVolumeResponse(volume);
+            VolumeResponse volResponse = _responseGenerator.createVolumeResponse(volume, getDetails());
             volResponse.setObjectName("volume");
             volResponses.add(volResponse);
         }

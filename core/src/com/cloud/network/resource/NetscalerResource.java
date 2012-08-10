@@ -233,8 +233,25 @@ public class NetscalerResource implements ServerResource {
         }
     }
 
+    private void logout() throws ExecutionException {
+        try {
+            if (!_isSdx) {
+                if(_netscalerService != null) {
+                    _netscalerService.logout();
+                }
+            } else {
+                if(_netscalerSdxService != null) {
+                    _netscalerSdxService.logout();
+                }
+            }
+        } catch (Exception e) {
+        }
+    }
+
     private void login() throws ExecutionException {
         try {
+            // If a previous session was open, log it out.
+            logout();
             if (!_isSdx) {
                 _netscalerService = new com.citrix.netscaler.nitro.service.nitro_service(_ip, "https");
                 _netscalerService.set_credential(_username, _password);
@@ -246,9 +263,9 @@ public class NetscalerResource implements ServerResource {
             } else {
                 _netscalerSdxService = new com.citrix.sdx.nitro.service.nitro_service(_ip, "https");
                 _netscalerSdxService.set_credential(_username, _password);
-                com.citrix.sdx.nitro.resource.base.login login  = _netscalerSdxService.login();
+                com.citrix.sdx.nitro.resource.base.login login = _netscalerSdxService.login();
                 if (login == null) {
-                    throw new ExecutionException ("Failed to log in to Netscaler device at " + _ip + " due to error " + apiCallResult.errorcode + " and message " + apiCallResult.message);
+                    throw new ExecutionException ("Failed to log in to Netscaler SDX device at " + _ip + " due to error " + apiCallResult.errorcode + " and message " + apiCallResult.message);
                 }
             }
         } catch (nitro_exception e) {
@@ -1353,7 +1370,7 @@ public class NetscalerResource implements ServerResource {
     }
 
     private void addLBVirtualServer(String virtualServerName, String publicIp, int publicPort, String lbAlgorithm, String protocol, StickinessPolicyTO[] stickyPolicies, AutoScaleVmGroupTO vmGroupTO)
-            throws ExecutionException {
+    throws ExecutionException {
         try {
             String lbMethod;
             if ("roundrobin".equalsIgnoreCase(lbAlgorithm)) {
@@ -1487,8 +1504,13 @@ public class NetscalerResource implements ServerResource {
             disableAutoScaleConfig(loadBalancer, false);
         } else {
             ///// This should never happen
-            throw new ExecutionException("Unknown vmGroup State :" + vmGroupTO.getState());
+            throw new ExecutionException("Unknown AutoScale Vm Group State :" + vmGroupTO.getState());
         }
+        saveConfiguration();
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Successfully executed resource AutoScaleConfig");
+        }
+
     }
 
     @SuppressWarnings("static-access")
@@ -1551,7 +1573,7 @@ public class NetscalerResource implements ServerResource {
         String nsVirtualServerName  = generateNSVirtualServerName(srcIp, srcPort);
         String serviceGroupName = generateAutoScaleServiceGroupName(vmGroupIdentifier);
 
-        if(loadBalancerTO.getAutoScaleVmGroupTO().getState().equals("enabled")) {
+        if(loadBalancerTO.getAutoScaleVmGroupTO().getCurrentState().equals("enabled")) {
             disableAutoScaleConfig(loadBalancerTO, false);
         }
 
@@ -1696,7 +1718,7 @@ public class NetscalerResource implements ServerResource {
                 ApiConstants.SERVICE_OFFERING_ID + "=" + profileTO.getServiceOfferingId()+ "&" +
                 ApiConstants.TEMPLATE_ID + "=" + profileTO.getTemplateId()+ "&" +
                 ((profileTO.getOtherDeployParams() == null)? "" : (profileTO.getOtherDeployParams() + "&")) +
-                        "lbruleid=" + loadBalancerTO.getUuid();
+                "lbruleid=" + loadBalancerTO.getUuid();
                 scaleUpAction.set_parameters(scaleUpParameters);
                 scaleUpAction.add(_netscalerService, scaleUpAction);
             } catch (Exception e) {
@@ -1715,7 +1737,7 @@ public class NetscalerResource implements ServerResource {
                 scaleDownAction.set_profilename(profileName);
                 scaleDownAction.set_quiettime(scaleDownQuietTime);
                 String scaleDownParameters = "command=destroyVirtualMachine" + "&" +
-                        "lbruleid=" + loadBalancerTO.getUuid();
+                "lbruleid=" + loadBalancerTO.getUuid();
                 scaleDownAction.set_parameters(scaleDownParameters);
                 scaleDownAction.set_vmdestroygraceperiod(destroyVmGracePeriod);
                 scaleDownAction.add(_netscalerService, scaleDownAction);
@@ -1825,7 +1847,7 @@ public class NetscalerResource implements ServerResource {
 
                             // bind lb monitor lb_metric_table_mon -metric cpu -metricThreshold 1
                             // lbmonitor_lbmetrictable_binding monitor_metrictable_binding = new
-// lbmonitor_lbmetrictable_binding();
+                            // lbmonitor_lbmetrictable_binding();
                             lbmonitor_metric_binding monitor_metric_binding = new lbmonitor_metric_binding();
                             ;
                             try {
@@ -1841,7 +1863,7 @@ public class NetscalerResource implements ServerResource {
                         }
                         // SYS.VSERVER("abcd").SNMP_TABLE(0).AVERAGE_VALUE.GT(80)
                         int counterIndex = snmpMetrics.get(counterName); // TODO: temporary fix. later on counter name
-// will be added as a param to SNMP_TABLE.
+                        // will be added as a param to SNMP_TABLE.
                         formatter.format("SYS.VSERVER(\"%s\").SNMP_TABLE(%d).AVERAGE_VALUE.%s(%d)",nsVirtualServerName, counterIndex, operator, threshold);
                     }
                     else if (counterTO.getSource().equals("netscaler"))
@@ -2047,7 +2069,7 @@ public class NetscalerResource implements ServerResource {
         // For now it is bound globally.
         // bind timer trigger lb_astimer -policyName lb_policy_scaleUp -vserver lb -priority 1 -samplesize 5
         // TODO: later bind to lbvserver. bind timer trigger lb_astimer -policyName lb_policy_scaleUp -vserver lb
-// -priority 1 -samplesize 5
+        // -priority 1 -samplesize 5
         // -thresholdsize 5
         nstimer_autoscalepolicy_binding timer_policy_binding = new nstimer_autoscalepolicy_binding();
         int sampleSize = duration/interval;
@@ -2055,7 +2077,7 @@ public class NetscalerResource implements ServerResource {
             timer_policy_binding.set_name(timerName);
             timer_policy_binding.set_policyname(policyName);
             // timer_policy_binding.set_global("DEFAULT"); // vserver name is present in the expression, this is default
-// now
+            // now
             timer_policy_binding.set_samplesize(sampleSize);
             timer_policy_binding.set_threshold(sampleSize); // We are not exposing this parameter as of now.
             // i.e. n(m) is not exposed to CS user. So thresholdSize == sampleSize

@@ -2536,6 +2536,9 @@
                             var stickyData = {};
                             var lbInstances = [];
 
+                            // Passing _hideFields array will disable specified fields for this row
+                            //item._hideFields = ['autoScale'];
+
                             // Get sticky data
                             $.ajax({
                               url: createURL('listLBStickinessPolicies'),
@@ -2610,8 +2613,7 @@
                           });
 
                           args.response.success({
-                            data: loadBalancerData,
-                            //hideFields: ['autoScale']
+                            data: loadBalancerData
                           });
                         }
                       });
