@@ -190,8 +190,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             boolean assignToVpcNtwk =  network.getVpcId() != null 
                     && ipAddress.getVpcId() != null && ipAddress.getVpcId().longValue() == network.getVpcId();
             if (assignToVpcNtwk) {
-                //set networkId just for verification purposes
-                ipAddress.setAssociatedWithNetworkId(networkId);
                 _networkMgr.checkIpForService(ipAddress, Service.PortForwarding, networkId);
 
                 s_logger.debug("The ip is not associated with the VPC network id="+ networkId + ", so assigning");
