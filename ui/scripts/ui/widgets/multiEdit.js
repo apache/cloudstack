@@ -707,6 +707,7 @@
         });
         $select.appendTo($td);
         field.select({
+          context: context,
           $select: $select,
           $form: $multiForm,
           response: {
