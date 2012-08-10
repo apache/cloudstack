@@ -415,7 +415,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.2"))
             return new XenServer602Resource();
 
-        if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.9"))
+        if (prodBrand.equals("XenServer") && prodVersion.startsWith("6.0.9"))
             return new XenServer602Resource();
         
         if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.100"))  {
@@ -563,7 +563,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             resource = XenServer600Resource.class.getName();
         } else if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.2")) {
             resource = XenServer602Resource.class.getName();
-        } else if (prodBrand.equals("XenServer") && prodVersion.equals("6.0.9")) {
+        } else if (prodBrand.equals("XenServer") && prodVersion.startsWith("6.0.9")) {
             resource = XenServer602Resource.class.getName();
         } else if(prodBrand.equals("XenServer") && prodVersion.equals("5.6.100"))  {
             String prodVersionTextShort = details.get("product_version_text_short").trim();
