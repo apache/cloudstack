@@ -35,5 +35,4 @@
     <xi:include href="event-types.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="alerts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="time-zones.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="contacting-support.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </chapter>
