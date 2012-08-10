@@ -6802,7 +6802,7 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   text-shadow: 0px 1px #FFFFFF;
 }
 
-.multi-edit .disabled .button.custom-action {
+.multi-edit .disabled .button.add-vm {
   /*+opacity:50%;*/
   filter: alpha(opacity=50);
   -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
