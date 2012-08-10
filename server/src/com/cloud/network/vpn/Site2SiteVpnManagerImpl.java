@@ -20,6 +20,8 @@ import com.cloud.api.commands.ListVpnCustomerGatewaysCmd;
 import com.cloud.api.commands.ListVpnGatewaysCmd;
 import com.cloud.api.commands.ResetVpnConnectionCmd;
 import com.cloud.api.commands.UpdateVpnCustomerGatewayCmd;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -47,7 +49,10 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserStatisticsDao;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
@@ -74,10 +79,18 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     @Inject AccountManager _accountMgr;
     
     String _name;
+    int _connLimit;
+    int _subnetsLimit;
     
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
+        
+        ComponentLocator locator = ComponentLocator.getCurrentLocator();
+        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
+        Map<String, String> configs = configDao.getConfiguration(params);
+        _connLimit = NumbersUtil.parseInt(configs.get(Config.Site2SiteVpnConnectionPerVpnGatewayLimit.key()), 4);
+        _subnetsLimit = NumbersUtil.parseInt(configs.get(Config.Site2SiteVpnSubnetsPerCustomerGatewayLimit.key()), 10);
         return true;
     }
 
@@ -126,8 +139,11 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
     }
 
     protected void checkCustomerGatewayCidrList(String guestCidrList) {
-        // Remote sub nets cannot overlap themselves
         String[] cidrList = guestCidrList.split(",");
+        if (cidrList.length > _subnetsLimit) {
+            throw new InvalidParameterValueException("Too many subnets of customer gateway! The limit is " + _subnetsLimit);
+        }
+        // Remote sub nets cannot overlap themselves
         for (int i = 0; i < cidrList.length - 1; i ++) {
             for (int j = i + 1; j < cidrList.length; j ++) {
                 if (NetUtils.isNetworksOverlap(cidrList[i], cidrList[j])) {
@@ -254,6 +270,9 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         
         // We also need to check if the new connection's remote CIDR is overlapped with existed connections
         List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByVpnGatewayId(vpnGatewayId);
+        if (conns.size() >= _connLimit) {
+            throw new InvalidParameterValueException("There are too many VPN connections with current VPN gateway! The limit is " + _connLimit);
+        }
         for (Site2SiteVpnConnectionVO vc : conns) {
             if (vc == null) {
                 continue;
