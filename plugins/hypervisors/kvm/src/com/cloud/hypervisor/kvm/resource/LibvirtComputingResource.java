@@ -25,6 +25,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -211,7 +212,7 @@ import com.cloud.vm.VirtualMachineName;
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
  * the libvirt API
- * 
+ *
  * @config {@table || Param Name | Description | Values | Default || ||
  *         hypervisor.type | type of local hypervisor | string | kvm || ||
  *         hypervisor.uri | local hypervisor to connect to | URI |
@@ -261,6 +262,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
     private String _mountPoint = "/mnt";
     StorageLayer _storage;
     private KVMStoragePoolManager _storagePoolMgr;
+    private VifDriver _vifDriver;
 
     private static final class KeyValueInterpreter extends OutputInterpreter {
         private final Map<String, String> map = new HashMap<String, String>();
@@ -314,7 +316,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements
     private boolean _can_bridge_firewall;
     protected String _localStoragePath;
     protected String _localStorageUUID;
-    private Pair<String, String> _pifs;
+    private Map <String, String> _pifs = new HashMap<String, String>();
+    private Map<String, Map<String, String>> hostNetInfo = new HashMap<String, Map<String, String>>();
     private final Map<String, vmStats> _vmStats = new ConcurrentHashMap<String, vmStats>();
 
     protected boolean _disconnected = true;
@@ -679,26 +682,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements
             }
         }
 
-        try {
-            createControlNetwork();
-        } catch (LibvirtException e) {
-            throw new ConfigurationException(e.getMessage());
-        }
-
-        _pifs = getPifs();
-        if (_pifs.first() == null) {
+        getPifs();
+        if (_pifs.get("private") == null) {
             s_logger.debug("Failed to get private nic name");
             throw new ConfigurationException("Failed to get private nic name");
         }
 
-        if (_pifs.second() == null) {
+        if (_pifs.get("public") == null) {
             s_logger.debug("Failed to get public nic name");
             throw new ConfigurationException("Failed to get public nic name");
         }
-        s_logger.debug("Found pif: " + _pifs.first() + " on " + _privBridgeName
-                + ", pif: " + _pifs.second() + " on " + _publicBridgeName);
+        s_logger.debug("Found pif: " + _pifs.get("private") + " on " + _privBridgeName
+                + ", pif: " + _pifs.get("public") + " on " + _publicBridgeName);
 
-        _can_bridge_firewall = can_bridge_firewall(_pifs.second());
+
+        _can_bridge_firewall = can_bridge_firewall(_pifs.get("public"));
 
         _localGateway = Script
                 .runSimpleBashScript("ip route |grep default|awk '{print $3}'");
@@ -716,7 +714,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         if (_migrateSpeed == -1) {
             //get guest network device speed
             _migrateSpeed = 0;
-            String speed = Script.runSimpleBashScript("ethtool " + _pifs.second() + " |grep Speed | cut -d \\  -f 2");
+            String speed = Script.runSimpleBashScript("ethtool " + _pifs.get("public") + " |grep Speed | cut -d \\  -f 2");
             if (speed != null) {
                 String[] tokens = speed.split("M");
                 if (tokens.length == 2) {
@@ -725,16 +723,47 @@ public class LibvirtComputingResource extends ServerResourceBase implements
                     } catch (Exception e) {
                         
                     }
-                    s_logger.debug("device " + _pifs.second() + " has speed: " + String.valueOf(_migrateSpeed));
+                    s_logger.debug("device " + _pifs.get("public") + " has speed: " + String.valueOf(_migrateSpeed));
                 }
             }
             params.put("vm.migrate.speed", String.valueOf(_migrateSpeed));
         }
+        
+        Map<String, String> bridges = new HashMap<String, String>();
+        bridges.put("linklocal", _linkLocalBridgeName);
+        bridges.put("public", _publicBridgeName);
+        bridges.put("private", _privBridgeName);
+        bridges.put("guest", _guestBridgeName);
+
+        params.put("libvirt.host.bridges", (Object) bridges);
+        params.put("libvirt.host.pifs", (Object) _pifs);
+
+        // Load the vif driver
+        String vifDriverName = (String) params.get("libvirt.vif.driver");
+        if (vifDriverName == null) {
+        	s_logger.info("No libvirt.vif.driver specififed. Defaults to BridgeVifDriver.");
+        	vifDriverName = "com.cloud.hypervisor.kvm.resource.BridgeVifDriver";
+        }
+
+        params.put("libvirt.computing.resource", (Object) this);
+
+        try {
+        	Class<?> clazz = Class.forName(vifDriverName);
+        	_vifDriver = (VifDriver) clazz.newInstance();
+        	_vifDriver.configure(params);
+        } catch (ClassNotFoundException e) {
+        	throw new ConfigurationException("Unable to find class for libvirt.vif.driver " + e);
+        } catch (InstantiationException e) {
+        	throw new ConfigurationException("Unable to instantiate class for libvirt.vif.driver " + e);
+        } catch (Exception e) {
+        	throw new ConfigurationException("Failed to initialize libvirt.vif.driver " + e);
+        }
+
 
         return true;
     }
 
-    private Pair<String, String> getPifs() {
+    private void getPifs() {
         /* get pifs from bridge */
         String pubPif = null;
         String privPif = null;
@@ -759,7 +788,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements
                                 + privPif + " | awk {'print $2'}");
             }
         }
-        return new Pair<String, String>(privPif, pubPif);
+        _pifs.put("private", privPif);
+        _pifs.put("public", pubPif);
     }
 
     private boolean checkNetwork(String networkName) {
@@ -1201,9 +1231,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements
             nicTO.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanId));
         }
 
-        InterfaceDef nic = createVif(nicTO, InterfaceDef.nicModel.VIRTIO);
         Domain vm = getDomain(conn, vmName);
-        vm.attachDevice(nic.toString());
+        vm.attachDevice(_vifDriver.plug(nicTO, "Other PV").toString());
     }
 
     public Answer execute(IpAssocCommand cmd) {
@@ -2091,25 +2120,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         try {
             Connect conn = LibvirtConnection.getConnection();
             for (NicTO nic : nics) {
-                String vlanId = null;
-                if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
-                    URI broadcastUri = nic.getBroadcastUri();
-                    vlanId = broadcastUri.getHost();
-                }
-                if (nic.getType() == TrafficType.Guest) {
-                    if (nic.getBroadcastType() == BroadcastDomainType.Vlan
-                            && !vlanId.equalsIgnoreCase("untagged")) {
-                        createVlanBr(vlanId, _pifs.first());
-                    }
-                } else if (nic.getType() == TrafficType.Control) {
-                    /* Make sure the network is still there */
-                    createControlNetwork();
-                } else if (nic.getType() == TrafficType.Public) {
-                    if (nic.getBroadcastType() == BroadcastDomainType.Vlan
-                            && !vlanId.equalsIgnoreCase("untagged")) {
-                        createVlanBr(vlanId, _pifs.second());
-                    }
-                }
+                _vifDriver.plug(nic, null);
             }
 
             /* setup disks, e.g for iso */
@@ -2131,20 +2142,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements
             return new PrepareForMigrationAnswer(cmd, e.toString());
         } catch (URISyntaxException e) {
             return new PrepareForMigrationAnswer(cmd, e.toString());
-        }
-    }
-
-    public void createVnet(String vnetId, String pif)
-            throws InternalErrorException {
-        final Script command = new Script(_modifyVlanPath, _timeout, s_logger);
-        command.add("-v", vnetId);
-        command.add("-p", pif);
-        command.add("-o", "add");
-
-        final String result = command.execute();
-        if (result != null) {
-            throw new InternalErrorException("Failed to create vnet " + vnetId
-                    + ": " + result);
         }
     }
 
@@ -2331,6 +2328,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements
                             && disk.getDiskPath() != null)
                         cleanupDisk(conn, disk);
                 }
+            }
+
+            List<InterfaceDef> ifaces = getInterfaces(conn, vmName);
+            for(InterfaceDef iface: ifaces){
+                _vifDriver.unplug(iface);
             }
 
             final String result2 = cleanupVnet(conn, cmd.getVnet());
@@ -2595,7 +2597,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
                 return arg0.getDeviceId() > arg1.getDeviceId() ? 1 : -1;
             }
         });
-        
+
         for (VolumeTO volume : disks) {
             KVMPhysicalDisk physicalDisk = null;
             KVMStoragePool pool = null;
@@ -2701,7 +2703,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
         patchDisk.defFileBasedDisk(datadiskPath, 1, rootDisk.getBusType(),
                 DiskDef.diskFmtType.RAW);
-        
+
         disks.add(patchDisk);
 
         String bootArgs = vmSpec.getBootArgs();
@@ -2709,59 +2711,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         patchSystemVm(bootArgs, datadiskPath, vmName);
     }
 
-    private String createVlanBr(String vlanId, String nic)
-            throws InternalErrorException {
-        String brName = setVnetBrName(vlanId);
-        createVnet(vlanId, nic);
-        return brName;
-    }
-
-    private InterfaceDef createVif(NicTO nic,
-                                   InterfaceDef.nicModel model) throws InternalErrorException,
-            LibvirtException {
-        InterfaceDef intf = new InterfaceDef();
-
-        String vlanId = null;
-        if (nic.getBroadcastType() == BroadcastDomainType.Vlan) {
-            URI broadcastUri = nic.getBroadcastUri();
-            vlanId = broadcastUri.getHost();
-        }
-
-        if (nic.getType() == TrafficType.Guest) {
-            if (nic.getBroadcastType() == BroadcastDomainType.Vlan
-                    && !vlanId.equalsIgnoreCase("untagged")) {
-                String brName = createVlanBr(vlanId, _pifs.first());
-                intf.defBridgeNet(brName, null, nic.getMac(), model);
-            } else {
-                intf.defBridgeNet(_guestBridgeName, null, nic.getMac(), model);
-            }
-        } else if (nic.getType() == TrafficType.Control) {
-            /* Make sure the network is still there */
-            createControlNetwork();
-            intf.defBridgeNet(_linkLocalBridgeName, null, nic.getMac(), model);
-        } else if (nic.getType() == TrafficType.Public) {
-            if (nic.getBroadcastType() == BroadcastDomainType.Vlan
-                    && !vlanId.equalsIgnoreCase("untagged")) {
-                String brName = createVlanBr(vlanId, _pifs.second());
-                intf.defBridgeNet(brName, null, nic.getMac(), model);
-            } else {
-                intf.defBridgeNet(_publicBridgeName, null, nic.getMac(), model);
-            }
-        } else if (nic.getType() == TrafficType.Management) {
-            intf.defBridgeNet(_privBridgeName, null, nic.getMac(), model);
-        } else if (nic.getType() == TrafficType.Storage) {
-            String storageBrName = nic.getName() == null ? _privBridgeName
-                    : nic.getName();
-            intf.defBridgeNet(storageBrName, null, nic.getMac(), model);
-        }
-
-        return intf;
-    }
-
     private void createVif(LibvirtVMDef vm, NicTO nic)
             throws InternalErrorException, LibvirtException {
         vm.getDevices().addDevice(
-                createVif(nic, getGuestNicModel(vm.getGuestOSType())));
+                _vifDriver.plug(nic, vm.getGuestOSType()).toString());
     }
 
     protected CheckSshAnswer execute(CheckSshCommand cmd) {
@@ -3610,7 +3563,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         }
     }
 
-    private boolean isGuestPVEnabled(String guestOS) {
+    boolean isGuestPVEnabled(String guestOS) {
         if (guestOS == null) {
             return false;
         }
@@ -3660,10 +3613,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         } else {
             return DiskDef.diskBus.IDE;
         }
-    }
-
-    private String setVnetBrName(String vnetId) {
-        return "cloudVirBr" + vnetId;
     }
 
     private String getVnetIdFromBrName(String vnetBrName) {
@@ -4068,10 +4017,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         }
 
         return new Pair<Double, Double>(rx, tx);
-    }
-
-    private void createControlNetwork() throws LibvirtException {
-        _virtRouterResource.createControlNetwork(_linkLocalBridgeName);
     }
 
     private Answer execute(NetworkRulesSystemVmCommand cmd) {
