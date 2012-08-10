@@ -65,6 +65,42 @@
       },
       'startport': { edit: true, label: 'label.start.port' },
       'endport': { edit: true, label: 'label.end.port' },
+      'networkid': {
+        label: 'Select Tier',
+        select: function(args) {
+          var data = {
+            listAll: true,
+            vpcid: args.context.vpc[0].id
+          };
+
+          // Only show selected tier, if viewing from detail view
+          if (args.context.networks &&
+              args.context.networks[0] &&
+              args.context.networks[0].vpcid) {
+            $.extend(data, {
+              id: args.context.networks[0].id
+            });
+          }
+          
+          //  Ajax Call to display the Tiers
+          $.ajax({
+            url: createURL('listNetworks'),
+            data: data,
+            success: function(json) {
+              var networks = json.listnetworksresponse.network;
+              
+              args.response.success({
+                data: $(networks).map(function(index, network) {
+                  return {
+                    name: network.id,
+                    description: network.name
+                  };
+                })
+              });
+            }
+          });
+        }
+      },
       'icmptype': { edit: true, label: 'ICMP.type', isDisabled: true },
       'icmpcode': { edit: true, label: 'ICMP.code', isDisabled: true },
       'traffictype' : {
@@ -89,16 +125,31 @@
     add: {
       label: 'Add',
       action: function(args) {
+        var $multi = args.$multi;
+        
         $.ajax({
           url: createURL('createNetworkACL'),
           data: $.extend(args.data, {
-            networkid: args.context.networks[0].id
+            networkid: args.data.networkid
           }),
           dataType: 'json',
           success: function(data) {
             args.response.success({
               _custom: {
-                jobId: data.createnetworkaclresponse.jobid
+                jobId: data.createnetworkaclresponse.jobid,
+                getUpdatedItem: function(json) {
+                  var networkName = $multi.find('select[name=networkid] option[value=' + args.data.networkid + ']').html();
+                  var data = $.extend(json.queryasyncjobresultresponse.jobresult.networkacl, {
+                    networkid: networkName
+                  });
+                  var aclRules = $multi.data('acl-rules');
+                  
+                  aclRules.push(data);
+                  $multi.data('acl-rules', aclRules);
+                  $(window).trigger('cloudStack.fullRefresh');
+
+                  return data;
+                }
               },
               notification: {
                 label: 'Add ACL',
@@ -127,7 +178,10 @@
               var jobID = data.deletenetworkaclresponse.jobid;
               args.response.success({
                 _custom: {
-                  jobId: jobID
+                  jobId: jobID,
+                  getUpdatedItem: function() {
+                    $(window).trigger('cloudStack.fullRefresh');
+                  }
                 },
                 notification: {
                   label: 'Remove ACL',
@@ -143,23 +197,42 @@
       }
     },
     dataProvider: function(args) {
-      $.ajax({
-        url: createURL('listNetworkACLs'),
-        data: {
-          listAll: true,
-          networkid: args.context.networks[0].id
-        },
-        dataType: 'json',
-        async: true,
-        success: function(json) {
-          args.response.success({
-            data: json.listnetworkaclsresponse.networkacl
-          });
-        },
-        error: function(XMLHttpResponse) {
-          args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-        }
-      });
+      var $multi = args.$multi;
+      var data = {
+        vpcid: args.context.vpc[0].id,
+        listAll: true
+      };
+
+      if (!$multi.data('acl-rules')) {
+        $multi.data('acl-rules', []);
+      }
+
+      if (args.context.networks &&
+          args.context.networks[0] &&
+          args.context.networks[0].vpcid) {
+        data.networkid = args.context.networks[0].id;
+
+        $.ajax({
+          url: createURL('listNetworkACLs'),
+          data: data,
+          dataType: 'json',
+          async: true,
+          success: function(json) {
+            args.response.success({
+              data: $(json.listnetworkaclsresponse.networkacl).map(function(index, acl) {
+                return $.extend(acl, {
+                  networkid: args.context.networks[0].name
+                });
+              })
+            });
+          },
+          error: function(XMLHttpResponse) {
+            args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+          }
+        });
+      } else {
+        args.response.success({ data: $multi.data('acl-rules') });
+      }
     }
   };
 
@@ -441,6 +514,54 @@
     ipAddresses: {
       listView: function() {
         return cloudStack.sections.network.sections.ipAddresses;
+      }
+    },
+    acl: {
+      multiEdit: aclMultiEdit,
+      
+      listView: {
+        listView: {
+          id: 'networks',
+          fields: {
+            tierName: { label: 'Tier' },
+            aclTotal: { label: 'ACL Total' }
+          },
+          dataProvider: function(args) {
+            $.ajax({
+              url: createURL('listNetworks'),
+              data: {
+                listAll: true,
+                vpcid: args.context.vpc[0].id
+              },
+              success: function(json) {
+                args.response.success({
+                  data: $.map(json.listnetworksresponse.network, function(tier) {
+                    var aclTotal = 0;
+                    
+                    // Get ACL total
+                    $.ajax({
+                      url: createURL('listNetworkACLs'),
+                      async: false,
+                      data: {
+                        listAll: true,
+                        networkid: tier.id
+                      },
+                      success: function(json) {
+                        aclTotal = json.listnetworkaclsresponse.networkacl ?
+                          json.listnetworkaclsresponse.networkacl.length : 0;
+                      }
+                    });
+                    
+                    return $.extend(tier, {
+                      tierName: tier.name,
+                      aclTotal: aclTotal
+                    });
+                  })
+                });
+              }
+            });
+          }
+        }      
       }
     },
     gateways: {
@@ -1433,7 +1554,7 @@
         isMaximized: true,
         tabs: {
           details: {
-            title: 'label.tier.details',
+            title: 'Network Details',
             preFilter: function(args) {
               var hiddenFields = [];
               var zone;
@@ -1572,6 +1693,22 @@
                   );
                 }
               });
+            }
+          },
+
+          acl: {
+            title: 'Network ACL',
+            custom: function(args) {
+              // Widget renders ACL multi-edit, overriding this fn
+              return $('<div>');
+            }
+          },
+
+          ipAddresses: {
+            title: 'label.menu.ipaddresses',
+            custom: function(args) {
+              // Widget renders IP addresses, overriding this fn
+              return $('<div>');
             }
           },
 
@@ -1931,13 +2068,14 @@
             poll: pollAsyncJobResult
           }
         },
-
-        acl: {
+        
+        // Removing ACL buttons from the tier chart
+        /* acl: {
           label: 'Configure ACL for tier',
           shortLabel: 'ACL',
-          multiEdit: aclMultiEdit
-        },
-
+         multiEdit: aclMultiEdit
+        }, */
+            
         remove: {
           label: 'Remove tier',
           action: function(args) {

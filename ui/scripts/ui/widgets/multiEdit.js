@@ -893,6 +893,7 @@
           context: context,
           data: data,
           itemData: itemData,
+          $multi: $multi,
           response: {
             success: function(successArgs) {
               var notification = successArgs ? successArgs.notification : null;

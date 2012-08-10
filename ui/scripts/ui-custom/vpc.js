@@ -16,21 +16,53 @@
 // under the License. 
 (function($, cloudStack) {
   var elems = {
+    aclDialog: function(args) {
+      var isDialog = args.isDialog;
+      var actionArgs = args.actionArgs;
+      var context = args.context;
+      var $acl = $('<div>').addClass('acl').multiEdit(
+        $.extend(true, {}, actionArgs.multiEdit, {
+          context: context
+        })
+      );
+
+      // Show ACL dialog
+      if (isDialog) {
+        $acl.dialog({
+          title: 'Configure ACL',
+          dialogClass: 'configure-acl',
+          width: 900,
+          height: 600,
+          buttons: {
+            'Done': function() {
+              $(':ui-dialog').remove();
+              $('.overlay').remove();
+            }
+          }
+        });
+      }
+
+      return $acl;
+    },
     vpcConfigureTooltip: function(args) {
+      var context = args.context;
       var $browser = args.$browser;
       var $chart = args.$chart;
       var ipAddresses = args.ipAddresses;
+      var acl = args.acl;
       var gateways = args.gateways;
       var siteToSiteVPN = args.siteToSiteVPN;
       var links = {
         'ip-addresses': 'IP Addresses',
         'gateways': 'Private Gateway',
-        'site-to-site-vpn': 'Site-to-site VPN'
+        'site-to-site-vpn': 'Site-to-site VPN',
+        'network-acls':  'ACLs'
       };
       var $links = $('<ul>').addClass('links');
       var $tooltip = $('<div>').addClass('vpc-configure-tooltip').append(
         $('<div>').addClass('arrow')
       );
+      var tierDetailView = args.tierDetailView;
 
       // Make links
       $.map(links, function(label, id) {
@@ -43,6 +75,37 @@
         // Link event
         $link.click(function() {
           switch (id) {
+          case 'network-acls':
+              $browser.cloudBrowser('addPanel', {
+              title: 'Network ACLs',
+              maximizeIfSelected: true,
+              complete: function($panel) {
+                $panel.listView(
+                  $.extend(true, {}, acl.listView, {
+                    listView: {
+                      actions: {
+                        add: {
+                          label: 'Add network ACL',
+                          action: {
+                            custom: function() {
+                              elems.aclDialog({
+                                isDialog: true,
+                                actionArgs: acl,
+                                context: context
+                              });
+                            }
+                          }
+                        }
+                      },
+                      detailView: tierDetailView
+                    }
+                  }),
+                  { context: acl.context }
+                );
+              }
+            });
+            break;
+
           case 'ip-addresses':
             $browser.cloudBrowser('addPanel', {
               title: 'IP Addresses',
@@ -200,24 +263,30 @@
       return $tooltip;
     },
     vpcConfigureArea: function(args) {
+      var context = args.context;
       var $browser = args.$browser;
       var $chart = args.$chart;
       var ipAddresses = args.ipAddresses;
+      var acl = args.acl;
       var gateways = args.gateways;
       var siteToSiteVPN = args.siteToSiteVPN;
       var $config = $('<div>').addClass('config-area');
       var $configIcon = $('<span>').addClass('icon').html('&nbsp');
-
+      var tierDetailView = args.tierDetailView;
+      
       $config.append($configIcon);
 
       // Tooltip event
       $configIcon.mouseover(function() {
         var $tooltip = elems.vpcConfigureTooltip({
+          context: context,
           $browser: $browser,
           $chart: $chart,
           ipAddresses: ipAddresses,
           gateways: gateways,
-          siteToSiteVPN: siteToSiteVPN
+          acl: acl,
+          siteToSiteVPN: siteToSiteVPN,
+          tierDetailView: tierDetailView
         });
 
         // Make sure tooltip is center aligned with icon
@@ -240,6 +309,8 @@
       return $router;
     },
     tier: function(args) {
+      var ipAddresses = args.ipAddresses;
+      var acl = args.acl;
       var name = args.name;
       var cidr = args.cidr;
       var context = args.context;
@@ -316,7 +387,7 @@
       if (isPlaceholder) {
         $tier.addClass('placeholder');
         $title.html('Create Tier');
-      } else {
+      } else {        
         $title.html(
           cloudStack.concat(name, 8)
         );
@@ -385,6 +456,7 @@
     },
     chart: function(args) {
       var $browser = args.$browser;
+      var acl = args.acl;
       var ipAddresses = args.ipAddresses;
       var gateways = args.gateways;
       var siteToSiteVPN = args.siteToSiteVPN;
@@ -404,11 +476,14 @@
             )
             .append(
               elems.vpcConfigureArea({
+                context: context,
                 $browser: $browser,
                 $chart: $chart,
                 ipAddresses: $.extend(ipAddresses, {context: context}),
                 gateways: $.extend(gateways, {context: context}),
-                siteToSiteVPN: $.extend(siteToSiteVPN, {context: context})
+                siteToSiteVPN: $.extend(siteToSiteVPN, {context: context}),
+                acl: $.extend(acl, {context: context}),
+                tierDetailView: tierDetailView
               })
             );
 
@@ -418,9 +493,11 @@
         }
 
         addTierDialog({
+          ipAddresses: ipAddresses,
           $browser: $browser,
           tierDetailView: tierDetailView,
           $tiers: $tiers,
+          acl: acl,
           context: context,
           actions: actions,
           vmListView: vmListView,
@@ -433,6 +510,8 @@
       if (tiers != null && tiers.length > 0) {
         $(tiers).map(function(index, tier) {
           var $tier = elems.tier({
+            ipAddresses: ipAddresses,
+            acl: acl,
             $browser: $browser,
             detailView: tierDetailView,
             name: tier.name,
@@ -596,22 +675,10 @@
       });
       break;
     case 'acl':
-      // Show ACL dialog
-      $('<div>').addClass('acl').multiEdit(
-        $.extend(true, {}, actionArgs.multiEdit, {
-          context: context
-        })
-      ).dialog({
-        title: 'Configure ACL for tier: ' + $tier.find('.title').attr('title'),
-        dialogClass: 'configure-acl',
-        width: 900,
-        height: 600,
-        buttons: {
-          'Done': function() {
-            $(':ui-dialog').remove();
-            $('.overlay').remove();
-          }
-        }
+      elems.aclDialog({
+        isDialog: true,
+        actionArgs: actionArgs,
+        context: context  
       }).closest('.ui-dialog').overlay();
       break;
     default:
@@ -629,6 +696,8 @@
 
   // Appends a new tier to chart
   var addNewTier = function(args) {
+    var ipAddresses = args.ipAddresses;
+    var acl = args.acl;
     var actions = args.actions;
     var vmListView = args.vmListView;
     var actionPreFilter = args.actionPreFilter;
@@ -636,12 +705,14 @@
     var $browser = args.$browser;
     var tierDetailView = args.tierDetailView;
     var tier = $.extend(args.tier, {
+      ipAddresses: ipAddresses,
       $browser: $browser,
       detailView: tierDetailView,
       context: context,
       vmListView: vmListView,
       actions: actions,
       actionPreFilter: actionPreFilter,
+      acl: acl,
       virtualMachines: []
     });
     var $tiers = args.$tiers;
@@ -656,6 +727,7 @@
 
   // Renders the add tier form, in a dialog
   var addTierDialog = function(args) {
+    var ipAddresses = args.ipAddresses;
     var actions = args.actions;
     var context = args.context;
     var vmListView = args.vmListView;
@@ -663,6 +735,7 @@
     var $tiers = args.$tiers;
     var $browser = args.$browser;
     var tierDetailView = args.tierDetailView;
+    var acl = args.acl;
 
     cloudStack.dialog.createForm({
       context: context,
@@ -686,12 +759,14 @@
                 function(args) {
                   $loading.remove();
                   addNewTier({
+                    ipAddresses: ipAddresses,
                     $browser: $browser,
                     tierDetailView: tierDetailView,
                     context: $.extend(true, {}, context, {
                       networks: [tier]
                     }),
                     tier: tier,
+                    acl: acl,
                     $tiers: $tiers,
                     actions: actions,
                     actionPreFilter: actionPreFilter,
@@ -722,6 +797,7 @@
     var tierArgs = args.tiers;
     var ipAddresses = args.ipAddresses;
     var gateways = args.gateways;
+    var acl = args.acl;
     var siteToSiteVPN = args.siteToSiteVPN;
 
     return function(args) {
@@ -743,12 +819,36 @@
             context: context,
             response: {
               success: function(args) {
+                // Setup detail view tabs
+                var tierDetailView = $.extend(true, {}, tierArgs.detailView, {
+                  tabs: {
+                    acl: {
+                      custom: function(args) {
+                        var $acl = elems.aclDialog({
+                          isDialog: false,
+                          actionArgs: acl,
+                          context: args.context
+                        });
+                        
+                        return $acl;
+                      }
+                    },
+                    ipAddresses: {
+                      custom: function(args) {
+                        return $('<div>').listView(ipAddresses.listView(),
+                                                   {context: args.context});
+                      }
+                    }
+                  }
+                });
+                
                 var tiers = args.tiers;
                 var $chart = elems.chart({
                   $browser: $browser,
                   ipAddresses: ipAddresses,
                   gateways: gateways,
-                  tierDetailView: tierArgs.detailView,
+                  acl: acl,
+                  tierDetailView: tierDetailView,
                   siteToSiteVPN: siteToSiteVPN,
                   vmListView: vmListView,
                   context: context,
