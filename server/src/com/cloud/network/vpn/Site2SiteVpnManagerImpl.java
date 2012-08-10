@@ -125,6 +125,19 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         return gw;
     }
 
+    protected void checkCustomerGatewayCidrList(String guestCidrList) {
+        // Remote sub nets cannot overlap themselves
+        String[] cidrList = guestCidrList.split(",");
+        for (int i = 0; i < cidrList.length - 1; i ++) {
+            for (int j = i + 1; j < cidrList.length; j ++) {
+                if (NetUtils.isNetworksOverlap(cidrList[i], cidrList[j])) {
+                    throw new InvalidParameterValueException("The subnet of customer gateway " + cidrList[i] + " is overlapped with another subnet " +
+                            cidrList[j] + " of customer gateway!");
+                }
+            }
+        }
+    }
+    
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_S2S_VPN_CUSTOMER_GATEWAY_CREATE, eventDescription = "creating s2s customer gateway", create=true)
     public Site2SiteCustomerGateway createCustomerGateway(CreateVpnCustomerGatewayCmd cmd) {
@@ -183,6 +196,9 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         if (_customerGatewayDao.findByName(name) != null) {
             throw new InvalidParameterValueException("The customer gateway with name " + name + " already existed!");
         }
+        
+        checkCustomerGatewayCidrList(guestCidrList);
+        
         Site2SiteCustomerGatewayVO gw = new Site2SiteCustomerGatewayVO(name, owner.getAccountId(), owner.getDomainId(), gatewayIp, guestCidrList, ipsecPsk,
                 ikePolicy, espPolicy, ikeLifetime, espLifetime, dpd);
         _customerGatewayDao.persist(gw);
@@ -226,11 +242,31 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         }
 
         String[] cidrList = customerGateway.getGuestCidrList().split(",");
+        
+        // Remote sub nets cannot overlap VPC's sub net
         String vpcCidr = _vpcDao.findById(vpnGateway.getVpcId()).getCidr();
         for (String cidr : cidrList) {
             if (NetUtils.isNetworksOverlap(vpcCidr, cidr)) {
-                throw new InvalidParameterValueException("The subnet of customer gateway " + customerGatewayId + "'s subnet " + cidr + " is overlapped with VPC cidr " +
+                throw new InvalidParameterValueException("The subnets of customer gateway " + customerGatewayId + "'s subnet " + cidr + " is overlapped with VPC cidr " +
                         vpcCidr + "!");
+            }
+        }
+        
+        // We also need to check if the new connection's remote CIDR is overlapped with existed connections
+        List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByVpnGatewayId(vpnGatewayId);
+        for (Site2SiteVpnConnectionVO vc : conns) {
+            if (vc == null) {
+                continue;
+            }
+            Site2SiteCustomerGatewayVO gw = _customerGatewayDao.findById(vc.getCustomerGatewayId());
+            String[] oldCidrList = gw.getGuestCidrList().split(",");
+            for (String oldCidr : oldCidrList) {
+                for (String cidr : cidrList) {
+                    if (NetUtils.isNetworksOverlap(cidr, oldCidr)) {
+                        throw new InvalidParameterValueException("The new connection's remote subnet " + cidr + " is overlapped with existed VPN connection to customer gateway "
+                                + gw.getName() + "'s subnet " + oldCidr);
+                    }
+                }
             }
         }
 
@@ -394,6 +430,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         if (dpd == null) {
             dpd = false;
         }
+
+        checkCustomerGatewayCidrList(guestCidrList);
 
         gw.setName(name);
         gw.setGatewayIp(gatewayIp);
