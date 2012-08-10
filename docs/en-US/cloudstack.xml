@@ -30,6 +30,4 @@
     <xi:include href="provisioning.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="admin-guide.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="developer-guide.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="release-notes-3.0.4.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="Revision_History.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </book>

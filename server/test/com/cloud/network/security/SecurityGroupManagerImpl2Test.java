@@ -19,6 +19,8 @@ package com.cloud.network.security;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.naming.ConfigurationException;
+
 import junit.framework.TestCase;
 
 import org.junit.After;
@@ -29,13 +31,18 @@ import com.cloud.agent.MockAgentManagerImpl;
 import com.cloud.configuration.DefaultInterceptorLibrary;
 import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
+import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.network.MockNetworkManagerImpl;
 import com.cloud.network.security.dao.SecurityGroupDaoImpl;
+import com.cloud.network.security.dao.SecurityGroupRuleDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupRulesDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupVMMapDaoImpl;
 import com.cloud.network.security.dao.SecurityGroupWorkDaoImpl;
 import com.cloud.network.security.dao.VmRulesetLogDaoImpl;
+import com.cloud.projects.MockProjectManagerImpl;
+import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.user.MockAccountManagerImpl;
+import com.cloud.user.MockDomainManagerImpl;
 import com.cloud.user.dao.AccountDaoImpl;
 import com.cloud.utils.Profiler;
 import com.cloud.utils.component.ComponentLocator;
@@ -58,7 +65,7 @@ public class SecurityGroupManagerImpl2Test extends TestCase {
         locator.addDao("ConfigurationDao", ConfigurationDaoImpl.class);
         locator.addDao("SecurityGroupDao", SecurityGroupDaoImpl.class);
         
-        //locator.addDao("IngressRuleDao", IngressRuleDaoImpl.class);
+        locator.addDao("SecurityGroupRuleDao", SecurityGroupRuleDaoImpl.class);
         locator.addDao("SecurityGroupVMMapDao", SecurityGroupVMMapDaoImpl.class);
         locator.addDao("SecurityGroupRulesDao", SecurityGroupRulesDaoImpl.class);
         locator.addDao("UserVmDao", UserVmDaoImpl.class);
@@ -68,14 +75,18 @@ public class SecurityGroupManagerImpl2Test extends TestCase {
         locator.addDao("VmRulesetLogDao", VmRulesetLogDaoImpl.class);
         locator.addDao("VMInstanceDao", VMInstanceDaoImpl.class);
         locator.addDao("DomainDao", DomainDaoImpl.class);
+        locator.addDao("UsageEventDao", UsageEventDaoImpl.class);
+        locator.addDao("ResourceTagDao", ResourceTagsDaoImpl.class);
         locator.addManager("AgentManager", MockAgentManagerImpl.class);
         locator.addManager("VirtualMachineManager", MockVirtualMachineManagerImpl.class);
         locator.addManager("UserVmManager", MockUserVmManagerImpl.class);
         locator.addManager("NetworkManager", MockNetworkManagerImpl.class);
         locator.addManager("AccountManager", MockAccountManagerImpl.class); 
+        locator.addManager("DomainManager", MockDomainManagerImpl.class); 
+        locator.addManager("ProjectManager", MockProjectManagerImpl.class);
         locator.makeActive(new DefaultInterceptorLibrary());
         _sgMgr = ComponentLocator.inject(SecurityGroupManagerImpl2.class);
-     
+        _sgMgr._mBean = new SecurityManagerMBeanImpl(_sgMgr);
     }
     
     @Override
@@ -98,12 +109,12 @@ public class SecurityGroupManagerImpl2Test extends TestCase {
     }
     
     @Ignore
-    public void testSchedule() {
+    public void testSchedule() throws ConfigurationException {
         _schedule(1000);
     }
     
-    public void testWork() {
-       _schedule(100);
+    public void testWork() throws ConfigurationException {
+       _schedule(1000);
        _sgMgr.work();
         
     }

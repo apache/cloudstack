@@ -28,7 +28,7 @@
 	<para>Figure 1 illustrates a typical guest traffic setup:</para>
 	<mediaobject>
 		<imageobject>
-			<imagedata fileref="./images/basic_deployment.png" />
+			<imagedata fileref="./images/basic-deployment.png" />
 		</imageobject>
 		<textobject><phrase>guesttraffic.png: Depicts a guest traffic setup</phrase></textobject>
 	</mediaobject>

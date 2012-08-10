@@ -45,6 +45,8 @@ import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceListener;
@@ -104,6 +106,8 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
     SwiftManager _swiftMgr; 
     @Inject
     ConfigurationManager _configMgr;   
+    @Inject
+    HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
 
     private int _vmCapacityReleaseInterval;
     private ScheduledExecutorService _executor;
@@ -827,4 +831,19 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
 		
 	}
 
+    @Override
+    public boolean checkIfHostReachMaxGuestLimit(HostVO host) {
+        Long vmCount = _vmDao.countRunningByHostId(host.getId());
+        HypervisorType hypervisorType = host.getHypervisorType();
+        String hypervisorVersion = host.getHypervisorVersion();
+        Long maxGuestLimit = _hypervisorCapabilitiesDao.getMaxGuestsLimit(hypervisorType, hypervisorVersion);
+        if(vmCount.longValue() >= maxGuestLimit.longValue()){
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Host name: " + host.getName() + ", hostId: "+ host.getId() + 
+                        " already reached max Running VMs(count includes system VMs), limit is: " + maxGuestLimit + ",Running VM counts is: "+vmCount.longValue());
+            }
+            return true;
+        }
+        return false;
+    }
 }

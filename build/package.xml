@@ -218,6 +218,7 @@
         <include name="vmware-vim.jar" />
         <include name="vmware-lib-jaxrpc.jar" />
         <include name="vmware-vim25.jar" />
+        <include name="cloud-ejb-api-3.0.jar" />
       </zipfileset>
       <zipfileset dir="${jar.dir}">
         <include name="${agent.jar}" />

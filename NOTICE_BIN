@@ -10,10 +10,23 @@ obtained from http://repo1.maven.org/maven2/javax/mail/mail/1.4/mail-1.4.jar
 under the COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0
 
 This product includes JUnit (http://www.junit.org/)
-under the BSD License: http://opensource.org/licenses/BSD-3-Clause
+licensed under the BSD License: http://opensource.org/licenses/BSD-3-Clause
 Copyright (c) 2000-2006, www.hamcrest.org
 
 This product includes Simple Logging Facade for Java or (SLF4J) (http://www.slf4j.org/)
-under the MIT license: http://www.slf4j.org/license.html
+licensed under the MIT license: http://www.slf4j.org/license.html
 Copyright (c) 2004-2011 QOS.ch
+
+This product includes the backport-util-concurrent library (http://backport-jsr166.sourceforge.net/)
+created by the Distributed Computing Laboratory at Emory University
+licensed under a public domain license: http://creativecommons.org/licenses/publicdomain/
+
+This product includes JSch (http://www.jcraft.com/jsch/)
+licensed under a modified BSD license: http://www.jcraft.com/jsch/LICENSE.txt
+Copyright (c) 2002-2011 Atsuhiko Yamanaka, JCraft,Inc.
+
+This product includes software developed within the iBATIS Apache project (http://ibatis.apache.org/)
+licensed under the Apache License, Version 2.0
+Copyright 2004 Clinton Begin
+
 
