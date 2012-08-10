@@ -70,8 +70,8 @@ get_usage () {
         # flush rules and remove chain
         iptables -F NETWORK_STATS_$i > /dev/null;
         iptables -X NETWORK_STATS_$i > /dev/null;
-        iptables -F VPN_STATS_$i > /dev/null;
-        iptables -X VPN_STATS_$i > /dev/null;                            
+        iptables -t mangle -F VPN_STATS_$i > /dev/null;
+        iptables -t mangle -X VPN_STATS_$i > /dev/null;                            
       fi
     done
     rm /root/removedVifs
@@ -80,7 +80,7 @@ get_usage () {
 }
 
 get_vpn_usage () {
-  iptables -L VPN_STATS_$ethDev -n -v -x | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
+  iptables -t mangle -L VPN_STATS_$ethDev -n -v -x | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
   if [ $? -gt 0 ]
   then
      printf $?
