@@ -1006,7 +1006,7 @@
                       s2scustomergatewayid: args.data.vpncustomergatewayid
                     },
                     success: function(json) {										  
-                      var jid = json.createvpnconnectionresponse.jobid;
+                      var jid = json.createvpnconnectionresponse.jobid;											
                       args.response.success(
                         {_custom:
                           {
@@ -1017,7 +1017,10 @@
                           }
                         }
                       );
-                    }
+                    },										
+										error: function(xmlHttpResponse) {
+											args.response.error(parseXMLHttpResponse(xmlHttpResponse));
+										}
                   });
                 },
                 notification: {
