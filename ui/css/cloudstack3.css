@@ -6802,6 +6802,15 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   text-shadow: 0px 1px #FFFFFF;
 }
 
+.multi-edit .disabled .button.custom-action {
+  /*+opacity:50%;*/
+  filter: alpha(opacity=50);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
+  -moz-opacity: 0.5;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .multi-edit .button.custom-action:hover {
   background: #808080 url(../images/bg-gradients.png);
   color: #FFFFFF;

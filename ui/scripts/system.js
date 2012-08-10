@@ -1323,8 +1323,14 @@
 
                           guestGateway: { label: 'label.guest.gateway' },
                           guestNetmask: { label: 'label.guest.netmask' },
-                          guestStartIp: { label: 'label.guest.start.ip' },
-                          guestEndIp: { label: 'label.guest.end.ip' },
+                          guestStartIp: { 
+													  label: 'label.guest.start.ip', 
+														validation: { required: true } 
+													},
+                          guestEndIp: { 
+													  label: 'label.guest.end.ip', 
+														validation: { required: true } 
+													},
                           networkdomain: { label: 'label.network.domain' }
                         }
                       },
