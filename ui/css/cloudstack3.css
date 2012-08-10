@@ -7355,7 +7355,7 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   text-shadow: 0px 1px #FFFFFF;
 }
 
-.multi-edit .disabled .button.add-vm {
+.multi-edit .disabled .button.add-vm .button.custom-action {
   /*+opacity:50%;*/
   filter: alpha(opacity=50);
   -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
