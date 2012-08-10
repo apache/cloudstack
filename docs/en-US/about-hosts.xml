@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="about-hosts">
+	<title>About Hosts</title>
+    <para>A host is a single computer. Hosts provide the computing resources that run the guest virtual machines. Each host has hypervisor software installed on it to manage the guest VMs. For example, a Linux KVM-enabled server, a Citrix XenServer server, and an ESXi server are hosts.</para>
+    <para>The host is the smallest organizational unit within a &PRODUCT; deployment. Hosts are contained within clusters, clusters are contained within pods, and pods are contained within zones.</para>
+    <para>Hosts in a &PRODUCT; deployment:</para>
+    <itemizedlist>
+        <listitem><para>Provde the CPU, memory, storage, and networking resources needed to host the virtual machines</para></listitem>
+        <listitem><para>Interconnect using a high bandwidth TCP/IP network and connect to the Internet</para></listitem>
+        <listitem><para>May reside in multiple data centers across different geographic locations</para></listitem>
+        <listitem><para>May have different capacities (different CPU speeds, different amounts of RAM, etc.), although the hosts within a cluster must all be homogeneous</para></listitem>
+    </itemizedlist>
+    <para>Additional hosts can be added at any time to provide more capacity for guest VMs.</para>
+    <para>&PRODUCT; automatically detects the amount of CPU and memory resources provided by the Hosts.</para>
+    <para>Hosts are not visible to the end user. An end user cannot determine which host their guest has been assigned to.</para>
+    <para>For a host to function in &PRODUCT;, you must do the following:</para>
+    <itemizedlist>
+        <listitem><para>Install hypervisor software on the host</para></listitem>
+        <listitem><para>Assign an IP address to the host</para></listitem>
+        <listitem><para>Ensure the host is connected to the &PRODUCT; Management Server</para></listitem>        
+    </itemizedlist>
+</section>

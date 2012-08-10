@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE bookinfo PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<section id="about-primary-storage">
+	<title>About Primary Storage</title>
+    <para>Primary storage is associated with a cluster, and it stores the disk volumes for all the VMs running on hosts in that cluster. You can add multiple primary storage servers to a cluster. At least one is required. It is typically located close to the hosts for increased performance.</para>
+    <para>&PRODUCT; is designed to work with all standards-compliant iSCSI and NFS servers that are supported by the underlying hypervisor, including, for example:</para>
+    <itemizedlist>
+        <listitem><para>Dell EqualLogic™ for iSCSI</para></listitem>
+        <listitem><para>Network Appliances filers for NFS and iSCSI</para></listitem>
+        <listitem><para>Scale Computing for NFS</para></listitem>
+    </itemizedlist>
+    <para>If you intend to use only local disk for your installation, you can skip to Add Secondary Storage.</para>
+</section>

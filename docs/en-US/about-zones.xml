@@ -15,7 +15,7 @@
         <imageobject>
             <imagedata fileref="./images/zone-overview.png" />
         </imageobject>
-        <textobject><phrase>pod-overview.png: Nested structure of a simple pod</phrase></textobject>
+        <textobject><phrase>zone-overview.png: Nested structure of a simple zone</phrase></textobject>
     </mediaobject>
     <para>Zones are visible to the end user. When a user starts a guest VM, the user must select a zone for their guest. Users might also be required to copy their private templates to additional zones to enable creation of guest VMs using their templates in those zones.</para>
     <para>Zones can be public or private.  Public zones are visible to all users.  This means that any user may create a guest in that zone.  Private zones are reserved for a specific domain.  Only users in that domain or its subdomains may create guests in that zone.</para>
