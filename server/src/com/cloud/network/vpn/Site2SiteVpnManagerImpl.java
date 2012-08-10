@@ -383,8 +383,8 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         List<Site2SiteVpnConnectionVO> conns = _vpnConnectionDao.listByCustomerGatewayId(id);
         if (conns != null) {
             for (Site2SiteVpnConnection conn : conns) {
-                if (conn.getState() != State.Disconnected || conn.getState() != State.Error) {
-                    throw new InvalidParameterValueException("Unable to update customer gateway because there is active VPN connection " + conn.getId());
+                if (conn.getState() != State.Error) {
+                    throw new InvalidParameterValueException("Unable to update customer gateway with connections in non-Error state!");
                 }
             }
         }
