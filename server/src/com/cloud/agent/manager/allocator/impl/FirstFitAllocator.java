@@ -77,7 +77,6 @@ public class FirstFitAllocator implements HostAllocator {
     @Inject ConfigurationDao _configDao = null;
     @Inject GuestOSDao _guestOSDao = null; 
     @Inject GuestOSCategoryDao _guestOSCategoryDao = null;
-    @Inject HypervisorCapabilitiesDao _hypervisorCapabilitiesDao = null;
     @Inject VMInstanceDao _vmInstanceDao = null;
     @Inject ResourceManager _resourceMgr;
     float _factor = 1;
@@ -206,11 +205,9 @@ public class FirstFitAllocator implements HostAllocator {
             }
                         
             //find number of guest VMs occupying capacity on this host.
-            Long vmCount = _vmInstanceDao.countRunningByHostId(host.getId());
-            Long maxGuestLimit = getHostMaxGuestLimit(host);
-            if (vmCount.longValue() == maxGuestLimit.longValue()){
+            if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)){
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Host name: " + host.getName() + ", hostId: "+ host.getId() +" already has max Running VMs(count includes system VMs), limit is: " + maxGuestLimit + " , skipping this and trying other available hosts");
+                    s_logger.debug("Host name: " + host.getName() + ", hostId: "+ host.getId() +" already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
                 }
                 continue;
             }
@@ -393,15 +390,7 @@ public class FirstFitAllocator implements HostAllocator {
     	GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
     	return guestOSCategory.getName();
     }
-    
-    protected Long getHostMaxGuestLimit(HostVO host) {
-        HypervisorType hypervisorType = host.getHypervisorType();
-        String hypervisorVersion = host.getHypervisorVersion();
 
-        Long maxGuestLimit = _hypervisorCapabilitiesDao.getMaxGuestsLimit(hypervisorType, hypervisorVersion);
-        return maxGuestLimit;
-    }
-    
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;

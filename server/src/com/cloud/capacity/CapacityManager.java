@@ -48,4 +48,11 @@ public interface CapacityManager extends Manager {
      * @return total allocated capacity for the storage pool
      */
     long getAllocatedPoolCapacity(StoragePoolVO pool, VMTemplateVO templateForVmCreation);
+    
+    /**
+     * Check if specified host's running VM count has reach hypervisor limit
+     * @param host the host to be checked
+     * @return true if the count of host's running VMs >= hypervisor limit
+     */
+    boolean checkIfHostReachMaxGuestLimit(HostVO host);
 }

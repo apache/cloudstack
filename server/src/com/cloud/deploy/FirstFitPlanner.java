@@ -196,6 +196,8 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
                 s_logger.debug("The last host of this VM cannot be found");
             }else if(avoid.shouldAvoid(host)){
                 s_logger.debug("The last host of this VM is in avoid set");
+            }else if(_capacityMgr.checkIfHostReachMaxGuestLimit(host)){
+                s_logger.debug("The last Host, hostId: "+ host.getId() +" already has max Running VMs(count includes system VMs), skipping this and trying other available hosts");
             }else{
                 if (host.getStatus() == Status.Up && host.getResourceState() == ResourceState.Enabled) {
                     if(_capacityMgr.checkIfHostHasCapacity(host.getId(), cpu_requested, ram_requested, true, cpuOverprovisioningFactor, true)){
