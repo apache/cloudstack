@@ -138,6 +138,8 @@
           } else if (field.addButton && !options.noSelect) {
             if (options.multipleAdd) {
               $addButton.click(function() {
+                if ($td.hasClass('disabled')) return false;
+                
                 _medit.vmList($multi,
                               options.listView,
                               options.context,
@@ -146,6 +148,8 @@
                               {
                                 multiRule: multiRule
                               });
+
+                return true;
               });
               $td.append($addButton);
             } else {
