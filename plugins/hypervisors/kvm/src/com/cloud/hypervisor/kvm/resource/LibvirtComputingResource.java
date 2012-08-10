@@ -2640,13 +2640,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements
                                         disk.defNetworkBasedDisk(physicalDisk.getPath().replace("rbd:", ""), pool.getSourceHost(), pool.getSourcePort(),
                                                                  pool.getAuthUserName(), pool.getUuid(),
                                                                  devId, diskBusType, diskProtocol.RBD);
-                                } else if (volume.getType() == Volume.Type.DATADISK) {
-                                        disk.defFileBasedDisk(physicalDisk.getPath(), devId,
-                                                        DiskDef.diskBus.VIRTIO,
-                                                        DiskDef.diskFmtType.QCOW2);
+                } else if (pool.getType() == StoragePoolType.CLVM) {
+                    disk.defBlockBasedDisk(physicalDisk.getPath(), devId,
+                    diskBusType);
                 } else {
-                    disk.defFileBasedDisk(physicalDisk.getPath(), devId,
-                            diskBusType, DiskDef.diskFmtType.QCOW2);
+                    if (volume.getType() == Volume.Type.DATADISK) {
+                         disk.defFileBasedDisk(physicalDisk.getPath(), devId,
+                         DiskDef.diskBus.VIRTIO,
+                         DiskDef.diskFmtType.QCOW2);
+                    } else {
+                         disk.defFileBasedDisk(physicalDisk.getPath(), devId,
+                         diskBusType, DiskDef.diskFmtType.QCOW2);
+                    }
+
                 }
 
             }

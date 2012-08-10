@@ -7510,6 +7510,7 @@
                         items.push({id: "nfs", description: "nfs"});
                         items.push({id: "SharedMountPoint", description: "SharedMountPoint"});
                         items.push({id: "rbd", description: "RBD"});
+                        items.push({id: "clvm", description: "CLVM"});
                         args.response.success({data: items});
                       }
                       else if(selectedClusterObj.hypervisortype == "XenServer") {
