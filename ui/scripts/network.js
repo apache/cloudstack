@@ -2538,8 +2538,26 @@
 
                             // Passing _hideFields array will disable specified fields for this row
                             //item._hideFields = ['autoScale'];
-
-                            // Get sticky data
+                            
+														$.ajax({
+															url: createURL('listAutoScaleVmGroups'),
+															data: {
+																listAll: true,
+																lbruleid: item.id
+															},	
+                              async: false,															
+															success: function(json) {			
+															  //debugger;
+                                if(json.listautoscalevmgroupsresponse.autoscalevmgroup != null && json.listautoscalevmgroupsresponse.autoscalevmgroup.length > 0) { //from 'autoScale' button
+																  item._hideFields = ['add-vm'];
+																}
+																else { //from 'add-vm' button
+																  item._hideFields = ['autoScale'];
+																} 
+															}
+														});
+																												
+														// Get sticky data
                             $.ajax({
                               url: createURL('listLBStickinessPolicies'),
                               async: false,
