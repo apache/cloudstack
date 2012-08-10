@@ -843,7 +843,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return true;
     }
 
-    public boolean canIpUsedForService(PublicIp publicIp, Service service) {
+    public boolean canIpUsedForService(PublicIp publicIp, Service service, Long networkId) {
         List<PublicIp> ipList = new ArrayList<PublicIp>();
         ipList.add(publicIp);
         Map<PublicIp, Set<Service>> ipToServices = getIpToServices(ipList, false, true);
@@ -851,8 +851,13 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (services == null || services.isEmpty()) {
             return true;
         }
+        
+        if (networkId == null) {
+            networkId = publicIp.getAssociatedWithNetworkId();
+        }
+        
         // We only support one provider for one service now
-        Map<Service, Set<Provider>> serviceToProviders = getServiceProvidersMap(publicIp.getAssociatedWithNetworkId());
+        Map<Service, Set<Provider>> serviceToProviders = getServiceProvidersMap(networkId);
         Set<Provider> oldProviders = serviceToProviders.get(services.toArray()[0]);
         Provider oldProvider = (Provider) oldProviders.toArray()[0];
         // Since IP already has service to bind with, the oldProvider can't be null
@@ -6906,7 +6911,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return true;
         }
         PublicIp publicIp = new PublicIp(userIp, _vlanDao.findById(userIp.getVlanId()), NetUtils.createSequenceBasedMacAddress(userIp.getMacAddress()));
-        if (!canIpUsedForService(publicIp, service)) {
+        if (!canIpUsedForService(publicIp, service, networkId)) {
             return false;
         }
         if (!offering.isConserveMode()) {
