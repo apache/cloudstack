@@ -43,6 +43,8 @@ import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.DVPortgroupConfigInfo;
 import com.vmware.vim25.DVSTrafficShapingPolicy;
 import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.HostNetworkPolicy;
+import com.vmware.vim25.HostNetworkSecurityPolicy;
 import com.vmware.vim25.HostNetworkTrafficShapingPolicy;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.HostVirtualSwitch;
@@ -563,7 +565,13 @@ public class HypervisorHostHelper {
         }
         
         networkName = composeCloudNetworkName(namePrefix, vlanId, networkRateMbps, vSwitchName);
-
+        HostNetworkSecurityPolicy secPolicy = null;
+        if (namePrefix.equalsIgnoreCase("cloud.private")) {
+            secPolicy = new HostNetworkSecurityPolicy();
+            secPolicy.setAllowPromiscuous(Boolean.TRUE);
+            secPolicy.setForgedTransmits(Boolean.TRUE);
+            secPolicy.setMacChanges(Boolean.TRUE);
+        }
         HostNetworkTrafficShapingPolicy shapingPolicy = null;
         if(networkRateMbps != null && networkRateMbps.intValue() > 0) {
             shapingPolicy = new HostNetworkTrafficShapingPolicy();
@@ -583,12 +591,12 @@ public class HypervisorHostHelper {
 
         boolean bWaitPortGroupReady = false;
         if (!hostMo.hasPortGroup(vSwitch, networkName)) {
-            hostMo.createPortGroup(vSwitch, networkName, vid, shapingPolicy);
+            hostMo.createPortGroup(vSwitch, networkName, vid, secPolicy, shapingPolicy);
             bWaitPortGroupReady = true;
         } else {
             HostPortGroupSpec spec = hostMo.getPortGroupSpec(networkName);
             if(!isSpecMatch(spec, vid, shapingPolicy)) {
-                hostMo.updatePortGroup(vSwitch, networkName, vid, shapingPolicy);
+                hostMo.updatePortGroup(vSwitch, networkName, vid, secPolicy, shapingPolicy);
                 bWaitPortGroupReady = true;
             }
         }
