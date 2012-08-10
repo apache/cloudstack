@@ -536,23 +536,23 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     	} else {
     		return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
     	}
-
     	try {
     		if (s_logger.isTraceEnabled()) {
     			s_logger.trace("Executing /opt/cloud/bin/vpc_netusage.sh " + args + " on DomR " + privateIp);
     		}
-
     		VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
 
     		Pair<Boolean, String> resultPair = SshHelper.sshExecute(privateIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_netusage.sh " + args);
 
     		if (!resultPair.first()) {
-    			return null;
+                throw new Exception(" vpc network usage plugin call failed ");
     		}
-
-    		String result =  resultPair.second();
     		
     		if (option.equals("get")) {
+                String result =  resultPair.second();
+                if (result == null || result.isEmpty()) {
+                    throw new Exception(" vpc network usage get returns empty ");
+                }
                 long[] stats = new long[2];
                 if (result != null) {
                     String[] splitResult = result.split(":");
@@ -564,16 +564,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     return new NetworkUsageAnswer(cmd, "success", stats[0], stats[1]);
                 }
             }
-            if (result == null || result.isEmpty()) {
-                throw new Exception(" vpc network usage plugin call failed ");
-            }
             return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
-    		
-    	} catch (Throwable e) {
+        } catch (Throwable e) {
     		s_logger.error("Unable to execute NetworkUsage command on DomR (" + privateIp + "), domR may not be ready yet. failure due to " 
     				+ VmwareHelper.getExceptionMessage(e), e);
     	}
-
     	return null;
     }
 
