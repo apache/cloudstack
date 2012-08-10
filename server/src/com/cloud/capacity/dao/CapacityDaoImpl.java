@@ -30,6 +30,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.dao.StoragePoolDaoImpl;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -104,7 +105,12 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
                                                                             "WHERE  total_capacity > 0 AND cluster_id is not null AND capacity_state='Enabled'";
     private static final String LIST_CAPACITY_GROUP_BY_CLUSTER_TYPE_PART2 = " GROUP BY cluster_id, capacity_type order by percent desc limit ";
     private static final String UPDATE_CAPACITY_STATE = "UPDATE `cloud`.`op_host_capacity` SET capacity_state = ? WHERE ";
-    
+    private static final String LIST_CLUSTERS_CROSSING_THRESHOLD = "SELECT cluster_id " +
+    		"FROM (SELECT cluster_id, ( (sum(capacity.used_capacity) + sum(capacity.reserved_capacity) + ?)/sum(total_capacity) ) ratio "+
+    		"FROM `cloud`.`op_host_capacity` capacity "+
+    		"WHERE capacity.data_center_id = ? AND capacity.capacity_type = ? AND capacity.total_capacity > 0 "+    		    		
+    		"GROUP BY cluster_id) tmp " +
+    		"WHERE tmp.ratio > ? ";
     
     
     public CapacityDaoImpl() {
@@ -128,6 +134,52 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     	
     	_allFieldsSearch.done();
     }
+          
+    @Override
+    public  List<Long> listClustersCrossingThreshold(short capacityType, Long zoneId, Float disableThreshold, long compute_requested, Float overProvFactor){
+ 
+         Transaction txn = Transaction.currentTxn();
+         PreparedStatement pstmt = null;
+         List<Long> result = new ArrayList<Long>();         
+         StringBuilder sql = new StringBuilder(LIST_CLUSTERS_CROSSING_THRESHOLD);
+         
+ 
+         try {
+             pstmt = txn.prepareAutoCloseStatement(sql.toString());
+             pstmt.setLong(1, compute_requested);
+             pstmt.setLong(2, zoneId);
+             pstmt.setShort(3, capacityType);                          
+             pstmt.setFloat(4, disableThreshold*overProvFactor);             
+ 
+             ResultSet rs = pstmt.executeQuery();
+             while (rs.next()) {
+                 result.add(rs.getLong(1));
+             }
+             return result;
+         } catch (SQLException e) {
+             throw new CloudRuntimeException("DB Exception on: " + sql, e);
+         } catch (Throwable e) {
+        	 throw new CloudRuntimeException("Caught: " + sql, e);
+         } 
+     }
+
+    /*public static String preparePlaceHolders(int length) {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < length;) {
+            builder.append("?");
+            if (++i < length) {
+                builder.append(",");
+            }
+        }
+        return builder.toString();
+    }
+
+    public static void setValues(PreparedStatement preparedStatement, Object... values) throws SQLException {
+        for (int i = 0; i < values.length; i++) {
+            preparedStatement.setObject(i + 1, values[i]);
+        }
+    }*/
+
     
     @Override
     public  List<SummedCapacity> findCapacityBy(Integer capacityType, Long zoneId, Long podId, Long clusterId, String resource_state){
