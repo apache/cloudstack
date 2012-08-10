@@ -52,6 +52,7 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.as.dao.AutoScalePolicyConditionMapDao;
@@ -711,20 +712,22 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
     }
 
     @Override
-    public boolean configureAutoScaleVmGroup(CreateAutoScaleVmGroupCmd cmd) {
-        return configureAutoScaleVmGroup(cmd.getEntityId());
+    public boolean configureAutoScaleVmGroup(CreateAutoScaleVmGroupCmd cmd) throws ResourceUnavailableException {
+        return configureAutoScaleVmGroup(cmd.getEntityId(), AutoScaleVmGroup.State_New);
     }
 
     public boolean isLoadBalancerBasedAutoScaleVmGroup(AutoScaleVmGroup vmGroup) {
         return vmGroup.getLoadBalancerId() != null;
     }
 
-    private boolean configureAutoScaleVmGroup(long vmGroupid) throws InvalidParameterValueException {
+    private boolean configureAutoScaleVmGroup(long vmGroupid, String currentState) throws ResourceUnavailableException{
         AutoScaleVmGroup vmGroup = _autoScaleVmGroupDao.findById(vmGroupid);
 
         if (isLoadBalancerBasedAutoScaleVmGroup(vmGroup)) {
             try {
-                return _lbRulesMgr.configureLbAutoScaleVmGroup(vmGroupid);
+                return _lbRulesMgr.configureLbAutoScaleVmGroup(vmGroupid, currentState);
+            } catch (ResourceUnavailableException re) {
+                throw re;
             } catch (Exception e) {
                 s_logger.warn("Exception during configureLbAutoScaleVmGroup in lb rules manager", e);
                 return false;
@@ -751,12 +754,14 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         boolean success = false;
 
         try {
-            success = configureAutoScaleVmGroup(id);
-        } finally {
+            success = configureAutoScaleVmGroup(id, bakupState);
+        } catch (ResourceUnavailableException e) {
+            autoScaleVmGroupVO.setState(bakupState);
+            _autoScaleVmGroupDao.persist(autoScaleVmGroupVO);
+        }
+        finally {
             if (!success) {
                 s_logger.warn("Could not delete AutoScale Vm Group id : " + id);
-                autoScaleVmGroupVO.setState(bakupState);
-                _autoScaleVmGroupDao.persist(autoScaleVmGroupVO);
                 return false;
             }
         }
@@ -945,12 +950,12 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         try {
             vmGroup.setState(AutoScaleVmGroup.State_Enabled);
             vmGroup = _autoScaleVmGroupDao.persist(vmGroup);
-            success = configureAutoScaleVmGroup(id);
-
+            success = configureAutoScaleVmGroup(id, AutoScaleVmGroup.State_Disabled);
+        } catch (ResourceUnavailableException e) {
+            vmGroup.setState(AutoScaleVmGroup.State_Disabled);
+            _autoScaleVmGroupDao.persist(vmGroup);
         } finally {
             if (!success) {
-                vmGroup.setState(AutoScaleVmGroup.State_Disabled);
-                _autoScaleVmGroupDao.persist(vmGroup);
                 s_logger.warn("Failed to enable AutoScale Vm Group id : " + id);
                 return null;
             }
@@ -972,11 +977,12 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         try {
             vmGroup.setState(AutoScaleVmGroup.State_Disabled);
             vmGroup = _autoScaleVmGroupDao.persist(vmGroup);
-            success = configureAutoScaleVmGroup(id);
+            success = configureAutoScaleVmGroup(id, AutoScaleVmGroup.State_Enabled);
+        } catch (ResourceUnavailableException e) {
+            vmGroup.setState(AutoScaleVmGroup.State_Enabled);
+            _autoScaleVmGroupDao.persist(vmGroup);
         } finally {
             if (!success) {
-                vmGroup.setState(AutoScaleVmGroup.State_Enabled);
-                _autoScaleVmGroupDao.persist(vmGroup);
                 s_logger.warn("Failed to disable AutoScale Vm Group id : " + id);
                 return null;
             }

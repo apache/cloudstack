@@ -356,11 +356,13 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer {
         AutoScaleVmGroup vmGroup;
         private final List<LbAutoScalePolicy> policies;
         private final LbAutoScaleVmProfile profile;
+        private final String currentState;
 
-        public LbAutoScaleVmGroup(AutoScaleVmGroup vmGroup, List<LbAutoScalePolicy> policies, LbAutoScaleVmProfile profile) {
+        public LbAutoScaleVmGroup(AutoScaleVmGroup vmGroup, List<LbAutoScalePolicy> policies, LbAutoScaleVmProfile profile, String currentState) {
             this.vmGroup = vmGroup;
             this.policies = policies;
             this.profile = profile;
+            this.currentState = currentState;
         }
 
         public AutoScaleVmGroup getVmGroup() {
@@ -373,6 +375,10 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer {
 
         public LbAutoScaleVmProfile getProfile() {
             return profile;
+        }
+
+        public String getCurrentState() {
+            return currentState;
         }
     }
 
