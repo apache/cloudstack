@@ -1,8 +1,27 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
 <section id="troubleshooting-unable-to-power-on-vm">
     <title>Unable to power on virtual machine on VMware</title>
     <formalpara>
@@ -12,7 +31,7 @@
     <itemizedlist>
         <listitem><para>Unable to open Swap File</para></listitem>
         <listitem><para>Unable to access a file since it is locked</para></listitem>
-        <listitem><para>	Unable to access Virtual machine configuration</para></listitem>
+        <listitem><para>Unable to access Virtual machine configuration</para></listitem>
     </itemizedlist>
     <formalpara>
         <title>Cause</title>
@@ -22,6 +41,5 @@
         <title>Solution</title>
         <para>See the following:</para>
     </formalpara>
-    <para><ulink url="http://kb.vmware.com/selfservice/microsites/search.do?language=en_US&amp;cmd=displayKC&amp;externalId=10051/">VMware Knowledge Base Article</ulink></para>                
+    <para><ulink url="http://kb.vmware.com/selfservice/microsites/search.do?language=en_US&amp;cmd=displayKC&amp;externalId=10051/">VMware Knowledge Base Article</ulink></para>
 </section>
-      
