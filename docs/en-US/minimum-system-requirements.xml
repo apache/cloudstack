@@ -30,10 +30,8 @@
         <itemizedlist>
             <listitem><para>Operating system:</para>
                 <itemizedlist>
-                    <listitem><para>Preferred: RHEL 6.2+ 64-bit (https://access.redhat.com/downloads) or CentOS 6.2+ 64-bit (http://isoredirect.centos.org/centos/6/isos/x86_64/).</para></listitem>
-                    <listitem><para>Also supported (v3.0.3 and greater): RHEL and CentOS 5.4-5.x 64-bit</para></listitem>
-                    <listitem><para>It is highly recommended that you purchase a RHEL support license.
-                    Citrix support can not be responsible for helping fix issues with the underlying OS.</para></listitem>
+                    <listitem><para>Preferred: CentOS/RHEL 6.2+ or Ubuntu 12.04(.1)</para></listitem>
+                    <listitem><para>Also supported: CentOS/RHEL 5.5 or Ubuntu 10.04</para></listitem>
                 </itemizedlist>
             </listitem>
             <listitem><para>64-bit x86 CPU (more cores results in better performance)</para></listitem>
