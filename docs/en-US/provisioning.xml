@@ -4,7 +4,7 @@
 %BOOK_ENTITIES;
 ]>
 <chapter id="provisioning">
-	<title>Provisioning Your Cloud Infrastructure</title>
-	<xi:include href="cloud-infrastructure-concepts.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <title>Provisioning Your Cloud Infrastructure</title>
+    <xi:include href="cloud-infrastructure-concepts.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
     <xi:include href="provisioning-steps.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </chapter>

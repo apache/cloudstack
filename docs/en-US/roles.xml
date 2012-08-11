@@ -23,13 +23,13 @@
 -->
 
 <section id="roles">
-	<title>Roles</title>
-	<para>
-		The CloudPlatform API supports three access roles:</para>
-	<orderedlist>
-		<listitem><para>Root Admin. Access to all features of the cloud, including both virtual and physical resource management.</para></listitem>
-		<listitem><para>Domain Admin. Access to only the virtual resources of the clouds that belong to the administrator’s domain.</para></listitem>
-		<listitem><para>User. Access to only the features that allow management of the user’s virtual instances, storage, and network.</para></listitem>
-	</orderedlist>
+    <title>Roles</title>
+    <para>
+        The CloudPlatform API supports three access roles:</para>
+    <orderedlist>
+        <listitem><para>Root Admin. Access to all features of the cloud, including both virtual and physical resource management.</para></listitem>
+        <listitem><para>Domain Admin. Access to only the virtual resources of the clouds that belong to the administrator’s domain.</para></listitem>
+        <listitem><para>User. Access to only the features that allow management of the user’s virtual instances, storage, and network.</para></listitem>
+    </orderedlist>
 </section>
 

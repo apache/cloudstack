@@ -23,7 +23,7 @@
 -->
 
 <section id="export-template">
-	<title>Exporting Templates</title>
-	<para>End users and Administrators may export templates from the &PRODUCT;.  Navigate to the template in the UI and choose the Download function from the Actions menu.</para>
+    <title>Exporting Templates</title>
+    <para>End users and Administrators may export templates from the &PRODUCT;.  Navigate to the template in the UI and choose the Download function from the Actions menu.</para>
 
 </section>

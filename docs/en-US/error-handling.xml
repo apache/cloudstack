@@ -22,8 +22,8 @@
  under the License.
 -->
 
-	<section id="error-handling">
-		<title>Error Handling</title>
-		<para>If an error occurs while processing an API request, the appropriate response in the format specified is returned.  Each error response consists of an error code and an error text describing what possibly can go wrong. For an example error response, see page 12.</para>
-		<para>An HTTP error code of 401 is always returned if API request was rejected due to bad signatures, missing API Keys, or the user simply did not have the permissions to execute the command.</para>
+    <section id="error-handling">
+        <title>Error Handling</title>
+        <para>If an error occurs while processing an API request, the appropriate response in the format specified is returned.  Each error response consists of an error code and an error text describing what possibly can go wrong. For an example error response, see page 12.</para>
+        <para>An HTTP error code of 401 is always returned if API request was rejected due to bad signatures, missing API Keys, or the user simply did not have the permissions to execute the command.</para>
     </section>

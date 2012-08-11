@@ -23,12 +23,12 @@
 -->
 
 <section id="job-status">
-		<title>Job Status</title>
-	<para>The key to using an asynchronous command is the job ID that is returned immediately once the command has been executed. With the job ID, you can periodically check the job status by making calls to queryAsyncJobResult command. The command will return three possible job status integer values:</para>
-		<itemizedlist>
-			<listitem><para>0 - Job is still in progress. Continue to periodically poll for any status changes.</para></listitem>
-			<listitem><para>1 - Job has successfully completed. The job will return any successful response values associated with command that was originally executed.</para></listitem>
-			<listitem><para>2 - Job has failed to complete.  Please check the "jobresultcode" tag for failure reason code and "jobresult" for the failure reason.</para></listitem>
-		</itemizedlist>
+        <title>Job Status</title>
+    <para>The key to using an asynchronous command is the job ID that is returned immediately once the command has been executed. With the job ID, you can periodically check the job status by making calls to queryAsyncJobResult command. The command will return three possible job status integer values:</para>
+        <itemizedlist>
+            <listitem><para>0 - Job is still in progress. Continue to periodically poll for any status changes.</para></listitem>
+            <listitem><para>1 - Job has successfully completed. The job will return any successful response values associated with command that was originally executed.</para></listitem>
+            <listitem><para>2 - Job has failed to complete.  Please check the "jobresultcode" tag for failure reason code and "jobresult" for the failure reason.</para></listitem>
+        </itemizedlist>
 </section>
 

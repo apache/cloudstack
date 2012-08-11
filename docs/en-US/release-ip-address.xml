@@ -23,19 +23,19 @@
 -->
 
 <section id="release-ip-address">
-	<title>Releasing an IP Address</title>
-	<orderedlist>
-		<listitem><para>Log in to the CloudPlatform UI as an administrator or end user. </para></listitem>
-		<listitem><para>In the left navigation, choose Network.</para></listitem>
-		<listitem><para>Click the name of the network where you want to work with.</para></listitem>
-		<listitem><para>Click View IP Addresses.</para></listitem>
-		<listitem><para>Click the IP address you want to release.</para>
-		</listitem>
-		<listitem><para>Click the Release IP button <inlinemediaobject>
-			<imageobject>
-				<imagedata fileref="./images/release-ip-icon.png" />
-			</imageobject>
-			<textobject><phrase>ReleaseIPButton.png: button to release an IP</phrase></textobject>
-		</inlinemediaobject>.</para></listitem>		
-	</orderedlist>
+    <title>Releasing an IP Address</title>
+    <orderedlist>
+        <listitem><para>Log in to the CloudPlatform UI as an administrator or end user. </para></listitem>
+        <listitem><para>In the left navigation, choose Network.</para></listitem>
+        <listitem><para>Click the name of the network where you want to work with.</para></listitem>
+        <listitem><para>Click View IP Addresses.</para></listitem>
+        <listitem><para>Click the IP address you want to release.</para>
+        </listitem>
+        <listitem><para>Click the Release IP button <inlinemediaobject>
+            <imageobject>
+                <imagedata fileref="./images/release-ip-icon.png" />
+            </imageobject>
+            <textobject><phrase>ReleaseIPButton.png: button to release an IP</phrase></textobject>
+        </inlinemediaobject>.</para></listitem>        
+    </orderedlist>
 </section>

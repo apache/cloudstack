@@ -23,6 +23,6 @@
 -->
 
 <section id="primary-storage">
-		<title>Primary Storage</title>
-		<para>This section gives concepts and technical details about CloudPlatform primary storage. For information about how to install and configure primary storage through the CloudPlatform UI, see the Advanced Installation Guide.</para>
-	</section>
+        <title>Primary Storage</title>
+        <para>This section gives concepts and technical details about CloudPlatform primary storage. For information about how to install and configure primary storage through the CloudPlatform UI, see the Advanced Installation Guide.</para>
+    </section>

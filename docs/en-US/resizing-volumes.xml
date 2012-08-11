@@ -23,16 +23,16 @@
 -->
 
 <section id="resizing-volumes">
-	<title>Resizing Volumes</title>
-		<para>&PRODUCT; does not provide the ability to resize root disks or data disks; the disk size is fixed based on the template used to create the VM. However, the tool <ulink url="http://vmtoolkit.com/files/folders/converters/entry87.aspx/"> VHD Resizer</ulink>), while not officially supported by Cloud.com or Citrix, might provide a workaround. To increase disk size with VHD Resizer:</para>
-		<orderedlist>
-			<listitem><para>Get the VHD from the secondary storage.</para></listitem>
-			<listitem><para>Import it into VHD Resizer.</para></listitem>
-			<listitem><para>Resize the VHD.</para></listitem>
-			<listitem><para>Upload the new VHD.</para></listitem>
-			<listitem><para>Create a new VM.</para></listitem>
-			<listitem><para>Take a snapshot, then create a new template from that snapshot.</para>
-				<para>For more information, see <ulink url="http://support.citrix.com/article/CTX118608/"> How to Resize a Provisioning Server 5 Virtual Disk </ulink> at the Citrix Knowledge Center </para></listitem>
-		</orderedlist>
+    <title>Resizing Volumes</title>
+        <para>&PRODUCT; does not provide the ability to resize root disks or data disks; the disk size is fixed based on the template used to create the VM. However, the tool <ulink url="http://vmtoolkit.com/files/folders/converters/entry87.aspx/"> VHD Resizer</ulink>), while not officially supported by Cloud.com or Citrix, might provide a workaround. To increase disk size with VHD Resizer:</para>
+        <orderedlist>
+            <listitem><para>Get the VHD from the secondary storage.</para></listitem>
+            <listitem><para>Import it into VHD Resizer.</para></listitem>
+            <listitem><para>Resize the VHD.</para></listitem>
+            <listitem><para>Upload the new VHD.</para></listitem>
+            <listitem><para>Create a new VM.</para></listitem>
+            <listitem><para>Take a snapshot, then create a new template from that snapshot.</para>
+                <para>For more information, see <ulink url="http://support.citrix.com/article/CTX118608/"> How to Resize a Provisioning Server 5 Virtual Disk </ulink> at the Citrix Knowledge Center </para></listitem>
+        </orderedlist>
 </section>
 

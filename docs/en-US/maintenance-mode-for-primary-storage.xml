@@ -23,6 +23,6 @@
 -->
 
 <section id="maintenance-mode-for-primary-storage.xml">
-		<title>Maintenance Mode for Primary Storage</title>
-			<para>Primary storage may be placed into maintenance mode. This is useful, for example, to replace faulty RAM in a storage device. Maintenance mode for a storage device will first stop any new guests from being provisioned on the storage device. Then it will stop all guests that have any volume on that storage device. When all such guests are stopped the storage device is in maintenance mode and may be shut down. When the storage device is online again you may cancel maintenance mode for the device. The &PRODUCT; will bring the device back online and attempt to start all guests that were running at the time of the entry into maintenance mode.</para>
-	</section>
+        <title>Maintenance Mode for Primary Storage</title>
+            <para>Primary storage may be placed into maintenance mode. This is useful, for example, to replace faulty RAM in a storage device. Maintenance mode for a storage device will first stop any new guests from being provisioned on the storage device. Then it will stop all guests that have any volume on that storage device. When all such guests are stopped the storage device is in maintenance mode and may be shut down. When the storage device is online again you may cancel maintenance mode for the device. The &PRODUCT; will bring the device back online and attempt to start all guests that were running at the time of the entry into maintenance mode.</para>
+    </section>

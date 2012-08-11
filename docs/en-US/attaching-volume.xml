@@ -23,21 +23,21 @@
 -->
 
 <section id="attaching-volume">
-	<title>Attaching a Volume</title>
-	<para>You can attach a volume to a guest VM to provide extra disk storage. Attach a volume when you first create a new volume, when you are moving an existing volume from one VM to another, or after you have migrated a volume from one storage pool to another.</para>
-		<orderedlist>
-			<listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
-			<listitem><para>In the left navigation, click Storage.</para></listitem>
-			<listitem><para>In Select View, choose Volumes.</para></listitem>
-			<listitem><para>4.	Click the volume name in the Volumes list, then click the Attach Disk button<inlinemediaobject>
-				<imageobject>
-					<imagedata fileref="./images/attach-disk-icon.png" />
-				</imageobject>
-				<textobject><phrase>AttachDiskButton.png: button to attach a volume</phrase></textobject>
-			</inlinemediaobject>
-				</para></listitem>
-			<listitem><para>In the Instance popup, choose the VM to which you want to attach the volume. You will only see instances to which you are allowed to attach volumes; for example, a user will see only instances created by that user, but the administrator will have more choices.</para>
-				<para>If the VM is running in the OVM hypervisor, the VM must be stopped before a new volume can be attached to it.</para></listitem> 
-			<listitem><para>When the volume has been attached, you should be able to see it by clicking Instances, the instance name, and View Volumes.</para></listitem>
-		</orderedlist>
-	</section>
+    <title>Attaching a Volume</title>
+    <para>You can attach a volume to a guest VM to provide extra disk storage. Attach a volume when you first create a new volume, when you are moving an existing volume from one VM to another, or after you have migrated a volume from one storage pool to another.</para>
+        <orderedlist>
+            <listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
+            <listitem><para>In the left navigation, click Storage.</para></listitem>
+            <listitem><para>In Select View, choose Volumes.</para></listitem>
+            <listitem><para>4.    Click the volume name in the Volumes list, then click the Attach Disk button<inlinemediaobject>
+                <imageobject>
+                    <imagedata fileref="./images/attach-disk-icon.png" />
+                </imageobject>
+                <textobject><phrase>AttachDiskButton.png: button to attach a volume</phrase></textobject>
+            </inlinemediaobject>
+                </para></listitem>
+            <listitem><para>In the Instance popup, choose the VM to which you want to attach the volume. You will only see instances to which you are allowed to attach volumes; for example, a user will see only instances created by that user, but the administrator will have more choices.</para>
+                <para>If the VM is running in the OVM hypervisor, the VM must be stopped before a new volume can be attached to it.</para></listitem> 
+            <listitem><para>When the volume has been attached, you should be able to see it by clicking Instances, the instance name, and View Volumes.</para></listitem>
+        </orderedlist>
+    </section>

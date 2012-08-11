@@ -1,41 +1,41 @@
 <section id="user-services-overview">
-		<title>User Services Overview</title>
-	<para>In addition to the physical and logical infrastructure of your cloud, and the CloudPlatform software and servers, you also need a layer of user services so that people can actually make use of the cloud. This means not just a user UI, but a set of options and resources that users can choose from, such as templates for creating virtual machines, disk storage, and more. If you are running a commercial service, you will be keeping track of what services and resources users are consuming and charging them for that usage. Even if you do not charge anything for people to use your cloud – say, if the users are strictly internal to your organization, or just friends who are sharing your cloud – you can still keep track of what services they use and how much of them.</para>
-	<section id="offerings-and-templates">
-		<title>Service Offerings, Disk Offerings, Network Offerings, and Templates</title>
-		<para>A user creating a new instance can make a variety of choices about its characteristics and capabilities. CloudPlatform provides several ways to present users with choices when creating a new instance:</para>
-		<itemizedlist>
-			<listitem><para>Service Offerings, defined by the CloudPlatform administrator, provide a choice of CPU speed, number of CPUs, RAM size, tags on the root disk, and other choices. See Creating a New Compute Offering.</para></listitem>
-			<listitem><para>Disk Offerings, defined by the CloudPlatform administrator, provide a choice of disk size for primary data storage. See Creating a New Disk Offering.</para></listitem>
-			<listitem><para>Network Offerings, defined by the CloudPlatform administrator, describe the feature set that is available to end users from the virtual router or external networking devices on a given guest network. See Network Offerings.</para></listitem>
-			<listitem><para> Templates, defined by the CloudPlatform administrator or by any CloudPlatform user, are the base OS images that the user can choose from when creating a new instance. For example, CloudPlatform includes CentOS as a template. See Working with Templates.</para></listitem>
-		</itemizedlist>
-		<para>In addition to these choices that are provided for users, there is another type of service offering which is available only to the CloudPlatform root administrator, and is used for configuring virtual infrastructure resources. For more information, see Upgrading a Virtual Router with System Service Offerings.</para>
-	</section>
-	<section id="accounts-users-domains">
-		<title>Accounts, Users, and Domains</title>
-		<para>An account typically represents a customer of the service provider or a department in a large organization. Multiple users can exist in an account. Users are like aliases in the account. Users in the same account are not isolated from each other, but they are isolated from users in other accounts. Most installations need not surface the notion of users; they just have one user per account.</para>
-		<para>Accounts are grouped by domains. Domains usually contain accounts that have some logical relationship to each other and a set of delegated administrators with some authority over the domain and its subdomains. For example, a service provider with several resellers could create a domain for each reseller.</para>
-		<para>Administrators are accounts with special privileges in the system. There may be multiple administrators in the system. Administrators can create or delete other administrators, and change the password for any user in the system. Root administrators have complete access to the system, including managing templates, service offerings, customer care administrators, and domains. Domain administrators can perform administrative operations for users who belong to that domain. Domain administrators do not have visibility into physical servers or other domains.</para>
-	</section>
-	<section id="using-ldap-server">
-		<title>Using an LDAP Server for User Authentication</title>
-		<para>You can use an external LDAP server such as Microsoft Active Directory or ApacheDS to authenticate CloudPlatform end-users. Just map CloudPlatform accounts to the corresponding LDAP accounts using a query filter. The query filter is written using the query syntax of the particular LDAP server, and can include special wildcard characters provided by CloudPlatform for matching common values such as the user’s email address and name. CloudPlatform will search the external LDAP directory tree starting at a specified base directory and return the distinguished name (DN) and password of the matching user. This information along with the given password is used to authenticate the user.</para>
-		<para>To set up LDAP authentication in CloudPlatform, call the CloudPlatform API command ldapConfig and provide the following:</para>
-		<itemizedlist>
-			<listitem><para>Hostname or IP address and listening port of the LDAP server</para></listitem>
-			<listitem><para>Base directory and query filter</para></listitem>
-			<listitem><para>Search user DN credentials, which give CloudPlatform permission to search on the LDAP server</para></listitem>
-			<listitem><para>SSL keystore and password, if SSL is used</para></listitem>
-		</itemizedlist>
-		<section id="example-ldap-commands">
-			<title>Example LDAP Configuration Commands</title>
-			<para>To understand the examples in this section, you need to know the basic concepts behind calling the CloudPlatform API, which are explained in the Developer’s Guide.</para>
-			<para>The following shows an example invocation of ldapConfig with an ApacheDS LDAP server.</para>
-			<programlisting>http://127.0.0.1:8080/client/api?command=ldapConfig&amp;hostname=127.0.0.1&amp;searchbase=ou%3Dtesting%2Co%3Dproject&amp;queryfilter=%28%26%28uid%3D%25u%29%29&amp;binddn=cn%3DJohn+Singh%2Cou%3Dtesting%2Co%project&amp;bindpass=secret&amp;port=10389&amp;ssl=true&amp;truststore=C%3A%2Fcompany%2Finfo%2Ftrusted.ks&amp;truststorepass=secret&amp;response=json&amp;apiKey=YourAPIKey&amp;signature=YourSignatureHash				
-			</programlisting>
-			<para>The command must be URL-encoded. Here is the same example without the URL encoding:</para>
-			<programlisting>
+        <title>User Services Overview</title>
+    <para>In addition to the physical and logical infrastructure of your cloud, and the CloudPlatform software and servers, you also need a layer of user services so that people can actually make use of the cloud. This means not just a user UI, but a set of options and resources that users can choose from, such as templates for creating virtual machines, disk storage, and more. If you are running a commercial service, you will be keeping track of what services and resources users are consuming and charging them for that usage. Even if you do not charge anything for people to use your cloud – say, if the users are strictly internal to your organization, or just friends who are sharing your cloud – you can still keep track of what services they use and how much of them.</para>
+    <section id="offerings-and-templates">
+        <title>Service Offerings, Disk Offerings, Network Offerings, and Templates</title>
+        <para>A user creating a new instance can make a variety of choices about its characteristics and capabilities. CloudPlatform provides several ways to present users with choices when creating a new instance:</para>
+        <itemizedlist>
+            <listitem><para>Service Offerings, defined by the CloudPlatform administrator, provide a choice of CPU speed, number of CPUs, RAM size, tags on the root disk, and other choices. See Creating a New Compute Offering.</para></listitem>
+            <listitem><para>Disk Offerings, defined by the CloudPlatform administrator, provide a choice of disk size for primary data storage. See Creating a New Disk Offering.</para></listitem>
+            <listitem><para>Network Offerings, defined by the CloudPlatform administrator, describe the feature set that is available to end users from the virtual router or external networking devices on a given guest network. See Network Offerings.</para></listitem>
+            <listitem><para> Templates, defined by the CloudPlatform administrator or by any CloudPlatform user, are the base OS images that the user can choose from when creating a new instance. For example, CloudPlatform includes CentOS as a template. See Working with Templates.</para></listitem>
+        </itemizedlist>
+        <para>In addition to these choices that are provided for users, there is another type of service offering which is available only to the CloudPlatform root administrator, and is used for configuring virtual infrastructure resources. For more information, see Upgrading a Virtual Router with System Service Offerings.</para>
+    </section>
+    <section id="accounts-users-domains">
+        <title>Accounts, Users, and Domains</title>
+        <para>An account typically represents a customer of the service provider or a department in a large organization. Multiple users can exist in an account. Users are like aliases in the account. Users in the same account are not isolated from each other, but they are isolated from users in other accounts. Most installations need not surface the notion of users; they just have one user per account.</para>
+        <para>Accounts are grouped by domains. Domains usually contain accounts that have some logical relationship to each other and a set of delegated administrators with some authority over the domain and its subdomains. For example, a service provider with several resellers could create a domain for each reseller.</para>
+        <para>Administrators are accounts with special privileges in the system. There may be multiple administrators in the system. Administrators can create or delete other administrators, and change the password for any user in the system. Root administrators have complete access to the system, including managing templates, service offerings, customer care administrators, and domains. Domain administrators can perform administrative operations for users who belong to that domain. Domain administrators do not have visibility into physical servers or other domains.</para>
+    </section>
+    <section id="using-ldap-server">
+        <title>Using an LDAP Server for User Authentication</title>
+        <para>You can use an external LDAP server such as Microsoft Active Directory or ApacheDS to authenticate CloudPlatform end-users. Just map CloudPlatform accounts to the corresponding LDAP accounts using a query filter. The query filter is written using the query syntax of the particular LDAP server, and can include special wildcard characters provided by CloudPlatform for matching common values such as the user’s email address and name. CloudPlatform will search the external LDAP directory tree starting at a specified base directory and return the distinguished name (DN) and password of the matching user. This information along with the given password is used to authenticate the user.</para>
+        <para>To set up LDAP authentication in CloudPlatform, call the CloudPlatform API command ldapConfig and provide the following:</para>
+        <itemizedlist>
+            <listitem><para>Hostname or IP address and listening port of the LDAP server</para></listitem>
+            <listitem><para>Base directory and query filter</para></listitem>
+            <listitem><para>Search user DN credentials, which give CloudPlatform permission to search on the LDAP server</para></listitem>
+            <listitem><para>SSL keystore and password, if SSL is used</para></listitem>
+        </itemizedlist>
+        <section id="example-ldap-commands">
+            <title>Example LDAP Configuration Commands</title>
+            <para>To understand the examples in this section, you need to know the basic concepts behind calling the CloudPlatform API, which are explained in the Developer’s Guide.</para>
+            <para>The following shows an example invocation of ldapConfig with an ApacheDS LDAP server.</para>
+            <programlisting>http://127.0.0.1:8080/client/api?command=ldapConfig&amp;hostname=127.0.0.1&amp;searchbase=ou%3Dtesting%2Co%3Dproject&amp;queryfilter=%28%26%28uid%3D%25u%29%29&amp;binddn=cn%3DJohn+Singh%2Cou%3Dtesting%2Co%project&amp;bindpass=secret&amp;port=10389&amp;ssl=true&amp;truststore=C%3A%2Fcompany%2Finfo%2Ftrusted.ks&amp;truststorepass=secret&amp;response=json&amp;apiKey=YourAPIKey&amp;signature=YourSignatureHash                
+            </programlisting>
+            <para>The command must be URL-encoded. Here is the same example without the URL encoding:</para>
+            <programlisting>
 http://127.0.0.1:8080/client/api?command=ldapConfig
 &amp;hostname=127.0.0.1
 &amp;searchbase=ou=testing,o=project
@@ -49,29 +49,29 @@ http://127.0.0.1:8080/client/api?command=ldapConfig
 &amp;response=json
 &amp;apiKey=YourAPIKey
 &amp;signature=YourSignatureHash
-			</programlisting>
-			<para>The following shows a similar command for Active Directory. Here, the search base is the testing group within a company, and the users are matched up based on email address.</para>
-			<programlisting>http://10.147.29.101:8080/client/api?command=ldapConfig&amp;hostname=10.147.28.250&amp;searchbase=OU%3Dtesting%2CDC%3Dcompany&amp;queryfilter=%28%26%28mail%3D%25e%29%29&amp;binddn=CN%3DAdministrator%2COU%3Dtesting%2CDC%3Dcompany&amp;bindpass=1111_aaaa&amp;port=389&amp;response=json&amp;apiKey=YourAPIKey&amp;signature=YourSignatureHash
-			</programlisting>
-			<para>The next few sections explain some of the concepts you will need to know when filling out the ldapConfig parameters.</para>
-		</section>
-		<section id="search-base">
-			<title>Search Base</title>
-			<para>Coming soon: TODO</para>
-		</section>
-		<section id="query-filter">
-			<title>Query Filter</title>
-			<para>Coming soon: TODO</para>
-		</section>
-		<section id="search-user-bind-dn">
-			<title>Search User Bind DN</title>
-			<para>Coming soon: TODO</para>
-		</section>
-		<section id="ssl-keystore-path-and-password">
-			<title>SSL Keystore Path and Password</title>
-			<para>Coming soon: TODO</para>
-		</section>
-		
-	</section>
+            </programlisting>
+            <para>The following shows a similar command for Active Directory. Here, the search base is the testing group within a company, and the users are matched up based on email address.</para>
+            <programlisting>http://10.147.29.101:8080/client/api?command=ldapConfig&amp;hostname=10.147.28.250&amp;searchbase=OU%3Dtesting%2CDC%3Dcompany&amp;queryfilter=%28%26%28mail%3D%25e%29%29&amp;binddn=CN%3DAdministrator%2COU%3Dtesting%2CDC%3Dcompany&amp;bindpass=1111_aaaa&amp;port=389&amp;response=json&amp;apiKey=YourAPIKey&amp;signature=YourSignatureHash
+            </programlisting>
+            <para>The next few sections explain some of the concepts you will need to know when filling out the ldapConfig parameters.</para>
+        </section>
+        <section id="search-base">
+            <title>Search Base</title>
+            <para>Coming soon: TODO</para>
+        </section>
+        <section id="query-filter">
+            <title>Query Filter</title>
+            <para>Coming soon: TODO</para>
+        </section>
+        <section id="search-user-bind-dn">
+            <title>Search User Bind DN</title>
+            <para>Coming soon: TODO</para>
+        </section>
+        <section id="ssl-keystore-path-and-password">
+            <title>SSL Keystore Path and Password</title>
+            <para>Coming soon: TODO</para>
+        </section>
+        
+    </section>
 </section>
 

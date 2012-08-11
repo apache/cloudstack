@@ -26,5 +26,5 @@
     <title>Responses</title>
         <xi:include href="response-formats.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
         <xi:include href="max-result-page-returned.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-        <xi:include href="error-handling.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />	
+        <xi:include href="error-handling.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />    
 </section>

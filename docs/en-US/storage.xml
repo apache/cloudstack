@@ -23,8 +23,8 @@
 -->
 
 <section id="storage">
-	<title>Deleting VMs</title>
-	<para>&PRODUCT; defines two types of storage: primary and secondary. Primary storage can be accessed by either iSCSI or NFS. Additionally, direct attached storage may be used for primary storage. Secondary storage is always accessed using NFS.</para>
-	<para>There is no ephemeral storage in &PRODUCT;. All volumes on all nodes are persistent</para>	
+    <title>Deleting VMs</title>
+    <para>&PRODUCT; defines two types of storage: primary and secondary. Primary storage can be accessed by either iSCSI or NFS. Additionally, direct attached storage may be used for primary storage. Secondary storage is always accessed using NFS.</para>
+    <para>There is no ephemeral storage in &PRODUCT;. All volumes on all nodes are persistent</para>    
 </section>
 

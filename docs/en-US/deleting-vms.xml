@@ -23,19 +23,19 @@
 -->
 
 <section id="deleting-vms">
-		<title>Deleting VMs</title>
-			<para>Users can delete their own virtual machines. A running virtual machine will be abruptly stopped before it is deleted. Administrators can delete any virtual machines.</para>
-			<para>To delete a virtual machine:</para>	
-			<orderedlist>
-				<listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
-				<listitem><para>In the left navigation, click Instances.</para></listitem>
-				<listitem><para>Choose the VM that you want to delete.</para></listitem>
-				<listitem><para>Click the Destroy Instance button <inlinemediaobject>
-				<imageobject>
-					<imagedata fileref="./images/destroy-instance.png" />
-				</imageobject>
-				<textobject><phrase>Destroyinstance.png: button to destroy an instance</phrase></textobject>
-			</inlinemediaobject>
-				</para></listitem>
-			</orderedlist>
-	</section>
+        <title>Deleting VMs</title>
+            <para>Users can delete their own virtual machines. A running virtual machine will be abruptly stopped before it is deleted. Administrators can delete any virtual machines.</para>
+            <para>To delete a virtual machine:</para>    
+            <orderedlist>
+                <listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
+                <listitem><para>In the left navigation, click Instances.</para></listitem>
+                <listitem><para>Choose the VM that you want to delete.</para></listitem>
+                <listitem><para>Click the Destroy Instance button <inlinemediaobject>
+                <imageobject>
+                    <imagedata fileref="./images/destroy-instance.png" />
+                </imageobject>
+                <textobject><phrase>Destroyinstance.png: button to destroy an instance</phrase></textobject>
+            </inlinemediaobject>
+                </para></listitem>
+            </orderedlist>
+    </section>

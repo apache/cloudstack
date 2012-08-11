@@ -23,52 +23,52 @@
 -->
 
 <section id="install-management-server-multi-nodes">
-	<title>Prepare and Start Additional Management Servers</title>
-	<para>For your second and subsequent Management Servers, you will install the Management Server software, connect it to the database, and set up the OS for the Management Server. 
-	</para>
-	<orderedlist>
-		<listitem><para>Perform the steps in <xref linkend="prepare-os"/>.</para>
-		</listitem>
-		<listitem><para>Download the Management Server onto the additional host where it will run. Get the software from the following link.</para>
-				<para condition="cloudplatform"><ulink url="https://www.citrix.com/English/ss/downloads/">https://www.citrix.com/English/ss/downloads/</ulink></para>
+    <title>Prepare and Start Additional Management Servers</title>
+    <para>For your second and subsequent Management Servers, you will install the Management Server software, connect it to the database, and set up the OS for the Management Server. 
+    </para>
+    <orderedlist>
+        <listitem><para>Perform the steps in <xref linkend="prepare-os"/>.</para>
+        </listitem>
+        <listitem><para>Download the Management Server onto the additional host where it will run. Get the software from the following link.</para>
+                <para condition="cloudplatform"><ulink url="https://www.citrix.com/English/ss/downloads/">https://www.citrix.com/English/ss/downloads/</ulink></para>
 <para condition="cloudstack"><ulink url="FIXME">FIXME</ulink></para>
-				<para condition="cloudplatform">You will need a <ulink url="http://www.citrix.com/lang/English/publicindex.asp?destURL=%2FEnglish%2FmyCitrix%2Findex.asp%3F">MyCitrix account</ulink>.</para>		
-		</listitem>
-		<listitem><para>Install the  packages. You should have a file in the form of “&PRODUCT;-VERSION-N-OSVERSION.tar.gz”. Untar the file and then run the install.sh script inside it. Replace the file and directory names below with those you are using:</para>
-			<programlisting>
+                <para condition="cloudplatform">You will need a <ulink url="http://www.citrix.com/lang/English/publicindex.asp?destURL=%2FEnglish%2FmyCitrix%2Findex.asp%3F">MyCitrix account</ulink>.</para>        
+        </listitem>
+        <listitem><para>Install the  packages. You should have a file in the form of “&PRODUCT;-VERSION-N-OSVERSION.tar.gz”. Untar the file and then run the install.sh script inside it. Replace the file and directory names below with those you are using:</para>
+            <programlisting>
 # tar xzf &PRODUCT;-VERSION-N-OSVERSION.tar.gz
 # cd &PRODUCT;-VERSION-N-OSVERSION
 # ./install.sh
-			</programlisting>
-			<para>You should see a few messages as the installer prepares, followed by a list of choices.</para>
-		</listitem>
-		<listitem><para>Choose M to install the Management Server software.</para>
-			<programlisting>  > M</programlisting>
-		</listitem>
-		<listitem><para>Wait for a message like “Complete! Done,” which indicates that the software was installed successfully.</para>
-		</listitem>
-		<listitem><para>(RHEL or CentOS) When the installation is finished, run the following commands to start essential services  (the commands might be different depending on your OS):</para>
-			<programlisting>
+            </programlisting>
+            <para>You should see a few messages as the installer prepares, followed by a list of choices.</para>
+        </listitem>
+        <listitem><para>Choose M to install the Management Server software.</para>
+            <programlisting>  > M</programlisting>
+        </listitem>
+        <listitem><para>Wait for a message like “Complete! Done,” which indicates that the software was installed successfully.</para>
+        </listitem>
+        <listitem><para>(RHEL or CentOS) When the installation is finished, run the following commands to start essential services  (the commands might be different depending on your OS):</para>
+            <programlisting>
 # service rpcbind start
 # service nfs start
 # chkconfig nfs on
 # chkconfig rpcbind on
-			</programlisting>
-		</listitem>
-		<listitem><para>Configure the database client. Note the absence of the --deploy-as argument in this case.
-			(For more details about the arguments to this command, see <xref linkend="install-database-on-separate-node"/>.)
-		</para>
-			<programlisting># cloud-setup-databases cloud:&lt;dbpassword&gt;@&lt;dbhost&gt; -e &lt;encryption_type&gt; -m &lt;management_server_key&gt; -k &lt;database_key&gt;
-			</programlisting>
-		</listitem>
-		<listitem><para>(Trial installations only) If you are running the hypervisor on the same machine with the Management Server, edit /etc/sudoers and add the following line:</para>
-			<programlisting>Defaults:cloud !requiretty</programlisting>
-		</listitem>
-		<listitem><para>Configure the OS and start the Management Server:</para>
-			<programlisting># cloud-setup-management</programlisting>
-			<para>The Management Server on this node should now be running.</para>
-		</listitem>
-		<listitem><para>Repeat these steps on each additional Management Server. </para></listitem>
-		<listitem><para>Be sure to configure a load balancer for the Management Servers. See Management Server Load Balancing.</para></listitem>
-	</orderedlist>
+            </programlisting>
+        </listitem>
+        <listitem><para>Configure the database client. Note the absence of the --deploy-as argument in this case.
+            (For more details about the arguments to this command, see <xref linkend="install-database-on-separate-node"/>.)
+        </para>
+            <programlisting># cloud-setup-databases cloud:&lt;dbpassword&gt;@&lt;dbhost&gt; -e &lt;encryption_type&gt; -m &lt;management_server_key&gt; -k &lt;database_key&gt;
+            </programlisting>
+        </listitem>
+        <listitem><para>(Trial installations only) If you are running the hypervisor on the same machine with the Management Server, edit /etc/sudoers and add the following line:</para>
+            <programlisting>Defaults:cloud !requiretty</programlisting>
+        </listitem>
+        <listitem><para>Configure the OS and start the Management Server:</para>
+            <programlisting># cloud-setup-management</programlisting>
+            <para>The Management Server on this node should now be running.</para>
+        </listitem>
+        <listitem><para>Repeat these steps on each additional Management Server. </para></listitem>
+        <listitem><para>Be sure to configure a load balancer for the Management Servers. See Management Server Load Balancing.</para></listitem>
+    </orderedlist>
 </section>

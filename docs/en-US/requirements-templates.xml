@@ -23,9 +23,9 @@
 -->
 
 <section id="requirements-templates">
-	<title>Requirements for Templates</title>
-	<itemizedlist>
-		<listitem><para>For XenServer, install PV drivers / Xen tools on each template that you create.  This will enable live migration and clean guest shutdown.</para></listitem>
-		<listitem><para>For vSphere, install VMware Tools on each template that you create.  This will enable console view to work properly.</para></listitem>
+    <title>Requirements for Templates</title>
+    <itemizedlist>
+        <listitem><para>For XenServer, install PV drivers / Xen tools on each template that you create.  This will enable live migration and clean guest shutdown.</para></listitem>
+        <listitem><para>For vSphere, install VMware Tools on each template that you create.  This will enable console view to work properly.</para></listitem>
 </itemizedlist>
 </section>

@@ -23,6 +23,6 @@
 -->
 
 <section id="domains">
-	<title>Domains</title>
-	<para>If the LDAP server requires SSL, you need to enable it in the ldapConfig command by setting the parameters ssl, truststore, and truststorepass. Before enabling SSL for ldapConfig, you need to get the certificate which the LDAP server is using and add it to a trusted keystore. You will need to know the path to the keystore and the password.</para>
-	</section>
+    <title>Domains</title>
+    <para>If the LDAP server requires SSL, you need to enable it in the ldapConfig command by setting the parameters ssl, truststore, and truststorepass. Before enabling SSL for ldapConfig, you need to get the certificate which the LDAP server is using and add it to a trusted keystore. You will need to know the path to the keystore and the password.</para>
+    </section>

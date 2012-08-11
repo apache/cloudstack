@@ -23,7 +23,7 @@
 -->
 
 <section id="about-primary-storage">
-	<title>About Primary Storage</title>
+    <title>About Primary Storage</title>
     <para>Primary storage is associated with a cluster, and it stores the disk volumes for all the VMs running on hosts in that cluster. You can add multiple primary storage servers to a cluster. At least one is required. It is typically located close to the hosts for increased performance.</para>
     <para>&PRODUCT; is designed to work with all standards-compliant iSCSI and NFS servers that are supported by the underlying hypervisor, including, for example:</para>
     <itemizedlist>

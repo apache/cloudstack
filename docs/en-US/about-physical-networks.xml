@@ -23,7 +23,7 @@
 -->
 
 <section id="about-physical-networks">
-	<title>About Physical Networks</title>
+    <title>About Physical Networks</title>
     <para>Part of adding a zone is setting up the physical network. One or (in an advanced zone) more physical networks can be associated with each zone. The network corresponds to a NIC on the hypervisor host. Each physical network can carry one or more types of network traffic. The choices of traffic type for each network vary depending on whether you are creating a zone with basic networking or advanced networking.</para>
     <para>A physical network is the actual network hardware and wiring in a zone. A zone can have multiple physical networks. An administrator can:</para>
     <itemizedlist>

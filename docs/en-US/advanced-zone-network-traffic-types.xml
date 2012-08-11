@@ -23,7 +23,7 @@
 -->
 
 <section id="advanced-zone-network-traffic-types">
-	<title>Advanced Zone Network Traffic Types</title>
+    <title>Advanced Zone Network Traffic Types</title>
     <para>When advanced networking is used, there can be multiple physical networks in the zone. Each physical network can carry one or more traffic types, and  you need to let &PRODUCT; know which type of network traffic you want each network to carry. The traffic types in an advanced zone are:</para>
     <itemizedlist>
         <listitem><para>Guest. When end users run VMs, they generate guest traffic. The guest VMs communicate with each other over a network that can be referred to as the guest network. This network can be isolated or shared. In an isolated guest network, the administrator needs to reserve VLAN ranges to provide isolation for each &PRODUCT; account’s network (potentially a large number of VLANs). In a shared guest network, all guest VMs share a single network.</para></listitem>

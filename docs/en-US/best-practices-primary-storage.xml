@@ -23,9 +23,9 @@
 -->
 
 <section id="best-practices-primary-storage">
-		<title>Best Practices for Primary Storage</title>
-		<itemizedlist>
-			<listitem><para>The speed of primary storage will impact guest performance. If possible, choose smaller, higher RPM drives for primary storage.</para></listitem>
-			<listitem><para>Ensure that nothing is stored on the server. Adding the server to CloudPlatform will destroy any existing data</para></listitem>			
-		</itemizedlist>
-	</section>
+        <title>Best Practices for Primary Storage</title>
+        <itemizedlist>
+            <listitem><para>The speed of primary storage will impact guest performance. If possible, choose smaller, higher RPM drives for primary storage.</para></listitem>
+            <listitem><para>Ensure that nothing is stored on the server. Adding the server to CloudPlatform will destroy any existing data</para></listitem>            
+        </itemizedlist>
+    </section>

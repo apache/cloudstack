@@ -23,34 +23,34 @@
 -->
 
 <section id="prepare-system-vm-template">
-	<title>Prepare the System VM Template</title>
-	<para>Secondary storage must be seeded with a template that is used for &PRODUCT; system VMs.</para>
-	<note><para>When copying and pasting a command, be sure the command has pasted as a single line before executing. Some document viewers may introduce unwanted line breaks in copied text.</para></note>
-	<orderedlist>
-		<listitem><para>On the Management Server, run one or more of the following cloud-install-sys-tmplt commands to retrieve and decompress the system VM template. Run the command for each hypervisor type that you expect end users to run in this Zone.</para>
-			<para>If your secondary storage mount point is not named /mnt/secondary, substitute your own mount point name.</para>
-			<para>If you set the &PRODUCT; database encryption type to "web" when you set up the database, you must now add the parameter -s &lt;management-server-secret-key&gt;. See About Password and Key Encryption.</para>
-			<para>This process will require approximately 5 GB of free space on the local file system and up to 30 minutes each time it runs.</para>
-			<itemizedlist>
-				<listitem><para>For XenServer:</para>
-					<programlisting># /usr/lib64/cloud/agent/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2 -h xenserver -s &lt;optional-management-server-secret-key&gt; -F</programlisting>
-				</listitem>
-				<listitem><para>For vSphere:</para>
-					<programlisting># /usr/lib64/cloud/agent/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.ova -h vmware -s &lt;optional-management-server-secret-key&gt;  -F</programlisting>
-				</listitem>
-				<listitem><para>For KVM:</para>
-					<programlisting># /usr/lib64/cloud/agent/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -s &lt;optional-management-server-secret-key&gt; -F</programlisting>
-				</listitem>
-			</itemizedlist>
-		</listitem>
-		<listitem><para>If you are using a separate NFS server, perform this step. If you are using the Management Server as the NFS server, you MUST NOT perform this step.</para>
-			<para>When the script has finished, unmount secondary storage and remove the created directory.</para>
-			<programlisting>
+    <title>Prepare the System VM Template</title>
+    <para>Secondary storage must be seeded with a template that is used for &PRODUCT; system VMs.</para>
+    <note><para>When copying and pasting a command, be sure the command has pasted as a single line before executing. Some document viewers may introduce unwanted line breaks in copied text.</para></note>
+    <orderedlist>
+        <listitem><para>On the Management Server, run one or more of the following cloud-install-sys-tmplt commands to retrieve and decompress the system VM template. Run the command for each hypervisor type that you expect end users to run in this Zone.</para>
+            <para>If your secondary storage mount point is not named /mnt/secondary, substitute your own mount point name.</para>
+            <para>If you set the &PRODUCT; database encryption type to "web" when you set up the database, you must now add the parameter -s &lt;management-server-secret-key&gt;. See About Password and Key Encryption.</para>
+            <para>This process will require approximately 5 GB of free space on the local file system and up to 30 minutes each time it runs.</para>
+            <itemizedlist>
+                <listitem><para>For XenServer:</para>
+                    <programlisting># /usr/lib64/cloud/agent/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2 -h xenserver -s &lt;optional-management-server-secret-key&gt; -F</programlisting>
+                </listitem>
+                <listitem><para>For vSphere:</para>
+                    <programlisting># /usr/lib64/cloud/agent/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.ova -h vmware -s &lt;optional-management-server-secret-key&gt;  -F</programlisting>
+                </listitem>
+                <listitem><para>For KVM:</para>
+                    <programlisting># /usr/lib64/cloud/agent/scripts/storage/secondary/cloud-install-sys-tmplt -m /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -s &lt;optional-management-server-secret-key&gt; -F</programlisting>
+                </listitem>
+            </itemizedlist>
+        </listitem>
+        <listitem><para>If you are using a separate NFS server, perform this step. If you are using the Management Server as the NFS server, you MUST NOT perform this step.</para>
+            <para>When the script has finished, unmount secondary storage and remove the created directory.</para>
+            <programlisting>
 # umount /mnt/secondary 
 # rmdir /mnt/secondary
-			</programlisting>
-		</listitem>
-		<listitem><para>Repeat these steps for each secondary storage server.</para>
-		</listitem>
-	</orderedlist>
+            </programlisting>
+        </listitem>
+        <listitem><para>Repeat these steps for each secondary storage server.</para>
+        </listitem>
+    </orderedlist>
 </section>

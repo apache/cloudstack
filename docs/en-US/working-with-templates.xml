@@ -4,10 +4,10 @@
 %BOOK_ENTITIES;
 ]>
 <section id="working-with-templates">
-	<title>Working with Templates</title>
-	<para>A template is a reusable configuration for virtual machines. When users launch VMs, they can choose from a list of templates in CloudPlatform.</para>
-	<para>Specifically, a template is a virtual disk image that includes one of a variety of operating systems, optional additional software such as office applications, and settings such as access control to determine who can use the template. Each template is associated with a particular type of hypervisor, which is specified when the template is added to CloudPlatform.</para>
-	<para>CloudPlatform ships with a default template. In order to present more choices to users, CloudPlatform administrators and users can create templates and add them to CloudPlatform.</para>
+    <title>Working with Templates</title>
+    <para>A template is a reusable configuration for virtual machines. When users launch VMs, they can choose from a list of templates in CloudPlatform.</para>
+    <para>Specifically, a template is a virtual disk image that includes one of a variety of operating systems, optional additional software such as office applications, and settings such as access control to determine who can use the template. Each template is associated with a particular type of hypervisor, which is specified when the template is added to CloudPlatform.</para>
+    <para>CloudPlatform ships with a default template. In order to present more choices to users, CloudPlatform administrators and users can create templates and add them to CloudPlatform.</para>
     <xi:include href="create-templates-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="requirements-templates.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="best-practices-templates.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
@@ -22,4 +22,4 @@
     <xi:include href="create-bare-metal-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="convert-hyperv-vm-to-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="delete-templates.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	</section>
+    </section>

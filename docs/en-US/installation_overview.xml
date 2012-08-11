@@ -23,11 +23,11 @@
 -->
 
 <chapter id="installation_overview">
-	<title>Installation Overview</title>
-		<xi:include href="cloudstack_whatis.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-		<xi:include href="cloudstack_features.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-		<xi:include href="deployment_architecture_overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-		<xi:include href="installation_steps_overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-		<xi:include href="cloudstack_system_requirements.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-	
+    <title>Installation Overview</title>
+        <xi:include href="cloudstack_whatis.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="cloudstack_features.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="deployment_architecture_overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="installation_steps_overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+        <xi:include href="cloudstack_system_requirements.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    
 </chapter>

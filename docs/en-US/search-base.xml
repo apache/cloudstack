@@ -26,26 +26,26 @@
     <title>Search Base</title>
 <para>An LDAP query is relative to a given node of the LDAP directory tree, called the search base. The search base is the distinguished name (DN) of a level of the directory tree below which all users can be found. The users can be in the immediate base directory or in some subdirectory. The search base may be equivalent to the organization, group, or domain name. The syntax for writing a DN varies depending on which LDAP server you are using. A full discussion of distinguished names is outside the scope of our documentation. The following table shows some examples of search bases to find users in the testing department..</para>
      
-	<informaltable>
-		<tgroup cols="2" align="left" colsep="1" rowsep="1">
-		<thead>
-			<row>
-				<entry><para>LDAP Server</para></entry>
-				<entry><para>Example Search Base DN</para></entry>																	
-			</row>
-		</thead>
-		<tbody>
-			<row>
-			<entry><para>ApacheDS</para></entry>
-				<entry><para>ou=testing,o=project</para></entry>									
-			</row>
-			<row>
-				<entry><para>Active Directory</para></entry>
-				<entry><para>OU=testing, DC=company</para></entry>
-			</row>
-		</tbody>
-		</tgroup>
-	</informaltable>
+    <informaltable>
+        <tgroup cols="2" align="left" colsep="1" rowsep="1">
+        <thead>
+            <row>
+                <entry><para>LDAP Server</para></entry>
+                <entry><para>Example Search Base DN</para></entry>                                                                    
+            </row>
+        </thead>
+        <tbody>
+            <row>
+            <entry><para>ApacheDS</para></entry>
+                <entry><para>ou=testing,o=project</para></entry>                                    
+            </row>
+            <row>
+                <entry><para>Active Directory</para></entry>
+                <entry><para>OU=testing, DC=company</para></entry>
+            </row>
+        </tbody>
+        </tgroup>
+    </informaltable>
 
 
 </section>

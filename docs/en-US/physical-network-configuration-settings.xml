@@ -23,7 +23,7 @@
 -->
 
 <section id="physical-network-configuration-settings">
-	<title>Configurable Characteristics of Physical Networks</title>
+    <title>Configurable Characteristics of Physical Networks</title>
     <para>&PRODUCT; provides configuration settings you can use to set up a physical network in a zone, including:</para>
     <itemizedlist>
         <listitem><para>What type of network traffic it carries (guest, public, management, storage)</para></listitem>

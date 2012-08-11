@@ -23,6 +23,6 @@
 -->
 
 <section id="stopping-and-starting-vms">
-	<title>Stopping and Starting VMs</title>
-	<para>Any user can access their own virtual machines. The administrator can access all VMs running in the cloud.</para>
+    <title>Stopping and Starting VMs</title>
+    <para>Any user can access their own virtual machines. The administrator can access all VMs running in the cloud.</para>
 </section>

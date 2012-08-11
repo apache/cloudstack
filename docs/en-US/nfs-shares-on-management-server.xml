@@ -23,40 +23,40 @@
 -->
 
 <section id="nfs-shares-on-management-server">
-	<title>Using the Management Server As the NFS Server</title>
-	<para>This section tells how to set up NFS shares for primary and secondary storage on the same node with the Management Server.  This is more typical of a trial installation, but is technically possible in a larger deployment. It is assumed that you will have less than 16TB of storage on the host.</para> 
-	<para>The exact commands for the following steps may vary depending on your operating system version.</para>
-	<orderedlist>
-		<listitem><para>On the Management Server host, create two directories that you will use for primary and secondary storage. For example:</para>
-		<programlisting>
+    <title>Using the Management Server As the NFS Server</title>
+    <para>This section tells how to set up NFS shares for primary and secondary storage on the same node with the Management Server.  This is more typical of a trial installation, but is technically possible in a larger deployment. It is assumed that you will have less than 16TB of storage on the host.</para> 
+    <para>The exact commands for the following steps may vary depending on your operating system version.</para>
+    <orderedlist>
+        <listitem><para>On the Management Server host, create two directories that you will use for primary and secondary storage. For example:</para>
+        <programlisting>
 # mkdir -p /export/primary
 # mkdir -p /export/secondary
-		</programlisting>
-		</listitem>
-		<listitem><para>To configure the new directories as NFS exports, edit /etc/exports. Export the NFS share(s) with rw,async,no_root_squash. For example:</para>
-			<programlisting># vi /etc/exports</programlisting>
-			<para>Insert the following line.</para>
-			<programlisting>/export  *(rw,async,no_root_squash)</programlisting>
-		</listitem>
-		<listitem><para>Export the /export directory.</para>
-			<programlisting># exportfs -a</programlisting>
-		</listitem>
-		<listitem><para>Edit the /etc/sysconfig/nfs file.</para>
-			<programlisting># vi /etc/sysconfig/nfs</programlisting>
-			<para>Uncomment the following lines:</para>
-			<programlisting>
+        </programlisting>
+        </listitem>
+        <listitem><para>To configure the new directories as NFS exports, edit /etc/exports. Export the NFS share(s) with rw,async,no_root_squash. For example:</para>
+            <programlisting># vi /etc/exports</programlisting>
+            <para>Insert the following line.</para>
+            <programlisting>/export  *(rw,async,no_root_squash)</programlisting>
+        </listitem>
+        <listitem><para>Export the /export directory.</para>
+            <programlisting># exportfs -a</programlisting>
+        </listitem>
+        <listitem><para>Edit the /etc/sysconfig/nfs file.</para>
+            <programlisting># vi /etc/sysconfig/nfs</programlisting>
+            <para>Uncomment the following lines:</para>
+            <programlisting>
 LOCKD_TCPPORT=32803
 LOCKD_UDPPORT=32769
 MOUNTD_PORT=892
 RQUOTAD_PORT=875
 STATD_PORT=662
 STATD_OUTGOING_PORT=2020
-			</programlisting>
-		</listitem>
-		<listitem><para>Edit the /etc/sysconfig/iptables file.</para>
-			<programlisting># vi /etc/sysconfig/iptables</programlisting>
-			<para>Add the following lines at the beginning of the INPUT chain where &lt;NETWORK&gt; is the network that you'll be using:</para>
-			<programlisting>
+            </programlisting>
+        </listitem>
+        <listitem><para>Edit the /etc/sysconfig/iptables file.</para>
+            <programlisting># vi /etc/sysconfig/iptables</programlisting>
+            <para>Add the following lines at the beginning of the INPUT chain where &lt;NETWORK&gt; is the network that you'll be using:</para>
+            <programlisting>
 -A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 111 -j ACCEPT
 -A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 111 -j ACCEPT
 -A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 2049 -j ACCEPT
@@ -67,46 +67,46 @@ STATD_OUTGOING_PORT=2020
 -A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 875 -j ACCEPT
 -A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 875 -j ACCEPT
 -A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p tcp --dport 662 -j ACCEPT
--A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 662 -j ACCEPT				
-			</programlisting>
-		</listitem>
-		<listitem><para>Run the following commands:</para>
-			<programlisting>
+-A INPUT -s &lt;NETWORK&gt; -m state --state NEW -p udp --dport 662 -j ACCEPT                
+            </programlisting>
+        </listitem>
+        <listitem><para>Run the following commands:</para>
+            <programlisting>
 # service iptables restart
 # service iptables save
-			</programlisting>
-		</listitem>
-		<listitem><para>If NFS v4 communication is used between client and server, add your domain to /etc/idmapd.conf on both the hypervisor host and Management Server.</para>
-			<programlisting># vi /etc/idmapd.conf</programlisting>
-			<para>Remove the character # from the beginning of the Domain line in idmapd.conf and replace the value in the file with your own domain. In the example below, the domain is company.com.</para>
-			<programlisting>Domain = company.com</programlisting>
-		</listitem>
-		<listitem><para>Reboot the Management Server host.</para>
-			<para>Two NFS shares called /export/primary and /export/secondary are now set up.</para>
-		</listitem>
-		<listitem><para>It is recommended that you test to be sure the previous steps have been successful.</para>
-			<orderedlist numeration="loweralpha">
-				<listitem><para>Log in to the hypervisor host.</para></listitem>
-				<listitem><para>Be sure NFS and rpcbind are running. The commands might be different depending on your OS. For example:</para>
-					<programlisting>
+            </programlisting>
+        </listitem>
+        <listitem><para>If NFS v4 communication is used between client and server, add your domain to /etc/idmapd.conf on both the hypervisor host and Management Server.</para>
+            <programlisting># vi /etc/idmapd.conf</programlisting>
+            <para>Remove the character # from the beginning of the Domain line in idmapd.conf and replace the value in the file with your own domain. In the example below, the domain is company.com.</para>
+            <programlisting>Domain = company.com</programlisting>
+        </listitem>
+        <listitem><para>Reboot the Management Server host.</para>
+            <para>Two NFS shares called /export/primary and /export/secondary are now set up.</para>
+        </listitem>
+        <listitem><para>It is recommended that you test to be sure the previous steps have been successful.</para>
+            <orderedlist numeration="loweralpha">
+                <listitem><para>Log in to the hypervisor host.</para></listitem>
+                <listitem><para>Be sure NFS and rpcbind are running. The commands might be different depending on your OS. For example:</para>
+                    <programlisting>
 # service rpcbind start
 # service nfs start
 # chkconfig nfs on
 # chkconfig rpcbind on
-# reboot						
-					</programlisting>
-				</listitem>
-				<listitem><para>Log back in to the hypervisor host and try to mount the /export directories. For example (substitute your own management server name):</para>
-					<programlisting>
+# reboot                        
+                    </programlisting>
+                </listitem>
+                <listitem><para>Log back in to the hypervisor host and try to mount the /export directories. For example (substitute your own management server name):</para>
+                    <programlisting>
 # mkdir /primarymount
 # mount -t nfs &lt;management-server-name&gt;:/export/primary /primarymount
 # umount /primarymount
 # mkdir /secondarymount
 # mount -t nfs &lt;management-server-name&gt;:/export/secondary /secondarymount
-# umount /secondarymount						
-					</programlisting>
-				</listitem>
-			</orderedlist>
-		</listitem>
-	</orderedlist>
+# umount /secondarymount                        
+                    </programlisting>
+                </listitem>
+            </orderedlist>
+        </listitem>
+    </orderedlist>
 </section>

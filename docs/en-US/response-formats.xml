@@ -23,34 +23,34 @@
 -->
 
 <section id="response-formats">
-	<title>Response Formats: XML and JSON</title>
-	<para>CloudStack supports two formats as the response to an API call. The default response is XML. If you would like the response to be in JSON, add &amp;response=json to the Command String.</para>
-	<para>Sample XML Response:</para>
-	<programlisting>
-	 &lt;listipaddressesresponse&gt; 
-		&lt;allocatedipaddress&gt;
-		&lt;ipaddress&gt;192.168.10.141&lt;/ipaddress&gt; 
-		&lt;allocated&gt;2009-09-18T13:16:10-0700&lt;/allocated&gt; 
-		&lt;zoneid&gt;4&lt;/zoneid&gt; 
-		    &lt;zonename&gt;WC&lt;/zonename&gt; 
-		    &lt;issourcenat&gt;true&lt;/issourcenat&gt; 
-		&lt;/allocatedipaddress&gt;
-	 &lt;/listipaddressesresponse&gt;
-	</programlisting>
-	<para>Sample JSON Response:</para>
-	<programlisting>
-		{ "listipaddressesresponse" : 
-		  { "allocatedipaddress" :
-		    [ 
-		      { 
-		        "ipaddress" : "192.168.10.141", 
-		        "allocated" : "2009-09-18T13:16:10-0700",
-		        "zoneid" : "4", 
-		        "zonename" : "WC", 
-		        "issourcenat" : "true" 
-		      } 
-		    ]
-		  } 
-		} 
-	</programlisting>
+    <title>Response Formats: XML and JSON</title>
+    <para>CloudStack supports two formats as the response to an API call. The default response is XML. If you would like the response to be in JSON, add &amp;response=json to the Command String.</para>
+    <para>Sample XML Response:</para>
+    <programlisting>
+     &lt;listipaddressesresponse&gt; 
+        &lt;allocatedipaddress&gt;
+        &lt;ipaddress&gt;192.168.10.141&lt;/ipaddress&gt; 
+        &lt;allocated&gt;2009-09-18T13:16:10-0700&lt;/allocated&gt; 
+        &lt;zoneid&gt;4&lt;/zoneid&gt; 
+            &lt;zonename&gt;WC&lt;/zonename&gt; 
+            &lt;issourcenat&gt;true&lt;/issourcenat&gt; 
+        &lt;/allocatedipaddress&gt;
+     &lt;/listipaddressesresponse&gt;
+    </programlisting>
+    <para>Sample JSON Response:</para>
+    <programlisting>
+        { "listipaddressesresponse" : 
+          { "allocatedipaddress" :
+            [ 
+              { 
+                "ipaddress" : "192.168.10.141", 
+                "allocated" : "2009-09-18T13:16:10-0700",
+                "zoneid" : "4", 
+                "zonename" : "WC", 
+                "issourcenat" : "true" 
+              } 
+            ]
+          } 
+        } 
+    </programlisting>
 </section>

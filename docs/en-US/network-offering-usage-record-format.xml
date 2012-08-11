@@ -23,21 +23,21 @@
 -->
 
 <section id="network-offering-usage-record-format">
-	<title>Network Offering Usage Record Format</title>
-	<itemizedlist>
-			<listitem><para>account – name of the account</para></listitem>
-			<listitem><para>accountid – ID of the account</para></listitem>
-			<listitem><para>domainid – ID of the domain in which this account resides</para></listitem>
-			<listitem><para>zoneid – Zone where the usage occurred</para></listitem>
-			<listitem><para>description – A string describing what the usage record is tracking</para></listitem>
-			<listitem><para>usage – String representation of the usage, including the units of usage (e.g. 'Hrs' for hours)</para></listitem>
-			<listitem><para>usagetype – A number representing the usage type (see Usage Types)</para></listitem>
-			<listitem><para>rawusage – A number representing the actual usage in hours</para></listitem>
-			<listitem><para>usageid – ID of the network offering</para></listitem>
-			<listitem><para>usagetype – A number representing the usage type (see Usage Types)</para></listitem>
-			<listitem><para>offeringid – Network offering ID</para></listitem>
-			<listitem><para>virtualMachineId – The ID of the virtual machine</para></listitem>
-			<listitem><para>virtualMachineId – The ID of the virtual machine</para></listitem>
-			<listitem><para>startdate, enddate – The range of time for which the usage is aggregated; see Dates in the Usage Record</para></listitem>
-		</itemizedlist>
+    <title>Network Offering Usage Record Format</title>
+    <itemizedlist>
+            <listitem><para>account – name of the account</para></listitem>
+            <listitem><para>accountid – ID of the account</para></listitem>
+            <listitem><para>domainid – ID of the domain in which this account resides</para></listitem>
+            <listitem><para>zoneid – Zone where the usage occurred</para></listitem>
+            <listitem><para>description – A string describing what the usage record is tracking</para></listitem>
+            <listitem><para>usage – String representation of the usage, including the units of usage (e.g. 'Hrs' for hours)</para></listitem>
+            <listitem><para>usagetype – A number representing the usage type (see Usage Types)</para></listitem>
+            <listitem><para>rawusage – A number representing the actual usage in hours</para></listitem>
+            <listitem><para>usageid – ID of the network offering</para></listitem>
+            <listitem><para>usagetype – A number representing the usage type (see Usage Types)</para></listitem>
+            <listitem><para>offeringid – Network offering ID</para></listitem>
+            <listitem><para>virtualMachineId – The ID of the virtual machine</para></listitem>
+            <listitem><para>virtualMachineId – The ID of the virtual machine</para></listitem>
+            <listitem><para>startdate, enddate – The range of time for which the usage is aggregated; see Dates in the Usage Record</para></listitem>
+        </itemizedlist>
 </section>

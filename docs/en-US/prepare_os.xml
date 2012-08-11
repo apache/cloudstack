@@ -22,85 +22,85 @@
  under the License.
 -->
 
-	<section id="prepare_os">
-		<title>Prepare the Operating System</title>
-		<para>The OS must be prepared to host the Management Server using the following steps. These steps must be performed on each Management Server node.</para>
-			<orderedlist>
-				<listitem><para>Log in to your OS as root.</para></listitem>
-				<listitem><para>Check for a fully qualified hostname.</para>
-					<programlisting># hostname --fqdn</programlisting>
-					<para>This should return a fully qualified hostname such as "kvm1.lab.example.org".  If it does not, edit /etc/hosts so that it does.</para>
-				</listitem>
-				<listitem><para>Set SELinux to be permissive by default.</para>
-					<orderedlist numeration="loweralpha">
-						<listitem><para>Check to see whether SELinux is installed on your machine. If not, you can skip to step 4.</para>
-							<para>In RHEL or CentOS, SELinux are installed and enabled by default. You can verify this with:</para>
-							<programlisting># rpm -qa | grep selinux</programlisting>
-							<para>In Ubuntu, SELinux is not installed by default. You can verify this with:</para>
-							<programlisting># dpkg --list 'selinux'</programlisting>
-						</listitem>
-						<listitem><para>Set the SELINUX variable in /etc/selinux/config to “permissive”. This ensures that the permissive setting will be maintained after a system reboot.</para>
-							<para>In RHEL or CentOS:</para>
-							<programlisting># vi /etc/selinux/config</programlisting>
-							<para>In Ubuntu (do this step only if SELinux was found on the machine in the previous step):</para>
-							<programlisting># selinux-config-enforcing permissive</programlisting>					
-						</listitem>
-						<listitem><para>Then set SELinux to permissive starting immediately, without requiring a system reboot.</para>
-							<para>In CentOS:</para>
-							<programlisting># setenforce permissive</programlisting>
-							<para>In RHEL:</para>
-							<programlisting># setenforce 0</programlisting>
-							<para>In Ubuntu (do this step only if SELinux was found on the machine):</para>
-							<programlisting># setenforce permissive</programlisting>
-						</listitem>
-					</orderedlist>
-				</listitem>
-				<listitem><para>Make sure that the Management Server can reach the Internet.</para>
-					<programlisting># ping www.google.com</programlisting>
-				</listitem>
-				<listitem><para>(RHEL 6.2) If you do not have a Red Hat Network account, you need to prepare a local Yum repository.</para>
-					<orderedlist numeration="loweralpha">
-						<listitem><para>If you are working with a physical host, insert the RHEL 6.2 installation CD. If you are using a VM, attach the RHEL6 ISO.</para></listitem>
-						<listitem><para>Mount the CDROM to /media.</para></listitem>
-						<listitem><para>Create a repo file at /etc/yum.repos.d/rhel6.repo. In the file, insert the following lines:</para>
-							<programlisting>
+    <section id="prepare_os">
+        <title>Prepare the Operating System</title>
+        <para>The OS must be prepared to host the Management Server using the following steps. These steps must be performed on each Management Server node.</para>
+            <orderedlist>
+                <listitem><para>Log in to your OS as root.</para></listitem>
+                <listitem><para>Check for a fully qualified hostname.</para>
+                    <programlisting># hostname --fqdn</programlisting>
+                    <para>This should return a fully qualified hostname such as "kvm1.lab.example.org".  If it does not, edit /etc/hosts so that it does.</para>
+                </listitem>
+                <listitem><para>Set SELinux to be permissive by default.</para>
+                    <orderedlist numeration="loweralpha">
+                        <listitem><para>Check to see whether SELinux is installed on your machine. If not, you can skip to step 4.</para>
+                            <para>In RHEL or CentOS, SELinux are installed and enabled by default. You can verify this with:</para>
+                            <programlisting># rpm -qa | grep selinux</programlisting>
+                            <para>In Ubuntu, SELinux is not installed by default. You can verify this with:</para>
+                            <programlisting># dpkg --list 'selinux'</programlisting>
+                        </listitem>
+                        <listitem><para>Set the SELINUX variable in /etc/selinux/config to “permissive”. This ensures that the permissive setting will be maintained after a system reboot.</para>
+                            <para>In RHEL or CentOS:</para>
+                            <programlisting># vi /etc/selinux/config</programlisting>
+                            <para>In Ubuntu (do this step only if SELinux was found on the machine in the previous step):</para>
+                            <programlisting># selinux-config-enforcing permissive</programlisting>                    
+                        </listitem>
+                        <listitem><para>Then set SELinux to permissive starting immediately, without requiring a system reboot.</para>
+                            <para>In CentOS:</para>
+                            <programlisting># setenforce permissive</programlisting>
+                            <para>In RHEL:</para>
+                            <programlisting># setenforce 0</programlisting>
+                            <para>In Ubuntu (do this step only if SELinux was found on the machine):</para>
+                            <programlisting># setenforce permissive</programlisting>
+                        </listitem>
+                    </orderedlist>
+                </listitem>
+                <listitem><para>Make sure that the Management Server can reach the Internet.</para>
+                    <programlisting># ping www.google.com</programlisting>
+                </listitem>
+                <listitem><para>(RHEL 6.2) If you do not have a Red Hat Network account, you need to prepare a local Yum repository.</para>
+                    <orderedlist numeration="loweralpha">
+                        <listitem><para>If you are working with a physical host, insert the RHEL 6.2 installation CD. If you are using a VM, attach the RHEL6 ISO.</para></listitem>
+                        <listitem><para>Mount the CDROM to /media.</para></listitem>
+                        <listitem><para>Create a repo file at /etc/yum.repos.d/rhel6.repo. In the file, insert the following lines:</para>
+                            <programlisting>
 [rhel]
 name=rhel6
 baseurl=file:///media
 enabled=1
-gpgcheck=0	
-							</programlisting>
-						</listitem>
-					</orderedlist>
-				</listitem>
-				<listitem><para>Turn on NTP for time synchronization.</para>
-					<note><para>NTP is required to synchronize the clocks of the servers in your cloud.</para></note>
-					<orderedlist numeration="loweralpha">
-						<listitem><para>Install NTP.</para>
-							<para>On RHEL or CentOS:</para>
-							<programlisting># yum install ntp</programlisting>
-							<para>On Ubuntu:</para>
-							<programlisting># apt-get install ntp</programlisting>
-						</listitem>
-						<listitem><para>Edit the NTP configuration file to point to your NTP server.</para>
-							<programlisting># vi /etc/ntp.conf</programlisting>
-							<para>For example, you can use one of the following:</para>
-							<programlisting>0.xenserver.pool.ntp.org
+gpgcheck=0    
+                            </programlisting>
+                        </listitem>
+                    </orderedlist>
+                </listitem>
+                <listitem><para>Turn on NTP for time synchronization.</para>
+                    <note><para>NTP is required to synchronize the clocks of the servers in your cloud.</para></note>
+                    <orderedlist numeration="loweralpha">
+                        <listitem><para>Install NTP.</para>
+                            <para>On RHEL or CentOS:</para>
+                            <programlisting># yum install ntp</programlisting>
+                            <para>On Ubuntu:</para>
+                            <programlisting># apt-get install ntp</programlisting>
+                        </listitem>
+                        <listitem><para>Edit the NTP configuration file to point to your NTP server.</para>
+                            <programlisting># vi /etc/ntp.conf</programlisting>
+                            <para>For example, you can use one of the following:</para>
+                            <programlisting>0.xenserver.pool.ntp.org
 1.xenserver.pool.ntp.org
 2.xenserver.pool.ntp.org
 3.xenserver.pool.ntp.org
 </programlisting>
-						</listitem>
-						<listitem><para>Restart the NTP client.</para>
-							<programlisting># service ntpd restart</programlisting>
-						</listitem>
-						<listitem><para>Make sure NTP will start again upon reboot.</para>
-							<para>On RHEL or CentOS:</para>
-							<programlisting># chkconfig ntpd on</programlisting>
-							<para>On Ubuntu:</para>
-							<programlisting># chkconfig ntp on</programlisting>
-						</listitem>
-					</orderedlist>
-				</listitem>
-			</orderedlist>
-	</section>
+                        </listitem>
+                        <listitem><para>Restart the NTP client.</para>
+                            <programlisting># service ntpd restart</programlisting>
+                        </listitem>
+                        <listitem><para>Make sure NTP will start again upon reboot.</para>
+                            <para>On RHEL or CentOS:</para>
+                            <programlisting># chkconfig ntpd on</programlisting>
+                            <para>On Ubuntu:</para>
+                            <programlisting># chkconfig ntp on</programlisting>
+                        </listitem>
+                    </orderedlist>
+                </listitem>
+            </orderedlist>
+    </section>

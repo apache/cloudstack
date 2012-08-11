@@ -23,32 +23,32 @@
 -->
 
 <section id="changing-vm-name-os-group">
-	<title>Changing the VM Name, OS, or Group</title>
-	<para>After a VM is created, you can modify the display name, operating system, and the group it belongs to.</para>
-	<para>To access a VM through the &PRODUCT; UI:</para>
-		<orderedlist>
-			<listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
-			<listitem><para>In the left navigation, click Instances.</para></listitem>
-			<listitem><para>Select the VM that you want to modify.</para></listitem>
-			<listitem><para>Click the Stop button to stop the VM <inlinemediaobject>
-				<imageobject>
-					<imagedata fileref="./images/stop-instance-icon.png" />
-				</imageobject>
-				<textobject><phrase>StopButton.png: button to stop a VM</phrase></textobject>
-			</inlinemediaobject>
-				</para></listitem>
-			<listitem><para>Click Edit <inlinemediaobject>
-				<imageobject>
-					<imagedata fileref="./images/edit-icon.png" />
-				</imageobject>
-				<textobject><phrase>StopButton.png: button to edit the properties of a VM</phrase></textobject>
-			</inlinemediaobject>.</para></listitem>
-			<listitem><para>Make the desired changes to the following:</para></listitem>
-			
-				<listitem><para>Display name: Enter a new display name if you want to change the name of the VM.</para></listitem>
-				<listitem><para>OS Type: Select the desired operating system.</para></listitem>
-				<listitem><para>Group: Enter the group name for the VM.</para></listitem>	
-			
-			<listitem><para>Click Apply.</para></listitem>
-		</orderedlist>
-	</section>
+    <title>Changing the VM Name, OS, or Group</title>
+    <para>After a VM is created, you can modify the display name, operating system, and the group it belongs to.</para>
+    <para>To access a VM through the &PRODUCT; UI:</para>
+        <orderedlist>
+            <listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
+            <listitem><para>In the left navigation, click Instances.</para></listitem>
+            <listitem><para>Select the VM that you want to modify.</para></listitem>
+            <listitem><para>Click the Stop button to stop the VM <inlinemediaobject>
+                <imageobject>
+                    <imagedata fileref="./images/stop-instance-icon.png" />
+                </imageobject>
+                <textobject><phrase>StopButton.png: button to stop a VM</phrase></textobject>
+            </inlinemediaobject>
+                </para></listitem>
+            <listitem><para>Click Edit <inlinemediaobject>
+                <imageobject>
+                    <imagedata fileref="./images/edit-icon.png" />
+                </imageobject>
+                <textobject><phrase>StopButton.png: button to edit the properties of a VM</phrase></textobject>
+            </inlinemediaobject>.</para></listitem>
+            <listitem><para>Make the desired changes to the following:</para></listitem>
+            
+                <listitem><para>Display name: Enter a new display name if you want to change the name of the VM.</para></listitem>
+                <listitem><para>OS Type: Select the desired operating system.</para></listitem>
+                <listitem><para>Group: Enter the group name for the VM.</para></listitem>    
+            
+            <listitem><para>Click Apply.</para></listitem>
+        </orderedlist>
+    </section>

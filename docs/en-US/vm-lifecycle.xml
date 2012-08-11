@@ -1,20 +1,20 @@
 <section id="vm-lifecycle">
-	<title>VM Lifecycle</title>
-	<para>Virtual machines can be in the following states:</para>
-	<mediaobject>
-		<imageobject>
-			<imagedata fileref="./images/basic-deployment.png" />
-		</imageobject>
-		<textobject><phrase>basic-deployment.png: Basic two-machine CloudStack deployment</phrase></textobject>
-	</mediaobject>
-	<para>Once a virtual machine is destroyed, it cannot be recovered. All the resources used by the virtual machine will be reclaimed by the system. This includes the virtual machine’s IP address.</para>
-	<para>A stop will attempt to gracefully shut down the operating system, which typically involves terminating all the running applications. If the operation system cannot be stopped, it will be forcefully terminated. This has the same effect as pulling the power cord to a physical machine.</para>
-	<para>A reboot is a stop followed by a start.</para>
-	<para>CloudPlatform preserves the state of the virtual machine hard disk until the machine is destroyed.</para>
-	<para>A running virtual machine may fail because of hardware or network issues. A failed virtual machine is in the down state.</para>
-	<para>The system places the virtual machine into the down state if it does not receive the heartbeat from the hypervisor for three minutes.</para>
-	<para>The user can manually restart the virtual machine from the down state.</para>
-	<para>The system will start the virtual machine from the down state automatically if the virtual machine is marked as HA-enabled.</para>
-	
+    <title>VM Lifecycle</title>
+    <para>Virtual machines can be in the following states:</para>
+    <mediaobject>
+        <imageobject>
+            <imagedata fileref="./images/basic-deployment.png" />
+        </imageobject>
+        <textobject><phrase>basic-deployment.png: Basic two-machine CloudStack deployment</phrase></textobject>
+    </mediaobject>
+    <para>Once a virtual machine is destroyed, it cannot be recovered. All the resources used by the virtual machine will be reclaimed by the system. This includes the virtual machine’s IP address.</para>
+    <para>A stop will attempt to gracefully shut down the operating system, which typically involves terminating all the running applications. If the operation system cannot be stopped, it will be forcefully terminated. This has the same effect as pulling the power cord to a physical machine.</para>
+    <para>A reboot is a stop followed by a start.</para>
+    <para>CloudPlatform preserves the state of the virtual machine hard disk until the machine is destroyed.</para>
+    <para>A running virtual machine may fail because of hardware or network issues. A failed virtual machine is in the down state.</para>
+    <para>The system places the virtual machine into the down state if it does not receive the heartbeat from the hypervisor for three minutes.</para>
+    <para>The user can manually restart the virtual machine from the down state.</para>
+    <para>The system will start the virtual machine from the down state automatically if the virtual machine is marked as HA-enabled.</para>
+    
 </section>
 

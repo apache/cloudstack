@@ -23,94 +23,94 @@
 -->
 
 <section id="compatibility-matrix">
-	<title>Compatibility Matrix</title>
-			<informaltable>
-					<tgroup cols="7" align="left" colsep="1" rowsep="1">
-						<thead>
-							<row>
-								<entry><para>Hypervisor</para></entry>
-								<entry><para>CloudStack 2.1.x</para></entry>
-								<entry><para>CloudStack 2.2.x</para></entry>
-								<entry><para>CloudStack 3.0.0</para></entry>
-								<entry><para>CloudStack 3.0.1</para></entry>
-								<entry><para>CloudStack 3.0.2</para></entry>
-								<entry><para>CloudStack 3.0.3</para></entry>
-							</row>
-						</thead>
-						<tbody>
-							<row>
-								<entry><para>XenServer 5.6</para></entry>
-								<entry><para>Yes</para></entry>
-								<entry><para>Yes</para></entry>
-								<entry><para>No</para></entry>
-								<entry><para>No</para></entry>
-								<entry><para>No</para></entry>
-								<entry><para>No</para></entry>
-							</row>
-							<row>
-								<entry><para>XenServer 5.6 FP1</para></entry>
-								<entry><para>Yes</para></entry>
-								<entry><para>Yes</para></entry>
-								<entry><para>No</para></entry>
-								<entry><para>No</para></entry>
-								<entry><para>No</para></entry>
-								<entry><para>No</para></entry>	
-							</row>
-							<row>
-										<entry><para>XenServer 5.6 SP2</para></entry>
-										<entry><para>Yes</para></entry>
-										<entry><para>Yes</para></entry>
-										<entry><para>No</para></entry>
-										<entry><para>No</para></entry>
-										<entry><para>Yes</para></entry>
-										<entry><para>Yes</para></entry>
-									</row>
-									<row>
-										<entry><para>XenServer 6.0.0</para></entry>
-										<entry><para>No</para></entry>
-										<entry><para>No</para></entry>
-										<entry><para>No</para></entry>
-										<entry><para>No</para></entry>
-										<entry><para>No</para></entry>
-										<entry><para>Yes</para></entry>
-									</row>
-								<row>
-									<entry><para>XenServer 6.0.2</para></entry>
-									<entry><para>No</para></entry>
-									<entry><para>No</para></entry>
-									<entry><para>Yes</para></entry>
-									<entry><para>Yes</para></entry>
-									<entry><para>Yes</para></entry>
-									<entry><para>Yes</para></entry>
-								</row>
-							<row>
-								<entry><para>XenServer 6.1</para></entry>
-								<entry><para>No</para></entry>
-								<entry><para>No</para></entry>
-								<entry><para>No</para></entry>
-								<entry><para>No</para></entry>
-								<entry><para>No</para></entry>
-								<entry><para>No</para></entry>
-							</row>
-							<row>
-								<entry><para>KVM (RHEL 6.0 or 6.1)</para></entry>
-								<entry><para>Yes</para></entry>
-								<entry><para>Yes</para></entry>
-								<entry><para>Yes</para></entry>
-								<entry><para>Yes</para></entry>
-								<entry><para>Yes</para></entry>
-								<entry><para>Yes</para></entry>
-							</row>
-							<row>
-								<entry><para>VMware (vSphere and vCenter, both version 4.1)</para></entry>
-								<entry><para>Yes</para></entry>
-								<entry><para>Yes</para></entry>
-								<entry><para>Yes</para></entry>
-								<entry><para>Yes</para></entry>
-								<entry><para>Yes</para></entry>
-								<entry><para>Yes</para></entry>
-							</row>
-								</tbody>
-							</tgroup>
-						</informaltable>
+    <title>Compatibility Matrix</title>
+            <informaltable>
+                    <tgroup cols="7" align="left" colsep="1" rowsep="1">
+                        <thead>
+                            <row>
+                                <entry><para>Hypervisor</para></entry>
+                                <entry><para>CloudStack 2.1.x</para></entry>
+                                <entry><para>CloudStack 2.2.x</para></entry>
+                                <entry><para>CloudStack 3.0.0</para></entry>
+                                <entry><para>CloudStack 3.0.1</para></entry>
+                                <entry><para>CloudStack 3.0.2</para></entry>
+                                <entry><para>CloudStack 3.0.3</para></entry>
+                            </row>
+                        </thead>
+                        <tbody>
+                            <row>
+                                <entry><para>XenServer 5.6</para></entry>
+                                <entry><para>Yes</para></entry>
+                                <entry><para>Yes</para></entry>
+                                <entry><para>No</para></entry>
+                                <entry><para>No</para></entry>
+                                <entry><para>No</para></entry>
+                                <entry><para>No</para></entry>
+                            </row>
+                            <row>
+                                <entry><para>XenServer 5.6 FP1</para></entry>
+                                <entry><para>Yes</para></entry>
+                                <entry><para>Yes</para></entry>
+                                <entry><para>No</para></entry>
+                                <entry><para>No</para></entry>
+                                <entry><para>No</para></entry>
+                                <entry><para>No</para></entry>    
+                            </row>
+                            <row>
+                                        <entry><para>XenServer 5.6 SP2</para></entry>
+                                        <entry><para>Yes</para></entry>
+                                        <entry><para>Yes</para></entry>
+                                        <entry><para>No</para></entry>
+                                        <entry><para>No</para></entry>
+                                        <entry><para>Yes</para></entry>
+                                        <entry><para>Yes</para></entry>
+                                    </row>
+                                    <row>
+                                        <entry><para>XenServer 6.0.0</para></entry>
+                                        <entry><para>No</para></entry>
+                                        <entry><para>No</para></entry>
+                                        <entry><para>No</para></entry>
+                                        <entry><para>No</para></entry>
+                                        <entry><para>No</para></entry>
+                                        <entry><para>Yes</para></entry>
+                                    </row>
+                                <row>
+                                    <entry><para>XenServer 6.0.2</para></entry>
+                                    <entry><para>No</para></entry>
+                                    <entry><para>No</para></entry>
+                                    <entry><para>Yes</para></entry>
+                                    <entry><para>Yes</para></entry>
+                                    <entry><para>Yes</para></entry>
+                                    <entry><para>Yes</para></entry>
+                                </row>
+                            <row>
+                                <entry><para>XenServer 6.1</para></entry>
+                                <entry><para>No</para></entry>
+                                <entry><para>No</para></entry>
+                                <entry><para>No</para></entry>
+                                <entry><para>No</para></entry>
+                                <entry><para>No</para></entry>
+                                <entry><para>No</para></entry>
+                            </row>
+                            <row>
+                                <entry><para>KVM (RHEL 6.0 or 6.1)</para></entry>
+                                <entry><para>Yes</para></entry>
+                                <entry><para>Yes</para></entry>
+                                <entry><para>Yes</para></entry>
+                                <entry><para>Yes</para></entry>
+                                <entry><para>Yes</para></entry>
+                                <entry><para>Yes</para></entry>
+                            </row>
+                            <row>
+                                <entry><para>VMware (vSphere and vCenter, both version 4.1)</para></entry>
+                                <entry><para>Yes</para></entry>
+                                <entry><para>Yes</para></entry>
+                                <entry><para>Yes</para></entry>
+                                <entry><para>Yes</para></entry>
+                                <entry><para>Yes</para></entry>
+                                <entry><para>Yes</para></entry>
+                            </row>
+                                </tbody>
+                            </tgroup>
+                        </informaltable>
 </section>

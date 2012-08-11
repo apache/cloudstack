@@ -23,7 +23,7 @@
 -->
 
 <section id="about-clusters">
-	<title>About Clusters</title>
+    <title>About Clusters</title>
     <para>A cluster provides a way to group hosts. To be precise, a cluster is a XenServer server pool, a set of KVM servers, a set of OVM hosts, or a VMware cluster preconfigured in vCenter. The hosts in a cluster all have identical hardware, run the same hypervisor, are on the same subnet, and access the same shared primary storage. Virtual machine instances (VMs) can be live-migrated from one host to another within the same cluster, without interrupting service to the user.</para>
     <para>A cluster is the third-largest organizational unit within a &PRODUCT; deployment. Clusters are contained within pods, and pods are contained within zones. Size of the cluster is limited by the underlying hypervisor, although the &PRODUCT; recommends less in most cases; see Best Practices.</para>
     <para>A cluster consists of one or more hosts and one or more primary storage servers.</para>

@@ -22,45 +22,45 @@
  under the License.
 -->
 
-	<section id="cloudstack_features">
-		<title>What Can &PRODUCT; Do?</title>
-		
-		<para>
-			<emphasis role="bold">Multiple Hypervisor Support</emphasis>
-		</para>
-		<para>
-			&PRODUCT; works with a variety of hypervisors. A single cloud deployment can contain multiple hypervisor implementations. You have the complete freedom to choose the right hypervisor for your workload. &PRODUCT; is designed to work with open source Xen and KVM hypervisors as well as enterprise-grade hypervisors such as Citrix XenServer, VMware vSphere, and Oracle VM (OVM). You can also provision “bare metal” hosts with no hypervisor (Beta feature. Untested in &PRODUCT; 3.0.x0.)
-		</para>
-		<para>
-			<emphasis role="bold">Massively Scalable Infrastructure Management</emphasis>
-		</para>
-		<para>
-			&PRODUCT; can manage tens of thousands of servers installed in multiple geographically distributed datacenters. The centralized management server scales linearly, eliminating the need for intermediate cluster-level management servers. No single component failure can cause cloud-wide outage. Periodic maintenance of the management server can be performed without affecting the functioning of virtual machines running in the cloud.
-		</para>
-		<para>
-			<emphasis role="bold">Automatic Configuration Management</emphasis>
-		</para>
-		<para>&PRODUCT; automatically configures each guest virtual machine’s networking and storage settings.
-		</para>
-		<para>&PRODUCT; internally manages a pool of virtual appliances to support the cloud itself. These appliances offer services such as firewalling, routing, DHCP, VPN access, console proxy, storage access, and storage replication. The extensive use of virtual appliances simplifies the installation, configuration, and ongoing management of a cloud deployment.
-		</para>
-		<para>
-			<emphasis role="bold">Graphical User Interface</emphasis>
-		</para>
-		<para>&PRODUCT; offers an administrator's Web interface, used for provisioning and managing the cloud, as well as an end-user's Web interface, used for running VMs and managing VM templates. The UI can be customized to reflect the desired service provider or enterprise look and feel.
-		</para>
-		<para>
-			<emphasis role="bold">API and Extensibility</emphasis>
-		</para>
-		<para>
-			&PRODUCT; provides an API that gives programmatic access to all the management features available in the UI. The API is maintained and documented. This API enables the creation of command line tools and new user interfaces to suit particular needs. See the Developer’s Guide and API Reference, both available at http://docs.cloud.com/CloudStack_Documentation.
-		</para>
-		<para>
-			The &PRODUCT; platform pluggable allocation architecture allows the creation of new types of allocators for the selection of storage and Hosts. See the Allocator Implementation Guide (http://docs.cloud.com/CloudStack_Documentation/Allocator_Implementation_Guide).
-		</para>
-		<para>
-			<emphasis role="bold">High Availability</emphasis>
-		</para>
-		<para>The &PRODUCT; platform has a number of features to increase the availability of the system. The Management Server itself may be deployed in a multi-node installation where the servers are load balanced. MySQL may be configured to use replication to provide for a manual failover in the event of database loss. For the Hosts, the &PRODUCT; platform supports NIC bonding and the use of separate networks for storage as well as iSCSI Multipath.
-		</para>
-	</section>
+    <section id="cloudstack_features">
+        <title>What Can &PRODUCT; Do?</title>
+        
+        <para>
+            <emphasis role="bold">Multiple Hypervisor Support</emphasis>
+        </para>
+        <para>
+            &PRODUCT; works with a variety of hypervisors. A single cloud deployment can contain multiple hypervisor implementations. You have the complete freedom to choose the right hypervisor for your workload. &PRODUCT; is designed to work with open source Xen and KVM hypervisors as well as enterprise-grade hypervisors such as Citrix XenServer, VMware vSphere, and Oracle VM (OVM). You can also provision “bare metal” hosts with no hypervisor (Beta feature. Untested in &PRODUCT; 3.0.x0.)
+        </para>
+        <para>
+            <emphasis role="bold">Massively Scalable Infrastructure Management</emphasis>
+        </para>
+        <para>
+            &PRODUCT; can manage tens of thousands of servers installed in multiple geographically distributed datacenters. The centralized management server scales linearly, eliminating the need for intermediate cluster-level management servers. No single component failure can cause cloud-wide outage. Periodic maintenance of the management server can be performed without affecting the functioning of virtual machines running in the cloud.
+        </para>
+        <para>
+            <emphasis role="bold">Automatic Configuration Management</emphasis>
+        </para>
+        <para>&PRODUCT; automatically configures each guest virtual machine’s networking and storage settings.
+        </para>
+        <para>&PRODUCT; internally manages a pool of virtual appliances to support the cloud itself. These appliances offer services such as firewalling, routing, DHCP, VPN access, console proxy, storage access, and storage replication. The extensive use of virtual appliances simplifies the installation, configuration, and ongoing management of a cloud deployment.
+        </para>
+        <para>
+            <emphasis role="bold">Graphical User Interface</emphasis>
+        </para>
+        <para>&PRODUCT; offers an administrator's Web interface, used for provisioning and managing the cloud, as well as an end-user's Web interface, used for running VMs and managing VM templates. The UI can be customized to reflect the desired service provider or enterprise look and feel.
+        </para>
+        <para>
+            <emphasis role="bold">API and Extensibility</emphasis>
+        </para>
+        <para>
+            &PRODUCT; provides an API that gives programmatic access to all the management features available in the UI. The API is maintained and documented. This API enables the creation of command line tools and new user interfaces to suit particular needs. See the Developer’s Guide and API Reference, both available at http://docs.cloud.com/CloudStack_Documentation.
+        </para>
+        <para>
+            The &PRODUCT; platform pluggable allocation architecture allows the creation of new types of allocators for the selection of storage and Hosts. See the Allocator Implementation Guide (http://docs.cloud.com/CloudStack_Documentation/Allocator_Implementation_Guide).
+        </para>
+        <para>
+            <emphasis role="bold">High Availability</emphasis>
+        </para>
+        <para>The &PRODUCT; platform has a number of features to increase the availability of the system. The Management Server itself may be deployed in a multi-node installation where the servers are load balanced. MySQL may be configured to use replication to provide for a manual failover in the event of database loss. For the Hosts, the &PRODUCT; platform supports NIC bonding and the use of separate networks for storage as well as iSCSI Multipath.
+        </para>
+    </section>

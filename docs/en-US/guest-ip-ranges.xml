@@ -23,6 +23,6 @@
 -->
 
 <section id="guest-ip-ranges">
-	<title>Guest IP Ranges</title>
-	<para>The IP ranges for guest network traffic are set on a per-account basis by the user.  This allows the users to configure their network in a fashion that will enable VPN linking between their guest network and their clients.</para>
+    <title>Guest IP Ranges</title>
+    <para>The IP ranges for guest network traffic are set on a per-account basis by the user.  This allows the users to configure their network in a fashion that will enable VPN linking between their guest network and their clients.</para>
 </section>

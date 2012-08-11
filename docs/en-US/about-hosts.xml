@@ -23,7 +23,7 @@
 -->
 
 <section id="about-hosts">
-	<title>About Hosts</title>
+    <title>About Hosts</title>
     <para>A host is a single computer. Hosts provide the computing resources that run the guest virtual machines. Each host has hypervisor software installed on it to manage the guest VMs. For example, a Linux KVM-enabled server, a Citrix XenServer server, and an ESXi server are hosts.</para>
     <para>The host is the smallest organizational unit within a &PRODUCT; deployment. Hosts are contained within clusters, clusters are contained within pods, and pods are contained within zones.</para>
     <para>Hosts in a &PRODUCT; deployment:</para>

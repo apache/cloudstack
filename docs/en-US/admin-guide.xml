@@ -23,7 +23,7 @@
 -->
 
 <chapter id="admin-guide">
-	<title>Administrator Guide</title>
+    <title>Administrator Guide</title>
     <xi:include href="whats-in-this-adminguide.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="user-services-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="about-working-with-vms.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

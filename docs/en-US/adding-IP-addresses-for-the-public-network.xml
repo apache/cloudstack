@@ -23,23 +23,23 @@
 -->
 
 <section id="adding-IP-addresses-for-the-public-network">
-	<title>Adding IP Addresses for the Public Network</title>
-	<para>These instructions assume you have already logged in to the &PRODUCT; UI.</para>
-	<orderedlist>
-		<listitem><para>In the left navigation, choose Infrastructure. In Zones, click View More, then click the desired zone .</para></listitem>
-		<listitem><para>Click the Network tab.</para></listitem>
-		<listitem><para>In the Public node of the diagram, click Configure.</para></listitem>
-		<listitem><para>Click the IP Ranges tab.</para></listitem>
-		<listitem><para>Provide the following information:</para>
-		<itemizedlist>
-			<listitem><para>Gateway. The gateway in use for these IP addresses</para></listitem>
-			<listitem><para>Netmask. The netmask associated with this IP range</para></listitem>
-			<listitem><para>VLAN. The VLAN that will be used for public traffic</para></listitem>
-			<listitem><para>Start IP/End IP. A range of IP addresses that are assumed to be accessible from the Internet and will be allocated for access to guest networks.</para></listitem>
-		</itemizedlist>
-		</listitem>
-		<listitem><para>Click Add.</para></listitem>
-	</orderedlist>
-	
-	
-	</section>
+    <title>Adding IP Addresses for the Public Network</title>
+    <para>These instructions assume you have already logged in to the &PRODUCT; UI.</para>
+    <orderedlist>
+        <listitem><para>In the left navigation, choose Infrastructure. In Zones, click View More, then click the desired zone .</para></listitem>
+        <listitem><para>Click the Network tab.</para></listitem>
+        <listitem><para>In the Public node of the diagram, click Configure.</para></listitem>
+        <listitem><para>Click the IP Ranges tab.</para></listitem>
+        <listitem><para>Provide the following information:</para>
+        <itemizedlist>
+            <listitem><para>Gateway. The gateway in use for these IP addresses</para></listitem>
+            <listitem><para>Netmask. The netmask associated with this IP range</para></listitem>
+            <listitem><para>VLAN. The VLAN that will be used for public traffic</para></listitem>
+            <listitem><para>Start IP/End IP. A range of IP addresses that are assumed to be accessible from the Internet and will be allocated for access to guest networks.</para></listitem>
+        </itemizedlist>
+        </listitem>
+        <listitem><para>Click Add.</para></listitem>
+    </orderedlist>
+    
+    
+    </section>

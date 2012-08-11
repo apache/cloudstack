@@ -23,116 +23,116 @@
 -->
 
 <section id="added-cloudPlatform-error-codes">
-		<title>Added &PRODUCT; Error Codes</title>
-			<para>You can now find the &PRODUCT;-specific error code in the exception response for each type of exception. The following list of error codes is added to the new class named CSExceptionErrorCode.  These codes are applicable in &PRODUCT; 3.0.3 and later versions.</para>
-	<informaltable frame="all">
-		<tgroup cols="3" align="left" colsep="1" rowsep="1">
-			<colspec colname="c1" />
-			<colspec colname="c2" />
-			<colspec colname="c3" />
-				<tbody>
-					<row>
-						<entry><para>4250 : "com.cloud.utils.exception.CloudRuntimeException"</para></entry>
-						<entry><para>4255 : "com.cloud.utils.exception.ExceptionUtil"</para></entry>
-						<entry><para>4260 : "com.cloud.utils.exception.ExecutionException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4265 : "com.cloud.utils.exception.HypervisorVersionChangedException"</para></entry>
-						<entry><para>4270 : "com.cloud.utils.exception.RuntimeCloudException"</para></entry>
-						<entry><para>4275 : "com.cloud.exception.CloudException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4280 : "com.cloud.exception.AccountLimitException"</para></entry>
-						<entry><para>4285 : "com.cloud.exception.AgentUnavailableException"</para></entry>
-						<entry><para>4290 : "com.cloud.exception.CloudAuthenticationException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4295 : "com.cloud.exception.CloudExecutionException"</para></entry>
-						<entry><para>4300 : "com.cloud.exception.ConcurrentOperationException"</para></entry>
-						<entry><para>4305 : "com.cloud.exception.ConflictingNetworkSettingsException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4310 : "com.cloud.exception.DiscoveredWithErrorException"</para></entry>
-						<entry><para>4315 : "com.cloud.exception.HAStateException"</para></entry>
-						<entry><para>4320 : "com.cloud.exception.InsufficientAddressCapacityException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4325 : "com.cloud.exception.InsufficientCapacityException"</para></entry>
-						<entry><para>4330 : "com.cloud.exception.InsufficientNetworkCapacityException"</para></entry>
-						<entry><para>4335 : "com.cloud.exception.InsufficientServerCapacityException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4340 : "com.cloud.exception.InsufficientStorageCapacityException"</para></entry>
-						<entry><para>4345 : "com.cloud.exception.InternalErrorException"</para></entry>
-						<entry><para>4350 : "com.cloud.exception.InvalidParameterValueException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4355 : "com.cloud.exception.ManagementServerException"</para></entry>
-						<entry><para>4360 : "com.cloud.exception.NetworkRuleConflictException"</para></entry>
-						<entry><para>4365 : "com.cloud.exception.PermissionDeniedException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4370 : "com.cloud.exception.ResourceAllocationException"</para></entry>
-						<entry><para>4375 : "com.cloud.exception.ResourceInUseException"</para></entry>
-						<entry><para>4380 : "com.cloud.exception.ResourceUnavailableException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4385 : "com.cloud.exception.StorageUnavailableException"</para></entry>
-						<entry><para>4390 : "com.cloud.exception.UnsupportedServiceException"</para></entry>
-						<entry><para>4395 : "com.cloud.exception.VirtualMachineMigrationException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4400 : "com.cloud.exception.AccountLimitException"</para></entry>
-						<entry><para>4405 : "com.cloud.exception.AgentUnavailableException"</para></entry>
-						<entry><para>4410 : "com.cloud.exception.CloudAuthenticationException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4415 : "com.cloud.exception.CloudException"</para></entry>
-						<entry><para>4420 : "com.cloud.exception.CloudExecutionException"</para></entry>
-						<entry><para>4425 : "com.cloud.exception.ConcurrentOperationException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4430 : "com.cloud.exception.ConflictingNetworkSettingsException"</para></entry>
-						<entry><para>4435 : "com.cloud.exception.ConnectionException"</para></entry>
-						<entry><para>4440 : "com.cloud.exception.DiscoveredWithErrorException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4445 : "com.cloud.exception.DiscoveryException"</para></entry>
-						<entry><para>4450 : "com.cloud.exception.HAStateException"</para></entry>
-						<entry><para>4455 : "com.cloud.exception.InsufficientAddressCapacityException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4460 : "com.cloud.exception.InsufficientCapacityException"</para></entry>
-						<entry><para>4465 : "com.cloud.exception.InsufficientNetworkCapacityException"</para></entry>
-						<entry><para>4470 : "com.cloud.exception.InsufficientServerCapacityException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4475 : "com.cloud.exception.InsufficientStorageCapacityException"</para></entry>
-						<entry><para>4480 : "com.cloud.exception.InsufficientVirtualNetworkCapcityException"</para></entry>
-						<entry><para>4485 : "com.cloud.exception.InternalErrorException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4490 : "com.cloud.exception.InvalidParameterValueException"</para></entry>
-						<entry><para>4495 : "com.cloud.exception.ManagementServerException"</para></entry>
-						<entry><para>4500 : "com.cloud.exception.NetworkRuleConflictException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4505 : "com.cloud.exception.PermissionDeniedException"</para></entry>
-						<entry><para>4510 : "com.cloud.exception.ResourceAllocationException"</para></entry>
-						<entry><para>4515 : "com.cloud.exception.ResourceInUseException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4520 : "com.cloud.exception.ResourceUnavailableException"</para></entry>
-						<entry><para>4525 : "com.cloud.exception.StorageUnavailableException"</para></entry>
-						<entry><para>4530 : "com.cloud.exception.UnsupportedServiceException"</para></entry>
-					</row>
-					<row>
-						<entry><para>4535 : "com.cloud.exception.VirtualMachineMigrationException"</para></entry>
-						<entry><para>9999 : "com.cloud.api.ServerApiException"</para></entry>
-						<entry><para></para></entry>
-					</row>
-				</tbody>
-			</tgroup>
-		</informaltable>
-	</section>
+        <title>Added &PRODUCT; Error Codes</title>
+            <para>You can now find the &PRODUCT;-specific error code in the exception response for each type of exception. The following list of error codes is added to the new class named CSExceptionErrorCode.  These codes are applicable in &PRODUCT; 3.0.3 and later versions.</para>
+    <informaltable frame="all">
+        <tgroup cols="3" align="left" colsep="1" rowsep="1">
+            <colspec colname="c1" />
+            <colspec colname="c2" />
+            <colspec colname="c3" />
+                <tbody>
+                    <row>
+                        <entry><para>4250 : "com.cloud.utils.exception.CloudRuntimeException"</para></entry>
+                        <entry><para>4255 : "com.cloud.utils.exception.ExceptionUtil"</para></entry>
+                        <entry><para>4260 : "com.cloud.utils.exception.ExecutionException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4265 : "com.cloud.utils.exception.HypervisorVersionChangedException"</para></entry>
+                        <entry><para>4270 : "com.cloud.utils.exception.RuntimeCloudException"</para></entry>
+                        <entry><para>4275 : "com.cloud.exception.CloudException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4280 : "com.cloud.exception.AccountLimitException"</para></entry>
+                        <entry><para>4285 : "com.cloud.exception.AgentUnavailableException"</para></entry>
+                        <entry><para>4290 : "com.cloud.exception.CloudAuthenticationException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4295 : "com.cloud.exception.CloudExecutionException"</para></entry>
+                        <entry><para>4300 : "com.cloud.exception.ConcurrentOperationException"</para></entry>
+                        <entry><para>4305 : "com.cloud.exception.ConflictingNetworkSettingsException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4310 : "com.cloud.exception.DiscoveredWithErrorException"</para></entry>
+                        <entry><para>4315 : "com.cloud.exception.HAStateException"</para></entry>
+                        <entry><para>4320 : "com.cloud.exception.InsufficientAddressCapacityException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4325 : "com.cloud.exception.InsufficientCapacityException"</para></entry>
+                        <entry><para>4330 : "com.cloud.exception.InsufficientNetworkCapacityException"</para></entry>
+                        <entry><para>4335 : "com.cloud.exception.InsufficientServerCapacityException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4340 : "com.cloud.exception.InsufficientStorageCapacityException"</para></entry>
+                        <entry><para>4345 : "com.cloud.exception.InternalErrorException"</para></entry>
+                        <entry><para>4350 : "com.cloud.exception.InvalidParameterValueException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4355 : "com.cloud.exception.ManagementServerException"</para></entry>
+                        <entry><para>4360 : "com.cloud.exception.NetworkRuleConflictException"</para></entry>
+                        <entry><para>4365 : "com.cloud.exception.PermissionDeniedException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4370 : "com.cloud.exception.ResourceAllocationException"</para></entry>
+                        <entry><para>4375 : "com.cloud.exception.ResourceInUseException"</para></entry>
+                        <entry><para>4380 : "com.cloud.exception.ResourceUnavailableException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4385 : "com.cloud.exception.StorageUnavailableException"</para></entry>
+                        <entry><para>4390 : "com.cloud.exception.UnsupportedServiceException"</para></entry>
+                        <entry><para>4395 : "com.cloud.exception.VirtualMachineMigrationException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4400 : "com.cloud.exception.AccountLimitException"</para></entry>
+                        <entry><para>4405 : "com.cloud.exception.AgentUnavailableException"</para></entry>
+                        <entry><para>4410 : "com.cloud.exception.CloudAuthenticationException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4415 : "com.cloud.exception.CloudException"</para></entry>
+                        <entry><para>4420 : "com.cloud.exception.CloudExecutionException"</para></entry>
+                        <entry><para>4425 : "com.cloud.exception.ConcurrentOperationException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4430 : "com.cloud.exception.ConflictingNetworkSettingsException"</para></entry>
+                        <entry><para>4435 : "com.cloud.exception.ConnectionException"</para></entry>
+                        <entry><para>4440 : "com.cloud.exception.DiscoveredWithErrorException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4445 : "com.cloud.exception.DiscoveryException"</para></entry>
+                        <entry><para>4450 : "com.cloud.exception.HAStateException"</para></entry>
+                        <entry><para>4455 : "com.cloud.exception.InsufficientAddressCapacityException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4460 : "com.cloud.exception.InsufficientCapacityException"</para></entry>
+                        <entry><para>4465 : "com.cloud.exception.InsufficientNetworkCapacityException"</para></entry>
+                        <entry><para>4470 : "com.cloud.exception.InsufficientServerCapacityException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4475 : "com.cloud.exception.InsufficientStorageCapacityException"</para></entry>
+                        <entry><para>4480 : "com.cloud.exception.InsufficientVirtualNetworkCapcityException"</para></entry>
+                        <entry><para>4485 : "com.cloud.exception.InternalErrorException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4490 : "com.cloud.exception.InvalidParameterValueException"</para></entry>
+                        <entry><para>4495 : "com.cloud.exception.ManagementServerException"</para></entry>
+                        <entry><para>4500 : "com.cloud.exception.NetworkRuleConflictException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4505 : "com.cloud.exception.PermissionDeniedException"</para></entry>
+                        <entry><para>4510 : "com.cloud.exception.ResourceAllocationException"</para></entry>
+                        <entry><para>4515 : "com.cloud.exception.ResourceInUseException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4520 : "com.cloud.exception.ResourceUnavailableException"</para></entry>
+                        <entry><para>4525 : "com.cloud.exception.StorageUnavailableException"</para></entry>
+                        <entry><para>4530 : "com.cloud.exception.UnsupportedServiceException"</para></entry>
+                    </row>
+                    <row>
+                        <entry><para>4535 : "com.cloud.exception.VirtualMachineMigrationException"</para></entry>
+                        <entry><para>9999 : "com.cloud.api.ServerApiException"</para></entry>
+                        <entry><para></para></entry>
+                    </row>
+                </tbody>
+            </tgroup>
+        </informaltable>
+    </section>
 
