@@ -1,8 +1,27 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
 <book>
 	<xi:include href="Book_Info.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 	<chapter id="submitting-feedback">
@@ -20,14 +39,14 @@
 				<listitem><para>Stop all Usage Servers if running.  Run this on all Usage Server hosts.</para><programlisting># service cloud-usage stop</programlisting></listitem>
 				<listitem><para>Stop the Management Servers.  Run this on all Management Server hosts.</para><programlisting># service cloud-management stop</programlisting></listitem>
 				<listitem><para>On the MySQL master, take a backup of the MySQL databases.  We recommend performing this step even in test upgrades.  If there is an issue, this will assist with debugging.</para>
-					<para>In the following commands, it is assumed that you have set the root password on the database, which is a CloudPlatform recommended best practice. Substitute your own MySQL root password.</para>
+					<para>In the following commands, it is assumed that you have set the root password on the database, which is a &PRODUCT; recommended best practice. Substitute your own MySQL root password.</para>
 					<programlisting># mysqldump -u root -p&lt;mysql_password&gt; cloud &gt;> cloud-backup.dmp
 # mysqldump -u root -p&lt;mysql_password&gt; cloud_usage &gt; cloud-usage-backup.dmp
 </programlisting></listitem>
-				<listitem><para>Download CloudPlatform 3.0.4 onto management server host where it will run. Get the software from the following link:</para>
+				<listitem><para>Download &PRODUCT; 3.0.4 onto management server host where it will run. Get the software from the following link:</para>
 					<para><ulink url="https://www.citrix.com/English/ss/downloads/"></ulink>.</para>
 					<para> You need a <ulink url="http://www.citrix.com/lang/English/publicindex.asp?destURL=%2FEnglish%2FmyCitrix%2Findex.asp%3F#">My Citrix Account</ulink>.</para></listitem>
-				<listitem><para>Upgrade the CloudPlatform packages. You should have a file in the form of 
+				<listitem><para>Upgrade the &PRODUCT; packages. You should have a file in the form of 
 					“CloudStack-3.0.4-N-OSVERSION.tar.gz”.  Untar the file, then run the install.sh script inside it. Replace the file and directory names below with those you are using:
 				</para><programlisting># tar xzf CloudStack-3.0.4-N-OSVERSION.tar.gz
 # cd CloudStack-3.0.4-N-OSVERSION
@@ -35,7 +54,7 @@
 </programlisting>
 					<para>You should see a few messages as the installer prepares, followed by a list of choices.</para></listitem>
 				<listitem><para>Choose "U" to upgrade the package</para><programlisting>&gt;U</programlisting><para>You should see some output as the upgrade proceeds, ending with a message like "Complete! Done."</para></listitem>
-				<listitem><para>If you have made changes to your existing copy of the file components.xml in your previous-version CloudPlatform installation, the changes will be preserved in the upgrade. However, you need to do the following steps to place these changes in a new version of the file which is compatible with version 3.0.4.</para>
+				<listitem><para>If you have made changes to your existing copy of the file components.xml in your previous-version &PRODUCT; installation, the changes will be preserved in the upgrade. However, you need to do the following steps to place these changes in a new version of the file which is compatible with version 3.0.4.</para>
 					<note><para>How will you know whether you need to do this? If the upgrade output in the previous step included a message like the following, then some custom content was found in your old components.xml, and you need to merge the two files:</para></note>
 					<programlisting>warning: /etc/cloud/management/components.xml created as /etc/cloud/management/components.xml.rpmnew </programlisting>
 					<orderedlist numeration="loweralpha">
@@ -54,7 +73,7 @@
 					<programlisting># service cloud-usage start</programlisting></listitem>
 				<listitem><para>12.	(KVM only) Additional steps are required for each KVM host. These steps will not affect running guests in the cloud.  These steps are required only for clouds using KVM as hosts and only on the KVM hosts.</para>
 					<orderedlist numeration="loweralpha">
-						<listitem><para>Copy the CloudPlatform 3.0.4 tar file to the host, untar it, and change directory to the resulting directory.</para></listitem>
+						<listitem><para>Copy the &PRODUCT; 3.0.4 tar file to the host, untar it, and change directory to the resulting directory.</para></listitem>
 						<listitem><para>Stop the running agent.</para>
 							<programlisting># service cloud-agent stop</programlisting></listitem>
 						<listitem><para>Update the agent software.</para><programlisting># ./install.sh</programlisting></listitem>
@@ -62,7 +81,7 @@
 						<listitem><para>Start the agent.</para><programlisting># service cloud-agent start</programlisting></listitem>
 					</orderedlist>
 				</listitem>
-				<listitem><para>Log in to the CloudPlatform UI as administrator, and check the status of the hosts. All hosts should come to Up state (except those that you know to be offline). You may need to wait 20 or 30 minutes, depending on the number of hosts.</para>
+				<listitem><para>Log in to the &PRODUCT; UI as administrator, and check the status of the hosts. All hosts should come to Up state (except those that you know to be offline). You may need to wait 20 or 30 minutes, depending on the number of hosts.</para>
 					<note><para>Troubleshooting: If login fails, clear your browser cache and reload the page.</para></note>
 					<para>Do not proceed to the next step until the hosts show in Up state.  If the hosts do not come to the Up state, contact support.</para></listitem>
 				<listitem><para>If you are upgrading from 3.0.1 or 3.0.2, perform the following:</para>
@@ -92,7 +111,7 @@
 						<listitem><para>Open port 7080:</para>
 							<programlisting># iptables -I INPUT -p tcp -m tcp --dport 7080 -j ACCEPT</programlisting> 
 						</listitem>
-						<listitem><para>If you have made any modifications in server.xml on your existing CloudPlatform installation, back it up:</para>
+						<listitem><para>If you have made any modifications in server.xml on your existing &PRODUCT; installation, back it up:</para>
 							<programlisting># mv /etc/cloud/management/server.xml /etc/cloud/management/server.xml-backup</programlisting>
 							<para>Then replace with the new server.xml file:</para>
 								<programlisting># cp /etc/cloud/management/server.xml.rpmnew /etc/cloud/management/server.xml</programlisting>
@@ -110,13 +129,13 @@ cloudAPIPort=8080
 						<listitem><para>Restart the Management Server to put the new settings into effect.</para></listitem>
 					</orderedlist>
 				</listitem>
-				<listitem><para>If needed, upgrade all Citrix XenServer hypervisor hosts in your cloud to a version supported by CloudPlatform 3.0.4. The supported versions are XenServer 5.6 SP2 and 6.0.2. Instructions for upgrade can be found in the CloudPlatform 3.0.3 Advanced Installation Guide.</para></listitem>
+				<listitem><para>If needed, upgrade all Citrix XenServer hypervisor hosts in your cloud to a version supported by &PRODUCT; 3.0.4. The supported versions are XenServer 5.6 SP2 and 6.0.2. Instructions for upgrade can be found in the &PRODUCT; 3.0.3 Advanced Installation Guide.</para></listitem>
 				<listitem><para>Now apply the XenServer hotfix XS602E003 to XenServer v6.0.2 hypervisor hosts. (Support for this hotfix is the reason for release 3.0.4.)</para>
 				<orderedlist numeration="loweralpha">
-					<listitem><para>Disconnect the XenServer cluster from CloudPlatform.</para>
-						<para>In the left navigation bar of the CloudPlatform UI, select Infrastructure. Under Clusters, click View All. Select the XenServer cluster and click Actions - Unmanage.</para>
+					<listitem><para>Disconnect the XenServer cluster from &PRODUCT;.</para>
+						<para>In the left navigation bar of the &PRODUCT; UI, select Infrastructure. Under Clusters, click View All. Select the XenServer cluster and click Actions - Unmanage.</para>
 						<para>This may fail if there are hosts not in one of the states Up, Down, Disconnected, or Alert. You may need to fix that before unmanaging this cluster.</para>
-						<para>Wait until the status of the cluster has reached Unmanaged. Use the CloudPlatform UI to check on the status. When the cluster is in the unmanaged state, there is no connection to the hosts in the cluster.</para>
+						<para>Wait until the status of the cluster has reached Unmanaged. Use the &PRODUCT; UI to check on the status. When the cluster is in the unmanaged state, there is no connection to the hosts in the cluster.</para>
 					</listitem>
 					<listitem><para>To clean up the VLAN, log in to one XenServer host and run:</para>
 						<programlisting>/opt/xensource/bin/cloud-clean-vlan.sh</programlisting>
@@ -146,7 +165,7 @@ cloudAPIPort=8080
 						</para>
 						<programlisting>xe patch-apply host-uuid=&lt;host-uuid&gt; uuid=&lt;hotfix-uuid&gt;</programlisting>
 					</listitem>
-					<listitem><para>Copy the following files from the CloudPlatform Management Server to the host.</para>
+					<listitem><para>Copy the following files from the &PRODUCT; Management Server to the host.</para>
 						<informaltable>
 							<tgroup cols="2" align="left" colsep="1" rowsep="1">
 								<colspec colwidth="1*" colname="1" colnum="1"/>
@@ -274,15 +293,15 @@ cloudAPIPort=8080
 				<listitem><para>Stop the Management Servers.  Run this on all Management Server hosts.</para>
 					<programlisting># service cloud-management stop</programlisting></listitem>
 				<listitem><para>On the MySQL master, take a backup of the MySQL databases. We recommend performing this step even in test upgrades. If there is an issue, this will assist with debugging.</para>
-					<para>In the following commands, it is assumed that you have set the root password on the database, which is a CloudPlatform recommended best practice. Substitute your own MySQL root password.</para>
+					<para>In the following commands, it is assumed that you have set the root password on the database, which is a &PRODUCT; recommended best practice. Substitute your own MySQL root password.</para>
 					<programlisting># mysqldump -u root -p&lt;mysql_password&gt; cloud &gt;> cloud-backup.dmp
 # mysqldump -u root -p&lt;mysql_password&gt; cloud_usage &gt; cloud-usage-backup.dmp
 </programlisting>
 				</listitem>
-				<listitem><para>Download CloudPlatform 3.0.4 onto management server host where it will run. Get the software from the following link:</para>
+				<listitem><para>Download &PRODUCT; 3.0.4 onto management server host where it will run. Get the software from the following link:</para>
 					<para><ulink url="https://www.citrix.com/English/ss/downloads/"></ulink></para>
 					<para> You need a <ulink url="http://www.citrix.com/lang/English/publicindex.asp?destURL=%2FEnglish%2FmyCitrix%2Findex.asp%3F#">My Citrix Account</ulink>.</para></listitem>
-				<listitem><para>Upgrade the CloudPlatform packages. You should have a file in the form of 
+				<listitem><para>Upgrade the &PRODUCT; packages. You should have a file in the form of 
 					“CloudStack-3.0.4-N-OSVERSION.tar.gz”.  Untar the file, then run the install.sh script inside it. Replace the file and directory names below with those you are using:
 				</para><programlisting># tar xzf CloudStack-3.0.4-N-OSVERSION.tar.gz
 # cd CloudStack-3.0.4-N-OSVERSION
@@ -290,7 +309,7 @@ cloudAPIPort=8080
 </programlisting>
 					<para>You should see a few messages as the installer prepares, followed by a list of choices.</para></listitem>
 				<listitem><para>Choose "U" to upgrade the package</para><programlisting>&gt;U</programlisting><para>You should see some output as the upgrade proceeds, ending with a message like "Complete! Done."</para></listitem>
-				<listitem><para>If you have made changes to your existing copy of the file components.xml in your previous-version CloudPlatform installation, the changes will be preserved in the upgrade. However, you need to do the following steps to place these changes in a new version of the file which is compatible with version 3.0.4.</para>
+				<listitem><para>If you have made changes to your existing copy of the file components.xml in your previous-version &PRODUCT; installation, the changes will be preserved in the upgrade. However, you need to do the following steps to place these changes in a new version of the file which is compatible with version 3.0.4.</para>
 					<note><para>How will you know whether you need to do this? If the upgrade output in the previous step included a message like "warning: /etc/cloud/management/components.xml created as /etc/cloud/management/components.xml.rpmnew", then some custom content was found in your old components.xml, and you need to merge the two files:</para></note>
 					<orderedlist numeration="loweralpha">
 						<listitem><para>Make a backup copy of your /etc/cloud/management/components.xml file. For example:</para>
@@ -300,7 +319,7 @@ cloudAPIPort=8080
 						<listitem><para>Merge your changes from the backup file into the new components.xml file.</para><programlisting># vi /etc/cloud/management/components.xml</programlisting></listitem>
 					</orderedlist>						
 				</listitem>
-				<listitem><para>If you have made changes to your existing copy of the /etc/cloud/management/db.properties file in your previous-version CloudPlatform installation, the changes will be preserved in the upgrade. However, you need to do the following steps to place these changes in a new version of the file which is compatible with version 3.0.4.</para>
+				<listitem><para>If you have made changes to your existing copy of the /etc/cloud/management/db.properties file in your previous-version &PRODUCT; installation, the changes will be preserved in the upgrade. However, you need to do the following steps to place these changes in a new version of the file which is compatible with version 3.0.4.</para>
 					<orderedlist>
 						<listitem><para>Make a backup copy of your file /etc/cloud/management/db.properties. For example:</para>
 							<programlisting># mv /etc/cloud/management/db.properties /etc/cloud/management/db.properties-backup</programlisting></listitem>
@@ -316,7 +335,7 @@ cloudAPIPort=8080
 					<itemizedlist>
 						<listitem><para>(Optional) For encryption_type, use file or web to indicate the technique used to pass in the database encryption password. Default: file.</para></listitem>
 						<listitem><para>(Optional) For management_server_key, substitute the default key that is used to encrypt confidential parameters in the properties file. Default: password. It is highly recommended that you replace this with a more secure value</para></listitem>
-						<listitem><para>(Optional) For database_key, substitute the default key that is used to encrypt confidential parameters in the CloudPlatform database. Default: password. It is highly recommended that you replace this with a more secure value.</para></listitem>
+						<listitem><para>(Optional) For database_key, substitute the default key that is used to encrypt confidential parameters in the &PRODUCT; database. Default: password. It is highly recommended that you replace this with a more secure value.</para></listitem>
 					</itemizedlist>
 				</listitem>
 				<listitem><para>Repeat steps 10 - 15 on every management server node. If you provided your own encryption key in step 15, use the same key on all other management servers.</para></listitem>
@@ -335,7 +354,7 @@ cloudAPIPort=8080
 						<listitem><para>Start the agent.</para><programlisting># service cloud-agent start</programlisting></listitem>
 					</orderedlist>
 				</listitem>
-				<listitem><para>Log in to the CloudPlatform UI as admin, and check the status of the hosts. All hosts should come to Up state (except those that you know to be offline). You may need to wait 20 or 30 minutes, depending on the number of hosts.</para>
+				<listitem><para>Log in to the &PRODUCT; UI as admin, and check the status of the hosts. All hosts should come to Up state (except those that you know to be offline). You may need to wait 20 or 30 minutes, depending on the number of hosts.</para>
 					<para>Do not proceed to the next step until the hosts show in the Up state.  If the hosts do not come to the Up state, contact support.</para></listitem>
 				<listitem><para>Run the following script to stop, then start, all Secondary Storage VMs, Console Proxy VMs, and virtual routers.</para>
 					<orderedlist numeration="loweralpha">
@@ -388,7 +407,7 @@ Done restarting router(s).
 						<listitem><para>Open port 7080:</para>
 							<programlisting># iptables -I INPUT -p tcp -m tcp --dport 7080 -j ACCEPT</programlisting> 
 						</listitem>
-						<listitem><para>If you have made any modifications in server.xml on your existing CloudPlatform installation, back it up:</para>
+						<listitem><para>If you have made any modifications in server.xml on your existing &PRODUCT; installation, back it up:</para>
 							<programlisting># mv /etc/cloud/management/server.xml /etc/cloud/management/server.xml-backup</programlisting>
 							<para>Then replace with the new server.xml file:</para>
 							<programlisting># cp /etc/cloud/management/server.xml.rpmnew /etc/cloud/management/server.xml</programlisting>
@@ -406,13 +425,13 @@ cloudAPIPort=8080
 						<listitem><para>Restart the Management Server to put the new settings into effect.</para></listitem>
 					</orderedlist>
 				</listitem>
-				<listitem><para>If needed, upgrade all Citrix XenServer hypervisor hosts in your cloud to a version supported by CloudPlatform 3.0.4. The supported versions are XenServer 5.6 SP2 and 6.0.2. Instructions for upgrade can be found in the CloudPlatform 3.0.3 Advanced Installation Guide.</para></listitem>
+				<listitem><para>If needed, upgrade all Citrix XenServer hypervisor hosts in your cloud to a version supported by &PRODUCT; 3.0.4. The supported versions are XenServer 5.6 SP2 and 6.0.2. Instructions for upgrade can be found in the &PRODUCT; 3.0.3 Advanced Installation Guide.</para></listitem>
 				<listitem><para>Now apply the XenServer hotfix XS602E003 to XenServer v6.0.2 hypervisor hosts. (Support for this hotfix is the reason for release 3.0.4.)</para>
 					<orderedlist numeration="loweralpha">
-						<listitem><para>Disconnect the XenServer cluster from CloudPlatform.</para>
-							<para>In the left navigation bar of the CloudPlatform UI, select Infrastructure. Under Clusters, click View All. Select the XenServer cluster and click Actions - Unmanage.</para>
+						<listitem><para>Disconnect the XenServer cluster from &PRODUCT;.</para>
+							<para>In the left navigation bar of the &PRODUCT; UI, select Infrastructure. Under Clusters, click View All. Select the XenServer cluster and click Actions - Unmanage.</para>
 							<para>This may fail if there are hosts not in one of the states Up, Down, Disconnected, or Alert. You may need to fix that before unmanaging this cluster.</para>
-							<para>Wait until the status of the cluster has reached Unmanaged. Use the CloudPlatform UI to check on the status. When the cluster is in the unmanaged state, there is no connection to the hosts in the cluster.</para>
+							<para>Wait until the status of the cluster has reached Unmanaged. Use the &PRODUCT; UI to check on the status. When the cluster is in the unmanaged state, there is no connection to the hosts in the cluster.</para>
 						</listitem>
 						<listitem><para>To clean up the VLAN, log in to one XenServer host and run:</para>
 							<programlisting>/opt/xensource/bin/cloud-clean-vlan.sh</programlisting>
@@ -442,7 +461,7 @@ cloudAPIPort=8080
 							</para>
 							<programlisting>xe patch-apply host-uuid=&lt;host-uuid&gt; uuid=&lt;hotfix-uuid&gt;</programlisting>
 						</listitem>
-						<listitem><para>Copy the following files from the CloudPlatform Management Server to the host.</para>
+						<listitem><para>Copy the following files from the &PRODUCT; Management Server to the host.</para>
 							<informaltable>
 								<tgroup cols="2" align="left" colsep="1" rowsep="1">
 									<colspec colwidth="1*" colname="1" colnum="1"/>
@@ -493,7 +512,7 @@ cloudAPIPort=8080
 		<para></para>
 		<section id="what-new-in-3.0.4">
 			<title>What’s New in 3.0.4</title>
-			<para>CloudPlatform 3.0.4 is the first maintenance patch for CloudPlatform 3.0.3. This release includes no new features. For a list of the major fixed items, see Issues Fixed in 3.0.4.</para>
+			<para>&PRODUCT; 3.0.4 is the first maintenance patch for &PRODUCT; 3.0.3. This release includes no new features. For a list of the major fixed items, see Issues Fixed in 3.0.4.</para>
 		</section>
 		<section id="issues-fixed-3.0.4">
 			<title>Issues Fixed in 3.0.4</title>
@@ -514,7 +533,7 @@ cloudAPIPort=8080
 						</row>
 						<row>
 							<entry><para>CS-13944</para></entry>
-							<entry><para>The CloudPlatform 2.2.x to 3.0.x database upgrade for multiple physical networks is now supported.</para></entry>
+							<entry><para>The &PRODUCT; 2.2.x to 3.0.x database upgrade for multiple physical networks is now supported.</para></entry>
 						</row>
 						<row>
 							<entry><para>CS-15300</para></entry>
@@ -522,7 +541,7 @@ cloudAPIPort=8080
 						</row>
 						<row>
 							<entry><para>CS-15396</para></entry>
-							<entry><para>The CloudPlatform database now contain the UUD information after the 2.2.14 to 3.0.4 upgrade.</para></entry>
+							<entry><para>The &PRODUCT; database now contain the UUD information after the 2.2.14 to 3.0.4 upgrade.</para></entry>
 						</row>
 						<row>
 							<entry><para>CS-15450</para></entry>
@@ -550,7 +569,7 @@ cloudAPIPort=8080
 						</row>
 						<row>
 							<entry><para>CS-15323</para></entry>
-							<entry><para>CloudPlatform supports the following Citrix XenServer hotfixes: XS602E003, XS602E004, and
+							<entry><para>&PRODUCT; supports the following Citrix XenServer hotfixes: XS602E003, XS602E004, and
 									XS602E005.</para></entry>
 						</row>
 						<row>
@@ -617,7 +636,7 @@ cloudAPIPort=8080
 							<entry><para>CloudStack and LDAP user validation cannot happen simultaneously because the user password is hashed and stored in the database, and LDAP requires the passwords in plain text.</para>
 								<para>To work with the LDAP user, the MD5 hash should be disabled in the login process by commenting the following variable in sharedFunctions.js file available at /usr/share/cloud/management/webapps/client/scripts, and restart the cloud-management service.</para>
 								<programlisting>var md5HashedLogin = false;</programlisting><para>However, if md5HashedLogin is set to false, the end user can login with the LDAP credentials
-									but not with the CloudPlatform user credentials.</para></entry>
+									but not with the &PRODUCT; user credentials.</para></entry>
 						</row>
 						<row>
 							<entry><para>CS-15578</para></entry>
@@ -676,7 +695,7 @@ cloudAPIPort=8080
 			</section>
 			<section id="support-for-aws-api">
 				<title>Support for Amazon Web Services API</title>
-				<para>This release supports Amazon Web Services APIs, including Elastic Compute Cloud (EC2) API. Fidelity with the EC2 API and the installation experience for this functionality are both enhanced. In prior releases, users were required to install a separate component called CloudBridge, in addition to installing the Management Server. For new installations of CloudPlatform 3.0.3, this software is installed automatically along with CloudPlatform and runs in a more closely integrated fashion. The feature is disabled by default, but can be easily enabled by setting the appropriate global configuration parameter and performing a few setup steps.</para>
+				<para>This release supports Amazon Web Services APIs, including Elastic Compute Cloud (EC2) API. Fidelity with the EC2 API and the installation experience for this functionality are both enhanced. In prior releases, users were required to install a separate component called CloudBridge, in addition to installing the Management Server. For new installations of &PRODUCT; 3.0.3, this software is installed automatically along with &PRODUCT; and runs in a more closely integrated fashion. The feature is disabled by default, but can be easily enabled by setting the appropriate global configuration parameter and performing a few setup steps.</para>
 			</section>
 			<section id="support-nexus-dvswitch">
 				<title>Support for Cisco Nexus 1000v Virtual Switch</title>
@@ -759,7 +778,7 @@ cloudAPIPort=8080
 						</row>
 						<row>
 							<entry><para>CS-12705</para></entry>
-							<entry><para>When creating a Network offering by using SRX as the service provider for SourceNAT servcies, an option is given in the CloudPlatform UI now to set the source_nat type to "per Zone"/"per account". </para></entry>
+							<entry><para>When creating a Network offering by using SRX as the service provider for SourceNAT servcies, an option is given in the &PRODUCT; UI now to set the source_nat type to "per Zone"/"per account". </para></entry>
 						</row>
 						<row>
 							<entry><para>CS-12782</para></entry>
@@ -811,11 +830,11 @@ cloudAPIPort=8080
 						</row>
 						<row>
 							<entry><para>CS-14025</para></entry>
-							<entry><para>The Python Eggs are provided to easily package the test client for each branch of CloudPlatform.</para></entry>
+							<entry><para>The Python Eggs are provided to easily package the test client for each branch of &PRODUCT;.</para></entry>
 						</row>
 						<row>
 							<entry><para>CS-14068</para></entry>
-							<entry><para>Resetting the VM password through the CloudPlatform UI no longer causes any error.</para></entry>
+							<entry><para>Resetting the VM password through the &PRODUCT; UI no longer causes any error.</para></entry>
 						</row>
 						<row>
 							<entry><para>CS-14156</para></entry>
@@ -839,7 +858,7 @@ cloudAPIPort=8080
 						</row>
 						<row>
 							<entry><para>CS-14234</para></entry>
-							<entry><para>Sending project invite email to an account now requires SMTP configured in CloudPlatform.</para></entry>
+							<entry><para>Sending project invite email to an account now requires SMTP configured in &PRODUCT;.</para></entry>
 						</row>
 						<row>
 							<entry><para>CS-14237</para></entry>
@@ -964,7 +983,7 @@ cloudAPIPort=8080
 						</row>
 						<row>
 							<entry><para>CS-15009</para></entry>
-							<entry><para>The port_profile table will not be populated with port profile information. In this release, CloudPlatform directly connects to the VSM for all the port profile operations; therefore, no port profile information is cached.</para></entry>
+							<entry><para>The port_profile table will not be populated with port profile information. In this release, &PRODUCT; directly connects to the VSM for all the port profile operations; therefore, no port profile information is cached.</para></entry>
 						</row>
 						<row>
 							<entry><para>CS-15037</para></entry>
@@ -988,7 +1007,7 @@ cloudAPIPort=8080
 						</row>
 						<row>
 							<entry><para>CS-15120</para></entry>
-							<entry><para>No actions are listed in the Action column of the Volumes page in the CloudPlatform UI.</para></entry>
+							<entry><para>No actions are listed in the Action column of the Volumes page in the &PRODUCT; UI.</para></entry>
 						</row>
 						<row>
 							<entry><para>CS-15124</para></entry>
@@ -1005,10 +1024,6 @@ cloudAPIPort=8080
 						<row>
 							<entry><para>CS-15198</para></entry>
 							<entry><para>Peak bandwidth (PIR) and burst size shaping policies are not applied on Nexus 1000v virtual switch interface.</para></entry>
-						</row>
-						<row>
-							<entry><para>CS-15218</para></entry>
-							<entry><para>You might find the term "CloudStack" when you expect "CloudPlatform" in scripts, file names, etc. The use of the new product name CloudPlatform is not yet fully implemented.</para></entry>
 						</row>
 						<row>
 							<entry><para>CS-15256</para></entry>
@@ -1799,7 +1814,7 @@ mysql> select id from `cloud`.`virtual_supervisor_module` where ipaddr="&lt;vsm_
 			</section>
 			<section id="vm-storage-migration">
 				<title>VM Storage Migration</title>
-				<para>The CloudPlatform administrator can move a virtual machine’s root disk volume or any additional data disk from one storage pool to another in the same zone. You can use the storage migration feature to achieve some commonly desired administration goals, such as balancing the load on storage pools and increasing the reliability of virtual machines by moving them away from any storage  pool that is experiencing  issues. This functionality is supported in XenServer, KVM, and VMware.</para>
+				<para>The &PRODUCT; administrator can move a virtual machine’s root disk volume or any additional data disk from one storage pool to another in the same zone. You can use the storage migration feature to achieve some commonly desired administration goals, such as balancing the load on storage pools and increasing the reliability of virtual machines by moving them away from any storage  pool that is experiencing  issues. This functionality is supported in XenServer, KVM, and VMware.</para>
 			</section>
 			<section id="swift-for-secondary-storage">
 				<title>Swift for Secondary Storage</title>
@@ -1807,8 +1822,8 @@ mysql> select id from `cloud`.`virtual_supervisor_module` where ipaddr="&lt;vsm_
 			</section>
 			<section id="password-key-encryption">
 				<title>Password and Key Encryption</title>
-				<para>CloudPlatform stores several sensitive passwords and secret keys that are used to provide security. Starting in version 3.0, these values are always automatically encrypted. These include the database secret key, database password, SSH keys, compute node root password, VPN password, user API secret key, and VNC password.</para>
-				<para>In version 3.0, the Java Simplified Encryption (JASYPT) library is used. The data values are encrypted and decrypted using a database secret key. Of course, the database secret key itself cannot be stored in the open – it must be encrypted. To read it, a second secret key must be provided from an external source during Management Server startup. This key can be provided in one of two ways: loaded from a file or provided by the CloudPlatform administrator. The encryption type, database secret key, and Management Server secret key are set by the administrator during the CloudPlatform installation.</para>
+				<para>&PRODUCT; stores several sensitive passwords and secret keys that are used to provide security. Starting in version 3.0, these values are always automatically encrypted. These include the database secret key, database password, SSH keys, compute node root password, VPN password, user API secret key, and VNC password.</para>
+				<para>In version 3.0, the Java Simplified Encryption (JASYPT) library is used. The data values are encrypted and decrypted using a database secret key. Of course, the database secret key itself cannot be stored in the open – it must be encrypted. To read it, a second secret key must be provided from an external source during Management Server startup. This key can be provided in one of two ways: loaded from a file or provided by the &PRODUCT; administrator. The encryption type, database secret key, and Management Server secret key are set by the administrator during the &PRODUCT; installation.</para>
 			</section>
 			<section id="security-group-egress-rules">
 				<title>Security Group Egress Rules</title>
@@ -1818,12 +1833,12 @@ mysql> select id from `cloud`.`virtual_supervisor_module` where ipaddr="&lt;vsm_
 			<section id="projects-to-organize-users-resources">
 				<title>Using Projects to Organize Users and Resources</title>
 				<para>In version 3.0, users can group themselves into projects so they can collaborate and share virtual resources. The usage per project as well as per user is tracked, so the usage can be billed to either a user account or a project. For example, a private cloud within a software company might have all members of the QA department assigned to one project, so the company can track the resources used in testing while the project members can more easily isolate their efforts from other users of the same cloud. Per-project resource limits can be set.</para>
-				<para>You can configure CloudPlatform to allow any user to create a new project, or you can restrict that ability to just administrators. You can either add people directly to a project, or you have to send an invitation which the recipient must accept.</para>
-				<para>A user can be a member of any number of projects and can switch to a new Project View in the CloudPlatform UI to show only project-related information, such as project VMs, fellow project members, project-related alerts, and so on.</para>
+				<para>You can configure &PRODUCT; to allow any user to create a new project, or you can restrict that ability to just administrators. You can either add people directly to a project, or you have to send an invitation which the recipient must accept.</para>
+				<para>A user can be a member of any number of projects and can switch to a new Project View in the &PRODUCT; UI to show only project-related information, such as project VMs, fellow project members, project-related alerts, and so on.</para>
 			</section>
 			<section id="network-services-for-users">
 				<title>Providing Network Services for Users</title>
-				<para>People using cloud infrastructure have a variety of needs and preferences when it comes to the networking services provided by the cloud. Provisioning physical and virtual networks has always been supported in CloudPlatform. As an administrator, you can do the following additional things to set up networking for your users:</para>
+				<para>People using cloud infrastructure have a variety of needs and preferences when it comes to the networking services provided by the cloud. Provisioning physical and virtual networks has always been supported in &PRODUCT;. As an administrator, you can do the following additional things to set up networking for your users:</para>
 				<itemizedlist>
 					<listitem><para>Set up several different providers (also known as network elements) for the same service on a single physical network. For example, you can provide both Cisco and Juniper firewalls. You can have multiple instances of the same service provider in a network; for example, more than one Juniper SRX device.</para></listitem>
 					<listitem><para>Bundle different types of network services into network offerings. When creating a new VM, the user chooses one of the available network offerings, and that determines which network services the VM can use. A network offering is a named set of network services, such as DHCP, source NAT, load balancing, firewall, VPN, port forwarding, and specific network service providers, such as Juniper SRX for the firewall. You can add new network offerings as time goes on so end users can upgrade to a better class of service on their network.</para></listitem>
@@ -2273,7 +2288,7 @@ mysql> select id from `cloud`.`virtual_supervisor_module` where ipaddr="&lt;vsm_
 						</row>
 						<row>
 							<entry><para>Many</para></entry>
-							<entry><para>In the Add Zone wizard, there is no step for configuring network traffic labels on the physical network(s). Workaround: Don’t enable the zone in the last step of the wizard. Enable the zone only after configuring traffic labels for each traffic type, on each physical network, on each hypervisor in the zone. Set up the labels on the hypervisor host, then configure matching labels through the CloudPlatform UI.</para></entry>
+							<entry><para>In the Add Zone wizard, there is no step for configuring network traffic labels on the physical network(s). Workaround: Don’t enable the zone in the last step of the wizard. Enable the zone only after configuring traffic labels for each traffic type, on each physical network, on each hypervisor in the zone. Set up the labels on the hypervisor host, then configure matching labels through the &PRODUCT; UI.</para></entry>
 						</row>
 					</tbody>
 				</tgroup>
@@ -2380,7 +2395,7 @@ mysql> select id from `cloud`.`virtual_supervisor_module` where ipaddr="&lt;vsm_
 				<listitem><para>deletePhysicalNetwork (Deletes a Physical Network.)</para></listitem>
 				<listitem><para>listPhysicalNetworks (Lists physical networks)</para></listitem>
 				<listitem><para>updatePhysicalNetwork (Updates a physical network)</para></listitem>
-				<listitem><para>listSupportedNetworkServices (Lists all network services provided by CloudPlatform or for the given Provider.)</para></listitem>
+				<listitem><para>listSupportedNetworkServices (Lists all network services provided by &PRODUCT; or for the given Provider.)</para></listitem>
 				<listitem><para>addNetworkServiceProvider (Adds a network serviceProvider to a physical network)</para></listitem>
 				<listitem><para>deleteNetworkServiceProvider (Deletes a Network Service Provider.)</para></listitem>
 				<listitem><para>listNetworkServiceProviders (Lists network serviceproviders for a given physical network.)</para></listitem>
