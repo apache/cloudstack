@@ -1,6 +1,6 @@
 <?xml version='1.0' encoding='utf-8' ?>
 <!DOCTYPE authorgroup PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
-<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+<!ENTITY % BOOK_ENTITIES SYSTEM "Runbook.ent">
 %BOOK_ENTITIES;
 ]>
 
@@ -22,24 +22,11 @@
  under the License.
 -->
 
+
 <authorgroup>
-	<author>
-		<firstname>Jessica</firstname>
-		<surname>Tomechak</surname>
-		<affiliation>
-			<orgname>Citrix</orgname>
-			<orgdiv>Cloud Platform Group</orgdiv>
-		</affiliation>
-		<email>jessica.tomechak@citrix.com</email>
-	</author>
-	<author>
-		<firstname>Radhika</firstname>
-		<surname>PC</surname>
-		<affiliation>
-			<orgname>Citrix</orgname>
-			<orgdiv>Cloud Platform Group</orgdiv>
-		</affiliation>
-		<email>radhika.puthiyetath@citrix.com</email>
-	</author>
+    <author>
+        <firstname>Apache</firstname>
+        <surname>CloudStack</surname>
+    </author>
 </authorgroup>
 

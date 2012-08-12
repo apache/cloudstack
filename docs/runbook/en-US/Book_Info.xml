@@ -24,29 +24,29 @@
 
 
 <bookinfo id="book-Runbook-Runbook">
-	<title>Runbook</title>
-	<subtitle>Prescriptive instructions for deploying Apache CloudStack</subtitle>
-	<productname>Apache CloudStack</productname>
-	<productnumber>3.0.2</productnumber>
-	<edition>0</edition>
-	<pubsnumber>0</pubsnumber>
-	<abstract>
-		<para>
-			These runbooks are designed to provide a strict environment to guarantee 
+    <title>Runbook</title>
+    <subtitle>Prescriptive instructions for deploying Apache CloudStack</subtitle>
+    <productname>Apache CloudStack</productname>
+    <productnumber>3.0.2</productnumber>
+    <edition>0</edition>
+    <pubsnumber>0</pubsnumber>
+    <abstract>
+        <para>
+            These runbooks are designed to provide a strict environment to guarantee 
                         a higher degree of success in initial deployments of Apache CloudStack. 
                         All of the elements of the environment will be provided to you. 
                         Apache CloudStack is capable of much more complex configurations, 
                         but they are beyond the scope of this document.
-		</para>
-	</abstract>
-	<corpauthor>
-		<inlinemediaobject>
-			<imageobject>
-				<imagedata fileref="Common_Content/images/title_logo.svg" format="SVG" />
-			</imageobject>
-		</inlinemediaobject>
-	</corpauthor>
-	<xi:include href="Common_Content/Legal_Notice.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	<xi:include href="Author_Group.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        </para>
+    </abstract>
+    <corpauthor>
+        <inlinemediaobject>
+            <imageobject>
+                <imagedata fileref="Common_Content/images/title_logo.svg" format="SVG" />
+            </imageobject>
+        </inlinemediaobject>
+    </corpauthor>
+    <xi:include href="Common_Content/Legal_Notice.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="Author_Group.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </bookinfo>
 

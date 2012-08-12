@@ -23,7 +23,7 @@
 -->
 
 <section id="enable-security-groups">
-	<title>Enabling Security Groups</title>
-	<para>In order for security groups to function in a zone, the security groups feature must first be enabled for the zone. The administrator can do this when creating a new zone, by selecting a network offering that includes security groups. The procedure is described in Basic Zone Configuration in the Advanced Installation Guide.</para>
+    <title>Enabling Security Groups</title>
+    <para>In order for security groups to function in a zone, the security groups feature must first be enabled for the zone. The administrator can do this when creating a new zone, by selecting a network offering that includes security groups. The procedure is described in Basic Zone Configuration in the Advanced Installation Guide.</para>
 </section>
 

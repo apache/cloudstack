@@ -34,5 +34,5 @@
     <itemizedlist>        
         <listitem><para>A new VLAN that matches the account's provisioned Zone VLAN</para></listitem>
         <listitem><para>A self IP for the VLAN. This is always the second IP of the account's private subnet (e.g. 10.1.1.2).</para></listitem>
-      </itemizedlist>   				
-	</section>
+      </itemizedlist>                   
+    </section>

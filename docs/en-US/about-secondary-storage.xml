@@ -23,7 +23,7 @@
 -->
 
 <section id="about-secondary-storage">
-	<title>About Secondary Storage</title>
+    <title>About Secondary Storage</title>
     <para>Secondary storage is associated with a zone, and it stores the following:</para>
     <itemizedlist>
         <listitem><para>Templates &mdash; OS images that can be used to boot VMs and can include additional configuration information, such as installed applications</para></listitem>

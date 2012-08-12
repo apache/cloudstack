@@ -22,22 +22,22 @@
  under the License.
 -->
 
-	<section id="multi_node_installation_overview">
-		<title>Management Server Multi-Node Installation Overview</title>
-		<para>
-			This section describes installing multiple Management Servers and installing MySQL on a node separate from the Management Servers. The machines must meet the system requirements described in System Requirements.
-		</para>
-		<warning><para>For the sake of security, be sure the public Internet can not access port 8096 or port 8250 on the Management Server.</para></warning>
-		<para>
-			The procedure for a multi-node installation is:
-		</para>
-			<orderedlist>
-				<listitem><para>Prepare the Operating System</para></listitem>
-				<listitem><para>Install the First Management Server</para></listitem>
-				<listitem><para>Install and Configure the Database</para></listitem>
-				<listitem><para>Prepare NFS Shares</para></listitem>
-				<listitem><para>Prepare and Start Additional Management Servers</para></listitem>
-				<listitem><para>Prepare the System VM Template</para></listitem>
-			</orderedlist>
-	</section>
+    <section id="multi_node_installation_overview">
+        <title>Management Server Multi-Node Installation Overview</title>
+        <para>
+            This section describes installing multiple Management Servers and installing MySQL on a node separate from the Management Servers. The machines must meet the system requirements described in System Requirements.
+        </para>
+        <warning><para>For the sake of security, be sure the public Internet can not access port 8096 or port 8250 on the Management Server.</para></warning>
+        <para>
+            The procedure for a multi-node installation is:
+        </para>
+            <orderedlist>
+                <listitem><para>Prepare the Operating System</para></listitem>
+                <listitem><para>Install the First Management Server</para></listitem>
+                <listitem><para>Install and Configure the Database</para></listitem>
+                <listitem><para>Prepare NFS Shares</para></listitem>
+                <listitem><para>Prepare and Start Additional Management Servers</para></listitem>
+                <listitem><para>Prepare the System VM Template</para></listitem>
+            </orderedlist>
+    </section>
 

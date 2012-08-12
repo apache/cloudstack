@@ -2,25 +2,25 @@
 <!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 ]>
 <section>
-	<title>We Need Feedback!</title>
-	 <indexterm>
-		<primary>feedback1</primary>
-		 <secondary>contact information for this brand</secondary>
+    <title>We Need Feedback!</title>
+     <indexterm>
+        <primary>feedback1</primary>
+         <secondary>contact information for this brand</secondary>
 
-	</indexterm>
-	 <para>
-		If you find a typographical error in this manual, or if you 
+    </indexterm>
+     <para>
+        If you find a typographical error in this manual, or if you 
                 have thought of a way to make this manual better, we would 
                 love to hear from you! Please submit a bug: 
                 <ulink url="http://bugs.cloudstack.org">http://bugs.cloudstack.org</ulink> 
                 against the component <application>Doc</application>
-	</para>
-	 <para>
-		If you have a suggestion for improving the documentation, try to be as 
+    </para>
+     <para>
+        If you have a suggestion for improving the documentation, try to be as 
                 specific as possible when describing it. If you have found an error, 
                 please include the section number and some of the surrounding text 
                 so we can find it easily.
-	</para>
+    </para>
 
 </section>
 

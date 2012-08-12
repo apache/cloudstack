@@ -1,12 +1,30 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
-<section id="runtime-behavior-of-primary-storage">
-		<title>Runtime Behavior of Primary Storage</title>
-		<para>Root volumes are created automatically when a virtual machine is created. Root volumes are deleted when the VM is destroyed. Data volumes can be created and dynamically attached to VMs (although, when the Oracle VM hypervisor is used, the VM must be stopped before an additional volume can be attached). Data volumes are not deleted when VMs are destroyed.</para>
-		<para>Administrators should monitor the capacity of primary storage devices and add additional primary storage as needed.  See the Advanced Installation Guide.</para>			
-		<para>Administrators add primary storage to the system by creating a CloudPlatform storage pool. Each storage pool is associated with a cluster.</para>
-	</section>
 
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="runtime-behavior-of-primary-storage">
+    <title>Runtime Behavior of Primary Storage</title>
+    <para>Root volumes are created automatically when a virtual machine is created. Root volumes are deleted when the VM is destroyed. Data volumes can be created and dynamically attached to VMs (although, when the Oracle VM hypervisor is used, the VM must be stopped before an additional volume can be attached). Data volumes are not deleted when VMs are destroyed.</para>
+    <para>Administrators should monitor the capacity of primary storage devices and add additional primary storage as needed.  See the Advanced Installation Guide.</para>            
+    <para>Administrators add primary storage to the system by creating a &PRODUCT; storage pool. Each storage pool is associated with a cluster.</para>
+</section>

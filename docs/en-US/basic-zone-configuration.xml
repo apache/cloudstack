@@ -23,7 +23,7 @@
 -->
 
 <section id="basic-zone-configuration">
-	<title>Basic Zone Configuration</title>
+    <title>Basic Zone Configuration</title>
     <orderedlist>
         <listitem><para>After you select Basic in the Add Zone wizard and click Next, you will be asked to enter the following details. Then click Next.</para>
             <itemizedlist>

@@ -23,7 +23,7 @@
 -->
 
 <section id="guest-network">
-	<title>Guest Network</title>
-	<para>In a &PRODUCT; cloud, guest VMs can communicate with each other using shared infrastructure with the security and user perception that the guests have a private LAN.</para>
-	<para>The &PRODUCT; virtual router is the main component providing networking features for guest traffic.</para>	
+    <title>Guest Network</title>
+    <para>In a &PRODUCT; cloud, guest VMs can communicate with each other using shared infrastructure with the security and user perception that the guests have a private LAN.</para>
+    <para>The &PRODUCT; virtual router is the main component providing networking features for guest traffic.</para>    
 </section>

@@ -462,6 +462,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 type = StoragePoolType.Filesystem;
             } else if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.RBD) {
                 type = StoragePoolType.RBD;
+            } else if (spd.getPoolType() == LibvirtStoragePoolDef.poolType.LOGICAL) {
+                type = StoragePoolType.CLVM;
             }
 
             LibvirtStoragePool pool = new LibvirtStoragePool(uuid, storage.getName(),
@@ -551,6 +553,8 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 sp = CreateSharedStoragePool(conn, name, host, path);
             } else if (type == StoragePoolType.RBD) {
                 sp = createRBDStoragePool(conn, name, host, port, userInfo, path);
+            } else if (type == StoragePoolType.CLVM) {
+                sp = createCLVMStoragePool(conn, name, host, path);
             }
         }
 
@@ -685,9 +689,15 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         if (destPool.getType() != StoragePoolType.RBD) {
             disk = destPool.createPhysicalDisk(newUuid, format, template.getVirtualSize());
 
-            Script.runSimpleBashScript("qemu-img create -f "
-                    + template.getFormat() + " -b  " + template.getPath() + " "
-                    + disk.getPath());
+            if (format == PhysicalDiskFormat.QCOW2) {
+                Script.runSimpleBashScript("qemu-img create -f "
+                        + template.getFormat() + " -b  " + template.getPath() + " "
+                        + disk.getPath());
+            } else if (format == PhysicalDiskFormat.RAW) {
+                Script.runSimpleBashScript("qemu-img convert -f "
+                                        + template.getFormat() + " -O raw " + template.getPath()
+                                        + " " + disk.getPath());
+            }
         } else {
             disk = new KVMPhysicalDisk(destPool.getSourceDir() + "/" + newUuid, newUuid, destPool);
             disk.setFormat(format);

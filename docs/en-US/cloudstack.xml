@@ -23,7 +23,7 @@
 -->
 
 <book>
-	<xi:include href="Book_Info.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="Book_Info.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="concepts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="installation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="ui.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

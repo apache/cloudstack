@@ -1337,8 +1337,14 @@
 
                           guestGateway: { label: 'label.guest.gateway' },
                           guestNetmask: { label: 'label.guest.netmask' },
-                          guestStartIp: { label: 'label.guest.start.ip' },
-                          guestEndIp: { label: 'label.guest.end.ip' },
+                          guestStartIp: { 
+													  label: 'label.guest.start.ip', 
+														validation: { required: true } 
+													},
+                          guestEndIp: { 
+													  label: 'label.guest.end.ip', 
+														validation: { required: true } 
+													},
                           networkdomain: { label: 'label.network.domain' }
                         }
                       },
@@ -8065,6 +8071,7 @@
                         items.push({id: "nfs", description: "nfs"});
                         items.push({id: "SharedMountPoint", description: "SharedMountPoint"});
                         items.push({id: "rbd", description: "RBD"});
+                        items.push({id: "clvm", description: "CLVM"});
                         args.response.success({data: items});
                       }
                       else if(selectedClusterObj.hypervisortype == "XenServer") {

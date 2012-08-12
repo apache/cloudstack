@@ -23,22 +23,22 @@
 -->
 
 <section id="change-network-offering-on-guest-network">
-	<title>Changing the Network Offering on a Guest Network</title>
-	<para>A user or administrator can change the network offering that is associated with an existing guest network.</para>
-	<itemizedlist>
-		<listitem><para>Log in to the &PRODUCT; UI as an administrator or end user. </para></listitem>
-		<listitem><para>If you are changing from a network offering that uses the &PRODUCT; virtual router to one that uses external devices as network service providers, you must first stop all the VMs on the network. See Stopping and Starting VMs. Then return here and continue to the next step</para></listitem>
-		<listitem><para>In the left navigation, choose Network</para></listitem>
-		<listitem><para>Click the name of the network you want to modify <inlinemediaobject>
-			<imageobject>
-				<imagedata fileref="./images/edit-icon.png" />
-			</imageobject>
-			<textobject><phrase>AttachDiskButton.png: button to attach a volume</phrase></textobject>
-		</inlinemediaobject>.</para></listitem>
-		<listitem><para>In Network Offering, choose the new network offering, then click Apply.</para></listitem>
-		<listitem><para>A prompt appears asking whether you want to keep the existing CIDR. This is to let you know that if you change the network offering, the CIDR will be affected. Choose No to proceed with the change.</para></listitem>
-		<listitem><para>Wait for the update to complete. Don’t try to restart VMs until after the network change is complete.</para></listitem>
-		<listitem><para>If you stopped any VMs in step 2, restart them.</para></listitem>
-	</itemizedlist>
+    <title>Changing the Network Offering on a Guest Network</title>
+    <para>A user or administrator can change the network offering that is associated with an existing guest network.</para>
+    <itemizedlist>
+        <listitem><para>Log in to the &PRODUCT; UI as an administrator or end user. </para></listitem>
+        <listitem><para>If you are changing from a network offering that uses the &PRODUCT; virtual router to one that uses external devices as network service providers, you must first stop all the VMs on the network. See Stopping and Starting VMs. Then return here and continue to the next step</para></listitem>
+        <listitem><para>In the left navigation, choose Network</para></listitem>
+        <listitem><para>Click the name of the network you want to modify <inlinemediaobject>
+            <imageobject>
+                <imagedata fileref="./images/edit-icon.png" />
+            </imageobject>
+            <textobject><phrase>AttachDiskButton.png: button to attach a volume</phrase></textobject>
+        </inlinemediaobject>.</para></listitem>
+        <listitem><para>In Network Offering, choose the new network offering, then click Apply.</para></listitem>
+        <listitem><para>A prompt appears asking whether you want to keep the existing CIDR. This is to let you know that if you change the network offering, the CIDR will be affected. Choose No to proceed with the change.</para></listitem>
+        <listitem><para>Wait for the update to complete. Don’t try to restart VMs until after the network change is complete.</para></listitem>
+        <listitem><para>If you stopped any VMs in step 2, restart them.</para></listitem>
+    </itemizedlist>
 
-	</section>
+    </section>

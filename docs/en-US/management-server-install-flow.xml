@@ -23,14 +23,14 @@
 -->
 
 <section id="management-server-install-flow">
-	<title>Management Server Installation</title>
-	<xi:include href="management-server-installation-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	<xi:include href="prepare-os.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	<xi:include href="install-management-server.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <title>Management Server Installation</title>
+    <xi:include href="management-server-installation-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="prepare-os.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="install-management-server.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="install-database-on-management-server-node.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	<xi:include href="install-database-on-separate-node.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	<xi:include href="prepare-nfs-shares.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	<xi:include href="install-management-server-multi-nodes.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	<xi:include href="prepare-system-vm-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	<xi:include href="installation-complete.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <xi:include href="install-database-on-separate-node.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="prepare-nfs-shares.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="install-management-server-multi-nodes.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="prepare-system-vm-template.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="installation-complete.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </section>

@@ -4,7 +4,7 @@
 %BOOK_ENTITIES;
 ]>
 <section id="zone-add">
-	<title>Adding a Zone</title>
+    <title>Adding a Zone</title>
     <para>These steps assume you have already logged in to the CloudPlatform UI. See <xref linkend="log-in" />.</para>
     <orderedlist>
         <listitem><para>(Optional) If you are going to use Swift for cloud-wide secondary storage, you need to add it before you add zones.</para>

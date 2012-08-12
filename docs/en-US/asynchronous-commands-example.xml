@@ -17,90 +17,90 @@
 -->
 
 <section id="asynchronous-commands-example">
-	<title>Example</title>
-		<para>
-			The following shows an example of using an asynchronous command. Assume the API command:</para>
-		<programlisting>command=deployVirtualMachine&amp;zoneId=1&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=1
-		</programlisting>
-		<para>CloudStack will immediately return a job ID and any other additional data.</para>
-		<programlisting>
-		 &lt;deployvirtualmachineresponse&gt; 
-  			&lt;jobid&gt;1&lt;/jobid&gt;
- 		    &lt;id&gt;100&lt;/id&gt;
-		 &lt;/deployvirtualmachineresponse&gt;
-		</programlisting>
-		<para>Using the job ID, you can periodically poll for the results by using the queryAsyncJobResult command.</para>
-	    <programlisting>command=queryAsyncJobResult&amp;jobId=1</programlisting>
-		<para>Three possible results could come from this query.</para>
-		<para>Job is still pending:</para>
-	    <programlisting>
-	     &lt;queryasyncjobresult&gt; 
-  			&lt;jobid&gt;1&lt;/jobid&gt;
-  			&lt;jobstatus&gt;0&lt;/jobstatus&gt;
-  			&lt;jobprocstatus&gt;1&lt;/jobprocstatus&gt;
-		 &lt;/queryasyncjobresult&gt;
-		</programlisting>
-		<para>Job has succeeded:</para>
-	    <programlisting>
-	    	&lt;queryasyncjobresultresponse cloud-stack-version="3.0.1.6"&gt;
-  				&lt;jobid&gt;1&lt;/jobid&gt;
-  				&lt;jobstatus&gt;1&lt;/jobstatus&gt;
-  				&lt;jobprocstatus&gt;0&lt;/jobprocstatus&gt;
- 				&lt;jobresultcode&gt;0&lt;/jobresultcode&gt;
-  				&lt;jobresulttype&gt;object&lt;/jobresulttype&gt;
-  				&lt;jobresult&gt;
-				    &lt;virtualmachine&gt;
-				    &lt;id&gt;450&lt;/id&gt;
-				    &lt;name&gt;i-2-450-VM&lt;/name&gt;
-				    &lt;displayname&gt;i-2-450-VM&lt;/displayname&gt;
-				    &lt;account&gt;admin&lt;/account&gt;
-				    &lt;domainid&gt;1&lt;/domainid&gt;
-				    &lt;domain&gt;ROOT&lt;/domain&gt;
-				    &lt;created&gt;2011-03-10T18:20:25-0800&lt;/created&gt;
-				    &lt;state&gt;Running&lt;/state&gt;
-				    &lt;haenable&gt;false&lt;/haenable&gt;
-				    &lt;zoneid&gt;1&lt;/zoneid&gt;
-				    &lt;zonename&gt;San Jose 1&lt;/zonename&gt;
-				    &lt;hostid&gt;2&lt;/hostid&gt;
-				    &lt;hostname&gt;905-13.sjc.lab.vmops.com&lt;/hostname&gt;
-				    &lt;templateid&gt;1&lt;/templateid&gt;
-				    &lt;templatename&gt;CentOS 5.3 64bit LAMP&lt;/templatename&gt;
-				    &lt;templatedisplaytext&gt;CentOS 5.3 64bit LAMP&lt;/templatedisplaytext&gt;
-				    &lt;passwordenabled&gt;false&lt;/passwordenabled&gt;
-				    &lt;serviceofferingid&gt;1&lt;/serviceofferingid&gt;
-				    &lt;serviceofferingname&gt;Small Instance&lt;/serviceofferingname&gt;
-				    &lt;cpunumber&gt;1&lt;/cpunumber&gt;
-				    &lt;cpuspeed&gt;500&lt;/cpuspeed&gt;
-				    &lt;memory&gt;512&lt;/memory&gt;
-				    &lt;guestosid&gt;12&lt;/guestosid&gt;
-				    &lt;rootdeviceid&gt;0&lt;/rootdeviceid&gt;
-				    &lt;rootdevicetype&gt;NetworkFilesystem&lt;/rootdevicetype&gt;
-				    &lt;nic&gt;
-				      &lt;id&gt;561&lt;/id&gt;
-				      &lt;networkid&gt;205&lt;/networkid&gt;
-				      &lt;netmask&gt;255.255.255.0&lt;/netmask&gt;
-				      &lt;gateway&gt;10.1.1.1&lt;/gateway&gt;
-				      &lt;ipaddress&gt;10.1.1.225&lt;/ipaddress&gt;
-				      &lt;isolationuri&gt;vlan://295&lt;/isolationuri&gt;
-				      &lt;broadcasturi&gt;vlan://295&lt;/broadcasturi&gt;
-				      &lt;traffictype&gt;Guest&lt;/traffictype&gt;
-				      &lt;type&gt;Virtual&lt;/type&gt;
-				      &lt;isdefault&gt;true&lt;/isdefault&gt;
-				    &lt;/nic&gt;
-				    &lt;hypervisor&gt;XenServer&lt;/hypervisor&gt;
-				   &lt;/virtualmachine&gt;
-				 &lt;/jobresult&gt;
-			&lt;/queryasyncjobresultresponse&gt;
-	    </programlisting>
-		<para>Job has failed:</para>
-    	<programlisting>
-    		&lt;queryasyncjobresult&gt;
-  				&lt;jobid&gt;1&lt;/jobid&gt; 
-  				&lt;jobstatus&gt;2&lt;/jobstatus&gt; 
-	  			&lt;jobprocstatus&gt;0&lt;/jobprocstatus&gt;
-	  			&lt;jobresultcode&gt;551&lt;/jobresultcode&gt;
-	  			&lt;jobresulttype&gt;text&lt;/jobresulttype&gt;
-	  			&lt;jobresult&gt;Unable to deploy virtual machine id = 100 due to not enough capacity&lt;/jobresult&gt; 
-			&lt;/queryasyncjobresult&gt;
-		</programlisting>	
-	</section>
+    <title>Example</title>
+        <para>
+            The following shows an example of using an asynchronous command. Assume the API command:</para>
+        <programlisting>command=deployVirtualMachine&amp;zoneId=1&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=1
+        </programlisting>
+        <para>CloudStack will immediately return a job ID and any other additional data.</para>
+        <programlisting>
+         &lt;deployvirtualmachineresponse&gt; 
+              &lt;jobid&gt;1&lt;/jobid&gt;
+             &lt;id&gt;100&lt;/id&gt;
+         &lt;/deployvirtualmachineresponse&gt;
+        </programlisting>
+        <para>Using the job ID, you can periodically poll for the results by using the queryAsyncJobResult command.</para>
+        <programlisting>command=queryAsyncJobResult&amp;jobId=1</programlisting>
+        <para>Three possible results could come from this query.</para>
+        <para>Job is still pending:</para>
+        <programlisting>
+         &lt;queryasyncjobresult&gt; 
+              &lt;jobid&gt;1&lt;/jobid&gt;
+              &lt;jobstatus&gt;0&lt;/jobstatus&gt;
+              &lt;jobprocstatus&gt;1&lt;/jobprocstatus&gt;
+         &lt;/queryasyncjobresult&gt;
+        </programlisting>
+        <para>Job has succeeded:</para>
+        <programlisting>
+            &lt;queryasyncjobresultresponse cloud-stack-version="3.0.1.6"&gt;
+                  &lt;jobid&gt;1&lt;/jobid&gt;
+                  &lt;jobstatus&gt;1&lt;/jobstatus&gt;
+                  &lt;jobprocstatus&gt;0&lt;/jobprocstatus&gt;
+                 &lt;jobresultcode&gt;0&lt;/jobresultcode&gt;
+                  &lt;jobresulttype&gt;object&lt;/jobresulttype&gt;
+                  &lt;jobresult&gt;
+                    &lt;virtualmachine&gt;
+                    &lt;id&gt;450&lt;/id&gt;
+                    &lt;name&gt;i-2-450-VM&lt;/name&gt;
+                    &lt;displayname&gt;i-2-450-VM&lt;/displayname&gt;
+                    &lt;account&gt;admin&lt;/account&gt;
+                    &lt;domainid&gt;1&lt;/domainid&gt;
+                    &lt;domain&gt;ROOT&lt;/domain&gt;
+                    &lt;created&gt;2011-03-10T18:20:25-0800&lt;/created&gt;
+                    &lt;state&gt;Running&lt;/state&gt;
+                    &lt;haenable&gt;false&lt;/haenable&gt;
+                    &lt;zoneid&gt;1&lt;/zoneid&gt;
+                    &lt;zonename&gt;San Jose 1&lt;/zonename&gt;
+                    &lt;hostid&gt;2&lt;/hostid&gt;
+                    &lt;hostname&gt;905-13.sjc.lab.vmops.com&lt;/hostname&gt;
+                    &lt;templateid&gt;1&lt;/templateid&gt;
+                    &lt;templatename&gt;CentOS 5.3 64bit LAMP&lt;/templatename&gt;
+                    &lt;templatedisplaytext&gt;CentOS 5.3 64bit LAMP&lt;/templatedisplaytext&gt;
+                    &lt;passwordenabled&gt;false&lt;/passwordenabled&gt;
+                    &lt;serviceofferingid&gt;1&lt;/serviceofferingid&gt;
+                    &lt;serviceofferingname&gt;Small Instance&lt;/serviceofferingname&gt;
+                    &lt;cpunumber&gt;1&lt;/cpunumber&gt;
+                    &lt;cpuspeed&gt;500&lt;/cpuspeed&gt;
+                    &lt;memory&gt;512&lt;/memory&gt;
+                    &lt;guestosid&gt;12&lt;/guestosid&gt;
+                    &lt;rootdeviceid&gt;0&lt;/rootdeviceid&gt;
+                    &lt;rootdevicetype&gt;NetworkFilesystem&lt;/rootdevicetype&gt;
+                    &lt;nic&gt;
+                      &lt;id&gt;561&lt;/id&gt;
+                      &lt;networkid&gt;205&lt;/networkid&gt;
+                      &lt;netmask&gt;255.255.255.0&lt;/netmask&gt;
+                      &lt;gateway&gt;10.1.1.1&lt;/gateway&gt;
+                      &lt;ipaddress&gt;10.1.1.225&lt;/ipaddress&gt;
+                      &lt;isolationuri&gt;vlan://295&lt;/isolationuri&gt;
+                      &lt;broadcasturi&gt;vlan://295&lt;/broadcasturi&gt;
+                      &lt;traffictype&gt;Guest&lt;/traffictype&gt;
+                      &lt;type&gt;Virtual&lt;/type&gt;
+                      &lt;isdefault&gt;true&lt;/isdefault&gt;
+                    &lt;/nic&gt;
+                    &lt;hypervisor&gt;XenServer&lt;/hypervisor&gt;
+                   &lt;/virtualmachine&gt;
+                 &lt;/jobresult&gt;
+            &lt;/queryasyncjobresultresponse&gt;
+        </programlisting>
+        <para>Job has failed:</para>
+        <programlisting>
+            &lt;queryasyncjobresult&gt;
+                  &lt;jobid&gt;1&lt;/jobid&gt; 
+                  &lt;jobstatus&gt;2&lt;/jobstatus&gt; 
+                  &lt;jobprocstatus&gt;0&lt;/jobprocstatus&gt;
+                  &lt;jobresultcode&gt;551&lt;/jobresultcode&gt;
+                  &lt;jobresulttype&gt;text&lt;/jobresulttype&gt;
+                  &lt;jobresult&gt;Unable to deploy virtual machine id = 100 due to not enough capacity&lt;/jobresult&gt; 
+            &lt;/queryasyncjobresult&gt;
+        </programlisting>    
+    </section>

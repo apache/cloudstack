@@ -23,7 +23,7 @@
 -->
 
 <section id="events">
-	<xi:include href="events-log.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="events-log.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="standard-events.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="long-running-job-events.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="event-log-queries.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

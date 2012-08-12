@@ -4,6 +4,6 @@
 %BOOK_ENTITIES;
 ]>
 <chapter id="ui">
-	<title>User Interface</title>
-	<xi:include href="log-in.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
+    <title>User Interface</title>
+    <xi:include href="log-in.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
 </chapter>

@@ -23,14 +23,14 @@
 -->
 
 <section id="changing-secondary-storage-serversp">
-	<title>Changing Secondary Storage Servers</title>
-	<para>You can change the secondary storage NFS mount.  Perform the following steps to do so:</para>
-		<orderedlist>
-			<listitem><para>Stop all running Management Servers.</para></listitem>
-			<listitem><para>Wait 30 minutes.  This allows any writes to secondary storage to complete.</para></listitem>
-			<listitem><para>Copy all files from the old secondary storage mount to the new.</para></listitem>
-			<listitem><para>Use the procedure above to change the IP address for secondary storage if required.</para></listitem>
-			<listitem><para>Start the Management Server.</para></listitem>
-		</orderedlist>
-	</section>
+    <title>Changing Secondary Storage Servers</title>
+    <para>You can change the secondary storage NFS mount.  Perform the following steps to do so:</para>
+        <orderedlist>
+            <listitem><para>Stop all running Management Servers.</para></listitem>
+            <listitem><para>Wait 30 minutes.  This allows any writes to secondary storage to complete.</para></listitem>
+            <listitem><para>Copy all files from the old secondary storage mount to the new.</para></listitem>
+            <listitem><para>Use the procedure above to change the IP address for secondary storage if required.</para></listitem>
+            <listitem><para>Start the Management Server.</para></listitem>
+        </orderedlist>
+    </section>
 

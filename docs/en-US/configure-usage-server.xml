@@ -54,7 +54,7 @@
                 <row>
                     <entry><para>usage.aggregation.timezone</para></entry>
                     <entry><para>Time zone of usage records. Set this if the usage records and daily job execution are in different time zones. For example, with the following settings, the usage job will run at PST 00:15 and generate usage records for the 24 hours from 00:00:00 GMT to 23:59:59 GMT:</para>
-                    <programlisting>usage.stats.job.exec.time = 00:15	
+                    <programlisting>usage.stats.job.exec.time = 00:15    
 usage.execution.timezone = PST
 usage.aggregation.timezone = GMT
                         </programlisting>

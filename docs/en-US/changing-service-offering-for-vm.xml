@@ -23,27 +23,27 @@
 -->
 
 <section id="changing-service-offering-for-vm">
-	<title>Changing the Service Offering for a VM</title>
-		<para>To upgrade or downgrade the level of compute resources available to a virtual machine, you can change the VM's compute offering.</para>
-		<orderedlist>
-			<listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
-			<listitem><para>In the left navigation, click Instances.</para></listitem>
-			<listitem><para>Choose the VM that you want to work with.</para></listitem>
-			<listitem><para>Click the Stop button to stop the VM <inlinemediaobject>
-				<imageobject>
-					<imagedata fileref="./images/stop-instance-icon.png" />
-				</imageobject>
-				<textobject><phrase>StopButton.png: button to stop a VM</phrase></textobject>
-			</inlinemediaobject>
-				</para></listitem>
-			<listitem><para>Click the Change Service button <inlinemediaobject>
-				<imageobject>
-					<imagedata fileref="./images/change-service-icon.png" />
-				</imageobject>
-				<textobject><phrase>ChangeServiceButton.png: button to change the service of a VM</phrase></textobject>
-			</inlinemediaobject>. The Change service dialog box is displayed.</para></listitem>
-			<listitem><para>Select the offering you want.</para></listitem>
-			<listitem><para>Click OK.</para></listitem>
-		</orderedlist>
-	</section>
+    <title>Changing the Service Offering for a VM</title>
+        <para>To upgrade or downgrade the level of compute resources available to a virtual machine, you can change the VM's compute offering.</para>
+        <orderedlist>
+            <listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
+            <listitem><para>In the left navigation, click Instances.</para></listitem>
+            <listitem><para>Choose the VM that you want to work with.</para></listitem>
+            <listitem><para>Click the Stop button to stop the VM <inlinemediaobject>
+                <imageobject>
+                    <imagedata fileref="./images/stop-instance-icon.png" />
+                </imageobject>
+                <textobject><phrase>StopButton.png: button to stop a VM</phrase></textobject>
+            </inlinemediaobject>
+                </para></listitem>
+            <listitem><para>Click the Change Service button <inlinemediaobject>
+                <imageobject>
+                    <imagedata fileref="./images/change-service-icon.png" />
+                </imageobject>
+                <textobject><phrase>ChangeServiceButton.png: button to change the service of a VM</phrase></textobject>
+            </inlinemediaobject>. The Change service dialog box is displayed.</para></listitem>
+            <listitem><para>Select the offering you want.</para></listitem>
+            <listitem><para>Click OK.</para></listitem>
+        </orderedlist>
+    </section>
 

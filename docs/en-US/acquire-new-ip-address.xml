@@ -23,14 +23,14 @@
 -->
 
 <section id="acquire-new-ip-address">
-	<title>Acquiring a New IP Address</title>
-	<orderedlist>
-		<listitem><para>Log in to the &PRODUCT; UI as an administrator or end user. </para></listitem>
-		<listitem><para>In the left navigation, choose Network.</para></listitem>
-		<listitem><para>Click the name of the network where you want to work with.</para></listitem>
-		<listitem><para>Click View IP Addresses.</para></listitem>
-		<listitem><para>Click Acquire New IP, and click Yes in the confirmation dialog.</para>
-		<para>You are prompted for confirmation because, typically, IP addresses are a limited resource. Within a few moments, the new IP address should appear with the state Allocated. You can now use the IP address in port forwarding or static NAT rules.</para>
-		</listitem>	
-	</orderedlist>
+    <title>Acquiring a New IP Address</title>
+    <orderedlist>
+        <listitem><para>Log in to the &PRODUCT; UI as an administrator or end user. </para></listitem>
+        <listitem><para>In the left navigation, choose Network.</para></listitem>
+        <listitem><para>Click the name of the network where you want to work with.</para></listitem>
+        <listitem><para>Click View IP Addresses.</para></listitem>
+        <listitem><para>Click Acquire New IP, and click Yes in the confirmation dialog.</para>
+        <para>You are prompted for confirmation because, typically, IP addresses are a limited resource. Within a few moments, the new IP address should appear with the state Allocated. You can now use the IP address in port forwarding or static NAT rules.</para>
+        </listitem>    
+    </orderedlist>
 </section>

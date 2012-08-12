@@ -4,6 +4,6 @@
 %BOOK_ENTITIES;
 ]>
 <section id="using-vpn-with-mac">
-	<title>Using VPN with Mac OS X</title>
-	<para>In Mac OS X, in Network Preferences – Advanced,  make sure Send all traffic over VPN connection is not checked.</para>
-	</section>
+    <title>Using VPN with Mac OS X</title>
+    <para>In Mac OS X, in Network Preferences – Advanced,  make sure Send all traffic over VPN connection is not checked.</para>
+    </section>

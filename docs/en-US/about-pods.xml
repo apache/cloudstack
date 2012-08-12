@@ -23,7 +23,7 @@
 -->
 
 <section id="about-pods">
-	<title>About Pods</title>
+    <title>About Pods</title>
     <para>A pod often represents a single rack. Hosts in the same pod are in the same subnet.</para>
     <para>A pod is the second-largest organizational unit within a &PRODUCT; deployment. Pods are contained within zones. Each zone can contain one or more pods.</para>
     <para>Pods are not visible to the end user.</para>

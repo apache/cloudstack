@@ -4,14 +4,14 @@
 %BOOK_ENTITIES;
 ]>
 <section id="usage-record-format">
-	<title>Usage Record Format</title>
-	<xi:include href="virtual-machine-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	<xi:include href="network-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	<xi:include href="ipaddress-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	<xi:include href="disk-volume-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	<xi:include href="template-iso-snapshot-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	<xi:include href="loadbalancer-policy-port-forwarding-rule-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	<xi:include href="network-offering-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	<xi:include href="VPN-user-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <title>Usage Record Format</title>
+    <xi:include href="virtual-machine-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="network-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="ipaddress-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="disk-volume-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="template-iso-snapshot-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="loadbalancer-policy-port-forwarding-rule-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="network-offering-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="VPN-user-usage-record-format.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>
 

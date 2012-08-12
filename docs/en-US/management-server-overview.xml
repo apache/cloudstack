@@ -23,36 +23,36 @@
 -->
 
 <section id="management-server-overview">
-		<title>Management Server Overview</title>
-		<para>The Management Server is the &PRODUCT; software that manages cloud resources. By interacting with the Management Server through its UI or API, you can configure and manage your cloud infrastructure.
-		</para>
-		<para>The Management Server runs on a dedicated server or VM. It controls allocation of virtual machines to hosts and assigns storage and IP addresses to the virtual machine instances. The Management Server runs in a Tomcat container and requires a MySQL database for persistence.
-		</para>
-		<para>The machine must meet the system requirements described in System Requirements.
-		</para>
-		<para>The Management Server:
-		</para>
-			<itemizedlist>
-				<listitem>
-					<para>Provides the web user interface for the administrator and a reference user interface for end users.</para>
-				</listitem>
-				<listitem>
-					<para>Provides the APIs for &PRODUCT;.</para>
-				</listitem>
-				<listitem>
-					<para>Manages the assignment of guest VMs to particular hosts.</para>
-				</listitem>
-				<listitem>
-					<para>Manages the assignment of public and private IP addresses to particular accounts.</para>
-				</listitem>
-				<listitem>
-					<para>Manages the allocation of storage to guests as virtual disks.</para>
-				</listitem>
-				<listitem>
-					<para>Manages snapshots, templates, and ISO images, possibly replicating them across data centers.</para>
-				</listitem>
-				<listitem>
-					<para>Provides a single point of configuration for the cloud.</para>
-				</listitem>
-			</itemizedlist>
-	</section>
+        <title>Management Server Overview</title>
+        <para>The Management Server is the &PRODUCT; software that manages cloud resources. By interacting with the Management Server through its UI or API, you can configure and manage your cloud infrastructure.
+        </para>
+        <para>The Management Server runs on a dedicated server or VM. It controls allocation of virtual machines to hosts and assigns storage and IP addresses to the virtual machine instances. The Management Server runs in a Tomcat container and requires a MySQL database for persistence.
+        </para>
+        <para>The machine must meet the system requirements described in System Requirements.
+        </para>
+        <para>The Management Server:
+        </para>
+            <itemizedlist>
+                <listitem>
+                    <para>Provides the web user interface for the administrator and a reference user interface for end users.</para>
+                </listitem>
+                <listitem>
+                    <para>Provides the APIs for &PRODUCT;.</para>
+                </listitem>
+                <listitem>
+                    <para>Manages the assignment of guest VMs to particular hosts.</para>
+                </listitem>
+                <listitem>
+                    <para>Manages the assignment of public and private IP addresses to particular accounts.</para>
+                </listitem>
+                <listitem>
+                    <para>Manages the allocation of storage to guests as virtual disks.</para>
+                </listitem>
+                <listitem>
+                    <para>Manages snapshots, templates, and ISO images, possibly replicating them across data centers.</para>
+                </listitem>
+                <listitem>
+                    <para>Provides a single point of configuration for the cloud.</para>
+                </listitem>
+            </itemizedlist>
+    </section>

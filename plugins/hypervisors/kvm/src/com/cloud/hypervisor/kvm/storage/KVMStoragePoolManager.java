@@ -78,6 +78,10 @@ public class KVMStoragePoolManager {
         if (destPool.getType() == StoragePoolType.RBD) {
             return this._storageAdaptor.createDiskFromTemplate(template, name,
                     KVMPhysicalDisk.PhysicalDiskFormat.RAW, template.getSize(), destPool);
+        } else if (destPool.getType() == StoragePoolType.CLVM) {
+            return this._storageAdaptor.createDiskFromTemplate(template, name,
+                                       KVMPhysicalDisk.PhysicalDiskFormat.RAW, template.getSize(),
+                                       destPool);
         } else {
             return this._storageAdaptor.createDiskFromTemplate(template, name,
                     KVMPhysicalDisk.PhysicalDiskFormat.QCOW2,

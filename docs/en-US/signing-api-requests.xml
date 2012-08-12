@@ -1,36 +1,60 @@
-	<section id="signing-api-requests">
-		<title>Signing API Requests</title>
-		<para>Whether you access the CloudStack API with HTTP or HTTPS, it must still be signed so that CloudStack can verify the caller has been authenticated and authorized to execute the command.  Make sure that you have both the API Key and Secret Key provided by the CloudStack administrator for your account before proceeding with the signing process.</para>
-		<para>To show how to sign a request, we will re-use the previous example.</para>
-		<programlisting>http://http://localhost:8080/client/api?command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
-		<para>Breaking this down, we have several distinct parts to this URL.</para>
-		<itemizedlist>
-			<listitem><para>Base URL: This is the base URL to the CloudStack Management Server.</para>
-				<programlisting>http://localhost:8080</programlisting>
-			</listitem>
-			<listitem><para>API Path: This is the path to the API Servlet that processes the incoming requests.</para>
-				<programlisting>/client/api?</programlisting>
-			</listitem>
-			<listitem><para>Command String: This part of the query string comprises of the command, its parameters, and the API Key that identifies the account.</para>
-				<note><para>As with all query string parameters of field-value pairs, the “field” component is case insensitive while all “value” values are case sensitive.</para></note>
-				<programlisting>command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ</programlisting>
-			</listitem>
-			<listitem><para>Signature: This is the hashed signature of the Base URL that is generated using a combination of the user’s Secret Key and the HMAC SHA-1 hashing algorithm.</para>
-				<para>&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</para>
-			</listitem>
-		</itemizedlist>
-		<para>Every API request has the format Base URL+API Path+Command String+Signature.</para>
-		<para>To generate the signature.</para>
-		<orderedlist>
-			<listitem><para>For each field-value pair (as separated by a ‘&amp;’) in the Command String, URL encode each value so that it can be safely sent via HTTP GET.</para>
-				<note><para>Make sure all spaces are encoded as “%20” rather than “+”.</para></note>
-			</listitem>
-			<listitem><para>Lower case the entire Command String and sort it alphabetically via the field for each field-value pair.  The result of this step would look like the following.</para>
-				<programlisting>apikey=mivr6x7u6bn_sdahobpjnejpgest35exq-jb8cg20yi3yaxxcgpyuairmfi_ejtvwz0nukkjbpmy3y2bcikwfq&amp;command=deployvirtualmachine&amp;diskofferingid=1&amp;serviceofferingid=1&amp;templateid=2&amp;zoneid=4</programlisting>
-			</listitem>
-			<listitem><para>Take the sorted Command String and run it through the HMAC SHA-1 hashing algorithm (most programming languages offer a utility method to do this) with the user’s Secret Key.  Base64 encode the resulting byte array in UTF-8 so that it can be safely transmitted via HTTP.  The final string produced after Base64 encoding should be “Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D”.</para>
-				<para>By reconstructing the final URL in the format Base URL+API Path+Command String+Signature, the final URL should look like:</para>
-				<programlisting>http://localhost:8080/client/api?command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
-			</listitem>
-		</orderedlist>
-	</section>
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="signing-api-requests">
+    <title>Signing API Requests</title>
+    <para>Whether you access the CloudStack API with HTTP or HTTPS, it must still be signed so that CloudStack can verify the caller has been authenticated and authorized to execute the command.  Make sure that you have both the API Key and Secret Key provided by the CloudStack administrator for your account before proceeding with the signing process.</para>
+    <para>To show how to sign a request, we will re-use the previous example.</para>
+    <programlisting>http://http://localhost:8080/client/api?command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
+    <para>Breaking this down, we have several distinct parts to this URL.</para>
+    <itemizedlist>
+        <listitem><para>Base URL: This is the base URL to the CloudStack Management Server.</para>
+            <programlisting>http://localhost:8080</programlisting>
+        </listitem>
+        <listitem><para>API Path: This is the path to the API Servlet that processes the incoming requests.</para>
+            <programlisting>/client/api?</programlisting>
+        </listitem>
+        <listitem><para>Command String: This part of the query string comprises of the command, its parameters, and the API Key that identifies the account.</para>
+            <note><para>As with all query string parameters of field-value pairs, the "field" component is case insensitive while all "value" values are case sensitive.</para></note>
+            <programlisting>command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ</programlisting>
+        </listitem>
+        <listitem><para>Signature: This is the hashed signature of the Base URL that is generated using a combination of the user’s Secret Key and the HMAC SHA-1 hashing algorithm.</para>
+            <para>&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</para>
+        </listitem>
+    </itemizedlist>
+    <para>Every API request has the format Base URL+API Path+Command String+Signature.</para>
+    <para>To generate the signature.</para>
+    <orderedlist>
+        <listitem><para>For each field-value pair (as separated by a '&amp;') in the Command String, URL encode each value so that it can be safely sent via HTTP GET.</para>
+            <note><para>Make sure all spaces are encoded as "%20" rather than "+".</para></note>
+        </listitem>
+        <listitem><para>Lower case the entire Command String and sort it alphabetically via the field for each field-value pair.  The result of this step would look like the following.</para>
+            <programlisting>apikey=mivr6x7u6bn_sdahobpjnejpgest35exq-jb8cg20yi3yaxxcgpyuairmfi_ejtvwz0nukkjbpmy3y2bcikwfq&amp;command=deployvirtualmachine&amp;diskofferingid=1&amp;serviceofferingid=1&amp;templateid=2&amp;zoneid=4</programlisting>
+        </listitem>
+        <listitem><para>Take the sorted Command String and run it through the HMAC SHA-1 hashing algorithm (most programming languages offer a utility method to do this) with the user’s Secret Key.  Base64 encode the resulting byte array in UTF-8 so that it can be safely transmitted via HTTP.  The final string produced after Base64 encoding should be "Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D".</para>
+            <para>By reconstructing the final URL in the format Base URL+API Path+Command String+Signature, the final URL should look like:</para>
+            <programlisting>http://localhost:8080/client/api?command=deployVirtualMachine&amp;serviceOfferingId=1&amp;diskOfferingId=1&amp;templateId=2&amp;zoneId=4&amp;apiKey=miVr6X7u6bN_sdahOBpjNejPgEsT35eXq-jB8CG20YI3yaxXcgpyuaIRmFI_EJTVwZ0nUkkJbPmY3y2bciKwFQ&amp;signature=Lxx1DM40AjcXU%2FcaiK8RAP0O1hU%3D</programlisting>
+        </listitem>
+    </orderedlist>
+</section>

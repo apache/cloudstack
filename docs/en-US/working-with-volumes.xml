@@ -4,9 +4,9 @@
 %BOOK_ENTITIES;
 ]>
 <section id="working-with-volumes">
-	<title>Using Swift for Secondary Storage</title>
-	<para>A volume provides storage to a guest VM.  The volume can provide for a root disk or an additional data disk.  CloudPlatform supports additional volumes for guest VMs.</para>
-	<para>Volumes are created for a specific hypervisor type.   A volume that has been attached to guest using one hypervisor type (e.g, XenServer) may not be attached to a guest that is using another hypervisor type (e.g. vSphere, Oracle VM, KVM).  This is because the different hypervisors use different disk image formats.</para>
-	<para>CloudPlatform defines a volume as a unit of storage available to a guest VM. Volumes are either root disks or data disks. The root disk has “/” in the file system and is usually the boot device. Data disks provide for additional storage (e.g. As “/opt” or “D:”). Every guest VM has a root disk, and VMs can also optionally have a data disk. End users can mount multiple data disks to guest VMs. Users choose data disks from the disk offerings created by administrators. The user can create a template from a volume as well; this is the standard procedure for private template creation.  Volumes are hypervisor-specific: a volume from one hypervisor type may not be used on a guest of another hypervisor type.</para>	
-	</section>
+    <title>Using Swift for Secondary Storage</title>
+    <para>A volume provides storage to a guest VM.  The volume can provide for a root disk or an additional data disk.  CloudPlatform supports additional volumes for guest VMs.</para>
+    <para>Volumes are created for a specific hypervisor type.   A volume that has been attached to guest using one hypervisor type (e.g, XenServer) may not be attached to a guest that is using another hypervisor type (e.g. vSphere, Oracle VM, KVM).  This is because the different hypervisors use different disk image formats.</para>
+    <para>CloudPlatform defines a volume as a unit of storage available to a guest VM. Volumes are either root disks or data disks. The root disk has “/” in the file system and is usually the boot device. Data disks provide for additional storage (e.g. As “/opt” or “D:”). Every guest VM has a root disk, and VMs can also optionally have a data disk. End users can mount multiple data disks to guest VMs. Users choose data disks from the disk offerings created by administrators. The user can create a template from a volume as well; this is the standard procedure for private template creation.  Volumes are hypervisor-specific: a volume from one hypervisor type may not be used on a guest of another hypervisor type.</para>    
+    </section>
 

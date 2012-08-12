@@ -65,14 +65,14 @@ ONBOOT="no"
       <para>
         Unfortunately, this configuration will not permit you to connect to the network,
         and is also unsuitable for our purposes with CloudStack. We want to 
-	configure that file so that it specifies the IP address, netmask, etc., as shown
-	in the following example:
+    configure that file so that it specifies the IP address, netmask, etc., as shown
+    in the following example:
       </para>
       <important>
         <title>Hardware Addresses</title>
-	<para>You should not use the hardware address (aka MAC address) from our example
-	    for your configuration. It is network interface specific, so you should keep the 
-	    address already provided in the HWADDR directive.
+    <para>You should not use the hardware address (aka MAC address) from our example
+        for your configuration. It is network interface specific, so you should keep the 
+        address already provided in the HWADDR directive.
         </para>
       </important>
       <screen>
@@ -135,7 +135,7 @@ DNS2=8.8.4.4
       <para> 
         To ensure that it remains in that state we need to configure the file 
         <filename>/etc/selinux/config</filename> to reflect the permissive state, 
-	as shown in this example: </para>
+    as shown in this example: </para>
       <screen>
 
 # This file controls the state of SELinux on the system.

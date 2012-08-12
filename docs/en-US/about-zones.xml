@@ -23,7 +23,7 @@
 -->
 
 <section id="about-zones">
-	<title>About Zones</title>
+    <title>About Zones</title>
     <para>A zone is the largest organizational unit within a &PRODUCT; deployment. A zone typically corresponds to a single datacenter, although it is permissible to have multiple zones in a datacenter. The benefit of organizing infrastructure into zones is to provide physical isolation and redundancy. For example, each zone can have its own power supply and network uplink, and the zones can be widely separated geographically (though this is not required).</para>
     <para>A zone consists of:</para>
     <itemizedlist>

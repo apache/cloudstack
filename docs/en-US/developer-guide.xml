@@ -23,8 +23,8 @@
 -->
 
 <chapter id="developer-guide">
-	<title>Using the API</title>
-	<xi:include href="developer-introduction.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <title>Using the API</title>
+    <xi:include href="developer-introduction.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="whats-new.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="making-api-request.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="enabling-api-call-expiration.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

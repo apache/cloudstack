@@ -23,6 +23,6 @@
 -->
 
 <section id="dns-dhcp">
-	<title>DNS and DHCP</title>
-	<para>The Virtual Router provides DNS and DHCP services to the guests. It proxies DNS requests to the DNS server configured on the Availability Zone.</para>
+    <title>DNS and DHCP</title>
+    <para>The Virtual Router provides DNS and DHCP services to the guests. It proxies DNS requests to the DNS server configured on the Availability Zone.</para>
 </section>

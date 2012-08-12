@@ -25,4 +25,4 @@
 <section id="events-log">
     <title>Event Logs</title>
     <para>There are two types of events logged in the &PRODUCT; Event Log. Standard events log the success or failure of an event and can be used to identify jobs or processes that have failed. There are also long running job events. Events for asynchronous jobs log when a job is scheduled, when it starts, and when it completes. Other long running synchronous jobs log when a job starts, and when it completes. Long running synchronous and asynchronous event logs can be used to gain more information on the status of a pending job or can be used to identify a job that is hanging or has not started. The following sections provide more information on these events..</para>
-	</section>
+    </section>

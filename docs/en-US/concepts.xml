@@ -23,8 +23,8 @@
 -->
 
 <chapter id="concepts">
-	<title>Concepts</title>
-		<xi:include href="whatis.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-		<xi:include href="feature-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-		<xi:include href="deployment-architecture-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <title>Concepts</title>
+        <xi:include href="whatis.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="feature-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="deployment-architecture-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </chapter>
