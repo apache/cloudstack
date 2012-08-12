@@ -3239,7 +3239,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                             if (s_logger.isDebugEnabled()) {
                                 s_logger.debug("Mismatch in storage pool " + assignedPool + " assigned by deploymentPlanner and the one associated with volume " + vol);
                             }
-                            if (vm.getServiceOffering().getUseLocalStorage())
+                            DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
+                            if (diskOffering.getUseLocalStorage())
                             {
                                 if (s_logger.isDebugEnabled()) {
                                     s_logger.debug("Local volume " + vol + " will be recreated on storage pool " + assignedPool + " assigned by deploymentPlanner");
@@ -3250,10 +3251,12 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                                     s_logger.debug("Shared volume " + vol + " will be migrated on storage pool " + assignedPool + " assigned by deploymentPlanner");
                                 }
                                 try {
-                                    Volume migratedVol = migrateVolume(vol.getId(), assignedPool.getId());
-                                    vm.addDisk(new VolumeTO(migratedVol, assignedPool));
+                                    List<Volume> volumesToMigrate = new ArrayList<Volume>();
+                                    volumesToMigrate.add(vol);
+                                    migrateVolumes(volumesToMigrate, assignedPool);
+                                    vm.addDisk(new VolumeTO(vol, assignedPool));
                                 } catch (ConcurrentOperationException e) {
-                                    throw new StorageUnavailableException("Volume migration failed for " + vol, Volume.class, vol.getId());
+                                    throw new CloudRuntimeException("Migration of volume " + vol + " to storage pool " + assignedPool + " failed", e);
                                 }
                             }
                         } else {

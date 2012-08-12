@@ -81,8 +81,6 @@ AlTER TABLE physical_network_service_providers ADD CONSTRAINT `fk_pnetwork_servi
 UPDATE `cloud`.`configuration` SET description='In second, timeout for creating volume from snapshot' WHERE name='create.volume.from.snapshot.wait';
 
 ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `max_data_volumes_limit` int unsigned DEFAULT 6 COMMENT 'Max. data volumes per VM supported by hypervisor';
-SET SQL_SAFE_UPDATES=0;
 UPDATE `cloud`.`hypervisor_capabilities` SET `max_data_volumes_limit`=13 WHERE `hypervisor_type`='XenServer' AND (`hypervisor_version`='6.0' OR `hypervisor_version`='6.0.2');
-SET SQL_SAFE_UPDATES=1;
 INSERT INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'management-server', 'event.purge.interval', '86400', 'The interval (in seconds) to wait before running the event purge thread');
 UPDATE `cloud`.`configuration` SET description='Do URL encoding for the api response, false by default' WHERE name='encode.api.response';
