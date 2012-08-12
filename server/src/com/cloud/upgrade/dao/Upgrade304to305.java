@@ -17,6 +17,9 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
@@ -56,6 +59,7 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
         addHostDetailsUniqueKey(conn);
         addVpcProvider(conn);
         updateRouterNetworkRef(conn);
+        correctNetworkUsingExternalDevices(conn);
     }
 
     @Override
@@ -202,6 +206,117 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
                 }
             } catch (SQLException e) {
             }
+        }
+    }
+
+    // ensure that networks using external load balancer/firewall in 2.2.14 or prior releases deployments has entry 
+    // in network_external_lb_device_map and network_external_firewall_device_map
+    private void correctNetworkUsingExternalDevices(Connection conn) {
+        //Get zones to upgrade
+        List<Long> zoneIds = new ArrayList<Long>();
+        PreparedStatement pstmt = null;
+        PreparedStatement pstmtUpdate = null;
+        ResultSet rs = null;
+        long networkOfferingId, networkId;
+        long f5DeviceId, f5HostId;
+        long srxDevivceId,  srxHostId;
+ 
+        try {
+            pstmt = conn.prepareStatement("select id from `cloud`.`data_center` where lb_provider='F5BigIp' or firewall_provider='JuniperSRX' or gateway_provider='JuniperSRX'");
+            rs = pstmt.executeQuery();
+            while (rs.next()) {
+                zoneIds.add(rs.getLong(1));
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to create network to LB & firewalla device mapping for networks  that use them", e);
+        }
+  
+        if (zoneIds.size() == 0) {
+        	    return; // no zones using F5 and SRX devices so return
+        }
+
+        // find the default network offering created for external devices during upgrade from 2.2.14
+        try {
+            pstmt = conn.prepareStatement("select id from `cloud`.`network_offerings` where unique_name='Isolated with external providers' ");
+            rs = pstmt.executeQuery();
+            if (rs.first()) {
+            	    networkOfferingId = rs.getLong(1);
+            } else {
+                	throw new CloudRuntimeException("Cannot upgrade as there is no 'Isolated with external providers' network offering crearted .");
+            }
+        } catch  (SQLException e) {
+        	    throw new CloudRuntimeException("Unable to create network to LB & firewalla device mapping for networks  that use them", e);
+        }
+
+        for (Long zoneId : zoneIds) {
+            try {
+            	    // find the F5 device id  in the zone
+                pstmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalLoadBalancer' AND removed IS NULL");
+                pstmt.setLong(1, zoneId);
+                rs = pstmt.executeQuery();
+                if (rs.first()) {
+                   f5HostId = networkOfferingId = rs.getLong(1);
+                } else {
+                    throw new CloudRuntimeException("Cannot upgrade as there is no F5 load balancer device found in data center " + zoneId);
+                }
+                pstmt = conn.prepareStatement("SELECT id FROM external_load_balancer_devices WHERE  host_id=?");
+                pstmt.setLong(1, f5HostId);
+                rs = pstmt.executeQuery();
+                if (rs.first()) {
+                	    f5DeviceId = networkOfferingId = rs.getLong(1);
+                } else {
+                    throw new CloudRuntimeException("Cannot upgrade as there is no F5 load balancer device with host ID " + f5HostId + " found in external_load_balancer_device");
+                }
+
+        	       // find the SRX device id  in the zone
+                pstmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalFirewall' AND removed IS NULL");
+                pstmt.setLong(1, zoneId);
+                rs = pstmt.executeQuery();
+                if (rs.first()) {
+                	    srxHostId = rs.getLong(1);
+                } else {
+                    throw new CloudRuntimeException("Cannot upgrade as there is no SRX firewall device found in data center " + zoneId);
+                }
+                pstmt = conn.prepareStatement("SELECT id FROM external_firewall_devices WHERE  host_id=?");
+                pstmt.setLong(1, srxHostId);
+                rs = pstmt.executeQuery();
+                if (rs.first()) {
+                	    srxDevivceId = rs.getLong(1);
+                } else {
+                    throw new CloudRuntimeException("Cannot upgrade as there is no SRX firewall device found with host ID " + srxHostId + " found in external_firewall_devices");
+                }
+
+        	       // check if network any uses F5 or SRX devices  in the zone
+                pstmt = conn.prepareStatement("select id from `cloud`.`networks` where guest_type='Virtual' and data_center_id=? and network_offering_id=? and removed IS NULL");
+                pstmt.setLong(1, zoneId);
+                pstmt.setLong(2, networkOfferingId);
+                rs = pstmt.executeQuery();
+                while (rs.next()) {
+                	    // get the network Id
+                  	networkId = rs.getLong(1);
+
+             	    // add mapping for the network in network_external_lb_device_map
+                    String insertLbMapping = "INSERT INTO `cloud`.`network_external_lb_device_map` (uuid, network_id, external_load_balancer_device_id,) VALUES ( ?, ?, ?)";
+                    pstmtUpdate = conn.prepareStatement(insertLbMapping);
+                    pstmtUpdate.setString(1, UUID.randomUUID().toString());
+                    pstmtUpdate.setLong(2, networkId);
+                    pstmtUpdate.setLong(3, f5DeviceId);
+                    pstmtUpdate.executeUpdate();
+                    s_logger.debug("Successfully added entry in network_external_lb_device_map for network " +  networkId + " and F5 device ID " +  f5DeviceId);
+                    
+         	        // add mapping for the network in network_external_firewall_device_map
+                    String insertFwMapping = "INSERT INTO `cloud`.`network_external_firewall_device_map` (uuid, network_id, external_firewall_device_id,) VALUES ( ?, ?, ?)";
+                    pstmtUpdate = conn.prepareStatement(insertFwMapping);
+                    pstmtUpdate.setString(1, UUID.randomUUID().toString());
+                    pstmtUpdate.setLong(2, networkId);
+                    pstmtUpdate.setLong(3, srxDevivceId);
+                    pstmtUpdate.executeUpdate();
+                    s_logger.debug("Successfully added entry in network_external_firewall_device_map for network " +  networkId + " and SRX device ID " +  srxDevivceId);
+                }
+            } catch (SQLException e) {
+            	
+            }
+            s_logger.info("Successfully upgraded network using F5 and SRX devices to have a entry in the network_external_lb_device_map and network_external_firewall_device_map");
         }
     }
 }
