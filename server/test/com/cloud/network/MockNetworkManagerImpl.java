@@ -901,7 +901,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      * @see com.cloud.network.NetworkManager#getNtwkOffDistinctProviders(long)
      */
     @Override
-    public List<Provider> getNtwkOffDistinctProviders(long networkId) {
+    public List<Provider> getNtwkOffDistinctProviders(long ntwkOffId) {
         // TODO Auto-generated method stub
         return null;
     }

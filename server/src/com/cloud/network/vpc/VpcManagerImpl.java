@@ -956,26 +956,11 @@ public class VpcManagerImpl implements VpcManager, Manager{
             validateNewVpcGuestNetwork(cidr, gateway, networkOwner, vpc, networkDomain); 
         }
 
-        //2) Only Isolated networks with Source nat service enabled can be added to vpc
-        if (!(guestNtwkOff.getGuestType() == GuestType.Isolated 
-                && _ntwkMgr.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.SourceNat))) {
+        //2) validate network offering attributes
+        List<Service> svcs = _ntwkMgr.listNetworkOfferingServices(guestNtwkOff.getId());
+        validateNtwkOffForVpc(guestNtwkOff, svcs);
 
-            throw new InvalidParameterValueException("Only networks of type " + GuestType.Isolated + " with service "
-                    + Service.SourceNat.getName() +
-                    " can be added as a part of VPC ", null);
-        }
-
-        //3) No redundant router support
-        if (guestNtwkOff.getRedundantRouter()) {
-            throw new InvalidParameterValueException("No redunant router support when network belnogs to VPC", null);
-        }
-
-        //4) Conserve mode should be off
-        if (guestNtwkOff.isConserveMode()) {
-            throw new InvalidParameterValueException("Only networks with conserve mode Off can belong to VPC", null);
-        }
-
-        //5) Check services/providers against VPC providers
+        //3) Check services/providers against VPC providers
         List<NetworkOfferingServiceMapVO> networkProviders = _ntwkOffServiceDao.listByNetworkOfferingId(guestNtwkOff.getId());
 
         for (NetworkOfferingServiceMapVO nSvcVO : networkProviders) {
@@ -989,7 +974,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
             }
         }
 
-        //6) Only one network in the VPC can support LB
+        //4) Only one network in the VPC can support LB
         if (_ntwkMgr.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb)) {
             List<? extends Network> networks = getVpcNetworks(vpc.getId());
             for (Network network : networks) {
@@ -1005,6 +990,37 @@ public class VpcManagerImpl implements VpcManager, Manager{
                     }
                 }
             }
+        }
+    }
+
+    @Override
+    public void validateNtwkOffForVpc(NetworkOffering guestNtwkOff, List<Service> supportedSvcs) {
+        //1) in current release, only vpc provider is supported by Vpc offering
+        List<Provider> providers = _ntwkMgr.getNtwkOffDistinctProviders(guestNtwkOff.getId());
+        for (Provider provider : providers) {
+            if (provider != Provider.VPCVirtualRouter) {
+                throw new InvalidParameterValueException("Only provider of type " + Provider.VPCVirtualRouter.getName() 
+                        + " is supported for network offering that can be used in VPC", null);
+            }
+        }
+        
+        //2) Only Isolated networks with Source nat service enabled can be added to vpc
+        if (!(guestNtwkOff.getGuestType() == GuestType.Isolated 
+                && supportedSvcs.contains(Service.SourceNat))) {
+
+            throw new InvalidParameterValueException("Only network offerings of type " + GuestType.Isolated + " with service "
+                    + Service.SourceNat.getName() +
+                    " are valid for vpc ", null);
+        }
+
+        //3) No redundant router support
+        if (guestNtwkOff.getRedundantRouter()) {
+            throw new InvalidParameterValueException("No redunant router support when network belnogs to VPC", null);
+        }
+
+        //4) Conserve mode should be off
+        if (guestNtwkOff.isConserveMode()) {
+            throw new InvalidParameterValueException("Only networks with conserve mode Off can belong to VPC", null);
         }
     }
 

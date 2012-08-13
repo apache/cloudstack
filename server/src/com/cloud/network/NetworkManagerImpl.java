@@ -7128,8 +7128,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<Provider> getNtwkOffDistinctProviders(long networkId) {
-        List<String> providerNames = _ntwkOfferingSrvcDao.getDistinctProviders(networkId);
+    public List<Provider> getNtwkOffDistinctProviders(long ntwkOffId) {
+        List<String> providerNames = _ntwkOfferingSrvcDao.getDistinctProviders(ntwkOffId);
         Map<String, Provider> providers = new HashMap<String, Provider>();
         for (String providerName : providerNames) {
             if(!providers.containsKey(providerName)){
