@@ -569,7 +569,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     		s_logger.error("Unable to execute NetworkUsage command on DomR (" + privateIp + "), domR may not be ready yet. failure due to " 
     				+ VmwareHelper.getExceptionMessage(e), e);
     	}
-    	return null;
+    	return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
     }
 
     private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {

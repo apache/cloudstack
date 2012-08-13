@@ -76,7 +76,7 @@ get_usage () {
     done
     rm /root/removedVifs
   fi     
-  return 1
+  return 0
 }
 
 get_vpn_usage () {
