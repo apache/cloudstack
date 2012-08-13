@@ -747,7 +747,7 @@
 				  return;
 				}				
 				if(args.data.scaleUpDuration < args.data.interval) {
-				  args.response.error("Duration of Scale Up Policy can not be less than Polling Interval.");
+				  args.response.error("Duration of Scale Up Policy must be greater than or equal to Polling Interval.");
 				  return;
 				}				
 				if(scaleUpData.length == 0) {
@@ -765,7 +765,7 @@
 				  return;
 				}			
 				if(args.data.scaleDownDuration < args.data.interval) {
-				  args.response.error("Duration of Scale Down Policy can not be less than Polling Interval.");
+				  args.response.error("Duration of Scale Down Policy must be greater than or equal to Polling Interval.");
 				  return;
 				}				
 				if(scaleDownData.length == 0) {
