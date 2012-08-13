@@ -53,15 +53,6 @@ public class MockProjectManagerImpl implements ProjectManager, Manager {
     }
 
     @Override
-    public List<? extends Project> listProjects(Long id, String name,
-            String displayText, String state, String accountName,
-            Long domainId, String keyword, Long startIndex, Long pageSize,
-            boolean listAll, boolean isRecursive) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public ProjectAccount assignAccountToProject(Project project,
             long accountId, Role accountRole) {
         // TODO Auto-generated method stub
@@ -226,6 +217,16 @@ public class MockProjectManagerImpl implements ProjectManager, Manager {
             ProjectVO project) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.projects.ProjectService#listProjects(java.lang.Long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.Long, java.lang.String, java.lang.Long, java.lang.Long, boolean, boolean, java.util.Map)
+     */
+    @Override
+    public List<? extends Project> listProjects(Long id, String name, String displayText, String state, String accountName, Long domainId, String keyword, Long startIndex, Long pageSize, boolean listAll,
+            boolean isRecursive, Map<String, String> tags) {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }
