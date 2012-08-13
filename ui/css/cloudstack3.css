@@ -9668,6 +9668,11 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   max-width: none;
 }
 
+.ui-dialog.configure-acl .multi-edit table select,
+.detail-view .acl .multi-edit select {
+  width: 76px;
+}
+
 .ui-dialog.configure-acl .ui-dialog-buttonpane {
   /*+placement:shift 722px -2px;*/
   position: relative;
