@@ -3608,7 +3608,8 @@
             name: { label: 'label.name' },
             displaytext: { label: 'label.description' },
             zonename: { label: 'label.zone' },
-            cidr: { label: 'label.cidr' }
+            cidr: { label: 'label.cidr' },
+            state: {label: 'State', indicator: { 'Enabled': 'on', 'Disabled': 'off'}}
           },
           dataProvider: function(args) {
             var array1 = [];
