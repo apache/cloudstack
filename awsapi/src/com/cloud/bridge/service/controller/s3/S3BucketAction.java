@@ -110,9 +110,6 @@ import com.cloud.bridge.util.XSerializerXmlAdapter;
 import com.cloud.bridge.util.XmlHelper;
 
 
-/**
- * @author Kelven Yang, John Zucker
- */
 public class S3BucketAction implements ServletAction {
     protected final static Logger logger = Logger.getLogger(S3BucketAction.class);
     

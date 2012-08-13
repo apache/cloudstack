@@ -27,7 +27,6 @@ import java.util.Calendar;
 import java.util.TimeZone;
 
 /**
- * @author John Zucker
  * Format and parse a date string which is expected to be in ISO 8601 DateTimeFormat especially for 
  * use in XML documents.
  * An example is for use with GMTDateTimeUserType to provide parsing of DateTime format strings into 

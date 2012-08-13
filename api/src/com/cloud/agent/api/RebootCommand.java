@@ -18,10 +18,6 @@ package com.cloud.agent.api;
 
 import com.cloud.vm.VirtualMachine;
 
-/**
- * @author ahuang
- *
- */
 public class RebootCommand extends Command {
     String vmName;
     

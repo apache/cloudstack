@@ -38,10 +38,6 @@ import com.cloud.network.rules.LbStickinessMethod.StickinessMethodType;
 import com.cloud.utils.net.NetUtils;
 
 
-/**
- * @author chiradeep
- *
- */
 public class HAProxyConfigurator implements LoadBalancerConfigurator {
 
     private static final Logger s_logger = Logger.getLogger(HAProxyConfigurator.class);

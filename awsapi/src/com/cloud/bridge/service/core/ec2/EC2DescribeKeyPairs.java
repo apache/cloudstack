@@ -20,10 +20,6 @@ package com.cloud.bridge.service.core.ec2;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * @author slriv
- *
- */
 public class EC2DescribeKeyPairs {
 	private EC2KeyPairFilterSet keyFilterSet;
 	private List<String> keyNames;

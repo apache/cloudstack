@@ -18,10 +18,6 @@ package com.cloud.exception;
 
 import com.cloud.utils.SerialVersionUID;
 
-/**
- * @author chiradeep
- * 
- */
 public class ManagementServerException extends CloudException {
 
     private static final long serialVersionUID = SerialVersionUID.ManagementServerException;

@@ -19,9 +19,6 @@ package com.cloud.bridge.persist.dao;
 import com.cloud.bridge.model.SHost;
 import com.cloud.bridge.persist.EntityDao;
 
-/**
- * @author Kelven Yang
- */
 public class SHostDao extends EntityDao<SHost> {
 	public SHostDao() {
 		super(SHost.class);

@@ -21,9 +21,6 @@ import java.util.List;
 import com.cloud.bridge.model.SBucket;
 import com.cloud.bridge.persist.EntityDao;
 
-/**
- * @author Kelven Yang
- */
 public class SBucketDao extends EntityDao<SBucket> {
 	public SBucketDao() {
 		super(SBucket.class);

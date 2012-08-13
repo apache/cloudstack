@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.host;
 
-/**
- * @author ahuang
- *
- */
 public interface HostStats {
 	
     // host related stats

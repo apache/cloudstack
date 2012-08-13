@@ -36,8 +36,6 @@ import com.cloud.utils.db.GenericDao;
 /**
  * A bean representing a user
  * 
- * @author Will Chan
- * 
  */
 @Entity
 @Table(name = "user")

@@ -23,9 +23,6 @@ import com.cloud.bridge.persist.EntityDao;
 import com.cloud.bridge.persist.PersistContext;
 import com.cloud.bridge.service.core.s3.S3MetaDataEntry;
 
-/**
- * @author Kelven Yang, John Zucker
- */
 public class SMetaDao extends EntityDao<SMeta> {
 	public SMetaDao() {
 		super(SMeta.class);

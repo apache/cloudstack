@@ -20,11 +20,6 @@ import java.util.Date;
 
 import com.cloud.storage.Storage.StoragePoolType;
 
-/**
- * @author chiradeep
- * 
- */
-
 public interface StoragePool {
 
     /**

@@ -24,7 +24,6 @@ import com.cloud.bridge.util.OrderedPair;
 import com.cloud.bridge.util.Triple;
 
 /**
- * @author John Zucker, Kelven Yang
  * A model of stored ACLs to remember the ACL permissions per canonicalUserID per grantee
  * Hold the AWS S3 grantee and permission constants.
  * 

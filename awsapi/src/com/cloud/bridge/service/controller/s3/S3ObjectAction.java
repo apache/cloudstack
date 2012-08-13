@@ -80,9 +80,6 @@ import com.cloud.bridge.util.HeaderParam;
 import com.cloud.bridge.util.ServletRequestDataSource;
 import com.cloud.bridge.util.OrderedPair;
 
-/**
- * @author Kelven Yang, John Zucker
- */
 public class S3ObjectAction implements ServletAction {
     protected final static Logger logger = Logger.getLogger(S3ObjectAction.class);
 

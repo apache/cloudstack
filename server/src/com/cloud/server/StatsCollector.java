@@ -67,8 +67,6 @@ import com.cloud.vm.dao.UserVmDao;
 
 /**
  * Provides real time stats for various agent resources up to x seconds
- * 
- * @author Will Chan
  *
  */
 public class StatsCollector {

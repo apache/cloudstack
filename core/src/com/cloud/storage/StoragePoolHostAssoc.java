@@ -18,10 +18,6 @@ package com.cloud.storage;
 
 import java.util.Date;
 
-/**
- * @author chiradeep
- *
- */
 public interface StoragePoolHostAssoc {
 	
 	long getHostId();

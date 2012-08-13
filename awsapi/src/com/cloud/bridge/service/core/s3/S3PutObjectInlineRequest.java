@@ -22,9 +22,6 @@ import java.io.InputStream;
 
 import javax.activation.DataHandler;
 
-/**
-  * @author Kelven Yang, John Zucker
- */
 public class S3PutObjectInlineRequest extends S3Request {
 	protected String bucketName;
 	protected String key;

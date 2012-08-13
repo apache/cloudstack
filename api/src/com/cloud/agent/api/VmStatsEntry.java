@@ -18,10 +18,6 @@ package com.cloud.agent.api;
 
 import com.cloud.vm.VmStats;
 
-/**
- * @author ahuang
- *
- */
 public class VmStatsEntry implements VmStats {
 	
 	double cpuUtilization;

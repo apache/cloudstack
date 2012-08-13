@@ -61,7 +61,6 @@ import com.cloud.utils.fsm.NoTransitionException;
 
 /**
  * Monitor progress of template download to a single storage server
- * @author chiradeep
  *
  */
 public class DownloadListener implements Listener {

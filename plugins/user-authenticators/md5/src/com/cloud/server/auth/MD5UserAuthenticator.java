@@ -31,7 +31,6 @@ import com.cloud.utils.component.ComponentLocator;
  * Simple UserAuthenticator that performs a MD5 hash of the password before 
  * comparing it against the local database.
  * 
- * @author Will Chan
  */
 @Local(value={UserAuthenticator.class})
 public class MD5UserAuthenticator extends DefaultUserAuthenticator {

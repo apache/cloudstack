@@ -24,9 +24,6 @@ import com.cloud.bridge.model.SObject;
 import com.cloud.bridge.persist.EntityDao;
 import com.cloud.bridge.util.EntityParam;
 
-/**
- * @author Kelven Yang
- */
 public class SObjectDao extends EntityDao<SObject> {
 	public SObjectDao() {
 		super(SObject.class);

@@ -23,7 +23,6 @@ public interface TemplateUploader extends Runnable{
 
 	/**
 	 * Callback used to notify completion of upload
-	 * @author nitin
 	 *
 	 */
 	public interface UploadCompleteCallback {

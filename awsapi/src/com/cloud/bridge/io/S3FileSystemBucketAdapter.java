@@ -38,9 +38,6 @@ import com.cloud.bridge.service.exception.OutOfStorageException;
 import com.cloud.bridge.util.StringHelper;
 import com.cloud.bridge.util.OrderedPair;
 
-/**
- * @author Kelven Yang, John Zucker
- */
 public class S3FileSystemBucketAdapter implements S3BucketAdapter {
     protected final static Logger logger = Logger.getLogger(S3FileSystemBucketAdapter.class);
 	

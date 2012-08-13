@@ -19,9 +19,6 @@ package com.cloud.bridge.model;
 import java.io.Serializable;
 import java.util.Date;
 
-/**
- * @author Kelven Yang
- */
 public class MHostMount implements Serializable {
 	private static final long serialVersionUID = -1119494563131099642L;
 

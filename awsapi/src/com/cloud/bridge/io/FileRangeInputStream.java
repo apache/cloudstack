@@ -21,9 +21,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 
-/**
- * @author Kelven Yang
- */
 public class FileRangeInputStream extends InputStream {
 	private RandomAccessFile randomAccessFile;
 	private long curPos;

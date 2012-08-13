@@ -33,7 +33,6 @@ import com.cloud.utils.db.GenericDaoBase;
 
 /**
  * Join table for storage hosts and templates
- * @author chiradeep
  *
  */
 @Entity

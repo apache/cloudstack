@@ -26,7 +26,6 @@ import com.cloud.bridge.service.controller.s3.ServiceProvider;
 
 
 /**
- * @author Kelven Yang
  * ServiceEngineLifecycle is used to participate Axis service life cycle management
  * so that we can inject proper initialization and cleanup procedure into the 
  * process

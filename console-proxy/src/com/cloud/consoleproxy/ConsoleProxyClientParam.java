@@ -18,94 +18,93 @@ package com.cloud.consoleproxy;
 
 /**
  * 
- * @author Kelven Yang
  * Data object to store parameter info needed by client to connect to its host
  */
 public class ConsoleProxyClientParam {
-	
-	private String clientHostAddress;
-	private int clientHostPort; 
-	private String clientHostPassword;
-	private String clientTag;
-	private String ticket;
-	
-	private String clientTunnelUrl;
-	private String clientTunnelSession;
-	
-	private String ajaxSessionId;
-	
-	public ConsoleProxyClientParam() {
-		clientHostPort = 0;
-	}
+    
+    private String clientHostAddress;
+    private int clientHostPort; 
+    private String clientHostPassword;
+    private String clientTag;
+    private String ticket;
+    
+    private String clientTunnelUrl;
+    private String clientTunnelSession;
+    
+    private String ajaxSessionId;
+    
+    public ConsoleProxyClientParam() {
+        clientHostPort = 0;
+    }
 
-	public String getClientHostAddress() {
-		return clientHostAddress;
-	}
+    public String getClientHostAddress() {
+        return clientHostAddress;
+    }
 
-	public void setClientHostAddress(String clientHostAddress) {
-		this.clientHostAddress = clientHostAddress;
-	}
+    public void setClientHostAddress(String clientHostAddress) {
+        this.clientHostAddress = clientHostAddress;
+    }
 
-	public int getClientHostPort() {
-		return clientHostPort;
-	}
+    public int getClientHostPort() {
+        return clientHostPort;
+    }
 
-	public void setClientHostPort(int clientHostPort) {
-		this.clientHostPort = clientHostPort;
-	}
+    public void setClientHostPort(int clientHostPort) {
+        this.clientHostPort = clientHostPort;
+    }
 
-	public String getClientHostPassword() {
-		return clientHostPassword;
-	}
+    public String getClientHostPassword() {
+        return clientHostPassword;
+    }
 
-	public void setClientHostPassword(String clientHostPassword) {
-		this.clientHostPassword = clientHostPassword;
-	}
+    public void setClientHostPassword(String clientHostPassword) {
+        this.clientHostPassword = clientHostPassword;
+    }
 
-	public String getClientTag() {
-		return clientTag;
-	}
+    public String getClientTag() {
+        return clientTag;
+    }
 
-	public void setClientTag(String clientTag) {
-		this.clientTag = clientTag;
-	}
+    public void setClientTag(String clientTag) {
+        this.clientTag = clientTag;
+    }
 
-	public String getTicket() {
-		return ticket;
-	}
+    public String getTicket() {
+        return ticket;
+    }
 
-	public void setTicket(String ticket) {
-		this.ticket = ticket;
-	}
-	
-	public String getClientTunnelUrl() {
-		return clientTunnelUrl;
-	}
+    public void setTicket(String ticket) {
+        this.ticket = ticket;
+    }
+    
+    public String getClientTunnelUrl() {
+        return clientTunnelUrl;
+    }
 
-	public void setClientTunnelUrl(String clientTunnelUrl) {
-		this.clientTunnelUrl = clientTunnelUrl;
-	}
+    public void setClientTunnelUrl(String clientTunnelUrl) {
+        this.clientTunnelUrl = clientTunnelUrl;
+    }
 
-	public String getClientTunnelSession() {
-		return clientTunnelSession;
-	}
+    public String getClientTunnelSession() {
+        return clientTunnelSession;
+    }
 
-	public void setClientTunnelSession(String clientTunnelSession) {
-		this.clientTunnelSession = clientTunnelSession;
-	}
-	
-	public String getAjaxSessionId() {
-		return this.ajaxSessionId;
-	}
-	
-	public void setAjaxSessionId(String ajaxSessionId) {
-		this.ajaxSessionId = ajaxSessionId;
-	}
+    public void setClientTunnelSession(String clientTunnelSession) {
+        this.clientTunnelSession = clientTunnelSession;
+    }
+    
+    public String getAjaxSessionId() {
+        return this.ajaxSessionId;
+    }
+    
+    public void setAjaxSessionId(String ajaxSessionId) {
+        this.ajaxSessionId = ajaxSessionId;
+    }
 
-	public String getClientMapKey() {
-		if(clientTag != null && !clientTag.isEmpty())
-			return clientTag;
-		
-		return clientHostAddress + ":" + clientHostPort;
-	}
+    public String getClientMapKey() {
+        if(clientTag != null && !clientTag.isEmpty())
+            return clientTag;
+        
+        return clientHostAddress + ":" + clientHostPort;
+    }
 }

@@ -20,7 +20,6 @@
 '''
 Created on Aug 2, 2010
 
-@author: rudd-o
 '''
 
 import sys

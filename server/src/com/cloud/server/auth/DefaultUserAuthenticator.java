@@ -24,8 +24,6 @@ import javax.naming.ConfigurationException;
 /**
  * Use this UserAuthenticator if users are already authenticated outside
  * 
- * @author Will Chan
- *
  */
 @Local(value={UserAuthenticator.class})
 public abstract class DefaultUserAuthenticator implements UserAuthenticator {

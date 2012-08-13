@@ -29,10 +29,6 @@ import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.jasypt.properties.EncryptableProperties;
 import org.apache.log4j.Logger;
 
-
-/**
- * @author Kelven Yang
- */
 public class CloudStackSessionFactory {
 	private static CloudStackSessionFactory instance;
 	public static final Logger logger = Logger.getLogger(CloudStackSessionFactory.class);

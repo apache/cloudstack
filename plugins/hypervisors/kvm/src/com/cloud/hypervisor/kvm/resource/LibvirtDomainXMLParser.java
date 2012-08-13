@@ -37,10 +37,6 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.nicModel;
 
-/**
- * @author chiradeep
- * 
- */
 public class LibvirtDomainXMLParser {
     private static final Logger s_logger = Logger
             .getLogger(LibvirtDomainXMLParser.class);

@@ -17,10 +17,6 @@
 package com.cloud.agent.api;
 
 
-/**
- * @author ahuang
- *
- */
 public class StartupAnswer extends Answer {
     long hostId;
     int pingInterval;

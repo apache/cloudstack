@@ -16,16 +16,11 @@
 // under the License.
 package com.cloud.storage.template;
 
-/**
- * @author Chiradeep
- *
- */
 public interface TemplateDownloader extends Runnable{
 	
 
 	/**
 	 * Callback used to notify completion of download
-	 * @author chiradeep
 	 *
 	 */
 	public interface DownloadCompleteCallback {

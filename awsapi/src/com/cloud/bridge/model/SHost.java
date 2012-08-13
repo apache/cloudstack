@@ -20,9 +20,6 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * @author Kelven Yang, John Zucker
- */
 public class SHost implements Serializable {
 	private static final long serialVersionUID = 213346565810468018L;
 	

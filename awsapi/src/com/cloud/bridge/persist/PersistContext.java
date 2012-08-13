@@ -33,7 +33,6 @@ import com.cloud.bridge.util.CloudStackSessionFactory;
 import com.cloud.bridge.util.OrderedPair;
 
 /**
- * @author Kelven Yang
  * 
  * We use Per-thread based hibernate session and transaction pattern. Transaction will be
  * started implicitly by EntityDao instances and be committed implicitly in the end of

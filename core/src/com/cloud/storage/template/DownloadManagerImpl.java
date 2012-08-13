@@ -68,10 +68,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
-/**
- * @author chiradeep
- * 
- */
 @Local(value = DownloadManager.class)
 public class DownloadManagerImpl implements DownloadManager {
     private String _name;

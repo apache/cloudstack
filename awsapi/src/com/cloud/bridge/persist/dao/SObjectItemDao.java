@@ -19,9 +19,6 @@ package com.cloud.bridge.persist.dao;
 import com.cloud.bridge.model.SObjectItem;
 import com.cloud.bridge.persist.EntityDao;
 
-/**
- * @author Kelven Yang
- */
 public class SObjectItemDao extends EntityDao<SObjectItem> {
 	public SObjectItemDao() {
 		super(SObjectItem.class);

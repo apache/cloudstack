@@ -20,10 +20,6 @@ import java.util.Map;
 
 import com.cloud.storage.template.TemplateInfo;
 
-/**
- * @author chiradeep
- * 
- */
 public class ModifyStoragePoolAnswer extends Answer {
     StoragePoolInfo poolInfo;
     Map<String, TemplateInfo> templateInfo;

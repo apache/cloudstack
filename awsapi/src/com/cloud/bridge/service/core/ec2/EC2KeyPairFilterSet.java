@@ -25,10 +25,6 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 
-/**
- * @author slriv
- *
- */
 public class EC2KeyPairFilterSet {
 	protected final static Logger logger = Logger.getLogger(EC2KeyPairFilterSet.class);
 	

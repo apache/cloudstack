@@ -32,10 +32,6 @@ import javax.persistence.TemporalType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDaoBase;
 
-/**
- * @author nitin
- *
- */
 @Entity
 @Table(name="upload")
 public class UploadVO implements Upload {

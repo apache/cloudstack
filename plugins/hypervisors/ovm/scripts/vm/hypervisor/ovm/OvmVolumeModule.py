@@ -17,7 +17,6 @@
 '''
 Created on June 2, 2011
 
-@author: frank
 '''
 from OvmCommonModule import *
 from OvmStoragePoolModule import OvmStoragePool
