@@ -54,9 +54,9 @@ start_ipsec() {
 enable_iptables_subnets() {
   for net in $rightnets
   do
-    sudo iptables -A FORWARD -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
+    sudo iptables -I FORWARD -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
     sudo iptables -A OUTPUT -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
-    sudo iptables -A FORWARD -t mangle -s $net -d $leftnet -j MARK --set-mark $vpninmark
+    sudo iptables -I FORWARD -t mangle -s $net -d $leftnet -j MARK --set-mark $vpninmark
     sudo iptables -A INPUT -t mangle -s $net -d $leftnet -j MARK --set-mark $vpninmark
   done
   return 0
