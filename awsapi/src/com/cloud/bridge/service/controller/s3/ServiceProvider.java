@@ -58,9 +58,6 @@ import com.cloud.bridge.util.DateHelper;
 import com.cloud.bridge.util.NetHelper;
 import com.cloud.bridge.util.OrderedPair;
 
-/**
- * @author Kelven Yang
- */
 public class ServiceProvider {
 	protected final static Logger logger = Logger.getLogger(ServiceProvider.class);
 

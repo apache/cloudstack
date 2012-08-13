@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * @author Kelven Yang, John Zucker
  * Holds the relation
  *  Id,
  *  Name, 

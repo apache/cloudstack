@@ -25,9 +25,6 @@ import com.cloud.bridge.persist.PersistContext;
 import com.cloud.bridge.service.core.s3.S3AccessControlList;
 import com.cloud.bridge.service.core.s3.S3Grant;
 
-/**
- * @author Kelven Yang
- */
 public class SAclDao extends EntityDao<SAcl> {
 	
 	public SAclDao() {

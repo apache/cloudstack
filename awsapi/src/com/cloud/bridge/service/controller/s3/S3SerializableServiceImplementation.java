@@ -107,7 +107,7 @@ import com.cloud.bridge.service.core.s3.S3SetBucketAccessControlPolicyRequest;
 import com.cloud.bridge.service.core.s3.S3SetObjectAccessControlPolicyRequest;
 import com.cloud.bridge.service.exception.InternalErrorException;
 
-/* @Author Kelven Yang, John Zucker
+/* 
  *  Implementation of S3 service requests as operations defined by the interface, com.amazon.s3.AmazonS3SkeletonInterface.
  * The operations dispatched from this class are of the form of SOAP operations which define business logic to be executed by the request.  
  * The methods required for S3 services in accordance with the skeleton are either implementations of the following

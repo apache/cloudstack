@@ -22,9 +22,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
-/**
- * @author Kelven Yang, John Zucker
- */
 public class SObject implements Serializable {
 	private static final long serialVersionUID = 8566744941395660486L;
 

@@ -18,9 +18,6 @@ package com.cloud.bridge.service.core.s3;
 
 import java.io.InputStream;
 
-/**
- * @author Kelven Yang
- */
 public class S3PutObjectRequest extends S3Request {
 	protected String bucketName;
 	protected String key;

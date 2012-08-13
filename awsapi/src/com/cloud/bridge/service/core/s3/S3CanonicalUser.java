@@ -18,9 +18,6 @@ package com.cloud.bridge.service.core.s3;
 
 import com.cloud.bridge.util.XElement;
 
-/**
- * @author Kelven Yang
- */
 public class S3CanonicalUser {
 	
 	@XElement(name="ID")

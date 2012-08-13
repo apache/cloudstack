@@ -21,9 +21,6 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
-/**
- * @author Kelven Yang
- */
 public class MHost implements Serializable {
 	private static final long serialVersionUID = 4848254624679753930L;
 

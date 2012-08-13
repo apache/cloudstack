@@ -29,7 +29,6 @@ import org.hibernate.usertype.UserType;
 import com.cloud.bridge.util.DateHelper;
 
 /**
- * @author Kelven Yang
  * GMTDateTimeUserType implements a Hibernate user type, it deals with GMT date/time conversion
  * between Java Date/Calendar and MySQL DATE types
  */

@@ -35,7 +35,6 @@ import org.apache.axis2.databinding.ADBBean;
 import org.apache.axis2.databinding.ADBException;
 
 /**
- * @author John Zucker
  * Provide an MTOM aware serializable output stream writer to be consumed by implementors of the 
  * com.amazon.s3 Response ADB bean classes.
  * This writer enables participation is StaX based builders and AXIOM om xml stream processing

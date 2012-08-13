@@ -18,9 +18,6 @@ package com.cloud.bridge.model;
 
 import java.io.Serializable;
 
-/**
- * @author Kelven Yang
- */
 public class SMeta implements Serializable {
 	private static final long serialVersionUID = 7459503272337054283L;
 	

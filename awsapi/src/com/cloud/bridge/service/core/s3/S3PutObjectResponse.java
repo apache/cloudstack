@@ -18,9 +18,6 @@ package com.cloud.bridge.service.core.s3;
 
 import java.util.Calendar;
 
-/**
- * @author Kelven Yang
- */
 public class S3PutObjectResponse extends S3Response {
 	protected String ETag;
 	protected Calendar lastModified;

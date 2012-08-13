@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.bridge.persist;
 
-/**
- * @author Kelven Yang
- */
 public class PersistException extends RuntimeException {
 	private static final long serialVersionUID = -7137918292537610367L;
 
