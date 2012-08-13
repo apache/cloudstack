@@ -827,7 +827,8 @@
                         $.ajax({
                           url: createURL('listStaticRoutes'),
                           data: {
-                            gatewayid: args.context.vpcGateways[0].id
+                            gatewayid: args.context.vpcGateways[0].id,
+                            listAll: true
                           },
                           success: function(json) {
                             var items = json.liststaticroutesresponse.staticroute;
