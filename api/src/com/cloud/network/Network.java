@@ -121,6 +121,7 @@ public interface Network extends ControlledEntity {
         public static final Provider VPCVirtualRouter = new Provider("VpcVirtualRouter", false);
         public static final Provider None = new Provider("None", false);
         public static final Provider NiciraNvp = new Provider("NiciraNvp", true);
+        public static final Provider MidokuraMidonet = new Provider("MidokuraMidonet", true);
 
         private String name;
         private boolean isExternal;
