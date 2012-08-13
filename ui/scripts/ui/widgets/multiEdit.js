@@ -801,6 +801,7 @@
                   );
 
             if (field.isDisabled) $input.hide();
+            if (field.defaultValue) $input.val(field.defaultValue);
           });
         } else {
           var $input = $('<input>')
@@ -813,6 +814,7 @@
                 .appendTo($td);
 
           if (field.isDisabled) $input.hide();
+          if (field.defaultValue) $input.val(field.defaultValue);
         }
       } else if (field.custom) {
         $('<div>').addClass('button add-vm custom-action')
@@ -841,6 +843,8 @@
           _l(args.add.label)
         ).appendTo($td);
       }
+
+      if (field.desc) $input.attr('title', field.desc);
     });
 
     // Setup header fields
