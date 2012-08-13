@@ -942,6 +942,8 @@
                           addButton: true
                         }
                       },
+											
+											/*
                       add: {
                         label: 'label.add.vms',
                         action: function(args) {                         
@@ -1047,6 +1049,8 @@
                           });
                         }
                       },
+											*/
+											
                       dataProvider: function(args) {
                         args.response.success({ //no LB listing in AddLoadBalancer tab
                           data: []
