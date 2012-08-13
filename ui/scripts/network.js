@@ -3626,11 +3626,11 @@
                     }
                   },
 									cidr: { 
-									  label: 'label.cidr',
+									  label: 'Super CIDR for Guest Networks',
 										validation: { required: true } 
 									},		
 									networkdomain: { 
-									  label: 'label.network.domain'
+									  label: 'DNS domain for Guest Networks'
 									}		
                 }
               },              
