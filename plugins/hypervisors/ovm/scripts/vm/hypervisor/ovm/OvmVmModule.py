@@ -17,7 +17,6 @@
 '''
 Created on May 17, 2011
 
-@author: frank
 '''
 from OvmCommonModule import *
 from OvmDiskModule import *

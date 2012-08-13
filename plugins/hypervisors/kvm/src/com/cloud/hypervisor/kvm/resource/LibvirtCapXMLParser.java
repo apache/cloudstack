@@ -25,10 +25,6 @@ import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-/**
- * @author chiradeep
- * 
- */
 public class LibvirtCapXMLParser extends LibvirtXMLParser {
     private boolean _host = false;
     private boolean _guest = false;

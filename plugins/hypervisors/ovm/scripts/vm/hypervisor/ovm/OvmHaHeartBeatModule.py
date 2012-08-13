@@ -17,7 +17,6 @@
 '''
 Created on Jun 6, 2011
 
-@author: frank
 '''
 from OvmCommonModule import *
 try:
