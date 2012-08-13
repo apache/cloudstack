@@ -3916,7 +3916,56 @@
                     }
                   });
                 }
-              }
+              },
+
+                router: {
+                  title: 'VPC Router Details',
+                  fields:[
+                       {
+                         name: {label:'Router Name'}
+                       },
+                       {
+                          id:{ label:'ID'},
+                          zonename: { label: 'label.zone'},
+                          dns1: {label: 'DNS'},
+                          gateway: {label:'Gateway'},
+                          publicip: {label: 'Public IP'},
+                          guestipaddress:{ label: 'Guest IP'},
+                          linklocalip: {label: 'Link Local IP'},
+                          state: { label:'State'},
+                          serviceofferingname: {label:'Service Offering'},
+                          isredundantrouter:{
+                                label: 'Redundant Router',
+                                converter: function(booleanValue) {
+                                      if (booleanValue == true) {
+                                          return "<font color='red'>Yes</font>";
+                                        }
+                                      return "No";
+                                  }
+                              },
+                          account: {label:'label.account'},
+                          domain: {label: 'label.domain'},
+
+                        }
+
+                      ],
+                        dataProvider: function(args) {
+                             $.ajax ({
+                                  url:createURL("listRouters&listAll=true&vpcid=" +args.context.vpc[0].id),
+                                  dataType: "json",
+                                  async: true,
+                                  success:function(json) {
+                                      var item = json.listroutersresponse.router[0];
+                                      args.response.success ({
+                                           data:item
+                                          })
+                                  }
+
+                               });
+                         }
+
+                    }
+
             }
           }
         }
