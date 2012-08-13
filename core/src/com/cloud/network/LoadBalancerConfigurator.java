@@ -22,10 +22,6 @@ import com.cloud.agent.api.routing.LoadBalancerConfigCommand;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 
 
-/**
- * @author chiradeep
- *
- */
 public interface LoadBalancerConfigurator {
 	public final static int ADD = 0;
 	public final static int REMOVE = 1;

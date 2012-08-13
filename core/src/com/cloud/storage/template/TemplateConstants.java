@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.storage.template;
 
-/**
- * @author chiradeep
- *
- */
 public final class TemplateConstants {
 	public static final String DEFAULT_TMPLT_ROOT_DIR = "template";
 	public static final String DEFAULT_VOLUME_ROOT_DIR = "volumes";

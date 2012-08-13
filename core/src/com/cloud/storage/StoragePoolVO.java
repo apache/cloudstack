@@ -34,10 +34,6 @@ import com.cloud.api.Identity;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.db.GenericDao;
 
-/**
- * @author chiradeep
- *
- */
 @Entity
 @Table(name="storage_pool")
 public class StoragePoolVO implements StoragePool, Identity {

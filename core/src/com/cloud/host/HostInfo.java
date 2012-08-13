@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.host;
 
-/**
- * @author chiradeep
- *
- */
 public final class HostInfo {
 	public static final String HYPERVISOR_VERSION = "Hypervisor.Version"; //tricky since KVM has userspace version and kernel version
 	public static final String HOST_OS = "Host.OS"; //Fedora, XenServer, Ubuntu, etc
