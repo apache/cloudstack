@@ -50,7 +50,7 @@
         'ip-addresses': 'IP Addresses',
         'gateways': 'Private Gateway',
         'site-to-site-vpn': 'Site-to-site VPN',
-        'network-acls':  'ACLs'
+        'network-acls':  'Network ACLs'
       };
       var $links = $('<ul>').addClass('links');
       var $tooltip = $('<div>').addClass('vpc-configure-tooltip').append(
