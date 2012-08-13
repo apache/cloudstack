@@ -51,7 +51,6 @@ import org.apache.commons.httpclient.methods.GetMethod;
  * Prerequisites: - Edit usercloud.properties to include your host, apiUrl, apiKey, and secretKey - Use ./executeUserAPI.sh to
  * execute this test class
  * 
- * @author will
  * 
  */
 public class UserCloudAPIExecutor {

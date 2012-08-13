@@ -20,10 +20,6 @@ import java.util.Collection;
 
 import com.cloud.utils.mgmt.ManagementBean;
 
-/**
- * @author ahuang
- *
- */
 public interface ConstantTimeBackoffMBean extends ManagementBean {
     public long getTimeToWait();
     
