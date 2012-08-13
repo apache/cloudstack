@@ -134,6 +134,7 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
@@ -581,6 +582,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("Please specify a VM that is in the same zone as the volume.", null);
         }
 
+        // If local storage is disabled then attaching a volume with local disk offering not allowed
+        DataCenterVO dataCenter = _dcDao.findById(volume.getDataCenterId());
+        if (!dataCenter.isLocalStorageEnabled()) {
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+            if (diskOffering.getUseLocalStorage()) {
+                throw new InvalidParameterValueException("Zone is not configured to use local storage but volume's disk offering " + diskOffering.getName() + " uses it", null);
+            }
+        }
+
         //permission check
         _accountMgr.checkAccess(caller, null, true, volume, vm);
 
@@ -728,7 +738,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         throw new CloudRuntimeException(e.toString());
                     }
                 } else {
-                    throw new CloudRuntimeException("Moving a local data volume " + volume + " is not allowed");
+                    throw new CloudRuntimeException("Failed to attach local data volume " + volume.getName() + " to VM " + vm.getDisplayName() + " as migration of local data volume is not allowed");
                 }
             }
         }

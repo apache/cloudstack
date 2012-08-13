@@ -1856,6 +1856,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
         Long zoneId = cmd.getZoneId();
         Long diskOfferingId = null;
+        DiskOfferingVO diskOffering = null;
         Long size = null;
 
         // validate input parameters before creating the volume
@@ -1875,11 +1876,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                     throw new InvalidParameterValueException("Disk size must be larger than 0", null);
                 }
             }
-            if (diskOfferingId == null) {
-                throw new InvalidParameterValueException("Missing parameter(s),either a positive volume size or a valid disk offering id must be specified.", null);
-            }
+
             // Check that the the disk offering is specified
-            DiskOfferingVO diskOffering = _diskOfferingDao.findById(diskOfferingId);
+            diskOffering = _diskOfferingDao.findById(diskOfferingId);
             if ((diskOffering == null) || diskOffering.getRemoved() != null || !DiskOfferingVO.Type.Disk.equals(diskOffering.getType())) {
                 throw new InvalidParameterValueException("Please specify a valid disk offering.", null);
             }
@@ -1924,7 +1923,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                         Snapshot.Status.BackedUp + " state yet and can't be used for volume creation", idList);
             }
 
-            diskOfferingId = (cmd.getDiskOfferingId() != null) ? cmd.getDiskOfferingId() : snapshotCheck.getDiskOfferingId();
+            diskOfferingId = snapshotCheck.getDiskOfferingId();
+            diskOffering = _diskOfferingDao.findById(diskOfferingId);
             zoneId = snapshotCheck.getDataCenterId();
             size = snapshotCheck.getSize(); // ; disk offering is used for tags purposes
 
@@ -1951,6 +1951,11 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         // Check if zone is disabled
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getType())) {
             throw new PermissionDeniedException("Cannot perform this operation, Zone is currently disabled: " + zoneId);
+        }
+
+        // If local storage is disabled then creation of volume with local disk offering not allowed
+        if (!zone.isLocalStorageEnabled() && diskOffering.getUseLocalStorage()) {
+            throw new InvalidParameterValueException("Zone is not configured to use local storage but volume's disk offering " + diskOffering.getName() + " uses it", null);
         }
 
         // Check that there is a shared primary storage pool in the specified zone
