@@ -23,10 +23,6 @@ import com.cloud.user.Account;
 import com.cloud.utils.SerialVersionUID;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-/**
- * @author chiradeep
- * 
- */
 public class PermissionDeniedException extends CloudRuntimeException {
 
     private static final long serialVersionUID = SerialVersionUID.PermissionDeniedException;

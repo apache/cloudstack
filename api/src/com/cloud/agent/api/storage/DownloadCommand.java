@@ -23,10 +23,6 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
 
 
-/**
- * @author chiradeep
- *
- */
 public class DownloadCommand extends AbstractDownloadCommand {
 	public static class PasswordAuth {
 		String userName;

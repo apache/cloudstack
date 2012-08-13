@@ -19,10 +19,6 @@ package com.cloud.agent.api;
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.host.HostStats;
 
-/**
- * @author ajoshi
- *
- */
 @LogLevel(Log4jLevel.Trace)
 public class GetHostStatsAnswer extends Answer implements HostStats {
 

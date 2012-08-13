@@ -16,10 +16,6 @@
 // under the License.
 package com.cloud.storage;
 
-/**
- * @author ahuang
- * 
- */
 public interface GuestOsCategory {
     long getId();
 
