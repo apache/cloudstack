@@ -120,6 +120,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
@@ -230,6 +231,8 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
     NicDao _nicDao;
     @Inject
     FirewallRulesDao _firewallDao;
+    @Inject
+    VpcManager _vpcMgr;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     protected static final DataCenterLinkLocalIpAddressDaoImpl _LinkLocalIpAllocDao = ComponentLocator.inject(DataCenterLinkLocalIpAddressDaoImpl.class);
@@ -3247,10 +3250,20 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
             for (Network.Service service : serviceProviderMap.keySet()) {
                 Set<Provider> providers = serviceProviderMap.get(service);
                 if (providers != null && !providers.isEmpty()) {
+                    boolean vpcOff = false;
                     for (Network.Provider provider : providers) {
+                        if (provider == Provider.VPCVirtualRouter) {
+                            vpcOff = true;
+                        }
                         NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(), service, provider);
                         _ntwkOffServiceMapDao.persist(offService);
                         s_logger.trace("Added service for the network offering: " + offService + " with provider " + provider.getName());
+                    }
+                    
+                    if (vpcOff) {
+                        List<Service> supportedSvcs = new ArrayList<Service>();
+                        supportedSvcs.addAll(serviceProviderMap.keySet());
+                        _vpcMgr.validateNtwkOffForVpc(offering, supportedSvcs);
                     }
                 } else {
                     NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(), service, null);

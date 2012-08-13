@@ -26,8 +26,10 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Service;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.vm.DomainRouterVO;
 
@@ -126,5 +128,12 @@ public interface VpcManager extends VpcService{
      * @throws ConcurrentOperationException
      */
     PublicIp assignSourceNatIpAddressToVpc(Account owner, Vpc vpc) throws InsufficientAddressCapacityException, ConcurrentOperationException;
+
+
+    /**
+     * @param guestNtwkOff
+     * @param supportedSvcs TODO
+     */
+    void validateNtwkOffForVpc(NetworkOffering guestNtwkOff, List<Service> supportedSvcs);
 
 }

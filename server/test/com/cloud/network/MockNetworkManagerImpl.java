@@ -764,14 +764,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
-    /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#getNtwkOffDistinctProviders(long)
-     */
-    @Override
-    public List<Provider> getNtwkOffDistinctProviders(long networkId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkManager#allocateNic(com.cloud.vm.NicProfile, com.cloud.network.Network, java.lang.Boolean, int, com.cloud.vm.VirtualMachineProfile)
@@ -888,7 +880,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      * @see com.cloud.network.NetworkManager#getDefaultUniqueProviderForService(java.lang.String)
      */
     @Override
-    public Provider getDefaultUniqueProviderForService(String serviceName) {
+    public List<Provider> getNtwkOffDistinctProviders(long ntwkOffId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -1133,6 +1125,15 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
      */
     @Override
     public List<? extends Network> getIsolatedNetworksWithSourceNATOwnedByAccountInZone(long zoneId, Account owner) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#getDefaultUniqueProviderForService(java.lang.String)
+     */
+    @Override
+    public Provider getDefaultUniqueProviderForService(String serviceName) {
         // TODO Auto-generated method stub
         return null;
     }

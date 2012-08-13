@@ -331,10 +331,10 @@ public interface NetworkManager extends NetworkService {
 
 
     /**
-     * @param networkId
+     * @param ntwkOffId
      * @return
      */
-    List<Provider> getNtwkOffDistinctProviders(long networkId);
+    List<Provider> getNtwkOffDistinctProviders(long ntwkOffId);
 
 
     /**
