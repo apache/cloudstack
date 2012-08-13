@@ -1394,11 +1394,6 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
     
     protected void removePFRule(PortForwardingRuleVO rule) {
-        
         _portForwardingDao.remove(rule.getId());
-        
-        //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
-        IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
-        _vpcMgr.unassignIPFromVpcNetwork(ip.getId(), rule.getNetworkId());   
     }
 }
