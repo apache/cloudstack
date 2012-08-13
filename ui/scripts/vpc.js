@@ -566,26 +566,30 @@
     },
     gateways: {
       add: {
-        preCheck: function(args) {
-          var items;
-          
-          $.ajax({
-            url: createURL('listPrivateGateways'),
-            async: false,
-            data: {
-              vpcid: args.context.vpc[0].id,
-              listAll: true
-            },
-            success: function(json) {
-              items = json.listprivategatewaysresponse.privategateway;              
-            }
-          });
-
-          if (items && items.length) {
-            return true;
-          }
-
-          return false;
+        preCheck: function(args) {          
+					if(isAdmin()) { //root-admin
+						var items;          
+						$.ajax({
+							url: createURL('listPrivateGateways'),
+							async: false,
+							data: {
+								vpcid: args.context.vpc[0].id,
+								listAll: true
+							},
+							success: function(json) {
+								items = json.listprivategatewaysresponse.privategateway;              
+							}
+						});
+						if (items && items.length) {
+							return true; //show private gateway listView
+						}
+						else {
+							return false; //show create private gateway dialog
+						}
+					}
+					else {  //regular-user, domain-admin
+					  return true; //show private gateway listView instead of create private gateway dialog because only root-admin is allowed to create private gateway
+					}
         },
         label: 'Add new gateway',
         messages: {
