@@ -73,6 +73,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.Inject;
 import com.cloud.vm.DiskProfile;
@@ -457,7 +458,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
     	return capacityList;
     }
     
-    private void removeClustersCrossingThreshold(List<Long> clusterList, ExcludeList avoid, VirtualMachineProfile<? extends VirtualMachine> vmProfile){
+    private void removeClustersCrossingThreshold(List<Long> clusterListForVmAllocation, ExcludeList avoid, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan){
     	        
     	Map<Short,Float> capacityThresholdMap = getCapacityThresholdMap();
     	List<Short> capacityList = getCapacitiesForCheckingThreshold();
@@ -467,37 +468,33 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         int cpu_requested = offering.getCpu() * offering.getSpeed();
         long ram_requested = offering.getRamSize() * 1024L * 1024L;
     	
-    	// Iterate over the cluster List and check for each cluster whether it breaks disable threshold for any of the capacity types
-    	for (Long clusterId : clusterList){
-    		for(short capacity : capacityList){
-    			
-    			List<SummedCapacity> summedCapacityList = _capacityDao.findCapacityBy(new Integer(capacity), null, null, clusterId);    			
-    	    	if (summedCapacityList != null && summedCapacityList.size() != 0  && summedCapacityList.get(0).getTotalCapacity() != 0){
-    	    		
-    	    		double used = (double)(summedCapacityList.get(0).getUsedCapacity() + summedCapacityList.get(0).getReservedCapacity());
-    	    		double total = summedCapacityList.get(0).getTotalCapacity();
-    	    		
-    	    		if (capacity == Capacity.CAPACITY_TYPE_CPU){
-    	    			total = total * ApiDBUtils.getCpuOverprovisioningFactor();
-    	    			used = used + cpu_requested;
-    	    		}else{
-    	    			used = used + ram_requested;
-    	    		}
-    	    		
-    	    		double usedPercentage = used/total;
-    	    		if ( usedPercentage > capacityThresholdMap.get(capacity)){    	    			
-    	    			avoid.addCluster(clusterId);
-    	    			clustersCrossingThreshold.add(clusterId);
-						s_logger.debug("Cannot allocate cluster " + clusterId + " for vm creation since its allocated percentage: " +usedPercentage + 
-								" will cross the disable capacity threshold: " + capacityThresholdMap.get(capacity) + " for capacity Type : " + capacity + ", skipping this cluster");    	    			
-    	    			break;
-    	    		}    	    				
-    	    	}    	    	
-        	}	    			
-    	}
-    	
-    	clusterList.removeAll(clustersCrossingThreshold);	    	
-    	
+        // 	For each capacity get the cluster list crossing the threshold and remove it from the clusterList that will be used for vm allocation.
+        for(short capacity : capacityList){
+        	
+        	if (clusterListForVmAllocation == null || clusterListForVmAllocation.size() == 0){
+           		return;
+           	}
+           	
+           	if (capacity == Capacity.CAPACITY_TYPE_CPU){
+           		clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(Capacity.CAPACITY_TYPE_CPU, plan.getDataCenterId(),
+           				capacityThresholdMap.get(capacity), cpu_requested, ApiDBUtils.getCpuOverprovisioningFactor());
+           	}else{
+           		clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(),
+           				capacityThresholdMap.get(capacity), ram_requested, 1.0f);//Mem overprov not supported yet
+           	}
+
+           	
+           	if (clustersCrossingThreshold != null && clustersCrossingThreshold.size() != 0){
+               	// addToAvoid Set
+           		avoid.addClusterList(clustersCrossingThreshold);
+           		// Remove clusters crossing disabled threshold
+               	clusterListForVmAllocation.removeAll(clustersCrossingThreshold);
+               	
+           		s_logger.debug("Cannot allocate cluster list " + clustersCrossingThreshold.toString() + " for vm creation since their allocated percentage" +
+           				" crosses the disable capacity threshold: " + capacityThresholdMap.get(capacity) + " for capacity Type : " + capacity + ", skipping these clusters");           		
+           	}
+           	           	           	
+        }
     }
 
     private DeployDestination checkClustersforDestination(List<Long> clusterList, VirtualMachineProfile<? extends VirtualMachine> vmProfile,
@@ -507,7 +504,7 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
             s_logger.trace("ClusterId List to consider: " + clusterList);
         }
 
-        removeClustersCrossingThreshold(clusterList, avoid, vmProfile);
+        removeClustersCrossingThreshold(clusterList, avoid, vmProfile, plan);
         
         for(Long clusterId : clusterList){
             Cluster clusterVO = _clusterDao.findById(clusterId);

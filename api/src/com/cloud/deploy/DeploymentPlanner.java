@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.deploy;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -180,6 +181,13 @@ public interface DeploymentPlanner extends Adapter {
             _clusterIds.add(clusterId);
         }
 
+        public void addClusterList(Collection<Long> clusterList) {
+            if (_clusterIds == null) {
+                _clusterIds = new HashSet<Long>();
+            }
+            _clusterIds.addAll(clusterList);
+        }
+        
         public void addHost(long hostId) {
             if (_hostIds == null) {
                 _hostIds = new HashSet<Long>();
