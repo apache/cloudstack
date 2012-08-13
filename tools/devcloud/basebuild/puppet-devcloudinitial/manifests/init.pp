@@ -103,16 +103,4 @@ class puppet-devcloudinitial {
     owner   => '0',
   }
 
-  user { 'root':
-    ensure           => 'present',
-    comment          => 'root',
-    gid              => '0',
-    home             => '/root',
-    password         => '$6$SCixzUjT$sVs9PwR2g7XdHSLnQW5Zsy2dVpVV3qESFV4Joniusbu3BqWUtKgc91vwEDwPhLqyCYM3kKR1.7G9g2Hu/pTQN/',
-    password_max_age => '99999',
-    password_min_age => '0',
-    shell            => '/bin/bash',
-    uid              => '0',
-  }
-
 }
