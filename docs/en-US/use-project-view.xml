@@ -1,23 +1,38 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "file:///C:/Program%20Files%20(x86)/Publican/DocBook_DTD/docbookx.dtd" [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
 <section id="use-project-view">
     <title>Using the Project View</title>
-    <para>If you are a member of a project, you can use CloudPlatform’s project view to see project members, resources consumed, and more. The project view shows only information related to one project. It is a useful way to filter out other information so you can concentrate on a project status and resources.</para>
+    <para>If you are a member of a project, you can use &PRODUCT;’s project view to see project members, resources consumed, and more. The project view shows only information related to one project. It is a useful way to filter out other information so you can concentrate on a project status and resources.</para>
     <orderedlist>        
-    <listitem><para>Log in to the CloudPlatform UI.</para></listitem>
+    <listitem><para>Log in to the &PRODUCT; UI.</para></listitem>
       <listitem><para>Click Project View.</para></listitem>
         <listitem><para>The project dashboard appears, showing the project’s VMs, volumes, users, events, network settings, and more. From the dashboard, you can:</para>
         <itemizedlist>
             <listitem><para>Click the Accounts tab to view and manage project members. If you are the project administrator, you can add new members, remove members, or change the role of a member from user to admin. Only one member at a time can have the admin role, so if you set another user’s role to admin, your role will change to regular user.</para></listitem>
-            <listitem><para>(If invitations are enabled) Click the Invitations tab to view and manage invitations that
-            have been sent to new project members but not yet accepted. Pending invitations will
-            remain in this list until the new member accepts, the invitation timeout is reached, or
-            you cancel the invitation.</para></listitem>             
+            <listitem><para>(If invitations are enabled) Click the Invitations tab to view and manage invitations that have been sent to new project members but not yet accepted. Pending invitations will remain in this list until the new member accepts, the invitation timeout is reached, or you cancel the invitation.</para></listitem>
         </itemizedlist>
         </listitem>
      </orderedlist>
-   </section>
-      
+</section>
