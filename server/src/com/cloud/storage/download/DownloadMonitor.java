@@ -28,7 +28,6 @@ import com.cloud.utils.component.Manager;
 
 /**
  * Monitor download progress of all templates across all servers
- * @author chiradeep
  *
  */
 public interface DownloadMonitor extends Manager{

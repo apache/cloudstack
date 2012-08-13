@@ -23,10 +23,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
 
-/**
- * @author chiradeep
- *
- */
 public abstract class DownloadState {
 	public static enum DownloadEvent {DOWNLOAD_ANSWER, ABANDON_DOWNLOAD, TIMEOUT_CHECK, DISCONNECT};
 	protected static final Logger s_logger = Logger.getLogger(DownloadListener.class.getName());

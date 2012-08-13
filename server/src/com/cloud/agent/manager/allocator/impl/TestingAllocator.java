@@ -33,10 +33,6 @@ import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
-/**
- * @author ahuang
- *
- */
 @Local(value={HostAllocator.class})
 public class TestingAllocator implements HostAllocator {
     HostDao _hostDao;

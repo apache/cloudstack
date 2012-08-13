@@ -23,7 +23,6 @@ import com.cloud.utils.component.Adapter;
 /**
  * which UserAuthenticator to user in components.xml.
  * 
- * @author Will Chan
  */
 public interface UserAuthenticator extends Adapter {
 	

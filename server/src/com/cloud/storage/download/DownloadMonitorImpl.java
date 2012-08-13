@@ -107,11 +107,6 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import edu.emory.mathcs.backport.java.util.Collections;
 
 
-
-/**
- * @author chiradeep
- *
- */
 @Local(value={DownloadMonitor.class})
 public class DownloadMonitorImpl implements  DownloadMonitor {
     static final Logger s_logger = Logger.getLogger(DownloadMonitorImpl.class);

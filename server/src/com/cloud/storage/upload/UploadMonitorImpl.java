@@ -73,7 +73,6 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 /**
- * @author nitin
  * Monitors the progress of upload.
  */
 @Local(value={UploadMonitor.class})
