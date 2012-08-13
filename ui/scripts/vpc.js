@@ -524,7 +524,7 @@
           id: 'networks',
           fields: {
             tierName: { label: 'Tier' },
-            aclTotal: { label: 'ACL Total' }
+            aclTotal: { label: 'Network ACL Total' }
           },
           dataProvider: function(args) {
             $.ajax({
