@@ -329,13 +329,19 @@
         minInstance: {
           label: 'Min Instances',
           defaultValue: '3',
-          validation: { required: true }
+          validation: { 
+					  required: true,
+						number: true
+					}
         },
 
         maxInstance: {
           label: 'Max Instances',
           defaultValue: '10',
-          validation: { required: true }
+          validation: { 
+					  required: true,
+						number: true
+					}
         }
       },
 
@@ -344,13 +350,19 @@
         interval: {
           label: 'Polling Interval (in sec)',
           defaultValue: '30',
-          validation: { required: true }
+          validation: { 
+					  required: true,
+						number: true
+					}
         },
 
         quietTime: {
           label: 'Quiet Time (in sec)',
           defaultValue: '300',
-          validation: { required: true }
+          validation: { 
+					  required: true,
+            number: true						
+					}
         },
 
         destroyVMgracePeriod: {
@@ -358,7 +370,10 @@
           defaultValue: '30',
           isHidden:true,
           dependsOn:'isAdvanced',
-          validation: { required: true }
+          validation: { 
+					  required: true,
+						number: true
+					}
         },
         securityGroups: {
           label: 'label.menu.security.groups',
@@ -417,7 +432,10 @@
           dependsOn: 'isAdvanced',
           label: 'SNMP Port',
           defaultValue: '161',
-          validation: { required: true }
+          validation: { 
+					  required: true,
+						number: true
+					}
         },
 
         username: {
@@ -563,51 +581,7 @@
           args.response.success({
             data: scaleUpData
           });
-        }
-        /*actions: {
-         destroy: {
-         label: '',
-         action: function(args) {
-         $.ajax({
-         url: createURL("deleteCondition&id=" + args.context.multiRule[0].counterid),
-         dataType: 'json',
-         async: true,
-         success: function(data) {
-         var jobId = data.deleteconditionresponse.jobid;
-
-         args.response.success({
-         _custom: {
-         jobId: jobId
-         }
-         });
-         }
-         });
-         }
-         }
-         },
-         ignoreEmptyFields: true,
-         dataProvider: function(args) {
-         $.ajax({
-         url: createURL('listConditions'),
-         dataType: 'json',
-         async: true,
-         success: function(data) {
-         args.response.success({
-         data: $.map(
-         data.listconditionsresponse.condition ?
-         data.listconditionsresponse.condition : [],
-         function(elem) {
-         return {
-         counterid: elem.id,
-         relationaloperator: elem.relationaloperator,
-         threshold: elem.threshold
-         };
-         }
-         )
-         });
-         }
-         });
-         }*/
+        }       
       },
 
       scaleDownPolicy: {
@@ -772,7 +746,11 @@
 				if(args.data.scaleUpDuration == null || args.data.scaleUpDuration.length == 0) {
 				  args.response.error("Duration of Scale Up Policy is required.");
 				  return;
-				}
+				}				
+				if(isNaN(args.data.scaleUpDuration)) {
+				  args.response.error("Duration of Scale Up Policy should be a number.");
+				  return;
+				}				
 				if(args.data.scaleUpDuration < args.data.interval) {
 				  args.response.error("Duration of Scale Up Policy can not be less than Polling Interval.");
 				  return;
@@ -787,6 +765,10 @@
 				  args.response.error("Duration of Scale Down Policy is required.");
 				  return;
 				}
+				if(isNaN(args.data.scaleDownDuration)) {
+				  args.response.error("Duration of Scale Down Policy should be a number.");
+				  return;
+				}			
 				if(args.data.scaleDownDuration < args.data.interval) {
 				  args.response.error("Duration of Scale Down Policy can not be less than Polling Interval.");
 				  return;
