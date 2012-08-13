@@ -464,12 +464,6 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
 
         //remove the rule
         _firewallDao.remove(rule.getId());
-        
-        if (rule.getSourceIpAddressId() != null) {
-            //if the rule is the last one for the ip address assigned to VPC, unassign it from the network
-            IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
-            _vpcMgr.unassignIPFromVpcNetwork(ip.getId(), rule.getNetworkId());
-        }
     }
 
     @Override

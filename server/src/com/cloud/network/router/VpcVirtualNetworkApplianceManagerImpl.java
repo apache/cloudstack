@@ -628,12 +628,13 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             }
         }
         
-        //3) apply the rules
+        //3) apply the ips
         boolean result = applyRules(network, routers, "vpc ip association", false, null, false, new RuleApplier() {
             @Override
             public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
                 Commands cmds = new Commands(OnError.Continue);
                 Map<String, String> vlanMacAddress = new HashMap<String, String>();
+                List<PublicIpAddress> ipsToSend = new ArrayList<PublicIpAddress>();
                 for (PublicIpAddress ipAddr : ipAddress) {
                     
                     String broadcastURI = BroadcastDomainType.Vlan.toUri(ipAddr.getVlanTag()).toString();
@@ -646,14 +647,15 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                             throw new CloudRuntimeException("Unable to find the nic in network " + ipAddr.getNetworkId() + 
                                     "  to apply the ip address " + ipAddr  + " for");
                         }
-                        macAddress = ipAddr.getMacAddress();
+                        s_logger.debug("Not sending release for ip address " + ipAddr + 
+                                " as its nic is already gone from VPC router " + router);
                     } else {
                         macAddress = nic.getMacAddress();
-                    }
-                    
-                    vlanMacAddress.put(ipAddr.getVlanTag(), macAddress);
+                        vlanMacAddress.put(ipAddr.getVlanTag(), macAddress);
+                        ipsToSend.add(ipAddr);
+                    }   
                 }
-                createVpcAssociatePublicIPCommands(router, ipAddress, cmds, vlanMacAddress);
+                createVpcAssociatePublicIPCommands(router, ipsToSend, cmds, vlanMacAddress);
                 return sendCommandsToRouter(router, cmds);
             }
         });

@@ -981,7 +981,6 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 if (performedIpAssoc) {
                     ipVO = _ipAddressDao.findById(ipVO.getId());
                     _vpcMgr.unassignIPFromVpcNetwork(ipVO.getId(), lb.getNetworkId());
-
                 }
             }
         }
@@ -1178,6 +1177,9 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                         }
                     }
                 }
+                // if the rule is the last one for the ip address assigned to VPC, unassign it from the network
+                IpAddress ip = _ipAddressDao.findById(lb.getSourceIpAddressId());
+                _vpcMgr.unassignIPFromVpcNetwork(ip.getId(), lb.getNetworkId());
             }
         }
 
@@ -1559,10 +1561,6 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
 
         // remove the rule
         _lbDao.remove(rule.getId());
-
-        // if the rule is the last one for the ip address assigned to VPC, unassign it from the network
-        IpAddress ip = _ipAddressDao.findById(rule.getSourceIpAddressId());
-        _vpcMgr.unassignIPFromVpcNetwork(ip.getId(), rule.getNetworkId());
 
     }
 }
