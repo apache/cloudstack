@@ -23,7 +23,7 @@
       // Show ACL dialog
       if (isDialog) {
         $acl.dialog({
-          title: 'Configure ACL',
+          title: 'Configure Network ACLs',
           dialogClass: 'configure-acl',
           width: 900,
           height: 600,
