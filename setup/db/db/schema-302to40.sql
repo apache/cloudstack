@@ -16,7 +16,7 @@
 -- under the License.
 
 --;
--- Schema upgrade from 3.0.3 to 4.0.0;
+-- Schema upgrade from 3.0.2 to 4.0.0;
 --;
 
 
