@@ -4191,7 +4191,7 @@
 										  id: args.context.vpnCustomerGateway[0].id
 										},                  
                     success: function(json) {
-                      var jid = json.deletecustomergatewayresponse.jobid;
+                      var jid = json.deletevpncustomergatewayresponse.jobid;
                       args.response.success(
                         {_custom:
                           {
