@@ -452,7 +452,7 @@ setup_redundant_router() {
     cp /root/redundant_router/arping_gateways.sh.templ $rrouter_bin_path/arping_gateways.sh
     cp /root/redundant_router/check_bumpup.sh $rrouter_bin_path/
     cp /root/redundant_router/disable_pubip.sh $rrouter_bin_path/
-    cp /root/redundant_router/checkrouter.sh.templ /root/checkrouter.sh
+    cp /root/redundant_router/checkrouter.sh.templ /opt/cloud/bin/checkrouter.sh
     sed -i "s/\[ROUTER_ID\]/$NAME/g" /etc/keepalived/keepalived.conf
     sed -i "s/\[ROUTER_IP\]/$GUEST_GW\/$GUEST_CIDR_SIZE/g" /etc/keepalived/keepalived.conf
     sed -i "s/\[BOARDCAST\]/$GUEST_BRD/g" /etc/keepalived/keepalived.conf
@@ -479,7 +479,7 @@ setup_redundant_router() {
     sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/primary-backup.sh
     sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/check_heartbeat.sh
     sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/arping_gateways.sh
-    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" /root/checkrouter.sh
+    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" /opt/cloud/bin/checkrouter.sh
     chmod a+x $rrouter_bin_path/*.sh
 
     sed -i "s/--exec\ \$DAEMON;/--exec\ \$DAEMON\ --\ --vrrp;/g" /etc/init.d/keepalived
