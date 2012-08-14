@@ -2708,9 +2708,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         /* add patch disk */
         DiskDef patchDisk = new DiskDef();
 
-        patchDisk.defFileBasedDisk(datadiskPath, 1, rootDisk.getBusType(),
-                DiskDef.diskFmtType.RAW);
-        
+        if (pool.getType() == StoragePoolType.CLVM) {
+            patchDisk.defBlockBasedDisk(datadiskPath, 1, rootDisk.getBusType());
+        } else {
+            patchDisk.defFileBasedDisk(datadiskPath, 1, rootDisk.getBusType(),
+            DiskDef.diskFmtType.RAW);
+        }
+ 
         disks.add(patchDisk);
 
         String bootArgs = vmSpec.getBootArgs();
