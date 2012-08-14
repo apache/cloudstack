@@ -548,7 +548,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception(" vpc network usage plugin call failed ");
     		}
     		
-    		if (option.equals("get")) {
+    		if (option.equals("get") || option.equals("vpn")) {
                 String result =  resultPair.second();
                 if (result == null || result.isEmpty()) {
                     throw new Exception(" vpc network usage get returns empty ");

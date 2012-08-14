@@ -287,9 +287,10 @@ public class LoadBalancerTO implements Serializable {
         private final String cloudStackApiUrl;
         private final String autoScaleUserApiKey;
         private final String autoScaleUserSecretKey;
+        private final String networkId;
 
-        public AutoScaleVmProfileTO(String zoneId, String domainId, String cloudStackApiUrl, String autoScaleUserApiKey, String autoScaleUserSecretKey, String serviceOfferingId, String templateId,
-                String otherDeployParams, String snmpCommunity, Integer snmpPort, Integer destroyVmGraceperiod) {
+        public AutoScaleVmProfileTO(String zoneId, String domainId, String cloudStackApiUrl, String autoScaleUserApiKey, String autoScaleUserSecretKey, String serviceOfferingId,
+                String templateId, String networkId, String otherDeployParams, String snmpCommunity, Integer snmpPort, Integer destroyVmGraceperiod) {
             this.zoneId = zoneId;
             this.domainId = domainId;
             this.serviceOfferingId = serviceOfferingId;
@@ -301,6 +302,7 @@ public class LoadBalancerTO implements Serializable {
             this.cloudStackApiUrl = cloudStackApiUrl;
             this.autoScaleUserApiKey = autoScaleUserApiKey;
             this.autoScaleUserSecretKey = autoScaleUserSecretKey;
+            this.networkId = networkId;
         }
 
         public String getZoneId() {
@@ -345,6 +347,10 @@ public class LoadBalancerTO implements Serializable {
 
         public String getAutoScaleUserSecretKey() {
             return autoScaleUserSecretKey;
+        }
+
+        public String getNetworkId() {
+            return networkId;
         }
     }
 
@@ -427,8 +433,9 @@ public class LoadBalancerTO implements Serializable {
 
         AutoScaleVmProfileTO autoScaleVmProfileTO = new AutoScaleVmProfileTO(lbAutoScaleVmProfile.getZoneId(), lbAutoScaleVmProfile.getDomainId(),
                 lbAutoScaleVmProfile.getCsUrl(), lbAutoScaleVmProfile.getAutoScaleUserApiKey(), lbAutoScaleVmProfile.getAutoScaleUserSecretKey(),
-                lbAutoScaleVmProfile.getServiceOfferingId(), lbAutoScaleVmProfile.getTemplateId(), autoScaleVmProfile.getOtherDeployParams(),
-                autoScaleVmProfile.getSnmpCommunity(), autoScaleVmProfile.getSnmpPort(), autoScaleVmProfile.getDestroyVmGraceperiod());
+                lbAutoScaleVmProfile.getServiceOfferingId(), lbAutoScaleVmProfile.getTemplateId(), lbAutoScaleVmProfile.getNetworkId(),
+                autoScaleVmProfile.getOtherDeployParams(), autoScaleVmProfile.getSnmpCommunity(), autoScaleVmProfile.getSnmpPort(),
+                autoScaleVmProfile.getDestroyVmGraceperiod());
 
         AutoScaleVmGroup autoScaleVmGroup = lbAutoScaleVmGroup.getVmGroup();
         autoScaleVmGroupTO = new AutoScaleVmGroupTO(autoScaleVmGroup.getMinMembers(), autoScaleVmGroup.getMaxMembers(), autoScaleVmGroup.getMemberPort(),

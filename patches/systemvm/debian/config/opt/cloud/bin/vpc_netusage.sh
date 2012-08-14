@@ -34,8 +34,8 @@ create_usage_rules () {
   then 
     iptables -N NETWORK_STATS_$ethDev > /dev/null;
     iptables -I FORWARD -j NETWORK_STATS_$ethDev > /dev/null;
-    iptables -A NETWORK_STATS_$ethDev -i $ethDev -d $vcidr > /dev/null;
     iptables -A NETWORK_STATS_$ethDev -o $ethDev -s $vcidr > /dev/null;
+    iptables -A NETWORK_STATS_$ethDev -i $ethDev -d $vcidr > /dev/null;
   fi  
   return $?
 }
@@ -46,8 +46,8 @@ create_vpn_usage_rules () {
   then 
     iptables -t mangle -N VPN_STATS_$ethDev > /dev/null;
     iptables -t mangle -I FORWARD -j VPN_STATS_$ethDev > /dev/null;
-    iptables -t mangle -A VPN_STATS_$ethDev -i $ethDev -m mark --mark $vpninmark > /dev/null;
     iptables -t mangle -A VPN_STATS_$ethDev -o $ethDev -m mark --mark $vpnoutmark > /dev/null;
+    iptables -t mangle -A VPN_STATS_$ethDev -i $ethDev -m mark --mark $vpninmark > /dev/null;
   fi
   return $?
 }
@@ -69,8 +69,10 @@ get_usage () {
       then
         # flush rules and remove chain
         iptables -F NETWORK_STATS_$i > /dev/null;
+        iptables -D FORWARD -j NETWORK_STATS_$i > /dev/null;
         iptables -X NETWORK_STATS_$i > /dev/null;
         iptables -t mangle -F VPN_STATS_$i > /dev/null;
+        iptables -t mangle -D FORWARD -j VPN_STATS_$i > /dev/null;
         iptables -t mangle -X VPN_STATS_$i > /dev/null;                            
       fi
     done

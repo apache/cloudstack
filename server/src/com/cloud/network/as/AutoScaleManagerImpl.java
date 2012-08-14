@@ -315,6 +315,9 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
 
         // validations
         HashMap<String, String> deployParams = cmd.getDeployParamMap();
+        if(deployParams.containsKey("networks") && deployParams.get("networks").length() > 0) {
+            throw new InvalidParameterValueException("'networks' is not a valid parameter, network for an AutoScaled VM is chosen automatically. An autoscaled VM is deployed in the loadbalancer's network", null);
+        }
         /*
          * Just for making sure the values are right in other deploy params.
          * For ex. if projectId is given as a string instead of an long value, this
