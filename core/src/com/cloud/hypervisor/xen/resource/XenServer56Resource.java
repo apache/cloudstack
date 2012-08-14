@@ -189,7 +189,7 @@ public class XenServer56Resource extends CitrixResourceBase {
             }
 
             String result = callHostPlugin(conn, "vmops", "routerProxy", "args", args);
-            if (option.equals("get")) {
+            if (option.equals("get") || option.equals("vpn")) {
                 long[] stats = new long[2];
                 if (result != null) {
                     String[] splitResult = result.split(":");
