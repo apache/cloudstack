@@ -34,7 +34,7 @@ import com.cloud.user.Account;
 public class DeleteVpnCustomerGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(DeleteVpnCustomerGatewayCmd.class.getName());
 
-    private static final String s_name = "deletecustomergatewayresponse";
+    private static final String s_name = "deletevpncustomergatewayresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
