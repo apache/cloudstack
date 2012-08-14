@@ -1148,10 +1148,14 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         String time = configs.get("expunge.interval");
         _expungeInterval = NumbersUtil.parseInt(time, 86400);
-
+        if ( _expungeInterval < 600 ) {
+        	_expungeInterval = 600;
+        }
         time = configs.get("expunge.delay");
         _expungeDelay = NumbersUtil.parseInt(time, _expungeInterval);
-
+        if ( _expungeDelay < 600 ) {
+        	_expungeDelay = 600;
+        }
         _executor = Executors.newScheduledThreadPool(wrks, new NamedThreadFactory("UserVm-Scavenger"));
 
         _itMgr.registerGuru(VirtualMachine.Type.User, this);
