@@ -3731,7 +3731,10 @@
                        }
                       }
                     );
-                  }
+                  }, 
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
+                   }
                 });
               },
 
