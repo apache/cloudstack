@@ -9743,6 +9743,14 @@ div.ui-dialog div.acl div.multi-edit div.data div.data-body div.data-item table 
   max-height: 600px;
 }
 
+.ui-dialog div.autoscaler div.form-container div.form-item.disabled {
+  /*+opacity:50%;*/
+  filter: alpha(opacity=50);
+  -ms-filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=50);
+  -moz-opacity: 0.5;
+  opacity: 0.5;
+}
+
 .ui-dialog div.autoscaler .detail-actions {
 }
 

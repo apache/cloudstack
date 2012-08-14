@@ -17,6 +17,53 @@
   var totalScaleDownCondition = 0;
 
   cloudStack.autoscaler = {
+    preFilter: function(args) {
+      var $autoscaler = args.$autoscaler;
+      var isAdvancedZone = false;
+
+      // Hide fields for advanced zone      
+      $.ajax({
+        url: createURL('listZones'),
+        data: {
+          id: args.context.networks[0].zoneid,
+          listAll: true
+        },
+        async: false,
+        success: function(json) {
+          var zone = json.listzonesresponse.zone[0];
+
+          if (zone.networktype == 'Advanced') {
+            isAdvancedZone = true;
+          }
+           else
+             isAdvancedZone = false;
+        }
+      });
+
+      // Run pre-filter
+      if (args.data == null) { //from a new LB rule						  
+				$autoscaler.find('select[name=serviceOfferingId]').removeAttr('disabled');
+				$autoscaler.find('select[name=securityGroups]').removeAttr('disabled');
+				$autoscaler.find('select[name=diskOfferingId]').removeAttr('disabled');
+			} else { //from an existing LB rule
+				$autoscaler.find('select[name=serviceOfferingId]').attr('disabled', true);
+				$autoscaler.find('select[name=securityGroups]').attr('disabled', true);
+				$autoscaler.find('select[name=diskOfferingId]').attr('disabled', true);
+				
+				if(args.data.isAdvanced != null) {
+					$autoscaler.find('input[type=checkbox]').trigger('click');
+					$autoscaler.find('input[type=checkbox]').attr('checked', 'checked');
+				}
+      }
+
+      if (isAdvancedZone) {
+        $autoscaler.find('.form-item[rel=securityGroups]')
+          .addClass('disabled')
+          .attr('title', 'Security groups are only selectable for Basic zones');
+        $autoscaler.find('select[name=securityGroups]').attr('disabled', true);
+      }
+    },
+    
     // UI actions to appear in dialog
     autoscaleActions: {
       enable: {
