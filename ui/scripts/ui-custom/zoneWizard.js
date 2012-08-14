@@ -127,7 +127,7 @@
         var fields = [
           'gateway',
           'netmask',
-          'vlanid',
+          'vlan',
           'startip',
           'endip'
         ];
