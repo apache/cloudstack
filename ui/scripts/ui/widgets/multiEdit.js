@@ -147,7 +147,7 @@
                 _medit.vmList($multi,
                               options.listView,
                               options.context,
-                              options.multipleAdd, _l('label.add'),
+                              options.multipleAdd, _l('label.add.vms'),
                               addItemAction,
                               {
                                 multiRule: multiRule
