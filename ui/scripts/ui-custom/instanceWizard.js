@@ -486,7 +486,7 @@
               var $checkbox = $step.find('.new-network input[type=checkbox]');
               var $newNetwork = $checkbox.closest('.new-network');
 
-              if ($step.find('.select.my-networks .select-container .select').size()) {
+              if ($step.find('.select.my-networks .select-container .select:visible').size()) {
                 $checkbox.attr('checked', false);
                 $newNetwork.addClass('unselected');
               } else {
