@@ -381,9 +381,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ENABLE_STATIC_NAT, eventDescription = "enabling static nat")
     public boolean enableStaticNat(long ipId, long vmId, long networkId) throws NetworkRuleConflictException, ResourceUnavailableException {
-    	    return enableStaticNat(ipId, vmId, networkId, false);
+        return enableStaticNat(ipId, vmId, networkId, false);
     }
- 
+
     private boolean enableStaticNat(long ipId, long vmId, long networkId, boolean isSystemVm) 
             throws NetworkRuleConflictException, ResourceUnavailableException {
         UserContext ctx = UserContext.current();
@@ -544,10 +544,10 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             if (!reassignStaticNat) {
                 List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
                 idList.add(new IdentityProxy(ipAddress, ipAddress.getId(), "ipId"));
-                idList.add(new IdentityProxy(oldIP, oldIP.getId(), "oldipId"));
+                idList.add(new IdentityProxy(oldIP, oldIP.getId(), "curIpId"));
                 idList.add(new IdentityProxy("vm_instance", vmId, "vmId"));
                 throw new InvalidParameterValueException("Failed to enable static nat for the ip address with specified ipId" +
-                        " as vm with specified vmId is already associated with ip with specified oldipId", idList);
+                        " as vm with specified vmId is already associated with ip specified as curIpId", idList);
             }
             // unassign old static nat rule
             s_logger.debug("Disassociating static nat for ip " + oldIP);
@@ -1300,7 +1300,7 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
     @Override
     public boolean applyStaticNatForIp(long sourceIpId, boolean continueOnError, Account caller, boolean forRevoke) {
         IpAddress sourceIp = _ipAddressDao.findById(sourceIpId);
-        
+
         List<StaticNat> staticNats = createStaticNatForIp(sourceIp, caller, forRevoke);
 
         if (staticNats != null && !staticNats.isEmpty()) {
@@ -1316,12 +1316,12 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
 
         return true;
     }
-    
-    
+
+
     @Override
     public boolean applyStaticNatForNetwork(long networkId, boolean continueOnError, Account caller, boolean forRevoke) {
         List<? extends IpAddress> staticNatIps = _ipAddressDao.listStaticNatPublicIps(networkId);
-        
+
         List<StaticNat> staticNats = new ArrayList<StaticNat>();
         for (IpAddress staticNatIp : staticNatIps) {
             staticNats.addAll(createStaticNatForIp(staticNatIp, caller, forRevoke));
