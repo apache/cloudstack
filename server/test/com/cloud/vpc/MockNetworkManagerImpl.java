@@ -1124,8 +1124,11 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
      */
     @Override
     public List<Service> listNetworkOfferingServices(long networkOfferingId) {
-        // TODO Auto-generated method stub
-        return null;
+        List<Service> supportedSvcs = new ArrayList<Service>();
+        if (networkOfferingId != 2) {
+            supportedSvcs.add(Service.SourceNat);
+        }
+        return supportedSvcs;
     }
 
     /* (non-Javadoc)
@@ -1295,8 +1298,9 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
      */
     @Override
     public List<Provider> getNtwkOffDistinctProviders(long ntwkOffId) {
-        // TODO Auto-generated method stub
-        return null;
+        List<Provider> providers = new ArrayList<Provider>();
+        providers.add(Provider.VPCVirtualRouter);
+        return providers;
     }
 
     /* (non-Javadoc)
