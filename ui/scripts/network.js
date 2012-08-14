@@ -3672,9 +3672,11 @@
                             return json.queryasyncjobresultresponse.jobresult.vpc;
                           }
                         }
-                      }
-                    );
-                  }
+                      });
+                  },
+                  error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
+                    }
                 });								
               },
              
