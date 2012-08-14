@@ -1697,7 +1697,7 @@
                         args.context.vpc ?
                           args.context.vpc[0].network : args.context.networks,
                         function(network) {
-                          return network.id = ipObj.networkid;
+                          return network.id = ipObj.associatednetworkid;
                         })[0];
 
                       args.response.success({
