@@ -1658,11 +1658,11 @@
                     ipaddress: { label: 'IP' }
                   },
                   {
-                    id: { label: 'label.id' },
-                    networkname: { label: 'label.network.name' },
-                    networkid: { label: 'label.network.id' },
+                    id: { label: 'label.id' },    
                     associatednetworkid: { label: 'label.associated.network.id' },
+										networkname: { label: 'Associated Network' },
                     state: { label: 'label.state' },
+										networkid: { label: 'label.network.id' },
                     issourcenat: { label: 'label.source.nat', converter: cloudStack.converters.toBooleanText },
                     isstaticnat: { label: 'label.static.nat', converter: cloudStack.converters.toBooleanText },
                     issystem: { label: 'label.is.system', converter: cloudStack.converters.toBooleanText }, //(basic zone only)
