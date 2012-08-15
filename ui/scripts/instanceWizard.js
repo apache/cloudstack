@@ -322,12 +322,10 @@
 
         var networkObjs, vpcObjs;
 
-        // Get VPCs
+        //listVPCs without account/domainid/listAll parameter will return only VPCs belonging to the current login. That's what should happen in Instances page's VM Wizard. 
+				//i.e. If the current login is root-admin, do not show VPCs belonging to regular-user/domain-admin in Instances page's VM Wizard. 
         $.ajax({
-          url: createURL('listVPCs'),
-          data: isDomainAdmin() ?
-            { account: args.context.users[0].account, domainid: args.context.users[0].domainid } :
-            { listAll: true },
+          url: createURL('listVPCs'), 
           async: false,
           success: function(json) {
             vpcObjs = json.listvpcsresponse.vpc ? json.listvpcsresponse.vpc : [];
