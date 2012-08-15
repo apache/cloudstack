@@ -1707,7 +1707,7 @@
                       args.response.success({
                         actionFilter: actionFilters.ipAddress,
                         data: $.extend(ipObj, {
-                          networkname: network.name
+                          networkname: network ? network.name : ''
                         })
                       });
                     },
