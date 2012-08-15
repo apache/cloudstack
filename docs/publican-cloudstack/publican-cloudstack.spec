@@ -2,7 +2,7 @@
 
 Name:		publican-cloudstack
 Summary:	Common documentation files for %{brand}
-Version:	0.2
+Version:	0.3
 Release:	1%{?dist}
 License:	ASLv2
 Group:		Applications/Text
@@ -39,8 +39,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/publican/Common_Content/%{brand}
 
 %changelog
+* Tue Aug 14 2012 Joe Brockmeier <jzb@zonker.net> 0.3-1
+- Removed unneeded common files distributed with Publican
 * Tue Jun 26 2012  David Nalley <david@gnsa.us> 0.2-1
 - updated for ASF move
 * Sat Aug 11 2011  David Nalley <david@gnsa.us> 0.1-1
 - Created Brand
-

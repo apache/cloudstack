@@ -8,20 +8,9 @@
          <secondary>contact information for this brand</secondary>
 
     </indexterm>
-     <para>
-        If you find a typographical error in this manual, or if you 
-                have thought of a way to make this manual better, we would 
-                love to hear from you! Please submit a bug: 
-                <ulink url="http://bugs.cloudstack.org">http://bugs.cloudstack.org</ulink> 
-                against the component <application>Doc</application>
-    </para>
-     <para>
-        If you have a suggestion for improving the documentation, try to be as 
-                specific as possible when describing it. If you have found an error, 
-                please include the section number and some of the surrounding text 
-                so we can find it easily.
-    </para>
-
+     <para>If you find a typographical error in this manual, or if you have thought of a way to make this manual better, we would love to hear from you! Please submit a bug: <ulink url="http://bugs.cloudstack.org">http://bugs.cloudstack.org</ulink> against the component <application>Doc</application>.</para>
+    <para>If you have a suggestion for improving the documentation, try to be as specific as possible when describing it. If you have found an error, please include the section number and some of the surrounding text so we can find it easily.</para>
+    <para>Better yet, feel free to submit a patch if you would like to enhance the documentation. Our documentation is, along with the rest of the CloudStack source code, kept in the project's git repository.</para>
 </section>
 
 
