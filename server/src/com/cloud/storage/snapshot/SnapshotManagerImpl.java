@@ -372,9 +372,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             if (answer != null) {
                 s_logger.error(answer.getDetails());
             }
-
-            // delete from the snapshots table
-            _snapshotDao.expunge(snapshotId);
             throw new CloudRuntimeException("Creating snapshot for volume " + volumeId + " on primary storage failed.");
         }
 
@@ -424,7 +421,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 if (hosts != null && !hosts.isEmpty()) {
                     HostVO host = hosts.get(0);
                     if (!hostSupportSnapsthot(host)) {
-                        _snapshotDao.expunge(snapshotId);
                         throw new CloudRuntimeException("KVM Snapshot is not supported on cluster: " + host.getId());
                     }
                 }
@@ -435,14 +431,13 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 UserVmVO userVm = _vmDao.findById(volume.getInstanceId());
                 if (userVm != null) {
                     if (userVm.getState().equals(State.Destroyed) || userVm.getState().equals(State.Expunging)) {
-                        _snapshotDao.expunge(snapshotId);
                         throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " is associated with vm:" + userVm.getInstanceName() + " is in "
                                 + userVm.getState().toString() + " state");
                     }
                     
                     if(userVm.getHypervisorType() == HypervisorType.VMware || userVm.getHypervisorType() == HypervisorType.KVM) {
-                    	List<SnapshotVO> activeSnapshots = _snapshotDao.listByInstanceId(volume.getInstanceId(), Snapshot.Status.Creating,  Snapshot.Status.CreatedOnPrimary,  Snapshot.Status.BackingUp);
-                    	if(activeSnapshots.size() > 1)
+                        List<SnapshotVO> activeSnapshots = _snapshotDao.listByInstanceId(volume.getInstanceId(), Snapshot.Status.Creating,  Snapshot.Status.CreatedOnPrimary,  Snapshot.Status.BackingUp);
+                        if(activeSnapshots.size() > 1)
                             throw new CloudRuntimeException("There is other active snapshot tasks on the instance to which the volume is attached, please try again later");
                     }
                 }
