@@ -1110,77 +1110,117 @@
           var array1 = [];
 					var apiCmd, apiCmdRes;							
 					if(!('multiRules' in args.context)) { //from a new LB 	
-					  apiCmd = 'createAutoScaleVmProfile';
-						apiCmdRes = 'autoscalevmprofileresponse';
-					
-						array1.push("&zoneid=" + args.context.networks[0].zoneid);
-						array1.push("&serviceofferingid=" + args.data.serviceOfferingId);          
-						var array2 = [];
-						if(args.data.diskOfferingId != "")
+            var data = {
+						  zoneid: args.context.networks[0].zoneid,
+							serviceofferingid: args.data.serviceOfferingId,
+							templateid: args.data.templateNames,
+							destroyvmgraceperiod: args.data.destroyVMgracePeriod,
+							snmpcommunity: args.data.snmpCommunity,
+							snmpport: args.data.snmpPort							
+						};	
+
+            if(args.data.username != null && args.data.username.length > 0) {
+						  $.extend(data, {
+							  autoscaleuserid: args.data.username
+							});
+						}						
+																				
+						var array2 = [];					
+						if(args.data.diskOfferingId != null && args.data.diskOfferingId.length > 0)
 							array2.push("diskofferingid=" + args.data.diskOfferingId);
-						if(args.data.securityGroups != ""){
-							if(array2.join("") != "")
+						if(args.data.securityGroups != null && args.data.securityGroups.length > 0){
+							if(array2.length > 0)
 								array2.push("&securitygroupids=" + args.data.securityGroups);
 							else
 								array2.push("securitygroupids=" + args.data.securityGroups);
+						}		
+            if(array2.length > 0) {						
+							$.extend(data, {
+								otherdeployparams: array2.join("")
+							});
 						}
-						array2 = array2.join("");
-						if(array2 != "")
-							array1.push("&otherdeployparams=" + encodeURIComponent(array2));
-					}
-					else { //from an existing LB
-					  apiCmd = 'updateAutoScaleVmProfile';
-						apiCmdRes = 'updateautoscalevmprofileresponse';
-						
-						array1.push("&id=" + args.context.originalAutoscaleData.context.autoscaleVmProfile.id);
-					}
-					
-					//apply to both create and update
-          array1.push("&templateid=" + args.data.templateNames);
-					array1.push("&destroyvmgraceperiod=" + args.data.destroyVMgracePeriod);
-					array1.push("&snmpcommunity=" + args.data.snmpCommunity);
-					array1.push("&snmpport=" + args.data.snmpPort);
-					if(args.data.username != null && args.data.username.length > 0)
-            array1.push("&autoscaleuserid=" + args.data.username);
-         
-          $.ajax({
-            url: createURL(apiCmd + array1.join("")),
-            dataType: 'json',
-            async: true,
-            success: function(json) {						 
-              var jobId = json[apiCmdRes].jobid;
-              var autoscaleVmProfileTimer = setInterval(function(){
-                $.ajax({
-                  url: createURL("queryAsyncJobResult&jobId="+jobId),
-                  dataType: "json",
-                  success: function(json) {
-                    var result = json.queryasyncjobresultresponse;
-                    if (result.jobstatus == 0) {
-                      return; //Job has not completed
-                    }
-                    else {
-                      clearInterval(autoscaleVmProfileTimer);
-                      if (result.jobstatus == 1) { 
-                        scaleVmProfileResponse = result.jobresult.autoscalevmprofile;
-												if(!('multiRules' in args.context)) { //from a new LB 	
-                          loadBalancer(args); //create a load balancer rule
+										 
+						$.ajax({
+							url: createURL('createAutoScaleVmProfile'),							
+							data: data,
+							success: function(json) {						 
+								var jobId = json.autoscalevmprofileresponse.jobid;
+								var autoscaleVmProfileTimer = setInterval(function(){
+									$.ajax({
+										url: createURL("queryAsyncJobResult&jobId="+jobId),
+										dataType: "json",
+										success: function(json) {
+											var result = json.queryasyncjobresultresponse;
+											if (result.jobstatus == 0) {
+												return; //Job has not completed
+											}
+											else {
+												clearInterval(autoscaleVmProfileTimer);
+												if (result.jobstatus == 1) { 
+													scaleVmProfileResponse = result.jobresult.autoscalevmprofile;													
+													loadBalancer(args); //create a load balancer rule																										
 												}
-												else { //from an existing LB		
-													autoScaleVmGroup(args); //update autoScaleVmGroup
+												else if (result.jobstatus == 2) {
+													args.response.error(_s(result.jobresult.errortext));
 												}
-                      }
-                      else if (result.jobstatus == 2) {
-                        args.response.error(_s(result.jobresult.errortext));
-                      }
-                    }
-                  }
-                });
-              }, 3000);
-            },
-            error: function(XMLHttpResponse) {
-              args.response.error(parseXMLHttpResponse(XMLHttpResponse));
-            }
-          });
+											}
+										}
+									});
+								}, 3000);
+							},
+							error: function(XMLHttpResponse) {
+								args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+							}
+						});            			
+					}
+					else { //from an existing LB		
+            var data = {
+              id: args.context.originalAutoscaleData.context.autoscaleVmProfile.id,
+							templateid: args.data.templateNames,
+							destroyvmgraceperiod: args.data.destroyVMgracePeriod,
+							snmpcommunity: args.data.snmpCommunity,
+							snmpport: args.data.snmpPort							
+            };							
+								
+						if(args.data.username != null && args.data.username.length > 0) {
+						  $.extend(data, {
+							  autoscaleuserid: args.data.username
+							});
+						}						
+								
+						$.ajax({
+							url: createURL('updateAutoScaleVmProfile'),
+							data: data,
+							success: function(json) {						 
+								var jobId = json.updateautoscalevmprofileresponse.jobid;
+								var autoscaleVmProfileTimer = setInterval(function(){
+									$.ajax({
+										url: createURL("queryAsyncJobResult&jobId="+jobId),
+										dataType: "json",
+										success: function(json) {
+											var result = json.queryasyncjobresultresponse;
+											if (result.jobstatus == 0) {
+												return; //Job has not completed
+											}
+											else {
+												clearInterval(autoscaleVmProfileTimer);
+												if (result.jobstatus == 1) { 
+													scaleVmProfileResponse = result.jobresult.autoscalevmprofile;		
+													autoScaleVmGroup(args); //update autoScaleVmGroup													
+												}
+												else if (result.jobstatus == 2) {
+													args.response.error(_s(result.jobresult.errortext));
+												}
+											}
+										}
+									});
+								}, 3000);
+							},
+							error: function(XMLHttpResponse) {
+								args.response.error(parseXMLHttpResponse(XMLHttpResponse));
+							}
+						});						
+					}	
         };
 
         var loadBalancer = function(args){
