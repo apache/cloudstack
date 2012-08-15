@@ -29,7 +29,7 @@ HOSTNAME=systemvm
 SIZE=2000
 DEBIAN_MIRROR=ftp.us.debian.org/debian
 MINIMIZE=true
-CLOUDSTACK_RELEASE=3.0
+CLOUDSTACK_RELEASE=4.0
 offset=4096
 baseimage() {
   mkdir -p $LOCATION
