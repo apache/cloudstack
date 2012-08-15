@@ -828,12 +828,7 @@ def default_network_rules(session, args):
     try:
         for v in vifs:
             util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
-            util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
-        util.pread2(['iptables', '-A', vmchain_default, '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
-        #allow dhcp
-        for v in vifs:
-            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-p', 'udp', '--dport', '67', '--sport', '68',  '-j', 'ACCEPT'])
-            util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-p', 'udp', '--dport', '68', '--sport', '67',  '-j', 'ACCEPT'])
+            util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '4', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
 
         #don't let vm spoof its ip address
         for v in vifs:
@@ -841,8 +836,6 @@ def default_network_rules(session, args):
             util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', '!', vm_ip, '-j', 'DROP'])
             util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '--destination', '!', vm_ip, '-j', 'DROP'])
             util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '--source', vm_ip, '-j', vmchain_egress])
-        
-        for v in vifs:
             util.pread2(['iptables', '-A', vmchain_default, '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v,  '-j', vmchain])
     except:
         util.SMlog("Failed to program default rules for vm " + vm_name)
@@ -939,7 +932,7 @@ def network_rules_for_rebooted_vm(session, vmName):
 
     for v in vifs:
         util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
-        util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
+        util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '4', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
 
     #change antispoof rule in vmchain
     try:
