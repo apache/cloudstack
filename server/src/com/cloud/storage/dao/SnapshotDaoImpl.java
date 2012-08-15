@@ -307,4 +307,11 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         txn.commit();
         return result;
     }
+    
+    @Override
+    public List<SnapshotVO> listAllByStatus(Snapshot.Status... status) {
+        SearchCriteria<SnapshotVO> sc = this.StatusSearch.create();
+        sc.setParameters("status", (Object[])status);
+        return listBy(sc, null);
+    }
 }
