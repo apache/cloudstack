@@ -57,7 +57,7 @@ public class Site2SiteVpnGatewayResponse extends BaseResponse implements Control
 	}
 	
 	public void setVpcId(Long vpcId) {
-		this.id.setValue(vpcId);
+		this.vpcId.setValue(vpcId);
 	}
 	
     public void setRemoved(Date removed) {
