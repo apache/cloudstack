@@ -3975,7 +3975,7 @@
 								}
 							},
 							createForm: {
-								title: 'add VPN Customer Gateway',
+								title: 'Add VPN Customer Gateway',
 								fields: {		
                   name: {
 									  label: 'label.name',
@@ -3987,7 +3987,8 @@
 									}, 
 									cidrlist: { 
 										label: 'CIDR list',
-										validation: { required: true }
+                                                                                desc: 'Please enter a comma separated list of CIDRs if more than one',
+                                                                                validation: { required: true }
 									},
                   gateway: {
                     label: 'label.gateway',
