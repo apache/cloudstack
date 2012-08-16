@@ -10669,6 +10669,13 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   max-height: 600px;
 }
 
+div.container div.panel div#details-tab-network.detail-group div div.multi-edit table.multi-edit tbody tr td,
+ div.container div.panel div#details-tab-network.detail-group div div.multi-edit table.multi-edit thead tr th
+  {
+ min-width:72px;
+ font-size:10px;
+}
+
 .ui-dialog div.autoscaler .detail-actions {
 }
 
