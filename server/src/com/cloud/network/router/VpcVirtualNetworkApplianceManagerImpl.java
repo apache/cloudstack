@@ -848,9 +848,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 createVpcAssociatePublicIPCommands(router, sourceNat, cmds, vlanMacAddress);
             }
             
-            //Add network usage commands
-            cmds.addCommands(usageCmds);
-            
             //add VPC router to guest networks
             for (Pair<Nic, Network> nicNtwk : guestNics) {
                 Nic guestNic = nicNtwk.first();
@@ -926,7 +923,10 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
 
             finalizeUserDataAndDhcpOnStart(cmds, router, provider, guestNic.getNetworkId());
         }
-  
+
+        //Add network usage commands
+        cmds.addCommands(usageCmds);
+        
         return true;
     }
     
