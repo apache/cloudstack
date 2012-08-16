@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.agent.api.routing;
 
-import com.cloud.agent.api.routing.SetSourceNatCommand;
+import com.cloud.agent.api.Answer;
 
 public class SetSourceNatAnswer extends Answer{
     public SetSourceNatAnswer() {}
