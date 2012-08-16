@@ -32,6 +32,7 @@ import java.util.Formatter;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -651,39 +652,48 @@ public class NetUtils {
      * @param avoid set of ips to avoid
      * @return ip that is within the cidr range but not in the avoid set.  -1 if unable to find one.
      */
-    public static long getRandomIpFromCidr(String startIp, int size, Set<Long> avoid) {
+    public static long getRandomIpFromCidr(String startIp, int size, SortedSet<Long> avoid) {
         return getRandomIpFromCidr(ip2Long(startIp), size, avoid);
 
     }
 
     /**
      * Given a cidr, this method returns an ip address within the range but
-     * is not in the avoid list.
+     * is not in the avoid list. 
+     * Note: the gateway address has to be specified in the avoid list
      * 
-     * @param startIp ip that the cidr starts with
+     * @param cidr ip that the cidr starts with
      * @param size size of the cidr
      * @param avoid set of ips to avoid
      * @return ip that is within the cidr range but not in the avoid set.  -1 if unable to find one.
      */
-    public static long getRandomIpFromCidr(long cidr, int size, Set<Long> avoid) {
+    public static long getRandomIpFromCidr(long cidr, int size, SortedSet<Long> avoid) {
         assert (size < 32) : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
 
         long startNetMask = ip2Long(getCidrNetmask(size));
-        long startIp = (cidr & startNetMask) + 2;
-        int range = 1 << (32 - size);
+        long startIp = (cidr & startNetMask) + 1; //exclude the first ip since it isnt valid, e.g., 192.168.10.0
+        int range = 1 << (32 - size); //e.g., /24 = 2^8 = 256
+        range = range -1; //exclude end of the range since that is the broadcast address, e.g., 192.168.10.255
 
-        if (avoid.size() > range) {
+        if (avoid.size() >= range) {
             return -1;
         }
-
-        for (int i = 0; i < range; i++) {
-            int next = _rand.nextInt(range);
-            if (!avoid.contains(startIp + next)) {
-                return startIp + next;
+                
+        //Reduce the range by the size of the avoid set
+        //e.g., cidr = 192.168.10.0, size = /24, avoid = 192.168.10.1, 192.168.10.20, 192.168.10.254
+        // range = 2^8 - 1 - 3 = 252
+        range = range - avoid.size();
+        int next = _rand.nextInt(range); //note: nextInt excludes last value
+        long ip = startIp + next;
+        for (Long avoidable : avoid) {
+            if (ip >= avoidable) {
+            	ip++;
+            } else {
+            	break;
             }
         }
 
-        return -1;
+        return ip;
     }
 
     public static String getIpRangeStartIpFromCidr(String cidr, long size) {
