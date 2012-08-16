@@ -94,11 +94,11 @@ import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StorageService;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.pool.StoragePoolManager;
+import com.cloud.storage.pool.StoragePoolService;
 import com.cloud.storage.resource.DummySecondaryStorageResource;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.user.AccountManager;
@@ -194,8 +194,8 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     @Inject
     protected VirtualMachineManager _vmMgr = null;
     
-    @Inject StorageService _storageSvr = null;
-    @Inject StorageManager _storageMgr = null;
+    @Inject StoragePoolService _storageSvr = null;
+    @Inject StoragePoolManager _storageMgr = null;
     
     @Inject
     protected HypervisorGuruManager _hvGuruMgr;

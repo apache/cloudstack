@@ -30,7 +30,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.storage.StoragePool;
+import com.cloud.storage.pool.StoragePool;
 import com.cloud.user.Account;
 
 @SuppressWarnings("rawtypes")

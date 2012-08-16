@@ -58,9 +58,9 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ManagementServer;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.pool.StoragePoolManager;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Adapters;
@@ -126,7 +126,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
     @Inject
     AlertManager _alertMgr;
     @Inject
-    StorageManager _storageMgr;
+    StoragePoolManager _storageMgr;
     @Inject
     GuestOSDao _guestOSDao;
     @Inject

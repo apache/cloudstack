@@ -28,7 +28,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.GuestOSResponse;
 import com.cloud.api.response.ListResponse;
-import com.cloud.storage.GuestOS;
+import com.cloud.storage.volume.GuestOS;
 
 @Implementation(description="Lists all supported OS types for this cloud.", responseObject=GuestOSResponse.class)
 public class ListGuestOsCmd extends BaseListCmd {

@@ -28,8 +28,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.TemplateType;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;

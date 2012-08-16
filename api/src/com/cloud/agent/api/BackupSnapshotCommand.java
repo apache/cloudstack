@@ -19,7 +19,7 @@ package com.cloud.agent.api;
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.storage.StoragePool;
+import com.cloud.storage.pool.StoragePool;
 
 /**
  * This currently assumes that both primary and secondary storage are mounted on the XenServer.  

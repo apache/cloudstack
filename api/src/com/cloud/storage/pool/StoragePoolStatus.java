@@ -14,15 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage;
+package com.cloud.storage.pool;
 
-public interface GuestOS {
-
-    long getId();
-
-    String getName();
-
-    String getDisplayName();
-
-    long getCategoryId();
+public enum StoragePoolStatus {
+    Up,
+    PrepareForMaintenance,
+    ErrorInMaintenance,
+    CancelMaintenance,
+    Maintenance,
+    Removed;
 }

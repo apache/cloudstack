@@ -23,7 +23,7 @@ import com.cloud.hypervisor.kvm.resource.KVMHABase;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.PoolType;
 import com.cloud.hypervisor.kvm.resource.KVMHAMonitor;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk.PhysicalDiskFormat;
-import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.pool.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 
 public class KVMStoragePoolManager {

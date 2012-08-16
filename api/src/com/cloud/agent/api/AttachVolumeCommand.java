@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.agent.api;
 
-import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.pool.Storage.StoragePoolType;
 
 public class AttachVolumeCommand extends Command {
 	

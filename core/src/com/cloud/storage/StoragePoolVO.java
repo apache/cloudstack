@@ -31,7 +31,9 @@ import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 
 import com.cloud.api.Identity;
-import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.pool.StoragePool;
+import com.cloud.storage.pool.StoragePoolStatus;
+import com.cloud.storage.pool.Storage.StoragePoolType;
 import com.cloud.utils.db.GenericDao;
 
 @Entity

@@ -19,7 +19,7 @@ package com.cloud.template;
 import java.util.Map;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateVO;
 
 public class TemplateProfile {	

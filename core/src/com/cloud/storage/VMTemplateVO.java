@@ -33,8 +33,9 @@ import javax.persistence.Transient;
 
 import com.cloud.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.pool.Storage;
+import com.cloud.storage.pool.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.TemplateType;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.db.GenericDao;
 

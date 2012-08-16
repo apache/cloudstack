@@ -43,19 +43,19 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 
-import com.cloud.storage.Storage;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.Volume.Event;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.download.DownloadState.DownloadEvent;
+import com.cloud.storage.pool.Storage;
+import com.cloud.storage.pool.StoragePoolManager;
+import com.cloud.storage.volume.Volume.Event;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
@@ -116,7 +116,7 @@ public class DownloadListener implements Listener {
 
 	private VolumeHostDao volumeHostDao;
 	private VolumeDao _volumeDao;
-	private StorageManager _storageMgr;
+	private StoragePoolManager _storageMgr;
 	private VMTemplateHostDao vmTemplateHostDao;
 	private VMTemplateDao _vmTemplateDao;
 
@@ -154,7 +154,7 @@ public class DownloadListener implements Listener {
 		updateDatabase(Status.NOT_DOWNLOADED, "");
 	}
 	
-	public DownloadListener(HostVO ssAgent, HostVO host, VolumeVO volume, Timer _timer, VolumeHostDao dao, Long volHostId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd, VolumeDao volumeDao, StorageManager storageMgr) {
+	public DownloadListener(HostVO ssAgent, HostVO host, VolumeVO volume, Timer _timer, VolumeHostDao dao, Long volHostId, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd, VolumeDao volumeDao, StoragePoolManager storageMgr) {
 	    this.ssAgent = ssAgent;
         this.sserver = host;
 		this.volume = volume;

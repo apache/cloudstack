@@ -107,12 +107,8 @@ import com.cloud.org.Grouping.AllocationState;
 import com.cloud.org.Managed;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.GuestOSCategoryVO;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.StorageService;
 import com.cloud.storage.Swift;
 import com.cloud.storage.SwiftVO;
 import com.cloud.storage.VMTemplateVO;
@@ -120,6 +116,10 @@ import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.pool.StoragePool;
+import com.cloud.storage.pool.StoragePoolManager;
+import com.cloud.storage.pool.StoragePoolService;
+import com.cloud.storage.pool.StoragePoolStatus;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.template.VirtualMachineTemplate;
@@ -162,7 +162,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     @Inject
     AgentManager                             _agentMgr;
     @Inject
-    StorageManager                           _storageMgr;
+    StoragePoolManager                           _storageMgr;
     @Inject
     protected SecondaryStorageVmManager      _secondaryStorageMgr;
 
@@ -201,7 +201,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
     @Inject
     protected HighAvailabilityManager        _haMgr;
     @Inject 
-    protected StorageService                 _storageSvr;
+    protected StoragePoolService                 _storageSvr;
     @Inject(adapter = Discoverer.class)
     protected Adapters<? extends Discoverer> _discoverers;
     @Inject
@@ -1760,7 +1760,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             if (storagePool != null) {
                 if (storagePool.getStatus() == StoragePoolStatus.Up || storagePool.getStatus() == StoragePoolStatus.ErrorInMaintenance) {
                     try {
-                        storagePool = _storageSvr.preparePrimaryStorageForMaintenance(storagePool.getId());
+                        storagePool = _storageSvr.prepareStorageForMaintenance(storagePool.getId());
                         if (storagePool == null) {
                             s_logger.debug("Failed to set primary storage into maintenance mode");
                             throw new UnableDeleteHostException("Failed to set primary storage into maintenance mode");

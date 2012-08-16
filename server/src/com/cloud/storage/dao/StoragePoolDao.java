@@ -20,8 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.pool.StoragePoolStatus;
 import com.cloud.utils.db.GenericDao;
 /**
  * Data Access Object for storage_pool table

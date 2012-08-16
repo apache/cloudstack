@@ -18,7 +18,7 @@ package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.storage.StoragePool;
+import com.cloud.storage.pool.StoragePool;
 
 public class CopyVolumeCommand extends Command {
 

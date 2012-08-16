@@ -17,9 +17,9 @@
 package com.cloud.agent.api.storage;
 
 import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.Volume;
+import com.cloud.storage.pool.StoragePool;
+import com.cloud.storage.volume.Volume;
 
 public class DestroyCommand extends StorageCommand {
 	// in VMware, things are designed around VM instead of volume, we need it the volume VM context if the volume is attached

@@ -18,7 +18,7 @@ package com.cloud.api.commands;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
 
 public class ListTemplatePermissionsCmd extends ListTemplateOrIsoPermissionsCmd {

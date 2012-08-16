@@ -46,16 +46,16 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceState;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolVO;
-import com.cloud.storage.StorageStats;
-import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.pool.StoragePoolManager;
+import com.cloud.storage.pool.StorageStats;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.storage.volume.VolumeStats;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -81,7 +81,7 @@ public class StatsCollector {
 	private final UserVmDao _userVmDao;
 	private final VolumeDao _volsDao;
 	private final StoragePoolDao _storagePoolDao;
-	private final StorageManager _storageManager;
+	private final StoragePoolManager _storageManager;
     private final StoragePoolHostDao _storagePoolHostDao;
     private final SecondaryStorageVmManager _ssvmMgr;
     private final ResourceManager _resourceMgr;
@@ -118,7 +118,7 @@ public class StatsCollector {
 		_userVmDao = locator.getDao(UserVmDao.class);
 		_volsDao = locator.getDao(VolumeDao.class);
 		_storagePoolDao = locator.getDao(StoragePoolDao.class);
-		_storageManager = locator.getManager(StorageManager.class);
+		_storageManager = locator.getManager(StoragePoolManager.class);
         _storagePoolHostDao  = locator.getDao(StoragePoolHostDao.class);
         _resourceMgr = locator.getManager(ResourceManager.class);
 

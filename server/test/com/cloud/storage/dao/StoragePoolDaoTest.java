@@ -18,7 +18,7 @@ package com.cloud.storage.dao;
 
 import junit.framework.TestCase;
 
-import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.pool.StoragePoolStatus;
 import com.cloud.utils.component.ComponentLocator;
 
 public class StoragePoolDaoTest extends TestCase {

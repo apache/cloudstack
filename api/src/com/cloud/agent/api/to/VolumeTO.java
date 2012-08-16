@@ -16,9 +16,9 @@
 // under the License.
 package com.cloud.agent.api.to;
 
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.Volume;
+import com.cloud.storage.pool.StoragePool;
+import com.cloud.storage.pool.Storage.StoragePoolType;
+import com.cloud.storage.volume.Volume;
 
 public class VolumeTO {
     protected VolumeTO() {

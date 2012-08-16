@@ -18,7 +18,7 @@ package com.cloud.vm;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering;
-import com.cloud.storage.Volume;
+import com.cloud.storage.volume.Volume;
 
 /**
  * DiskProfile describes a disk and what functionality is required from it.

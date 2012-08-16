@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.agent.api.to;
 
-import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
 
 public class TemplateTO {

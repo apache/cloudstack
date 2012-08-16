@@ -25,8 +25,8 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.pool.StoragePool;
+import com.cloud.storage.pool.StoragePoolStatus;
 import com.cloud.user.Account;
 
 @Implementation(description = "Deletes a storage pool.", responseObject = SuccessResponse.class)

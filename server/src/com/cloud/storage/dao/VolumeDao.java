@@ -19,8 +19,8 @@ package com.cloud.storage.dao;
 import java.util.List;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Volume;
+import com.cloud.storage.pool.Storage.ImageFormat;
+import com.cloud.storage.volume.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;

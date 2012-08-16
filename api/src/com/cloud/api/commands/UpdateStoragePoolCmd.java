@@ -27,7 +27,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.StoragePoolResponse;
-import com.cloud.storage.StoragePool;
+import com.cloud.storage.pool.StoragePool;
 import com.cloud.user.Account;
 
 @Implementation(description="Updates a storage pool.", responseObject=StoragePoolResponse.class, since="3.0.0")

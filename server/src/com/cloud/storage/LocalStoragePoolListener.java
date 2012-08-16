@@ -37,6 +37,8 @@ import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.pool.Storage;
+import com.cloud.storage.pool.StoragePoolManager;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
@@ -47,7 +49,7 @@ public class LocalStoragePoolListener implements Listener {
     @Inject StoragePoolDao _storagePoolDao;
     @Inject StoragePoolHostDao _storagePoolHostDao;
     @Inject CapacityDao _capacityDao;
-    @Inject StorageManager _storageMgr;
+    @Inject StoragePoolManager _storageMgr;
 
     @Override
     public int getTimeout() {

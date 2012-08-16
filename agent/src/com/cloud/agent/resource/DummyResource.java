@@ -40,8 +40,8 @@ import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.resource.ServerResource;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.pool.Storage;
+import com.cloud.storage.pool.Storage.StoragePoolType;
 
 @Local(value = { ServerResource.class })
 public class DummyResource implements ServerResource {

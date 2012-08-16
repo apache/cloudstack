@@ -28,7 +28,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
-import com.cloud.storage.Volume;
+import com.cloud.storage.volume.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 import com.cloud.uservm.UserVm;

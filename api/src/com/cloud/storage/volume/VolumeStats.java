@@ -14,15 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage;
+package com.cloud.storage.volume;
 
-public interface StorageStats {
+public interface VolumeStats {
     /**
-     * @return bytes used by the storage server already.
+     * @return bytes used by the volume
      */
-    public long getByteUsed();
-    /**
-     * @return bytes capacity of the storage server 
-     */
-    public long getCapacityBytes();
+    public long getBytesUsed();
 }

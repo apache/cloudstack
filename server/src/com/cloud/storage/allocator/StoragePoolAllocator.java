@@ -22,7 +22,7 @@ import java.util.Set;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
-import com.cloud.storage.StoragePool;
+import com.cloud.storage.pool.StoragePool;
 import com.cloud.utils.component.Adapter;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;

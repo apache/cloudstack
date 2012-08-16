@@ -27,8 +27,8 @@ import org.apache.log4j.Logger;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
+import com.cloud.storage.pool.StoragePool;
+import com.cloud.storage.pool.StoragePoolManager;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
@@ -40,7 +40,7 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
     
     StoragePoolAllocator _firstFitStoragePoolAllocator;
     StoragePoolAllocator _localStoragePoolAllocator;
-    StorageManager _storageMgr;
+    StoragePoolManager _storageMgr;
     ConfigurationDao _configDao;
     boolean _storagePoolCleanupEnabled;
     
@@ -92,9 +92,9 @@ public class GarbageCollectingStoragePoolAllocator extends AbstractStoragePoolAl
         _localStoragePoolAllocator = ComponentLocator.inject(LocalStoragePoolAllocator.class);
         _localStoragePoolAllocator.configure("GCLocalStoragePoolAllocator", params);
         
-        _storageMgr = locator.getManager(StorageManager.class);
+        _storageMgr = locator.getManager(StoragePoolManager.class);
         if (_storageMgr == null) {
-        	throw new ConfigurationException("Unable to get " + StorageManager.class.getName());
+        	throw new ConfigurationException("Unable to get " + StoragePoolManager.class.getName());
         }
         
         _configDao = locator.getDao(ConfigurationDao.class);

@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
-import com.cloud.storage.Storage;
+import com.cloud.storage.pool.Storage;
 
 /**
  * VirtualDisk describes the disks that are plugged into

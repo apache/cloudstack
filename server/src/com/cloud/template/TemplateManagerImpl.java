@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -58,6 +59,7 @@ import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.api.commands.UpdateIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.UpdateTemplatePermissionsCmd;
+import com.cloud.api.commands.UploadVolumeCmd;
 import com.cloud.async.AsyncJobManager;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.configuration.Config;
@@ -67,6 +69,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
@@ -82,17 +85,12 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Upload;
 import com.cloud.storage.Upload.Type;
@@ -117,9 +115,17 @@ import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.storage.pool.Storage;
+import com.cloud.storage.pool.StoragePool;
+import com.cloud.storage.pool.StoragePoolManager;
+import com.cloud.storage.pool.StoragePoolStatus;
+import com.cloud.storage.pool.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.TemplateType;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.upload.UploadMonitor;
+import com.cloud.storage.volume.Volume;
+import com.cloud.storage.volume.Volume.Event;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -131,6 +137,7 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.EnumUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.Adapters;
 import com.cloud.utils.component.ComponentLocator;
@@ -144,6 +151,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -187,7 +195,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Inject DomainDao _domainDao;
     @Inject UploadDao _uploadDao;
     long _routerTemplateId = -1;
-    @Inject StorageManager _storageMgr;
+    @Inject StoragePoolManager _storageMgr;
     @Inject AsyncJobManager _asyncMgr;
     @Inject UserVmManager _vmMgr;
     @Inject UsageEventDao _usageEventDao;
@@ -1446,4 +1454,24 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         return true;
     }
     
+    /*
+     * Upload the volume to secondary storage.
+     * 
+     */
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_UPLOAD, eventDescription = "uploading volume", async = true)
+    public VolumeVO uploadVolume(UploadVolumeCmd cmd) throws ResourceAllocationException{
+    	Account caller = UserContext.current().getCaller();
+        long ownerId = cmd.getEntityOwnerId();
+        Long zoneId = cmd.getZoneId();
+        String volumeName = cmd.getVolumeName();
+        String url = cmd.getUrl();
+        String format = cmd.getFormat();
+        
+        _storageMgr.validateVolume(caller, ownerId, zoneId, volumeName, url, format);
+    	VolumeVO volume = _storageMgr.persistVolume(caller, ownerId, zoneId, volumeName, url, cmd.getFormat());
+    	_downloadMonitor.downloadVolumeToStorage(volume, zoneId, url, cmd.getChecksum(), ImageFormat.valueOf(format.toUpperCase()));
+		return volume;    	
+    }
 }

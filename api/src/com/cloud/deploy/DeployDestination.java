@@ -22,8 +22,8 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.host.Host;
 import com.cloud.org.Cluster;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.Volume;
+import com.cloud.storage.pool.StoragePool;
+import com.cloud.storage.volume.Volume;
 import com.cloud.utils.NumbersUtil;
 
 public class DeployDestination {

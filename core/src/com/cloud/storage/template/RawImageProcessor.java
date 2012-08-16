@@ -26,7 +26,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.ImageFormat;
 import com.cloud.storage.template.Processor.FormatInfo;
 
 @Local(value=Processor.class)

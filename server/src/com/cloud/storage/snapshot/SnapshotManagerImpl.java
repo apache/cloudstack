@@ -72,19 +72,11 @@ import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ResourceTag.TaggedResourceType;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.Status;
-import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
@@ -93,8 +85,15 @@ import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.pool.Storage;
+import com.cloud.storage.pool.StoragePool;
+import com.cloud.storage.pool.StoragePoolManager;
+import com.cloud.storage.pool.Storage.StoragePoolType;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
+import com.cloud.storage.snapshot.Snapshot.Status;
+import com.cloud.storage.snapshot.Snapshot.Type;
 import com.cloud.storage.swift.SwiftManager;
+import com.cloud.storage.volume.Volume;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
@@ -159,7 +158,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     @Inject
     protected DomainDao _domainDao;
     @Inject
-    protected StorageManager _storageMgr;
+    protected StoragePoolManager _storageMgr;
     @Inject
     protected AgentManager _agentMgr;
     @Inject

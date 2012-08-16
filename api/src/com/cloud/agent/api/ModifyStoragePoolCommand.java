@@ -20,7 +20,7 @@ import java.io.File;
 import java.util.UUID;
 
 import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.storage.StoragePool;
+import com.cloud.storage.pool.StoragePool;
 
 public class ModifyStoragePoolCommand extends Command {
 	

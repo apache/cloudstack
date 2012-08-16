@@ -28,9 +28,9 @@ import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
 import com.cloud.host.Status;
-import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.pool.StoragePoolStatus;
+import com.cloud.storage.pool.Storage.StoragePoolType;
 import com.cloud.storage.StoragePoolDetailVO;
-import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.utils.component.ComponentLocator;
 import com.cloud.utils.db.DB;

@@ -21,7 +21,7 @@ import java.util.List;
 import org.libvirt.StoragePool;
 
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk.PhysicalDiskFormat;
-import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.pool.Storage.StoragePoolType;
 
 public class LibvirtStoragePool implements KVMStoragePool {
     protected String uuid;

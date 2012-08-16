@@ -48,11 +48,11 @@ import com.cloud.async.executor.ExtractJobResultObject;
 import com.cloud.event.EventVO;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.HostVO;
-import com.cloud.storage.Storage;
 import com.cloud.storage.Upload.Status;
 import com.cloud.storage.Upload.Type;
 import com.cloud.storage.UploadVO;
 import com.cloud.storage.dao.UploadDao;
+import com.cloud.storage.pool.Storage;
 import com.cloud.storage.upload.UploadState.UploadEvent;
 import com.cloud.utils.exception.CloudRuntimeException;
 

@@ -18,7 +18,7 @@ package com.cloud.agent.api;
 
 import java.util.Map;
 
-import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.pool.Storage.StoragePoolType;
 
 public class StoragePoolInfo {
 	String uuid;

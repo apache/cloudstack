@@ -19,7 +19,7 @@ package com.cloud.hypervisor.kvm.storage;
 import java.util.List;
 
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk.PhysicalDiskFormat;
-import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.pool.Storage.StoragePoolType;
 
 public interface KVMStoragePool {
     public KVMPhysicalDisk createPhysicalDisk(String name,

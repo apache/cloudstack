@@ -21,7 +21,7 @@ import java.util.List;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
-import com.cloud.storage.Snapshot;
+import com.cloud.storage.snapshot.Snapshot;
 import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 

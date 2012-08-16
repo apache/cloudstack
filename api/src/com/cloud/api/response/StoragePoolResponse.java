@@ -21,7 +21,7 @@ import java.util.Date;
 import com.cloud.api.ApiConstants;
 import com.cloud.utils.IdentityProxy;
 import com.cloud.serializer.Param;
-import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.pool.StoragePoolStatus;
 import com.google.gson.annotations.SerializedName;
 
 public class StoragePoolResponse extends BaseResponse {

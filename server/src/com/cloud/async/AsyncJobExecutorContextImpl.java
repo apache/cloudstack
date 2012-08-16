@@ -27,8 +27,8 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.server.ManagementServer;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.pool.StoragePoolManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
@@ -48,7 +48,7 @@ public class AsyncJobExecutorContextImpl implements AsyncJobExecutorContext {
 	private UserVmManager _vmMgr;
     private SnapshotManager _snapMgr;
 	private AccountManager _accountMgr;
-	private StorageManager _storageMgr;
+	private StoragePoolManager _storageMgr;
     private EventDao _eventDao;
     private UserVmDao _vmDao;
     private AccountDao _accountDao;
@@ -82,7 +82,7 @@ public class AsyncJobExecutorContextImpl implements AsyncJobExecutorContext {
 	}
 	
 	@Override
-	public StorageManager getStorageMgr() {
+	public StoragePoolManager getStorageMgr() {
 		return _storageMgr;
 	}
 	
@@ -179,9 +179,9 @@ public class AsyncJobExecutorContextImpl implements AsyncJobExecutorContext {
             throw new ConfigurationException("unable to get " + AccountManager.class.getName());
         }
         
-        _storageMgr = locator.getManager(StorageManager.class);
+        _storageMgr = locator.getManager(StoragePoolManager.class);
         if (_storageMgr == null) {
-        	throw new ConfigurationException("unable to get " + StorageManager.class.getName());
+        	throw new ConfigurationException("unable to get " + StoragePoolManager.class.getName());
         }
         
         _eventDao = locator.getDao(EventDao.class);

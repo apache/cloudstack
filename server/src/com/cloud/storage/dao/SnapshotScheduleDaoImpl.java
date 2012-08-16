@@ -21,8 +21,8 @@ import java.util.List;
 
 import javax.ejb.Local;
 
-import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotScheduleVO;
+import com.cloud.storage.snapshot.Snapshot;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;

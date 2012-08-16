@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.exception;
 
-import com.cloud.storage.StoragePool;
+import com.cloud.storage.pool.StoragePool;
 import com.cloud.utils.SerialVersionUID;
 
 /**

@@ -29,7 +29,7 @@ import com.cloud.agent.api.StartupSecondaryStorageCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
-import com.cloud.storage.Storage;
+import com.cloud.storage.pool.Storage;
 
 public class SecondaryStorageListener implements Listener {
     private final static Logger s_logger = Logger.getLogger(SecondaryStorageListener.class);

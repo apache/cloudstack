@@ -22,7 +22,7 @@ import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.ImageFormat;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.component.Manager;
 

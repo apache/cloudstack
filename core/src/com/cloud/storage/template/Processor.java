@@ -17,7 +17,7 @@
 package com.cloud.storage.template;
 
 import com.cloud.exception.InternalErrorException;
-import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.ImageFormat;
 import com.cloud.utils.component.Adapter;
 
 /**

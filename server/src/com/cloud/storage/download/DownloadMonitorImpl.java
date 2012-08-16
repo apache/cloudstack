@@ -64,16 +64,12 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceManager;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.SwiftVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.Volume.Event;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -85,10 +81,14 @@ import com.cloud.storage.dao.VMTemplateSwiftDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
+import com.cloud.storage.pool.StoragePoolManager;
+import com.cloud.storage.pool.Storage.ImageFormat;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.storage.template.TemplateConstants;
 import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.volume.Volume;
+import com.cloud.storage.volume.Volume.Event;
 import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.component.Inject;
@@ -134,7 +134,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     @Inject
     SecondaryStorageVmManager _ssvmMgr;
     @Inject
-    StorageManager _storageMgr ;
+    StoragePoolManager _storageMgr ;
     
     @Inject
     private final DataCenterDao _dcDao = null;

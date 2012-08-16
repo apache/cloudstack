@@ -54,7 +54,6 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
@@ -62,6 +61,7 @@ import com.cloud.storage.VMTemplateSwiftVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.pool.StoragePoolManager;
 import com.cloud.storage.swift.SwiftManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -101,7 +101,7 @@ public class CapacityManagerImpl implements CapacityManager, StateListener<State
     @Inject
     ResourceManager _resourceMgr;
     @Inject
-    StorageManager _storageMgr;
+    StoragePoolManager _storageMgr;
     @Inject
     SwiftManager _swiftMgr; 
     @Inject

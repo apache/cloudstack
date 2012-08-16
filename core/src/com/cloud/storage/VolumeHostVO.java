@@ -30,8 +30,9 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 //import com.cloud.storage.VMVolumeStorageResourceAssoc.Status;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.pool.Storage;
+import com.cloud.storage.pool.Storage.ImageFormat;
 import com.cloud.utils.db.GenericDaoBase;
 
 /**

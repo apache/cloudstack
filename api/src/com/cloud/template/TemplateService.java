@@ -28,9 +28,11 @@ import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
 import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
+import com.cloud.api.commands.UploadVolumeCmd;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.storage.volume.Volume;
 
 public interface TemplateService {
 
@@ -86,4 +88,7 @@ public interface TemplateService {
     List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd);
 
     boolean updateTemplateOrIsoPermissions(UpdateTemplateOrIsoPermissionsCmd cmd);
+
+	Volume uploadVolume(UploadVolumeCmd cmd)
+			throws ResourceAllocationException;
 }

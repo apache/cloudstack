@@ -117,19 +117,20 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.orchestra.StorageOrchestraEngine;
+import com.cloud.storage.pool.StoragePool;
+import com.cloud.storage.pool.StoragePoolManager;
+import com.cloud.storage.pool.Storage.ImageFormat;
+import com.cloud.storage.volume.Volume;
+import com.cloud.storage.volume.Volume.Type;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -166,7 +167,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     String _name;
     @Inject
-    protected StorageManager _storageMgr;
+    protected StoragePoolManager _storageMgr;
     @Inject
     protected NetworkManager _networkMgr;
     @Inject
@@ -236,6 +237,9 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Inject
     protected ResourceManager _resourceMgr;
+    
+    @Inject 
+    protected StorageOrchestraEngine _storageOrchestraEngine;
 
     Map<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>> _vmGurus = new HashMap<VirtualMachine.Type, VirtualMachineGuru<? extends VMInstanceVO>>();
     protected StateMachine2<State, VirtualMachine.Event, VirtualMachine> _stateMachine;
@@ -301,17 +305,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             s_logger.debug("Allocaing disks for " + vm);
         }
 
-        if (template.getFormat() == ImageFormat.ISO) {
-            _storageMgr.allocateRawVolume(Type.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), rootDiskOffering.second(), vm, owner);
-        } else if (template.getFormat() == ImageFormat.BAREMETAL) {
-            // Do nothing
-        } else {
-            _storageMgr.allocateTemplatedVolume(Type.ROOT, "ROOT-" + vm.getId(), rootDiskOffering.first(), template, vm, owner);
-        }
-
-        for (Pair<DiskOfferingVO, Long> offering : dataDiskOfferings) {
-            _storageMgr.allocateRawVolume(Type.DATADISK, "DATA-" + vm.getId(), offering.first(), offering.second(), vm, owner);
-        }
+        _storageOrchestraEngine.allocateVolume(vm.getId(), rootDiskOffering, dataDiskOfferings, template.getId(), Account owner);
+       
 
         txn.commit();
         if (s_logger.isDebugEnabled()) {

@@ -30,7 +30,7 @@ import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.StoragePoolResponse;
 import com.cloud.async.AsyncJob;
-import com.cloud.storage.StoragePool;
+import com.cloud.storage.pool.StoragePool;
 
 @Implementation(description="Lists storage pools.", responseObject=StoragePoolResponse.class)
 public class ListStoragePoolsCmd extends BaseListCmd {

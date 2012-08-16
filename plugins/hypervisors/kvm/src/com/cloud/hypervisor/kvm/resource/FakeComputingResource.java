@@ -94,10 +94,10 @@ import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.Volume;
+import com.cloud.storage.pool.Storage;
+import com.cloud.storage.pool.Storage.StoragePoolType;
 import com.cloud.storage.template.TemplateInfo;
+import com.cloud.storage.volume.Volume;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
@@ -553,7 +553,7 @@ public class FakeComputingResource extends ServerResourceBase implements
         try {
 
             VolumeTO vol = new VolumeTO(cmd.getVolumeId(), Volume.Type.ROOT,
-                    com.cloud.storage.Storage.StoragePoolType.LVM, cmd
+                    com.cloud.storage.pool.Storage.StoragePoolType.LVM, cmd
                             .getPool().getUuid(), "dummy", "/mountpoint",
                     "dummyPath", 1000L, null);
             return new CreateAnswer(cmd, vol);

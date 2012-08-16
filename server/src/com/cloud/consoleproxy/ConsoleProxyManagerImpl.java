@@ -105,8 +105,6 @@ import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.servlet.ConsoleProxyServlet;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
@@ -114,6 +112,8 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.StoragePoolDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
+import com.cloud.storage.pool.StoragePoolManager;
+import com.cloud.storage.pool.StoragePoolStatus;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
@@ -205,7 +205,7 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     @Inject
     private AgentManager _agentMgr;
     @Inject
-    private StorageManager _storageMgr;
+    private StoragePoolManager _storageMgr;
     @Inject
     NetworkManager _networkMgr;
     @Inject

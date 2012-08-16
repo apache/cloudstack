@@ -32,7 +32,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.storage.Volume;
+import com.cloud.storage.volume.Volume;
 import com.cloud.user.UserContext;
 
 @Implementation(description="Uploads a data disk.", responseObject=VolumeResponse.class)
@@ -109,7 +109,7 @@ public class UploadVolumeCmd extends BaseAsyncCmd {
 			ConcurrentOperationException, ResourceAllocationException,
 			NetworkRuleConflictException {
 
-	        Volume volume = _storageService.uploadVolume(this);
+	        Volume volume = _templateService.uploadVolume(this);
 	        if (volume != null){	            
 	            VolumeResponse response = _responseGenerator.createVolumeResponse(volume);
 	            response.setResponseName(getCommandName());              

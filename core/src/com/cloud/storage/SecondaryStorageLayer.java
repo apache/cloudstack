@@ -18,7 +18,7 @@ package com.cloud.storage;
 
 import java.net.URI;
 
-import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.ImageFormat;
 import com.cloud.utils.component.Adapter;
 
 public interface SecondaryStorageLayer extends Adapter {

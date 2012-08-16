@@ -32,7 +32,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.dc.DataCenter;
 import com.cloud.event.EventTypes;
 import com.cloud.storage.Upload;
-import com.cloud.storage.Volume;
+import com.cloud.storage.volume.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 

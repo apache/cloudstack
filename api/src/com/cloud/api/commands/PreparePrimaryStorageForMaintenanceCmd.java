@@ -30,7 +30,7 @@ import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.storage.StoragePool;
+import com.cloud.storage.pool.StoragePool;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
@@ -100,7 +100,7 @@ public class PreparePrimaryStorageForMaintenanceCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException{
-        StoragePool result = _storageService.preparePrimaryStorageForMaintenance(getId());
+        StoragePool result = _storageService.prepareStorageForMaintenance(getId());
         if (result != null){
             StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);
             response.setResponseName("storagepool");

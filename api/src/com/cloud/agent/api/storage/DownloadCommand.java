@@ -18,8 +18,8 @@ package com.cloud.agent.api.storage;
 
 import java.net.URI;
 
-import com.cloud.storage.Volume;
-import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.ImageFormat;
+import com.cloud.storage.volume.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 
 

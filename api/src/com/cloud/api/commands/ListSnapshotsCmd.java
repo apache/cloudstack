@@ -29,7 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.SnapshotResponse;
 import com.cloud.async.AsyncJob;
-import com.cloud.storage.Snapshot;
+import com.cloud.storage.snapshot.Snapshot;
 
 
 @Implementation(description="Lists all available snapshots for the account.", responseObject=SnapshotResponse.class)

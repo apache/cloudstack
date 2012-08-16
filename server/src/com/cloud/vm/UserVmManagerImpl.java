@@ -156,22 +156,12 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSVO;
-import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -184,7 +174,17 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
+import com.cloud.storage.pool.Storage;
+import com.cloud.storage.pool.StoragePool;
+import com.cloud.storage.pool.StoragePoolManager;
+import com.cloud.storage.pool.StoragePoolStatus;
+import com.cloud.storage.pool.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.StoragePoolType;
+import com.cloud.storage.pool.Storage.TemplateType;
+import com.cloud.storage.snapshot.Snapshot;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.storage.volume.Volume;
+import com.cloud.storage.volume.Volume.Type;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -271,7 +271,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Inject
     protected NetworkManager _networkMgr = null;
     @Inject
-    protected StorageManager _storageMgr = null;
+    protected StoragePoolManager _storageMgr = null;
     @Inject
     protected SnapshotManager _snapshotMgr = null;
     @Inject

@@ -24,7 +24,7 @@ import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.agent.api.storage.DownloadCommand.Proxy;
 import com.cloud.agent.api.storage.DownloadCommand.ResourceType;
 import com.cloud.storage.VMTemplateHostVO;
-import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.ImageFormat;
 import com.cloud.storage.resource.SecondaryStorageResource;
 import com.cloud.utils.component.Manager;
 

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.host.HostVO;
+import com.cloud.storage.pool.StoragePool;
 import com.cloud.utils.component.Manager;
 
 public interface OCFS2Manager extends Manager {

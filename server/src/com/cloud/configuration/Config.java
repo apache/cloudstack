@@ -28,8 +28,8 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.server.ManagementServer;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.allocator.StoragePoolAllocator;
+import com.cloud.storage.pool.StoragePoolManager;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
@@ -74,12 +74,12 @@ public enum Config {
 	StoragePoolMaxWaitSeconds("Storage", ManagementServer.class, Integer.class, "storage.pool.max.waitseconds", "3600", "Timeout (in seconds) to synchronize storage pool operations.", null),
 	StorageTemplateCleanupEnabled("Storage", ManagementServer.class, Boolean.class, "storage.template.cleanup.enabled", "true", "Enable/disable template cleanup activity, only take effect when overall storage cleanup is enabled", null),
 	PrimaryStorageDownloadWait("Storage", TemplateManager.class, Integer.class, "primary.storage.download.wait", "10800", "In second, timeout for download template to primary storage", null),
-	CreateVolumeFromSnapshotWait("Storage", StorageManager.class, Integer.class, "create.volume.from.snapshot.wait", "10800", "In second, timeout for creating volume from snapshot", null),
-	CopyVolumeWait("Storage", StorageManager.class, Integer.class, "copy.volume.wait", "10800", "In second, timeout for copy volume command", null),
+	CreateVolumeFromSnapshotWait("Storage", StoragePoolManager.class, Integer.class, "create.volume.from.snapshot.wait", "10800", "In second, timeout for creating volume from snapshot", null),
+	CopyVolumeWait("Storage", StoragePoolManager.class, Integer.class, "copy.volume.wait", "10800", "In second, timeout for copy volume command", null),
 	CreatePrivateTemplateFromVolumeWait("Storage", UserVmManager.class, Integer.class, "create.private.template.from.volume.wait", "10800", "In second, timeout for CreatePrivateTemplateFromVolumeCommand", null),
 	CreatePrivateTemplateFromSnapshotWait("Storage", UserVmManager.class, Integer.class, "create.private.template.from.snapshot.wait", "10800", "In second, timeout for CreatePrivateTemplateFromSnapshotCommand", null),
 	BackupSnapshotWait(
-            "Storage", StorageManager.class, Integer.class, "backup.snapshot.wait", "21600", "In second, timeout for BackupSnapshotCommand", null),
+            "Storage", StoragePoolManager.class, Integer.class, "backup.snapshot.wait", "21600", "In second, timeout for BackupSnapshotCommand", null),
 
 	// Network
 	NetworkLBHaproxyStatsVisbility("Network", ManagementServer.class, String.class, "network.loadbalancer.haproxy.stats.visibility", "global", "Load Balancer(haproxy) stats visibilty, the value can be one of the following six parameters : global,guest-network,link-local,disabled,all,default", null),
@@ -171,8 +171,8 @@ public enum Config {
     RouterExtraPublicNics("Advanced", NetworkManager.class, Integer.class, "router.extra.public.nics", "2", "specify extra public nics used for virtual router(up to 5)", "0-5"),
 	StartRetry("Advanced", AgentManager.class, Integer.class, "start.retry", "10", "Number of times to retry create and start commands", null),
 	StopRetryInterval("Advanced", HighAvailabilityManager.class, Integer.class, "stop.retry.interval", "600", "Time in seconds between retries to stop or destroy a vm" , null),
-	StorageCleanupInterval("Advanced", StorageManager.class, Integer.class, "storage.cleanup.interval", "86400", "The interval (in seconds) to wait before running the storage cleanup thread.", null),
-	StorageCleanupEnabled("Advanced", StorageManager.class, Boolean.class, "storage.cleanup.enabled", "true", "Enables/disables the storage cleanup thread.", null),
+	StorageCleanupInterval("Advanced", StoragePoolManager.class, Integer.class, "storage.cleanup.interval", "86400", "The interval (in seconds) to wait before running the storage cleanup thread.", null),
+	StorageCleanupEnabled("Advanced", StoragePoolManager.class, Boolean.class, "storage.cleanup.enabled", "true", "Enables/disables the storage cleanup thread.", null),
 	UpdateWait("Advanced", AgentManager.class, Integer.class, "update.wait", "600", "Time to wait (in seconds) before alerting on a updating agent", null),
 	Wait("Advanced", AgentManager.class, Integer.class, "wait", "1800", "Time in seconds to wait for control commands to return", null),
 	XapiWait("Advanced", AgentManager.class, Integer.class, "xapiwait", "600", "Time (in seconds) to wait for XAPI to return", null),
@@ -433,7 +433,7 @@ public enum Config {
             return "StorageAllocator";
         } else if (_componentClass == NetworkManager.class) {
             return "NetworkManager";
-        } else if (_componentClass == StorageManager.class) {
+        } else if (_componentClass == StoragePoolManager.class) {
             return "StorageManager";
         } else if (_componentClass == TemplateManager.class) {
             return "TemplateManager";

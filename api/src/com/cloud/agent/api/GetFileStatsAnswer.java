@@ -17,7 +17,7 @@
 package com.cloud.agent.api;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
-import com.cloud.storage.VolumeStats;
+import com.cloud.storage.volume.VolumeStats;
 
 @LogLevel(Log4jLevel.Trace)
 public class GetFileStatsAnswer extends Answer implements VolumeStats {

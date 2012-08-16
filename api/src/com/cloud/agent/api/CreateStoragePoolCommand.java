@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.agent.api;
 
-import com.cloud.storage.StoragePool;
+import com.cloud.storage.pool.StoragePool;
 
 public class CreateStoragePoolCommand extends ModifyStoragePoolCommand {
 

@@ -25,7 +25,6 @@ import com.cloud.api.commands.ListSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.storage.Snapshot;
 import com.cloud.user.Account;
 
 public interface SnapshotService {

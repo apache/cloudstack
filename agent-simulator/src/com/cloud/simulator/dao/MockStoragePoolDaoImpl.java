@@ -19,7 +19,7 @@ package com.cloud.simulator.dao;
 import javax.ejb.Local;
 
 import com.cloud.simulator.MockStoragePoolVO;
-import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.pool.Storage.StoragePoolType;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;

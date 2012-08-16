@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage;
+package com.cloud.storage.pool;
 
 import java.net.UnknownHostException;
 import java.util.List;
@@ -32,8 +32,9 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.storage.volume.Volume;
 
-public interface StorageService{
+public interface StoragePoolService {
     /**
      * Create StoragePool based on uri
      * 
@@ -45,34 +46,10 @@ public interface StorageService{
      * @throws IllegalArgumentException
      * @throws UnknownHostException
      * @throws ResourceUnavailableException
-     *             TODO
      */
     StoragePool createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, 
     UnknownHostException, ResourceUnavailableException;
-
-    /**
-     * Creates the database object for a volume based on the given criteria
-     * 
-     * @param cmd
-     *            the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot,
-     *            name)
-     * @return the volume object
-     * @throws PermissionDeniedException
-     */
-    Volume allocVolume(CreateVolumeCmd cmd) throws ResourceAllocationException;
-
-    /**
-     * Creates the volume based on the given criteria
-     * 
-     * @param cmd
-     *            the API command wrapping the criteria (account/domainId [admin only], zone, diskOffering, snapshot,
-     *            name)
-     * @return the volume object
-     */
-    Volume createVolume(CreateVolumeCmd cmd);
-
-    boolean deleteVolume(long volumeId) throws ConcurrentOperationException;
-
+    
     /**
      * Delete the storage pool
      * 
@@ -81,21 +58,19 @@ public interface StorageService{
      * @return success or failure
      */
     boolean deletePool(DeletePoolCmd cmd);
-
+    
     /**
-     * Enable maintenance for primary storage
+     * Enable maintenance for storage
      * 
      * @param cmd
      *            - the command specifying primaryStorageId
      * @return the primary storage pool
      * @throws ResourceUnavailableException
-     *             TODO
      * @throws InsufficientCapacityException
-     *             TODO
      */
-    public StoragePool preparePrimaryStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException, 
+    public StoragePool prepareStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException, 
     InsufficientCapacityException;
-
+    
     /**
      * Complete maintenance for primary storage
      * 
@@ -103,26 +78,14 @@ public interface StorageService{
      *            - the command specifying primaryStorageId
      * @return the primary storage pool
      * @throws ResourceUnavailableException
-     *             TODO
      */
-    public StoragePool cancelPrimaryStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) 
+    public StoragePool cancelStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) 
             throws ResourceUnavailableException;
 
+    
+    
+    //TODO: Need to move around for this following APIs
     public StoragePool updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException;
 
     public StoragePool getStoragePool(long id);
-
-    Volume migrateVolume(Long volumeId, Long storagePoolId) throws ConcurrentOperationException;
-
-    List<? extends Volume> searchForVolumes(ListVolumesCmd cmd);
-
-    /**
-     * Uploads the volume to secondary storage
-     * 
-     * @param UploadVolumeCmd cmd 
-     *            
-     * @return Volume object
-     */
-    Volume uploadVolume(UploadVolumeCmd cmd)	throws ResourceAllocationException;
-
 }

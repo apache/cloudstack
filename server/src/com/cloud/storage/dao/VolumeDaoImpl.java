@@ -29,11 +29,11 @@ import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.server.ResourceTag.TaggedResourceType;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Volume;
-import com.cloud.storage.Volume.Event;
-import com.cloud.storage.Volume.State;
-import com.cloud.storage.Volume.Type;
+import com.cloud.storage.pool.Storage.ImageFormat;
+import com.cloud.storage.volume.Volume;
+import com.cloud.storage.volume.Volume.Event;
+import com.cloud.storage.volume.Volume.State;
+import com.cloud.storage.volume.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.Pair;
@@ -332,8 +332,8 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
 	@Override
-	public boolean updateState(com.cloud.storage.Volume.State currentState,
-			Event event, com.cloud.storage.Volume.State nextState, Volume vo,
+	public boolean updateState(com.cloud.storage.volume.Volume.State currentState,
+			Event event, com.cloud.storage.volume.Volume.State nextState, Volume vo,
 			Object data) {
 		
 	        Long oldUpdated = vo.getUpdatedCount();

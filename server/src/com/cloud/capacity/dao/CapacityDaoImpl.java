@@ -30,9 +30,9 @@ import org.apache.log4j.Logger;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
-import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.dao.StoragePoolDaoImpl;
+import com.cloud.storage.pool.Storage;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentLocator;

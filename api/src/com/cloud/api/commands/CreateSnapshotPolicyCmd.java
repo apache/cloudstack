@@ -28,8 +28,8 @@ import com.cloud.api.response.SnapshotPolicyResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.projects.Project;
-import com.cloud.storage.Volume;
 import com.cloud.storage.snapshot.SnapshotPolicy;
+import com.cloud.storage.volume.Volume;
 import com.cloud.user.Account;
 
 @Implementation(description="Creates a snapshot policy for the account.", responseObject=SnapshotPolicyResponse.class)

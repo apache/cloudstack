@@ -34,9 +34,9 @@ import com.cloud.agent.api.storage.DownloadCommand;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.serializer.GsonHelper;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.pool.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;
 
 /**

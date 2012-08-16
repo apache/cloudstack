@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.agent.api.storage;
 
-import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.ImageFormat;
 
 public class AbstractUploadCommand  extends StorageCommand{
 

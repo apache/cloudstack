@@ -28,7 +28,7 @@ import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
-import com.cloud.storage.Snapshot;
+import com.cloud.storage.snapshot.Snapshot;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 

@@ -30,6 +30,7 @@ import javax.persistence.Table;
 
 import com.cloud.api.Identity;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.snapshot.Snapshot;
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.annotations.Expose;
 

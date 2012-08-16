@@ -26,7 +26,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.storage.Volume;
+import com.cloud.storage.volume.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 

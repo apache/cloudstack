@@ -29,7 +29,7 @@ import com.cloud.api.response.VolumeResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ResourceAllocationException;
-import com.cloud.storage.Volume;
+import com.cloud.storage.volume.Volume;
 import com.cloud.user.UserContext;
 
 @Implementation(responseObject=VolumeResponse.class, description="Creates a disk volume from a disk offering. This disk volume must still be attached to a virtual machine to make use of it.")

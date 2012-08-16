@@ -22,7 +22,7 @@ import java.util.Map;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
-import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.ImageFormat;
 import com.cloud.utils.IdentityProxy;
 import com.google.gson.annotations.SerializedName;
 

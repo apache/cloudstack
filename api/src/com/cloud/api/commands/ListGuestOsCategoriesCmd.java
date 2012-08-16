@@ -28,7 +28,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.response.GuestOSCategoryResponse;
 import com.cloud.api.response.ListResponse;
-import com.cloud.storage.GuestOsCategory;
+import com.cloud.storage.volume.GuestOsCategory;
 
 @Implementation(description="Lists all supported OS categories for this cloud.", responseObject=GuestOSCategoryResponse.class)
 public class ListGuestOsCategoriesCmd extends BaseListCmd {

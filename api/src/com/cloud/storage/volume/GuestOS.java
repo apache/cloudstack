@@ -14,18 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage;
+package com.cloud.storage.volume;
 
-import com.cloud.utils.component.Adapter;
+public interface GuestOS {
 
-/**
- * StorageGuru understands about how to implement different
- * types of storage pools.
- */
-public interface StorageGuru extends Adapter {
-    void createVolume();
+    long getId();
 
-    void prepareVolume();
+    String getName();
 
-    void destroyVolume();
+    String getDisplayName();
+
+    long getCategoryId();
 }

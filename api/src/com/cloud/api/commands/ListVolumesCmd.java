@@ -29,7 +29,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.response.ListResponse;
 import com.cloud.api.response.VolumeResponse;
 import com.cloud.async.AsyncJob;
-import com.cloud.storage.Volume;
+import com.cloud.storage.volume.Volume;
 
 
 @Implementation(description="Lists all volumes.", responseObject=VolumeResponse.class)

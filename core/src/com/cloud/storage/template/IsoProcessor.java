@@ -25,7 +25,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.storage.StorageLayer;
-import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.pool.Storage.ImageFormat;
 
 @Local(value=Processor.class)
 public class IsoProcessor implements Processor {

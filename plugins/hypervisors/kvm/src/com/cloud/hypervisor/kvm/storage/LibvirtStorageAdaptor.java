@@ -45,7 +45,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtStorageVolumeDef.volFormat;
 import com.cloud.hypervisor.kvm.resource.LibvirtStorageVolumeXMLParser;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk.PhysicalDiskFormat;
 import com.cloud.exception.InternalErrorException;
-import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.pool.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;

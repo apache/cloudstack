@@ -26,6 +26,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import com.cloud.api.Identity;
+import com.cloud.storage.volume.GuestOsCategory;
 
 @Entity
 @Table(name="guest_os_category")

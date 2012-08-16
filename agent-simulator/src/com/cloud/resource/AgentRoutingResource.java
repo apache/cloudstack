@@ -54,7 +54,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.simulator.MockVMVO;
-import com.cloud.storage.Storage.StorageResourceType;
+import com.cloud.storage.pool.Storage.StorageResourceType;
 import com.cloud.storage.template.TemplateInfo;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine.State;

@@ -20,8 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.cloud.host.Host;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.pool.Storage;
+import com.cloud.storage.pool.Storage.StoragePoolType;
 import com.cloud.storage.template.TemplateInfo;
 
 

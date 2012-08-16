@@ -20,8 +20,8 @@ import java.util.Date;
 
 import com.cloud.async.AsyncInstanceCreateStatus;
 import com.cloud.serializer.Param;
-import com.cloud.storage.Volume.Type;
 import com.cloud.storage.upload.UploadState;
+import com.cloud.storage.volume.Volume.Type;
 
 public class ExtractJobResultObject {
 	

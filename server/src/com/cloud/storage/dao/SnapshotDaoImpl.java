@@ -25,10 +25,10 @@ import javax.ejb.Local;
 import org.apache.log4j.Logger;
 
 import com.cloud.server.ResourceTag.TaggedResourceType;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Snapshot.Type;
+import com.cloud.storage.snapshot.Snapshot;
+import com.cloud.storage.snapshot.Snapshot.Type;
+import com.cloud.storage.volume.Volume;
 import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.tags.dao.ResourceTagsDaoImpl;
 import com.cloud.utils.component.ComponentLocator;

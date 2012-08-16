@@ -98,14 +98,14 @@ import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.auth.UserAuthenticator;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.pool.StoragePoolManager;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.storage.volume.Volume;
 import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account.State;
@@ -184,7 +184,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @Inject
     private UserVmManager _vmMgr;
     @Inject
-    private StorageManager _storageMgr;
+    private StoragePoolManager _storageMgr;
     @Inject
     private TemplateManager _tmpltMgr;
     @Inject

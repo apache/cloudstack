@@ -22,8 +22,8 @@ import com.cloud.event.dao.EventDao;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.server.ManagementServer;
-import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.pool.StoragePoolManager;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.AccountManager;
 import com.cloud.user.dao.AccountDao;
@@ -41,7 +41,7 @@ public interface AsyncJobExecutorContext extends Manager {
 	public UserVmManager getVmMgr();
 	public SnapshotManager getSnapshotMgr();
 	public AccountManager getAccountMgr();
-	public StorageManager getStorageMgr();
+	public StoragePoolManager getStorageMgr();
 	public EventDao getEventDao();
 	public UserVmDao getVmDao();
 	public AccountDao getAccountDao();

@@ -32,8 +32,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.projects.Project;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Volume;
+import com.cloud.storage.snapshot.Snapshot;
+import com.cloud.storage.volume.Volume;
 import com.cloud.user.Account;
 import com.cloud.user.UserContext;
 
