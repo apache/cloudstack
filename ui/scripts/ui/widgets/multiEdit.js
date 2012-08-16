@@ -801,7 +801,11 @@
                   );
 
             if (field.isDisabled) $input.hide();
-            if (field.defaultValue) $input.val(field.defaultValue);
+
+            if (field.defaultValue) {
+              $input.val(field.defaultValue);
+              $input.data('multi-default-value', field.defaultValue);
+            }
           });
         } else {
           var $input = $('<input>')
@@ -814,7 +818,10 @@
                 .appendTo($td);
 
           if (field.isDisabled) $input.hide();
-          if (field.defaultValue) $input.val(field.defaultValue);
+          if (field.defaultValue) {
+            $input.val(field.defaultValue);
+            $input.data('multi-default-value', field.defaultValue);
+          }
         }
       } else if (field.custom) {
         $('<div>').addClass('button add-vm custom-action')
@@ -907,7 +914,15 @@
         $dataBody.prepend($loading);
 
         // Clear out fields
-        $multi.find('input').val('');
+        $multi.find('input').each(function() {
+          var $input = $(this);
+
+          if ($input.data('multi-default-value')) {
+            $input.val($input.data('multi-default-value'));
+          } else {
+            $input.val('');
+          }
+        });
         $multi.find('tbody td').each(function() {
           var $item = $(this);
 
