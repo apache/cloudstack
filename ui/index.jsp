@@ -1791,6 +1791,7 @@ dictionary = {
 'label.max.volumes': '<fmt:message key="label.max.volumes"/>',
 'label.max.snapshots': '<fmt:message key="label.max.snapshots"/>',
 'label.max.templates': '<fmt:message key="label.max.templates"/>',
+'label.max.vpcs': '<fmt:message key="label.max.vpcs"/>',
 'label.remind.later': '<fmt:message key="label.remind.later"/>',
 'label.invited.accounts': '<fmt:message key="label.invited.accounts"/>',
 'label.add.accounts.to': '<fmt:message key="label.add.accounts.to"/>',
