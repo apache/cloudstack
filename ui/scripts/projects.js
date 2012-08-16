@@ -107,7 +107,11 @@
                     6: {
                       id: 'network',
                       label: 'label.max.networks'
-                    }
+                    },
+                    7: {
+                      id: 'vpc',
+                      label: 'label.max.vpcs'
+                    }                    
                   };
 
                   return {
