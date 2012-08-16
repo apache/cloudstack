@@ -898,6 +898,7 @@
           $.each(reorder, function(actionName, action) {
             var fnLabel = {
               moveTop: _l('label.move.to.top'),
+              moveBottom: _l('label.move.to.bottom'),
               moveUp: _l('label.move.up.row'),
               moveDown: _l('label.move.down.row'),
               moveDrag: _l('label.drag.new.position')
