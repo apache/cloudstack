@@ -1662,11 +1662,11 @@
                     ipaddress: { label: 'IP' }
                   },
                   {
-                    id: { label: 'label.id' },
-                    networkname: { label: 'label.network.name' },
-                    networkid: { label: 'label.network.id' },
+                    id: { label: 'label.id' },    
                     associatednetworkid: { label: 'label.associated.network.id' },
+										networkname: { label: 'Associated Network' },
                     state: { label: 'label.state' },
+										networkid: { label: 'label.network.id' },
                     issourcenat: { label: 'label.source.nat', converter: cloudStack.converters.toBooleanText },
                     isstaticnat: { label: 'label.static.nat', converter: cloudStack.converters.toBooleanText },
                     issystem: { label: 'label.is.system', converter: cloudStack.converters.toBooleanText }, //(basic zone only)
@@ -1701,13 +1701,13 @@
                         args.context.vpc ?
                           args.context.vpc[0].network : args.context.networks,
                         function(network) {
-                          return network.id = ipObj.networkid;
+                          return network.id = ipObj.associatednetworkid;
                         })[0];
 
                       args.response.success({
                         actionFilter: actionFilters.ipAddress,
                         data: $.extend(ipObj, {
-                          networkname: network.name
+                          networkname: network ? network.name : ''
                         })
                       });
                     },
@@ -3731,7 +3731,10 @@
                        }
                       }
                     );
-                  }
+                  }, 
+                    error: function(data) {
+                      args.response.error(parseXMLHttpResponse(data));
+                   }
                 });
               },
 
@@ -4059,8 +4062,8 @@
                     select: function(args) {
                       var items = [];
                       items.push({id: '', description: ''});
-                      items.push({id: 'modp1024', description: 'modp1024'});
-                      items.push({id: 'modp1536', description: 'modp1536'});										 
+                      items.push({id: 'modp1024', description: 'Group 2(modp1024)'});
+                      items.push({id: 'modp1536', description: 'Group 5(modp1536)'});										 
                       args.response.success({data: items});
                     }
                   },																
@@ -4091,8 +4094,8 @@
                     select: function(args) {
                       var items = [];
                       items.push({id: '', description: ''});
-                      items.push({id: 'modp1024', description: 'modp1024'});
-                      items.push({id: 'modp1536', description: 'modp1536'});										 
+                      items.push({id: 'modp1024', description: 'Group 2(modp1024)'});
+                      items.push({id: 'modp1536', description: 'Group 5(modp1536)'});										 
                       args.response.success({data: items});
                     }
                   },																	
@@ -4241,7 +4244,7 @@
                       id: args.context.vpnCustomerGateway[0].id
                     },
                     success: function(json) {
-                      var jid = json.deletecustomergatewayresponse.jobid;
+                      var jid = json.deletevpncustomergatewayresponse.jobid;
                       args.response.success(
                         {_custom:
                          {
@@ -4315,8 +4318,8 @@
 											select: function(args) {
 												var items = [];
 												items.push({id: '', description: ''});
-												items.push({id: 'modp1024', description: 'modp1024'});
-												items.push({id: 'modp1536', description: 'modp1536'});										 
+												items.push({id: 'modp1024', description: 'Group 2(modp1024)'});
+                        items.push({id: 'modp1536', description: 'Group 5(modp1536)'});												 
 												args.response.success({data: items});
 											}
 										},						
@@ -4350,8 +4353,8 @@
 											select: function(args) {
 												var items = [];
 												items.push({id: '', description: ''});
-												items.push({id: 'modp1024', description: 'modp1024'});
-												items.push({id: 'modp1536', description: 'modp1536'});										 
+												items.push({id: 'modp1024', description: 'Group 2(modp1024)'});
+                        items.push({id: 'modp1536', description: 'Group 5(modp1536)'});												 
 												args.response.success({data: items});
 											}
 										},	           

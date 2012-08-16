@@ -41,6 +41,7 @@ import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcOffering;
 import com.cloud.network.vpc.VpcService;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.component.ComponentLocator;
@@ -440,6 +441,15 @@ public class MockVpcManagerImpl implements VpcManager, Manager{
     public String getName() {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.vpc.VpcManager#validateNtwkOffForVpc(com.cloud.offering.NetworkOffering, java.util.List)
+     */
+    @Override
+    public void validateNtwkOffForVpc(NetworkOffering guestNtwkOff, List<Service> supportedSvcs) {
+        // TODO Auto-generated method stub
+        
     }
 
 }

@@ -11,6 +11,16 @@
 (function($, cloudStack) {
   var aclMultiEdit = {
     noSelect: true,
+    fieldPreFilter: function(args) {
+      var context = args.context;
+      var hiddenFields = [];
+
+      if (context.networks) { // from tier detail view
+        hiddenFields.push('networkid');
+      }
+
+      return hiddenFields; // Returns fields to be hidden
+    },
     fields: {
       'cidrlist': { edit: true, label: 'label.cidr' },
       'protocol': {
@@ -124,7 +134,8 @@
         $.ajax({
           url: createURL('createNetworkACL'),
           data: $.extend(args.data, {
-            networkid: args.data.networkid
+            networkid: args.context.networks ?
+              args.context.networks[0].id : args.data.networkid
           }),
           dataType: 'json',
           success: function(data) {
