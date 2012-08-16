@@ -99,7 +99,7 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
 		ConsoleProxyClient viewer = ConsoleProxy.getVncViewer(param);
 		AjaxFIFOImageCache imageCache =viewer.getAjaxImageCache();
 		
-		byte[] img = imageCache.getImage(imageCache.getKey() - 1);
+		byte[] img = imageCache.getImage(0);
 
 		if(img != null) {
 			Headers hds = t.getResponseHeaders();
