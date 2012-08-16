@@ -18,10 +18,13 @@
 # under the License.
 
 
-# the following two variables are used by the target "waf dist"
-# if you change 'em here, you need to change it also in cloud.spec, add a %changelog entry there, and add an entry in debian/changelog
-VERSION = '3.0.3.2012-05-15T19:32:03Z'
-
+# the following variables are used by the target "waf dist"
+# if you change APPNAME here, you need to change 'Name' also 
+# in cloud.spec, add a %changelog entry there, and add an 
+# entry in debian/changelog. SHORTVERSION is used in package
+# naming for deb/rpm, VERSION is used for tarball and bin 
+VERSION = '4.0.0.2012-08-15T18:03:12Z'
+SHORTVERSION = '4.0'
 APPNAME = 'cloud'
 
 import shutil,os
@@ -616,7 +619,7 @@ def rpm(context):
 
 	if Options.options.VERNUM:
 		ver = Options.options.VERNUM
-	else: ver = "2.2"
+	else: ver = SHORTVERSION
 
 	packagever = ["--define", "_ver %s" % ver]
 	
@@ -650,7 +653,7 @@ def deb(context):
 	if Options.options.VERNUM:
 		VERSION = Options.options.VERNUM
 	else:
-		VERSION = "2.2"
+		VERSION = SHORTVERSION
 
 	version = ["--set-envvar=PACKAGEVERSION=%s"%VERSION]
 

@@ -34,12 +34,19 @@ LOCKFILE=@LOCKDIR@/"$SHORTNAME"
 LOGFILE=@AGENTLOG@
 PROGNAME="Cloud Agent"
 CLASS="com.cloud.agent.AgentShell"
+JSVC=`which jsvc 2>/dev/null`;
+
+# exit if we don't find jsvc
+if [ -z "$JSVC" ]; then
+    echo no jsvc found in path;
+    exit 1;
+fi
 
 unset OPTIONS
 [ -r @SYSCONFDIR@/sysconfig/"$SHORTNAME" ] && source @SYSCONFDIR@/sysconfig/"$SHORTNAME"
 
 # The first existing directory is used for JAVA_HOME (if JAVA_HOME is not defined in $DEFAULT)
-JDK_DIRS="/usr/lib/jvm/java-6-openjdk /usr/lib/jvm/java-6-openjdk-i386 /usr/lib/jvm/java-6-openjdk-amd64 /usr/lib/jvm/java-6-sun /usr/lib/jvm/java-1.5.0-sun /usr/lib/j2sdk1.5-sun /usr/lib/j2sdk1.5-ibm"
+JDK_DIRS="/usr/lib/jvm/jre /usr/lib/jvm/java-6-openjdk /usr/lib/jvm/java-6-openjdk-i386 /usr/lib/jvm/java-6-openjdk-amd64 /usr/lib/jvm/java-6-sun /usr/lib/jvm/java-1.5.0-sun /usr/lib/j2sdk1.5-sun /usr/lib/j2sdk1.5-ibm"
 
 for jdir in $JDK_DIRS; do
     if [ -r "$jdir/bin/java" -a -z "${JAVA_HOME}" ]; then
@@ -55,12 +62,12 @@ JCP="/usr/share/java/commons-daemon.jar"
 
 # We need to append the JSVC daemon JAR to the classpath
 # AgentShell implements the JSVC daemon methods
-export CLASSPATH="$SCP:$DCP:$ACP:$JCP:@AGENTSYSCONFDIR@"
+export CLASSPATH="$SCP:$DCP:$ACP:$JCP:@AGENTSYSCONFDIR@:@AGENTLIBDIR@"
 
 start() {
         echo -n $"Starting $PROGNAME: "
 	if hostname --fqdn >/dev/null 2>&1 ; then
-		jsvc -cp "$CLASSPATH" -pidfile "$PIDFILE" $CLASS
+		$JSVC -cp "$CLASSPATH" -pidfile "$PIDFILE" $CLASS
 		RETVAL=$?
 		echo
 	else
@@ -75,7 +82,7 @@ start() {
 
 stop() {
 	echo -n $"Stopping $PROGNAME: "
-	jsvc -pidfile "$PIDFILE" -stop $CLASS
+	$JSVC -pidfile "$PIDFILE" -stop $CLASS
 	RETVAL=$?
 	echo
 	[ $RETVAL = 0 ] && rm -f ${LOCKFILE} ${PIDFILE}
@@ -112,4 +119,3 @@ case "$1" in
 esac
 
 exit $RETVAL
-

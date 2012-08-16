@@ -418,9 +418,7 @@ fi
 %{_javadir}/%{name}-api.jar
 %attr(0755,root,root) %{_bindir}/cloud-sccs
 %attr(0755,root,root) %{_bindir}/cloud-gitrevs
-%doc %{_docdir}/%{name}-%{version}/sccs-info
 %doc %{_docdir}/%{name}-%{version}/version-info
-%doc %{_docdir}/%{name}-%{version}/configure-info
 %doc README.html
 %doc debian/copyright
 
@@ -449,9 +447,6 @@ fi
 %{_javadir}/%{name}-plugin-nicira-nvp.jar
 %{_javadir}/%{name}-plugin-elb.jar
 %{_javadir}/%{name}-plugin-netapp.jar
-%{_javadir}/%{name}-plugin-hypervisor-kvm.jar
-   /usr/share/java/libvirt-0.4.8.jar
-
 %config(noreplace) %{_sysconfdir}/%{name}/server/*
 
 %files agent-scripts
@@ -473,9 +468,11 @@ fi
 %{_javadir}/%{name}-netscaler-sdx.jar
 %{_javadir}/%{name}-log4j-extras.jar
 %{_javadir}/%{name}-backport-util-concurrent-3.0.jar
+%{_javadir}/%{name}-plugin-hypervisor-kvm.jar
 %{_javadir}/%{name}-ehcache.jar
 %{_javadir}/%{name}-email.jar
 %{_javadir}/%{name}-httpcore-4.0.jar
+%{_javadir}/libvirt-0.4.8.jar
 %{_javadir}/%{name}-log4j.jar
 %{_javadir}/%{name}-trilead-ssh2-build213.jar
 %{_javadir}/%{name}-cglib.jar
@@ -499,7 +496,8 @@ fi
 %{_javadir}/%{name}-jasypt-1.8.jar
 %{_javadir}/%{name}-commons-configuration-1.8.jar
 %{_javadir}/%{name}-commons-lang-2.6.jar
-%{_javadir}/libvirt-0.4.8.jar
+%{_javadir}/%{name}-ejb-api-3.0.jar
+%{_javadir}/%{name}-javax.persistence-2.0.0.jar
 
 
 %files core
@@ -529,12 +527,6 @@ fi
 %files client
 %defattr(0644,root,root,0775)
 %config(noreplace) %{_sysconfdir}/%{name}/management/*
-%config(noreplace) %attr(0640,root,%{name}) %{_sysconfdir}/%{name}/management/db.properties
-%config(noreplace) %{_sysconfdir}/%{name}/management/log4j-%{name}.xml
-%config(noreplace) %{_sysconfdir}/%{name}/management/tomcat6.conf
-%dir %attr(0770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina
-%dir %attr(0770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina/localhost
-%dir %attr(0770,root,%{name}) %{_sysconfdir}/%{name}/management/Catalina/localhost/client
 %config(noreplace) %{_sysconfdir}/sysconfig/%{name}-management
 %attr(0755,root,root) %{_initrddir}/%{name}-management
 %dir %{_datadir}/%{name}/management
@@ -595,20 +587,22 @@ fi
 %attr(0755,root,root) %{_bindir}/cloud-setup-bridge
 
 %changelog
+* Thu Aug 16 2012 Marcus Sorense  <shadowsor@gmail.com> 4.0
+- rearranged files sections to match currently built files
+
 * Mon May 3 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.12
 - Bump version for RC4 release
 
-%changelog
 * Fri Apr 30 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.11
 - Rename to CloudStack everywhere
 
 * Wed Apr 28 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.10
 - FOSS release
 
-%changelog
 * Mon Apr 05 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.8
 - RC3 branched
 
 * Wed Feb 17 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.7
 - First initial broken-up release
+
 
