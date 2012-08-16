@@ -1639,7 +1639,16 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 if (cmds != null) {
                     resource.disconnected();
                 }
-
+                if(host == null){
+                    if (cmds != null) {
+                        StartupCommand firstCmd = cmds[0];
+                        host = findHostByGuid(firstCmd.getGuid());
+                        if (host == null) {
+                            host = findHostByGuid(firstCmd.getGuidWithoutResource());
+                        }
+                    }
+                }
+                
                 if (host != null) {
                     /* Change agent status to Alert */
                     _agentMgr.agentStatusTransitTo(host, Status.Event.AgentDisconnected, _nodeId);
