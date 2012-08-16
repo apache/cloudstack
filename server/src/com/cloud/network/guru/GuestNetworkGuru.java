@@ -373,11 +373,11 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                 boolean isGateway = false;
                 if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter) {
                     if (network.getVpcId() != null) {
-                        if (_networkMgr.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.SourceNat, Provider.VPCVirtualRouter)) {
+                        if (_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.VPCVirtualRouter)) {
                             isGateway = true;
                         }
                     } else {
-                        if (_networkMgr.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.SourceNat, Provider.VirtualRouter)) {
+                        if (_networkMgr.isProviderSupportServiceInNetwork(network.getId(), Service.SourceNat, Provider.VirtualRouter)) {
                             isGateway = true;
                         }
                     }
