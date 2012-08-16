@@ -353,3 +353,13 @@ UPDATE `cloud`.`configuration` SET description='In second, timeout for creating 
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.vpcs', '20', 'The default maximum number of vpcs that can be created for an account');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.vpcs', '20', 'The default maximum number of vpcs that can be created for a project');
+
+UPDATE `cloud`.`configuration` SET category='Network' WHERE name='guest.domain.suffix';
+UPDATE `cloud`.`configuration` SET component='management-server' WHERE name='agent.lb.enabled';
+UPDATE `cloud`.`configuration` SET component='StorageManager' WHERE name='backup.snapshot.wait';
+UPDATE `cloud`.`configuration` SET component='StorageManager' WHERE name='copy.volume.wait';
+UPDATE `cloud`.`configuration` SET component='StorageManager' WHERE name='create.volume.from.snapshot.wait';
+UPDATE `cloud`.`configuration` SET component='TemplateManager' WHERE name='primary.storage.download.wait';
+UPDATE `cloud`.`configuration` SET component='StorageManager' WHERE name='storage.cleanup.enabled';
+UPDATE `cloud`.`configuration` SET component='StorageManager' WHERE name='storage.cleanup.interval';
+UPDATE `cloud`.`configuration` SET description='Comma separated list of cidrs internal to the datacenter that can host template download servers, please note 0.0.0.0 is not a valid site ' WHERE name='secstorage.allowed.internal.sites';
