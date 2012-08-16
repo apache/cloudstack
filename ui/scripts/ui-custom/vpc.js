@@ -297,7 +297,9 @@
 
       return $config;
     },
-    router: function() {
+    router: function(args) {
+      var $browser = args.$browser;
+      var detailView = args.detailView;
       var $router = $('<li>').addClass('tier virtual-router');
       var $title = $('<span>').addClass('title').html('Virtual Router');
 
@@ -305,6 +307,17 @@
 
       // Append horizontal chart line
       $router.append($('<div>').addClass('connect-line'));
+
+      $router.click(function() {
+        if ($router.hasClass('disabled')) return false;
+
+        $browser.cloudBrowser('addPanel', {
+          title: 'VPC router details',
+          complete: function($panel) {
+            $panel.detailView(detailView);
+          }
+        });
+      });
 
       return $router;
     },
@@ -468,60 +481,70 @@
       var context = args.context;
       var tierDetailView = args.tierDetailView;
       var $tiers = $('<ul>').addClass('tiers');
-      var $router = elems.router();
+      var $router;
+
+      $router = elems.router({
+        $browser:$browser,
+        detailView:$.extend(true, {}, args.routerDetailView(), {
+          context:context
+        })
+      });
+
+      if (!isAdmin() && !isDomainAdmin()) $router.addClass('disabled');
+
       var $chart = $('<div>').addClass('vpc-chart');
       var $title = $('<div>').addClass('vpc-title')
-            .append(
-              $('<span>').html(vpcName)
-            )
-            .append(
-              elems.vpcConfigureArea({
-                context: context,
-                $browser: $browser,
-                $chart: $chart,
-                ipAddresses: $.extend(ipAddresses, {context: context}),
-                gateways: $.extend(gateways, {context: context}),
-                siteToSiteVPN: $.extend(siteToSiteVPN, {context: context}),
-                acl: $.extend(acl, {context: context}),
-                tierDetailView: tierDetailView
-              })
-            );
+        .append(
+        $('<span>').html(vpcName)
+      )
+        .append(
+        elems.vpcConfigureArea({
+          context:context,
+          $browser:$browser,
+          $chart:$chart,
+          ipAddresses:$.extend(ipAddresses, {context:context}),
+          gateways:$.extend(gateways, {context:context}),
+          siteToSiteVPN:$.extend(siteToSiteVPN, {context:context}),
+          acl:$.extend(acl, {context:context}),
+          tierDetailView:tierDetailView
+        })
+      );
 
-      var showAddTierDialog = function() {
+      var showAddTierDialog = function () {
         if ($(this).find('.loading-overlay').size()) {
           return false;
         }
 
         addTierDialog({
-          ipAddresses: ipAddresses,
-          $browser: $browser,
-          tierDetailView: tierDetailView,
-          $tiers: $tiers,
-          acl: acl,
-          context: context,
-          actions: actions,
-          vmListView: vmListView,
-          actionPreFilter: actionPreFilter
+          ipAddresses:ipAddresses,
+          $browser:$browser,
+          tierDetailView:tierDetailView,
+          $tiers:$tiers,
+          acl:acl,
+          context:context,
+          actions:actions,
+          vmListView:vmListView,
+          actionPreFilter:actionPreFilter
         });
 
         return true;
       };
 
       if (tiers != null && tiers.length > 0) {
-        $(tiers).map(function(index, tier) {
+        $(tiers).map(function (index, tier) {
           var $tier = elems.tier({
-            ipAddresses: ipAddresses,
-            acl: acl,
-            $browser: $browser,
-            detailView: tierDetailView,
-            name: tier.name,
-            cidr: tier.cidr,
-            virtualMachines: tier.virtualMachines,
-            vmListView: vmListView,
-            actions: actions,
-            actionPreFilter: actionPreFilter,
-            context: $.extend(true, {}, context, {
-              networks: [tier]
+            ipAddresses:ipAddresses,
+            acl:acl,
+            $browser:$browser,
+            detailView:tierDetailView,
+            name:tier.name,
+            cidr:tier.cidr,
+            virtualMachines:tier.virtualMachines,
+            vmListView:vmListView,
+            actions:actions,
+            actionPreFilter:actionPreFilter,
+            context:$.extend(true, {}, context, {
+              networks:[tier]
             })
           });
 
@@ -530,7 +553,7 @@
 
       }
 
-      elems.tier({ isPlaceholder: true }).appendTo($tiers)
+      elems.tier({ isPlaceholder:true }).appendTo($tiers)
         .click(showAddTierDialog);
       $tiers.prepend($router);
       $chart.append($title, $tiers);
@@ -799,6 +822,7 @@
     var gateways = args.gateways;
     var acl = args.acl;
     var siteToSiteVPN = args.siteToSiteVPN;
+    var routerDetailView = args.routerDetailView;
 
     return function(args) {
       var context = args.context;
@@ -849,6 +873,7 @@
                   gateways: gateways,
                   acl: acl,
                   tierDetailView: tierDetailView,
+                  routerDetailView: routerDetailView,
                   siteToSiteVPN: siteToSiteVPN,
                   vmListView: vmListView,
                   context: context,
