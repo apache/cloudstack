@@ -36,7 +36,7 @@
             </listitem>
             <listitem><para>64-bit x86 CPU (more cores results in better performance)</para></listitem>
             <listitem><para>4 GB of memory</para></listitem>
-            <listitem><para>250 GB of local disk (more results in better capability; 500 GB recommended)</para></listitem>
+            <listitem><para>50 GB of local disk (When running secondary storage on the management server 500GB is recommended)</para></listitem>
             <listitem><para>At least 1 NIC</para></listitem>
             <listitem><para>Statically allocated IP address</para></listitem>
             <listitem><para>Fully qualified domain name as returned by the hostname command</para></listitem>
@@ -78,8 +78,8 @@
             </itemizedlist>
             <para>The main requirement for KVM hypervisors is the libvirt and Qemu version. If you whish to run on a different distribution, make sure you meet the following requirements:</para>
             <itemizedlist>
-                <listitem><para>libvirt: 0.9.4 and higher</para></listitem>
-                <listitem><para>Qemu/KVM: 1.0 and higher</para></listitem>
+                <listitem><para>libvirt: 0.9.4 or higher</para></listitem>
+                <listitem><para>Qemu/KVM: 1.0 or higher</para></listitem>
             </itemizedlist>
         </section>
         <section id="hypervisor-requirements-ovm">
