@@ -89,10 +89,6 @@
         <include name="commons-collections-3.2.1.jar" />
       </fileset>
     </copy>
-    <copy todir="${agent-simulator.dist.dir}">
-      <fileset dir="${agent-simulator.dir}/scripts">
-      </fileset>
-    </copy>
     <copy overwrite="true" todir="${server.dist.dir}/conf">
       <fileset dir="${agent-simulator.dir}/tomcatconf">
         <include name="*.in" />
