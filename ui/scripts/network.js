@@ -3823,7 +3823,16 @@
                   poll: pollAsyncJobResult
                 }
               }
-            },						
+            },
+
+            tabFilter:function(args) {
+                var hiddenTabs=[];
+                var isRouterOwner = isAdmin() ;
+                if(!isRouterOwner)
+                  hiddenTabs.push("router");
+               return hiddenTabs;
+            },
+						
             tabs: {
               details: {
                 title: 'label.details',
