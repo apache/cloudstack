@@ -4073,7 +4073,7 @@
                     label: 'IKE DH',
                     select: function(args) {
                       var items = [];
-                  //    items.push({id: '', description: ''});
+                      items.push({id: '', description: 'None'});
                       items.push({id: 'modp1024', description: 'Group 2(modp1024)'});
                       items.push({id: 'modp1536', description: 'Group 5(modp1536)'});										 
                       args.response.success({data: items});
@@ -4105,7 +4105,7 @@
                     label: 'Perfect Forward Secrecy',
                     select: function(args) {
                       var items = [];
-                    //  items.push({id: '', description: ''});
+                      items.push({id: '', description: 'None'});
                       items.push({id: 'modp1024', description: 'Group 2(modp1024)'});
                       items.push({id: 'modp1536', description: 'Group 5(modp1536)'});										 
                       args.response.success({data: items});
@@ -4329,7 +4329,7 @@
 											isEditable: true,
 											select: function(args) {
 												var items = [];
-												items.push({id: '', description: ''});
+												items.push({id: '', description: 'None'});
 												items.push({id: 'modp1024', description: 'Group 2(modp1024)'});
                         items.push({id: 'modp1536', description: 'Group 5(modp1536)'});												 
 												args.response.success({data: items});
@@ -4364,7 +4364,7 @@
 											isEditable: true,
 											select: function(args) {
 												var items = [];
-												items.push({id: '', description: ''});
+												items.push({id: '', description: 'None'});
 												items.push({id: 'modp1024', description: 'Group 2(modp1024)'});
                         items.push({id: 'modp1536', description: 'Group 5(modp1536)'});												 
 												args.response.success({data: items});
