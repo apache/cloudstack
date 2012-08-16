@@ -1514,7 +1514,6 @@ under the License.
             <div class="add-snapshot-action add"></div>
           </div>
         </div>
-
         <!-- Scheduled snapshots -->
         <div class="scheduled-snapshots">
           <p>Scheduled Snapshots</p>
@@ -1528,7 +1527,6 @@ under the License.
                 <td class="keep">Keep: <span></span></td>
                 <td class="actions"><div class="action destroy"><span class="icon">&nbsp;</span></div></td>
               </tr>
-
               <!-- Daily -->
               <tr class="daily">
                 <td class="time">Time: <span></span></td>
@@ -1537,7 +1535,6 @@ under the License.
                 <td class="keep">Keep: <span></span></td>
                 <td class="actions"><div class="action destroy"><span class="icon">&nbsp;</span></div></td>
               </tr>
-
               <!-- Weekly -->
               <tr class="weekly">
                 <td class="time">Time: <span></span></td>
@@ -1546,7 +1543,6 @@ under the License.
                 <td class="keep">Keep: <span></span></td>
                 <td class="actions"><div class="action destroy"><span class="icon">&nbsp;</span></div></td>
               </tr>
-
               <!-- Monthly -->
               <tr class="monthly">
                 <td class="time">Time: <span></span></td>
@@ -1831,6 +1827,7 @@ dictionary = {
 'label.move.down.row': '<fmt:message key="label.move.down.row"/>',
 'label.move.up.row': '<fmt:message key="label.move.up.row"/>',
 'label.move.to.top': '<fmt:message key="label.move.to.top"/>',
+'label.move.to.bottom': '<fmt:message key="label.move.to.bottom"/>',
 'label.order': '<fmt:message key="label.order"/>',
 'label.no.data': '<fmt:message key="label.no.data"/>',
 'label.change.value': '<fmt:message key="label.change.value"/>',
