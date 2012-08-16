@@ -13,6 +13,7 @@
 package com.cloud.api.response;
 
 import java.util.Date;
+import java.util.List;
 
 import com.cloud.api.ApiConstants;
 import com.cloud.serializer.Param;
@@ -135,6 +136,10 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     
     @SerializedName(ApiConstants.VPC_ID) @Param(description="VPC the network belongs to")
     private IdentityProxy vpcId = new IdentityProxy("vpc");
+    
+    @SerializedName("nic")  @Param(description="the list of nics associated with the router", 
+            responseObject = NicResponse.class, since="3.0.1")
+    private List<NicResponse> nics;
     
     @Override
     public Long getObjectId() {
@@ -307,5 +312,9 @@ public class DomainRouterResponse extends BaseResponse implements ControlledEnti
     
     public void setVpcId(Long vpcId) {
         this.vpcId.setValue(vpcId);
+    }
+    
+    public void setNics(List<NicResponse> nics) {
+        this.nics = nics;
     }
 }
