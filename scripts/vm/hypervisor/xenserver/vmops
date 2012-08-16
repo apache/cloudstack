@@ -926,6 +926,7 @@ def network_rules_for_rebooted_vm(session, vmName):
         util.pread2(['ifconfig', tap])
         vifs.append(tap)
     except:
+        tap = 'none'
         pass
     vmchain = chain_name(vm_name)
     vmchain_default = chain_name_def(vm_name)
@@ -939,9 +940,13 @@ def network_rules_for_rebooted_vm(session, vmName):
         delcmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | sed 's/-A/-D/'"
         delcmd2 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | sed 's/-A/-D/'"
         inscmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' "
-        inscmd2 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' "
         inscmd3 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' "
-        inscmd4 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' "
+        if tap == 'none';
+            inscmd2 = ''
+            inscmd4 = ''
+        else:
+            inscmd2 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' "
+            inscmd4 = "iptables-save| grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep tap | sed -r 's/tap[0-9]+.0/" + tap + "/' "
         
         ipts = []
         for cmd in [delcmd, delcmd2, inscmd, inscmd2, inscmd3, inscmd4]:
