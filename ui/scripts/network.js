@@ -4021,10 +4021,10 @@
 
           actions: {
             add: {
-              label: 'add VPN Customer Gateway',
+              label: 'Add VPN Customer Gateway',
               messages: {
                 notification: function(args) {
-                  return 'add VPN Customer Gateway';
+                  return 'Add VPN Customer Gateway';
                 }
               },
               createForm: {
