@@ -941,7 +941,7 @@ def network_rules_for_rebooted_vm(session, vmName):
         delcmd2 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | sed 's/-A/-D/'"
         inscmd = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-in | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' "
         inscmd3 = "iptables-save | grep '\-A " +  vmchain_default + "' | grep  physdev-out | grep vif | sed -r 's/vif[0-9]+.0/" + vif + "/' "
-        if tap == 'none';
+        if tap == 'none':
             inscmd2 = ''
             inscmd4 = ''
         else:
