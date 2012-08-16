@@ -2946,11 +2946,9 @@ public class ManagementServerImpl implements ManagementServer {
         }
 
         long accountId = volume.getAccountId();
-
-        String secondaryStorageURL = _storageMgr.getSecondaryStorageURL(zoneId);
         StoragePoolVO srcPool = _poolDao.findById(volume.getPoolId());
-        List<HostVO> storageServers = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.SecondaryStorage, zoneId);
-        HostVO sserver = storageServers.get(0);
+        HostVO sserver = _storageMgr.getSecondaryStorageHost(zoneId);
+        String secondaryStorageURL = sserver.getStorageUrl();
 
         List<UploadVO> extractURLList = _uploadDao.listByTypeUploadStatus(volumeId, Upload.Type.VOLUME, UploadVO.Status.DOWNLOAD_URL_CREATED);
 

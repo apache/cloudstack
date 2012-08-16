@@ -25,7 +25,7 @@ public class AjaxFIFOImageCache {
 	private List<Integer> fifoQueue;
 	private Map<Integer, byte[]> cache;
 	private int cacheSize;
-	private int nextKey = 1;
+	private int nextKey = 0;
 	
 	public AjaxFIFOImageCache(int cacheSize) {
 		this.cacheSize = cacheSize;
@@ -57,6 +57,9 @@ public class AjaxFIFOImageCache {
 	}
 	
 	public synchronized byte[] getImage(int key) {
+		if (key == 0) {
+			key = nextKey;
+		}
 		
 		if(cache.containsKey(key)) {
 			if(s_logger.isTraceEnabled())
@@ -70,7 +73,7 @@ public class AjaxFIFOImageCache {
 	}
 	
 	public synchronized int getNextKey() {
-		return nextKey++;
+		return ++nextKey;
 	}
 	
 	public synchronized int getKey() {
