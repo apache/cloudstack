@@ -154,24 +154,24 @@ TAGS FOR A SECTION
 <!-- Make your modifications below this line.  -->
 
 <section id="INSERT A UNIQUE SECTION ID HERE, PROBABLY MATCHING THE TITLE BELOW. KEEP THE QUOTE MARKS.">
-	<title>Text of the section title</title>
-    <para>Here’s the text of a paragraph in this section.</para>
+    <title>Text of the section title</title>
+    <para>Here's the text of a paragraph in this section.</para>
     <para>Always use &PRODUCT; rather than typing CloudStack or CloudPlatform.</para>
     <para>Indent with 4 spaces, not with tab characters.</para>
     <para>To hyperlink to a URL outside this document: <ulink url="http://external URL here">Display text of the link here</ulink></para>
     <para>To hyperlink to another section in this document: <xref linkend="SECTION ID OF THE OTHER SECTION GOES HERE." />
         The publication tools will automatically insert the display text of the link for you.</para>
-    <note><para>Use this for all tips and asides. Don’t use other tags such as tip.
+    <note><para>Use this for all tips and asides. Don't use other tags such as tip.
         Our publication tool (publican) prefers the note tag. The tool will 
-        automatically insert the text NOTE: for you, so please don’t type it.</para></note>
-    <warning><para>Use this for anything that is vital to avoid runtime errors. Don’t use
+        automatically insert the text NOTE: for you, so please don't type it.</para></note>
+    <warning><para>Use this for anything that is vital to avoid runtime errors. Don't use
         other tags such as caution. Our publication tool (publican) prefers the warning tag. The tool will
-        automatically insert the text WARNING: for you, so please don’t type it.</para></warning>
-    <para>Here’s how to do a bulleted list:</para>
+        automatically insert the text WARNING: for you, so please don't type it.</para></warning>
+    <para>Here's how to do a bulleted list:</para>
     <itemizedlist>
         <listitem><para>Bulleted list item text.</para></listitem>
     </itemizedlist>
-    <para>Here’s how to do a numbered list. These are used for step by step instructions 
+    <para>Here's how to do a numbered list. These are used for step by step instructions 
         or to describe a sequence of events in time. For everything else, use a bulleted list.</para>
     <orderedlist>
         <listitem><para>Text of the step</para></listitem>
@@ -181,8 +181,8 @@ TAGS FOR A SECTION
             </orderedlist>
         </listitem>
     </orderedlist>
-    <para>Here’s how to insert an image. Put the graphic file in images/, a subdirectory of the directory where this XML file is.
-        Refer to it using this tag. The tag is admittedly complex, but it’s the one we need to use with publican:</para>
+    <para>Here's how to insert an image. Put the graphic file in images/, a subdirectory of the directory where this XML file is.
+        Refer to it using this tag. The tag is admittedly complex, but it's the one we need to use with publican:</para>
     <mediaobject>
         <imageobject>
             <imagedata fileref="./images/YOUR_FILENAME_HERE.png" />
