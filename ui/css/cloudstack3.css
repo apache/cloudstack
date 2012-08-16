@@ -9743,6 +9743,14 @@ div.ui-dialog div.acl div.multi-edit div.data div.data-body div.data-item table 
   max-height: 600px;
 }
 
+div.container div.panel div#details-tab-network.detail-group div div.multi-edit table.multi-edit tbody tr td,
+ div.container div.panel div#details-tab-network.detail-group div div.multi-edit table.multi-edit thead tr th
+  {
+ min-width:72px;
+ font-size:10px;
+}
+
+
 .ui-dialog div.autoscaler div.form-container div.form-item.disabled {
   /*+opacity:50%;*/
   filter: alpha(opacity=50);
