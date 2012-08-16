@@ -111,8 +111,8 @@
           });
         }
       },
-      'icmptype': { edit: true, label: 'ICMP.type', isDisabled: true , desc:'Please specify -1 if you want to allow any', defaultValue:'-1'},
-      'icmpcode': { edit: true, label: 'ICMP.code', isDisabled: true , desc:'Please specify -1 if you want to allow any', defaultValue:'-1'},
+      'icmptype': { edit: true, label: 'ICMP.type', isDisabled: true, desc:'Please specify -1 if you want to allow all ICMP types', defaultValue:'-1' },
+      'icmpcode': { edit: true, label: 'ICMP.code', isDisabled: true, desc:'Please specify -1 if you want to allow all ICMP codes', defaultValue:'-1' },
       'traffictype' : {
         label: 'Traffic type',
         select: function(args) {
