@@ -553,8 +553,11 @@
                 vpcid: args.context.vpc[0].id
               },
               success: function(json) {
+                var networks = json.listnetworksresponse.network ?
+                  json.listnetworksresponse.network : [];
+
                 args.response.success({
-                  data: $.map(json.listnetworksresponse.network, function(tier) {
+                  data: $.map(networks, function(tier) {
                     var aclTotal = 0;
                     
                     // Get ACL total
