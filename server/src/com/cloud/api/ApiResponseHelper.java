@@ -1701,8 +1701,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             routerResponse.setPodId(router.getPodIdToDeployIn());
             List<NicProfile> nicProfiles = ApiDBUtils.getNics(router);
+            List<NicResponse> nicResponses = new ArrayList<NicResponse>();
             for (NicProfile singleNicProfile : nicProfiles) {
                 Network network = ApiDBUtils.findNetworkById(singleNicProfile.getNetworkId());
+                //legacy code, public/control/guest nic info is kept in nics response object
                 if (network != null) {
                     if (network.getTrafficType() == TrafficType.Public) {
                         routerResponse.setPublicIp(singleNicProfile.getIp4Address());
@@ -1722,8 +1724,32 @@ public class ApiResponseHelper implements ResponseGenerator {
                         routerResponse.setGuestNetworkId(singleNicProfile.getNetworkId());
                         routerResponse.setNetworkDomain(network.getNetworkDomain());
                     }
+
+                    NicResponse nicResponse = new NicResponse();
+                    nicResponse.setId(singleNicProfile.getId());
+                    nicResponse.setIpaddress(singleNicProfile.getIp4Address());
+                    nicResponse.setGateway(singleNicProfile.getGateway());
+                    nicResponse.setNetmask(singleNicProfile.getNetmask());
+                    nicResponse.setNetworkid(singleNicProfile.getNetworkId());
+                    nicResponse.setNetworkName(network.getName());
+                    
+                    if (singleNicProfile.getBroadCastUri() != null) {
+                        nicResponse.setBroadcastUri(singleNicProfile.getBroadCastUri().toString());
+                    }
+                    if (singleNicProfile.getIsolationUri() != null) {
+                        nicResponse.setIsolationUri(singleNicProfile.getIsolationUri().toString());
+                    }
+
+                    nicResponse.setTrafficType(network.getTrafficType().toString());
+                    if (network.getGuestType() != null) {
+                        nicResponse.setType(network.getGuestType().toString());  
+                    }
+                    nicResponse.setIsDefault(singleNicProfile.isDefaultNic());
+                    nicResponse.setObjectName("nic");
+                    nicResponses.add(nicResponse);  
                 }
             }
+            routerResponse.setNics(nicResponses);
         }
 
         // Service Offering Info
