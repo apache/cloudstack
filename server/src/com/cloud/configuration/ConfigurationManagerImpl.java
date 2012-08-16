@@ -270,6 +270,7 @@ public class ConfigurationManagerImpl implements ConfigurationManager, Configura
         configValuesForValidation.add("storage.cleanup.interval");
         configValuesForValidation.add("wait");
         configValuesForValidation.add("xen.heartbeat.interval");
+        configValuesForValidation.add("vpc.max.networks");
     }
 
     @Override

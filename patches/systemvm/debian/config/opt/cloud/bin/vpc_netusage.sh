@@ -58,7 +58,7 @@ remove_usage_rules () {
 }
 
 get_usage () {
-  iptables -L NETWORK_STATS_$ethDev -n -v -x | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
+  iptables -L NETWORK_STATS_$ethDev -n -v -x 2> /dev/null | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
   if [ -f /root/removedVifs ]
   then
     var=`cat /root/removedVifs`
