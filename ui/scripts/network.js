@@ -4040,8 +4040,7 @@
                   },
                   cidrlist: {
                     label: 'CIDR list',
-                    desc:'Please enter a comma separated list of CIDRs if more 
-than one',          
+                    desc:'Please enter a comma separated list of CIDRs if more than one',          
                     validation: { required: true }
                   },
                   ipsecpsk: {
