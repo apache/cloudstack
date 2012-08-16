@@ -242,6 +242,14 @@
   };
 
   cloudStack.vpc = {
+    routerDetailView: function() {
+      return {
+        title: 'VPC router details',
+        tabs: {
+          routerDetails: cloudStack.sections.network.sections.vpc.listView.detailView.tabs.router
+        }
+      };
+    },
     vmListView: {
       id: 'vpcTierInstances',
       listView: {

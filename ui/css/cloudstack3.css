@@ -9604,10 +9604,15 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   top: -36px;
   background-position: 0px -2519px;
   border: 1px solid #ADADAD;
+  cursor: pointer;
+}
+
+.vpc-chart li.tier.virtual-router.disabled,
+.vpc-chart li.tier.virtual-router.disabled span {
+  cursor: default;
 }
 
 .vpc-chart li.tier.virtual-router span {
-  cursor: default;
   color: #586E82;
   font-size: 18px;
   /*+text-shadow:0px 1px 3px #FFFFFF;*/
