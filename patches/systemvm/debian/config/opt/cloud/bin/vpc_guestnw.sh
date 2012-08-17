@@ -97,21 +97,6 @@ desetup_dnsmasq() {
   sleep 1
 }
 
-setup_usage() {
-  sudo iptables -t mangle -N NETWORK_STATS_$dev
-  sudo iptables -t mangle -A NETWORK_STATS_$dev -s $subnet/$mask ! -d $vpccidr
-  sudo iptables -t mangle -A NETWORK_STATS_$dev -o $dev ! -s $vpccidr
-  sudo iptables -t mangle -A POSTROUTING -s $subnet/$mask -j NETWORK_STATS_$dev
-  sudo iptables -t mangle -A POSTROUTING -o $dev -j NETWORK_STATS_$dev
-}
-
-desetup_usage() {
-  sudo iptables -t mangle -F NETWORK_STATS_$dev
-  sudo iptables -t mangle -D POSTROUTING -s $subnet/$mask -j NETWORK_STATS_$dev
-  sudo iptables -t mangle -D POSTROUTING -o $dev -j NETWORK_STATS_$dev
-  sudo iptables -t mangle -X NETWORK_STATS_$dev
-}
-
 create_guest_network() {
   logger -t cloud " $(basename $0): Create network on interface $dev,  gateway $gw, network $ip/$mask "
   # setup ip configuration
@@ -130,7 +115,6 @@ create_guest_network() {
   # set up hairpin
   sudo iptables -t nat -A POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
   create_acl_chain
-  setup_usage
   setup_dnsmasq
   setup_apache2
 }
@@ -144,7 +128,6 @@ destroy_guest_network() {
   sudo iptables -t mangle -D PREROUTING -i $dev -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
   sudo iptables -t nat -A POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
   destroy_acl_chain
-  desetup_usage
   desetup_dnsmasq
   desetup_apache2
 }

@@ -491,6 +491,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
     
     protected Answer execute(NetworkUsageCommand cmd) {
+    	if ( cmd.isForVpc() ) {
+            return VPCNetworkUsage(cmd);
+        }
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource NetworkUsageCommand " + _gson.toJson(cmd));
         }
@@ -503,6 +506,64 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
         return answer;
+    }
+
+    protected NetworkUsageAnswer VPCNetworkUsage(NetworkUsageCommand cmd) {
+    	String privateIp = cmd.getPrivateIP();
+    	String option = cmd.getOption();
+    	String publicIp = cmd.getGatewayIP();
+
+
+    	String args = "-l " + publicIp+ " ";
+    	if (option.equals("get")) {
+    		args += "-g";
+    	} else if (option.equals("create")) {
+    		args += "-c";
+    		String vpcCIDR = cmd.getVpcCIDR();
+    		args += " -v " + vpcCIDR;
+    	} else if (option.equals("reset")) {
+    		args += "-r";
+    	} else if (option.equals("vpn")) {
+    		args += "-n";
+    	} else if (option.equals("remove")) {
+    		args += "-d";
+    	} else {
+    		return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
+    	}
+    	try {
+    		if (s_logger.isTraceEnabled()) {
+    			s_logger.trace("Executing /opt/cloud/bin/vpc_netusage.sh " + args + " on DomR " + privateIp);
+    		}
+    		VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+
+    		Pair<Boolean, String> resultPair = SshHelper.sshExecute(privateIp, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/vpc_netusage.sh " + args);
+
+    		if (!resultPair.first()) {
+                throw new Exception(" vpc network usage plugin call failed ");
+    		}
+    		
+    		if (option.equals("get") || option.equals("vpn")) {
+                String result =  resultPair.second();
+                if (result == null || result.isEmpty()) {
+                    throw new Exception(" vpc network usage get returns empty ");
+                }
+                long[] stats = new long[2];
+                if (result != null) {
+                    String[] splitResult = result.split(":");
+                    int i = 0;
+                    while (i < splitResult.length - 1) {
+                        stats[0] += (new Long(splitResult[i++])).longValue();
+                        stats[1] += (new Long(splitResult[i++])).longValue();
+                    }
+                    return new NetworkUsageAnswer(cmd, "success", stats[0], stats[1]);
+                }
+            }
+            return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
+        } catch (Throwable e) {
+    		s_logger.error("Unable to execute NetworkUsage command on DomR (" + privateIp + "), domR may not be ready yet. failure due to " 
+    				+ VmwareHelper.getExceptionMessage(e), e);
+    	}
+    	return new NetworkUsageAnswer(cmd, "success", 0L, 0L);
     }
 
     protected Answer execute(SetPortForwardingRulesCommand cmd) {

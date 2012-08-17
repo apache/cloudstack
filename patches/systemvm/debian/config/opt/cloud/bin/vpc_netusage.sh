@@ -15,6 +15,8 @@
 source /root/func.sh
 source /opt/cloud/bin/vpc_func.sh
 
+vpnoutmark="0x525"
+vpninmark="0x524"
 lock="biglock"
 locked=$(getLockFile $lock)
 if [ "$locked" != "1" ]
@@ -23,25 +25,64 @@ then
 fi
 
 usage() {
-  printf "Usage: %s -[c|g|r] [-[a|d] <public interface>]\n" $(basename $0)  >&2
+  printf "Usage: %s -[c|g|r|n|d] [-l <public gateway>] [-v <vpc cidr>] \n" $(basename $0)  >&2
 }
 
 create_usage_rules () {
-  iptables-save|grep "NETWORK_STATS_$guestIp -i $ethDev" > /dev/null
+  iptables-save|grep "NETWORK_STATS_$ethDev" > /dev/null
   if [ $? -gt 0 ]
   then 
-    iptables -A NETWORK_STATS_$guestIp -i $ethDev -s ! zcidr > /dev/null
-  fi
-  iptables-save|grep "NETWORK_STATS_$guestIp -o $ethDev" > /dev/null
+    iptables -N NETWORK_STATS_$ethDev > /dev/null;
+    iptables -I FORWARD -j NETWORK_STATS_$ethDev > /dev/null;
+    iptables -A NETWORK_STATS_$ethDev -o $ethDev -s $vcidr > /dev/null;
+    iptables -A NETWORK_STATS_$ethDev -i $ethDev -d $vcidr > /dev/null;
+  fi  
+  return $?
+}
+
+create_vpn_usage_rules () {
+  iptables-save|grep "VPN_STATS_$ethDev" > /dev/null
   if [ $? -gt 0 ]
   then 
-    iptables -A NETWORK_STATS_$guestIp -o $ethDev -d ! zcidr > /dev/null
+    iptables -t mangle -N VPN_STATS_$ethDev > /dev/null;
+    iptables -t mangle -I FORWARD -j VPN_STATS_$ethDev > /dev/null;
+    iptables -t mangle -A VPN_STATS_$ethDev -o $ethDev -m mark --mark $vpnoutmark > /dev/null;
+    iptables -t mangle -A VPN_STATS_$ethDev -i $ethDev -m mark --mark $vpninmark > /dev/null;
   fi
   return $?
 }
 
+remove_usage_rules () {
+  echo $ethDev >> /root/removedVifs
+  return $?
+}
+
 get_usage () {
-  iptables -t mangle -L NETWORK_STATS_$ethDev -n -v -x | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
+  iptables -L NETWORK_STATS_$ethDev -n -v -x 2> /dev/null | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
+  if [ -f /root/removedVifs ]
+  then
+    var=`cat /root/removedVifs`
+    # loop through vifs to be cleared
+    for i in $var; do
+      # Make sure vif doesn't exist
+      if [ ! -f /sys/class/net/$i ]
+      then
+        # flush rules and remove chain
+        iptables -F NETWORK_STATS_$i > /dev/null;
+        iptables -D FORWARD -j NETWORK_STATS_$i > /dev/null;
+        iptables -X NETWORK_STATS_$i > /dev/null;
+        iptables -t mangle -F VPN_STATS_$i > /dev/null;
+        iptables -t mangle -D FORWARD -j VPN_STATS_$i > /dev/null;
+        iptables -t mangle -X VPN_STATS_$i > /dev/null;
+      fi
+    done
+    rm /root/removedVifs
+  fi     
+  return 0
+}
+
+get_vpn_usage () {
+  iptables -t mangle -L VPN_STATS_$ethDev -n -v -x | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
   if [ $? -gt 0 ]
   then
      printf $?
@@ -50,7 +91,7 @@ get_usage () {
 }
 
 reset_usage () {
-  iptables -t mangle -Z NETWORK_STATS_$ethDev > /dev/null
+  iptables -Z NETWORK_STATS_$ethDev > /dev/null
   if [ $? -gt 0  -a $? -ne 2 ]
   then
      return 1
@@ -63,9 +104,11 @@ cflag=
 gflag=
 rflag=
 lflag=
+vflag=
+nflag=
+dflag=
 
-
-while getopts 'cgrl:' OPTION
+while getopts 'cgndrl:v:' OPTION
 do
   case $OPTION in
   c)	cflag=1
@@ -75,8 +118,15 @@ do
   r)	rflag=1
 	;;
   l)    lflag=1
-        guestIp="$OPTARG"
+        publicIp="$OPTARG"
         ;;
+  v)    vflag=1
+        vcidr="$OPTARG"
+        ;;
+  n)	nflag=1
+	;;
+  d)	dflag=1
+	;;	        
   i)    #Do nothing, since it's parameter for host script
         ;;
   ?)	usage
@@ -85,16 +135,33 @@ do
   esac
 done
 
+ethDev=$(getEthByIp $publicIp)
 if [ "$cflag" == "1" ] 
 then
-  unlock_exit 0 $lock $locked
+  if [ "$ethDev" != "" ]
+  then
+    create_usage_rules
+    create_vpn_usage_rules
+    unlock_exit 0 $lock $locked
+   fi 
 fi
 
-ethDev=$(getEthByIp $guestIp)
 if [ "$gflag" == "1" ] 
 then
   get_usage 
   unlock_exit $? $lock $locked
+fi
+
+if [ "$nflag" == "1" ] 
+then
+  get_vpn_usage 
+  unlock_exit $? $lock $locked
+fi
+
+if [ "$dflag" == "1" ] 
+then
+  remove_usage_rules
+  unlock_exit 0 $lock $locked
 fi
 
 if [ "$rflag" == "1" ] 
