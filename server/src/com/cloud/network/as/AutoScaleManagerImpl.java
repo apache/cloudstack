@@ -843,7 +843,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         if(vmGroup.getCreated() != null)
             ApiDBUtils.getAutoScaleVmGroupPolicyIds(vmGroup.getId(), bakupScaleUpPolicyIds, bakupScaleDownPolicyIds);
 
-        if (minMembers < 0) {
+        if (minMembers < 1) {
             throw new InvalidParameterValueException(ApiConstants.MIN_MEMBERS + " is an invalid value: " + minMembers, null);
         }
 

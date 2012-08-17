@@ -286,6 +286,11 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             if (zone.getNetworkType() == NetworkType.Advanced) {
                 NetworkVO lbNetwork = _networkDao.findById(lbNetworkId);
                 lbNetworkUuid = lbNetwork.getUuid();
+                if (vmGroup.getState().equals(AutoScaleVmGroup.State_New)) {
+                    if(!lbNetwork.getState().equals(Network.State.Implemented)) {
+                        throw new InvalidParameterValueException("Network is not in implemented state", null);
+                    }
+                }
             }
         }
 
