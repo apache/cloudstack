@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.cloud</groupId>
+	<artifactId>cloud-api</artifactId>
+	<version>4.0.0-SNAPSHOT</version>
+  <name>Apache CloudStack API</name>
+	<parent>
+		<groupId>com.cloud</groupId>
+		<artifactId>cloud-parent</artifactId>
+		<version>4.0.0-SNAPSHOT</version>
+    <relativePath>../parent/pom.xml</relativePath>
+	</parent>
+	<dependencies>
+		<dependency>
+			<groupId>com.cloud</groupId>
+			<artifactId>cloud-utils</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>${cs.gson.version}</version>
+		</dependency>
+	</dependencies>
+	<build>
+		<defaultGoal>install</defaultGoal>
+		<sourceDirectory>src</sourceDirectory>
+	</build>
+</project>
