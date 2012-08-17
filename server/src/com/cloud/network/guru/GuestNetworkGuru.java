@@ -73,6 +73,8 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.network.Network.Provider;
+import com.cloud.network.Network.Service;
 
 @Local(value = NetworkGuru.class)
 public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGuru {
@@ -361,16 +363,29 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
         if (nic.getIp4Address() == null) {
             nic.setBroadcastUri(network.getBroadcastUri());
             nic.setIsolationUri(network.getBroadcastUri());
+            nic.setGateway(network.getGateway()); 
 
             String guestIp = null;
             if (network.getSpecifyIpRanges()) {
                 _networkMgr.allocateDirectIp(nic, dc, vm, network, nic.getRequestedIp());
             } else {
-                //if Vm is router vm, set ip4 to the network gateway
+                //if Vm is router vm and source nat is enabled in the network, set ip4 to the network gateway
+                boolean isGateway = false;
                 if (vm.getVirtualMachine().getType() == VirtualMachine.Type.DomainRouter) {
+                    if (network.getVpcId() != null) {
+                        if (_networkMgr.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.SourceNat, Provider.VPCVirtualRouter)) {
+                            isGateway = true;
+                        }
+                    } else {
+                        if (_networkMgr.isProviderSupportServiceInNetwork(nic.getNetworkId(), Service.SourceNat, Provider.VirtualRouter)) {
+                            isGateway = true;
+                        }
+                    }
+                }
+                
+                if (isGateway) {
                     guestIp = network.getGateway();
                 } else {
-                    nic.setGateway(network.getGateway());
                     guestIp = _networkMgr.acquireGuestIpAddress(network, nic.getRequestedIp());
                     if (guestIp == null) {
                         throw new InsufficientVirtualNetworkCapcityException("Unable to acquire Guest IP" +
