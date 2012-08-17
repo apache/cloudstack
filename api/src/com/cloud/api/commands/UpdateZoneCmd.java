@@ -139,9 +139,6 @@ public class UpdateZoneCmd extends BaseCmd {
     }   
 
     public Boolean getLocalStorageEnabled() {
-        if (localStorageEnabled == null) {
-            return false;
-        }
         return localStorageEnabled;
     }
 
