@@ -721,6 +721,20 @@ UPDATE `cloud`.`network_offerings` SET display_text='Offering for Shared Securit
 UPDATE `cloud`.`configuration` SET category = 'Secure' where name in ('alert.smtp.password', 'network.loadbalancer.haproxy.stats.auth', 'security.singlesignon.key', 'project.smtp.password');
 UPDATE `cloud`.`configuration` SET category = 'Hidden' where name in ('secondary.storage.vm', 'xen.create.pools.in.pod', 'cloud.identifier', 'security.hash.key', 'router.ram.size');
 
+
+UPDATE `cloud`.`guest_os` set id = 158 where id = 141;
+UPDATE `cloud`.`guest_os` set id = 159 where id = 142;
+UPDATE `cloud`.`guest_os` set id = 160 where id = 143;
+UPDATE `cloud`.`vm_template` set guest_os_id = 158 where guest_os_id = 141;
+UPDATE `cloud`.`vm_template` set guest_os_id = 159 where guest_os_id = 142;
+UPDATE `cloud`.`vm_template` set guest_os_id = 160 where guest_os_id = 143;
+UPDATE `cloud`.`vm_instance` set guest_os_id = 158 where guest_os_id = 141;
+UPDATE `cloud`.`vm_instance` set guest_os_id = 159 where guest_os_id = 142;
+UPDATE `cloud`.`vm_instance` set guest_os_id = 160 where guest_os_id = 143;
+UPDATE `cloud`.`guest_os_hypervisor` set guest_os_id = 158 where guest_os_id = 141;
+UPDATE `cloud`.`guest_os_hypervisor` set guest_os_id = 159 where guest_os_id = 142;
+UPDATE `cloud`.`guest_os_hypervisor` set guest_os_id = 160 where guest_os_id = 143;
+
 INSERT IGNORE INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (143, 1, 'CentOS 6.0 (32-bit)');
 INSERT IGNORE INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (144, 1, 'CentOS 6.0 (64-bit)');
 INSERT IGNORE INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (145, 3, 'Oracle Enterprise Linux 5.6 (32-bit)');
