@@ -28,4 +28,6 @@
     <xi:include href="hypervisor-host-install-prepare-os.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="hypervisor-host-install-libvirt.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="hypervisor-host-install-security-policies.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="hypervisor-host-install-network.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="hypervisor-host-install-firewall.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>

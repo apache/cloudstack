@@ -1,0 +1,151 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="hypervisor-host-install-network">
+    <title>Configure the network bridges</title>
+    <warning><para>This is a very important section, please make sure you read this thoroughly.</para></warning>
+    <para>In order to forward traffic to your instances you will need at least two bridges: public and private.</para>
+    <para>By default these bridges are called cloudbr0 and cloudbr1, but you do have to make sure they are available on each hypervisor.</para>
+    <section id="hypervisor-host-install-network-vlan">
+        <title>Network example</title>
+        <para>There are many ways to configure your network. In the Basic networking mode you should have two (V)LAN's, one for your private network and one for the public network.</para>
+        <para>The hypervisor has one NIC (eth0) with three VLAN's:</para>
+        <orderedlist>
+            <listitem><para>VLAN 100 for management of the hypervisor</para></listitem>
+            <listitem><para>VLAN 200 for public network of the instances (cloudbr0)</para></listitem>
+            <listitem><para>VLAN 300 for private network of the instances (cloudbr1)</para></listitem>
+        </orderedlist>
+        <para>On VLAN 100 we give the Hypervisor the IP-Address 192.168.42.11/24 with the gateway 192.168.42.1</para>
+    </section>
+    <section id="hypervisor-host-install-network-configure">
+        <title>Configuring the network bridges</title>
+        <para>It depends on the distribution you are using how to configure these, below you'll find examples for RHEL/CentOS and Ubuntu.</para>
+        <note><para>The goal is to have two bridges called 'cloudbr0' and 'cloudbr1' after this section. This should be used as a guideline only. The exact configuration will depend on your network layout.</para></note>
+        <section id="hypervisor-host-install-network-configure-rhel">
+            <title>Configure in RHEL or CentOS</title>
+            <para>The required packages were installed when libvirt was installed, we can proceed to configuring the network.</para>
+            <para>First we configure eth0</para>
+            <programlisting language="Bash">vi /etc/sysconfig/network-scripts/ifcfg-eth0</programlisting>
+            <para>Make sure it looks similair to:</para>
+            <programlisting><![CDATA[DEVICE=eth0
+HWADDR=00:04:xx:xx:xx:xx
+ONBOOT=yes
+HOTPLUG=no
+BOOTPROTO=none
+TYPE=Ethernet]]></programlisting>
+            <para>We now have to configure the three VLAN interfaces:</para>
+            <programlisting language="Bash">vi /etc/sysconfig/network-scripts/ifcfg-eth0.100</programlisting>
+            <programlisting><![CDATA[DEVICE=eth0.100
+HWADDR=00:04:xx:xx:xx:xx
+ONBOOT=yes
+HOTPLUG=no
+BOOTPROTO=none
+TYPE=Ethernet
+VLAN=yes
+IPADDR=192.168.42.11
+GATEWAY=192.168.42.1
+NETMASK=255.255.255.0]]></programlisting>
+            <programlisting language="Bash">vi /etc/sysconfig/network-scripts/ifcfg-eth0.200</programlisting>
+            <programlisting><![CDATA[DEVICE=eth0.200
+HWADDR=00:04:xx:xx:xx:xx
+ONBOOT=yes
+HOTPLUG=no
+BOOTPROTO=none
+TYPE=Ethernet
+VLAN=yes
+BRIDGE=cloudbr0]]></programlisting>
+            <programlisting language="Bash">vi /etc/sysconfig/network-scripts/ifcfg-eth0.300</programlisting>
+            <programlisting><![CDATA[DEVICE=eth0.300
+HWADDR=00:04:xx:xx:xx:xx
+ONBOOT=yes
+HOTPLUG=no
+BOOTPROTO=none
+TYPE=Ethernet
+VLAN=yes
+BRIDGE=cloudbr1]]></programlisting>
+            <para>Now we have the VLAN interfaces configured we can add the bridges on top of them.</para>
+            <programlisting language="Bash">vi /etc/sysconfig/network-scripts/ifcfg-cloudbr0</programlisting>
+            <para>Now we just configure it is a plain bridge without an IP-Adress</para>
+            <programlisting><![CDATA[DEVICE=cloudbr0
+TYPE=Bridge
+ONBOOT=yes
+BOOTPROTO=none
+IPV6INIT=no
+IPV6_AUTOCONF=no
+DELAY=5
+STP=yes]]></programlisting>
+            <para>We do the same for cloudbr1</para>
+            <programlisting language="Bash">vi /etc/sysconfig/network-scripts/ifcfg-cloudbr1</programlisting>
+            <programlisting><![CDATA[DEVICE=cloudbr1
+TYPE=Bridge
+ONBOOT=yes
+BOOTPROTO=none
+IPV6INIT=no
+IPV6_AUTOCONF=no
+DELAY=5
+STP=yes]]></programlisting>
+            <para>With this configuration you should be able to restart the network, although a reboot is recommended to see if everything works properly.</para>
+            <warning><para>Make sure you have an alternative way like IPMI or ILO to reach the machine in case you made a configuration error and the network stops functioning!</para></warning>
+        </section>
+        <section id="hypervisor-host-install-network-configure-ubuntu">
+            <title>Configure in Ubuntu</title>
+            <para>All the required packages were installed when you installed libvirt, so we only have to configure the network.</para>
+            <programlisting language="Bash">vi /etc/network/interfaces</programlisting>
+            <para>Modify the interfaces file to look like this:</para>
+            <programlisting><![CDATA[auto lo
+iface lo inet loopback
+
+auto eth0.200
+iface eth0.200 inet manual
+
+auto eth0.300
+iface eth0.300 inet manual
+
+# The primary network interface
+auto eth0.100
+iface eth0.100 inet static
+    address 192.168.42.11
+    netmask 255.255.255.240
+    gateway 192.168.42.1
+
+# Public network
+auto cloudbr0
+iface cloudbr0 inet manual
+    bridge_ports eth0.200
+    bridge_fd 5
+    bridge_stp off
+    bridge_maxwait 1
+
+# Private network
+auto cloudbr1
+iface cloudbr1 inet manual
+    bridge_ports eth0.300
+    bridge_fd 5
+    bridge_stp off
+    bridge_maxwait 1]]></programlisting>
+            <para>With this configuration you should be able to restart the network, although a reboot is recommended to see if everything works properly.</para>
+            <warning><para>Make sure you have an alternative way like IPMI or ILO to reach the machine in case you made a configuration error and the network stops functioning!</para></warning>
+        </section>
+    </section>
+</section>
