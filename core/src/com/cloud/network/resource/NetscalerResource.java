@@ -1528,7 +1528,7 @@ public class NetscalerResource implements ServerResource {
         }
         addLBVirtualServer(nsVirtualServerName, srcIp, srcPort, lbAlgorithm, lbProtocol, loadBalancerTO.getStickinessPolicies(), vmGroupTO);
 
-        String serviceGroupName = generateAutoScaleServiceGroupName(vmGroupIdentifier);
+        String serviceGroupName = generateAutoScaleServiceGroupName(loadBalancerTO);
         servicegroup serviceGroup = getServiceGroupIfExisits(serviceGroupName);
         if(serviceGroup == null) {
             // add servicegroup lb_autoscaleGroup -autoscale POLICY -memberPort 80
@@ -1571,7 +1571,7 @@ public class NetscalerResource implements ServerResource {
         String vmGroupIdentifier = generateAutoScaleVmGroupIdentifier(loadBalancerTO);
 
         String nsVirtualServerName  = generateNSVirtualServerName(srcIp, srcPort);
-        String serviceGroupName = generateAutoScaleServiceGroupName(vmGroupIdentifier);
+        String serviceGroupName = generateAutoScaleServiceGroupName(loadBalancerTO);
 
         if(loadBalancerTO.getAutoScaleVmGroupTO().getCurrentState().equals("enabled")) {
             disableAutoScaleConfig(loadBalancerTO, false);
@@ -1613,7 +1613,7 @@ public class NetscalerResource implements ServerResource {
         int srcPort = loadBalancerTO.getSrcPort();
 
         String nsVirtualServerName  = generateNSVirtualServerName(srcIp, srcPort);
-        String serviceGroupName = generateAutoScaleServiceGroupName(vmGroupIdentifier);
+        String serviceGroupName = generateAutoScaleServiceGroupName(loadBalancerTO);
         String profileName = generateAutoScaleProfileName(vmGroupIdentifier);
         String timerName = generateAutoScaleTimerName(vmGroupIdentifier);
         String scaleDownActionName = generateAutoScaleScaleDownActionName(vmGroupIdentifier);
@@ -1923,7 +1923,7 @@ public class NetscalerResource implements ServerResource {
         String scaleUpActionName = generateAutoScaleScaleUpActionName(vmGroupIdentifier);
         String mtName = generateSnmpMetricTableName(vmGroupIdentifier);
         String monitorName = generateSnmpMonitorName(vmGroupIdentifier);
-        String serviceGroupName = generateAutoScaleServiceGroupName(vmGroupIdentifier);
+        String serviceGroupName = generateAutoScaleServiceGroupName(loadBalancerTO);
         AutoScaleVmGroupTO vmGroupTO = loadBalancerTO.getAutoScaleVmGroupTO();
         List<AutoScalePolicyTO> policies = vmGroupTO.getPolicies();
         String minMemberPolicyName = generateAutoScaleMinPolicyName(vmGroupIdentifier);
@@ -2231,8 +2231,15 @@ public class NetscalerResource implements ServerResource {
         return lbTO.getSrcIp() + "-" + lbTO.getSrcPort();
     }
 
-    private String generateAutoScaleServiceGroupName(String vmGroupIdentifier) {
-        return genObjectName("Cloud-AutoScale-SvcGrp", vmGroupIdentifier);
+    private String generateAutoScaleServiceGroupName(LoadBalancerTO lbTO) {
+        /*
+         *  ServiceGroup name in NetScaler wont support long names. Providing special name.
+         *  Need for introducing uuid because every vmgroup creation should be distinguished.
+         *  Ex. (1) create a vm group, delete a vmgroup, create a vmgroup on same lb ip and port
+         *  This will reuse all vms from the original vm group in step (1)
+         */
+
+        return "Cloud" + lbTO.getAutoScaleVmGroupTO().getUuid().replace("-", "");
     }
 
     private String generateAutoScaleTimerName(String vmGroupIdentifier) {
