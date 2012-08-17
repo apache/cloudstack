@@ -4020,9 +4020,9 @@ public class ApiResponseHelper implements ResponseGenerator {
     public ConditionResponse createConditionResponse(Condition condition) {
         ConditionResponse response = new ConditionResponse();
         response.setId(condition.getId());
-        CounterResponse counter;
-        counter = createCounterResponse(ApiDBUtils.getCounter(condition.getCounterid()));
-        response.setCounter(counter);
+        List<CounterResponse> counterResponseList = new ArrayList<CounterResponse>();
+        counterResponseList.add(createCounterResponse(ApiDBUtils.getCounter(condition.getCounterid())));
+        response.setCounterResponse(counterResponseList);
         response.setRelationalOperator(condition.getRelationalOperator().toString());
         response.setThreshold(condition.getThreshold());
         response.setObjectName("condition");
