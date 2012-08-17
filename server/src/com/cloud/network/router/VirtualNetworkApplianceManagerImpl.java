@@ -1588,18 +1588,26 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         DataCenterDeployment plan = new DataCenterDeployment(0, null, null, null, null, null);
         DomainRouterVO result = null;
         assert router.getIsRedundantRouter();
-        List<DomainRouterVO> routerList = _routerDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn());
+        List<Long> networkIds = _routerDao.getRouterNetworks(router.getId());
+        //Not support VPC now
+        if (networkIds.size() > 1) {
+            throw new ResourceUnavailableException("Unable to support more than one guest network for redundant router now!",
+                    DataCenter.class, router.getDataCenterIdToDeployIn());
+        }
         DomainRouterVO routerToBeAvoid = null;
-        for (DomainRouterVO rrouter : routerList) {
-            if (rrouter.getHostId() != null && rrouter.getIsRedundantRouter() && rrouter.getState() == State.Running) {
-                if (routerToBeAvoid != null) {
-                    throw new ResourceUnavailableException("Try to start router " + router.getInstanceName() + "(" + router.getId() + ")"
-                            + ", but there are already two redundant routers with IP " + router.getPublicIpAddress()
-                            + ", they are " + rrouter.getInstanceName() + "(" + rrouter.getId() + ") and "
-                            + routerToBeAvoid.getInstanceName() + "(" + routerToBeAvoid.getId() + ")",
-                            DataCenter.class, rrouter.getDataCenterIdToDeployIn());
+        if (networkIds.size() != 0)  {
+            List<DomainRouterVO> routerList = _routerDao.findByNetwork(networkIds.get(0));
+            for (DomainRouterVO rrouter : routerList) {
+                if (rrouter.getHostId() != null && rrouter.getIsRedundantRouter() && rrouter.getState() == State.Running) {
+                    if (routerToBeAvoid != null) {
+                        throw new ResourceUnavailableException("Try to start router " + router.getInstanceName() + "(" + router.getId() + ")"
+                                + ", but there are already two redundant routers with IP " + router.getPublicIpAddress()
+                                + ", they are " + rrouter.getInstanceName() + "(" + rrouter.getId() + ") and "
+                                + routerToBeAvoid.getInstanceName() + "(" + routerToBeAvoid.getId() + ")",
+                                DataCenter.class, rrouter.getDataCenterIdToDeployIn());
+                    }
+                    routerToBeAvoid = rrouter;
                 }
-                routerToBeAvoid = rrouter;
             }
         }
         if (routerToBeAvoid == null) {
