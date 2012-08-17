@@ -81,8 +81,9 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
 		}
 		
 		try {
-			key = Integer.parseInt(keyStr);
-		} catch (NumberFormatException e) {
+             if (keyStr != null)
+            	 key = Integer.parseInt(keyStr);
+             } catch (NumberFormatException e) {
 			s_logger.warn("Invalid numeric parameter in query string: " + keyStr);
 			throw new IllegalArgumentException(e);
 		}
@@ -97,9 +98,9 @@ public class ConsoleProxyAjaxImageHandler implements HttpHandler {
 		param.setClientTunnelSession(console_host_session);
 		
 		ConsoleProxyClient viewer = ConsoleProxy.getVncViewer(param);
-		AjaxFIFOImageCache imageCache =viewer.getAjaxImageCache();
+		AjaxFIFOImageCache imageCache = viewer.getAjaxImageCache();
 		
-		byte[] img = imageCache.getImage(0);
+        byte[] img = imageCache.getImage(key);
 
 		if(img != null) {
 			Headers hds = t.getResponseHeaders();
