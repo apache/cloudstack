@@ -2443,7 +2443,7 @@ CREATE TABLE `cloud`.`autoscale_policy_condition_map` (
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_autoscale_policy_condition_map__policy_id` FOREIGN KEY `fk_autoscale_policy_condition_map__policy_id` (`policy_id`) REFERENCES `autoscale_policies` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_autoscale_policy_condition_map__condition_id` FOREIGN KEY `fk_autoscale_policy_condition_map__condition_id` (`condition_id`) REFERENCES `conditions` (`id`),
-  INDEX `i_autoscale_policy_condition_map__policy_id`(`policy_id`),
+  INDEX `i_autoscale_policy_condition_map__policy_id`(`policy_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`autoscale_vmgroup_policy_map` (
