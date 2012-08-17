@@ -329,7 +329,7 @@ Within the target/jar directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright (c) 2007-2010, The JASYPT team (http://www.jasypt.org)
         from The JASYPT team  http://www.jasypt.org 
-            cloud-jasypt-1.8.jar  http://www.jasypt.org 
+            cloud-jasypt-1.9.jar  http://www.jasypt.org 
 
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright © 2003-2007 Luck Consulting Pty Ltd
@@ -340,6 +340,12 @@ Within the target/jar directory
     Copyright © 2009 Google Inc.
         from Google Inc.  http://google.com 
             cloud-google-gson-1.7.1.jar  http://code.google.com/p/google-gson/ 
+
+    licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
+    $license.CopyrightNotice
+        from Jetty Committers  http://jetty.codehaus.org/jetty/ 
+            jetty-6.1.26.jar  http://repo1.maven.org/maven2/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26-sources.jar 
+            jetty-util-6.1.26.jar  http://repo1.maven.org/maven2/org/mortbay/jetty/jetty-util/6.1.26/jetty-util-6.1.26-sources.jar 
 
     licensed under the BSD (3-clause) http://www.opensource.org/licenses/BSD-3-Clause  (as follows)
 
@@ -373,7 +379,9 @@ Within the target/jar directory
             cloud-jsch-0.1.42.jar  http://www.jcraft.com/jsch/ 
 
     licensed under the BSD (3-clause) http://www.opensource.org/licenses/BSD-3-Clause  (as follows)
- 
+
+            Copyright (c) 2007-2008 Trilead AG (http://www.trilead.com)
+            All rights reserved. 
             
               Redistribution and use in source and binary forms, with or without
               modification, are permitted provided that the following conditions
@@ -1351,7 +1359,7 @@ Within the target/jar directory
             WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
             DAMAGE.
                             
-        from XStream Ccommitters  http://xstream.codehaus.org/ 
+        from XStream Committers  http://xstream.codehaus.org/ 
             cloud-xstream-1.3.1.jar  http://xstream.codehaus.org/repository.html 
 
 Within the utils/src/com/cloud/utils/db directory
