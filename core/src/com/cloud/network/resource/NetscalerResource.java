@@ -1717,6 +1717,7 @@ public class NetscalerResource implements ServerResource {
                 ApiConstants.ZONE_ID + "=" + profileTO.getZoneId()+ "&" +
                 ApiConstants.SERVICE_OFFERING_ID + "=" + profileTO.getServiceOfferingId()+ "&" +
                 ApiConstants.TEMPLATE_ID + "=" + profileTO.getTemplateId()+ "&" +
+                ApiConstants.DISPLAY_NAME + "=" + profileTO.getVmName()+ "&" +
                 ((profileTO.getNetworkId() == null)? "" : (ApiConstants.NETWORK_IDS + "=" + profileTO.getNetworkId()+ "&")) +
                 ((profileTO.getOtherDeployParams() == null)? "" : (profileTO.getOtherDeployParams() + "&")) +
                 "lbruleid=" + loadBalancerTO.getUuid();
