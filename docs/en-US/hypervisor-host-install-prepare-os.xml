@@ -42,9 +42,9 @@
                 <orderedlist numeration="loweralpha">
                     <listitem><para>Install NTP</para>
                         <para condition="community">On RHEL or CentOS:</para>
-                        <programlisting># yum install ntp</programlisting>
+                        <programlisting language="Bash">yum install ntp</programlisting>
                         <para condition="community">On Ubuntu:</para>
-                        <programlisting condition="community"># apt-get install openntpd</programlisting>
+                        <programlisting language="Bash">apt-get install openntpd</programlisting>
                     </listitem>
                 </orderedlist>
         </listitem>
