@@ -46,6 +46,11 @@ public class Version {
         String[] tokens = version.split("[.]");
         return tokens[0] + "." + tokens[1]+ "." + tokens[2];
     }
+
+    public static String trimToPatchNormalized(String version) {
+        String[] tokens = version.split("[.]");
+        return tokens[0] + tokens[1] + tokens[2];
+    }
     
     public static void main(String[] args) {
     	System.out.println("Result is " + compare(args[0], args[1]));
