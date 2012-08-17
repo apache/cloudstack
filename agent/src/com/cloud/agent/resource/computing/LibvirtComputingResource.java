@@ -1133,7 +1133,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 					return new Answer(cmd, false,
 							" Can't create storage volume on storage pool");
 				}
-				disksize = vol.getSize();
+				disksize = vol.getVirtualSize();
 			} else {
 				disksize = dskch.getSize();
 				vol = primaryPool.createPhysicalDisk(UUID.randomUUID()
