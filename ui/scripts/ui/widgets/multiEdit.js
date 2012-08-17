@@ -622,7 +622,11 @@
           var $itemActions = $('<td>').addClass('actions item-actions');
 
           $.each(itemActions, function(itemActionID, itemAction) {
-            if (itemActionID == 'add') return true;
+            if (itemActionID == 'add') 
+						  return true;
+						            				
+						if(item._hideActions != null && $.inArray(itemActionID, item._hideActions) > -1)
+              return true;	
 
             var $itemAction = $('<div>').addClass('action').addClass(itemActionID);
 
