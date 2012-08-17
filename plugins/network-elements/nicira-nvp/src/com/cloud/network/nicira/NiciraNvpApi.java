@@ -255,7 +255,7 @@ public class NiciraNvpApi {
         
         T result;
         try {
-            result = gson.fromJson(pm.getResponseBodyAsString(), TypeToken.get(newObject.getClass()).getType());
+            result = (T)gson.fromJson(pm.getResponseBodyAsString(), TypeToken.get(newObject.getClass()).getType());
         } catch (IOException e) {
             throw new NiciraNvpApiException("Failed to decode json response body", e);
         }
@@ -314,7 +314,7 @@ public class NiciraNvpApi {
         Gson gson = new Gson();
         T returnValue;
         try {
-            returnValue = gson.fromJson(gm.getResponseBodyAsString(), returnObjectType);
+            returnValue = (T)gson.fromJson(gm.getResponseBodyAsString(), returnObjectType);
         } catch (IOException e) {
             s_logger.error("IOException while retrieving response body",e);
             throw new NiciraNvpApiException(e);
