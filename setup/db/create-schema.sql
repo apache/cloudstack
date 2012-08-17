@@ -2433,7 +2433,8 @@ CREATE TABLE `cloud`.`autoscale_vmgroups` (
   CONSTRAINT `fk_autoscale_vmgroups__account_id` FOREIGN KEY `fk_autoscale_vmgroups__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_autoscale_vmgroups__zone_id` FOREIGN KEY `fk_autoscale_vmgroups__zone_id`(`zone_id`) REFERENCES `data_center`(`id`),
   CONSTRAINT `uc_autoscale_vmgroups__uuid` UNIQUE (`uuid`),
-  INDEX `i_autoscale_vmgroups__removed`(`removed`)
+  INDEX `i_autoscale_vmgroups__removed`(`removed`),
+  INDEX `i_autoscale_vmgroups__load_balancer_id`(`load_balancer_id`)  
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`autoscale_policy_condition_map` (
