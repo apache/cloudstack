@@ -880,6 +880,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (!offering.isConserveMode()) {
             for (PublicIp ip : ipToServices.keySet()) {
                 Set<Service> services = ipToServices.get(ip);
+                if (services != null && services.contains(Service.Firewall)) {
+                    services.remove(Service.Firewall);
+                }
                 if (services != null && services.size() > 1) {
                     throw new CloudRuntimeException("Ip " + ip.getAddress() + " is used by multiple services!");
                 }
