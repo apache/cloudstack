@@ -37,6 +37,7 @@ import com.cloud.alert.AlertManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.StackMaid;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.DataCenterVO;
@@ -703,7 +704,7 @@ public class HighAvailabilityManagerImpl implements HighAvailabilityManager, Clu
             params = configDao.getConfiguration(Long.toHexString(_serverId), xmlParams);
         }
 
-        String value = params.get("workers");
+        String value = params.get(Config.HAWorkers.key());
         final int count = NumbersUtil.parseInt(value, 1);
         _workers = new WorkerThread[count];
         for (int i = 0; i < _workers.length; i++) {
