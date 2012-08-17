@@ -1474,4 +1474,15 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     	_downloadMonitor.downloadVolumeToStorage(volume, zoneId, url, cmd.getChecksum(), ImageFormat.valueOf(format.toUpperCase()));
 		return volume;    	
     }
+    
+    @Override
+    public String prepareTemplateOnPool(VMTemplateVO template, StoragePool pool) {
+    	 if (template.getFormat() != Storage.ImageFormat.ISO) {
+    		 VMTemplateStoragePoolVO templatePoolRef = prepareTemplateForCreate(template, pool);
+    		 return templatePoolRef.getLocalDownloadPath();
+    	 } else {
+    		 prepareISOForCreate(template, pool);
+    	 }
+    	 return null;
+    }
 }

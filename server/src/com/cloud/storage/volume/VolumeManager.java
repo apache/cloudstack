@@ -2,6 +2,7 @@ package com.cloud.storage.volume;
 
 import java.util.List;
 
+import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -61,8 +62,8 @@ public interface VolumeManager {
 	 * @param hyperType
 	 * @return volume VO if success, null otherwise
 	 */
-	VolumeVO createVolume(VolumeVO volume, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, Long clusterId,
-            ServiceOfferingVO offering, DiskOfferingVO diskOffering, List<StoragePoolVO> avoids, long size, HypervisorType hyperType);
+	VolumeVO createVolume(VolumeVO volume, long VMTemplateId, DiskOfferingVO diskOffering,
+            HypervisorType hyperType, StoragePool assignedPool);
 	
 	/**
 	 * Marks the specified volume as destroyed in the management server database. The expunge thread will delete the volume from its storage pool.
@@ -101,7 +102,7 @@ public interface VolumeManager {
 			VirtualMachineProfile<? extends VirtualMachine> vm,
 			StoragePool destPool) throws ConcurrentOperationException;
 	
-	boolean stateTransitTo(Volume vol, Event event)
+	boolean processEvent(Volume vol, Event event)
 			throws NoTransitionException;
 	
 	VolumeVO allocateDuplicateVolume(VolumeVO oldVol, Long templateId);
@@ -129,4 +130,7 @@ public interface VolumeManager {
 	Volume copyVolume(Long volumeId, Long destStoragePoolId);
 
 	List<VolumeVO> searchForVolumes(ListVolumesCmd cmd);
+
+	VolumeVO allocateDiskVolume(String volumeName, long zoneId, long ownerId,
+			long domainId, long diskOfferingId, long size);
 }

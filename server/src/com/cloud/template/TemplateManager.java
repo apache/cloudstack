@@ -91,4 +91,6 @@ public interface TemplateManager extends TemplateService{
 
     VMTemplateHostVO prepareISOForCreate(VMTemplateVO template, StoragePool pool);
 
+	String prepareTemplateOnPool(VMTemplateVO template, StoragePool pool);
+
 }

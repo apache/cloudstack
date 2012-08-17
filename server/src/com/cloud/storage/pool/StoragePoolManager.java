@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage.pool;
 
+import java.util.HashSet;
 import java.util.List;
 
 import com.cloud.agent.api.Answer;
@@ -148,4 +149,9 @@ public interface StoragePoolManager extends StoragePoolService, Manager {
 	boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool);
 
 	StoragePool getStoragePoolById(Long id);
+
+	StoragePool findStoragePool(DataCenterVO dc, DiskProfile diskProfile,
+			Account account, HashSet<StoragePool> poolsToAvoid);
+
+	boolean PrepareTemplateOnPool(VMTemplateVO template, StoragePool pool);
 }

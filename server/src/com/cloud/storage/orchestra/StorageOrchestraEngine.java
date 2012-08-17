@@ -4,12 +4,15 @@ import java.util.List;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientStorageCapacityException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.pool.StoragePool;
 import com.cloud.storage.volume.Volume;
 import com.cloud.user.Account;
@@ -27,4 +30,7 @@ public interface StorageOrchestraEngine {
     void allocateVolume(Long vmId, Pair<? extends DiskOfferingVO, Long> rootDiskOffering, 
     		List<Pair<DiskOfferingVO, Long>> dataDiskOfferings,
     		Long templateId, Account owner);
+	VolumeVO createVolume(CreateVolumeCmd cmd);
+	VolumeVO allocVolume(CreateVolumeCmd cmd)
+			throws ResourceAllocationException;
 }

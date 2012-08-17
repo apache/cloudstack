@@ -367,11 +367,11 @@ public class StoragePoolManagerImpl implements StoragePoolManager, Manager, Clus
     protected int _pingInterval = 60; // seconds
     protected int _hostRetry;
     protected BigDecimal _overProvisioningFactor = new BigDecimal(1);
-    private long _maxVolumeSizeInGb;
+
     private long _serverId;
     private StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
-    private int _customDiskOfferingMinSize = 1;
-    private int _customDiskOfferingMaxSize = 1024;
+
+
     private double _storageUsedThreshold = 1.0d;
     private double _storageAllocatedThreshold = 1.0d;
     protected BigDecimal _storageOverprovisioningFactor = new BigDecimal(1);
@@ -419,6 +419,23 @@ public class StoragePoolManagerImpl implements StoragePoolManager, Manager, Clus
         }
 
         return false;
+    }
+    
+    @Override
+    public StoragePool findStoragePool(DataCenterVO dc, DiskProfile diskProfile, Account account, HashSet<StoragePool> poolsToAvoid) {
+		StoragePoolVO pool = null;
+		Set<Long> podsToAvoid = new HashSet<Long>();
+		Pair<HostPodVO, Long> pod = null;
+		// Determine what pod to store the volume in
+		while ((pod = _resourceMgr.findPod(null, null, dc, account.getId(), podsToAvoid)) != null) {
+			podsToAvoid.add(pod.first().getId());
+			// Determine what storage pool to store the volume in
+			while ((pool = findStoragePool(diskProfile, dc, pod.first(), null, null, poolsToAvoid)) != null) {
+				poolsToAvoid.add(pool);
+				return pool;
+			}
+		}
+		return null;
     }
 
     protected StoragePoolVO findStoragePool(DiskProfile dskCh, final DataCenterVO dc, HostPodVO pod, Long clusterId, VMInstanceVO vm, final Set<StoragePool> avoid) {
@@ -576,14 +593,11 @@ public class StoragePoolManagerImpl implements StoragePoolManager, Manager, Clus
             _agentMgr.registerForHostEvents(ComponentLocator.inject(LocalStoragePoolListener.class), true, false, false);
         }
 
-        String maxVolumeSizeInGbString = configDao.getValue("storage.max.volume.size");
-        _maxVolumeSizeInGb = NumbersUtil.parseLong(maxVolumeSizeInGbString, 2000);
 
-        String _customDiskOfferingMinSizeStr = configDao.getValue(Config.CustomDiskOfferingMinSize.toString());
-        _customDiskOfferingMinSize = NumbersUtil.parseInt(_customDiskOfferingMinSizeStr, Integer.parseInt(Config.CustomDiskOfferingMinSize.getDefaultValue()));
 
-        String _customDiskOfferingMaxSizeStr = configDao.getValue(Config.CustomDiskOfferingMaxSize.toString());
-        _customDiskOfferingMaxSize = NumbersUtil.parseInt(_customDiskOfferingMaxSizeStr, Integer.parseInt(Config.CustomDiskOfferingMaxSize.getDefaultValue()));
+
+
+   
 
 
 
@@ -2272,5 +2286,10 @@ public class StoragePoolManagerImpl implements StoragePoolManager, Manager, Clus
     public StoragePool getStoragePoolById(Long id) {
     	StoragePool pool = _storagePoolDao.findById(id);
     	return pool;
+    }
+    
+    @Override
+    public boolean PrepareTemplateOnPool(VMTemplateVO template, StoragePool pool) {
+    	
     }
 }

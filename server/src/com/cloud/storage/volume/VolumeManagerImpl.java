@@ -17,10 +17,13 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.CopyVolumeAnswer;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DeleteVolumeCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.api.commands.ListVolumesCmd;
@@ -29,6 +32,7 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientStorageCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -46,10 +50,12 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
 import com.cloud.storage.image.ImageManager;
+import com.cloud.storage.orchestra.StorageMigrationCleanupMaid;
 import com.cloud.storage.pool.Storage;
 import com.cloud.storage.pool.Storage.ImageFormat;
 import com.cloud.storage.pool.StoragePool;
@@ -113,39 +119,16 @@ public class VolumeManagerImpl implements VolumeManager, Manager {
     protected TemplateManager _templateMgr;
     @Inject
     protected VMInstanceDao _vmDao;
+    @Inject
+    protected VMTemplateDao _templateDao;
 	
-    @DB
-	@ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating volume", async = true)
-	public VolumeVO createVolume(CreateVolumeCmd cmd) {
-		VolumeVO volume = _volumeDao.findById(cmd.getEntityId());
-		boolean created = false;
-
-		try {
-			if (cmd.getSnapshotId() != null) {
-				volume = createVolumeFromSnapshot(volume, cmd.getSnapshotId());
-				if (volume.getState() == Volume.State.Ready) {
-					created = true;
-				}
-				return volume;
-			} else {
-				_volumeDao.update(volume.getId(), volume);
-				created = true;
-			}
-
-			return _volumeDao.findById(volume.getId());
-		} finally {
-			if (!created) {
-				s_logger.trace("Decrementing volume resource count for account id=" + volume.getAccountId() + " as volume failed to create on the backend");
-						_resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume);
-			}
-		}
-	}
+   
 
 	@Override
 	@DB
 	public boolean destroyVolume(VolumeVO volume) throws ConcurrentOperationException {
 		try {
-			if (!stateTransitTo(volume, Volume.Event.DestroyRequested)) {
+			if (!processEvent(volume, Volume.Event.DestroyRequested)) {
 				throw new ConcurrentOperationException("Failed to transit to destroyed state");
 			}
 		} catch (NoTransitionException e) {
@@ -173,7 +156,7 @@ public class VolumeManagerImpl implements VolumeManager, Manager {
 		}
 
 		try {
-			if (!stateTransitTo(volume, Volume.Event.OperationSucceeded)) {
+			if (!processEvent(volume, Volume.Event.OperationSucceeded)) {
 				throw new ConcurrentOperationException("Failed to transit state");
 
 			}
@@ -202,13 +185,162 @@ public class VolumeManagerImpl implements VolumeManager, Manager {
     
     @Override
     @DB
-    public VolumeVO createVolume(VolumeVO volume, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, Long clusterId, ServiceOfferingVO offering, DiskOfferingVO diskOffering,
+    public VolumeVO createVolume(VolumeVO volume, long VMTemplateId, DiskOfferingVO diskOffering,
+             HypervisorType hyperType, StoragePool assignedPool) {
+         Long existingPoolId = null;
+    	 existingPoolId = volume.getPoolId();
+         
+    	 if (existingPoolId == null && assignedPool == null) {
+    		 throw new StorageUnavailableException("Volume has no pool associate and also no storage pool assigned in DeployDestination, Unable to create " + volume, Volume.class, volume.getId());
+    	 }
+    	 
+    	 if (assignedPool == null) {
+    		 if (s_logger.isDebugEnabled()) {
+                 s_logger.debug("No need to recreate the volume: " + volume + ", since it already has a pool assigned: " + volume.getPoolId() + ", adding disk to VM");
+             }
+             StoragePoolVO pool = (StoragePoolVO)_storagePoolMgr.getStoragePoolById(volume.getPoolId());
+             return volume;
+    	 }
+    	 
+    	 boolean needToCreateVolume = false;
+    	 boolean needToRecreateVolume = false;
+    	 boolean needToMigrateVolume = false;
+    	 Volume.State state = volume.getState();
+    	 if (state == Volume.State.Allocated || state == Volume.State.Creating) {
+        	 needToCreateVolume = true;
+         }
+
+    	 if (volume.isRecreatable()) {
+    		 if (s_logger.isDebugEnabled()) {
+    			 s_logger.debug("Volume " + volume + " will be recreated on storage pool " + assignedPool + " assigned by deploymentPlanner");
+    		 }
+    		 if (volume.getPoolId() == null) {
+    			 needToCreateVolume = true;
+    		 } else {
+    			 needToRecreateVolume = true;
+    		 }
+    	 } else {
+    		 if (assignedPool.getId() != volume.getPoolId()) {
+    			 if (s_logger.isDebugEnabled()) {
+    				 s_logger.debug("Mismatch in storage pool " + assignedPool + " assigned by deploymentPlanner and the one associated with volume " + volume);
+    			 }
+    			 if (diskOffering.getUseLocalStorage()) {
+    				 throw new StorageUnavailableException("Can't recreate volume: " + volume + " on local storage", Volume.class, volume.getId());
+    			 } else {
+    				 if (s_logger.isDebugEnabled()) {
+    	        		 s_logger.debug("Shared volume " + volume + " will be migrated on storage pool " + assignedPool + " assigned by deploymentPlanner");
+    	        	 }
+    				needToMigrateVolume = true;
+    			 }
+    		 } else {
+    			 return volume;
+    		 }
+    	 }
+    	 
+    	 VolumeVO newVol = volume;
+    	 if (needToCreateVolume || needToRecreateVolume) {
+    		 if (needToRecreateVolume) {
+    			 newVol = switchVolume(volume, VMTemplateId);
+    		 }
+    		 newVol = createVolume(newVol, diskOffering, hyperType, assignedPool);
+    	 } else if (needToMigrateVolume) {
+    		 try {
+        		 List<Volume> volumesToMigrate = new ArrayList<Volume>();
+        		 volumesToMigrate.add(volume);
+        		 migrateVolumes(volumesToMigrate, assignedPool);
+        		 newVol = _volumeDao.findById(volume.getId());
+        	 } catch (ConcurrentOperationException e) {
+        		 throw new CloudRuntimeException("Migration of volume " + volume + " to storage pool " + assignedPool + " failed", e);
+        	 }
+         }
+    	 
+    	 return newVol;
+    }
+    
+    /**
+     * Give a volume in allocated state, created on specified storage
+     * @param toBeCreated
+     * @param offering
+     * @param hypervisorType
+     * @param sPool
+     * @return
+     * @throws StorageUnavailableException
+     */
+    private VolumeVO createVolume(VolumeVO toBeCreated, DiskOfferingVO offering, HypervisorType hypervisorType,
+            StoragePool sPool) throws StorageUnavailableException {
+        if (sPool == null) {
+        	throw new CloudRuntimeException("can't create volume: " + toBeCreated + " on a empty storage");
+        }
+        
+        if (toBeCreated == null) {
+        	throw new CloudRuntimeException("volume can't be null");
+        }
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating volume: " + toBeCreated + " on pool: " + sPool);
+        }
+         
+        DiskProfile diskProfile = new DiskProfile(toBeCreated, offering, hypervisorType);
+        
+        toBeCreated.setPoolId(sPool.getId());
+        try {
+        	processEvent(toBeCreated, Volume.Event.CreateRequested);
+        } catch (NoTransitionException e) {
+        	throw new CloudRuntimeException("Unable to request a create operation on volume " + toBeCreated);
+        }
+
+        boolean createdSuccessed = false;
+        try {
+        	VMTemplateVO template = null;
+        	String templateOnStoragePath = null;
+        	if (toBeCreated.getTemplateId() != null) {
+        		template = _templateDao.findById(toBeCreated.getTemplateId());
+        		templateOnStoragePath = _templateMgr.prepareTemplateOnPool(template, sPool);
+        	}
+        	
+        	CreateCommand cmd = null;
+        	cmd = new CreateCommand(diskProfile, templateOnStoragePath, new StorageFilerTO(sPool));
+
+        	Answer answer = _storagePoolMgr.sendToPool(sPool, null, cmd);
+        	if (answer.getResult()) {
+        		CreateAnswer createAnswer = (CreateAnswer) answer;
+        		VolumeTO created = createAnswer.getVolume();
+        		
+        		toBeCreated.setFolder(sPool.getPath());
+        		toBeCreated.setPath(created.getPath());
+        		toBeCreated.setSize(created.getSize());
+        		toBeCreated.setPoolType(sPool.getPoolType());
+        		toBeCreated.setPoolId(sPool.getId());
+        		toBeCreated.setPodId(sPool.getPodId());
+        		
+        		try {
+        			processEvent(toBeCreated, Volume.Event.OperationSucceeded);
+        			createdSuccessed = true;
+        		} catch (NoTransitionException e) {
+        			s_logger.debug("Unable to update volume state: " + e.toString());
+        			return null;
+        		}
+        	}
+        	return toBeCreated;
+        } finally {
+        	if (createdSuccessed == false) {
+        		try {
+        			processEvent(toBeCreated, Volume.Event.OperationFailed);
+        		} catch (NoTransitionException e1) {
+        			s_logger.debug("Unable to update volume state: " + e1.toString());
+        		}
+        	}
+        }
+    }
+    
+    @DB
+    private VolumeVO createVolume1(VolumeVO volume, VirtualMachineProfile<? extends VirtualMachine> vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, Long clusterId, ServiceOfferingVO offering, DiskOfferingVO diskOffering,
             List<StoragePoolVO> avoids, long size, HypervisorType hyperType) {
         StoragePoolVO pool = null;
         final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
 
         try {
-            stateTransitTo(volume, Volume.Event.CreateRequested);
+            processEvent(volume, Volume.Event.CreateRequested);
         } catch (NoTransitionException e) {
             s_logger.debug("Unable to update volume state: " + e.toString());
             return null;
@@ -306,13 +438,148 @@ public class VolumeManagerImpl implements VolumeManager, Manager {
             volume.setPoolId(pool.getId());
             volume.setPodId(pod.getId());
             try {
-                stateTransitTo(volume, Volume.Event.OperationSucceeded);
+                processEvent(volume, Volume.Event.OperationSucceeded);
             } catch (NoTransitionException e) {
                 s_logger.debug("Unable to update volume state: " + e.toString());
                 return null;
             }
             return volume;
         }
+    }
+    
+    @DB
+    public boolean migrateVolumes(List<Volume> volumes, StoragePool destPool) throws ConcurrentOperationException {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+
+        boolean transitResult = false;
+        long checkPointTaskId = -1;
+        try {
+            List<Long> volIds = new ArrayList<Long>();
+            for (Volume volume : volumes) {
+                if (!_snapshotMgr.canOperateOnVolume((VolumeVO) volume)) {
+                    throw new CloudRuntimeException("There are snapshots creating on this volume, can not move this volume");
+                }
+
+                try {
+                    if (!processEvent(volume, Volume.Event.MigrationRequested)) {
+                        throw new ConcurrentOperationException("Failed to transit volume state");
+                    }
+                } catch (NoTransitionException e) {
+                    s_logger.debug("Failed to set state into migrate: " + e.toString());
+                    throw new CloudRuntimeException("Failed to set state into migrate: " + e.toString());
+                }
+                volIds.add(volume.getId());
+            }
+
+            checkPointTaskId = _checkPointMgr.pushCheckPoint(new StorageMigrationCleanupMaid(StorageMigrationCleanupMaid.StorageMigrationState.MIGRATING, volIds));
+            transitResult = true;
+        } finally {
+            if (!transitResult) {
+                txn.rollback();
+            } else {
+                txn.commit();
+            }
+        }
+
+        // At this stage, nobody can modify volumes. Send the copyvolume command
+        List<Pair<StoragePoolVO, DestroyCommand>> destroyCmds = new ArrayList<Pair<StoragePoolVO, DestroyCommand>>();
+        List<CopyVolumeAnswer> answers = new ArrayList<CopyVolumeAnswer>();
+        try {
+            for (Volume volume : volumes) {
+                String secondaryStorageURL = getSecondaryStorageURL(volume.getDataCenterId());
+                StoragePoolVO srcPool = _storagePoolDao.findById(volume.getPoolId());
+                CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volume.getPath(), srcPool, secondaryStorageURL, true, _copyvolumewait);
+                CopyVolumeAnswer cvAnswer;
+                try {
+                    cvAnswer = (CopyVolumeAnswer) sendToPool(srcPool, cvCmd);
+                } catch (StorageUnavailableException e1) {
+                    throw new CloudRuntimeException("Failed to copy the volume from the source primary storage pool to secondary storage.", e1);
+                }
+
+                if (cvAnswer == null || !cvAnswer.getResult()) {
+                    throw new CloudRuntimeException("Failed to copy the volume from the source primary storage pool to secondary storage.");
+                }
+
+                String secondaryStorageVolumePath = cvAnswer.getVolumePath();
+
+                // Copy the volume from secondary storage to the destination storage
+                // pool
+                cvCmd = new CopyVolumeCommand(volume.getId(), secondaryStorageVolumePath, destPool, secondaryStorageURL, false, _copyvolumewait);
+                try {
+                    cvAnswer = (CopyVolumeAnswer) sendToPool(destPool, cvCmd);
+                } catch (StorageUnavailableException e1) {
+                    throw new CloudRuntimeException("Failed to copy the volume from secondary storage to the destination primary storage pool.");
+                }
+
+                if (cvAnswer == null || !cvAnswer.getResult()) {
+                    throw new CloudRuntimeException("Failed to copy the volume from secondary storage to the destination primary storage pool.");
+                }
+
+                answers.add(cvAnswer);
+                destroyCmds.add(new Pair<StoragePoolVO, DestroyCommand>(srcPool, new DestroyCommand(srcPool, volume, null)));
+            }
+        } finally {
+            if (answers.size() != volumes.size()) {
+                // this means one of copying volume failed
+                for (Volume volume : volumes) {
+                    try {
+                        processEvent(volume, Volume.Event.OperationFailed);
+                    } catch (NoTransitionException e) {
+                        s_logger.debug("Failed to change volume state: " + e.toString());
+                    }
+                }
+                _checkPointMgr.popCheckPoint(checkPointTaskId);
+            } else {
+                // Need a transaction, make sure all the volumes get migrated to new storage pool
+                txn = Transaction.currentTxn();
+                txn.start();
+
+                transitResult = false;
+                try {
+                    for (int i = 0; i < volumes.size(); i++) {
+                        CopyVolumeAnswer answer = answers.get(i);
+                        VolumeVO volume = (VolumeVO) volumes.get(i);
+                        Long oldPoolId = volume.getPoolId();
+                        volume.setPath(answer.getVolumePath());
+                        volume.setFolder(destPool.getPath());
+                        volume.setPodId(destPool.getPodId());
+                        volume.setPoolId(destPool.getId());
+                        volume.setLastPoolId(oldPoolId);
+                        volume.setPodId(destPool.getPodId());
+                        try {
+                            processEvent(volume, Volume.Event.OperationSucceeded);
+                        } catch (NoTransitionException e) {
+                            s_logger.debug("Failed to change volume state: " + e.toString());
+                            throw new CloudRuntimeException("Failed to change volume state: " + e.toString());
+                        }
+                    }
+                    transitResult = true;
+                    try {
+                        _checkPointMgr.popCheckPoint(checkPointTaskId);
+                    } catch (Exception e) {
+
+                    }
+                } finally {
+                    if (!transitResult) {
+                        txn.rollback();
+                    } else {
+                        txn.commit();
+                    }
+                }
+
+            }
+        }
+
+        // all the volumes get migrated to new storage pool, need to delete the copy on old storage pool
+        for (Pair<StoragePoolVO, DestroyCommand> cmd : destroyCmds) {
+            try {
+                Answer cvAnswer = _storagePoolMgr.sendToPool(cmd.first(), cmd.second());
+            } catch (StorageUnavailableException e) {
+                s_logger.debug("Unable to delete the old copy on storage pool: " + e.toString());
+            }
+        }
+        return true;
     }
     
     @Override
@@ -499,7 +766,7 @@ public class VolumeManagerImpl implements VolumeManager, Manager {
 
         volume = _volumeDao.persist(volume);
         try {
-			stateTransitTo(volume, Event.UploadRequested);
+			processEvent(volume, Event.UploadRequested);
 		} catch (NoTransitionException e) {
 			s_logger.debug("Can't create persist volume, due to " + e.toString());
 		}
@@ -563,14 +830,26 @@ public class VolumeManagerImpl implements VolumeManager, Manager {
         return true;
     }
 
-    private boolean validateVolumeSizeRange(long size) {
-        if (size < 0 || (size > 0 && size < (1024 * 1024 * 1024))) {
-            throw new InvalidParameterValueException("Please specify a size of at least 1 Gb.");
-        } else if (size > (_maxVolumeSizeInGb * 1024 * 1024 * 1024)) {
-            throw new InvalidParameterValueException("volume size " + size + ", but the maximum size allowed is " + _maxVolumeSizeInGb + " Gb.");
-        }
+    @Override
+    public VolumeVO allocateDiskVolume(String volumeName, long zoneId, long ownerId, long domainId, long diskOfferingId, long size) {
+    	if (volumeName == null) {
+    		volumeName = getRandomVolumeName();
+    	}
 
-        return true;
+    	VolumeVO volume = new VolumeVO(volumeName, -1, -1, -1, -1, new Long(-1), null, null, 0, Volume.Type.DATADISK);
+    	volume.setPoolId(null);
+    	volume.setDataCenterId(zoneId);
+    	volume.setPodId(null);
+    	volume.setAccountId(ownerId);
+    	volume.setDomainId(domainId);
+    	volume.setDiskOfferingId(diskOfferingId);
+    	volume.setSize(size);
+    	volume.setInstanceId(null);
+    	volume.setUpdated(new Date());
+    	volume.setDomainId(domainId);
+
+    	volume = _volumeDao.persist(volume);
+    	return volume;
     }
     
     @Override
@@ -680,18 +959,17 @@ public class VolumeManagerImpl implements VolumeManager, Manager {
     }
 
     @DB
-    protected VolumeVO switchVolume(VolumeVO existingVolume, VirtualMachineProfile<? extends VirtualMachine> vm) throws StorageUnavailableException {
+    protected VolumeVO switchVolume(VolumeVO existingVolume, long vmTemplateId) throws StorageUnavailableException {
         Transaction txn = Transaction.currentTxn();
         txn.start();
         try {
-            stateTransitTo(existingVolume, Volume.Event.DestroyRequested);
+            processEvent(existingVolume, Volume.Event.DestroyRequested);
         } catch (NoTransitionException e) {
             s_logger.debug("Unable to destroy existing volume: " + e.toString());
         }
 
         Long templateIdToUse = null;
         Long volTemplateId = existingVolume.getTemplateId();
-        long vmTemplateId = vm.getTemplateId();
         if (volTemplateId != null && volTemplateId.longValue() != vmTemplateId) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("switchVolume: Old Volume's templateId: " + volTemplateId + " does not match the VM's templateId: " + vmTemplateId + ", updating templateId in the new Volume");
@@ -945,10 +1223,9 @@ public class VolumeManagerImpl implements VolumeManager, Manager {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
 	
     @Override
-    public boolean stateTransitTo(Volume vol, Volume.Event event) throws NoTransitionException {
+    public boolean processEvent(Volume vol, Volume.Event event) throws NoTransitionException {
         return _volStateMachine.transitTo(vol, event, null, _volumeDao);
     }
 

@@ -18,12 +18,23 @@ package com.cloud.storage.snapshot;
 
 import java.util.List;
 
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.pool.StoragePool;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.VMInstanceVO;
 
 /**
  * 
@@ -137,4 +148,9 @@ public interface SnapshotManager {
     void deleteSnapshotsDirForVolume(String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId);
 
 	boolean canOperateOnVolume(VolumeVO volume);
+
+	String createVolumeFromSnapshot(long userId,
+			SnapshotVO snapshot, StoragePool pool);
+
+
 }

@@ -305,9 +305,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             s_logger.debug("Allocaing disks for " + vm);
         }
 
-        _storageOrchestraEngine.allocateVolume(vm.getId(), rootDiskOffering, dataDiskOfferings, template.getId(), Account owner);
-       
-
+        _storageOrchestraEngine.allocateVolume(vm.getId(), rootDiskOffering, dataDiskOfferings, template.getId(), owner);
+        
         txn.commit();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocation completed for VM: " + vm);
