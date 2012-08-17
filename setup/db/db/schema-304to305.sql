@@ -375,5 +375,7 @@ UPDATE `cloud`.`configuration` SET description='Comma separated list of cidrs in
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'site2site.vpn.vpngateway.connection.limit', '4', 'The maximum number of VPN connection per VPN gateway');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'site2site.vpn.customergateway.subnets.limit', '10', 'The maximum number of subnets per customer gateway');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Usage', 'DEFAULT', 'management-server', 'traffic.sentinel.include.zones', 'EXTERNAL', 'Traffic going into specified list of zones is metered. For metering all traffic leave this parameter empty');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Usage', 'DEFAULT', 'management-server', 'traffic.sentinel.exclude.zones', '', 'Traffic going into specified list of zones is not metered');
 
 DROP TABLE IF EXISTS `cloud`.`ovs_tunnel_account`;
