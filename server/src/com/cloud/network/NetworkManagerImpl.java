@@ -1921,6 +1921,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             ex.addProxyObject("networks", networkId, "networkId");
             throw ex;
         }
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Lock is acquired for network id " + networkId + " as a part of network implement");
+        }
 
         try {
             NetworkGuru guru = _networkGurus.get(network.getGuruName());
@@ -1966,10 +1970,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                 shutdownNetwork(networkId, context, false);
             }
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Releasing lock for network id " + networkId);
-            }
+            
             _networksDao.releaseFromLockTable(networkId);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Lock is released for network id " + networkId + " as a part of network implement");
+            }
         }
     }
 
