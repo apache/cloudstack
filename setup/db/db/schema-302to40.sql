@@ -464,3 +464,5 @@ UPDATE `cloud`.`configuration` SET component='StorageManager' WHERE name='storag
 UPDATE `cloud`.`configuration` SET component='StorageManager' WHERE name='storage.cleanup.interval';
 UPDATE `cloud`.`configuration` SET description='Comma separated list of cidrs internal to the datacenter that can host template download servers, please note 0.0.0.0 is not a valid site ' WHERE name='secstorage.allowed.internal.sites';
 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'site2site.vpn.vpngateway.connection.limit', '4', 'The maximum number of VPN connection per VPN gateway');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'site2site.vpn.customergateway.subnets.limit', '10', 'The maximum number of subnets per customer gateway');
