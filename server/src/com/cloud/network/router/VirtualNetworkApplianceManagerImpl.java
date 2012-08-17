@@ -1309,6 +1309,10 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (network == null) {
             throw new ConcurrentOperationException("Unable to lock network " + guestNetwork.getId());
         }
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Lock is acquired for network id " + network.getId() + " as a part of router startup in " + dest);
+        }
 
         try {
             //Check if providers are supported in the physical networks
@@ -1362,6 +1366,9 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         } finally {
             if (network != null) {
                 _networkDao.releaseFromLockTable(network.getId());
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Lock is released for network id " + network.getId() + " as a part of router startup in " + dest);
+                }
             }
         }
         return routers;
