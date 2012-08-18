@@ -155,10 +155,10 @@ class TestSecurityKeysEncryption(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic"])
     def test_vm_instance_vnc_password(self):
         """ Verify vm_instance table's vnc_password column encryption """
 
-        tags = ["advanced", "basic"]
 
         #Steps,
         #Deploy  a VM
@@ -182,10 +182,10 @@ class TestSecurityKeysEncryption(cloudstackTestCase):
                          )
         return
 
+    @attr(tags = ["advanced"])
     def test_vpn_users_password(self):
         """ Verify vpn_users table's password column encryption """
 
-        tags = ["advanced"]
 
         #Steps,
         #Deploy a VM
@@ -233,6 +233,7 @@ class TestSecurityKeysEncryption(cloudstackTestCase):
                          "Check password in vpn_users table to verify encryption"
                          )
 
+    @attr(tags = ["advanced", "basic"])
     def test_user_secret_key(self):
         """ Verify user table's SECRET key column encryption """
         #Steps,
@@ -240,7 +241,6 @@ class TestSecurityKeysEncryption(cloudstackTestCase):
         #Validations,
         #Verify user table's secret key column is encrypted
 
-        tags = ["advanced", "basic"]
 
         user_keys = User.registerUserKeys(self.apiclient, self.account.account.user[0].id)
         qresultset = self.dbclient.execute(
@@ -261,10 +261,10 @@ class TestSecurityKeysEncryption(cloudstackTestCase):
                          )
         return
 
+    @attr(tags = ["advanced", "basic"])
     def test_host_password(self):
         """ Verify host details table's  value column encryption where name is password """
 
-        tags = ["advanced", "basic"]
 
         #Validations,
         #Verify host details table's value column is encrypted where name is password
@@ -314,10 +314,10 @@ class TestSecurityKeysEncryption(cloudstackTestCase):
                          )
         return
 
+    @attr(tags = ["advanced", "basic"])
     def test_configurations_value_encryption(self):
         """ verify configuration tables following name records value field  are encrypted """
 
-        tags = ["advanced", "basic"]
 
         #Steps
         #verify configuration tables following name records value field  are encrypted

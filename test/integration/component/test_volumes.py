@@ -137,10 +137,10 @@ class TestAttachVolume(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_volume_attach(self):
         """Test Attach volumes (max capacity)
         """
-        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. Deploy a vm and create 5 data disk
         # 2. Attach all the created Volume to the vm.
@@ -289,10 +289,10 @@ class TestAttachVolume(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_02_volume_attach_max(self):
         """Test attach volumes (more than max) to an instance
         """
-        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. Attach one more data volume to VM (Already 5 attached)
@@ -420,10 +420,10 @@ class TestAttachDetachVolume(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_volume_attach_detach(self):
         """Test Volume attach/detach to VM (5 data volumes)
         """
-        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. Deploy a vm and create 5 data disk
@@ -668,10 +668,10 @@ class TestAttachVolumeISO(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_volume_iso_attach(self):
         """Test Volumes and ISO attach
         """
-        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. Create and attach 5 data volumes to VM
@@ -864,10 +864,10 @@ class TestVolumes(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_attach_volume(self):
         """Attach a created Volume to a Running VM
         """
-        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. Create a data volume.
         # 2. List Volumes should not have vmname and virtualmachineid fields in
@@ -948,10 +948,10 @@ class TestVolumes(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_02_detach_volume(self):
         """Detach a Volume attached to a VM
         """
-        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. Data disk should be detached from instance
@@ -996,10 +996,10 @@ class TestVolumes(cloudstackTestCase):
                          )
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_03_delete_detached_volume(self):
         """Delete a Volume unattached to an VM
         """
-        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. volume should be deleted successfully and listVolume should not
         #    contain the deleted volume details.

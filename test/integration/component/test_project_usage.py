@@ -188,10 +188,10 @@ class TestVmUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_01_vm_usage(self):
         """Test Create/Destroy VM and verify usage calculation
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a VM. Verify usage_events table contains VM .create,
         #    VM.start , Network.offering.assign , Volume.create events
@@ -399,10 +399,10 @@ class TestPublicIPUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "eip", "advancedns"])
     def test_01_public_ip_usage(self):
         """Test Assign new IP and verify usage calculation
         """
-        tags = ["advanced", "eip", "advancedns"]
         # Validate the following
         # 1. Acquire a IP for the network of this account. Verify usage_event
         #    table has  Acquire IP event for  the IP for this account
@@ -557,10 +557,10 @@ class TestVolumeUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_01_volume_usage(self):
         """Test Create/delete a volume and verify correct usage is recorded
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Volume.create event for both root and data disk is there for the
         #    created account in cloud.usage_event table
@@ -748,11 +748,11 @@ class TestTemplateUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_01_template_usage(self):
         """Test Upload/ delete a template and verify correct usage is generated
             for the template uploaded
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a account
         # 2. Upload a template from this account. template.create event is
@@ -900,10 +900,10 @@ class TestISOUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_01_ISO_usage(self):
         """Test Create/Delete a ISO and verify its usage is generated correctly
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a account
         # 2. Upload a ISO from this account. ISO.create event is recorded in
@@ -1072,10 +1072,10 @@ class TestLBRuleUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "eip", "advancedns"])
     def test_01_lb_usage(self):
         """Test Create/Delete a LB rule and verify correct usage is recorded
         """
-        tags = ["advanced", "eip", "advancedns"]
         # Validate the following
         # 1. Acquire a IP for this account. lb.rule.create event is registered
         #    for this account in cloud.usage_event table
@@ -1238,11 +1238,11 @@ class TestSnapshotUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_01_snapshot_usage(self):
         """Test Create/Delete a manual snap shot and verify
         correct usage is recorded
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create snapshot of the root disk  for this account.Snapshot.create
         #    event is there for the created account in cloud.usage_event table
@@ -1430,10 +1430,10 @@ class TestNatRuleUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_nat_usage(self):
         """Test Create/Delete a PF rule and verify correct usage is recorded
         """
-        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. Acquire a IP for this account
         # 2. Create a PF rule on the IP associated with this account.
@@ -1613,10 +1613,10 @@ class TestVpnUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_vpn_usage(self):
         """Test Create/Delete a VPN and verify correct usage is recorded
         """
-        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. Enable VPN for this IP. vpn.add.user event is registered for this
         #    account in cloud.usage_event table

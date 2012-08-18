@@ -188,10 +188,10 @@ class TestAddNetScaler(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_add_netscaler_device(self):
         """Test add netscaler device
         """
-        tags = ["advancedns"]
         # Validate the following
         # 1. Add Netscaler device into a Zone by providing valid log in
         #    credentials , public , private interface and enabling Load
@@ -314,10 +314,10 @@ class TestInvalidParametersNetscaler(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_invalid_cred(self):
         """Test add netscaler device with invalid credential
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Add Netscaler device into a Zone by providing invalid log in
@@ -383,10 +383,10 @@ class TestInvalidParametersNetscaler(cloudstackTestCase):
                                   )
         return
 
+    @attr(tags = ["advancedns"])
     def test_invalid_public_interface(self):
         """Test add netscaler device with invalid public interface
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Add Netscaler device into a Zone by providing valid log in
@@ -450,10 +450,10 @@ class TestInvalidParametersNetscaler(cloudstackTestCase):
                                   )
         return
 
+    @attr(tags = ["advancedns"])
     def test_invalid_private_interface(self):
         """Test add netscaler device with invalid private interface
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Add Netscaler device into a Zone by providing valid log in
@@ -635,10 +635,10 @@ class TestNetScalerDedicated(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_netscaler_dedicated_mode(self):
         """Test netscaler device in dedicated mode
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Add Netscaler device in dedicated mode.
@@ -854,10 +854,10 @@ class TestNetScalerShared(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_netscaler_shared_mode(self):
         """Test netscaler device in shared mode
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Add Netscaler device in shared mode.
@@ -1103,10 +1103,10 @@ class TestNetScalerCustomCapacity(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_netscaler_custom_capacity(self):
         """Test netscaler device with custom capacity
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Add Netscaler device in shared mode with capacity 3
@@ -1376,10 +1376,10 @@ class TestNetScalerNoCapacity(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_netscaler_no_capacity(self):
         """Test netscaler device with no capacity remaining
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Add Netscaler device in shared mode with capacity 2
@@ -1644,10 +1644,10 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_01_guest_network(self):
         """Implementing Guest Network when first VM gets deployed using the network having Netscaler as LB
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Configure Netscaler for load balancing. 
@@ -1764,10 +1764,10 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_02_guest_network_multiple(self):
         """Implementing Guest Network when multiple VMs gets deployed using the network having Netscaler as LB
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Configure Netscaler for load balancing. 
@@ -1930,10 +1930,10 @@ class TestGuestNetworkWithNetScaler(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_03_delete_account(self):
         """Delete an account that has LB rules
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Acquire an ipaddress. Create multiple Lb rules on this ip address
@@ -2210,10 +2210,10 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_01_stop_all_vms(self):
         """Test Stopping all the Vms for any account that has LB rules.
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Acquire IP address and create a load balancer rule
@@ -2291,10 +2291,10 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_02_start_one_vm(self):
         """Test LB rules on Netscaler after starting one Vm in account
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Acquire IP address and create a load balancer rule
@@ -2376,10 +2376,10 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_03_network_restart_without_cleanup(self):
         """Test LB rules on Netscaler after network restart without cleanup
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Acquire IP address and create a load balancer rule
@@ -2438,10 +2438,10 @@ class TestGuestNetworkShutDown(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_04_network_restart_with_cleanup(self):
         """Test LB rules on Netscaler after network restart with cleanup
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Acquire IP address and create a load balancer rule
@@ -2614,10 +2614,10 @@ class TestServiceProvider(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_01_create_nw_off_disabled(self):
         """Test create network with network offering disabled
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Configure Netscaler for load balancing. 
@@ -2660,10 +2660,10 @@ class TestServiceProvider(cloudstackTestCase):
                             )
         return
 
+    @attr(tags = ["advancedns"])
     def test_02_create_nw_sp_disabled(self):
         """Test create network when service provider is disabled
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Configure Netscaler for load balancing. 
@@ -2693,10 +2693,10 @@ class TestServiceProvider(cloudstackTestCase):
                             )
         return
 
+    @attr(tags = ["advancedns"])
     def test_03_create_lb_sp_disabled(self):
         """Test create LB rules when service provider is disabled
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Configure Netscaler for load balancing. 
@@ -2930,10 +2930,10 @@ class TestDeleteNetscaler(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_delete_netscaler_with_lb(self):
         """Test delete Netscaler when active LB rules are present
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Configure Netscaler for load balancing. 

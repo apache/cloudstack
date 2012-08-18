@@ -152,10 +152,10 @@ class TestProjectLimits(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_01_project_limits(self):
         """ Test project limits
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a Project. Verify once projects are created, they inherit
         #    a default set of resource limits as configured by the Cloud Stack
@@ -299,11 +299,11 @@ class TestProjectLimits(cloudstackTestCase):
                                       )
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     @unittest.skip("No provision for updating resource limits from account through API")
     def test_02_project_limits_normal_user(self):
         """ Test project limits
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a Project
         # 2. Reduce the projects limits as a domain admin. Verify resource
@@ -523,10 +523,10 @@ class TestResourceLimitsProject(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_03_vm_per_project(self):
         """Test VM limit per project
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Set max VM per project to 2
         # 2. Create account and start 2 VMs. Verify VM state is Up and Running

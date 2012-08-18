@@ -164,10 +164,10 @@ class TestRouterServices(cloudstackTestCase):
         self._cleanup = []
         return
 
+    @attr(tags = ["advanced"])
     def test_01_AdvancedZoneRouterServices(self):
         """Test advanced zone router services
         """
-        tags = ["advanced"]
         # Validate the following:
         # 1. Verify that list of services provided by this network are running
         #    a. DNS
@@ -310,10 +310,10 @@ class TestRouterServices(cloudstackTestCase):
                     )
         return
 
+    @attr(tags = ["advanced"])
     def test_02_NetworkGarbageCollection(self):
         """Test network garbage collection
         """
-        tags = ["advanced"]
         # Validate the following
         # 1. wait for router to start and guest network to be created
         #    a.listRouters account=user, domainid=1 (router state=Running)
@@ -468,10 +468,10 @@ class TestRouterServices(cloudstackTestCase):
         self._cleanup.append(self.vm_2)
         return
 
+    @attr(tags = ["advanced"])
     def test_03_RouterStartOnVmDeploy(self):
         """Test router start on VM deploy
         """
-        tags = ["advanced"]
         # Validate the following
         # 1. deployVirtualMachine in the account
         # 2. listVirtualMachines account=user, domainid=1
@@ -643,10 +643,10 @@ class TestRouterStopCreatePF(cloudstackTestCase):
         self._cleanup = []
         return
 
+    @attr(tags = ["advanced"])
     def test_01_RouterStopCreatePF(self):
         """Test router stop create port forwarding
         """
-        tags = ["advanced"]
         # validate the following
         # 1. wait for router to start, guest network to be implemented and
         #    VM to report Running
@@ -853,10 +853,10 @@ class TestRouterStopCreateLB(cloudstackTestCase):
         self._cleanup = []
         return
 
+    @attr(tags = ["advanced"])
     def test_01_RouterStopCreateLB(self):
         """Test router stop create Load balancing
         """
-        tags = ["advanced"]
         # validate the following
         # 1. listLoadBalancerRules (publicipid=ipaddressid of source NAT)
         # 2. rule should be for port 2222 as applied and
@@ -1063,10 +1063,10 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         self._cleanup = []
         return
 
+    @attr(tags = ["advanced"])
     def test_01_RouterStopCreateFW(self):
         """Test router stop create Firewall rule
         """
-        tags = ["advanced"]
         # validate the following
         # 1. 1. listFirewallRules (filter by ipaddressid of sourcenat)
         # 2. rule should be for ports 1-600 and in state=Active

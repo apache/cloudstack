@@ -158,11 +158,11 @@ class TestUploadDataDisk(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
+    @attr(tags = ["advanced", "basic", "eip", "advancedns", "sg"])
     def test_01_upload_data_disk(self):
         """Test Upload a data disk
         """
 
-        tags = ["advanced", "basic", "eip", "advancedns", "sg"]
 
         # Validate the following
         # 1. call upload volume API with following parameters HTTP URL of the
@@ -211,11 +211,11 @@ class TestUploadDataDisk(cloudstackTestCase):
                     )
         return
 
+    @attr(tags = ["advanced", "basic", "eip", "advancedns", "sg"])
     def test_02_upload_volume_limit(self):
         """Test upload volume limits
         """
 
-        tags = ["advanced", "basic", "eip", "advancedns", "sg"]
 
         # Validate the following
         # 1. Update the volume resource limit for account to 1
@@ -316,11 +316,11 @@ class TestUploadDiskDiffFormat(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
+    @attr(tags = ["advanced", "basic", "eip", "advancedns", "sg"])
     def test_upload_disk_diff_format(self):
         """Test Upload a data disk in different format
         """
 
-        tags = ["advanced", "basic", "eip", "advancedns", "sg"]
 
         # Validate the following
         # 1. call upload volume API with following parameters HTTP URL of the
@@ -449,11 +449,11 @@ class TestUploadAttachDisk(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
+    @attr(tags = ["advanced", "basic", "eip", "advancedns", "sg"])
     def test_upload_attach_data_disk(self):
         """Test Upload and attach a data disk
         """
 
-        tags = ["advanced", "basic", "eip", "advancedns", "sg"]
 
         # Validate the following
         # 1. call upload volume API with following parameters HTTP URL of the
@@ -602,11 +602,11 @@ class TestUploadAttachDiskDiffFormat(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
+    @attr(tags = ["advanced", "basic", "eip", "advancedns", "sg"])
     def test_upload_disk_diff_format(self):
         """Test Upload a data disk in different format
         """
 
-        tags = ["advanced", "basic", "eip", "advancedns", "sg"]
 
         # Validate the following
         # 1. call upload volume API with following parameters HTTP URL of the
@@ -757,11 +757,11 @@ class TestUploadDiskMultiStorage(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
+    @attr(tags = ["advanced", "basic", "eip", "advancedns", "sg"])
     def test_01_upload_volume_multi_sec_storage(self):
         """Test Upload a data disk when multiple sec storages are present
         """
 
-        tags = ["advanced", "basic", "eip", "advancedns", "sg"]
 
         # Validate the following
         # 1. Assume multiple secondary storages are present in a zone
@@ -826,11 +826,11 @@ class TestUploadDiskMultiStorage(cloudstackTestCase):
                     )
         return
 
+    @attr(tags = ["advanced", "basic", "eip", "advancedns", "sg"])
     def test_02_upload_volume_multi_pri_storage(self):
         """Test Upload a data disk when multiple primary storages are present
         """
 
-        tags = ["advanced", "basic", "eip", "advancedns", "sg"]
 
         # Validate the following
         # 1. Assume multiple primary storages are present in a pod

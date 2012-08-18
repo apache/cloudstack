@@ -215,10 +215,10 @@ class TestLbStickyPolicy(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_01_source_based_roundrobin(self):
         """Test Create a "SourceBased" stick policy for a Lb rule with "RoundRobin" algorithm
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Configure Netscaler for load balancing.
@@ -303,10 +303,10 @@ class TestLbStickyPolicy(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_02_source_based_source_algo(self):
         """Test Create a "SourceBased" stick policy for a Lb rule with "Source" algorithm
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Configure Netscaler for load balancing.
@@ -392,10 +392,10 @@ class TestLbStickyPolicy(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_03_source_based_leastconn(self):
         """Test Create a "SourceBased" stick policy for a Lb rule with leastconn algo
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Configure Netscaler for load balancing.
@@ -481,10 +481,10 @@ class TestLbStickyPolicy(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_04_lbcookie_based_roundrobin(self):
         """Test Create a "LBCookie" stick policy for a Lb rule with roundrobin algo
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Configure Netscaler for load balancing.
@@ -572,10 +572,10 @@ class TestLbStickyPolicy(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_05_lbcookie_source_algo(self):
         """Test Create a "LBCookie" stick policy for a Lb rule with "Source" algorithm
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Configure Netscaler for load balancing.
@@ -663,10 +663,10 @@ class TestLbStickyPolicy(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_06_lbcookie_leastconn(self):
         """Test Create a "LBCookie" stick policy for a Lb rule with leastconn algo
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Configure Netscaler for load balancing.
@@ -754,10 +754,10 @@ class TestLbStickyPolicy(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_07_appcookie_based_roundrobin(self):
         """Test Create a "AppCookie" stick policy for a Lb rule with roundrobin algo
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Configure Netscaler for load balancing.
@@ -845,10 +845,10 @@ class TestLbStickyPolicy(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_08_appcookie_source_algo(self):
         """Test Create a "AppCookie" stick policy for a Lb rule with "Source"
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Configure Netscaler for load balancing.
@@ -936,10 +936,10 @@ class TestLbStickyPolicy(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_09_appcookie_leastconn(self):
         """Test Create a "AppCookie" stick policy for a Lb rule with leastconn
         """
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Configure Netscaler for load balancing.
