@@ -1,14 +1,14 @@
 <?xml version="1.0"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>cloud-core</artifactId>
-	<version>4.0.0-SNAPSHOT</version>
-  <name>Apache CloudStack Core</name>
+	<name>Apache CloudStack Core</name>
 	<parent>
 		<groupId>com.cloud</groupId>
 		<artifactId>cloud-parent</artifactId>
 		<version>4.0.0-SNAPSHOT</version>
-    <relativePath>../parent/pom.xml</relativePath>
+		<relativePath>../parent/pom.xml</relativePath>
 	</parent>
 	<dependencies>
 		<dependency>
@@ -20,30 +20,28 @@
 			<groupId>com.cloud</groupId>
 			<artifactId>xapi</artifactId>
 			<version>${cs.xapi.version}</version>
-      <exclusions>
-        <exclusion>
-          <artifactId>junit</artifactId>
-          <groupId>junit</groupId>
-        </exclusion>
-      </exclusions>
+			<exclusions>
+				<exclusion>
+					<artifactId>junit</artifactId>
+					<groupId>junit</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>commons-httpclient</groupId>
 			<artifactId>commons-httpclient</artifactId>
 			<version>${cs.httpclient.version}</version>
-      <exclusions>
-        <exclusion>
-          <artifactId>commons-codec</artifactId>
-          <groupId>commons-codec</groupId>
-        </exclusion>
-      </exclusions>
+			<exclusions>
+				<exclusion>
+					<artifactId>commons-codec</artifactId>
+					<groupId>commons-codec</groupId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 	</dependencies>
 	<build>
 		<defaultGoal>install</defaultGoal>
 		<sourceDirectory>src</sourceDirectory>
-    <!--
-		<testSourceDirectory>test</testSourceDirectory>
-    -->
+		<!-- <testSourceDirectory>test</testSourceDirectory> -->
 	</build>
 </project>

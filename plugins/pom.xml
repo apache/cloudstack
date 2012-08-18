@@ -3,39 +3,38 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>cloud-plugins</artifactId>
-	<version>4.0.0-SNAPSHOT</version>
 	<name>Apache CloudStack Plugin POM</name>
-  <packaging>pom</packaging>
+	<packaging>pom</packaging>
 	<parent>
 		<groupId>com.cloud</groupId>
 		<artifactId>cloud-parent</artifactId>
 		<version>4.0.0-SNAPSHOT</version>
-    <relativePath>../parent/pom.xml</relativePath>
+		<relativePath>../parent/pom.xml</relativePath>
 	</parent>
 	<build>
 		<defaultGoal>install</defaultGoal>
 		<sourceDirectory>src</sourceDirectory>
 	</build>
-  <modules>
-    <module>parent</module>
-    <module>deployment-planners/user-concentrated-pod</module>
-    <module>deployment-planners/user-dispersing</module>
-    <module>file-systems/netapp</module>
-    <module>host-allocators/random</module>
-    <module>hypervisors/kvm</module>
-    <module>hypervisors/ovm</module>
-    <module>hypervisors/vmware</module>
-    <module>hypervisors/xen</module>
-    <module>network-elements/elastic-loadbalancer</module>
-    <module>network-elements/ovs</module>
-    <module>network-elements/f5</module>
-    <module>network-elements/juniper-srx</module>
-    <module>network-elements/midokura-midonet</module>
-    <module>network-elements/netscaler</module>
-    <module>network-elements/nicira-nvp</module>
-    <module>storage-allocators/random</module>
-    <module>user-authenticators/ldap</module>
-    <module>user-authenticators/md5</module>
-    <module>user-authenticators/plain-text</module>
-  </modules>
+	<modules>
+		<module>parent</module>
+		<module>deployment-planners/user-concentrated-pod</module>
+		<module>deployment-planners/user-dispersing</module>
+		<module>file-systems/netapp</module>
+		<module>host-allocators/random</module>
+		<module>hypervisors/kvm</module>
+		<module>hypervisors/ovm</module>
+		<module>hypervisors/vmware</module>
+		<module>hypervisors/xen</module>
+		<module>network-elements/elastic-loadbalancer</module>
+		<module>network-elements/ovs</module>
+		<module>network-elements/f5</module>
+		<module>network-elements/juniper-srx</module>
+		<module>network-elements/midokura-midonet</module>
+		<module>network-elements/netscaler</module>
+		<module>network-elements/nicira-nvp</module>
+		<module>storage-allocators/random</module>
+		<module>user-authenticators/ldap</module>
+		<module>user-authenticators/md5</module>
+		<module>user-authenticators/plain-text</module>
+	</modules>
 </project>

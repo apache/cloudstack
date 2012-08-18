@@ -3,24 +3,23 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>cloud-plugin-network-srx</artifactId>
-	<version>4.0.0-SNAPSHOT</version>
 	<name>Apache CloudStack Plugin - Juniper SRX</name>
 	<parent>
 		<groupId>com.cloud</groupId>
 		<artifactId>cloud-plugin-parent</artifactId>
 		<version>4.0.0-SNAPSHOT</version>
-    <relativePath>../../parent/pom.xml</relativePath>
+		<relativePath>../../parent/pom.xml</relativePath>
 	</parent>
-  <dependencies>
-    <dependency>
-      <groupId>com.cloud.com.f5</groupId>
-      <artifactId>icontrol</artifactId>
-      <version>1.0</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.axis</groupId>
-      <artifactId>axis</artifactId>
-      <version>${cs.axis.version}</version>
-    </dependency>
-  </dependencies>
+	<dependencies>
+		<dependency>
+			<groupId>com.cloud.com.f5</groupId>
+			<artifactId>icontrol</artifactId>
+			<version>1.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.axis</groupId>
+			<artifactId>axis</artifactId>
+			<version>${cs.axis.version}</version>
+		</dependency>
+	</dependencies>
 </project>

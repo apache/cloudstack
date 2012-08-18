@@ -132,10 +132,11 @@
 		<module>deps/XenServerJava</module>
 		<module>vmware-base</module>
 		<module>plugins</module>
+		<module>awsapi</module>
 	</modules>
 
 	<build>
-    <defaultGoal>install</defaultGoal>
+		<defaultGoal>install</defaultGoal>
 		<pluginManagement>
 			<plugins>
 				<plugin>
