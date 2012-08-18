@@ -173,10 +173,10 @@ class TestUserProjectCreation(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_admin_project_creation(self):
         """Test create project as a domain admin and domain user
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Check if 'allow.user.create.projects' configuration is true
         # 2. Create a Project as domain admin
@@ -338,11 +338,11 @@ class TestProjectCreationNegative(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     @unittest.skip("Known bug-able to create project as a domain user")
     def test_user_project_creation(self):
         """Test create project as a domain admin and domain user
         """
-
         # Validate the following
         # 1. Check if 'allow.user.create.projects' configuration is false
         # 2. Create a Project as domain admin. Project creation should be
@@ -479,10 +479,10 @@ class TestProjectInviteRequired(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_add_user_to_project(self):
         """Add user to project when 'project.invite.required' is false"""
 
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
 
         # Validate the following:
         # 1. Create a Project

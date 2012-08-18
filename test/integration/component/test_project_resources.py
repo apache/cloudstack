@@ -206,10 +206,10 @@ class TestOfferings(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_01_service_offerings(self):
         """ Test service offerings in a project
         """
-
         # Validate the following
         # 1. Create a project.
         # 2. List service offerings for the project. All SO available in the
@@ -248,6 +248,7 @@ class TestOfferings(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_02_project_disk_offerings(self):
         """ Test project disk offerings
         """
@@ -380,14 +381,10 @@ class TestNetwork(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_03_network_create(self):
         """ Test create network in project
         """
-<<<<<<< HEAD
-
-=======
-        tags = ["advanced", "advancedns"]
->>>>>>> 6d17e21... This commit has following fixes:
         # Validate the following
         # 1. Create a project.
         # 2. Add virtual/direct network resource to the project. User shared
@@ -588,16 +585,10 @@ class TestTemplates(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_04_public_template_use_in_project(self):
         """Test Templates creation in projects
         """
-<<<<<<< HEAD
-
-        # Validate the following 
-=======
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
-        # Validate the following
->>>>>>> 6d17e21... This commit has following fixes:
         # 1. Create a project
         # 2. Verify Public templates can be used without any restriction
         # 3. Verify that template created in project can be used in project
@@ -652,16 +643,10 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_05_use_private_template_in_project(self):
         """Test use of private template in a project
         """
-<<<<<<< HEAD
-
-        # Validate the following 
-=======
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
-        # Validate the following
->>>>>>> 6d17e21... This commit has following fixes:
         # 1. Create a project
         # 2. Verify that in order to use somebody’s Private template for vm
         #    creation in the project, permission to use the template has to
@@ -823,10 +808,10 @@ class TestSnapshots(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_06_create_snapshots_in_project(self):
         """Test create snapshots in project
         """
-
         # Validate the following
         # 1. Create a project
         # 2. Add some snapshots to the project
@@ -976,14 +961,10 @@ class TestPublicIpAddress(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_07_associate_public_ip(self):
         """Test associate public IP within the project
         """
-<<<<<<< HEAD
-
-=======
-        tags = ["advanced", "eip", "advancedns"]
->>>>>>> 6d17e21... This commit has following fixes:
         # Validate the following
         # 1. Create a project
         # 2. Add some public Ips to the project
@@ -1256,10 +1237,10 @@ class TestSecurityGroup(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["sg", "eip"])
     def test_08_security_group(self):
         """Test security groups in project
         """
-
         # Validate the following:
         # 1. Create a project
         # 2. Assign some security groups to that project

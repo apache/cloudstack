@@ -163,10 +163,10 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_createVM_snapshotTemplate(self):
         """Test create VM, Snapshot and Template
         """
-        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. Deploy VM using default template, small service offering
         #    and small data disk offering.
@@ -476,10 +476,10 @@ class TestAccountSnapshotClean(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_02_accountSnapshotClean(self):
         """Test snapshot cleanup after account deletion
         """
-        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. listAccounts API should list out the newly created account
         # 2. listVirtualMachines() command should return the deployed VM.
@@ -819,10 +819,10 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_03_snapshot_detachedDisk(self):
         """Test snapshot from detached disk
         """
-        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. login in VM  and write some data on data disk(use fdisk to
         #    partition datadisk,fdisk /dev/sdb, and make filesystem using
@@ -1098,10 +1098,10 @@ class TestSnapshotLimit(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_04_snapshot_limit(self):
         """Test snapshot limit in snapshot policies
         """
-        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. Perform hourly recurring snapshot on the root disk of VM and keep
         #    the maxsnapshots as 1
@@ -1356,10 +1356,10 @@ class TestSnapshotEvents(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_05_snapshot_events(self):
         """Test snapshot events
         """
-        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. Perform snapshot on the root disk of this VM and check the events/alerts.
         # 2. delete the snapshots and check the events/alerts
