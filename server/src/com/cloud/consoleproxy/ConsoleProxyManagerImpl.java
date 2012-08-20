@@ -1798,12 +1798,4 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
     @Override
     public void onScanEnd() {
     }
-
-	@Override
-	public boolean recreateNeeded(
-			VirtualMachineProfile<ConsoleProxyVO> profile, long hostId,
-			Commands cmds, ReservationContext context) {
-		// TODO Auto-generated method stub
-		return false;
-	}
 }

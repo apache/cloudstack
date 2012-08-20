@@ -210,7 +210,8 @@ public enum Config {
     ElasticLoadBalancerVmCpuMhz("Advanced", ManagementServer.class, Integer.class, "network.loadbalancer.basiczone.elb.vm.cpu.mhz", "128", "CPU speed for the elastic load balancer vm", null),
     ElasticLoadBalancerVmNumVcpu("Advanced", ManagementServer.class, Integer.class, "network.loadbalancer.basiczone.elb.vm.vcpu.num", "1", "Number of VCPU  for the elastic load balancer vm", null),
     ElasticLoadBalancerVmGcInterval("Advanced", ManagementServer.class, Integer.class, "network.loadbalancer.basiczone.elb.gc.interval.minutes", "30", "Garbage collection interval to destroy unused ELB vms in minutes. Minimum of 5", null),
-
+    RecreateSystemVmEnabled("Advanced", ManagementServer.class, Boolean.class, "recreate.systemvm.enabled", "false", "If true, will recreate system vm root disk whenever starting system vm", "true,false"),
+    
     // Ovm
     OvmPublicNetwork("Advanced", ManagementServer.class, String.class, "ovm.public.network.device", null, "Specify the public bridge on host for public network", null),
     OvmPrivateNetwork("Advanced", ManagementServer.class, String.class, "ovm.private.network.device", null, "Specify the private bridge on host for private network", null),

@@ -650,7 +650,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             DataCenterDeployment originalPlan = plan;
 
             int retry = _retry;
-            boolean recreate = false;
             while (retry-- != 0) { // It's != so that it can match -1.
 
                 if(reuseVolume){
@@ -741,7 +740,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     }                    
                     _networkMgr.prepare(vmProfile, dest, ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
-                        _storageMgr.prepare(vmProfile, dest, recreate);
+                        _storageMgr.prepare(vmProfile, dest);
                     }                    
                     vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
 
@@ -791,10 +790,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                                 canRetry = false;
                                 _haMgr.scheduleStop(vm, destHostId, WorkType.ForceStop);
                                 throw new ExecutionException("Unable to stop " + vm + " so we are unable to retry the start operation");
-                            }
-
-                            if (vmGuru.recreateNeeded(vmProfile, destHostId, cmds, ctx)) {
-                            	recreate = true;
                             }
                         }
                     }
