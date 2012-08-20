@@ -348,6 +348,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     private int _customDiskOfferingMinSize = 1;
     private int _customDiskOfferingMaxSize = 1024;
 
+	private boolean _recreateSystemVmEnabled;
+
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) throws StorageUnavailableException {
 
         // if pool is in maintenance and it is the ONLY pool available; reject
@@ -954,6 +956,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         String time = configs.get("storage.cleanup.interval");
         _storageCleanupInterval = NumbersUtil.parseInt(time, 86400);
 
+        value = configDao.getValue(Config.RecreateSystemVmEnabled.key());
+        _recreateSystemVmEnabled = Boolean.parseBoolean(value);
+        
         s_logger.info("Storage cleanup enabled: " + _storageCleanupEnabled + ", interval: " + _storageCleanupInterval + ", template cleanup enabled: " + _templateCleanupEnabled);
 
         String workers = configs.get("expunge.workers");
@@ -3192,7 +3197,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     }
 
     @Override
-    public void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, boolean recreate) throws StorageUnavailableException, InsufficientStorageCapacityException {
+    public void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException {
 
         if (dest == null) {
             if (s_logger.isDebugEnabled()) {
@@ -3204,7 +3209,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking if we need to prepare " + vols.size() + " volumes for " + vm);
         }
-
+        boolean recreate = _recreateSystemVmEnabled;
         List<VolumeVO> recreateVols = new ArrayList<VolumeVO>(vols.size());
 
         for (VolumeVO vol : vols) {
