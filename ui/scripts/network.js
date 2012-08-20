@@ -896,10 +896,17 @@
                                     data.listvirtualmachinesresponse.virtualmachine ?
                                       data.listvirtualmachinesresponse.virtualmachine : [],
                                     function(instance) {
-                                      return $.inArray(instance.state, [
-                                        'Destroyed'
-                                      ]) == -1;
-                                    }
+                                         var nonAutoScale=0;
+                                         if( instance.displayname.match(/AutoScale-LB-/)==null)
+                                             nonAutoScale =1;
+                                         else {
+                                            if(instance.displayname.match(/AutoScale-LB-/).length)
+                                               nonAutoScale =0;
+                                             }
+
+                                      var isActiveState= $.inArray(instance.state, ['Destroyed' ]) == -1;
+                                      return nonAutoScale && isActiveState;
+                                     }
                                   )
                                 });
                               },
