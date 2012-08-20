@@ -24,6 +24,7 @@ from marvin import remoteSSHClient
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
+from nose.plugins.attrib import attr
 #Import System modules
 import time
 
@@ -59,7 +60,7 @@ class Services:
                                         "username": "testuser",
                                         "password": "password",
                                         },
-                         "ostypeid":'1a568aed-db2d-41ca-b644-416b0bdc067e',
+                         "ostypeid":'01853327-513e-4508-9628-f1f55db1946f',
                          "sleep": 60,
                          "timeout": 10,
                          "mode": 'advanced', #Networking mode: Basic, Advanced
@@ -129,6 +130,7 @@ class TestRouterServices(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "smoke"])
     def test_01_router_internal_basic(self):
         """Test router internal basic zone
         """
@@ -190,6 +192,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "smoke"])
     def test_02_router_internal_adv(self):
         """Test router internal advanced zone
         """
@@ -267,6 +270,7 @@ class TestRouterServices(cloudstackTestCase):
         self.debug("Haproxy process status: %s" % res)
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_03_restart_network_cleanup(self):
         """Test restart network
         """
@@ -344,6 +348,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_04_restart_network_wo_cleanup(self):
         """Test restart network without cleanup
         """
@@ -444,6 +449,7 @@ class TestRouterServices(cloudstackTestCase):
                                 )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_05_router_basic(self):
         """Test router basic setup
         """
@@ -509,6 +515,7 @@ class TestRouterServices(cloudstackTestCase):
                             )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_06_router_advanced(self):
         """Test router advanced setup
         """
@@ -591,6 +598,7 @@ class TestRouterServices(cloudstackTestCase):
                             )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_07_stop_router(self):
         """Test stop router
         """
@@ -634,6 +642,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_08_start_router(self):
         """Test start router
         """
@@ -678,6 +687,7 @@ class TestRouterServices(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_09_reboot_router(self):
         """Test reboot router
         """
@@ -730,6 +740,8 @@ class TestRouterServices(cloudstackTestCase):
                         )
         return
 
+    @attr(configuration = "network.gc")
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_10_network_gc(self):
         """Test network GC
         """

@@ -23,6 +23,7 @@ from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
+from nose.plugins.attrib import attr
 
 #Import System modules
 import time
@@ -84,7 +85,7 @@ class TestSecStorageServices(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @unittest.skip("do not add secondary storage")
+    @unittest.skip("skipped - do not add secondary storage")
     def test_01_add_sec_storage(self):
         """Test secondary storage
         """
@@ -138,6 +139,7 @@ class TestSecStorageServices(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"])
     def test_02_sys_vm_start(self):
         """Test system VM start
         """
@@ -268,6 +270,7 @@ class TestSecStorageServices(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"])
     def test_03_sys_template_ready(self):
         """Test system templates are ready
         """

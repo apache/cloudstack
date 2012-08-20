@@ -24,6 +24,7 @@ from marvin.remoteSSHClient import remoteSSHClient
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
+from nose.plugins.attrib import attr
 
 
 class Services:
@@ -39,7 +40,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "service_offering": {
                                     "name": "Tiny Instance",
@@ -92,10 +93,10 @@ class Services:
                                 {
                                     "displaytext": 'Template from snapshot',
                                     "name": 'Template from snapshot',
-                                    "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                     "templatefilter": 'self',
                                 },
-                            "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                            "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                             # Cent OS 5.3 (64 bit)
                             "diskdevice": "/dev/xvdb",      # Data Disk
                             "rootdisk": "/dev/xvda",        # Root Disk
@@ -191,6 +192,8 @@ class TestSnapshotRootDisk(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_01_snapshot_root_disk(self):
         """Test Snapshot Root Disk
         """
@@ -431,6 +434,8 @@ class TestSnapshots(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_02_snapshot_data_disk(self):
         """Test Snapshot Data Disk
         """
@@ -571,6 +576,8 @@ class TestSnapshots(cloudstackTestCase):
                         )
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_03_volume_from_snapshot(self):
         """Create volumes from snapshots
         """
@@ -752,6 +759,8 @@ class TestSnapshots(cloudstackTestCase):
                                 self.new_virtual_machine.ipaddress)
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_04_delete_snapshot(self):
         """Test Delete Snapshot
         """
@@ -791,6 +800,8 @@ class TestSnapshots(cloudstackTestCase):
                          )
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_05_recurring_snapshot_root_disk(self):
         """Test Recurring Snapshot Root Disk
         """
@@ -882,6 +893,8 @@ class TestSnapshots(cloudstackTestCase):
                         )
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_06_recurring_snapshot_data_disk(self):
         """Test Recurring Snapshot data Disk
         """
@@ -976,6 +989,8 @@ class TestSnapshots(cloudstackTestCase):
                          )
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_07_template_from_snapshot(self):
         """Create Template from snapshot
         """

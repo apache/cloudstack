@@ -24,6 +24,7 @@ from marvin.remoteSSHClient import remoteSSHClient
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
+from nose.plugins.attrib import attr
 #Import System modules
 import time
 
@@ -105,9 +106,9 @@ class Services:
                 {
                     "displaytext": "Test ISO",
                     "name": "testISO",
-                    "url": "http://nfs1.lab.vmops.com/isos_32bit/dsl-4.4.10.iso",
+                    "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
                      # Source URL where ISO is located
-                    "ostypeid": '93ffa3ea-ef02-4e56-9940-f04158353555',
+                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                     "mode": 'HTTP_DOWNLOAD', # Downloading existing ISO 
                 },
                 "template": {
@@ -121,7 +122,7 @@ class Services:
             "sleep": 60,
             "timeout": 10,
             #Migrate VM to hostid
-            "ostypeid": '93ffa3ea-ef02-4e56-9940-f04158353555',
+            "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
             # CentOS 5.3 (64-bit)
             "mode":'advanced',
         }
@@ -168,7 +169,7 @@ class TestDeployVM(cloudstackTestCase):
                         self.account
                         ]
 
-    
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_deploy_vm(self):
         """Test Deploy Virtual Machine
         """
@@ -317,6 +318,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         return
 
     
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_01_stop_vm(self):
         """Test Stop Virtual Machine
         """
@@ -352,7 +354,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
-    
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_02_start_vm(self):
         """Test Start Virtual Machine
         """
@@ -390,7 +392,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
-    
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_03_reboot_vm(self):
         """Test Reboot Virtual Machine
         """
@@ -426,7 +428,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
-    
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_04_change_offering_small(self):
         """Change Offering to a small capacity
         """
@@ -544,7 +546,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
-    
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_05_change_offering_medium(self):
         """Change Offering to a medium capacity
         """
@@ -666,7 +668,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
-    
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_06_destroy_vm(self):
         """Test destroy Virtual Machine
         """
@@ -702,7 +704,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
-    
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_07_restore_vm(self):
         """Test recover Virtual Machine
         """
@@ -742,7 +744,7 @@ class TestVMLifeCycle(cloudstackTestCase):
 
         return
 
-    
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "multihost"])
     def test_08_migrate_vm(self):
         """Test migrate VM
         """
@@ -813,6 +815,9 @@ class TestVMLifeCycle(cloudstackTestCase):
                         )
         return
 
+    @attr(configuration = "expunge.interval")
+    @attr(configuration = "expunge.delay")
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_09_expunge_vm(self):
         """Test destroy(expunge) Virtual Machine
         """
@@ -860,7 +865,7 @@ class TestVMLifeCycle(cloudstackTestCase):
                     )
         return
 
-    
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_10_attachAndDetach_iso(self):
         """Test for detach ISO to virtual machine"""
 
@@ -1102,7 +1107,7 @@ class TestVMPasswordEnabled(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
-    
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_11_get_vm_password(self):
         """Test get VM password for password enabled template"""
 
