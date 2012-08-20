@@ -3507,8 +3507,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume);
             _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                     volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize()));
+            //snapshots: mark these removed in db
+            List<SnapshotVO> snapshots =  _snapshotDao.listByVolumeIdIncludingRemoved(volume.getId());
+            for (SnapshotVO snapshot: snapshots){
+            	_snapshotDao.remove(snapshot.getId());
+            }
         }
-
+        
         _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.user_vm);
         //generate usage events to account for this change
         _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), 
