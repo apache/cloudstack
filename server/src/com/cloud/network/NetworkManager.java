@@ -476,4 +476,10 @@ public interface NetworkManager extends NetworkService {
      */
     PublicIp assignDedicateIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId, boolean isSourceNat) throws ConcurrentOperationException, InsufficientAddressCapacityException;
 
+
+    /**
+     * @return
+     */
+    int getNetworkLockTimeout();
+
 }
