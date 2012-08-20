@@ -1635,6 +1635,7 @@ under the License.
 <script language="javascript">
 dictionary = {
 'label.edit.tags': '<fmt:message key="label.edit.tags"/>',  
+'label.local.storage.enabled': '<fmt:message key="label.local.storage.enabled"/>',
 'label.tier.details': '<fmt:message key="label.tier.details"/>',
 'label.action.enable.physical.network': '<fmt:message key="label.action.enable.physical.network"/>',
 'label.action.disable.physical.network': '<fmt:message key="label.action.disable.physical.network"/>',
