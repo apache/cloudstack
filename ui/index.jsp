@@ -1602,6 +1602,7 @@
 </html>
 <script language="javascript">
 dictionary = {
+'label.local.storage.enabled': '<fmt:message key="label.local.storage.enabled"/>',
 'label.tier.details': '<fmt:message key="label.tier.details"/>',
 'label.edit.tags': '<fmt:message key="label.edit.tags"/>',
 'label.network.rate.megabytes': '<fmt:message key="label.network.rate.megabytes"/>',

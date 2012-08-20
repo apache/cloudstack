@@ -283,31 +283,8 @@
         return (args.groupedData.zone.hypervisor != "VMware");
       },
 						
-			addPrimaryStorage: function(args) {		
-			  var item;
-				$.ajax({
-				  url: createURL("listConfigurations&name=" + todb("use.local.storage")),
-					dataType: 'json',
-					async: false,
-					success: function(json) {					  
-					  var items = json.listconfigurationsresponse.configuration; //unfortunately, it returns 2 items("system.vm.use.local.storage", "use.local.storage") instead of 1 item. 						
-						if(items != null && items.length > 0) { 
-						  for(var i = 0; i < items.length; i++) {
-							  item = items[i];
-							  if(item.name == "use.local.storage") {								  
-								  break; //break for loop
-								}
-							}
-						}
-					}
-				});		
-
-				if(item == null || item.value == null || item.value.length == 0 || item.value == "false")
-				  configurationUseLocalStorage = false;
-				else				
-          configurationUseLocalStorage = true;
-					
-				return (!configurationUseLocalStorage);
+			addPrimaryStorage: function(args) {
+        return args.data.localstorageenabled != 'on';
       }	
     },
 
@@ -512,6 +489,10 @@
                 }
               });
             }
+          },
+          localstorageenabled: {
+            label: 'label.local.storage.enabled',
+            isBoolean: true
           }
         }
       },
@@ -1259,6 +1240,9 @@
 
           array1.push("&name=" + todb(args.data.zone.name));
 
+          if (args.data.zone.localstorageenabled == 'on') {
+            array1.push("&localstorageenabled=true");
+          }
           array1.push("&dns1=" + todb(args.data.zone.dns1));
 
           var dns2 = args.data.zone.dns2;
@@ -2798,8 +2782,8 @@
           });
         },
 
-        addPrimaryStorage: function(args) {     
-					if(configurationUseLocalStorage == true) { //use local storage, don't need primary storage. So, skip this step.
+        addPrimaryStorage: function(args) {
+					if(args.data.zone.localstorageenabled == 'on') { //use local storage, don't need primary storage. So, skip this step.
             stepFns.addSecondaryStorage({
               data: args.data
             });
