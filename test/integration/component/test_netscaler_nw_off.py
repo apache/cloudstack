@@ -16,6 +16,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -38,7 +39,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "service_offering": {
                                     "name": "Tiny Instance",
@@ -153,7 +154,7 @@ class Services:
                                     "publicport": 22,
                                     "openfirewall": False,
                          },
-                         "ostypeid": '946b031b-0e10-4f4a-a3fc-d212ae2ea07f',
+                         "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 10,
@@ -359,7 +360,7 @@ class TestAddMultipleNSDiffZone(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advancedns"])
+    @attr(tags = ["advancedns", "multizone"])
     def test_add_mul_netscaler_diff_zone(self):
         """Test add netscaler devices in different zones
         """
@@ -989,6 +990,7 @@ class TestNetScalerSharedMode(cloudstackTestCase):
         self.debug("Deploy VM failed as Netscaler device capacity is full!")
         return
 
+    @attr(configuration = "network.gc")
     @attr(tags = ["advancedns"])
     def test_04_delete_account_after_capacity_full(self):
         """Test delete and add resouces after netscaler device capacity is full

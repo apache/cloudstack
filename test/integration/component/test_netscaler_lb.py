@@ -16,6 +16,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -134,7 +135,7 @@ class Services:
                                     "publicport": 22,
                                     "protocol": "TCP"
                          },
-                         "ostypeid": '2b58909b-7d9e-45d9-80d8-e58d0bbcbf07',
+                         "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 10,
@@ -2624,7 +2625,7 @@ class TestVmWithLb(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
-    @attr(tags = ["advancedns"])
+    @attr(tags = ["advancedns", "multihost"])
     def test_04_migrate_user_vm(self):
         """Test migrate user VM with LB"""
 

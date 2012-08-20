@@ -15,6 +15,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -54,7 +55,7 @@ class Services:
                                 },
                         "host": {
                                         "username": "root",
-                                        "password": "fr3sca",
+                                        "password": "password",
                                         "publicport": 22,
                             },
                         "account": {
@@ -85,7 +86,7 @@ class Services:
                                     "cidr": '55.55.0.0/11',
                                     # Any network (For creating FW rule
                                     },
-                         "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                         "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                          # Used for Get_Template : CentOS 5.3 (64 bit)
                          "mode": 'advanced',    # Networking mode: Advanced, basic
                         }
@@ -310,6 +311,7 @@ class TestRouterServices(cloudstackTestCase):
                     )
         return
 
+    @attr(configuration = "network.gc")
     @attr(tags = ["advanced"])
     def test_02_NetworkGarbageCollection(self):
         """Test network garbage collection
@@ -643,7 +645,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
         self._cleanup = []
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_RouterStopCreatePF(self):
         """Test router stop create port forwarding
         """
@@ -853,7 +855,7 @@ class TestRouterStopCreateLB(cloudstackTestCase):
         self._cleanup = []
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_RouterStopCreateLB(self):
         """Test router stop create Load balancing
         """
@@ -1063,7 +1065,7 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         self._cleanup = []
         return
 
-    @attr(tags = ["advanced"])
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_RouterStopCreateFW(self):
         """Test router stop create Firewall rule
         """

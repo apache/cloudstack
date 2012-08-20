@@ -1,6 +1,7 @@
 """ P1 tests for Security Keys Encryption
 """
 #Import Local Modules
+from nose.plugins.attrib import attr
 from integration.lib.base import *
 from integration.lib.common import *
 from integration.lib.utils import *
@@ -24,7 +25,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "service_offering": {
                                     "name": "Tiny Instance",
@@ -49,7 +50,7 @@ class Services:
                                 },
                          "host": {
                                    "username": "root",
-                                   "password": "fr3sca",
+                                   "password": "password",
                                 },
                          "globalconfig": {
                                    "security.hash.key" : "test",
@@ -70,7 +71,7 @@ class Services:
                                     "alert.smtp.password" : "test",
                                     "project.smtp.password" : "test",
                                 },
-                        "ostypeid": '7ddbbbb5-bb09-40de-b038-ee78995788ea',
+                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,

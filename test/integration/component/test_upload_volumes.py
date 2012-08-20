@@ -17,6 +17,7 @@
 
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -43,7 +44,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "service_offering": {
                                     "name": "Tiny Instance",
@@ -89,7 +90,7 @@ class Services:
                                     "publicport": 22,
                          },
                         "sleep": 50,
-                        "ostypeid": 'e6e3dd0f-03c8-4cab-9c32-89769c17ccb3',
+                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                         "mode": 'basic',
                     }
 
@@ -158,6 +159,7 @@ class TestUploadDataDisk(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
+    @attr(speed = "slow")
     @attr(tags = ["advanced", "basic", "eip", "advancedns", "sg"])
     def test_01_upload_data_disk(self):
         """Test Upload a data disk
@@ -211,6 +213,7 @@ class TestUploadDataDisk(cloudstackTestCase):
                     )
         return
 
+    @attr(speed = "slow")
     @attr(tags = ["advanced", "basic", "eip", "advancedns", "sg"])
     def test_02_upload_volume_limit(self):
         """Test upload volume limits
@@ -757,7 +760,7 @@ class TestUploadDiskMultiStorage(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
-    @attr(tags = ["advanced", "basic", "eip", "advancedns", "sg"])
+    @attr(tags = ["advanced", "basic", "eip", "advancedns", "sg", "multistorage"])
     def test_01_upload_volume_multi_sec_storage(self):
         """Test Upload a data disk when multiple sec storages are present
         """
@@ -826,7 +829,7 @@ class TestUploadDiskMultiStorage(cloudstackTestCase):
                     )
         return
 
-    @attr(tags = ["advanced", "basic", "eip", "advancedns", "sg"])
+    @attr(tags = ["advanced", "basic", "eip", "advancedns", "sg", "multistorage"])
     def test_02_upload_volume_multi_pri_storage(self):
         """Test Upload a data disk when multiple primary storages are present
         """

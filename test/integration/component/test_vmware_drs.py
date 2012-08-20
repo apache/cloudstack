@@ -16,6 +16,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.remoteSSHClient import remoteSSHClient
@@ -77,7 +78,7 @@ class Services:
             "sleep": 60,
             "timeout": 10,
             "full_host": "10.147.29.53",
-            "ostypeid": 'd96fc3f0-a1d3-4498-88aa-a7a1ca96c1bb',
+            "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
             # CentOS 5.3 (64-bit)
         }
 
@@ -154,7 +155,7 @@ class TestVMPlacement(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "vmware"])_
+    @attr(tags = ["advanced", "vmware", "multihost"])
     def test_vm_creation_in_fully_automated_mode(self):
         """ Test VM Creation in  automation mode = Fully automated
             This test requires following preconditions:
@@ -280,7 +281,7 @@ class TestAntiAffinityRules(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
         
-    @attr(tags = ["advanced", "vmware"])
+    @attr(tags = ["advanced", "vmware", "multihost"])
     def test_vmware_anti_affinity(self):
         """ Test Set up anti-affinity rules
 
@@ -481,7 +482,7 @@ class TestAffinityRules(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "vmware"])
+    @attr(tags = ["advanced", "vmware", "multihost"])
     def test_vmware_affinity(self):
         """ Test Set up affinity rules
 

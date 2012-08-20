@@ -16,6 +16,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.remoteSSHClient import remoteSSHClient
@@ -74,9 +75,9 @@ class Services:
                 {
                     "displaytext": "Test ISO",
                     "name": "testISO",
-                    "url": "http://nfs1.lab.vmops.com/isos_32bit/dsl-4.4.10.iso",
+                    "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
                      # Source URL where ISO is located
-                    "ostypeid": '19e6a39f-92db-4d2c-b375-33e7f42d86be',
+                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                     "mode": 'HTTP_DOWNLOAD',    # Downloading existing ISO
                 },
                 "template": {
@@ -88,14 +89,14 @@ class Services:
                     "isextractable": True,
                     "displaytext": "Cent OS Template",
                     "name": "Cent OS Template",
-                    "ostypeid": '19e6a39f-92db-4d2c-b375-33e7f42d86be',
+                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                     "templatefilter": 'self',
                     "passwordenabled": True,
                 },
             "sleep": 60,
             "timeout": 10,
             #Migrate VM to hostid
-            "ostypeid": '19e6a39f-92db-4d2c-b375-33e7f42d86be',
+            "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
             # CentOS 5.3 (64-bit)
         }
 

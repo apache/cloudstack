@@ -16,6 +16,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.remoteSSHClient import remoteSSHClient
@@ -46,7 +47,7 @@ class Services:
                     "username": "test",
                     # Random characters are appended in create account to
                     # ensure unique username generated each time
-                    "password": "fr3sca",
+                    "password": "password",
                 },
                 "virtual_machine": {
                 # Create a small virtual machine instance with disk offering
@@ -111,10 +112,10 @@ class Services:
                 },
                 "mgmt_server": {
                     "username": "root",
-                    "password": "fr3sca",
+                    "password": "password",
                     "ipaddress": "192.168.100.21"
                 },
-            "ostypeid": '85cb528f-72ed-4df9-ac6a-f6ccf0892ff2',
+            "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
             # CentOS 5.3 (64-bit)
             "sleep": 60,
             "timeout": 10,
@@ -2219,7 +2220,8 @@ class TestEgressAfterHostMaintainance(cloudstackTestCase):
 
         return
 
-    @attr(tags = ["sg", "eip"])
+    @attr(speed = "slow")
+    @attr(tags = ["sg", "eip", "maintenance"])
     def test_egress_after_host_maintainance(self):
         """Test maintenance case for egress
         """
