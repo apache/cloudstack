@@ -7350,5 +7350,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
         return nic;
     }
+    
+    @Override
+    public int getNetworkLockTimeout() {
+        return _networkLockTimeout;
+    }
 
 }
