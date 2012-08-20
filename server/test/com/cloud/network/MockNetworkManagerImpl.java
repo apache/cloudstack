@@ -1081,4 +1081,13 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         // TODO Auto-generated method stub
         return null;
     }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#getNetworkLockTimeout()
+     */
+    @Override
+    public int getNetworkLockTimeout() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 }
