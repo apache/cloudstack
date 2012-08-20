@@ -1425,7 +1425,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         DataCenterDeployment plan = new DataCenterDeployment(0, null, null, null, null, null);
         DomainRouterVO result = null;
         assert router.getIsRedundantRouter();
-        List<DomainRouterVO> routerList = _routerDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn());
+        List<DomainRouterVO> routerList = _routerDao.findByNetwork(router.getNetworkId());
         DomainRouterVO routerToBeAvoid = null;
         for (DomainRouterVO rrouter : routerList) {
             if (rrouter.getHostId() != null && rrouter.getIsRedundantRouter() && rrouter.getState() == State.Running) {
