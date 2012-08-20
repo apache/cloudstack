@@ -1604,6 +1604,10 @@ Released under the MIT license by Ole Laursen, October 2009.
             id='jqueryui.com'
             name='jQuery UI Developers'
             url='http://jqueryui.com/about' />
+        <organisation
+        	id='openstack.org'
+        	name='OpenStack, LLC'
+        	url='http://www.openstack.org' />
     </organisations>
     <primary-license id='ApacheLicenseVersion2'>
         <copyright-notice>Copyright (c) 2012 The Apache Software Foundation</copyright-notice>
@@ -1860,7 +1864,7 @@ Copyright © IBM Corp 2006
         </with-license>
         <with-license id='BSD3ClauseGeneric'>
             <copyright-notice>
-Copyright (c) 2007-2008 Trilead AG (http://www.trilead.com)
+Copyright © 2007-2008 Trilead AG (http://www.trilead.com)
 All rights reserved.
             </copyright-notice>
             <by-organisation id='trilead.com'>
@@ -1879,20 +1883,34 @@ All rights reserved.
             </by-organisation>
         </public-domain>
     </within>
-</manifest> 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    <within dir='scripts/storage/secondary'>
+    	<with-license id='ApacheLicenseVersion2'>
+    		<copyright-notice>
+Copyright © 2010-2011 OpenStack, LLC.
+			</copyright-notice>
+			<by-organisation id='openstack.org'>
+				<resource name='swift' />
+			</by-organisation>
+		</with-license>
+	</within>
+    <within dir='scripts/vm/hypervisor/xenserver'>
+    	<with-license id='ApacheLicenseVersion2'>
+    		<copyright-notice>
+Copyright © 2010-2011 OpenStack, LLC.
+			</copyright-notice>
+			<by-organisation id='openstack.org'>
+				<resource name='swift' />
+			</by-organisation>
+		</with-license>
+	</within>
+    <within dir='tools/gcc'>
+    	<with-license id='ApacheLicenseVersion2'>
+    		<copyright-notice>
+Copyright © 2009 Google Inc.
+			</copyright-notice>
+			<by-organisation id='google.com'>
+				<resource name='compiler.jar' />
+			</by-organisation>
+		</with-license>
+	</within>
+</manifest>
