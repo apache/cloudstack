@@ -147,4 +147,6 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
     public void incrUpdatedCount();
 
     public Date getUpdated();
+
+	boolean isAttachedToVm();
 }

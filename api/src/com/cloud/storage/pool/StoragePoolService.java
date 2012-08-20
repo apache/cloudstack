@@ -18,6 +18,7 @@ package com.cloud.storage.pool;
 
 import java.net.UnknownHostException;
 import java.util.List;
+import java.util.Set;
 
 import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
 import com.cloud.api.commands.CreateStoragePoolCmd;
@@ -26,13 +27,18 @@ import com.cloud.api.commands.DeletePoolCmd;
 import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.api.commands.UpdateStoragePoolCmd;
 import com.cloud.api.commands.UploadVolumeCmd;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.volume.Volume;
+import com.cloud.vm.DiskProfile;
+import com.cloud.vm.VMInstanceVO;
 
 public interface StoragePoolService {
     /**

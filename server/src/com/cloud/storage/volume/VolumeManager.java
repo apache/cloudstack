@@ -3,6 +3,7 @@ package com.cloud.storage.volume;
 import java.util.List;
 
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -24,6 +25,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.DiskProfile;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -61,9 +63,11 @@ public interface VolumeManager {
 	 * @param size
 	 * @param hyperType
 	 * @return volume VO if success, null otherwise
+	 * @throws StorageUnavailableException 
+	 * @throws ConcurrentOperationException 
 	 */
 	VolumeVO createVolume(VolumeVO volume, long VMTemplateId, DiskOfferingVO diskOffering,
-            HypervisorType hyperType, StoragePool assignedPool);
+            HypervisorType hyperType, StoragePool assignedPool) throws StorageUnavailableException, ConcurrentOperationException;
 	
 	/**
 	 * Marks the specified volume as destroyed in the management server database. The expunge thread will delete the volume from its storage pool.
@@ -133,4 +137,6 @@ public interface VolumeManager {
 
 	VolumeVO allocateDiskVolume(String volumeName, long zoneId, long ownerId,
 			long domainId, long diskOfferingId, long size);
+
+	Volume attachVolumeToVM(VolumeVO volume, UserVmVO vm, Long deviceId);
 }

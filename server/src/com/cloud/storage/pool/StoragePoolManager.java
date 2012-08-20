@@ -18,6 +18,7 @@ package com.cloud.storage.pool;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -154,4 +155,8 @@ public interface StoragePoolManager extends StoragePoolService, Manager {
 			Account account, HashSet<StoragePool> poolsToAvoid);
 
 	boolean PrepareTemplateOnPool(VMTemplateVO template, StoragePool pool);
+
+	StoragePoolVO findStoragePool(DiskProfile dskCh, DataCenterVO dc,
+			HostPodVO pod, Long clusterId, VMInstanceVO vm,
+			Set<StoragePool> avoid);
 }

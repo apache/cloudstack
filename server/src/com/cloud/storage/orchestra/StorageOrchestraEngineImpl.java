@@ -1,4 +1,4 @@
-package com.cloud.storage.orchestra;
+hpackage com.cloud.storage.orchestra;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -12,6 +12,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.AttachVolumeAnswer;
+import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
 import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
@@ -21,7 +23,12 @@ import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
 import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.api.BaseCmd;
+import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
+import com.cloud.async.AsyncJobExecutor;
+import com.cloud.async.AsyncJobVO;
+import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
@@ -52,6 +59,7 @@ import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
@@ -91,6 +99,8 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class StorageOrchestraEngineImpl implements StorageOrchestraEngine, Manager {
@@ -115,6 +125,8 @@ public class StorageOrchestraEngineImpl implements StorageOrchestraEngine, Manag
 	protected StoragePoolDao _storagePoolDao;
 	@Inject
 	protected UsageEventDao _usageEventDao;
+	@Inject
+	protected UserVmDao _userVmDao;
 	
 	
 	
@@ -360,7 +372,8 @@ public class StorageOrchestraEngineImpl implements StorageOrchestraEngine, Manag
     }
     
     @Override
-    public void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, boolean recreate) throws StorageUnavailableException, InsufficientStorageCapacityException {
+    public void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, boolean recreate) throws StorageUnavailableException, InsufficientStorageCapacityException,
+    					ConcurrentOperationException {
         if (dest == null) {
             throw new CloudRuntimeException("Unable to prepare Volume for vm because DeployDestination is null, vm:" + vm);
         }
@@ -377,55 +390,6 @@ public class StorageOrchestraEngineImpl implements StorageOrchestraEngine, Manag
             vm.addDisk(new VolumeTO(created, destPool));
         }
     }
-	 
-	@Override
-    @DB
-    public VolumeVO copyVolumeFromSecToPrimary(VolumeVO volume, VMInstanceVO vm, VMTemplateVO template, DataCenterVO dc, HostPodVO pod, Long clusterId, ServiceOfferingVO offering, DiskOfferingVO diskOffering,
-            List<StoragePoolVO> avoids, long size, HypervisorType hyperType) throws NoTransitionException {
-    	
-    	final HashSet<StoragePool> avoidPools = new HashSet<StoragePool>(avoids);
-    	DiskProfile dskCh = createDiskCharacteristics(volume, template, dc, diskOffering);
-    	dskCh.setHyperType(vm.getHypervisorType());
-    	// Find a suitable storage to create volume on 
-    	StoragePoolVO destPool = findStoragePool(dskCh, dc, pod, clusterId, vm, avoidPools);
-    	
-    	// Copy the volume from secondary storage to the destination storage pool    	  	
-    	processEvent(volume, Event.CopyRequested);
-    	VolumeHostVO volumeHostVO = _volumeHostDao.findByVolumeId(volume.getId());
-    	HostVO secStorage = _hostDao.findById(volumeHostVO.getHostId());
-    	String secondaryStorageURL = secStorage.getStorageUrl();
-    	String[] volumePath = volumeHostVO.getInstallPath().split("/");
-    	String volumeUUID = volumePath[volumePath.length - 1].split("\\.")[0];
-    	
-        CopyVolumeCommand cvCmd = new CopyVolumeCommand(volume.getId(), volumeUUID, destPool, secondaryStorageURL, false, _copyvolumewait);
-        CopyVolumeAnswer cvAnswer;
-		try {
-            cvAnswer = (CopyVolumeAnswer) sendToPool(destPool, cvCmd);
-        } catch (StorageUnavailableException e1) {
-        	processEvent(volume, Event.CopyFailed);
-            throw new CloudRuntimeException("Failed to copy the volume from secondary storage to the destination primary storage pool.");
-        }
-
-        if (cvAnswer == null || !cvAnswer.getResult()) {
-        	processEvent(volume, Event.CopyFailed);
-            throw new CloudRuntimeException("Failed to copy the volume from secondary storage to the destination primary storage pool.");
-        }        
-        Transaction txn = Transaction.currentTxn();
-        txn.start();        
-        volume.setPath(cvAnswer.getVolumePath());
-        volume.setFolder(destPool.getPath());
-        volume.setPodId(destPool.getPodId());
-        volume.setPoolId(destPool.getId());        
-        volume.setPodId(destPool.getPodId());
-        processEvent(volume, Event.CopySucceeded); 
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), volume.getDiskOfferingId(), null, volume.getSize());
-        _usageEventDao.persist(usageEvent);
-        _volumeHostDao.remove(volumeHostVO.getId());
-    	txn.commit();
-		return volume;
-    	
-    }
-	 
 	
 	 
 	 @Override
@@ -543,6 +507,27 @@ public class StorageOrchestraEngineImpl implements StorageOrchestraEngine, Manag
 
         migrateVolumes(vols, destPool);
         return vol;
+    }
+    
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_ATTACH, eventDescription = "attaching volume", async = true)
+    public Volume attachVolumeToVM(AttachVolumeCmd command) {
+        Account caller = UserContext.current().getCaller();
+		Long vmId = command.getVirtualMachineId();
+        Long volumeId = command.getId();
+        Long deviceId = command.getDeviceId();
+        VolumeVO volume = _volumeDao.findById(volumeId);
+
+        if (volume == null || volume.getVolumeType() != Volume.Type.DATADISK) {
+            throw new InvalidParameterValueException("Please specify a valid data volume.");
+        }
+        
+        UserVmVO vm = _userVmDao.findById(vmId);
+        if (vm == null || vm.getType() != VirtualMachine.Type.User) {
+            throw new InvalidParameterValueException("Please specify a valid User VM.");
+        }
+        _accountMgr.checkAccess(caller, null, true, volume, vm);
+        return _volumeMgr.attachVolumeToVM(volume, vm, deviceId);
     }
 
    

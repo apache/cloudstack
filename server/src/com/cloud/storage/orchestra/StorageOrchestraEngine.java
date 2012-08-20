@@ -4,6 +4,7 @@ import java.util.List;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.api.commands.AttachVolumeCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.deploy.DeployDestination;
@@ -33,4 +34,5 @@ public interface StorageOrchestraEngine {
 	VolumeVO createVolume(CreateVolumeCmd cmd);
 	VolumeVO allocVolume(CreateVolumeCmd cmd)
 			throws ResourceAllocationException;
+	Volume attachVolumeToVM(AttachVolumeCmd command);
 }

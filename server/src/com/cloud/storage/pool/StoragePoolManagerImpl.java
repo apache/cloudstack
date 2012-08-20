@@ -438,7 +438,8 @@ public class StoragePoolManagerImpl implements StoragePoolManager, Manager, Clus
 		return null;
     }
 
-    protected StoragePoolVO findStoragePool(DiskProfile dskCh, final DataCenterVO dc, HostPodVO pod, Long clusterId, VMInstanceVO vm, final Set<StoragePool> avoid) {
+    @Override
+    public StoragePoolVO findStoragePool(DiskProfile dskCh, final DataCenterVO dc, HostPodVO pod, Long clusterId, VMInstanceVO vm, final Set<StoragePool> avoid) {
 
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
         Enumeration<StoragePoolAllocator> en = _storagePoolAllocators.enumeration();
@@ -2292,4 +2293,7 @@ public class StoragePoolManagerImpl implements StoragePoolManager, Manager, Clus
     public boolean PrepareTemplateOnPool(VMTemplateVO template, StoragePool pool) {
     	
     }
+    
+    @O
+    
 }

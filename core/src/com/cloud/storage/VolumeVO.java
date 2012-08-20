@@ -438,4 +438,9 @@ public class VolumeVO implements Volume, Identity {
     public void setUuid(String uuid) {
     	this.uuid = uuid;
     }
+    
+    @Override
+    public boolean isAttachedToVm() {
+    	return this.getInstanceId() != null ? true : false; 
+    }
 }
