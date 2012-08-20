@@ -742,12 +742,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     _networkMgr.prepare(vmProfile, dest, ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
                         _storageMgr.prepare(vmProfile, dest, recreate);
-                        recreate = false;
-                    }
-                    //since StorageMgr succeeded in volume creation, resue Volume for further tries until current cluster has capacity
-                    if(!reuseVolume){
-                        reuseVolume = true;
-                    }
+                    }                    
                     vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
 
                     VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
