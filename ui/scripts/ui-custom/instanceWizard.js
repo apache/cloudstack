@@ -104,7 +104,8 @@
                         var $radio = $(this).closest('.select').find('input[type=radio]');
 
                         if ($(this).attr('type') == 'checkbox') {
-                          if ($(this).closest('.select-container').hasClass('single-select')) {
+                          if ($(this).closest('.select-container').hasClass('single-select') ||
+                              !$(this).closest('.select').siblings().filter(':visible').size()) {
                             $(this).closest('.select').siblings().find('input[type=checkbox]')
                               .attr('checked', false);
                             $(this).closest('.select').find('input[type=radio]').click();
