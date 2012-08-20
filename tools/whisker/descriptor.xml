@@ -1605,6 +1605,16 @@ Copyright © 2005-2010 Thomas Nagy
             </by-organisation>
         </with-license>
     </within>
+    <within dir='console-proxy/js'>
+        <with-license id='MIT'>
+            <copyright-notice>
+Copyright © 2011, John Resig
+            </copyright-notice>
+            <by-organisation id='person:john.resig'>
+                <resource name="jquery.js" notice='jquery.notice' />
+            </by-organisation>
+        </with-license>
+    </within>
     <within dir='ui/lib'>
         <with-license id='MIT'>
             <copyright-notice>
