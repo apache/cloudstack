@@ -18,6 +18,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -43,7 +44,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "service_offering": {
                                     "name": "Tiny Instance",
@@ -76,7 +77,7 @@ class Services:
                             0: {
                                 "displaytext": "Public Template",
                                 "name": "Public template",
-                                "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                                "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                 "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                                 "hypervisor": 'XenServer',
                                 "format": 'VHD',
@@ -88,12 +89,12 @@ class Services:
                         "template": {
                                 "displaytext": "Cent OS Template",
                                 "name": "Cent OS Template",
-                                "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                                "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                 "templatefilter": 'self',
                         },
                         "templatefilter": 'self',
                         "destzoneid": 2,    # For Copy template (Destination zone)
-                        "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                         "sleep": 60,
                         "timeout": 10,
                         "mode": 'advanced',     # Networking mode: Advanced, basic
@@ -415,7 +416,7 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags = ["advanced", "advancedns", "multizone"])
     def test_02_copy_template(self):
         """Test for copy template from one zone to another"""
 
@@ -528,6 +529,7 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
+    @attr(speed = "slow")
     @attr(tags = ["advanced", "advancedns"])
     def test_04_template_from_snapshot(self):
         """Create Template from snapshot

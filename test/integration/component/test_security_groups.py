@@ -19,6 +19,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -49,7 +50,7 @@ class Services:
                     "username": "test",
                     # Random characters are appended in create account to
                     # ensure unique username generated each time
-                    "password": "fr3sca",
+                    "password": "password",
                 },
                 "virtual_machine": {
                 # Create a small virtual machine instance with disk offering
@@ -66,7 +67,7 @@ class Services:
                 "host": {
                          "publicport": 22,
                          "username": "root",    # Host creds for SSH
-                         "password": "fr3sca",
+                         "password": "password",
                 },
                 "service_offering": {
                     "name": "Tiny Instance",
@@ -89,7 +90,7 @@ class Services:
                     "endport": -1,
                     "cidrlist": '0.0.0.0/0',
                 },
-            "ostypeid": '0c2c5d19-525b-41be-a8c3-c6607412f82b',
+            "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
             # CentOS 5.3 (64-bit)
             "sleep": 60,
             "timeout": 10,

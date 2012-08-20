@@ -18,6 +18,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -46,7 +47,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "user": {
                                     "email": "administrator@clogeny.com",
@@ -55,7 +56,7 @@ class Services:
                                     "username": "User",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "service_offering": {
                                     "name": "Tiny Instance",
@@ -85,10 +86,10 @@ class Services:
                         "template": {
                                     "displaytext": "Cent OS Template",
                                     "name": "Cent OS Template",
-                                    "ostypeid": '471a4b5b-5523-448f-9608-7d6218995733',
+                                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                     "templatefilter": 'self',
                         },
-                        "ostypeid": '471a4b5b-5523-448f-9608-7d6218995733',
+                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
@@ -155,7 +156,7 @@ class TestProjectLimits(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_01_project_limits(self):
         """ Test project limits
         """
@@ -302,7 +303,7 @@ class TestProjectLimits(cloudstackTestCase):
                                       )
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     @unittest.skip("No provision for updating resource limits from account through API")
     def test_02_project_limits_normal_user(self):
         """ Test project limits
@@ -526,7 +527,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_03_vm_per_project(self):
         """Test VM limit per project
         """
@@ -588,10 +589,10 @@ class TestResourceLimitsProject(cloudstackTestCase):
                                 )
         return
 
+    @attr(tags = ["advanced", "eip", "advancedns", "simulator"])
     def test_04_publicip_per_project(self):
         """Test Public IP limit per project
         """
-        tags = ["advanced", "eip", "advancedns"]
         # Validate the following
         # 1. set max no of IPs per project to 2.
         # 2. Create an account in this domain
@@ -673,10 +674,10 @@ class TestResourceLimitsProject(cloudstackTestCase):
                                            )
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_05_snapshots_per_project(self):
         """Test Snapshot limit per project
         """
-
         # Validate the following
         # 1. set max no of snapshots per project to 1.
         # 2. Create one snapshot in the project. Snapshot should be
@@ -750,10 +751,10 @@ class TestResourceLimitsProject(cloudstackTestCase):
                             )
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_06_volumes_per_project(self):
         """Test Volumes limit per project
         """
-
         # Validate the following
         # 1. set max no of volume per project to 1.
         # 2. Create 1 VM in this project
@@ -799,10 +800,10 @@ class TestResourceLimitsProject(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_07_templates_per_project(self):
         """Test Templates limit per project
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # 1. set max no of templates per project to 1.
         # 2. Create a template in this project. Both template should be in
         #    ready state

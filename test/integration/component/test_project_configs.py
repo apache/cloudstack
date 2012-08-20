@@ -18,6 +18,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -43,7 +44,7 @@ class Services:
                          "mgmt_server": {
                                    "ipaddress": '192.168.100.21',
                                    "username": 'root',
-                                   "password": 'fr3sca',
+                                   "password": 'password',
                                    "port": 22,
                         },
                         "account": {
@@ -53,7 +54,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "user": {
                                     "email": "administrator@clogeny.com",
@@ -62,7 +63,7 @@ class Services:
                                     "username": "User",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "service_offering": {
                                     "name": "Tiny Instance",
@@ -86,7 +87,7 @@ class Services:
                          "template": {
                                 "displaytext": "Public Template",
                                 "name": "Public template",
-                                "ostypeid": '7ddbbbb5-bb09-40de-b038-ee78995788ea',
+                                "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                 "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                                 "hypervisor": 'XenServer',
                                 "format": 'VHD',
@@ -97,7 +98,7 @@ class Services:
                         "configs": {
                                 "project.invite.timeout": 300,
                         },
-                        "ostypeid": '7ddbbbb5-bb09-40de-b038-ee78995788ea',
+                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
@@ -173,7 +174,8 @@ class TestUserProjectCreation(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
+    @attr(configuration = "allow.user.create.projects")
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_admin_project_creation(self):
         """Test create project as a domain admin and domain user
         """
@@ -338,7 +340,8 @@ class TestProjectCreationNegative(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
+    @attr(configuration = "allow.user.create.projects")
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     @unittest.skip("Known bug-able to create project as a domain user")
     def test_user_project_creation(self):
         """Test create project as a domain admin and domain user
@@ -479,7 +482,7 @@ class TestProjectInviteRequired(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_add_user_to_project(self):
         """Add user to project when 'project.invite.required' is false"""
 
@@ -630,10 +633,11 @@ class TestProjectInviteRequiredTrue(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(configuration = "project.invite.required")
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_add_user_to_project(self):
         """Add user to project when 'project.invite.required' is true"""
 
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
 
         # Validate the following:
         # 1. Create a Project
@@ -794,10 +798,11 @@ class TestProjectInviteTimeout(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(configuration = "project.invite.timeout")
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_01_invitation_timeout(self):
         """Test global config project invitation timeout"""
 
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
 
         # Validate the following:
         # 1. Set configuration to 5 mins
@@ -919,10 +924,11 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                             )
         return
 
+    @attr(configuration = "project.invite.timeout")
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_02_invitation_timeout_after_expiry(self):
         """Test global config project invitation timeout"""
 
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
 
         # Validate the following:
         # 1. Set configuration to 5 mins
@@ -1049,10 +1055,10 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                     )
         return
 
+    @attr(configuration = "project.invite.timeout")
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_03_invite_after_expiry(self):
         """Test global config project invitation timeout"""
-
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
 
         # Validate the following:
         # 1. Set configuration to 5 mins
@@ -1178,10 +1184,10 @@ class TestProjectInviteTimeout(cloudstackTestCase):
                     )
         return
 
+    @attr(configuration = "project.invite.timeout")
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_04_decline_invitation(self):
         """Test decline invitation"""
-
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
 
         # Validate the following:
         # 1. Set configuration to 5 mins

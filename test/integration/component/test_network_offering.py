@@ -19,6 +19,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -41,7 +42,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                                     },
                          "service_offering": {
                                     "name": "Tiny Instance",
@@ -136,7 +137,7 @@ class Services:
                                     "publicport": 22,
                                     "protocol": 'TCP',
                                 },
-                         "ostypeid": '9958b10f-9e5d-4ef1-908d-a047372d823b',
+                         "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 10,
@@ -1431,6 +1432,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(speed = "slow")
     @attr(tags = ["advancedns"])
     def test_01_nwupgrade_netscaler_conserve_on(self):
         """Test Nw upgrade to netscaler lb service and conserve mode ON
@@ -1630,6 +1632,7 @@ class TestNetworkUpgrade(cloudstackTestCase):
                         )
         return
 
+    @attr(speed = "slow")
     @attr(tags = ["advancedns"])
     def test_02_nwupgrade_netscaler_conserve_off(self):
         """Test Nw upgrade to netscaler lb service and conserve mode OFF

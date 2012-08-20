@@ -19,6 +19,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -80,7 +81,7 @@ class Services:
                                        "username": 'nsroot',
                                        "password": 'nsroot'
                                 },
-                         "ostypeid": '593341d7-879b-451e-804c-0c01bdea10c1',
+                         "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 10,
@@ -182,7 +183,7 @@ class TestEIP(cloudstackTestCase):
     
 
     @attr(tags = ["eip"])
-    @unittest.skip("skipped")
+    @unittest.skip("skipped - Framework DB Exception")
     def test_01_eip_by_deploying_instance(self):
         """Test EIP by deploying an instance
         """
@@ -350,7 +351,7 @@ class TestEIP(cloudstackTestCase):
         return
 
     @attr(tags = ["eip"])
-    @unittest.skip("skipped")
+    @unittest.skip("skipped - Framework DB Exception")
     def test_02_acquire_ip_enable_static_nat(self):
         """Test associate new IP and enable static NAT for new IP and the VM
         """
@@ -495,7 +496,7 @@ class TestEIP(cloudstackTestCase):
         return
 
     @attr(tags = ["eip"])
-    @unittest.skip("skipped")
+    @unittest.skip("skipped - Framework DB Exception")
     def test_03_disable_static_nat(self):
         """Test disable static NAT and release EIP acquired
         """
@@ -695,7 +696,7 @@ class TestEIP(cloudstackTestCase):
         return
 
     @attr(tags = ["eip"])
-    @unittest.skip("skipped")
+    @unittest.skip("skipped - Framework DB Exception")
     def test_04_disable_static_nat_system(self):
         """Test disable static NAT with system = True
         """
@@ -765,7 +766,7 @@ class TestEIP(cloudstackTestCase):
         return
 
     @attr(tags = ["eip"])
-    @unittest.skip("skipped")
+    @unittest.skip("skipped - Framework DB Exception")
     def test_05_destroy_instance(self):
         """Test EIO after destroying instance
         """

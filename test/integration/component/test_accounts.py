@@ -23,6 +23,7 @@ from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
 from marvin.remoteSSHClient import remoteSSHClient
+from nose.plugins.attrib import attr
 import datetime
 
 
@@ -42,7 +43,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "user": {
                                     "email": "user@test.com",
@@ -51,7 +52,7 @@ class Services:
                                     "username": "User",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "service_offering": {
                                     "name": "Tiny Instance",
@@ -75,7 +76,7 @@ class Services:
                          "template": {
                                 "displaytext": "Public Template",
                                 "name": "Public template",
-                                "ostypeid": 'aaf6e8c9-b609-441d-9ebd-b4eaa030a275',
+                                "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                 "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                                 "hypervisor": 'XenServer',
                                 "format": 'VHD',
@@ -83,7 +84,7 @@ class Services:
                                 "ispublic": True,
                                 "isextractable": True,
                         },
-                        "ostypeid": 'aaf6e8c9-b609-441d-9ebd-b4eaa030a275',
+                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,

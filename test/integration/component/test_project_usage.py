@@ -18,6 +18,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -40,7 +41,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "project": {
                                     "name": "Project",
@@ -74,7 +75,7 @@ class Services:
                         "templates": {
                                     "displaytext": 'Template',
                                     "name": 'Template',
-                                    "ostypeid": '471a4b5b-5523-448f-9608-7d6218995733',
+                                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                     "templatefilter": 'self',
                                     "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.qcow2.bz2"
                                 },
@@ -86,7 +87,7 @@ class Services:
                                   "isextractable": True,
                                   "isfeatured": True,
                                   "ispublic": True,
-                                  "ostypeid": '471a4b5b-5523-448f-9608-7d6218995733',
+                                  "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                 },
                         "lbrule": {
                                    "name": "SSH",
@@ -104,7 +105,7 @@ class Services:
                                    "username": "test",
                                    "password": "test",
                                 },
-                        "ostypeid": '471a4b5b-5523-448f-9608-7d6218995733',
+                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
@@ -191,7 +192,7 @@ class TestVmUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_01_vm_usage(self):
         """Test Create/Destroy VM and verify usage calculation
         """
@@ -402,7 +403,7 @@ class TestPublicIPUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "eip", "advancedns"])
+    @attr(tags = ["advanced", "eip", "advancedns", "simulator"])
     def test_01_public_ip_usage(self):
         """Test Assign new IP and verify usage calculation
         """
@@ -560,7 +561,7 @@ class TestVolumeUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_01_volume_usage(self):
         """Test Create/delete a volume and verify correct usage is recorded
         """
@@ -1075,7 +1076,7 @@ class TestLBRuleUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "eip", "advancedns"])
+    @attr(tags = ["advanced", "eip", "advancedns", "simulator"])
     def test_01_lb_usage(self):
         """Test Create/Delete a LB rule and verify correct usage is recorded
         """
@@ -1241,7 +1242,8 @@ class TestSnapshotUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_01_snapshot_usage(self):
         """Test Create/Delete a manual snap shot and verify
         correct usage is recorded
@@ -1433,7 +1435,7 @@ class TestNatRuleUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags = ["advanced", "advancedns", "simulator"])
     def test_01_nat_usage(self):
         """Test Create/Delete a PF rule and verify correct usage is recorded
         """
@@ -1616,7 +1618,7 @@ class TestVpnUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags = ["advanced", "advancedns", "simulator"])
     def test_01_vpn_usage(self):
         """Test Create/Delete a VPN and verify correct usage is recorded
         """

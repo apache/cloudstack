@@ -17,6 +17,7 @@
 """ Tests for Blocker bugs
 """
 import marvin
+from nose.plugins.attrib import attr
 from integration.lib.base import *
 from integration.lib.utils import *
 from integration.lib.common import *
@@ -43,7 +44,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "service_offering": {
                                     "name": "Tiny Instance",
@@ -75,7 +76,7 @@ class Services:
                         "templates": {
                                     "displaytext": 'Template from snapshot',
                                     "name": 'Template from snapshot',
-                                    "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
+                                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                     "templatefilter": 'self',
                                     "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                                     "hypervisor": 'XenServer',
@@ -97,7 +98,7 @@ class Services:
                                     "endport": 22,
                                     "protocol": "TCP"
                         },
-                        "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
+                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "mode": 'advanced',
@@ -1071,6 +1072,7 @@ class TestTemplates(cloudstackTestCase):
 
         return
 
+    @attr(speed = "slow")
     @attr(tags = ["advanced", "advancedns", "basic", "sg", "eip"])
     def test_01_check_template_size(self):
         """TS_BUG_009-Test the size of template created from root disk
@@ -1098,6 +1100,7 @@ class TestTemplates(cloudstackTestCase):
                              )
         return
 
+    @attr(speed = "slow")
     @attr(tags = ["advanced", "advancedns", "basic", "sg", "eip"])
     def test_02_check_size_snapshotTemplate(self):
         """TS_BUG_010-Test check size of snapshot and template
@@ -1178,6 +1181,7 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
+    @attr(speed = "slow")
     @attr(tags = ["advanced", "advancedns", "basic", "sg", "eip"])
     def test_03_resuse_template_name(self):
         """TS_BUG_011-Test Reusing deleted template name
