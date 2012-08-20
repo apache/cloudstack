@@ -16,6 +16,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -38,7 +39,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                                     },
                          "service_offering": {
                                     "name": "Tiny Instance",
@@ -133,7 +134,7 @@ class Services:
                                     "publicport": 22,
                                     "protocol": 'TCP',
                                 },
-                         "ostypeid": '9958b10f-9e5d-4ef1-908d-a047372d823b',
+                         "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 10,
@@ -206,11 +207,11 @@ class TestNOVirtualRouter(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced"])
     def test_01_network_off_without_conserve_mode(self):
         """Test Network offering with Conserve mode off and VR - All services
         """
 
-        tags = ["advanced"]
 
         # Validate the following
         # 1. Create a Network from the above network offering and deploy a VM.
@@ -451,11 +452,11 @@ class TestNOVirtualRouter(cloudstackTestCase):
                             )
         return
 
+    @attr(tags = ["advanced"])
     def test_02_network_off_with_conserve_mode(self):
         """Test Network offering with Conserve mode ON and VR - All services
         """
 
-        tags = ["advanced"]
 
         # Validate the following
         # 1. Create a Network from the above network offering and deploy a VM.
@@ -784,11 +785,11 @@ class TestNOWithNetscaler(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_01_network_off_without_conserve_mode(self):
         """Test Nw off with Conserve mode off, VR-All services, LB-netscaler
         """
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create a Network from the above network offering and deploy a VM.
@@ -1053,11 +1054,11 @@ class TestNOWithNetscaler(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advancedns"])
     def test_02_network_off_with_conserve_mode_netscaler(self):
         """Test NW off with Conserve mode ON, LB-Netscaler and VR-All services
         """
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create a Network from the above network offering and deploy a VM.
@@ -1428,11 +1429,12 @@ class TestNetworkUpgrade(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advancedns"])
     def test_01_nwupgrade_netscaler_conserve_on(self):
         """Test Nw upgrade to netscaler lb service and conserve mode ON
         """
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Upgrade a network with VR and conserve mode ON TO
@@ -1627,11 +1629,12 @@ class TestNetworkUpgrade(cloudstackTestCase):
                         )
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advancedns"])
     def test_02_nwupgrade_netscaler_conserve_off(self):
         """Test Nw upgrade to netscaler lb service and conserve mode OFF
         """
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Upgrade a network with VR and conserve mode ON TO

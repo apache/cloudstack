@@ -27,6 +27,7 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.maint.Version;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.crypt.EncryptionSecretKeyChecker;
@@ -666,7 +667,32 @@ public class Upgrade2214to30 extends Upgrade30xBase implements DbUpgrade {
     		s_logger.debug("Updating VMware System Vms");
     		try {
     			//Get 3.0.0 VMware system Vm template Id
-    			pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-vmware-3.0.0' and removed is null");
+                // First get the current version of the Mgmt server from the db.
+                String curDbVersion = "";
+                String trimmedCurrentVersion = "";
+                pstmt = conn.prepareStatement("select version from `cloud`.`version`");
+                try {
+                    rs = pstmt.executeQuery();
+                    if(rs.next()) {
+                        curDbVersion = rs.getString(1);
+                        rs.close();
+                        pstmt.close();
+                    } else
+                        throw new CloudRuntimeException("Couldn't retrieve current version from db");
+                } catch (SQLException e) {
+                    throw new CloudRuntimeException("Encountered sql exception : Couldn't retrieve current version from db");
+                }
+                if (curDbVersion != null) {
+                    trimmedCurrentVersion = Version.trimToPatchNormalized(curDbVersion);
+                }
+                // If the current version is >= 3.0.5, use the new burbank template.
+                if (Long.valueOf(trimmedCurrentVersion).longValue() >= 305 ) {
+                    s_logger.info("Using 3.0.5 vmware system vm template");
+                    pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-vmware-3.0.5' and removed is null");
+                } else {
+                    s_logger.info("Using 3.0.0 vmware system vm template");
+                    pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = 'systemvm-vmware-3.0.0' and removed is null");
+                }
     			rs = pstmt.executeQuery();
     			if(rs.next()){
     				long templateId = rs.getLong(1);

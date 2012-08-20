@@ -16,6 +16,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -134,7 +135,7 @@ class Services:
                                     "publicport": 22,
                                     "protocol": "TCP"
                          },
-                         "ostypeid": '2b58909b-7d9e-45d9-80d8-e58d0bbcbf07',
+                         "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 10,
@@ -221,11 +222,11 @@ class TestLbSourceNat(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_add_lb_on_source_nat(self):
         """Test Create LB rule for sourceNat IP address
         """
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -430,11 +431,11 @@ class TestLbOnIpWithPf(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_lb_on_ip_with_pf(self):
         """Test Create LB rule for sourceNat IP address
         """
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -641,11 +642,11 @@ class TestPfOnIpWithLb(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_pf_on_ip_with_lb(self):
         """Test Create a port forwarding rule  on an Ip address that already has a LB rule.
         """
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -853,11 +854,11 @@ class TestLbOnNonSourceNat(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_lb_on_non_source_nat(self):
         """Test Create LB rule for non-sourceNat IP address
         """
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -1068,11 +1069,11 @@ class TestAddMultipleVmsLb(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_add_multiple_vms_lb(self):
         """Test Add multiple Vms to an existing LB rule.
         """
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -1346,11 +1347,11 @@ class TestMultipleLbRules(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_multiple_lb_publicip(self):
         """Test Create multiple LB rules using different public Ips acquired
         """
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -1662,11 +1663,11 @@ class TestMultipleLbRulesSameIp(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_multiple_lb_same_publicip(self):
         """Test Create multiple LB rules using same public Ips on diff ports
         """
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Deploy the first VM using a network from the above created
@@ -2019,11 +2020,11 @@ class TestLoadBalancingRule(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_01_edit_name_lb_rule(self):
         """Test edit name of LB rule
         """
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create an Lb rule for couple of Vms .
@@ -2053,11 +2054,11 @@ class TestLoadBalancingRule(cloudstackTestCase):
                          )
         return
 
+    @attr(tags = ["advancedns"])
     def test_02_edit_lb_ports(self):
         """Test edit public port of LB rule
         """
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create an Lb rule for couple of Vms .
@@ -2075,11 +2076,11 @@ class TestLoadBalancingRule(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["advancedns"])
     def test_03_delete_lb_rule(self):
         """Test delete LB rule
         """
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Delete existing load balancing rule
@@ -2243,10 +2244,10 @@ class TestDeleteCreateLBRule(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_01_create_with_same_public_port(self):
         """Test create LB rule with same public port after deleting rule"""
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Delete existing rule and create exactly same rule with different
@@ -2404,10 +2405,10 @@ class TestVmWithLb(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advancedns"])
     def test_01_delete_public_ip(self):
         """Test delete one public Ip with LB rules"""
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Associate 2 public Ips and create load balancing rules in it
@@ -2473,10 +2474,10 @@ class TestVmWithLb(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_02_stop_user_vm(self):
         """Test stop user VM with LB"""
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create 2 instances and add these two for load balancing
@@ -2553,10 +2554,10 @@ class TestVmWithLb(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_03_start_user_vm(self):
         """Test start user VM with LB"""
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create 2 instances and add these two for load balancing
@@ -2624,10 +2625,10 @@ class TestVmWithLb(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns", "multihost"])
     def test_04_migrate_user_vm(self):
         """Test migrate user VM with LB"""
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create 2 instances and add these two for load balancing
@@ -2737,10 +2738,10 @@ class TestVmWithLb(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_05_reboot_user_vm(self):
         """Test reboot user VM with LB"""
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create 2 instances and add these two for load balancing
@@ -2807,10 +2808,10 @@ class TestVmWithLb(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_06_destroy_user_vm(self):
         """Test destroy user VM with LB"""
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Create 2 instances and add these two for load balancing
@@ -2890,10 +2891,10 @@ class TestVmWithLb(cloudstackTestCase):
                       (self.services["netscaler"]["ipaddress"], e))
         return
 
+    @attr(tags = ["advancedns"])
     def test_07_delete_all_public_ip(self):
         """Test delete all public Ip with LB rules"""
 
-        tags = ["advancedns"]
 
         # Validate the following
         # 1. Associate 2 public Ips and create load balancing rules in it

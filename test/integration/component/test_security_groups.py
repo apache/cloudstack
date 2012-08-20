@@ -16,6 +16,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -46,7 +47,7 @@ class Services:
                     "username": "test",
                     # Random characters are appended in create account to
                     # ensure unique username generated each time
-                    "password": "fr3sca",
+                    "password": "password",
                 },
                 "virtual_machine": {
                 # Create a small virtual machine instance with disk offering
@@ -63,7 +64,7 @@ class Services:
                 "host": {
                          "publicport": 22,
                          "username": "root",    # Host creds for SSH
-                         "password": "fr3sca",
+                         "password": "password",
                 },
                 "service_offering": {
                     "name": "Tiny Instance",
@@ -86,7 +87,7 @@ class Services:
                     "endport": -1,
                     "cidrlist": '0.0.0.0/0',
                 },
-            "ostypeid": '0c2c5d19-525b-41be-a8c3-c6607412f82b',
+            "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
             # CentOS 5.3 (64-bit)
             "sleep": 60,
             "timeout": 10,
@@ -162,11 +163,11 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["sg", "eip"])
     def test_01_deployVM_InDefaultSecurityGroup(self):
         """Test deploy VM in default security group
         """
 
-        tags = ["sg", "eip"]
 
         # Validate the following:
         # 1. deploy Virtual machine using admin user
@@ -241,11 +242,11 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["sg", "eip"])
     def test_02_listSecurityGroups(self):
         """Test list security groups for admin account
         """
 
-        tags = ["sg", "eip"]
 
         # Validate the following:
         # 1. listSecurityGroups in admin account
@@ -276,11 +277,11 @@ class TestDefaultSecurityGroup(cloudstackTestCase):
                          )
         return
 
+    @attr(tags = ["sg", "eip"])
     def test_03_accessInDefaultSecurityGroup(self):
         """Test access in default security group
         """
 
-        tags = ["sg", "eip"]
 
         # Validate the following:
         # 1. deploy Virtual machine using admin user
@@ -433,11 +434,11 @@ class TestAuthorizeIngressRule(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["sg", "eip"])
     def test_01_authorizeIngressRule(self):
         """Test authorize ingress rule
         """
 
-        tags = ["sg", "eip"]
 
         # Validate the following:
         #1. Create Security group for the account.
@@ -569,11 +570,11 @@ class TestRevokeIngressRule(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["sg", "eip"])
     def test_01_revokeIngressRule(self):
         """Test revoke ingress rule
         """
 
-        tags = ["sg", "eip"]
 
         # Validate the following:
         #1. Create Security group for the account.
@@ -736,11 +737,11 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["sg", "eip", "basic"])
     def test_01_dhcpOnlyRouter(self):
         """Test router services for user account
         """
 
-        tags = ["sg", "eip", "basic"]
 
         # Validate the following
         #1. List routers for any user account
@@ -866,10 +867,10 @@ class TestdeployVMWithUserData(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["sg", "eip"])
     def test_01_deployVMWithUserData(self):
         """Test Deploy VM with User data"""
 
-        tags = ["sg", "eip"]
 
         # Validate the following
         # 1. CreateAccount of type user
@@ -1042,10 +1043,10 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["sg", "eip"])
     def test_01_delete_security_grp_running_vm(self):
         """Test delete security group with running VM"""
 
-        tags = ["sg", "eip"]
 
         # Validate the following
         # 1. createsecuritygroup (ssh-incoming) for this account
@@ -1126,10 +1127,10 @@ class TestDeleteSecurityGroup(cloudstackTestCase):
                             )
         return
 
+    @attr(tags = ["sg", "eip"])
     def test_02_delete_security_grp_withoout_running_vm(self):
         """Test delete security group without running VM"""
 
-        tags = ["sg", "eip"]
 
         # Validate the following
         # 1. createsecuritygroup (ssh-incoming) for this account
@@ -1288,10 +1289,10 @@ class TestIngressRule(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["sg", "eip"])
     def test_01_authorizeIngressRule_AfterDeployVM(self):
         """Test delete security group with running VM"""
 
-        tags = ["sg", "eip"]
 
         # Validate the following
         # 1. createsecuritygroup (ssh-incoming, 22via22) for this account
@@ -1400,10 +1401,10 @@ class TestIngressRule(cloudstackTestCase):
                       % (ingress_rule_2["id"], e))
         return
 
+    @attr(tags = ["sg", "eip"])
     def test_02_revokeIngressRule_AfterDeployVM(self):
         """Test Revoke ingress rule after deploy VM"""
 
-        tags = ["sg", "eip"]
 
         # Validate the following
         # 1. createsecuritygroup (ssh-incoming, 22via22) for this account
@@ -1554,10 +1555,10 @@ class TestIngressRule(cloudstackTestCase):
                       % (icmp_rule["ruleid"], e))
         return
 
+    @attr(tags = ["sg", "eip"])
     def test_03_stopStartVM_verifyIngressAccess(self):
         """Test Start/Stop VM and Verify ingress rule"""
 
-        tags = ["sg", "eip"]
 
         # Validate the following
         # 1. createsecuritygroup (ssh-incoming, 22via22) for this account

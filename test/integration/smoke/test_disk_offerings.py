@@ -20,6 +20,7 @@ from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
+from nose.plugins.attrib import attr
 
 class Services:
     """Test Disk offerings Services
@@ -53,6 +54,7 @@ class TestCreateDiskOffering(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke"])
     def test_01_create_disk_offering(self):
         """Test to create disk offering"""
 
@@ -139,6 +141,7 @@ class TestDiskOfferings(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke"])
     def test_02_edit_disk_offering(self):
         """Test to update existing disk offering"""
 
@@ -189,6 +192,7 @@ class TestDiskOfferings(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke"])
     def test_03_delete_disk_offering(self):
         """Test to delete disk offering"""
 

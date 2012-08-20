@@ -2204,12 +2204,20 @@
                                 data.listvirtualmachinesresponse.virtualmachine ?
                                   data.listvirtualmachinesresponse.virtualmachine : [],
                                 function(instance) {
+                                  // Hiding the AutoScale VMs
+                                  var nonAutoScale=0;
+                                    if( instance.displayname.match(/AutoScale-LB-/)==null)
+                                             nonAutoScale =1;
+                                     else {
+                                        if(instance.displayname.match(/AutoScale-LB-/).length)
+                                            nonAutoScale =0;
+                                          }
                                   var isActiveState = $.inArray(instance.state, ['Destroyed']) == -1;
                                   var notExisting = !$.grep(itemData, function(item) {
                                     return item.id == instance.id;
-                                  }).length;
+                                   }).length;
 
-                                  return isActiveState && notExisting;
+                                  return nonAutoScale && isActiveState && notExisting ;
                                 }
                               );
 
@@ -2610,6 +2618,11 @@
                               success: function(data) {
                                 lbInstances = data.listloadbalancerruleinstancesresponse.loadbalancerruleinstance ?
                                   data.listloadbalancerruleinstancesresponse.loadbalancerruleinstance : [];
+																																																	
+                                $(lbInstances).each(function() {																  																
+																	if(this.name.indexOf('AutoScale-LB-') > -1) //autoscale VM is not allowed to be deleted manually. So, hide destroy button
+                                    this._hideActions = ['destroy'];	                                  																	
+																});                                				
                               },
                               error: function(data) {
                                 args.response.error(parseXMLHttpResponse(data));

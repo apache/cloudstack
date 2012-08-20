@@ -21,6 +21,7 @@ from marvin.remoteSSHClient import remoteSSHClient
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
+from nose.plugins.attrib import attr
 import urllib
 from random import random
 #Import System modules
@@ -40,7 +41,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "service_offering": {
                                     "name": "Tiny Instance",
@@ -70,12 +71,12 @@ class Services:
                          "template_1": {
                                 "displaytext": "Cent OS Template",
                                 "name": "Cent OS Template",
-                                "ostypeid": '946b031b-0e10-4f4a-a3fc-d212ae2ea07f',
+                                "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                          },
                          "template_2": {
                                 "displaytext": "Public Template",
                                 "name": "Public template",
-                                "ostypeid": '946b031b-0e10-4f4a-a3fc-d212ae2ea07f',
+                                "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                 "isfeatured": True,
                                 "ispublic": True,
                                 "isextractable": True,
@@ -89,7 +90,7 @@ class Services:
                         "isextractable": False,
                         "bootable": True,
                         "passwordenabled": True,
-                        "ostypeid": '946b031b-0e10-4f4a-a3fc-d212ae2ea07f',
+                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                         "mode": 'advanced',
                         # Networking mode: Advanced, basic
                         "sleep": 30,
@@ -214,6 +215,7 @@ class TestCreateTemplate(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_01_create_template(self):
         """Test create public & private template
         """
@@ -423,6 +425,7 @@ class TestTemplates(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_02_edit_template(self):
         """Test Edit template
         """
@@ -505,6 +508,7 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_03_delete_template(self):
         """Test delete template
         """
@@ -533,6 +537,7 @@ class TestTemplates(cloudstackTestCase):
                          )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_04_extract_template(self):
         "Test for extract template"
 
@@ -583,6 +588,7 @@ class TestTemplates(cloudstackTestCase):
                          )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_05_template_permissions(self):
         """Update & Test for template permissions"""
 
@@ -635,6 +641,7 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg", "multizone"])
     def test_06_copy_template(self):
         """Test for copy template from one zone to another"""
 
@@ -690,6 +697,7 @@ class TestTemplates(cloudstackTestCase):
         self.apiclient.deleteTemplate(cmd)
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_07_list_public_templates(self):
         """Test only public templates are visible to normal user"""
 
@@ -721,6 +729,7 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_08_list_system_templates(self):
         """Test System templates are not visible to normal user"""
 

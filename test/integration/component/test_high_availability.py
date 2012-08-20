@@ -16,6 +16,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -80,7 +81,7 @@ class Services:
                          "templates": {
                                 "displaytext": "Public Template",
                                 "name": "Public template",
-                                "ostypeid": '1d4a6dce-8db1-4c08-8752-e88b360d8287',
+                                "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                 "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                                 "hypervisor": 'XenServer',
                                 "format": 'VHD',
@@ -89,7 +90,7 @@ class Services:
                                 "isextractable": True,
                                 "templatefilter": 'self',
                          },
-                         "ostypeid": '1d4a6dce-8db1-4c08-8752-e88b360d8287',
+                         "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                          # Cent OS 5.3 (64 bit)
                          "sleep": 60,
                          "timeout": 100,
@@ -169,7 +170,7 @@ class TestHighAvailability(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags = ["advanced", "advancedns", "multihost"])
     def test_01_host_maintenance_mode(self):
         """Test host maintenance mode
         """
@@ -560,7 +561,7 @@ class TestHighAvailability(cloudstackTestCase):
                       )
         return
 
-    @attr(tags = ["advanced", "advancedns"])
+    @attr(tags = ["advanced", "advancedns", "multihost"])
     def test_02_host_maintenance_mode_with_activities(self):
         """Test host maintenance mode with activities
         """

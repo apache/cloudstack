@@ -183,7 +183,7 @@
           form: {
             title: '',
             fields: {
-              scaleUpDuration: { label: 'Duration', validation: { required: true } }
+              scaleUpDuration: { label: 'Duration(in sec)', validation: { required: true } }
             }
           }
         });
@@ -197,7 +197,7 @@
           form: {
             title: '',
             fields: {
-              scaleDownDuration: { label: 'Duration', validation: { required: true } }
+              scaleDownDuration: { label: 'Duration(in sec)', validation: { required: true } }
             }
           }
         });

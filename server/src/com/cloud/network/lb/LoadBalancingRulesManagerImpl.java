@@ -250,7 +250,9 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         return null;
     }
 
-    private LbAutoScaleVmGroup getLbAutoScaleVmGroup(AutoScaleVmGroupVO vmGroup, String currentState, long networkId) {
+    private LbAutoScaleVmGroup getLbAutoScaleVmGroup(AutoScaleVmGroupVO vmGroup, String currentState, LoadBalancerVO lb) {
+        long lbNetworkId = lb.getNetworkId();
+        String lbName = lb.getName();
         List<AutoScaleVmGroupPolicyMapVO> vmGroupPolicyMapList = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(vmGroup.getId());
         List<LbAutoScalePolicy> autoScalePolicies = new ArrayList<LbAutoScalePolicy>();
         for (AutoScaleVmGroupPolicyMapVO vmGroupPolicyMap : vmGroupPolicyMapList) {
@@ -274,6 +276,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         String domainId = _domainDao.findById(autoScaleVmProfile.getDomainId()).getUuid();
         String serviceOfferingId = _offeringsDao.findById(autoScaleVmProfile.getServiceOfferingId()).getUuid();
         String templateId = _templateDao.findById(autoScaleVmProfile.getTemplateId()).getUuid();
+        String vmName = "AutoScale-LB-" + lbName;
         String lbNetworkUuid = null;
 
         DataCenter zone = _configMgr.getZone(vmGroup.getZoneId());
@@ -281,8 +284,13 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             throw new InvalidParameterValueException("Unable to find zone by id", null);
         } else {
             if (zone.getNetworkType() == NetworkType.Advanced) {
-                NetworkVO lbNetwork = _networkDao.findById(networkId);
+                NetworkVO lbNetwork = _networkDao.findById(lbNetworkId);
                 lbNetworkUuid = lbNetwork.getUuid();
+                if (vmGroup.getState().equals(AutoScaleVmGroup.State_New)) {
+                    if(!lbNetwork.getState().equals(Network.State.Implemented)) {
+                        throw new InvalidParameterValueException("Network is not in implemented state", null);
+                    }
+                }
             }
         }
 
@@ -300,12 +308,12 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         }
 
 
-        LbAutoScaleVmProfile lbAutoScaleVmProfile = new LbAutoScaleVmProfile(autoScaleVmProfile, apiKey, secretKey, csUrl, zoneId, domainId, serviceOfferingId, templateId, lbNetworkUuid);
+        LbAutoScaleVmProfile lbAutoScaleVmProfile = new LbAutoScaleVmProfile(autoScaleVmProfile, apiKey, secretKey, csUrl, zoneId, domainId, serviceOfferingId, templateId, vmName, lbNetworkUuid);
         return new LbAutoScaleVmGroup(vmGroup, autoScalePolicies, lbAutoScaleVmProfile, currentState);
     }
 
     private boolean applyAutoScaleConfig(LoadBalancerVO lb, AutoScaleVmGroupVO vmGroup, String currentState) throws ResourceUnavailableException {
-        LbAutoScaleVmGroup lbAutoScaleVmGroup = getLbAutoScaleVmGroup(vmGroup, currentState, lb.getNetworkId());
+        LbAutoScaleVmGroup lbAutoScaleVmGroup = getLbAutoScaleVmGroup(vmGroup, currentState, lb);
         /* Regular config like destinations need not be packed for applying autoscale config as of today.*/
         LoadBalancingRule rule = new LoadBalancingRule(lb, null, null);
         rule.setAutoScaleVmGroup(lbAutoScaleVmGroup);

@@ -2348,7 +2348,9 @@ CREATE TABLE `cloud`.`counter` (
   `removed` datetime COMMENT 'date removed if not null',
   `created` datetime NOT NULL COMMENT 'date created',
   PRIMARY KEY (`id`),
-  CONSTRAINT `uc_counter__uuid` UNIQUE (`uuid`)
+  CONSTRAINT `uc_counter__uuid` UNIQUE (`uuid`),
+  INDEX `i_counter__removed`(`removed`),
+  INDEX `i_counter__source`(`source`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`conditions` (
@@ -2365,7 +2367,8 @@ CREATE TABLE `cloud`.`conditions` (
   CONSTRAINT `fk_conditions__counter_id` FOREIGN KEY `fk_condition__counter_id`(`counter_id`) REFERENCES `counter`(`id`),
   CONSTRAINT `fk_conditions__account_id` FOREIGN KEY `fk_condition__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_conditions__domain_id` FOREIGN KEY `fk_condition__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `uc_conditions__uuid` UNIQUE (`uuid`)
+  CONSTRAINT `uc_conditions__uuid` UNIQUE (`uuid`),
+  INDEX `i_conditions__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`autoscale_vmprofiles` (
@@ -2387,7 +2390,8 @@ CREATE TABLE `cloud`.`autoscale_vmprofiles` (
   CONSTRAINT `fk_autoscale_vmprofiles__domain_id` FOREIGN KEY `fk_autoscale_vmprofiles__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_autoscale_vmprofiles__account_id` FOREIGN KEY `fk_autoscale_vmprofiles__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_autoscale_vmprofiles__autoscale_user_id` FOREIGN KEY `fk_autoscale_vmprofiles__autoscale_user_id` (`autoscale_user_id`) REFERENCES `user`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `uc_autoscale_vmprofiles__uuid` UNIQUE (`uuid`)
+  CONSTRAINT `uc_autoscale_vmprofiles__uuid` UNIQUE (`uuid`),
+  INDEX `i_autoscale_vmprofiles__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`autoscale_policies` (
@@ -2403,7 +2407,8 @@ CREATE TABLE `cloud`.`autoscale_policies` (
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_autoscale_policies__domain_id` FOREIGN KEY `fk_autoscale_policies__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_autoscale_policies__account_id` FOREIGN KEY `fk_autoscale_policies__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
-  CONSTRAINT `uc_autoscale_policies__uuid` UNIQUE (`uuid`)
+  CONSTRAINT `uc_autoscale_policies__uuid` UNIQUE (`uuid`),
+  INDEX `i_autoscale_policies__removed`(`removed`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`autoscale_vmgroups` (
@@ -2427,7 +2432,9 @@ CREATE TABLE `cloud`.`autoscale_vmgroups` (
   CONSTRAINT `fk_autoscale_vmgroups__domain_id` FOREIGN KEY `fk_autoscale_vmgroups__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_autoscale_vmgroups__account_id` FOREIGN KEY `fk_autoscale_vmgroups__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_autoscale_vmgroups__zone_id` FOREIGN KEY `fk_autoscale_vmgroups__zone_id`(`zone_id`) REFERENCES `data_center`(`id`),
-  CONSTRAINT `uc_autoscale_vmgroups__uuid` UNIQUE (`uuid`)
+  CONSTRAINT `uc_autoscale_vmgroups__uuid` UNIQUE (`uuid`),
+  INDEX `i_autoscale_vmgroups__removed`(`removed`),
+  INDEX `i_autoscale_vmgroups__load_balancer_id`(`load_balancer_id`)  
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`autoscale_policy_condition_map` (
@@ -2436,7 +2443,8 @@ CREATE TABLE `cloud`.`autoscale_policy_condition_map` (
   `condition_id` bigint unsigned NOT NULL,
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_autoscale_policy_condition_map__policy_id` FOREIGN KEY `fk_autoscale_policy_condition_map__policy_id` (`policy_id`) REFERENCES `autoscale_policies` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_autoscale_policy_condition_map__condition_id` FOREIGN KEY `fk_autoscale_policy_condition_map__condition_id` (`condition_id`) REFERENCES `conditions` (`id`)
+  CONSTRAINT `fk_autoscale_policy_condition_map__condition_id` FOREIGN KEY `fk_autoscale_policy_condition_map__condition_id` (`condition_id`) REFERENCES `conditions` (`id`),
+  INDEX `i_autoscale_policy_condition_map__policy_id`(`policy_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`autoscale_vmgroup_policy_map` (
@@ -2445,7 +2453,8 @@ CREATE TABLE `cloud`.`autoscale_vmgroup_policy_map` (
   `policy_id` bigint unsigned NOT NULL,
   PRIMARY KEY  (`id`),
   CONSTRAINT `fk_autoscale_vmgroup_policy_map__vmgroup_id` FOREIGN KEY `fk_autoscale_vmgroup_policy_map__vmgroup_id` (`vmgroup_id`) REFERENCES `autoscale_vmgroups` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_autoscale_vmgroup_policy_map__policy_id` FOREIGN KEY `fk_autoscale_vmgroup_policy_map__policy_id` (`policy_id`) REFERENCES `autoscale_policies` (`id`)
+  CONSTRAINT `fk_autoscale_vmgroup_policy_map__policy_id` FOREIGN KEY `fk_autoscale_vmgroup_policy_map__policy_id` (`policy_id`) REFERENCES `autoscale_policies` (`id`),
+  INDEX `i_autoscale_vmgroup_policy_map__vmgroup_id`(`vmgroup_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (1,'snmp','Linux User CPU - Percentage', '1.3.6.1.4.1.2021.11.9.0', now());

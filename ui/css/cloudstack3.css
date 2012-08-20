@@ -9901,23 +9901,23 @@ div.ui-dialog div.autoscaler div.scale-down-policy-title {
 }
 
 div.ui-dialog div.autoscaler div.scale-up-policy-title div.form-container div.form-item div.value input[type=text] {
-  margin-left: 195px;
+  margin-left: 729px;
   width: 30%;
-  margin-top: 1px;
+  margin-top: -17px;
 }
 
 div.ui-dialog div.autoscaler div.scale-up-policy-title div.form-container div.form-item div.name {
-  margin-left: 390px;
+  margin-left: 420px;
 }
 
 div.ui-dialog div.autoscaler div.scale-down-policy-title div.form-container div.form-item div.value input[type=text] {
-  margin-left: 670px;
+  margin-left: 698px;
   width: 30%;
   margin-top: -16px;
 }
 
 div.ui-dialog div.autoscaler div.scale-down-policy-title div.form-container div.form-item div.name {
-  margin-left: 390px;
+  margin-left: 420px;
 }
 
 div.ui-dialog div.autoscaler div.scale-up-policy div.multi-edit div.data div.data-body div.data-item {

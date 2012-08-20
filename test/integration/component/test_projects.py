@@ -15,6 +15,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -40,7 +41,7 @@ class Services:
                          "mgmt_server": {
                                    "ipaddress": '192.168.100.21',
                                    "username": 'root',
-                                   "password": 'fr3sca',
+                                   "password": 'password',
                                    "port": 22,
                         },
                         "account": {
@@ -50,7 +51,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "user": {
                                     "email": "administrator@clogeny.com",
@@ -59,7 +60,7 @@ class Services:
                                     "username": "User",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                         "disk_offering": {
                                     "displaytext": "Tiny Disk Offering",
@@ -88,7 +89,7 @@ class Services:
                                     "publicport": 22,
                                     "protocol": 'TCP',
                          },
-                        "ostypeid": '7ddbbbb5-bb09-40de-b038-ee78995788ea',
+                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
@@ -164,11 +165,11 @@ class TestMultipleProjectCreation(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_01_create_multiple_projects_by_account(self):
         """ Verify an account can own multiple projects and can belong to
             multiple projects
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create multiple project. Verify at step 1 An account is allowed
         #    to create multiple projects
@@ -380,10 +381,10 @@ class TestCrossDomainAccountAdd(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_02_cross_domain_account_add(self):
         """ Verify No cross domain projects
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a project in a domain.
         # 2. Add different domain account to the project. Add account should
@@ -500,10 +501,10 @@ class TestDeleteAccountWithProject(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_03_delete_account_with_project(self):
         """ Test As long as the project exists, its owner can't be removed
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a project.
         # 2. Delete account who is owner of the project. Delete account should
@@ -614,11 +615,11 @@ class TestDeleteDomainWithProject(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_04_delete_domain_with_project(self):
         """ Test Verify delete domain with cleanup=true should delete projects
             belonging to the domain
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a project in a domain
         # 2. Delete domain forcefully. Verify that project is also deleted as
@@ -759,11 +760,11 @@ class TestProjectOwners(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_05_user_project_owner_promotion(self):
         """ Test Verify a project user can be later promoted to become a
             owner
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a project.
         # 2. Add account to the project. Edit account to make it a project
@@ -901,10 +902,10 @@ class TestProjectOwners(cloudstackTestCase):
                             )
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_06_max_one_project_owner(self):
         """ Test Verify there can only be one owner of a project at a time
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a project.
         # 2. Add account to the project. Edit account to make it a project
@@ -1191,11 +1192,11 @@ class TestProjectResources(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_07_project_resources_account_delete(self):
         """ Test Verify after an account is removed from the project, all his
             resources stay with the project.
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a project.
         # 2. Add some accounts to project. Add resources to the project
@@ -1307,10 +1308,10 @@ class TestProjectResources(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_08_cleanup_after_project_delete(self):
         """ Test accounts are unassigned from project after project deletion
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a project.
         # 2. Add some accounts to project. Add resources to the project
@@ -1521,11 +1522,11 @@ class TestProjectSuspendActivate(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_09_project_suspend(self):
         """ Test Verify after an account is removed from the project, all his
             resources stay with the project.
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Create a project.
         # 2. Add some accounts to project. Add resources to the project
@@ -1658,10 +1659,10 @@ class TestProjectSuspendActivate(cloudstackTestCase):
                     )
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_10_project_activation(self):
         """ Test project activation after suspension
         """
-        tags = ["advanced", "basic", "sg", "eip", "advancedns"]
         # Validate the following
         # 1. Activate the project
         # 2. Verify project is activated and we are able to add resources

@@ -15,6 +15,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -36,7 +37,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "service_offering": {
                                     "name": "Tiny Instance",
@@ -63,7 +64,7 @@ class Services:
                          "mgmt_server": {
                                     "ipaddress": '192.168.100.21',
                                     "username": "root",
-                                    "password": "fr3sca",
+                                    "password": "password",
                                     "port": 22,
                                 },
                         "recurring_snapshot": {
@@ -77,7 +78,7 @@ class Services:
                         "templates": {
                                     "displaytext": 'Template',
                                     "name": 'Template',
-                                    "ostypeid": '7ddbbbb5-bb09-40de-b038-ee78995788ea',
+                                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                     "templatefilter": 'self',
                                 },
                         "diskdevice": "/dev/xvda",
@@ -90,7 +91,7 @@ class Services:
                         "sub_lvl_dir2": "test2",
                         "random_data": "random.data",
 
-                        "ostypeid": '7ddbbbb5-bb09-40de-b038-ee78995788ea',
+                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
@@ -160,10 +161,11 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_createVM_snapshotTemplate(self):
         """Test create VM, Snapshot and Template
         """
-        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. Deploy VM using default template, small service offering
         #    and small data disk offering.
@@ -473,10 +475,11 @@ class TestAccountSnapshotClean(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns"])
     def test_02_accountSnapshotClean(self):
         """Test snapshot cleanup after account deletion
         """
-        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. listAccounts API should list out the newly created account
         # 2. listVirtualMachines() command should return the deployed VM.
@@ -816,10 +819,11 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns"])
     def test_03_snapshot_detachedDisk(self):
         """Test snapshot from detached disk
         """
-        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. login in VM  and write some data on data disk(use fdisk to
         #    partition datadisk,fdisk /dev/sdb, and make filesystem using
@@ -1095,10 +1099,11 @@ class TestSnapshotLimit(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns"])
     def test_04_snapshot_limit(self):
         """Test snapshot limit in snapshot policies
         """
-        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. Perform hourly recurring snapshot on the root disk of VM and keep
         #    the maxsnapshots as 1
@@ -1352,11 +1357,12 @@ class TestSnapshotEvents(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
-
+    
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns"])
     def test_05_snapshot_events(self):
         """Test snapshot events
         """
-        tags = ["advanced", "advancedns"]
         # Validate the following
         # 1. Perform snapshot on the root disk of this VM and check the events/alerts.
         # 2. delete the snapshots and check the events/alerts

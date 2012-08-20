@@ -308,8 +308,9 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer {
         private final String serviceOfferingId;
         private final String templateId;
         private final String networkId;
+        private final String vmName;
 
-        public LbAutoScaleVmProfile(AutoScaleVmProfile profile, String autoScaleUserApiKey, String autoScaleUserSecretKey, String csUrl, String zoneId, String domainId, String serviceOfferingId, String templateId, String networkId) {
+        public LbAutoScaleVmProfile(AutoScaleVmProfile profile, String autoScaleUserApiKey, String autoScaleUserSecretKey, String csUrl, String zoneId, String domainId, String serviceOfferingId, String templateId, String vmName, String networkId) {
             this.profile = profile;
             this.autoScaleUserApiKey = autoScaleUserApiKey;
             this.autoScaleUserSecretKey = autoScaleUserSecretKey;
@@ -318,6 +319,7 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer {
             this.domainId = domainId;
             this.serviceOfferingId = serviceOfferingId;
             this.templateId = templateId;
+            this.vmName = vmName;
             this.networkId = networkId;
         }
 
@@ -351,6 +353,10 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer {
 
         public String getTemplateId() {
             return templateId;
+        }
+
+        public String getVmName() {
+            return vmName;
         }
 
         public String getNetworkId() {

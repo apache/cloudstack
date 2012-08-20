@@ -16,6 +16,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.remoteSSHClient import remoteSSHClient
@@ -74,9 +75,9 @@ class Services:
                 {
                     "displaytext": "Test ISO",
                     "name": "testISO",
-                    "url": "http://nfs1.lab.vmops.com/isos_32bit/dsl-4.4.10.iso",
+                    "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
                      # Source URL where ISO is located
-                    "ostypeid": '19e6a39f-92db-4d2c-b375-33e7f42d86be',
+                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                     "mode": 'HTTP_DOWNLOAD',    # Downloading existing ISO
                 },
                 "template": {
@@ -88,14 +89,14 @@ class Services:
                     "isextractable": True,
                     "displaytext": "Cent OS Template",
                     "name": "Cent OS Template",
-                    "ostypeid": '19e6a39f-92db-4d2c-b375-33e7f42d86be',
+                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                     "templatefilter": 'self',
                     "passwordenabled": True,
                 },
             "sleep": 60,
             "timeout": 10,
             #Migrate VM to hostid
-            "ostypeid": '19e6a39f-92db-4d2c-b375-33e7f42d86be',
+            "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
             # CentOS 5.3 (64-bit)
         }
 
@@ -167,10 +168,10 @@ class TestDeployVM(cloudstackTestCase):
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
 
+    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
     def test_01_deploy_vm_no_startvm(self):
         """Test Deploy Virtual Machine with no startVM parameter
         """
-        tags = ["advanced", "eip", "advancedns", "basic", "sg"]
 
         # Validate the following:
         # 1. deploy Vm  without specifying the startvm parameter
@@ -221,10 +222,10 @@ class TestDeployVM(cloudstackTestCase):
             self.fail("SSH to VM instance failed!")
         return
 
+    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
     def test_02_deploy_vm_startvm_true(self):
         """Test Deploy Virtual Machine with startVM=true parameter
         """
-        tags = ["advanced", "eip", "advancedns", "basic", "sg"]
 
         # Validate the following:
         # 1. deploy Vm  with the startvm=true
@@ -276,10 +277,10 @@ class TestDeployVM(cloudstackTestCase):
             self.fail("SSH to VM instance failed!")
         return
 
+    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
     def test_03_deploy_vm_startvm_false(self):
         """Test Deploy Virtual Machine with startVM=false parameter
         """
-        tags = ["advanced", "eip", "advancedns", "basic", "sg"]
 
         # Validate the following:
         # 1. deploy Vm  with the startvm=false
@@ -368,10 +369,10 @@ class TestDeployVM(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
     def test_04_deploy_startvm_false_attach_volume(self):
         """Test Deploy Virtual Machine with startVM=false and attach volume
         """
-        tags = ["advanced", "eip", "advancedns", "basic", "sg"]
 
         # Validate the following:
         # 1. deploy Vm  with the startvm=false. Attach volume to the instance
@@ -434,11 +435,11 @@ class TestDeployVM(cloudstackTestCase):
             self.fail("Attach volume failed!")
         return
 
+    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
     def test_05_deploy_startvm_false_change_so(self):
         """Test Deploy Virtual Machine with startVM=false and
             change service offering
         """
-        tags = ["advanced", "eip", "advancedns", "basic", "sg"]
 
         # Validate the following:
         # 1. deploy Vm  with the startvm=false. Attach volume to the instance
@@ -547,11 +548,11 @@ class TestDeployVM(cloudstackTestCase):
                          )
         return
 
+    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
     def test_06_deploy_startvm_attach_detach(self):
         """Test Deploy Virtual Machine with startVM=false and
             attach detach volumes
         """
-        tags = ["advanced", "eip", "advancedns", "basic", "sg"]
 
         # Validate the following:
         # 1. deploy Vm  with the startvm=false. Attach volume to the instance
@@ -632,10 +633,10 @@ class TestDeployVM(cloudstackTestCase):
                          )
         return
 
+    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
     def test_07_deploy_startvm_attach_iso(self):
         """Test Deploy Virtual Machine with startVM=false and attach ISO
         """
-        tags = ["advanced", "eip", "advancedns", "basic", "sg"]
 
         # Validate the following:
         # 1. deploy Vm  with the startvm=false. Attach volume to the instance
@@ -723,11 +724,11 @@ class TestDeployVM(cloudstackTestCase):
                          )
         return
 
+    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
     def test_08_deploy_attach_volume(self):
         """Test Deploy Virtual Machine with startVM=false and
             attach volume already attached to different machine
         """
-        tags = ["advanced", "eip", "advancedns", "basic", "sg"]
 
         # Validate the following:
         # 1. deploy Vm  with the startvm=false. Attach volume to the instance
@@ -923,10 +924,10 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
 
+    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
     def test_01_deploy_ha_vm_startvm_false(self):
         """Test Deploy HA enabled Virtual Machine with startvm=false
         """
-        tags = ["advanced", "eip", "advancedns", "basic", "sg"]
 
         # Validate the following:
         # 1. deployHA enabled  Vm  with the startvm parameter = false
@@ -972,10 +973,10 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
     def test_02_deploy_ha_vm_from_iso(self):
         """Test Deploy HA enabled Virtual Machine from ISO
         """
-        tags = ["advanced", "eip", "advancedns", "basic", "sg"]
 
         # Validate the following:
         # 1. deployHA enabled Vm using ISO with the startvm parameter=true
@@ -1037,10 +1038,10 @@ class TestDeployHaEnabledVM(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
     def test_03_deploy_ha_vm_iso_startvm_false(self):
         """Test Deploy HA enabled Virtual Machine from ISO with startvm=false
         """
-        tags = ["advanced", "eip", "advancedns", "basic", "sg"]
 
         # Validate the following:
         # 1. deployHA enabled Vm using ISO with the startvm parameter=false
@@ -1154,10 +1155,10 @@ class TestRouterStateAfterDeploy(cloudstackTestCase):
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
 
+    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
     def test_01_deploy_vm_no_startvm(self):
         """Test Deploy Virtual Machine with no startVM parameter
         """
-        tags = ["advanced", "eip", "advancedns", "basic", "sg"]
 
         # Validate the following:
         # 1. deploy Vm  without specifying the startvm parameter
@@ -1369,10 +1370,10 @@ class TestDeployVMBasicZone(cloudstackTestCase):
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
 
+    @attr(tags = ["eip", "basic", "sg"])
     def test_01_deploy_vm_startvm_true(self):
         """Test Deploy Virtual Machine with startVM=true parameter
         """
-        tags = ["eip", "basic", "sg"]
 
         # Validate the following:
         # 1. deploy Vm  with the startvm=true
@@ -1427,10 +1428,10 @@ class TestDeployVMBasicZone(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["eip", "basic", "sg"])
     def test_02_deploy_vm_startvm_false(self):
         """Test Deploy Virtual Machine with startVM=true parameter
         """
-        tags = ["eip", "basic", "sg"]
 
         # Validate the following:
         # 1. deploy Vm  with the startvm=true
@@ -1584,11 +1585,11 @@ class TestDeployVMFromTemplate(cloudstackTestCase):
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
 
+    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
     def test_deploy_vm_password_enabled(self):
         """Test Deploy Virtual Machine with startVM=false & enabledpassword in
         template
         """
-        tags = ["advanced", "eip", "advancedns", "basic", "sg"]
 
         # Validate the following:
         # 1. Create the password enabled template
@@ -1722,10 +1723,10 @@ class TestVMAccountLimit(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
     def test_vm_per_account(self):
         """Test VM limit per account
         """
-        tags = ["advanced", "eip", "advancedns", "basic", "sg"]
 
         # Validate the following
         # 1. Set the resource limit for VM per account.
@@ -1838,10 +1839,10 @@ class TestUploadAttachVolume(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "eip", "advancedns", "basic", "sg"])
     def test_upload_attach_volume(self):
         """Test Upload volume and attach to VM in stopped state
         """
-        tags = ["advanced", "eip", "advancedns", "basic", "sg"]
 
         # Validate the following
         # 1. Upload the volume using uploadVolume API call

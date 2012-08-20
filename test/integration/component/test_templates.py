@@ -15,6 +15,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -40,7 +41,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "service_offering": {
                                     "name": "Tiny Instance",
@@ -73,7 +74,7 @@ class Services:
                             0: {
                                 "displaytext": "Public Template",
                                 "name": "Public template",
-                                "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                                "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                 "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                                 "hypervisor": 'XenServer',
                                 "format": 'VHD',
@@ -85,12 +86,12 @@ class Services:
                         "template": {
                                 "displaytext": "Cent OS Template",
                                 "name": "Cent OS Template",
-                                "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                                "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                 "templatefilter": 'self',
                         },
                         "templatefilter": 'self',
                         "destzoneid": 2,    # For Copy template (Destination zone)
-                        "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                         "sleep": 60,
                         "timeout": 10,
                         "mode": 'advanced',     # Networking mode: Advanced, basic
@@ -156,10 +157,10 @@ class TestCreateTemplate(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_create_template(self):
         """Test create public & private template
         """
-        tags = ["advanced", "advancedns"]
         # Validate the following:
         # 1. Upload a templates in raw img format. Create a Vm instances from
         #    raw img template.
@@ -372,10 +373,10 @@ class TestTemplates(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_create_template_volume(self):
         """Test Create template from volume
         """
-        tags = ["advanced", "advancedns"]
 
         # Validate the following:
         # 1. Deploy new VM using the template created from Volume
@@ -412,9 +413,9 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "multizone"])
     def test_02_copy_template(self):
         """Test for copy template from one zone to another"""
-        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 1. copy template should be successful and
@@ -470,10 +471,10 @@ class TestTemplates(cloudstackTestCase):
         self.apiclient.deleteTemplate(cmd)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_03_delete_template(self):
         """Test Delete template
         """
-        tags = ["advanced", "advancedns"]
 
         # Validate the following:
         # 1. Create a template and verify it is shown in list templates response
@@ -525,10 +526,11 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns"])
     def test_04_template_from_snapshot(self):
         """Create Template from snapshot
         """
-        tags = ["advanced", "advancedns"]
 
         # Validate the following
         # 2. Snapshot the Root disk

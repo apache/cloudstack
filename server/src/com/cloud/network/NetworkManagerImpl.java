@@ -877,6 +877,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         if (!offering.isConserveMode()) {
             for (PublicIp ip : ipToServices.keySet()) {
                 Set<Service> services = ipToServices.get(ip);
+                if (services != null && services.contains(Service.Firewall)) {
+                    services.remove(Service.Firewall);
+                }
                 if (services != null && services.size() > 1) {
                     throw new CloudRuntimeException("Ip " + ip.getAddress() + " is used by multiple services!");
                 }
@@ -1918,6 +1921,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             ex.addProxyObject("networks", networkId, "networkId");
             throw ex;
         }
+        
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Lock is acquired for network id " + networkId + " as a part of network implement");
+        }
 
         try {
             NetworkGuru guru = _networkGurus.get(network.getGuruName());
@@ -1963,10 +1970,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                 shutdownNetwork(networkId, context, false);
             }
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Releasing lock for network id " + networkId);
-            }
+            
             _networksDao.releaseFromLockTable(networkId);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Lock is released for network id " + networkId + " as a part of network implement");
+            }
         }
     }
 

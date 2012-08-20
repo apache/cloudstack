@@ -16,6 +16,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -65,7 +66,7 @@ class Services:
                                     "publicport": 22,
                                     "protocol": 'TCP',
                                 },
-                         "ostypeid": '6a6b23aa-5e59-4b53-8161-0ad1aa5990f1',
+                         "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                          "timeout": 100,
                     }
 
@@ -146,6 +147,8 @@ class TestHostHighAvailability(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(configuration = "ha.tag")
+    @attr(tags = ["advanced", "advancedns", "sg", "basic", "eip", "simulator"])
     def test_01_vm_deployment_with_compute_offering_with_ha_enabled(self):
         """ Test VM deployments (Create HA enabled Compute Service Offering and VM) """
         
@@ -209,6 +212,8 @@ class TestHostHighAvailability(cloudstackTestCase):
             "VM not created with HA enable tag"
             )
 
+    @attr(configuration = "ha.tag")
+    @attr(tags = ["advanced", "advancedns", "sg", "basic", "eip", "simulator", "multihost"])
     def test_02_no_vm_creation_on_host_with_haenabled(self):
         """ Verify you can not create new VMs on hosts with an ha.tag """
         
@@ -332,6 +337,8 @@ class TestHostHighAvailability(cloudstackTestCase):
             "VM migrated to HA enabled host."
             )
 
+    @attr(configuration = "ha.tag")
+    @attr(tags = ["advanced", "advancedns", "sg", "basic", "eip", "simulator", "multihost"])
     def test_03_cant_migrate_vm_to_host_with_ha_positive(self):
         """ Verify you can not migrate VMs to hosts with an ha.tag (positive) """
         
@@ -436,6 +443,8 @@ class TestHostHighAvailability(cloudstackTestCase):
             "The VM is not migrated to targeted suitable host."
             )
 			
+    @attr(configuration = "ha.tag")            
+    @attr(tags = ["advanced", "advancedns", "sg", "basic", "eip", "simulator", "multihost"])
     def test_04_cant_migrate_vm_to_host_with_ha_negative(self):
         """ Verify you can not migrate VMs to hosts with an ha.tag (negative) """
         
@@ -539,6 +548,9 @@ class TestHostHighAvailability(cloudstackTestCase):
             "The detination host id of migrated VM is not matching."
             )
 
+    @attr(configuration = "ha.tag")
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns", "sg", "basic", "eip", "simulator", "multihost"])
     def test_05_no_vm_with_ha_gets_migrated_to_ha_host_in_live_migration(self):
         """ Verify that none of the VMs with HA enabled migrate to an ha tagged host during live migration """
         
@@ -668,6 +680,9 @@ class TestHostHighAvailability(cloudstackTestCase):
         cmd.id = vm_with_ha_enabled.hostid
         self.apiclient.cancelHostMaintenance(cmd)
 			
+    @attr(configuration = "ha.tag")
+    @attr(speed = "slow")            
+    @attr(tags = ["advanced", "advancedns", "sg", "basic", "eip", "simulator", "multihost"])
     def test_06_no_vm_without_ha_gets_migrated_to_ha_host_in_live_migration(self):
         """ Verify that none of the VMs without HA enabled migrate to an ha tagged host during live migration """
         

@@ -19,6 +19,7 @@ from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
+from nose.plugins.attrib import attr
 from integration.lib.common import *
 
 #Import System modules
@@ -80,6 +81,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @unittest.skip("skipped - will not be adding storage in our environments")
     def test_01_primary_storage(self):
         """Test primary storage pools - XEN, KVM, VMWare
         """

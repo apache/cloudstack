@@ -20,6 +20,7 @@ from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
+from nose.plugins.attrib import attr
 
 
 class Services:
@@ -56,7 +57,8 @@ class TestCreateServiceOffering(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
         return
-
+    
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"])
     def test_01_create_service_offering(self):
         """Test to create service offering"""
 
@@ -162,6 +164,7 @@ class TestServiceOfferings(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"])
     def test_02_edit_service_offering(self):
         """Test to update existing service offering"""
 
@@ -212,6 +215,7 @@ class TestServiceOfferings(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"])
     def test_03_delete_service_offering(self):
         """Test to delete service offering"""
 

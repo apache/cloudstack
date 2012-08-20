@@ -16,6 +16,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.remoteSSHClient import remoteSSHClient
@@ -77,7 +78,7 @@ class Services:
             "sleep": 60,
             "timeout": 10,
             "full_host": "10.147.29.53",
-            "ostypeid": 'd96fc3f0-a1d3-4498-88aa-a7a1ca96c1bb',
+            "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
             # CentOS 5.3 (64-bit)
         }
 
@@ -154,6 +155,7 @@ class TestVMPlacement(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "vmware", "multihost"])
     def test_vm_creation_in_fully_automated_mode(self):
         """ Test VM Creation in  automation mode = Fully automated
             This test requires following preconditions:
@@ -163,7 +165,6 @@ class TestVMPlacement(cloudstackTestCase):
                 - Another host should have some capacity remaining
                 - DRS Cluster is configured in "Fully automated" mode
         """
-        tags = ["advanced", "vmware", "eip", "advancedns", "basic", "sg"]
         # Validate the following
         # 1. Create a new VM in a host which is almost fully utilized
         # 2 Automatically places VM on the other host
@@ -279,7 +280,8 @@ class TestAntiAffinityRules(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
-
+        
+    @attr(tags = ["advanced", "vmware", "multihost"])
     def test_vmware_anti_affinity(self):
         """ Test Set up anti-affinity rules
 
@@ -291,7 +293,6 @@ class TestAntiAffinityRules(cloudstackTestCase):
             - Add host names to host_1,host_2 and IDs of VM 1,2 in the settings
               class "anti_affinity" above.
         """
-        tags = ["advanced", "vmware", "eip", "advancedns", "basic", "sg"]
 
         # Validate the following
         # 1. Deploy VMs on host 1 and 2
@@ -481,6 +482,7 @@ class TestAffinityRules(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "vmware", "multihost"])
     def test_vmware_affinity(self):
         """ Test Set up affinity rules
 
@@ -492,7 +494,6 @@ class TestAffinityRules(cloudstackTestCase):
             - Add host names to host_1,host_2 and IDs of VM 1,2 in the settings
               class "affinity" above.
         """
-        tags = ["advanced", "vmware", "eip", "advancedns", "basic", "sg"]
 
         # Validate the following
         # 1. Deploy VMs 2 VMs on same hosts

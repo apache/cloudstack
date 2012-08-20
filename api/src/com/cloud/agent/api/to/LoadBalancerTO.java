@@ -287,10 +287,11 @@ public class LoadBalancerTO implements Serializable {
         private final String cloudStackApiUrl;
         private final String autoScaleUserApiKey;
         private final String autoScaleUserSecretKey;
+        private final String vmName;
         private final String networkId;
 
         public AutoScaleVmProfileTO(String zoneId, String domainId, String cloudStackApiUrl, String autoScaleUserApiKey, String autoScaleUserSecretKey, String serviceOfferingId,
-                String templateId, String networkId, String otherDeployParams, String snmpCommunity, Integer snmpPort, Integer destroyVmGraceperiod) {
+                String templateId, String vmName, String networkId, String otherDeployParams, String snmpCommunity, Integer snmpPort, Integer destroyVmGraceperiod) {
             this.zoneId = zoneId;
             this.domainId = domainId;
             this.serviceOfferingId = serviceOfferingId;
@@ -302,6 +303,7 @@ public class LoadBalancerTO implements Serializable {
             this.cloudStackApiUrl = cloudStackApiUrl;
             this.autoScaleUserApiKey = autoScaleUserApiKey;
             this.autoScaleUserSecretKey = autoScaleUserSecretKey;
+            this.vmName = vmName;
             this.networkId = networkId;
         }
 
@@ -349,12 +351,17 @@ public class LoadBalancerTO implements Serializable {
             return autoScaleUserSecretKey;
         }
 
+        public String getVmName() {
+            return vmName;
+        }
+
         public String getNetworkId() {
             return networkId;
         }
     }
 
     public static class AutoScaleVmGroupTO implements Serializable {
+        private final String uuid;
         private final int minMembers;
         private final int maxMembers;
         private final int memberPort;
@@ -364,8 +371,9 @@ public class LoadBalancerTO implements Serializable {
         private final String state;
         private final String currentState;
 
-        AutoScaleVmGroupTO(int minMembers, int maxMembers, int memberPort, int interval, List<AutoScalePolicyTO> policies, AutoScaleVmProfileTO profile, String state, String currentState)
+        AutoScaleVmGroupTO(String uuid, int minMembers, int maxMembers, int memberPort, int interval, List<AutoScalePolicyTO> policies, AutoScaleVmProfileTO profile, String state, String currentState)
         {
+            this.uuid = uuid;
             this.minMembers = minMembers;
             this.maxMembers = maxMembers;
             this.memberPort = memberPort;
@@ -374,6 +382,10 @@ public class LoadBalancerTO implements Serializable {
             this.profile = profile;
             this.state = state;
             this.currentState = currentState;
+        }
+
+        public String getUuid() {
+            return uuid;
         }
 
         public int getMinMembers() {
@@ -433,12 +445,12 @@ public class LoadBalancerTO implements Serializable {
 
         AutoScaleVmProfileTO autoScaleVmProfileTO = new AutoScaleVmProfileTO(lbAutoScaleVmProfile.getZoneId(), lbAutoScaleVmProfile.getDomainId(),
                 lbAutoScaleVmProfile.getCsUrl(), lbAutoScaleVmProfile.getAutoScaleUserApiKey(), lbAutoScaleVmProfile.getAutoScaleUserSecretKey(),
-                lbAutoScaleVmProfile.getServiceOfferingId(), lbAutoScaleVmProfile.getTemplateId(), lbAutoScaleVmProfile.getNetworkId(),
-                autoScaleVmProfile.getOtherDeployParams(), autoScaleVmProfile.getSnmpCommunity(), autoScaleVmProfile.getSnmpPort(),
-                autoScaleVmProfile.getDestroyVmGraceperiod());
+                lbAutoScaleVmProfile.getServiceOfferingId(), lbAutoScaleVmProfile.getTemplateId(), lbAutoScaleVmProfile.getVmName(),
+                lbAutoScaleVmProfile.getNetworkId(),autoScaleVmProfile.getOtherDeployParams(), autoScaleVmProfile.getSnmpCommunity(),
+                autoScaleVmProfile.getSnmpPort(), autoScaleVmProfile.getDestroyVmGraceperiod());
 
         AutoScaleVmGroup autoScaleVmGroup = lbAutoScaleVmGroup.getVmGroup();
-        autoScaleVmGroupTO = new AutoScaleVmGroupTO(autoScaleVmGroup.getMinMembers(), autoScaleVmGroup.getMaxMembers(), autoScaleVmGroup.getMemberPort(),
+        autoScaleVmGroupTO = new AutoScaleVmGroupTO(autoScaleVmGroup.getUuid(), autoScaleVmGroup.getMinMembers(), autoScaleVmGroup.getMaxMembers(), autoScaleVmGroup.getMemberPort(),
                 autoScaleVmGroup.getInterval(), autoScalePolicyTOs, autoScaleVmProfileTO, autoScaleVmGroup.getState(), lbAutoScaleVmGroup.getCurrentState());
     }
 
