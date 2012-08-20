@@ -69,8 +69,6 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
     
     void finalizeExpunge(T vm);
     
-    boolean recreateNeeded(VirtualMachineProfile<T> profile, long hostId, Commands cmds, ReservationContext context);
-    
     /**
      * Returns the id parsed from the name.  If it cannot parse the name,
      * then return null.  This method is used to determine if this is
@@ -82,7 +80,6 @@ public interface VirtualMachineGuru<T extends VirtualMachine> {
     Long convertToId(String vmName);
     
     /**
-<<<<<<< HEAD
      * Prepare for a nic to be plugged into the network.
      * @param network
      * @param nic
