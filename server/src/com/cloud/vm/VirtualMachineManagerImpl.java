@@ -652,7 +652,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
             DataCenterDeployment originalPlan = plan;
 
             int retry = _retry;
-            boolean recreate = false;
             while (retry-- != 0) { // It's != so that it can match -1.
 
                 if(reuseVolume){
@@ -747,8 +746,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     }
                     _networkMgr.prepare(vmProfile, dest, ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
-                        _storageMgr.prepare(vmProfile, dest, recreate);
-                        recreate = false;
+                        _storageMgr.prepare(vmProfile, dest);
                     }
                     //since StorageMgr succeeded in volume creation, reuse Volume for further tries until current cluster has capacity
                     if(!reuseVolume){
@@ -808,11 +806,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                                 _haMgr.scheduleStop(vm, destHostId, WorkType.ForceStop);
                                 throw new ExecutionException("Unable to stop " + vm + " so we are unable to retry the start operation");
                             }
-                            if (vmGuru.recreateNeeded(vmProfile, destHostId, cmds, ctx)) {
-                                recreate = true;
-                            } else {
-                                throw new ExecutionException("Unable to start " + vm + " due to error in finalizeStart, not retrying");
-                            }
+                            throw new ExecutionException("Unable to start " + vm + " due to error in finalizeStart, not retrying");
                         }
                     }
                     s_logger.info("Unable to start VM on " + dest.getHost() + " due to " + (startAnswer == null ? " no start answer" : startAnswer.getDetails()));

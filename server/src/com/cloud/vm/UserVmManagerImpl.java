@@ -3796,11 +3796,4 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     @Override
     public void prepareStop(VirtualMachineProfile<UserVmVO> profile) {
     }
-    @Override
-    public boolean recreateNeeded(VirtualMachineProfile<UserVmVO> profile,
-            long hostId, Commands cmds, ReservationContext context) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
 }
