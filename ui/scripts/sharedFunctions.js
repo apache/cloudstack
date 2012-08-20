@@ -698,6 +698,10 @@ cloudStack.api = {
           resourceType: resourceType
         };
 
+        if (isAdmin() || isDomainAdmin()) {
+          data.listAll = true;
+        }
+
         if (args.context.projects) {
           data.projectid=args.context.projects[0].id;
         }
