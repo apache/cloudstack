@@ -902,11 +902,17 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         HostVO externalLoadBalancer = null;
 
         if (add) {
-            ExternalLoadBalancerDeviceVO lbDeviceVO = allocateLoadBalancerForNetwork(guestConfig);
+            ExternalLoadBalancerDeviceVO lbDeviceVO = null;
+	        // on restart network, device could have been allocated already, skip allocation if a device is assigned
+            lbDeviceVO = getExternalLoadBalancerForNetwork(guestConfig);
             if (lbDeviceVO == null) {
-                String msg = "failed to alloacate a external load balancer for the network " + guestConfig.getId();
-                s_logger.error(msg);
-                throw new InsufficientNetworkCapacityException(msg, DataCenter.class, guestConfig.getDataCenterId());
+		    // allocate a load balancer device for the network
+	            lbDeviceVO = allocateLoadBalancerForNetwork(guestConfig);
+	            if (lbDeviceVO == null) {
+	                String msg = "failed to alloacate a external load balancer for the network " + guestConfig.getId();
+	                s_logger.error(msg);
+	                throw new InsufficientNetworkCapacityException(msg, DataCenter.class, guestConfig.getDataCenterId());
+	            }
             }
             externalLoadBalancer = _hostDao.findById(lbDeviceVO.getHostId());
             s_logger.debug("Allocated external load balancer device:" + lbDeviceVO.getId() + " for the network: " + guestConfig.getId());
@@ -930,6 +936,12 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
         Integer networkRate = _networkMgr.getNetworkRate(guestConfig.getId(), null);
 
         if (add) {
+		    // on restart network, network could have already been implemented. If already implemented then return
+            NicVO selfipNic = getPlaceholderNic(guestConfig);
+            if (selfipNic != null) {
+		    return true;
+            }
+
             // Acquire a self-ip address from the guest network IP address range
             selfIp = _networkMgr.acquireGuestIpAddress(guestConfig, null);
             if (selfIp == null) {
