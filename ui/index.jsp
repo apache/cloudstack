@@ -225,7 +225,15 @@ under the License.
               <!-- 5b: Select network -->
               <div class="wizard-step-conditional select-network">
                 <div class="content">
-                  <div class="main-desc"><fmt:message key="message.please.select.networks"/></div>
+                  <div class="main-desc">
+                    <fmt:message key="message.please.select.networks"/>
+                  </div>
+                  <div class="select-vpc">
+                    <label>VPC:</label>
+                    <select name="vpc-filter">
+                      <option value="-1">No VPC</option>
+                    </select>
+                  </div>
                   <div class="select my-networks">
                     <table>
                       <thead>
