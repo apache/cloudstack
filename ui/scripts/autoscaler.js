@@ -139,7 +139,7 @@
 								$(autoscaleVmGroup.scaleuppolicies[0].conditions).each(function(){								  
 									var condition = {
 									  id: this.id,
-										counterid: this.counter.id,										
+										counterid: this.counter[0].id,										
 										relationaloperator: this.relationaloperator,
 										threshold: this.threshold
 									};
@@ -154,7 +154,7 @@
 								$(autoscaleVmGroup.scaledownpolicies[0].conditions).each(function(){								  
 									var condition = {
 									  id: this.id,
-										counterid: this.counter.id,										
+										counterid: this.counter[0].id,										
 										relationaloperator: this.relationaloperator,
 										threshold: this.threshold.toString()
 									};
