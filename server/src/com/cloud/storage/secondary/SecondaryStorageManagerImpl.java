@@ -1469,15 +1469,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
         throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
     }
 
-    
-    @Override
-    public boolean recreateNeeded(
-			VirtualMachineProfile<SecondaryStorageVmVO> profile, long hostId,
-			Commands cmds, ReservationContext context) {
-		// TODO Auto-generated method stub
-		return false;
-    }
-
 	@Override
 	public void prepareStop(VirtualMachineProfile<SecondaryStorageVmVO> profile) {
 		

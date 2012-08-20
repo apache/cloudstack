@@ -292,14 +292,6 @@ public class MockUserVmManagerImpl implements UserVmManager, UserVmService, Mana
         return null;
     }
 
-
-        @Override
-       public boolean recreateNeeded(VirtualMachineProfile<UserVmVO> profile,
-                       long hostId, Commands cmds, ReservationContext context) {
-               // TODO Auto-generated method stub
-               return false;
-       }
-
     @Override
     public UserVm startVirtualMachine(DeployVMCmd cmd) throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException {
         // TODO Auto-generated method stub

@@ -2023,15 +2023,6 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         //not supported
         throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
     }
-    
-    
-    @Override
-    public boolean recreateNeeded(
-			VirtualMachineProfile<ConsoleProxyVO> profile, long hostId,
-			Commands cmds, ReservationContext context) {
-		// TODO Auto-generated method stub
-		return false;
-    }
 	
 	@Override
 	public void prepareStop(VirtualMachineProfile<ConsoleProxyVO> profile) {
