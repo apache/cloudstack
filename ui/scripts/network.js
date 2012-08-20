@@ -2627,7 +2627,7 @@
                                   data.listloadbalancerruleinstancesresponse.loadbalancerruleinstance : [];
 																																																	
                                 $(lbInstances).each(function() {																  																
-																	if(this.name.indexOf('AutoScale-LB-') > -1) //autoscale VM is not allowed to be deleted manually. So, hide destroy button
+																	if(this.displayname.indexOf('AutoScale-LB-') > -1) //autoscale VM is not allowed to be deleted manually. So, hide destroy button
                                     this._hideActions = ['destroy'];	                                  																	
 																});                                				
                               },
