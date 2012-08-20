@@ -21,6 +21,7 @@ from marvin import remoteSSHClient
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
+from nose.plugins.attrib import attr
 #Import System modules
 import time
 
@@ -31,7 +32,7 @@ class Services:
 
     def __init__(self):
         self.services = {
-                            "ostypeid": '1a568aed-db2d-41ca-b644-416b0bdc067e',
+                            "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                             # Cent OS 5.3 (64 bit)
                             "mode": 'advanced',
                             # Networking mode: Basic or advanced
@@ -183,6 +184,7 @@ class TestPublicIP(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_public_ip_admin_account(self):
         """Test for Associate/Disassociate
         public IP address for admin account"""
@@ -233,6 +235,7 @@ class TestPublicIP(cloudstackTestCase):
                     )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_public_ip_user_account(self):
         """Test for Associate/Disassociate
             public IP address for user account"""
@@ -343,6 +346,7 @@ class TestPortForwarding(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_01_port_fwd_on_src_nat(self):
         """Test for port forwarding on source NAT"""
 
@@ -465,6 +469,7 @@ class TestPortForwarding(cloudstackTestCase):
                                             )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_02_port_fwd_on_non_src_nat(self):
         """Test for port forwarding on non source NAT"""
 
@@ -661,6 +666,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
         cleanup_resources(cls.api_client, cls._cleanup)
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_01_create_lb_rule_src_nat(self):
         """Test to create Load balancing rule with source NAT"""
 
@@ -868,6 +874,7 @@ class TestLoadBalancingRule(cloudstackTestCase):
             ssh_1.execute("hostname")[0]
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_02_create_lb_rule_non_nat(self):
         """Test to create Load balancing rule with source NAT"""
 
@@ -1138,6 +1145,7 @@ class TestRebootRouter(cloudstackTestCase):
                         ]
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_reboot_router(self):
         """Test for reboot router"""
 
@@ -1273,6 +1281,7 @@ class TestAssignRemoveLB(cloudstackTestCase):
                         ]
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_assign_and_removal_lb(self):
         """Test for assign & removing load balancing rule"""
 
@@ -1547,6 +1556,7 @@ class TestReleaseIP(cloudstackTestCase):
     def tearDown(self):
         cleanup_resources(self.apiclient, self.cleanup)
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_releaseIP(self):
         """Test for Associate/Disassociate public IP address"""
 
@@ -1675,6 +1685,7 @@ class TestDeleteAccount(cloudstackTestCase):
         self.cleanup = []
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke"])
     def test_delete_account(self):
         """Test for delete account"""
 
