@@ -742,6 +742,12 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
                         _storageMgr.prepare(vmProfile, dest);
                     }                    
+
+                    //since StorageMgr succeeded in volume creation, resue Volume for further tries until current cluster has capacity
+                    if(!reuseVolume){
+                        reuseVolume = true;
+                    }
+
                     vmGuru.finalizeVirtualMachineProfile(vmProfile, dest, ctx);
 
                     VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
