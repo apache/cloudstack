@@ -429,7 +429,7 @@
           $action.addClass(action.id);
 
           if (action.id != 'remove') {
-            $action.append($('<span>').addClass('label').html(shortLabel));
+            $action.append($('<span>').addClass('label').html(_l(shortLabel)));
           } else {
             $action.append($('<span>').addClass('icon').html('&nbsp;'));
           }
