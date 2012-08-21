@@ -109,6 +109,7 @@
 	</target>
 	<target name="clean-awsapi-tomcat">
 		<delete dir="${tomcat.home}/webapps/awsapi" />
+		<delete dir="${tomcat.home}/webapps7080/awsapi" />
 	</target>
 	<path id="awsapi.classpath">
 		<path refid="deps.classpath" />
@@ -171,7 +172,7 @@
 		</jar>
 	</target>
 	<target name="deploy-axis" depends="-init-awsapi">
-		<unwar overwrite="true" src="${base.dir}/deps/awsapi-lib/axis2.war" dest="${server.deploy.to.dir}/webapps/awsapi" />
+		<unwar overwrite="true" src="${base.dir}/deps/awsapi-lib/axis2.war" dest="${server.deploy.to.dir}/webapps7080/awsapi" />
 	</target>
 	<condition property="access_key.private.notpresent">
 		<not>
@@ -197,34 +198,34 @@
 	</target>
 	<target name="deploy-awsapi" depends="deploy-axis">
 		<!--
-                <copy todir="${deploy.dir}/webapps/awsapi/WEB-INF/services">
+                <copy todir="${deploy.dir}/webapps7080/awsapi/WEB-INF/services">
                         <fileset dir="${dist.files.dir}">
                                 <include name="cloud-s3.aar"/>
                         </fileset>
                 </copy>
 		-->	
-		<copy todir="${server.deploy.to.dir}/webapps/awsapi/WEB-INF/services">
+		<copy todir="${server.deploy.to.dir}/webapps7080/awsapi/WEB-INF/services">
 			<fileset dir="${dist.files.dir}">
 				<include name="cloud-ec2.aar" />
 			</fileset>
 		</copy>
-		<copy todir="${server.deploy.to.dir}/webapps/awsapi/WEB-INF/modules">
+		<copy todir="${server.deploy.to.dir}/webapps7080/awsapi/WEB-INF/modules">
 			<fileset dir="${dist.files.dir}">
 				<include name="cloud-auth-s3.mar" />
 			</fileset>
 		</copy>
-		<copy todir="${server.deploy.to.dir}/webapps/awsapi/WEB-INF/modules">
+		<copy todir="${server.deploy.to.dir}/webapps7080/awsapi/WEB-INF/modules">
 			<fileset dir="${dist.files.dir}">
 				<include name="cloud-auth-ec2.mar" />
 			</fileset>
 		</copy>
-		<copy todir="${server.deploy.to.dir}/webapps/awsapi/WEB-INF/lib">
+		<copy todir="${server.deploy.to.dir}/webapps7080/awsapi/WEB-INF/lib">
 			<fileset dir="${jar.dir}">
 				<include name="cloud-awsapi.jar" />
 				<include name="cloud-jasypt-1.8.jar" />
 			</fileset>
 		</copy>
-		<copy todir="${server.deploy.to.dir}/webapps/awsapi/WEB-INF/lib">
+		<copy todir="${server.deploy.to.dir}/webapps7080/awsapi/WEB-INF/lib">
 			<fileset dir="${base.dir}/deps/awsapi-lib">
 				<include name="*.jar" />
 				<exclude name="mysql-connector-java-5.1.7-bin.jar" />
@@ -241,30 +242,30 @@
 				<include name="**/*" />
 			</fileset>
 		</copy>
-		<copy overwrite="true" todir="${server.deploy.to.dir}/webapps/awsapi/WEB-INF/conf">
+		<copy overwrite="true" todir="${server.deploy.to.dir}/webapps7080/awsapi/WEB-INF/conf">
 			<fileset dir="${base.dir}/awsapi/resource/Axis2/">
 				<include name="axis2.xml" />
 			</fileset>
 		</copy>
-		<copy overwrite="true" todir="${server.deploy.to.dir}/webapps/awsapi/WEB-INF">
+		<copy overwrite="true" todir="${server.deploy.to.dir}/webapps7080/awsapi/WEB-INF">
 			<fileset dir="${base.dir}/awsapi/web/">
 				<include name="web.xml" />
 			</fileset>
 		</copy>
 		<!-- rampart lib goes where the axis lib files go -->
-		<copy todir="${server.deploy.to.dir}/webapps/awsapi/WEB-INF/lib">
+		<copy todir="${server.deploy.to.dir}/webapps7080/awsapi/WEB-INF/lib">
 			<fileset dir="${base.dir}/deps/awsapi-lib/rampart-lib">
 				<include name="*.jar" />
 			</fileset>
 		</copy>
 		<!-- copying over rampart mar files for WS-Security -->
-		<copy todir="${server.deploy.to.dir}/webapps/awsapi/WEB-INF/modules">
+		<copy todir="${server.deploy.to.dir}/webapps7080/awsapi/WEB-INF/modules">
 			<fileset dir="${base.dir}/awsapi/modules">
 				<include name="*.mar" />
 			</fileset>
 		</copy>
 		<!-- WS-Security requires this keystore -->
-		<copy todir="${server.deploy.to.dir}/webapps/awsapi/WEB-INF/classes">
+		<copy todir="${server.deploy.to.dir}/webapps7080/awsapi/WEB-INF/classes">
 			<fileset dir="${base.dir}/awsapi/resource/AmazonEC2">
 				<include name="crypto.properties" />
 				<include name="xes.keystore" />
@@ -272,7 +273,7 @@
 		</copy>
 	</target>
 	<target name="deploy-debian-install" depends="build-awsapi-jar, build-awsapi">
-		<copy todir="${debian.tomcat.dir}/webapps/awsapi/WEB-INF/services">
+		<copy todir="${debian.tomcat.dir}/webapps7080/awsapi/WEB-INF/services">
 			<fileset dir="${dist.files.dir}">
 				<!--                
                 <include name="cloud-s3.aar"/>
@@ -280,7 +281,7 @@
 				<include name="cloud-ec2.aar" />
 			</fileset>
 		</copy>
-		<copy todir="${debian.tomcat.dir}/webapps/awsapi/WEB-INF/modules">
+		<copy todir="${debian.tomcat.dir}/webapps7080/awsapi/WEB-INF/modules">
 			<fileset dir="${dist.files.dir}">
 				<include name="cloud-auth-s3.mar" />
 				<include name="cloud-auth-ec2.mar" />
@@ -289,7 +290,7 @@
 				<include name="*.mar" />
 			</fileset>
 		</copy>
-		<copy todir="${debian.tomcat.dir}/webapps/awsapi/WEB-INF/lib">
+		<copy todir="${debian.tomcat.dir}/webapps7080/awsapi/WEB-INF/lib">
 			<fileset dir="${base.dir}/rampart-lib">
 				<include name="*.jar" />
 			</fileset>
@@ -303,7 +304,7 @@
 				<include name="*.jar" />
 			</fileset>
 		</copy>
-		<copy todir="${debian.tomcat.dir}/webapps/awsapi/WEB-INF/classes">
+		<copy todir="${debian.tomcat.dir}/webapps7080/awsapi/WEB-INF/classes">
 			<fileset dir="${base.dir}/resource/AmazonEC2">
 				<include name="crypto.properties" />
 				<include name="xes.keystore" />
@@ -317,12 +318,12 @@
 				<include name="**/*" />
 			</fileset>
 		</copy -->
-		<copy overwrite="true" todir="${debian.tomcat.dir}/webapps/awsapi/WEB-INF/conf">
+		<copy overwrite="true" todir="${debian.tomcat.dir}/webapps7080/awsapi/WEB-INF/conf">
 			<fileset dir="${base.dir}/awsapi/resource/Axis2/">
 				<include name="axis2.xml" />
 			</fileset>
 		</copy>
-		<copy overwrite="true" todir="${debian.tomcat.dir}/webapps/awsapi/WEB-INF">
+		<copy overwrite="true" todir="${debian.tomcat.dir}/webapps7080/awsapi/WEB-INF">
 			<fileset dir="${base.dir}/awsapi/web/">
 				<include name="web.xml" />
 			</fileset>
@@ -345,7 +346,7 @@
 		</copy>
 	</target>
 	<target name="deploy-rpm-install" depends="build-awsapi-jar, build-awsapi">
-		<copy todir="${rpm.tomcat.dir}/webapps/awsapi/WEB-INF/services">
+		<copy todir="${rpm.tomcat.dir}/webapps7080/awsapi/WEB-INF/services">
 			<fileset dir="${dist.files.dir}">
 <!--                
                 <include name="cloud-s3.aar"/>
@@ -353,7 +354,7 @@
 				<include name="cloud-ec2.aar" />
 			</fileset>
 		</copy>
-		<copy todir="${rpm.tomcat.dir}/webapps/awsapi/WEB-INF/modules">
+		<copy todir="${rpm.tomcat.dir}/webapps7080/awsapi/WEB-INF/modules">
 			<fileset dir="${dist.files.dir}">
 				<include name="cloud-auth-s3.mar" />
 				<include name="cloud-auth-ec2.mar" />
@@ -362,7 +363,7 @@
 				<include name="*.mar" />
 			</fileset>
 		</copy>
-		<copy todir="${rpm.tomcat.dir}/webapps/awsapi/WEB-INF/lib">
+		<copy todir="${rpm.tomcat.dir}/webapps7080/awsapi/WEB-INF/lib">
             <fileset dir="${base.dir}/deps/awsapi-lib/rampart-lib">
 				<include name="*.jar" />
 			</fileset>
@@ -376,7 +377,7 @@
 				<include name="*.jar" />
 			</fileset>
 		</copy>
-		<copy todir="${rpm.tomcat.dir}/webapps/awsapi/WEB-INF/classes">
+		<copy todir="${rpm.tomcat.dir}/webapps7080/awsapi/WEB-INF/classes">
             <fileset dir="${base.dir}/awsapi/resource/AmazonEC2">
 				<include name="crypto.properties" />
 				<include name="xes.keystore" />
@@ -387,12 +388,12 @@
 				<include name="**/*" />
 			</fileset>
 		</copy>
-		<copy overwrite="true" todir="${rpm.tomcat.dir}/webapps/awsapi/WEB-INF/conf">
+		<copy overwrite="true" todir="${rpm.tomcat.dir}/webapps7080/awsapi/WEB-INF/conf">
 			<fileset dir="${base.dir}/awsapi/resource/Axis2/">
 				<include name="axis2.xml" />
 			</fileset>
 		</copy>
-		<copy overwrite="true" todir="${rpm.tomcat.dir}/webapps/awsapi/WEB-INF">
+		<copy overwrite="true" todir="${rpm.tomcat.dir}/webapps7080/awsapi/WEB-INF">
 			<fileset dir="${base.dir}/awsapi/web/">
 				<include name="web.xml" />
 			</fileset>
