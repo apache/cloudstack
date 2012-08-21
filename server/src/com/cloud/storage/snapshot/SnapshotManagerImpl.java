@@ -851,7 +851,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     @Override
     public HostVO getSecondaryStorageHost(SnapshotVO snapshot) {
         HostVO secHost = null;
-        if( snapshot.getSwiftId() == null ) {
+        if( snapshot.getSwiftId() == null || snapshot.getSwiftId() == 0) {
             secHost = _hostDao.findById(snapshot.getSecHostId());
         } else {
             Long dcId = snapshot.getDataCenterId();
