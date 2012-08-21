@@ -82,6 +82,9 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     @SerializedName(ApiConstants.ASSOCIATED_NETWORK_ID) @Param(description="the ID of the Network associated with the IP address")
     private IdentityProxy associatedNetworkId = new IdentityProxy("networks");
     
+    @SerializedName(ApiConstants.ASSOCIATED_NETWORK_NAME) @Param(description="the name of the Network associated with the IP address")
+    private String associatedNetworkName;
+    
     @SerializedName(ApiConstants.NETWORK_ID) @Param(description="the ID of the Network where ip belongs to")
     private IdentityProxy networkId = new IdentityProxy("networks");
     
@@ -217,5 +220,9 @@ public class IPAddressResponse extends BaseResponse implements ControlledEntityR
     
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
+    }
+
+    public void setAssociatedNetworkName(String associatedNetworkName) {
+        this.associatedNetworkName = associatedNetworkName;
     }
 }
