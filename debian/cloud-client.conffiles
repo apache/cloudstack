@@ -1,0 +1,3 @@
+/etc/cloud/management/db.properties
+/etc/cloud/management/components.xml
+/etc/cloud/management/log4j-cloud.xml
