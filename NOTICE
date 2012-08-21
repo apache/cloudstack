@@ -13,6 +13,11 @@
     cloud-ejb-api-3.0.jar
     cloud-email.jar
     cloud-jstl-1.2.jar
+    jaxb-api-2.1.jar
+    jaxb-impl-2.1.7.jar
+    jaxb-xjc-2.1.7.jar
+    jta-1.1.jar
+    mail-1.4.jar
   
 
         NOTICE PURSUANT TO SECTION 9 OF THE COMMON DEVELOPMENT AND DISTRIBUTION LICENSE
@@ -23,6 +28,296 @@
         this License shall be subject to the jurisdiction of the Federal Courts of the
         Northern District of California and the state courts of the State of California,
         with venue lying in Santa Clara County, California.
+
+    
+  For 
+    cloud-commons-logging-1.1.1.jar
+    commons-logging-1.1.1.jar
+  
+
+        // ------------------------------------------------------------------
+        // NOTICE file corresponding to the section 4d of The Apache License,
+        // Version 2.0, in this case for Commons Logging
+        // ------------------------------------------------------------------
+        
+        Commons Logging
+        Copyright 2001-2007 The Apache Software Foundation
+        
+        This product includes/uses software(s) developed by 'an unknown organization'
+          - Unnamed - avalon-framework:avalon-framework:jar:4.1.3
+          - Unnamed - log4j:log4j:jar:1.2.12
+          - Unnamed - logkit:logkit:jar:1.0.1
+
+    
+  For 
+    neethi-2.0.4.jar
+  
+
+        =========================================================================
+        ==  NOTICE file corresponding to the section 4 d of                    ==
+        ==  the Apache License, Version 2.0,                                   ==
+        ==  in this case for the Apache AXIOM distribution.                    ==
+        =========================================================================
+        
+        This product includes software developed by
+        The Apache Software Foundation (http://www.apache.org/).
+        Portions Copyright 2006 International Business Machines Corp.
+        
+        Please read the different LICENSE files present in the licenses directory of
+        this distribution.
+
+    
+  For 
+    cloud-jasypt-1.9.jar
+  
+
+        Copyright (c) 2007-2010, The JASYPT team (http://www.jasypt.org)
+         
+           Licensed under the Apache License, Version 2.0 (the "License");
+           you may not use this file except in compliance with the License.
+           You may obtain a copy of the License at
+         
+               http://www.apache.org/licenses/LICENSE-2.0
+         
+           Unless required by applicable law or agreed to in writing, software
+           distributed under the License is distributed on an "AS IS" BASIS,
+           WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+           See the License for the specific language governing permissions and
+           limitations under the License.
+        
+        
+        ---------------------------------
+        
+        
+        
+        This distribution includes cryptographic software.  The country in 
+        which you currently reside may have restrictions on the import, 
+        possession, use, and/or re-export to another country, of 
+        encryption software.  BEFORE using any encryption software, please 
+        check your country's laws, regulations and policies concerning the
+        import, possession, or use, and re-export of encryption software, to 
+        see if this is permitted.  See http://www.wassenaar.org/ for more
+        information.
+        
+        The U.S. Government Department of Commerce, Bureau of Industry and
+        Security (BIS), has classified this software as Export Commodity 
+        Control Number (ECCN) 5D002.C.1, which includes information security
+        software using or performing cryptographic functions with asymmetric
+        algorithms.  The form and manner of this distribution makes it 
+        eligible for export under the License Exception ENC Technology 
+        Software Unrestricted (TSU) exception (see the BIS Export 
+        Administration Regulations, Section 740.13) for both object code and 
+        source code.
+        
+        The following provides more details on the cryptographic software 
+        used (note that this software is not included in the distribution):
+        
+          * The PBE Encryption facilities require the Java Cryptography 
+            extensions: http://java.sun.com/javase/technologies/security/.
+        
+        ---------------------------------
+        
+        Distributions of this software may include software developed by
+        The Apache Software Foundation (http://www.apache.org/).
+        
+        ---------------------------------
+        
+        
+        ICU License - ICU 1.8.1 and later
+        
+        COPYRIGHT AND PERMISSION NOTICE
+        
+        Copyright (c) 1995-2006 International Business Machines 
+        Corporation and others
+        
+        All rights reserved.
+        
+        Permission is hereby granted, free of charge, to any 
+        person obtaining a copy of this software and associated 
+        documentation files (the "Software"), to deal in the 
+        Software without restriction, including without limitation 
+        the rights to use, copy, modify, merge, publish, 
+        distribute, and/or sell copies of the Software, and to 
+        permit persons to whom the Software is furnished to do so, 
+        provided that the above copyright notice(s) and this 
+        permission notice appear in all copies of the Software and 
+        that both the above copyright notice(s) and this 
+        permission notice appear in supporting documentation.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY 
+        KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE 
+        WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
+        PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO 
+        EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN 
+        THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL 
+        INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES 
+        WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, 
+        WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER 
+        TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE 
+        USE OR PERFORMANCE OF THIS SOFTWARE.
+        
+        Except as contained in this notice, the name of a copyright 
+        holder shall not be used in advertising or otherwise to 
+        promote the sale, use or other dealings in this Software 
+        without prior written authorization of the copyright holder.
+
+    
+  For 
+    jquery.md5.js
+  
+
+        jQuery MD5 Plugin 1.2.1
+        https://github.com/blueimp/jQuery-MD5
+        
+        Copyright 2010, Sebastian Tschan
+        https://blueimp.net
+        
+        Licensed under the MIT license:
+        http://creativecommons.org/licenses/MIT/
+        
+        Based on
+        A JavaScript implementation of the RSA Data Security, Inc. MD5 Message
+        Digest Algorithm, as defined in RFC 1321.
+        Version 2.2 Copyright (C) Paul Johnston 1999 - 2009
+        Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
+        Distributed under the BSD License
+        See http://pajhome.org.uk/crypt/md5 for more info.
+
+    
+  For 
+    XmlSchema-1.4.3.jar
+  
+
+        Portions Copyright 2006 International Business Machines Corp.
+
+    
+  For 
+    cloud-trilead-ssh2-build213.jar
+  
+
+        Trilead SSH-2 for Java includes code that was written by Dr. Christian Plattner
+        during his PhD at ETH Zurich. The license states the following:
+        
+        Copyright (c) 2005 - 2006 Swiss Federal Institute of Technology (ETH Zurich),
+          Department of Computer Science (http://www.inf.ethz.ch),
+          Christian Plattner. All rights reserved.
+        
+        Redistribution and use in source and binary forms, with or without
+        modification, are permitted provided that the following conditions
+        are met:
+        
+        a.) Redistributions of source code must retain the above copyright
+            notice, this list of conditions and the following disclaimer.
+        b.) Redistributions in binary form must reproduce the above copyright
+            notice, this list of conditions and the following disclaimer in the
+            documentation and/or other materials provided with the distribution.
+        c.) Neither the name of ETH Zurich nor the names of its contributors may
+            be used to endorse or promote products derived from this software
+            without specific prior written permission.
+        
+        THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+        AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+        IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+        ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+        LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+        CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+        SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+        INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+        CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+        ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+        POSSIBILITY OF SUCH DAMAGE.
+        
+        The Java implementations of the AES, Blowfish and 3DES ciphers have been
+        taken (and slightly modified) from the cryptography package released by
+        "The Legion Of The Bouncy Castle".
+        
+        Their license states the following:
+        
+        Copyright (c) 2000 - 2004 The Legion Of The Bouncy Castle
+        (http://www.bouncycastle.org)
+        
+        Permission is hereby granted, free of charge, to any person obtaining a copy
+        of this software and associated documentation files (the "Software"), to deal
+        in the Software without restriction, including without limitation the rights
+        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+        copies of the Software, and to permit persons to whom the Software is
+        furnished to do so, subject to the following conditions:
+        
+        The above copyright notice and this permission notice shall be included in
+        all copies or substantial portions of the Software.
+        
+        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+        THE SOFTWARE.
+
+    
+  For 
+    axis2-1.5.1.jar
+    axis2-adb-1.5.1.jar
+    axis2-ant-plugin-1.5.1.jar
+    axis2-jaxbri-1.5.1.jar
+    axis2-jaxws-1.5.1.jar
+    axis2-jibx-1.5.1.jar
+    axis2-json-1.5.1.jar
+    axis2-kernel-1.5.1.jar
+    axis2-transport-http-1.5.1.jar
+    axis2-transport-local-1.5.1.jar
+    axis2.war
+    cloud-axis.jar
+  
+
+        =========================================================================
+        ==  NOTICE file corresponding to the section 4 d of                    ==
+        ==  the Apache License, Version 2.0,                                   ==
+        ==  in this case for the Apache Axis2 distribution.                    ==
+        =========================================================================
+        
+        This product includes software developed by
+        The Apache Software Foundation (http://www.apache.org/).
+        Portions Copyright 2006 International Business Machines Corp.
+        Portions Copyright 2005-2007 WSO2, Inc.
+        
+        This product also includes schemas and specification developed by:
+        - the W3C consortium (http://www.w3c.org)
+        
+        This product also includes WS-* schemas developed by International
+        Business Machines Corporation, Microsoft Corporation, BEA Systems, 
+        TIBCO Software, SAP AG, Sonic Software, and VeriSign
+        
+        This product also includes a WSDL developed by salesforce.com
+        - Copyright 1999-2006 salesforce.com, inc.
+        
+        Portions of the included xmlbeans library were originally based on the following:
+        - software copyright (c) 2000-2003, BEA Systems, <http://www.bea.com/>.
+        
+        Please read the different LICENSE files present in the lib directory of
+        this distribution.
+
+    
+  For 
+    xml-apis.jar
+  
+
+        =========================================================================
+        ==  NOTICE file corresponding to section 4(d) of the Apache License,   ==
+        ==  Version 2.0, in this case for the Apache xml-commons xml-apis      ==
+        ==  distribution.                                                      ==
+        =========================================================================
+        
+        Apache XML Commons XML APIs
+        Copyright 2006 The Apache Software Foundation.
+        
+        This product includes software developed at
+        The Apache Software Foundation (http://www.apache.org/).
+        
+        Portions of this software were originally based on the following:
+          - software copyright (c) 1999, IBM Corporation., http://www.ibm.com.
+          - software copyright (c) 1999, Sun Microsystems., http://www.sun.com.
+          - software copyright (c) 2000 World Wide Web Consortium, http://www.w3.org
 
     
   For 
@@ -202,6 +497,7 @@
     
   For 
     cloud-commons-codec-1.5.jar
+    commons-codec-1.4.jar
   
 
         Apache Commons Codec
@@ -218,24 +514,6 @@
         and distribution of this entire article is permitted in any medium,
         provided this notice is preserved.
         --------------------------------------------------------------------------------
-
-    
-  For 
-    cloud-commons-logging-1.1.1.jar
-  
-
-        // ------------------------------------------------------------------
-        // NOTICE file corresponding to the section 4d of The Apache License,
-        // Version 2.0, in this case for Commons Logging
-        // ------------------------------------------------------------------
-        
-        Commons Logging
-        Copyright 2001-2007 The Apache Software Foundation
-        
-        This product includes/uses software(s) developed by 'an unknown organization'
-          - Unnamed - avalon-framework:avalon-framework:jar:4.1.3
-          - Unnamed - log4j:log4j:jar:1.2.12
-          - Unnamed - logkit:logkit:jar:1.0.1
 
     
   For 
@@ -258,120 +536,40 @@
 
     
   For 
-    cloud-jasypt-1.9.jar
+    rampart-lib
   
 
-        Copyright (c) 2007-2010, The JASYPT team (http://www.jasypt.org)
-         
-           Licensed under the Apache License, Version 2.0 (the "License");
-           you may not use this file except in compliance with the License.
-           You may obtain a copy of the License at
-         
-               http://www.apache.org/licenses/LICENSE-2.0
-         
-           Unless required by applicable law or agreed to in writing, software
-           distributed under the License is distributed on an "AS IS" BASIS,
-           WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-           See the License for the specific language governing permissions and
-           limitations under the License.
+        Apache Rampart
+        Copyright 2010 The Apache Software Foundation
         
-        
-        ---------------------------------
-        
-        
-        
-        This distribution includes cryptographic software.  The country in 
-        which you currently reside may have restrictions on the import, 
-        possession, use, and/or re-export to another country, of 
-        encryption software.  BEFORE using any encryption software, please 
-        check your country's laws, regulations and policies concerning the
-        import, possession, or use, and re-export of encryption software, to 
-        see if this is permitted.  See http://www.wassenaar.org/ for more
-        information.
-        
-        The U.S. Government Department of Commerce, Bureau of Industry and
-        Security (BIS), has classified this software as Export Commodity 
-        Control Number (ECCN) 5D002.C.1, which includes information security
-        software using or performing cryptographic functions with asymmetric
-        algorithms.  The form and manner of this distribution makes it 
-        eligible for export under the License Exception ENC Technology 
-        Software Unrestricted (TSU) exception (see the BIS Export 
-        Administration Regulations, Section 740.13) for both object code and 
-        source code.
-        
-        The following provides more details on the cryptographic software 
-        used (note that this software is not included in the distribution):
-        
-          * The PBE Encryption facilities require the Java Cryptography 
-            extensions: http://java.sun.com/javase/technologies/security/.
-        
-        ---------------------------------
-        
-        Distributions of this software may include software developed by
+        This product includes software developed by
         The Apache Software Foundation (http://www.apache.org/).
         
-        ---------------------------------
-        
-        
-        ICU License - ICU 1.8.1 and later
-        
-        COPYRIGHT AND PERMISSION NOTICE
-        
-        Copyright (c) 1995-2006 International Business Machines 
-        Corporation and others
-        
-        All rights reserved.
-        
-        Permission is hereby granted, free of charge, to any 
-        person obtaining a copy of this software and associated 
-        documentation files (the "Software"), to deal in the 
-        Software without restriction, including without limitation 
-        the rights to use, copy, modify, merge, publish, 
-        distribute, and/or sell copies of the Software, and to 
-        permit persons to whom the Software is furnished to do so, 
-        provided that the above copyright notice(s) and this 
-        permission notice appear in all copies of the Software and 
-        that both the above copyright notice(s) and this 
-        permission notice appear in supporting documentation.
-        
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY 
-        KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE 
-        WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR 
-        PURPOSE AND NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO 
-        EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN 
-        THIS NOTICE BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL 
-        INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES 
-        WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, 
-        WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER 
-        TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE 
-        USE OR PERFORMANCE OF THIS SOFTWARE.
-        
-        Except as contained in this notice, the name of a copyright 
-        holder shall not be used in advertising or otherwise to 
-        promote the sale, use or other dealings in this Software 
-        without prior written authorization of the copyright holder.
+        Please read the different LICENSE files present in the lib directory of
+        this distribution.
 
     
   For 
-    jquery.md5.js
+    xercesImpl.jar
   
 
-        jQuery MD5 Plugin 1.2.1
-        https://github.com/blueimp/jQuery-MD5
+        =========================================================================
+        ==  NOTICE file corresponding to section 4(d) of the Apache License,   ==
+        ==  Version 2.0, in this case for the Apache Xerces Java distribution. ==
+        =========================================================================
         
-        Copyright 2010, Sebastian Tschan
-        https://blueimp.net
+        Apache Xerces Java
+        Copyright 1999-2012 The Apache Software Foundation
         
-        Licensed under the MIT license:
-        http://creativecommons.org/licenses/MIT/
+        This product includes software developed at
+        The Apache Software Foundation (http://www.apache.org/).
         
-        Based on
-        A JavaScript implementation of the RSA Data Security, Inc. MD5 Message
-        Digest Algorithm, as defined in RFC 1321.
-        Version 2.2 Copyright (C) Paul Johnston 1999 - 2009
-        Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
-        Distributed under the BSD License
-        See http://pajhome.org.uk/crypt/md5 for more info.
+        Portions of this software were originally based on the following:
+          - software copyright (c) 1999, IBM Corporation., http://www.ibm.com.
+          - software copyright (c) 1999, Sun Microsystems., http://www.sun.com.
+          - voluntary contributions made by Paul Eng on behalf of the 
+            Apache Software Foundation that were originally developed at iClick, Inc.,
+            software copyright (c) 1999.
 
     
   For 
@@ -388,64 +586,74 @@
 
     
   For 
-    cloud-trilead-ssh2-build213.jar
+    woden-api-1.0M8.jar
+    woden-impl-dom-1.0M8.jar
   
 
-        Trilead SSH-2 for Java includes code that was written by Dr. Christian Plattner
-        during his PhD at ETH Zurich. The license states the following:
+        =========================================================================
+        ==  NOTICE file corresponding to the section 4 d of                    ==
+        ==  the Apache License, Version 2.0,                                   ==
+        ==  in this case for the Apache Woden distribution.                    ==
+        =========================================================================
         
-        Copyright (c) 2005 - 2006 Swiss Federal Institute of Technology (ETH Zurich),
-          Department of Computer Science (http://www.inf.ethz.ch),
-          Christian Plattner. All rights reserved.
+        This product includes software developed by
+        The Apache Software Foundation (http://www.apache.org/).
         
-        Redistribution and use in source and binary forms, with or without
-        modification, are permitted provided that the following conditions
-        are met:
+        This product also includes software developed by :
+           
+          - IBM Corporation (http://www.ibm.com),
+              WSDL4J was the initial code contribution for the Apache Woden
+              project and some of the WSDL4J design and code has been reused.
+          - The W3C Consortium (http://www.w3c.org),
+              Common W3C XML Schema and DTD files are packaged with Apache Woden.
         
-        a.) Redistributions of source code must retain the above copyright
+        Please read the different LICENSE files present in the root directory of
+        this distribution.
+
+    
+  For 
+    axiom-api-1.2.8.jar
+    axiom-impl-1.2.8.jar
+  
+
+        Axiom includes software from other projects, as follows:
+        
+        This software includes the Woodstox High-performance XML processor
+         http://woodstox.codehaus.org/
+         licensed under the Apache License, Version 2.0
+        
+        This software includes the Jaxen XPath library
+         http://jaxen.codehaus.org/
+         licensed under the following BSD 3 Clause license:
+        
+        ================================================================================
+         Copyright 2003-2006 The Werken Company. All Rights Reserved.
+         
+         Redistribution and use in source and binary forms, with or without
+         modification, are permitted provided that the following conditions are
+         met:
+        
+          * Redistributions of source code must retain the above copyright
             notice, this list of conditions and the following disclaimer.
-        b.) Redistributions in binary form must reproduce the above copyright
+        
+          * Redistributions in binary form must reproduce the above copyright
             notice, this list of conditions and the following disclaimer in the
             documentation and/or other materials provided with the distribution.
-        c.) Neither the name of ETH Zurich nor the names of its contributors may
-            be used to endorse or promote products derived from this software
-            without specific prior written permission.
         
-        THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-        AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-        IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-        ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
-        LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-        CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-        SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-        INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-        CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-        ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-        POSSIBILITY OF SUCH DAMAGE.
+          * Neither the name of the Jaxen Project nor the names of its
+            contributors may be used to endorse or promote products derived 
+            from this software without specific prior written permission.
         
-        The Java implementations of the AES, Blowfish and 3DES ciphers have been
-        taken (and slightly modified) from the cryptography package released by
-        "The Legion Of The Bouncy Castle".
+        THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
+        IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+        TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
+        PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER
+        OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+        EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+        PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+        PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+        LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+        NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+        SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
         
-        Their license states the following:
-        
-        Copyright (c) 2000 - 2004 The Legion Of The Bouncy Castle
-        (http://www.bouncycastle.org)
-        
-        Permission is hereby granted, free of charge, to any person obtaining a copy
-        of this software and associated documentation files (the "Software"), to deal
-        in the Software without restriction, including without limitation the rights
-        to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-        copies of the Software, and to permit persons to whom the Software is
-        furnished to do so, subject to the following conditions:
-        
-        The above copyright notice and this permission notice shall be included in
-        all copies or substantial portions of the Software.
-        
-        THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-        IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-        FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-        AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-        LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-        OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-        THE SOFTWARE.
+        ================================================================================
