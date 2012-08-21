@@ -366,10 +366,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         if (router.getState() == State.Running) {
             try {
                 Commands cmds = new Commands(OnError.Stop);            	
-            	if(network.getTrafficType() == TrafficType.Public){
-            		NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(router.getPrivateIpAddress(), router.getInstanceName(), "remove", true, nic.getIp());
-            		cmds.addCommand(netUsageCmd);
-            	}            	
                 UnPlugNicCommand unplugNicCmd = new UnPlugNicCommand(nic, vm.getName());
                 cmds.addCommand("unplugnic", unplugNicCmd);
                 _agentMgr.send(dest.getHost().getId(), cmds);
@@ -378,13 +374,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 if (!(unplugNicAnswer != null && unplugNicAnswer.getResult())) {
                     s_logger.warn("Unable to unplug nic from router " + router);
                     result = false;
-                } else {
-                	if(network.getTrafficType() == TrafficType.Public){
-                		NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(router.getPrivateIpAddress(), router.getInstanceName(), "remove", true, nic.getIp());
-                		cmds = new Commands(OnError.Stop);
-                		cmds.addCommand(netUsageCmd);
-                		_agentMgr.send(dest.getHost().getId(), cmds);
-                	}
                 }
             } catch (OperationTimedoutException e) {
                 throw new AgentUnavailableException("Unable to unplug nic from rotuer " + router + " from network " + network,

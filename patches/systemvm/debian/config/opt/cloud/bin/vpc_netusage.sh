@@ -53,31 +53,11 @@ create_vpn_usage_rules () {
 }
 
 remove_usage_rules () {
-  echo $ethDev >> /root/removedVifs
-  return $?
+  return 0
 }
 
 get_usage () {
   iptables -L NETWORK_STATS_$ethDev -n -v -x 2> /dev/null | awk '$1 ~ /^[0-9]+$/ { printf "%s:", $2}'; > /dev/null
-  if [ -f /root/removedVifs ]
-  then
-    var=`cat /root/removedVifs`
-    # loop through vifs to be cleared
-    for i in $var; do
-      # Make sure vif doesn't exist
-      if [ ! -f /sys/class/net/$i ]
-      then
-        # flush rules and remove chain
-        iptables -F NETWORK_STATS_$i > /dev/null;
-        iptables -D FORWARD -j NETWORK_STATS_$i > /dev/null;
-        iptables -X NETWORK_STATS_$i > /dev/null;
-        iptables -t mangle -F VPN_STATS_$i > /dev/null;
-        iptables -t mangle -D FORWARD -j VPN_STATS_$i > /dev/null;
-        iptables -t mangle -X VPN_STATS_$i > /dev/null;
-      fi
-    done
-    rm /root/removedVifs
-  fi     
   return 0
 }
 
