@@ -46,7 +46,7 @@ ip_to_dev() {
 }
 
 doHairpinNat () {
-  local vrGuestIPNetwork=$(sudo ip addr show dev eth0 | grep inet | grep eth0 | awk '{print $2}' )
+  local vrGuestIPNetwork=$(sudo ip addr show dev eth0 | grep inet | grep eth0 | awk '{print $2}' | head -1)
   local vrGuestIP=$(echo $vrGuestIPNetwork | awk -F'/' '{print $1}')
 
   local publicIp=$1
