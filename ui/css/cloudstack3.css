@@ -9627,6 +9627,14 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   cursor: pointer;
 }
 
+.vpc-chart li.tier.virtual-router:hover {
+  text-decoration: underline;
+}
+
+.vpc-chart li.tier.virtual-router.disabled:hover {
+  text-decoration: none;
+}
+
 .vpc-chart li.tier.virtual-router.disabled,
 .vpc-chart li.tier.virtual-router.disabled span {
   cursor: default;
