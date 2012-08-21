@@ -256,6 +256,7 @@
         filters: {
           all: { label: 'All instances' },
           running: { label: 'Running instances' },
+          stopped: { label: 'Stopped instances' },
           destroyed: { label: 'Destroyed instances' }
         },
         fields: {
