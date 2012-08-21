@@ -22,6 +22,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -60,6 +62,7 @@ public class Upgrade302to40 implements DbUpgrade {
     public void performDataMigration(Connection conn) {
         addVpcProvider(conn);
         updateRouterNetworkRef(conn);
+        fixForeignKeys(conn);
     }
 
     @Override
@@ -175,5 +178,44 @@ public class Upgrade302to40 implements DbUpgrade {
             }
         }
         s_logger.debug("Done updating router/network references");        
+    }
+
+    
+    private void fixForeignKeys(Connection conn) {
+        //Drop the keys (if exist)
+        List<String> keys = new ArrayList<String>();
+        keys.add("fk_ssh_keypair__account_id");
+        keys.add("fk_ssh_keypair__domain_id");
+        keys.add("fk_ssh_keypairs__account_id");
+        keys.add("fk_ssh_keypairs__domain_id");
+        DbUpgradeUtils.dropKeysIfExist(conn, "ssh_keypairs", keys, true);
+        
+        keys = new ArrayList<String>();
+        keys.add("fk_ssh_keypair__account_id");
+        keys.add("fk_ssh_keypair__domain_id");
+        keys.add("fk_ssh_keypairs__account_id");
+        keys.add("fk_ssh_keypairs__domain_id");
+        DbUpgradeUtils.dropKeysIfExist(conn, "ssh_keypairs", keys, false);
+        
+        //insert the keys anew
+        try {
+            PreparedStatement pstmt; pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`ssh_keypairs` ADD " +
+                    "CONSTRAINT `fk_ssh_keypair__account_id` FOREIGN KEY `fk_ssh_keypair__account_id` (`account_id`)" +
+                    " REFERENCES `account` (`id`) ON DELETE CASCADE");
+            pstmt.executeUpdate();
+            pstmt.close();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to execute ssh_keypairs table update for adding account_id foreign key", e);
+        }
+            
+        try {
+            PreparedStatement pstmt; pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT" +
+                    " `fk_ssh_keypair__domain_id` FOREIGN KEY `fk_ssh_keypair__domain_id` (`domain_id`) " +
+                    "REFERENCES `domain` (`id`) ON DELETE CASCADE");
+            pstmt.executeUpdate();
+            pstmt.close();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to execute ssh_keypairs table update for adding domain_id foreign key", e);
+        }
     }
 }
