@@ -64,7 +64,7 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
     public void performDataMigration(Connection conn) {
         correctVRProviders(conn);
         correctMultiplePhysicaNetworkSetups(conn);
-
+        addHostDetailsUniqueKey(conn);
         addVpcProvider(conn);
         updateRouterNetworkRef(conn);
         fixForeignKeys(conn);
@@ -506,7 +506,38 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
         }
     }
 
-    
+    private void addHostDetailsUniqueKey(Connection conn) {
+        s_logger.debug("Checking if host_details unique key exists, if not we will add it");
+        PreparedStatement pstmt = null;
+        ResultSet rs = null;
+        try {
+            pstmt = conn.prepareStatement("SHOW INDEX FROM `cloud`.`host_details` WHERE KEY_NAME = 'uk_host_id_name'");
+            rs = pstmt.executeQuery();
+            if (rs.next()) {
+                s_logger.debug("Unique key already exists on host_details - not adding new one");
+            }else{
+                //add the key
+                PreparedStatement pstmtUpdate = conn.prepareStatement("ALTER TABLE `cloud`.`host_details` ADD CONSTRAINT UNIQUE KEY `uk_host_id_name` (`host_id`, `name`)");
+                pstmtUpdate.executeUpdate();
+                s_logger.debug("Unique key did not exist on host_details -  added new one");
+                pstmtUpdate.close();
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Failed to check/update the host_details unique key ", e);
+        } finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+
+                if (pstmt != null) {
+                    pstmt.close();
+                }
+            } catch (SQLException e) {
+            }
+        }
+    }
+
     private void addVpcProvider(Connection conn){
         //Encrypt config params and change category to Hidden
         s_logger.debug("Adding vpc provider to all physical networks in the system");
