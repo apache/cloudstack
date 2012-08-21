@@ -61,6 +61,7 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
         updateRouterNetworkRef(conn);
         correctNetworkUsingExternalDevices(conn);
         updateSystemVms(conn);
+        fixForeignKeys(conn);
     }
 
     @Override
@@ -366,6 +367,46 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
                 throw new CloudRuntimeException("Unable create a mapping for the networks in network_external_lb_device_map and network_external_firewall_device_map", e);
             }
             s_logger.info("Successfully upgraded network using F5 and SRX devices to have a entry in the network_external_lb_device_map and network_external_firewall_device_map");
+        }
+    }
+
+
+    private void fixForeignKeys(Connection conn) {
+        s_logger.debug("Fixing foreign keys' names in ssh_keypairs table");
+        //Drop the keys (if exist)
+        List<String> keys = new ArrayList<String>();
+        keys.add("fk_ssh_keypair__account_id");
+        keys.add("fk_ssh_keypair__domain_id");
+        keys.add("fk_ssh_keypairs__account_id");
+        keys.add("fk_ssh_keypairs__domain_id");
+        DbUpgradeUtils.dropKeysIfExist(conn, "ssh_keypairs", keys, true);
+        
+        keys = new ArrayList<String>();
+        keys.add("fk_ssh_keypair__account_id");
+        keys.add("fk_ssh_keypair__domain_id");
+        keys.add("fk_ssh_keypairs__account_id");
+        keys.add("fk_ssh_keypairs__domain_id");
+        DbUpgradeUtils.dropKeysIfExist(conn, "ssh_keypairs", keys, false);
+        
+        //insert the keys anew
+        try {
+            PreparedStatement pstmt; pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`ssh_keypairs` ADD " +
+            		"CONSTRAINT `fk_ssh_keypair__account_id` FOREIGN KEY `fk_ssh_keypair__account_id` (`account_id`)" +
+            		" REFERENCES `account` (`id`) ON DELETE CASCADE");
+            pstmt.executeUpdate();
+            pstmt.close();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to execute ssh_keypairs table update for adding account_id foreign key", e);
+        }
+            
+        try {
+            PreparedStatement pstmt; pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`ssh_keypairs` ADD CONSTRAINT" +
+            		" `fk_ssh_keypair__domain_id` FOREIGN KEY `fk_ssh_keypair__domain_id` (`domain_id`) " +
+            		"REFERENCES `domain` (`id`) ON DELETE CASCADE");
+            pstmt.executeUpdate();
+            pstmt.close();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Unable to execute ssh_keypairs table update for adding domain_id foreign key", e);
         }
     }
 }
