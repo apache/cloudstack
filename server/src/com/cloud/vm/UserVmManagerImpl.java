@@ -616,50 +616,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
     }
 
-    @Override
-    public boolean attachISOToVM(long vmId, long isoId, boolean attach) {
-        UserVmVO vm = _vmDao.findById(vmId);
-
-        if (vm == null) {
-            return false;
-        } else if (vm.getState() != State.Running) {
-            return true;
-        }
-        String isoPath;
-        VMTemplateVO tmplt = _templateDao.findById(isoId);
-        if (tmplt == null) {
-            s_logger.warn("ISO: " + isoId + " does not exist");
-            return false;
-        }
-        // Get the path of the ISO
-        Pair<String, String> isoPathPair = null;
-        if (tmplt.getTemplateType() == TemplateType.PERHOST) {
-            isoPath = tmplt.getName();
-        } else {
-            isoPathPair = _storageMgr.getAbsoluteIsoPath(isoId, vm.getDataCenterIdToDeployIn());
-            if (isoPathPair == null) {
-                s_logger.warn("Couldn't get absolute iso path");
-                return false;
-            } else {
-                isoPath = isoPathPair.first();
-            }
-        }
-
-        String vmName = vm.getInstanceName();
-
-        HostVO host = _hostDao.findById(vm.getHostId());
-        if (host == null) {
-            s_logger.warn("Host: " + vm.getHostId() + " does not exist");
-            return false;
-        }
-        AttachIsoCommand cmd = new AttachIsoCommand(vmName, isoPath, attach);
-        if (isoPathPair != null) {
-            cmd.setStoreUrl(isoPathPair.second());
-        }
-        Answer a = _agentMgr.easySend(vm.getHostId(), cmd);
-
-        return (a != null && a.getResult());
-    }
+    
 
     private UserVm rebootVirtualMachine(long userId, long vmId) throws InsufficientCapacityException, ResourceUnavailableException {
         UserVmVO vm = _vmDao.findById(vmId);
