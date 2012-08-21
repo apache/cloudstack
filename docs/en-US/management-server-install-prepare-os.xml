@@ -11,9 +11,9 @@
  to you under the Apache License, Version 2.0 (the
  "License"); you may not use this file except in compliance
  with the License.  You may obtain a copy of the License at
-
+ 
    http://www.apache.org/licenses/LICENSE-2.0
-
+ 
  Unless required by applicable law or agreed to in writing,
  software distributed under the License is distributed on an
  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,32 +22,33 @@
  under the License.
 -->
 
-<section id="hypervisor-host-install-prepare-os">
+<section id="prepare-os">
     <title>Prepare the Operating System</title>
-    <para>The OS of the Host must be prepared to host the &PRODUCT; Agent and run KVM instances.</para>
+    <para>The OS must be prepared to host the Management Server using the following steps. These steps must be performed on each Management Server node.</para>
     <orderedlist>
         <listitem><para>Log in to your OS as root.</para></listitem>
         <listitem>
             <para>Check for a fully qualified hostname.</para>
             <programlisting language="Bash">hostname --fqdn</programlisting>
-            <para>This should return a fully qualified hostname such as "kvm1.lab.example.org".  If it does not, edit /etc/hosts so that it does.</para>
+            <para>This should return a fully qualified hostname such as "managament1.lab.example.org".  If it does not, edit /etc/hosts so that it does.</para>
         </listitem>
         <listitem>
             <para>Make sure that the machine can reach the Internet.</para>
-            <programlisting language="Bash">ping www.cloudstack.org</programlisting>
+            <programlisting language="Bash">ping www.google.com</programlisting>
         </listitem>
         <listitem>
             <para>Turn on NTP for time synchronization.</para>
-            <note><para>NTP is required to synchronize the clocks of the servers in your cloud. Unsynchronized clocks can cause unexpected problems.</para></note>
-                <orderedlist numeration="loweralpha">
-                    <listitem><para>Install NTP</para>
-                        <para condition="community">On RHEL or CentOS:</para>
-                        <programlisting language="Bash">yum install ntp</programlisting>
-                        <para condition="community">On Ubuntu:</para>
-                        <programlisting language="Bash">apt-get install openntpd</programlisting>
-                    </listitem>
-                </orderedlist>
+            <note><para>NTP is required to synchronize the clocks of the servers in your cloud.</para></note>
+            <orderedlist numeration="loweralpha">
+                <listitem>
+                    <para>Install NTP.</para>
+                    <para condition="community">On RHEL or CentOS:</para>
+                    <programlisting language="Bash">yum install ntp</programlisting>
+                    <para condition="community">On Ubuntu:</para>
+                    <programlisting language="Bash">apt-get install openntpd</programlisting>
+                </listitem>
+            </orderedlist>
         </listitem>
-        <listitem><para>Repeat all of these steps on every hypervisor host.</para></listitem>
+        <listitem><para>Repeat all of these steps on every host where the Management Server will be installed.</para></listitem>
     </orderedlist>
 </section>

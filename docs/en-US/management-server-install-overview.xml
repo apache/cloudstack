@@ -37,7 +37,7 @@
             <orderedlist>
                 <listitem><para>Prepare the Operating System</para></listitem>
                 <listitem><para>Install the First Management Server</para></listitem>
-                <listitem><para>Install and Configure the Database</para></listitem>
+                <listitem><para>Install and Configure the MySQL database</para></listitem>
                 <listitem><para>Prepare NFS Shares</para></listitem>
                 <listitem><para>Prepare and Start Additional Management Servers (optional)</para></listitem>
                 <listitem><para>Prepare the System VM Template</para></listitem>
