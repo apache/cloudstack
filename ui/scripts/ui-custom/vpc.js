@@ -97,7 +97,15 @@
                           }
                         }
                       },
-                      detailView: tierDetailView
+                      detailView: function() {
+                        var detailView = $.extend(true, {}, tierDetailView);
+
+                        detailView.tabs = {
+                          acl: tierDetailView.tabs.acl
+                        };
+
+                        return detailView;
+                      }
                     }
                   }),
                   { context: acl.context }
