@@ -1053,17 +1053,11 @@ def cleanup_rules(session, args):
     cleanup = []
     for chain in vmchains:
         vmname = chain
-        vm = session.xenapi.VM.get_by_name_label(vmname)
-        if len(vm) != 1:
-            vmname = chain + "-untagged"
-            vm = session.xenapi.VM.get_by_name_label(vmname)
-            if len(vm) != 1:
-                util.SMlog("chain " + chain + " does not correspond to a vm, cleaning up")
-                cleanup.append(vmname)
-                continue
         if vmname not in resident_vms:
-            util.SMlog("vm " + vmname + " is not running on this host, cleaning up")
-            cleanup.append(vmname)
+            vmname = chain + "-untagged"
+            if vmname not in resident_vms:
+                util.SMlog("vm " + chain + " is not running on this host, cleaning up")
+                cleanup.append(chain)
                 
     for vm_name in cleanup:
         destroy_network_rules_for_vm(session, {'vmName':vm_name})
