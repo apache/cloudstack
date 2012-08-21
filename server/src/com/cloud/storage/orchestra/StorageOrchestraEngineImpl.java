@@ -12,6 +12,7 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeAnswer;
 import com.cloud.agent.api.AttachVolumeCommand;
 import com.cloud.agent.api.CreateVolumeFromSnapshotAnswer;
@@ -48,6 +49,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
@@ -63,11 +65,13 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.pool.Storage;
 import com.cloud.storage.pool.StoragePool;
 import com.cloud.storage.pool.Storage.ImageFormat;
 import com.cloud.storage.pool.Storage.StoragePoolType;
+import com.cloud.storage.pool.Storage.TemplateType;
 import com.cloud.storage.pool.StoragePoolManager;
 import com.cloud.storage.snapshot.Snapshot;
 import com.cloud.storage.snapshot.SnapshotManager;
@@ -83,6 +87,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Inject;
@@ -127,6 +132,8 @@ public class StorageOrchestraEngineImpl implements StorageOrchestraEngine, Manag
 	protected UsageEventDao _usageEventDao;
 	@Inject
 	protected UserVmDao _userVmDao;
+	@Inject
+	protected VMTemplateDao _templateDao;
 	
 	
 	
@@ -530,5 +537,52 @@ public class StorageOrchestraEngineImpl implements StorageOrchestraEngine, Manag
         return _volumeMgr.attachVolumeToVM(volume, vm, deviceId);
     }
 
-   
+	
+	@Override
+    @ActionEvent(eventType = EventTypes.EVENT_ISO_ATTACH, eventDescription = "attaching ISO", async = true)
+	public boolean attachIsoToVm(long isoId, long vmId) {
+        Account caller = UserContext.current().getCaller();
+        Long userId = UserContext.current().getCallerUserId();
+
+    	UserVmVO vm = _userVmDao.findById(vmId);
+    	if (vm == null) {
+            throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
+        }
+    	
+    	VMTemplateVO iso = _templateDao.findById(isoId);
+    	if (iso == null || iso.getRemoved() != null) {
+            throw new InvalidParameterValueException("Unable to find an ISO with id " + isoId);
+    	}
+    	
+    	_accountMgr.checkAccess(caller, null, false, iso, vm);
+    	
+    	Account vmOwner = _accountDao.findById(vm.getAccountId());
+    	_accountMgr.checkAccess(vmOwner, null, false, iso, vm);
+        
+    	_volumeMgr.attachISOToVm(vm, iso);
+    	return true;
+	}
+	
+	@Override
+    @ActionEvent(eventType = EventTypes.EVENT_ISO_DETACH, eventDescription = "detaching ISO", async = true)
+	public boolean detachIsoToVm(long vmId)  {
+		Account caller = UserContext.current().getCaller();
+		Long userId = UserContext.current().getCallerUserId();
+
+		UserVmVO vm = _userVmDao.findById(vmId);
+		if (vm == null) {
+			throw new InvalidParameterValueException ("Unable to find a virtual machine with id " + vmId);
+		}
+		
+		Long isoId = vm.getIsoId();
+		if (isoId == null) {
+			throw new InvalidParameterValueException("The specified VM has no ISO attached to it.");
+		}
+		
+		_accountMgr.checkAccess(caller, null, true, vm);
+    	UserContext.current().setEventDetails("Vm Id: " + vmId + " ISO Id: " + isoId);
+        
+        _volumeMgr.detachISOToVM(vm);
+        return true;
+	}
 }

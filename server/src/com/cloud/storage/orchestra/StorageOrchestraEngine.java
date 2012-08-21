@@ -35,4 +35,6 @@ public interface StorageOrchestraEngine {
 	VolumeVO allocVolume(CreateVolumeCmd cmd)
 			throws ResourceAllocationException;
 	Volume attachVolumeToVM(AttachVolumeCmd command);
+	boolean attachIsoToVm(long isoId, long vmId);
+	boolean detachIsoToVm(long vmId);
 }

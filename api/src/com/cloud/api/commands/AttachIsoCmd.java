@@ -95,7 +95,7 @@ public class AttachIsoCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
     	UserContext.current().setEventDetails("Vm Id: " +getVirtualMachineId()+ " ISO Id: "+getId());
-        boolean result = _templateService.attachIso(id, virtualMachineId);
+        boolean result = _storageEngine.attachIsoToVm(id, virtualMachineId);
         if (result) {
             UserVm userVm = _responseGenerator.findUserVmById(virtualMachineId);
             if (userVm != null) {

@@ -1933,10 +1933,7 @@ public class StoragePoolManagerImpl implements StoragePoolManager, Manager, Clus
         }
     }
 
-    protected DiskProfile toDiskProfile(VolumeVO vol, DiskOfferingVO offering) {
-        return new DiskProfile(vol.getId(), vol.getVolumeType(), vol.getName(), offering.getId(), vol.getSize(), offering.getTagsArray(), offering.getUseLocalStorage(), offering.isRecreatable(),
-                vol.getTemplateId());
-    }
+
 
 
     @Override
@@ -2288,12 +2285,4 @@ public class StoragePoolManagerImpl implements StoragePoolManager, Manager, Clus
     	StoragePool pool = _storagePoolDao.findById(id);
     	return pool;
     }
-    
-    @Override
-    public boolean PrepareTemplateOnPool(VMTemplateVO template, StoragePool pool) {
-    	
-    }
-    
-    @O
-    
 }

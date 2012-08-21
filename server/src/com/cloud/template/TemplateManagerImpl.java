@@ -24,6 +24,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -88,6 +89,7 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.resource.ResourceManager;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StoragePoolHostVO;
@@ -158,13 +160,14 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.host.Host;
 
 
 @Local(value={TemplateManager.class, TemplateService.class})
 public class TemplateManagerImpl implements TemplateManager, Manager, TemplateService {
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);
     String _name;
-    @Inject VMTemplateDao _tmpltDao;
+    @Inject VMTemplateDao _templateDao;
     @Inject VMTemplateHostDao _tmpltHostDao;
     @Inject VMTemplatePoolDao _tmpltPoolDao;
     @Inject VMTemplateZoneDao _tmpltZoneDao;
@@ -205,6 +208,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Inject SecondaryStorageVmManager _ssvmMgr;
     @Inject LaunchPermissionDao _launchPermissionDao;
     @Inject ProjectManager _projectMgr;
+    @Inject ResourceManager _resourceMgr;
 
     
     int _primaryStorageDownloadWait;
@@ -310,7 +314,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Override
     public VirtualMachineTemplate prepareTemplate(long templateId, long zoneId) {
     	
-    	VMTemplateVO vmTemplate = _tmpltDao.findById(templateId);
+    	VMTemplateVO vmTemplate = _templateDao.findById(templateId);
     	if(vmTemplate == null)
     		throw new InvalidParameterValueException("Unable to find template id=" + templateId);
     	
@@ -331,7 +335,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             throw new PermissionDeniedException("Extraction has been disabled by admin");
         }
         
-        VMTemplateVO template = _tmpltDao.findById(templateId);
+        VMTemplateVO template = _templateDao.findById(templateId);
         if (template == null || template.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find " +desc+ " with id " + templateId);
         }
@@ -466,7 +470,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     }
     
     String downloadTemplateFromSwiftToSecondaryStorage(long dcId, long templateId){
-        VMTemplateVO template = _tmpltDao.findById(templateId);
+        VMTemplateVO template = _templateDao.findById(templateId);
         if ( template == null ) {
             String errMsg = " Can not find template " + templateId;
             s_logger.warn(errMsg);
@@ -516,7 +520,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
     String uploadTemplateToSwiftFromSecondaryStorage(VMTemplateHostVO templateHostRef) {
         Long templateId = templateHostRef.getTemplateId();
-        VMTemplateVO template = _tmpltDao.findById(templateId);
+        VMTemplateVO template = _templateDao.findById(templateId);
         if (template == null) {
             String errMsg = " Can not find template " + templateId;
             s_logger.warn(errMsg);
@@ -570,7 +574,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
     @Override @DB
     public VMTemplateStoragePoolVO prepareTemplateForCreate(VMTemplateVO template, StoragePool pool) {
-    	template = _tmpltDao.findById(template.getId(), true);
+    	template = _templateDao.findById(template.getId(), true);
     	
         long poolId = pool.getId();
         long templateId = template.getId();
@@ -698,7 +702,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Override
     @DB
     public VMTemplateHostVO prepareISOForCreate(VMTemplateVO template, StoragePool pool) {
-        template = _tmpltDao.findById(template.getId(), true);
+        template = _templateDao.findById(template.getId(), true);
 
         long poolId = pool.getId();
         long templateId = template.getId();
@@ -806,7 +810,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             }
             
             if(_downloadMonitor.copyTemplate(template, srcSecHost, dstSecHost) ) {
-                _tmpltDao.addTemplateToZone(template, dstZoneId);
+                _templateDao.addTemplateToZone(template, dstZoneId);
             	
             	if(account.getId() != Account.ACCOUNT_ID_SYSTEM){
             	    UsageEventVO usageEvent = new UsageEventVO(copyEventType, account.getId(), dstZoneId, tmpltId, null, null, null, srcTmpltHost.getSize());
@@ -846,7 +850,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             throw new InvalidParameterValueException("Please specify a valid destination zone.");
         }
     	
-        VMTemplateVO template = _tmpltDao.findById(templateId);
+        VMTemplateVO template = _templateDao.findById(templateId);
         if (template == null || template.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find template with id");
         }
@@ -875,7 +879,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
     @Override
     public boolean delete(long userId, long templateId, Long zoneId) {
-    	VMTemplateVO template = _tmpltDao.findById(templateId);
+    	VMTemplateVO template = _templateDao.findById(templateId);
     	if (template == null || template.getRemoved() != null) {
     		throw new InvalidParameterValueException("Please specify a valid template.");
     	}
@@ -890,7 +894,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 		List<VMTemplateStoragePoolVO> allTemplatesInPool = _tmpltPoolDao.listByPoolId(pool.getId());
 		
 		for (VMTemplateStoragePoolVO templatePoolVO : allTemplatesInPool) {
-			VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templatePoolVO.getTemplateId());			
+			VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templatePoolVO.getTemplateId());			
 		
 			// If this is a routing template, consider it in use
 			if (template.getTemplateType() == TemplateType.SYSTEM) {
@@ -913,7 +917,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
     @Override
     public void evictTemplateFromStoragePool(VMTemplateStoragePoolVO templatePoolVO) {
 		StoragePoolVO pool = _poolDao.findById(templatePoolVO.getPoolId());
-		VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templatePoolVO.getTemplateId());
+		VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templatePoolVO.getTemplateId());
 		
 		
 		if (s_logger.isDebugEnabled()) {
@@ -945,7 +949,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 return;
             }
             List<HypervisorType> hypers = _clusterDao.getAvailableHypervisorInZone(null);
-            List<VMTemplateVO> templates = _tmpltDao.listByHypervisorType(hypers);
+            List<VMTemplateVO> templates = _templateDao.listByHypervisorType(hypers);
             List<Long> templateIds = new ArrayList<Long>();
             for (VMTemplateVO template : templates) {
                 if (template.getTemplateType() != TemplateType.PERHOST) {
@@ -1057,7 +1061,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 
 	@Override
     public boolean templateIsDeleteable(VMTemplateHostVO templateHostRef) {
-		VMTemplateVO template = _tmpltDao.findByIdIncludingRemoved(templateHostRef.getTemplateId());
+		VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templateHostRef.getTemplateId());
 		long templateId = template.getId();
 		HostVO secondaryStorageHost = _hostDao.findById(templateHostRef.getHostId());
 		long zoneId = secondaryStorageHost.getDataCenterId();
@@ -1083,105 +1087,34 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 		
 		return true;
 	}
-
-	@Override
-    @ActionEvent(eventType = EventTypes.EVENT_ISO_DETACH, eventDescription = "detaching ISO", async = true)
-	public boolean detachIso(long vmId)  {
-        Account caller = UserContext.current().getCaller();
-        Long userId = UserContext.current().getCallerUserId();
-        
-        // Verify input parameters
-        UserVmVO vmInstanceCheck = _userVmDao.findById(vmId);
-        if (vmInstanceCheck == null) {
-            throw new InvalidParameterValueException ("Unable to find a virtual machine with id " + vmId);
-        }
-        
-        UserVm userVM = _userVmDao.findById(vmId);
-        if (userVM == null) {
-            throw new InvalidParameterValueException("Please specify a valid VM.");
-        }
-        
-        _accountMgr.checkAccess(caller, null, true, userVM);
-
-        Long isoId = userVM.getIsoId();
-        if (isoId == null) {
-            throw new InvalidParameterValueException("The specified VM has no ISO attached to it.");
-        }
-    	UserContext.current().setEventDetails("Vm Id: " +vmId+ " ISO Id: "+isoId);
-        
-        State vmState = userVM.getState();
-        if (vmState != State.Running && vmState != State.Stopped) {
-        	throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
-        }
-
-        boolean result = attachISOToVM(vmId, userId, isoId, false); //attach=false => detach
-        if (result){
-        	return result;
-        }else {
-        	throw new CloudRuntimeException("Failed to detach iso");
-        }        
-	}
 	
 	@Override
-    @ActionEvent(eventType = EventTypes.EVENT_ISO_ATTACH, eventDescription = "attaching ISO", async = true)
-	public boolean attachIso(long isoId, long vmId) {
-        Account caller = UserContext.current().getCaller();
-        Long userId = UserContext.current().getCallerUserId();
-        
-    	// Verify input parameters
-    	UserVmVO vm = _userVmDao.findById(vmId);
-    	if (vm == null) {
-            throw new InvalidParameterValueException("Unable to find a virtual machine with id " + vmId);
-        }
-    	
-    	VMTemplateVO iso = _tmpltDao.findById(isoId);
-    	if (iso == null || iso.getRemoved() != null) {
-            throw new InvalidParameterValueException("Unable to find an ISO with id " + isoId);
-    	}
-    	
-    	//check permissions
-    	//check if caller has access to VM and ISO 
-    	//and also check if the VM's owner has access to the ISO.
-    	
-    	_accountMgr.checkAccess(caller, null, false, iso, vm);
-    	
-    	Account vmOwner = _accountDao.findById(vm.getAccountId());
-    	_accountMgr.checkAccess(vmOwner, null, false, iso, vm);
-    	
-        State vmState = vm.getState();
-        if (vmState != State.Running && vmState != State.Stopped) {
-        	throw new InvalidParameterValueException("Please specify a VM that is either Stopped or Running.");
-        }
-        
-        if ("xen-pv-drv-iso".equals(iso.getDisplayText()) && vm.getHypervisorType() != Hypervisor.HypervisorType.XenServer){
-        	throw new InvalidParameterValueException("Cannot attach Xenserver PV drivers to incompatible hypervisor " + vm.getHypervisorType());
-        }
-        
-        if("vmware-tools.iso".equals(iso.getName()) && vm.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
-        	throw new InvalidParameterValueException("Cannot attach VMware tools drivers to incompatible hypervisor " + vm.getHypervisorType());
-        }
-        boolean result = attachISOToVM(vmId, userId, isoId, true);
-        if (result){
-        	return result;
-        }else {
-        	throw new CloudRuntimeException("Failed to attach iso");
-        }
+	public boolean isTemplateReady(VMTemplateVO template, long dataCenterId) {
+		if (template.getTemplateType() == TemplateType.PERHOST) {
+			return true;
+		}
+		List<VMTemplateHostVO> templateHosts = _tmpltHostDao.listByZoneTemplate(dataCenterId, template.getId(), true);
+		return (templateHosts.size() > 0) ? true : false;
 	}
 
-    private boolean attachISOToVM(long vmId, long userId, long isoId, boolean attach) {
-    	UserVmVO vm = _userVmDao.findById(vmId);
-    	VMTemplateVO iso = _tmpltDao.findById(isoId);
+	@Override
+	public Map<String, String> getAbsoluteIsoPath(VMTemplateVO iso, long dataCenterId) {
+		Map<String, String> paths = new HashMap<String, String>();
 
-        boolean success = _vmMgr.attachISOToVM(vmId, isoId, attach);
-        if ( success && attach) {
-             vm.setIsoId(iso.getId());
-            _userVmDao.update(vmId, vm);
-        } 
-        if ( success && !attach ) {
-            vm.setIsoId(null);
-            _userVmDao.update(vmId, vm);
-        }    
-        return success;
+		//for pv driver iso
+		if (iso.getTemplateType() == TemplateType.PERHOST) {
+			paths.put("isoPath", iso.getName());
+		} else {
+			List<VMTemplateHostVO> templateHosts = _tmpltHostDao.listByZoneTemplate(dataCenterId, iso.getId(), true);
+			if (templateHosts.size() > 0) {
+				VMTemplateHostVO templateHost = templateHosts.get(0);
+				HostVO storageHost = _hostDao.findById(templateHost.getHostId());
+				String isoPath = storageHost.getStorageUrl() + "/" + templateHost.getInstallPath();
+				paths.put("isoPath", isoPath);
+				paths.put("secPath", storageHost.getStorageUrl());
+			}
+		}
+        return paths;
     }
 	
 	@Override
@@ -1265,7 +1198,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
 	
 	@Override
 	public VirtualMachineTemplate getTemplate(long templateId) {
-	    VMTemplateVO template = _tmpltDao.findById(templateId);
+	    VMTemplateVO template = _templateDao.findById(templateId);
 	    if (template != null && template.getRemoved() == null) {
 	        return template;
 	    }
@@ -1328,7 +1261,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         String operation = cmd.getOperation();
         String mediaType = "";
 
-        VMTemplateVO template = _tmpltDao.findById(id);
+        VMTemplateVO template = _templateDao.findById(id);
 
         if (template == null) {
             throw new InvalidParameterValueException("unable to find " + mediaType + " with id " + id);
@@ -1394,7 +1327,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
             throw new InvalidParameterValueException("Update template permissions is an invalid operation on template " + template.getName());
         }
 
-        VMTemplateVO updatedTemplate = _tmpltDao.createForUpdate();
+        VMTemplateVO updatedTemplate = _templateDao.createForUpdate();
 
         if (isPublic != null) {
             updatedTemplate.setPublicTemplate(isPublic.booleanValue());
@@ -1410,7 +1343,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
            throw new InvalidParameterValueException("Only ROOT admins are allowed to modify this attribute.");
        }
 
-       _tmpltDao.update(template.getId(), updatedTemplate);
+       _templateDao.update(template.getId(), updatedTemplate);
 
         Long domainId = caller.getDomainId();
         if ("add".equalsIgnoreCase(operation)) {
@@ -1445,10 +1378,10 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
         } else if ("reset".equalsIgnoreCase(operation)) {
             // do we care whether the owning account is an admin? if the
             // owner is an admin, will we still set public to false?
-            updatedTemplate = _tmpltDao.createForUpdate();
+            updatedTemplate = _templateDao.createForUpdate();
             updatedTemplate.setPublicTemplate(false);
             updatedTemplate.setFeatured(false);
-            _tmpltDao.update(template.getId(), updatedTemplate);
+            _templateDao.update(template.getId(), updatedTemplate);
             _launchPermissionDao.removeAllPermissions(id);
         }
         return true;

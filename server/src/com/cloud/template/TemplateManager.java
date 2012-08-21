@@ -17,6 +17,7 @@
 package com.cloud.template;
 
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.exception.InternalErrorException;
@@ -92,5 +93,9 @@ public interface TemplateManager extends TemplateService{
     VMTemplateHostVO prepareISOForCreate(VMTemplateVO template, StoragePool pool);
 
 	String prepareTemplateOnPool(VMTemplateVO template, StoragePool pool);
+
+	Map<String, String> getAbsoluteIsoPath(VMTemplateVO iso, long dataCenterId);
+
+	boolean isTemplateReady(VMTemplateVO template, long dataCenterId);
 
 }

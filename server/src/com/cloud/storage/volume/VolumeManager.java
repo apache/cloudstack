@@ -8,8 +8,10 @@ import com.cloud.api.commands.ListVolumesCmd;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.deploy.DeployDestination;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientStorageCapacityException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -31,13 +33,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface VolumeManager {
-    /** Returns the absolute path of the specified ISO
-     * @param templateId - the ID of the template that represents the ISO
-     * @param datacenterId
-     * @return absolute ISO path
-     */
-	public Pair<String, String> getAbsoluteIsoPath(long templateId, long dataCenterId);
-	
 	/**
 	 * Moves a volume from its current storage pool to a storage pool with enough capacity in the specified zone, pod, or cluster
 	 * @param volume
@@ -102,9 +97,6 @@ public interface VolumeManager {
     		List<Pair<DiskOfferingVO, Long>> dataDiskOfferings, Long templateId, Account owner);
     
     void cleanupVolumes(long vmId) throws ConcurrentOperationException;
-	boolean StorageMigration(
-			VirtualMachineProfile<? extends VirtualMachine> vm,
-			StoragePool destPool) throws ConcurrentOperationException;
 	
 	boolean processEvent(Volume vol, Event event)
 			throws NoTransitionException;
@@ -123,14 +115,6 @@ public interface VolumeManager {
 	String getVmNameOnVolume(VolumeVO volume);
 	void expungeVolume(VolumeVO vol, boolean force);
 
-	Volume migrateVolume(Long volumeId, Long storagePoolId)
-			throws ConcurrentOperationException;
-
-	void prepare(VirtualMachineProfile<? extends VirtualMachine> vm,
-			DeployDestination dest, boolean recreate)
-			throws StorageUnavailableException,
-			InsufficientStorageCapacityException;
-
 	Volume copyVolume(Long volumeId, Long destStoragePoolId);
 
 	List<VolumeVO> searchForVolumes(ListVolumesCmd cmd);
@@ -138,5 +122,11 @@ public interface VolumeManager {
 	VolumeVO allocateDiskVolume(String volumeName, long zoneId, long ownerId,
 			long domainId, long diskOfferingId, long size);
 
-	Volume attachVolumeToVM(VolumeVO volume, UserVmVO vm, Long deviceId);
+	Volume attachVolumeToVM(VolumeVO volume, UserVmVO vm, Long deviceId) throws StorageUnavailableException, ConcurrentOperationException, AgentUnavailableException, OperationTimedoutException;
+
+	boolean deleteVolume(long volumeId) throws ConcurrentOperationException;
+
+	void attachISOToVm(UserVmVO vm, VMTemplateVO iso);
+
+	void detachISOToVM(UserVmVO vm);
 }

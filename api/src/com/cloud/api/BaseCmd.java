@@ -55,6 +55,7 @@ import com.cloud.projects.ProjectService;
 import com.cloud.resource.ResourceService;
 import com.cloud.server.ManagementService;
 import com.cloud.server.TaggedResourceService;
+import com.cloud.storage.orchestra.StorageOrchestraEngine;
 import com.cloud.storage.pool.StoragePoolService;
 import com.cloud.storage.snapshot.SnapshotService;
 import com.cloud.template.TemplateService;
@@ -117,7 +118,6 @@ public abstract class BaseCmd {
     public static StoragePoolService _storageService;
     public static ResourceService _resourceService;
     public static NetworkService _networkService;
-    public static TemplateService _templateService;
     public static SecurityGroupService _securityGroupService;
     public static SnapshotService _snapshotService;
     public static ConsoleProxyService _consoleProxyService;
@@ -138,6 +138,7 @@ public abstract class BaseCmd {
     public static VpcService _vpcService;
     public static NetworkACLService _networkACLService;
     public static Site2SiteVpnService _s2sVpnService;
+    public static StorageOrchestraEngine _storageEngine;
 
     static void setComponents(ResponseGenerator generator) {
         ComponentLocator locator = ComponentLocator.getLocator(ManagementService.Name);
@@ -148,7 +149,6 @@ public abstract class BaseCmd {
         _storageService = locator.getManager(StoragePoolService.class);
         _resourceService = locator.getManager(ResourceService.class);
         _networkService = locator.getManager(NetworkService.class);
-        _templateService = locator.getManager(TemplateService.class);
         _securityGroupService = locator.getManager(SecurityGroupService.class);
         _snapshotService = locator.getManager(SnapshotService.class);
         _consoleProxyService = locator.getManager(ConsoleProxyService.class);
@@ -169,6 +169,7 @@ public abstract class BaseCmd {
         _vpcService = locator.getManager(VpcService.class);
         _networkACLService = locator.getManager(NetworkACLService.class);
         _s2sVpnService = locator.getManager(Site2SiteVpnService.class);
+        _storageEngine = locator.getManager(StorageOrchestraEngine.class);
     }
 
     public abstract void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException;
