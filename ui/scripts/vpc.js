@@ -533,7 +533,16 @@
     },
     ipAddresses: {
       listView: function() {
-        return cloudStack.sections.network.sections.ipAddresses;
+        var listView = $.extend(true, {}, cloudStack.sections.network.sections.ipAddresses);
+        
+        listView.listView.fields = {
+          ipaddress: listView.listView.fields.ipaddress,
+          zonename: listView.listView.fields.zonename,
+          associatednetworkname: { label: 'label.network.name' },
+          state: listView.listView.fields.state
+        };
+
+        return listView;
       }
     },
     acl: {
