@@ -304,7 +304,7 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
                 pstmt.setLong(1, zoneId);
                 rs = pstmt.executeQuery();
                 if (rs.first()) {
-                   f5HostId = networkOfferingId = rs.getLong(1);
+                   f5HostId  = rs.getLong(1);
                 } else {
                     throw new CloudRuntimeException("Cannot upgrade as there is no F5 load balancer device found in data center " + zoneId);
                 }
@@ -312,7 +312,7 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
                 pstmt.setLong(1, f5HostId);
                 rs = pstmt.executeQuery();
                 if (rs.first()) {
-                	    f5DeviceId = networkOfferingId = rs.getLong(1);
+                	    f5DeviceId = rs.getLong(1);
                 } else {
                     throw new CloudRuntimeException("Cannot upgrade as there is no F5 load balancer device with host ID " + f5HostId + " found in external_load_balancer_device");
                 }
@@ -345,7 +345,7 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
                   	networkId = rs.getLong(1);
 
              	    // add mapping for the network in network_external_lb_device_map
-                    String insertLbMapping = "INSERT INTO `cloud`.`network_external_lb_device_map` (uuid, network_id, external_load_balancer_device_id,) VALUES ( ?, ?, ?)";
+                    String insertLbMapping = "INSERT INTO `cloud`.`network_external_lb_device_map` (uuid, network_id, external_load_balancer_device_id, created) VALUES ( ?, ?, ?, now())";
                     pstmtUpdate = conn.prepareStatement(insertLbMapping);
                     pstmtUpdate.setString(1, UUID.randomUUID().toString());
                     pstmtUpdate.setLong(2, networkId);
@@ -354,7 +354,7 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
                     s_logger.debug("Successfully added entry in network_external_lb_device_map for network " +  networkId + " and F5 device ID " +  f5DeviceId);
                     
          	        // add mapping for the network in network_external_firewall_device_map
-                    String insertFwMapping = "INSERT INTO `cloud`.`network_external_firewall_device_map` (uuid, network_id, external_firewall_device_id,) VALUES ( ?, ?, ?)";
+                    String insertFwMapping = "INSERT INTO `cloud`.`network_external_firewall_device_map` (uuid, network_id, external_firewall_device_id, created) VALUES ( ?, ?, ?, now())";
                     pstmtUpdate = conn.prepareStatement(insertFwMapping);
                     pstmtUpdate.setString(1, UUID.randomUUID().toString());
                     pstmtUpdate.setLong(2, networkId);
@@ -363,7 +363,7 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
                     s_logger.debug("Successfully added entry in network_external_firewall_device_map for network " +  networkId + " and SRX device ID " +  srxDevivceId);
                 }
             } catch (SQLException e) {
-            	
+                throw new CloudRuntimeException("Unable create a mapping for the networks in network_external_lb_device_map and network_external_firewall_device_map", e);
             }
             s_logger.info("Successfully upgraded network using F5 and SRX devices to have a entry in the network_external_lb_device_map and network_external_firewall_device_map");
         }
