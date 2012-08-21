@@ -1523,7 +1523,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         }
                     }
                 }
-                if( snapshot.getSwiftId() != null ) {
+                if( snapshot.getSwiftId() != null && snapshot.getSwiftId() != 0 ) {
                     _snapshotMgr.downloadSnapshotsFromSwift(snapshot);
                 }
                 cmd = new CreatePrivateTemplateFromSnapshotCommand(pool.getUuid(), secondaryStorageURL, dcId, accountId, snapshot.getVolumeId(), backupSnapshotUUID, snapshot.getName(),
