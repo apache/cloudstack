@@ -43,3 +43,4 @@ deps/cloud.userlibraries
 *.iml
 git-remote-https.exe.stackdump
 *.swp
+tools/devcloud/devcloudbox/.vagrant
