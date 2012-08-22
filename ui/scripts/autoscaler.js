@@ -1201,8 +1201,17 @@
             openfirewall: false,
             networkid: networkid
           };
-          if(args.context.ipAddresses != undefined)
-            data = $.extend(data, {publicipid: args.context.ipAddresses[0].id});
+          if(args.context.ipAddresses != null) {
+            data = $.extend(data, {
+						  publicipid: args.context.ipAddresses[0].id
+						});
+					}
+					else {
+					  data = $.extend(data, {
+						  domainid: g_domainid,
+              account: g_account
+						});
+					}
 
           $.ajax({
             url: createURL('createLoadBalancerRule'),
