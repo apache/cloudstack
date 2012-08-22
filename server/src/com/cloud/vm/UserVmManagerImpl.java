@@ -134,7 +134,7 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
-import com.cloud.offering.DiskOffering;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
@@ -349,6 +349,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     ResourceTagDao _resourceTagDao;
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
+    @Inject
+    VpcManager _vpcMgr;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -2206,6 +2208,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // Verify that caller can perform actions in behalf of vm owner
         _accountMgr.checkAccess(caller, null, true, owner);
 
+        List<HypervisorType> vpcSupportedHTypes = _vpcMgr.getSupportedVpcHypervisors();
         if (networkIdList == null || networkIdList.isEmpty()) {
             NetworkVO defaultNetwork = null;
 
@@ -2256,7 +2259,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 if (network == null) {
                     throw new InvalidParameterValueException("Unable to find network by id", null);
                 }
+                if (network.getVpcId() != null) {
+                    //Only XenServer and VmWare hypervisors are supported for vpc networks
+                    if (!vpcSupportedHTypes.contains(template.getHypervisorType())) {
+                        throw new InvalidParameterValueException("Can't create vm from template with hypervisor "
+                                + template.getHypervisorType() + " in vpc network " + network, null);
+                    }
 
+                }
+                
                 _networkMgr.checkNetworkPermissions(owner, network);
 
                 //don't allow to use system networks 

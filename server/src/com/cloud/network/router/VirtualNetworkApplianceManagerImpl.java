@@ -1428,7 +1428,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         new Pair<Boolean, PublicIp>(publicNetwork, sourceNatIp));
                 //don't start the router as we are holding the network lock that needs to be released at the end of router allocation
                 DomainRouterVO router = deployRouter(owner, dest, plan, params, isRedundant, vrProvider, offeringId,
-                        null, networks, false);
+                        null, networks, false, null);
 
                 _routerDao.addRouterToGuestNetwork(router, guestNetwork);
 
@@ -1447,7 +1447,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     protected DomainRouterVO deployRouter(Account owner, DeployDestination dest, DeploymentPlan plan, Map<Param, Object> params,
             boolean isRedundant, VirtualRouterProvider vrProvider, long svcOffId,
-            Long vpcId, List<Pair<NetworkVO, NicProfile>> networks, boolean startRouter) throws ConcurrentOperationException,
+            Long vpcId, List<Pair<NetworkVO, NicProfile>> networks, boolean startRouter, List<HypervisorType> supportedHypervisors) throws ConcurrentOperationException,
             InsufficientAddressCapacityException, InsufficientServerCapacityException, InsufficientCapacityException,
             StorageUnavailableException, ResourceUnavailableException {
 
@@ -1460,12 +1460,12 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         // Router is the network element, we don't know the hypervisor type yet.
         // Try to allocate the domR twice using diff hypervisors, and when failed both times, throw the exception up
-        List<HypervisorType> supportedHypervisors = getSupportedHypervisors(dest, plan);
+        List<HypervisorType> hypervisors = getHypervisors(dest, plan, supportedHypervisors);
 
         int allocateRetry = 0;
         int startRetry = 0;
         DomainRouterVO router = null;
-        for (Iterator<HypervisorType> iter = supportedHypervisors.iterator(); iter.hasNext();) {
+        for (Iterator<HypervisorType> iter = hypervisors.iterator(); iter.hasNext();) {
             HypervisorType hType = iter.next();
             try {
                 s_logger.debug("Allocating the domR with the hypervisor type " + hType);
@@ -1525,33 +1525,44 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         return router;
     }
 
-    protected List<HypervisorType> getSupportedHypervisors(DeployDestination dest, DeploymentPlan plan) throws InsufficientServerCapacityException {
-        List<HypervisorType> supportedHypervisors = new ArrayList<HypervisorType>();
+    protected List<HypervisorType> getHypervisors(DeployDestination dest, DeploymentPlan plan, 
+            List<HypervisorType> supportedHypervisors) throws InsufficientServerCapacityException {
+        List<HypervisorType> hypervisors = new ArrayList<HypervisorType>();
         HypervisorType defaults = _resourceMgr.getDefaultHypervisor(dest.getDataCenter().getId());
         if (defaults != HypervisorType.None) {
-            supportedHypervisors.add(defaults);
+            hypervisors.add(defaults);
         }
 
         if (dest.getCluster() != null) {
             if (dest.getCluster().getHypervisorType() == HypervisorType.Ovm) {
-                supportedHypervisors.add(getClusterToStartDomainRouterForOvm(dest.getCluster().getPodId()));
+                hypervisors.add(getClusterToStartDomainRouterForOvm(dest.getCluster().getPodId()));
             } else {
-                supportedHypervisors.add(dest.getCluster().getHypervisorType());
+                hypervisors.add(dest.getCluster().getHypervisorType());
             }
         } else {
-            supportedHypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId(), true,
+            hypervisors = _resourceMgr.getSupportedHypervisorTypes(dest.getDataCenter().getId(), true,
                     plan.getPodId());
         }
 
-        if (supportedHypervisors.isEmpty()) {
+        //keep only elements defined in supported hypervisors
+        StringBuilder hTypesStr = new StringBuilder();
+        if (supportedHypervisors != null && !supportedHypervisors.isEmpty()) {
+            hypervisors.retainAll(supportedHypervisors);
+            for (HypervisorType hType : supportedHypervisors) {
+                hTypesStr.append(hType).append(" ");
+            }
+        }
+
+        if (hypervisors.isEmpty()) {
+            String errMsg = (hTypesStr.capacity() > 0) ? "supporting hypervisors " + hTypesStr.toString() : "";
             if (plan.getPodId() != null) {
                 throw new InsufficientServerCapacityException("Unable to create virtual router, " +
-                        "there are no clusters in the pod ", Pod.class, plan.getPodId());
+                        "there are no clusters in the pod " + errMsg, Pod.class, plan.getPodId());
             }
             throw new InsufficientServerCapacityException("Unable to create virtual router, " +
-                    "there are no clusters in the zone ", DataCenter.class, dest.getDataCenter().getId());
+                    "there are no clusters in the zone " + errMsg, DataCenter.class, dest.getDataCenter().getId());
         }
-        return supportedHypervisors;
+        return hypervisors;
     }
 
     protected List<Pair<NetworkVO, NicProfile>> createRouterNetworks(Account owner, boolean isRedundant,

@@ -50,6 +50,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
@@ -1959,5 +1960,13 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
         return _ntwkMgr.updateGuestNetwork(networkId, name, displayText, callerAccount, callerUser, domainSuffix,
                 ntwkOffId, changeCidr);
-    } 
+    }
+
+    @Override
+    public List<HypervisorType> getSupportedVpcHypervisors() {
+        List<HypervisorType> hTypes = new ArrayList<HypervisorType>();
+        hTypes.add(HypervisorType.XenServer);
+        hTypes.add(HypervisorType.VMware);
+        return hTypes;
+    }
 }

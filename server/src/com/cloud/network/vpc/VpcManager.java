@@ -20,6 +20,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Service;
@@ -134,5 +135,11 @@ public interface VpcManager extends VpcService{
      * @param supportedSvcs TODO
      */
     void validateNtwkOffForVpc(NetworkOffering guestNtwkOff, List<Service> supportedSvcs);
+
+
+    /**
+     * @return
+     */
+    List<HypervisorType> getSupportedVpcHypervisors();
 
 }
