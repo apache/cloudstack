@@ -2479,7 +2479,8 @@
 
           $(storageIPRanges).each(function() {
             var item = this;
-            
+              if('vlan' in item && (item.vlan == null || item.vlan.length == 0))
+                delete item.vlan;
             $.ajax({
               url: createURL('createStorageNetworkIpRange'),
               data: $.extend(true, {}, item, {
