@@ -464,16 +464,18 @@ public class FirstFitPlanner extends PlannerBase implements DeploymentPlanner {
         	if (clusterListForVmAllocation == null || clusterListForVmAllocation.size() == 0){
            		return;
            	}
-           	
-           	if (capacity == Capacity.CAPACITY_TYPE_CPU){
-           		clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(Capacity.CAPACITY_TYPE_CPU, plan.getDataCenterId(),
-           				capacityThresholdMap.get(capacity), cpu_requested, ApiDBUtils.getCpuOverprovisioningFactor());
-           	}else{
-           		clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(),
-           				capacityThresholdMap.get(capacity), ram_requested, 1.0f);//Mem overprov not supported yet
-           	}
 
-           	
+            Float threshold = capacityThresholdMap.get(capacity);
+            if (threshold.floatValue() < 1.0f) {
+           	    if (capacity == Capacity.CAPACITY_TYPE_CPU){
+           	        clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(),
+                       	    threshold, cpu_requested, ApiDBUtils.getCpuOverprovisioningFactor());
+           	    }else{
+           	        clustersCrossingThreshold = _capacityDao.listClustersCrossingThreshold(capacity, plan.getDataCenterId(),
+                       	    threshold, ram_requested, 1.0f);//Mem overprov not supported yet
+           	    }
+            }
+
            	if (clustersCrossingThreshold != null && clustersCrossingThreshold.size() != 0){
                	// addToAvoid Set
            		avoid.addClusterList(clustersCrossingThreshold);
