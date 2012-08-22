@@ -289,7 +289,7 @@ class deployDataCenters():
                 listnetworkoffering = listNetworkOfferings.listNetworkOfferingsCmd()
                 
                 listnetworkoffering.name = "DefaultSharedNetscalerEIPandELBNetworkOffering" \
-                        if len(filter(lambda x : x.typ == 'Public', zone.physical_networks.traffictypes)) > 0 \
+                        if len(filter(lambda x : x.typ == 'Public', zone.physical_networks[0].traffictypes)) > 0 \
                         else "DefaultSharedNetworkOfferingWithSGService"
 
                 listnetworkofferingresponse = \
@@ -318,7 +318,7 @@ class deployDataCenters():
         return
     
     def isEipElbZone(self, zone):
-        if zone.networktype == "Basic" and len(filter(lambda x : x.typ == 'Public', zone.physical_networks.traffictypes)) > 0:
+        if zone.networktype == "Basic" and len(filter(lambda x : x.typ == 'Public', zone.physical_networks[0].traffictypes)) > 0:
             return True
         return False
 
