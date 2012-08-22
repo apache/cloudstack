@@ -318,7 +318,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         List<Pair<NetworkVO, NicProfile>> networks = createVpcRouterNetworks(owner, isRedundant, plan, new Pair<Boolean, PublicIp>(true, sourceNatIp),
                 vpcId);
         DomainRouterVO router = 
-                super.deployRouter(owner, dest, plan, params, isRedundant, vrProvider, svcOffId, vpcId, networks, true);
+                super.deployRouter(owner, dest, plan, params, isRedundant, vrProvider, svcOffId, vpcId, networks, true, 
+                        _vpcMgr.getSupportedVpcHypervisors());
         
         return router;
     }
