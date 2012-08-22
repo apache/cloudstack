@@ -713,7 +713,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         } catch (StorageUnavailableException e) {
             s_logger.error(basicErrMsg);
         } finally {
-            if (snapshot.getSwiftId() != null) {
+            if (snapshot.getSwiftId() != null && snapshot.getSwiftId() != 0) {
                 _snapshotMgr.deleteSnapshotsDirForVolume(secondaryStoragePoolUrl, dcId, accountId, volumeId);
             }
             _snapshotDao.unlockFromLockTable(snapshotId.toString());

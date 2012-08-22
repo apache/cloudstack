@@ -379,3 +379,5 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Usage', 'DEFAULT', 'manageme
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Usage', 'DEFAULT', 'management-server', 'traffic.sentinel.exclude.zones', '', 'Traffic going into specified list of zones is not metered');
 
 DROP TABLE IF EXISTS `cloud`.`ovs_tunnel_account`;
+UPDATE `cloud`.`snapshots` set swift_id=null where swift_id=0;
+
