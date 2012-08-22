@@ -1495,7 +1495,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         int ethDeviceNum = this.findRouterEthDeviceIndex(domrName, routerIp, ip.getVifMacAddress());
         if (ethDeviceNum < 0) {
-            throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
+            if (ip.isAdd()) {
+                throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
+            } else {
+                 s_logger.debug("VIF to deassociate IP with does not exist, return success");
+                return;
+            }
         }           
 
         String args = "";    

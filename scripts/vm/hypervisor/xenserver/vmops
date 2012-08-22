@@ -431,6 +431,19 @@ def can_bridge_firewall(session, args):
         util.pread2(['iptables', '-D', 'FORWARD',  '-j', 'RH-Firewall-1-INPUT'])
     except:
         util.SMlog('Chain BRIDGE-FIREWALL already exists')
+
+    try:
+        util.pread2(['iptables', '-N', 'BRIDGE-DEFAULT-FIREWALL'])
+        util.pread2(['iptables', '-A', 'BRIDGE-DEFAULT-FIREWALL', '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
+        util.pread2(['iptables', '-A', 'BRIDGE-DEFAULT-FIREWALL', '-m', 'physdev', '--physdev-is-bridged',  '-p', 'udp', '--dport', '67', '--sport', '68',  '-j', 'ACCEPT'])
+        util.pread2(['iptables', '-A', 'BRIDGE-DEFAULT-FIREWALL', '-m', 'physdev', '--physdev-is-bridged',  '-p', 'udp', '--dport', '68', '--sport', '67',  '-j', 'ACCEPT'])
+        util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '-j', 'BRIDGE-DEFAULT-FIREWALL'])
+        util.pread2(['iptables', '-D', 'BRIDGE-FIREWALL', '-m', 'state', '--state', 'RELATED,ESTABLISHED', '-j', 'ACCEPT'])
+        util.pread2(['iptables', '-D', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged',  '-p', 'udp', '--dport', '67', '--sport', '68',  '-j', 'ACCEPT'])
+        util.pread2(['iptables', '-D', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged',  '-p', 'udp', '--dport', '68', '--sport', '67',  '-j', 'ACCEPT'])
+    except:
+        util.SMlog('Chain BRIDGE-DEFAULT-FIREWALL already exists')
+
     privnic = get_private_nic(session, args)
     result = 'true'
     try:
@@ -756,7 +769,7 @@ def default_network_rules_systemvm(session, args):
     for vif in vifs:
         try:
             util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', vif, '-j', vmchain])
-            util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '4', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '-j', vmchain])
+            util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '-j', vmchain])
             util.pread2(['iptables', '-I', vmchain, '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', vif, '-j', 'RETURN'])
         except:
             util.SMlog("Failed to program default rules")
@@ -828,7 +841,7 @@ def default_network_rules(session, args):
     try:
         for v in vifs:
             util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
-            util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '4', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
+            util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
 
         #don't let vm spoof its ip address
         for v in vifs:
@@ -933,7 +946,7 @@ def network_rules_for_rebooted_vm(session, vmName):
 
     for v in vifs:
         util.pread2(['iptables', '-A', 'BRIDGE-FIREWALL', '-m', 'physdev', '--physdev-is-bridged', '--physdev-out', v, '-j', vmchain_default])
-        util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '4', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
+        util.pread2(['iptables', '-I', 'BRIDGE-FIREWALL', '2', '-m', 'physdev', '--physdev-is-bridged', '--physdev-in', v, '-j', vmchain_default])
 
     #change antispoof rule in vmchain
     try:
