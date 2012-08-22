@@ -35,7 +35,7 @@ import com.cloud.user.UserContext;
 public class UpdateVpnCustomerGatewayCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateVpnCustomerGatewayCmd.class.getName());
 
-    private static final String s_name = "updatecustomergatewayresponse";
+    private static final String s_name = "updatevpncustomergatewayresponse";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
