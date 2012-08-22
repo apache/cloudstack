@@ -491,8 +491,7 @@
                 $checkbox.attr('checked', false);
                 $newNetwork.addClass('unselected');
               } else {
-                $checkbox.attr('checked', true);
-                $newNetwork.removeClass('unselected');
+                $newNetwork.find('input[name=defaultNetwork]').filter('[value=new-network]').click();
               }
 
               $checkbox.change();
