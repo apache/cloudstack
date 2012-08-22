@@ -35,6 +35,7 @@ import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkVO;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
@@ -54,8 +55,8 @@ public interface VirtualMachineManager extends Manager {
     <T extends VMInstanceVO> T allocate(T vm,
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
-            Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
-            List<Pair<DiskOfferingVO, Long>> dataDiskOfferings,
+            Pair<? extends DiskOffering, Long> rootDiskOffering,
+            List<Pair<DiskOffering, Long>> dataDiskOfferings,
             List<Pair<NetworkVO, NicProfile>> networks,
             Map<VirtualMachineProfile.Param, Object> params,
             DeploymentPlan plan,
@@ -66,7 +67,7 @@ public interface VirtualMachineManager extends Manager {
             VMTemplateVO template,
             ServiceOfferingVO serviceOffering,
             Long rootSize,
-            Pair<DiskOfferingVO, Long> dataDiskOffering,
+            Pair<DiskOffering, Long> dataDiskOffering,
             List<Pair<NetworkVO, NicProfile>> networks,
             DeploymentPlan plan,
             HypervisorType hyperType,

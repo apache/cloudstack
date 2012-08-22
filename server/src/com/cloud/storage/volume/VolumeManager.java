@@ -15,6 +15,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.DiskOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StoragePoolVO;
@@ -33,17 +34,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface VolumeManager {
-	/**
-	 * Moves a volume from its current storage pool to a storage pool with enough capacity in the specified zone, pod, or cluster
-	 * @param volume
-	 * @param destPoolDcId
-	 * @param destPoolPodId
-	 * @param destPoolClusterId
-	 * @return VolumeVO
-	 * @throws ConcurrentOperationException 
-	 */
-	VolumeVO moveVolume(VolumeVO volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType) throws ConcurrentOperationException;
-
 	/**
 	 * Create a volume based on the given criteria
 	 * @param volume
@@ -64,22 +54,6 @@ public interface VolumeManager {
 	VolumeVO createVolume(VolumeVO volume, long VMTemplateId, DiskOfferingVO diskOffering,
             HypervisorType hyperType, StoragePool assignedPool) throws StorageUnavailableException, ConcurrentOperationException;
 	
-	/**
-	 * Marks the specified volume as destroyed in the management server database. The expunge thread will delete the volume from its storage pool.
-	 * @param volume
-	 * @return 
-	 */
-	boolean destroyVolume(VolumeVO volume) throws ConcurrentOperationException;
-	
-	/**
-	 * Checks that one of the following is true:
-	 * 1. The volume is not attached to any VM
-	 * 2. The volume is attached to a VM that is running on a host with the KVM hypervisor, and the VM is stopped
-	 * 3. The volume is attached to a VM that is running on a host with the XenServer hypervisor (the VM can be stopped or running)
-	 * @return true if one of the above conditions is true
-	 */
-	boolean volumeInactive(VolumeVO volume);
-	
     /**
      * Allocates one volume.
      * @param <T>
@@ -93,27 +67,16 @@ public interface VolumeManager {
      * @return VolumeVO a persisted volume.
      */
     DiskProfile allocateVolume(Long vmId,
-    		Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
-    		List<Pair<DiskOfferingVO, Long>> dataDiskOfferings, Long templateId, Account owner);
+    		Pair<? extends DiskOffering, Long> rootDiskOffering,
+    		List<Pair<DiskOffering, Long>> dataDiskOfferings, Long templateId, Account owner);
     
     void cleanupVolumes(long vmId) throws ConcurrentOperationException;
 	
 	boolean processEvent(Volume vol, Event event)
 			throws NoTransitionException;
 	
-	VolumeVO allocateDuplicateVolume(VolumeVO oldVol, Long templateId);
 	boolean validateVolume(Account caller, long ownerId, Long zoneId, String volumeName, String url, String format) throws ResourceAllocationException;
 	VolumeVO persistVolume(Account caller, long ownerId, Long zoneId, String volumeName, String url, String format);
-	
-	/**
-	 * Checks that the volume is stored on a shared storage pool
-	 * @param volume
-	 * @return true if the volume is on a shared storage pool, false otherwise
-	 */
-	boolean volumeOnSharedStoragePool(VolumeVO volume);
-	
-	String getVmNameOnVolume(VolumeVO volume);
-	void expungeVolume(VolumeVO vol, boolean force);
 
 	Volume copyVolume(Long volumeId, Long destStoragePoolId);
 
@@ -124,9 +87,17 @@ public interface VolumeManager {
 
 	Volume attachVolumeToVM(VolumeVO volume, UserVmVO vm, Long deviceId) throws StorageUnavailableException, ConcurrentOperationException, AgentUnavailableException, OperationTimedoutException;
 
-	boolean deleteVolume(long volumeId) throws ConcurrentOperationException;
-
 	void attachISOToVm(UserVmVO vm, VMTemplateVO iso);
 
 	void detachISOToVM(UserVmVO vm);
+
+	Volume detachVolumeFromVM(VolumeVO volume, UserVmVO vm);
+
+	boolean deleteVolume(VolumeVO volume) throws ConcurrentOperationException;
+
+	boolean migrateVolumes(List<Volume> volumes, StoragePool destPool) throws ConcurrentOperationException;
+
+	void release(VolumeVO volume);
+
+	void recreateVolume(VolumeVO volume, long vmId) throws ConcurrentOperationException;
 }

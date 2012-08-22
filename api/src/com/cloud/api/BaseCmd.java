@@ -115,7 +115,6 @@ public abstract class BaseCmd {
     public static AccountService _accountService;
     public static UserVmService _userVmService;
     public static ManagementService _mgr;
-    public static StoragePoolService _storageService;
     public static ResourceService _resourceService;
     public static NetworkService _networkService;
     public static SecurityGroupService _securityGroupService;
@@ -146,7 +145,6 @@ public abstract class BaseCmd {
         _accountService = locator.getManager(AccountService.class);
         _configService = locator.getManager(ConfigurationService.class);
         _userVmService = locator.getManager(UserVmService.class);
-        _storageService = locator.getManager(StoragePoolService.class);
         _resourceService = locator.getManager(ResourceService.class);
         _networkService = locator.getManager(NetworkService.class);
         _securityGroupService = locator.getManager(SecurityGroupService.class);

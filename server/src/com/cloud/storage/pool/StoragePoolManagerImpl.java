@@ -1933,14 +1933,6 @@ public class StoragePoolManagerImpl implements StoragePoolManager, Manager, Clus
         }
     }
 
-
-
-
-    @Override
-    public void release(VirtualMachineProfile<? extends VMInstanceVO> profile) {
-        // add code here
-    }
-
     protected class StorageGarbageCollector implements Runnable {
 
         public StorageGarbageCollector() {

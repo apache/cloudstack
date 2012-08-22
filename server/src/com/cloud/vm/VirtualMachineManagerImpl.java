@@ -111,6 +111,7 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
@@ -167,7 +168,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     String _name;
     @Inject
-    protected StoragePoolManager _storageMgr;
+    protected StorageOrchestraEngine _storageMgr;
     @Inject
     protected NetworkManager _networkMgr;
     @Inject
@@ -265,8 +266,8 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
 
     @Override
     @DB
-    public <T extends VMInstanceVO> T allocate(T vm, VMTemplateVO template, ServiceOfferingVO serviceOffering, Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
-            List<Pair<DiskOfferingVO, Long>> dataDiskOfferings, List<Pair<NetworkVO, NicProfile>> networks, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan plan,
+    public <T extends VMInstanceVO> T allocate(T vm, VMTemplateVO template, ServiceOfferingVO serviceOffering, Pair<? extends DiskOffering, Long> rootDiskOffering,
+            List<Pair<DiskOffering, Long>> dataDiskOfferings, List<Pair<NetworkVO, NicProfile>> networks, Map<VirtualMachineProfile.Param, Object> params, DeploymentPlan plan,
             HypervisorType hyperType, Account owner) throws InsufficientCapacityException {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Allocating entries for VM: " + vm);
@@ -298,7 +299,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
 
         if (dataDiskOfferings == null) {
-            dataDiskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>(0);
+            dataDiskOfferings = new ArrayList<Pair<DiskOffering, Long>>(0);
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -316,13 +317,13 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
     }
 
     @Override
-    public <T extends VMInstanceVO> T allocate(T vm, VMTemplateVO template, ServiceOfferingVO serviceOffering, Long rootSize, Pair<DiskOfferingVO, Long> dataDiskOffering,
+    public <T extends VMInstanceVO> T allocate(T vm, VMTemplateVO template, ServiceOfferingVO serviceOffering, Long rootSize, Pair<DiskOffering, Long> dataDiskOffering,
             List<Pair<NetworkVO, NicProfile>> networks, DeploymentPlan plan, HypervisorType hyperType, Account owner) throws InsufficientCapacityException {
-        List<Pair<DiskOfferingVO, Long>> diskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>(1);
+        List<Pair<DiskOffering, Long>> diskOfferings = new ArrayList<Pair<DiskOffering, Long>>(1);
         if (dataDiskOffering != null) {
             diskOfferings.add(dataDiskOffering);
         }
-        return allocate(vm, template, serviceOffering, new Pair<DiskOfferingVO, Long>(serviceOffering, rootSize), diskOfferings, networks, null, plan, hyperType, owner);
+        return allocate(vm, template, serviceOffering, new Pair<DiskOffering, Long>(serviceOffering, rootSize), diskOfferings, networks, null, plan, hyperType, owner);
     }
 
     @Override
@@ -1223,7 +1224,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         VirtualMachineProfile<VMInstanceVO> profile = new VirtualMachineProfileImpl<VMInstanceVO>(vm);
         boolean migrationResult = false;
         try {
-            migrationResult = _storageMgr.StorageMigration(profile, destPool);
+            migrationResult = _storageMgr.vmStorageMigration(profile, destPool);
 
             if (migrationResult) {
                 //if the vm is migrated to different pod in basic mode, need to reallocate ip

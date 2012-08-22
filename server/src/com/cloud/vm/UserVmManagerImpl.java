@@ -139,6 +139,7 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
@@ -174,6 +175,7 @@ import com.cloud.storage.dao.VMTemplateHostDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
+import com.cloud.storage.orchestra.StorageOrchestraEngine;
 import com.cloud.storage.pool.Storage;
 import com.cloud.storage.pool.StoragePool;
 import com.cloud.storage.pool.StoragePoolManager;
@@ -352,6 +354,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected VolumeHostDao _volumeHostDao;
     @Inject
     ResourceTagDao _resourceTagDao;
+    @Inject
+    StorageOrchestraEngine _storageEngine;
 
 
     protected ScheduledExecutorService _executor = null;
@@ -509,112 +513,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         }
     }
     
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume", async = true)
-    public Volume detachVolumeFromVM(DetachVolumeCmd cmmd) {
-        Account caller = UserContext.current().getCaller();
-        if ((cmmd.getId() == null && cmmd.getDeviceId() == null && cmmd.getVirtualMachineId() == null) || (cmmd.getId() != null && (cmmd.getDeviceId() != null || cmmd.getVirtualMachineId() != null))
-                || (cmmd.getId() == null && (cmmd.getDeviceId() == null || cmmd.getVirtualMachineId() == null))) {
-            throw new InvalidParameterValueException("Please provide either a volume id, or a tuple(device id, instance id)");
-        }
-
-        Long volumeId = cmmd.getId();
-        VolumeVO volume = null;
-
-        if (volumeId != null) {
-            volume = _volsDao.findById(volumeId);
-        } else {
-            volume = _volsDao.findByInstanceAndDeviceId(cmmd.getVirtualMachineId(), cmmd.getDeviceId()).get(0);
-        }
-
-        Long vmId = null;
-
-        if (cmmd.getVirtualMachineId() == null) {
-            vmId = volume.getInstanceId();
-        } else {
-            vmId = cmmd.getVirtualMachineId();
-        }
-
-        // Check that the volume ID is valid
-        if (volume == null) {
-            throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId);
-        }
-
-        // Permissions check
-        _accountMgr.checkAccess(caller, null, true, volume);
-
-        // Check that the volume is a data volume
-        if (volume.getVolumeType() != Volume.Type.DATADISK) {
-            throw new InvalidParameterValueException("Please specify a data volume.");
-        }
-
-        // Check that the volume is currently attached to a VM
-        if (vmId == null) {
-            throw new InvalidParameterValueException("The specified volume is not attached to a VM.");
-        }
-
-        // Check that the volume is stored on shared storage
-        if (volume.getState() != Volume.State.Allocated && !_storageMgr.volumeOnSharedStoragePool(volume)) {
-            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
-        } 
-
-        // Check that the VM is in the correct state
-        UserVmVO vm = _vmDao.findById(vmId);
-        if (vm.getState() != State.Running && vm.getState() != State.Stopped && vm.getState() != State.Destroyed) {
-            throw new InvalidParameterValueException("Please specify a VM that is either running or stopped.");
-        }
-
-        AsyncJobExecutor asyncExecutor = BaseAsyncJobExecutor.getCurrentExecutor();
-        if (asyncExecutor != null) {
-            AsyncJobVO job = asyncExecutor.getJob();
-
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info("Trying to attaching volume " + volumeId + "to vm instance:" + vm.getId() + ", update async job-" + job.getId() + " progress status");
-            }
-
-            _asyncMgr.updateAsyncJobAttachment(job.getId(), "volume", volumeId);
-            _asyncMgr.updateAsyncJobStatus(job.getId(), BaseCmd.PROGRESS_INSTANCE_CREATED, volumeId);
-        }
-
-        String errorMsg = "Failed to detach volume: " + volume.getName() + " from VM: " + vm.getHostName();
-        boolean sendCommand = (vm.getState() == State.Running);
-        Answer answer = null;
-
-        if (sendCommand) {
-            AttachVolumeCommand cmd = new AttachVolumeCommand(false, vm.getInstanceName(), volume.getPoolType(), volume.getFolder(), volume.getPath(), volume.getName(),
-                    cmmd.getDeviceId() != null ? cmmd.getDeviceId() : volume.getDeviceId(), volume.getChainInfo());
-
-            StoragePoolVO volumePool = _storagePoolDao.findById(volume.getPoolId());
-            cmd.setPoolUuid(volumePool.getUuid());
-
-            try {
-                answer = _agentMgr.send(vm.getHostId(), cmd);
-            } catch (Exception e) {
-                throw new CloudRuntimeException(errorMsg + " due to: " + e.getMessage());
-            }
-        }
-
-        if (!sendCommand || (answer != null && answer.getResult())) {
-            // Mark the volume as detached
-            _volsDao.detachVolume(volume.getId());
-            if (answer != null && answer instanceof AttachVolumeAnswer) {
-                volume.setChainInfo(((AttachVolumeAnswer) answer).getChainInfo());
-                _volsDao.update(volume.getId(), volume);
-            }
-
-            return _volsDao.findById(volumeId);
-        } else {
-
-            if (answer != null) {
-                String details = answer.getDetails();
-                if (details != null && !details.isEmpty()) {
-                    errorMsg += "; " + details;
-                }
-            }
-
-            throw new CloudRuntimeException(errorMsg);
-        }
-    }
+    
 
     
 
@@ -1352,18 +1251,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 } catch (NoTransitionException e1) {
                     s_logger.warn(e1.getMessage());
                 }
-                // destroy associated volumes for vm in error state
-                // get all volumes in non destroyed state
-                List<VolumeVO> volumesForThisVm = _volsDao.findUsableVolumesForInstance(vm.getId());
-                for (VolumeVO volume : volumesForThisVm) {
-                    try {
-                        if (volume.getState() != Volume.State.Destroy) {
-                            _storageMgr.destroyVolume(volume);
-                        }
-                    } catch (ConcurrentOperationException e) {
-                        s_logger.warn("Unable to delete volume:" + volume.getId() + " for vm:" + vmId + " whilst transitioning to error state");
-                    }
-                }
                 String msg = "Failed to deploy Vm with Id: " + vmId;
                 _alertMgr.sendAlert(AlertManager.ALERT_TYPE_USERVM, vm.getDataCenterIdToDeployIn(), vm.getPodIdToDeployIn(), msg, msg);
 
@@ -1995,8 +1882,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         // If the template represents an ISO, a disk offering must be passed in, and will be used to create the root disk
         // Else, a disk offering is optional, and if present will be used to create the data disk
-        Pair<DiskOfferingVO, Long> rootDiskOffering = new Pair<DiskOfferingVO, Long>(null, null);
-        List<Pair<DiskOfferingVO, Long>> dataDiskOfferings = new ArrayList<Pair<DiskOfferingVO, Long>>();
+        Pair<DiskOffering, Long> rootDiskOffering = new Pair<DiskOffering, Long>(null, null);
+        List<Pair<DiskOffering, Long>> dataDiskOfferings = new ArrayList<Pair<DiskOffering, Long>>();
 
         if (isIso) {
             if (diskOfferingId == null) {
@@ -2029,7 +1916,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         throw new InvalidParameterValueException("Disk offering " + diskOffering + " requires size parameter.");
                     }
                 }
-                dataDiskOfferings.add(new Pair<DiskOfferingVO, Long>(diskOffering, size));
+                dataDiskOfferings.add(new Pair<DiskOffering, Long>(diskOffering, size));
             }
         }
 
@@ -3367,18 +3254,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 throw ex;
             }
         }
-
-        /* allocate a new volume from original template*/
-        VolumeVO newVol = _storageMgr.allocateDuplicateVolume(root, null);
-        _volsDao.attachVolume(newVol.getId(), vmId, newVol.getDeviceId());
-
-        /* Detach and destory the old root volume */
+        
         try {
-            _volsDao.detachVolume(root.getId());
-            _storageMgr.destroyVolume(root);
-        } catch (ConcurrentOperationException e) {
-            s_logger.debug("Unable to delete old root volume " + root.getId() + ", user may manually delete it", e);
-        }
+			_storageEngine.recreateVolume(root.getId(), vmId);
+		} catch (ConcurrentOperationException e) {
+			s_logger.debug("Failed to recreate volume: " + root.getId() + ", due to " + e.toString());
+			throw new CloudRuntimeException("Failed to recreate volume: " + root.getId() + ", due to " + e.toString());
+		}
 
         if (needRestart) {
             try {

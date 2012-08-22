@@ -24,6 +24,11 @@ import java.util.Date;
  * 
  */
 public interface DiskOffering {
+    public enum Type {
+        Disk,
+        Service
+    };
+    
     long getId();
 
     String getUniqueName();
@@ -49,4 +54,8 @@ public interface DiskOffering {
     boolean isCustomized();
 
     void setDiskSize(long diskSize);
+    
+    Type getType();
+    
+    boolean isRecreatable();
 }

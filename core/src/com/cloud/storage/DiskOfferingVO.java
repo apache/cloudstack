@@ -43,11 +43,6 @@ import com.cloud.utils.db.GenericDao;
 @Inheritance(strategy=InheritanceType.JOINED)
 @DiscriminatorColumn(name="type", discriminatorType=DiscriminatorType.STRING, length=32)
 public class DiskOfferingVO implements DiskOffering, Identity {
-    public enum Type {
-        Disk,
-        Service
-    };
-    
     @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")

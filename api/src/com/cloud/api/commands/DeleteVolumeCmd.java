@@ -79,7 +79,7 @@ public class DeleteVolumeCmd extends BaseCmd {
     @Override
     public void execute() throws ConcurrentOperationException {
         UserContext.current().setEventDetails("Volume Id: "+getId());
-        boolean result = _storageService.deleteVolume(id);
+        boolean result = _storageEngine.deleteVolume(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

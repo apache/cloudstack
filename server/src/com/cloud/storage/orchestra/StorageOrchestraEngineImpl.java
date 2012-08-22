@@ -1,5 +1,7 @@
-hpackage com.cloud.storage.orchestra;
+package com.cloud.storage.orchestra;
 
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -26,13 +28,36 @@ import com.cloud.agent.api.storage.DestroyCommand;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.api.BaseCmd;
 import com.cloud.api.commands.AttachVolumeCmd;
+import com.cloud.api.commands.CancelPrimaryStorageMaintenanceCmd;
+import com.cloud.api.commands.CopyTemplateCmd;
+import com.cloud.api.commands.CreateSnapshotPolicyCmd;
+import com.cloud.api.commands.CreateStoragePoolCmd;
 import com.cloud.api.commands.CreateVolumeCmd;
+import com.cloud.api.commands.DeleteIsoCmd;
+import com.cloud.api.commands.DeletePoolCmd;
+import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
+import com.cloud.api.commands.DeleteTemplateCmd;
+import com.cloud.api.commands.DeleteVolumeCmd;
+import com.cloud.api.commands.DetachVolumeCmd;
+import com.cloud.api.commands.ExtractIsoCmd;
+import com.cloud.api.commands.ExtractTemplateCmd;
+import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
+import com.cloud.api.commands.ListSnapshotPoliciesCmd;
+import com.cloud.api.commands.ListSnapshotsCmd;
+import com.cloud.api.commands.ListTemplateOrIsoPermissionsCmd;
+import com.cloud.api.commands.ListVolumesCmd;
+import com.cloud.api.commands.RegisterIsoCmd;
+import com.cloud.api.commands.RegisterTemplateCmd;
+import com.cloud.api.commands.UpdateStoragePoolCmd;
+import com.cloud.api.commands.UpdateTemplateOrIsoPermissionsCmd;
+import com.cloud.api.commands.UploadVolumeCmd;
 import com.cloud.async.AsyncJobExecutor;
 import com.cloud.async.AsyncJobVO;
 import com.cloud.async.BaseAsyncJobExecutor;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -42,15 +67,22 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientStorageCapacityException;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceInUseException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.DiskOffering;
 import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingVO;
@@ -75,6 +107,8 @@ import com.cloud.storage.pool.Storage.TemplateType;
 import com.cloud.storage.pool.StoragePoolManager;
 import com.cloud.storage.snapshot.Snapshot;
 import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.storage.snapshot.SnapshotPolicy;
+import com.cloud.storage.snapshot.SnapshotSchedule;
 import com.cloud.storage.volume.Volume;
 import com.cloud.storage.volume.VolumeManagerImpl;
 import com.cloud.storage.volume.Volume.Event;
@@ -134,8 +168,8 @@ public class StorageOrchestraEngineImpl implements StorageOrchestraEngine, Manag
 	protected UserVmDao _userVmDao;
 	@Inject
 	protected VMTemplateDao _templateDao;
-	
-	
+	@Inject
+	protected ConfigurationDao _configDao;
 	
 	@Inject
 	protected StoragePoolManager _storagePoolMgr;
@@ -373,8 +407,8 @@ public class StorageOrchestraEngineImpl implements StorageOrchestraEngine, Manag
     
     @Override
     public void allocateVolume(Long vmId,
-    		Pair<? extends DiskOfferingVO, Long> rootDiskOffering,
-    		List<Pair<DiskOfferingVO, Long>> dataDiskOfferings, Long templateId, Account owner) {
+    		Pair<? extends DiskOffering, Long> rootDiskOffering,
+    		List<Pair<DiskOffering, Long>> dataDiskOfferings, Long templateId, Account owner) {
     	_volumeMgr.allocateVolume(vmId, rootDiskOffering, dataDiskOfferings, templateId, owner);
     }
     
@@ -399,41 +433,43 @@ public class StorageOrchestraEngineImpl implements StorageOrchestraEngine, Manag
     }
 	
 	 
-	 @Override
-	    public void prepareForMigration(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) {
-	        List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
-	        if (s_logger.isDebugEnabled()) {
-	            s_logger.debug("Preparing " + vols.size() + " volumes for " + vm);
-	        }
+    @Override
+    public void prepareForMigration(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) {
+    	List<VolumeVO> vols = _volumeDao.findUsableVolumesForInstance(vm.getId());
+    	if (s_logger.isDebugEnabled()) {
+    		s_logger.debug("Preparing " + vols.size() + " volumes for " + vm);
+    	}
 
-	        for (VolumeVO vol : vols) {
-	            StoragePool pool = _storagePoolDao.findById(vol.getPoolId());
-	            vm.addDisk(new VolumeTO(vol, pool));
-	        }
+    	for (VolumeVO vol : vols) {
+    		StoragePool pool = _storagePoolDao.findById(vol.getPoolId());
+    		vm.addDisk(new VolumeTO(vol, pool));
+    	}
 
-	        if (vm.getType() == VirtualMachine.Type.User) {
-	            UserVmVO userVM = (UserVmVO) vm.getVirtualMachine();
-	            if (userVM.getIsoId() != null) {
-	                Pair<String, String> isoPathPair = getAbsoluteIsoPath(userVM.getIsoId(), userVM.getDataCenterIdToDeployIn());
-	                if (isoPathPair != null) {
-	                    String isoPath = isoPathPair.first();
-	                    VolumeTO iso = new VolumeTO(vm.getId(), Volume.Type.ISO, StoragePoolType.ISO, null, null, null, isoPath, 0, null, null);
-	                    vm.addDisk(iso);
-	                }
-	            }
-	        }
-	    }
+    	if (vm.getType() == VirtualMachine.Type.User) {
+    		UserVmVO userVM = (UserVmVO) vm.getVirtualMachine();
+    		if (userVM.getIsoId() != null) {
+    			long isoId = userVM.getIsoId();
+    			VMTemplateVO iso = _templateDao.findById(isoId);
+    			Map<String, String> isoPathPair = _templateMgr.getAbsoluteIsoPath(iso, userVM.getDataCenterIdToDeployIn());
+    			if (!isoPathPair.isEmpty()) {
+    				String isoPath = isoPathPair.get("isoPath");
+    				VolumeTO isoTO = new VolumeTO(vm.getId(), Volume.Type.ISO, StoragePoolType.ISO, null, null, null, isoPath, 0, null, null);
+    				vm.addDisk(isoTO);
+    			}
+    		}
+    	}
+    }
 
 	@Override
 	public boolean configure(String name, Map<String, Object> params)
 			throws ConfigurationException {
-        String _customDiskOfferingMinSizeStr = configDao.getValue(Config.CustomDiskOfferingMinSize.toString());
+        String _customDiskOfferingMinSizeStr = _configDao.getValue(Config.CustomDiskOfferingMinSize.toString());
         _customDiskOfferingMinSize = NumbersUtil.parseInt(_customDiskOfferingMinSizeStr, Integer.parseInt(Config.CustomDiskOfferingMinSize.getDefaultValue()));
         
-        String _customDiskOfferingMaxSizeStr = configDao.getValue(Config.CustomDiskOfferingMaxSize.toString());
+        String _customDiskOfferingMaxSizeStr = _configDao.getValue(Config.CustomDiskOfferingMaxSize.toString());
         _customDiskOfferingMaxSize = NumbersUtil.parseInt(_customDiskOfferingMaxSizeStr, Integer.parseInt(Config.CustomDiskOfferingMaxSize.getDefaultValue()));
         
-        String maxVolumeSizeInGbString = configDao.getValue("storage.max.volume.size");
+        String maxVolumeSizeInGbString = _configDao.getValue("storage.max.volume.size");
         _maxVolumeSizeInGb = NumbersUtil.parseLong(maxVolumeSizeInGbString, 2000);
 		return true;
 	}
@@ -456,12 +492,19 @@ public class StorageOrchestraEngineImpl implements StorageOrchestraEngine, Manag
 		return null;
 	}
 
-	
-    
+    @Override
+    public void release(VirtualMachineProfile<? extends VirtualMachine> profile) {
+    	List<VolumeTO> volumes = profile.getDisks();
+    	for (VolumeTO volumeT : volumes) {
+    		long volumeId = volumeT.getId();
+    		VolumeVO volume = _volumeDao.findById(volumeId);
+    		_volumeMgr.release(volume);
+    	}
+    }
   
     
     @Override
-    public boolean StorageMigration(VirtualMachineProfile<? extends VirtualMachine> vm, StoragePool destPool) throws ConcurrentOperationException {
+    public boolean vmStorageMigration(VirtualMachineProfile<? extends VirtualMachine> vm, StoragePool destPool) throws ConcurrentOperationException {
         List<VolumeVO> vols = _volumeDao.findUsableVolumesForInstance(vm.getId());
         List<Volume> volumesNeedToMigrate = new ArrayList<Volume>();
 
@@ -484,7 +527,7 @@ public class StorageOrchestraEngineImpl implements StorageOrchestraEngine, Manag
             return true;
         }
 
-        return migrateVolumes(volumesNeedToMigrate, destPool);
+        return _volumeMgr.migrateVolumes(volumesNeedToMigrate, destPool);
     }
 
     
@@ -512,7 +555,7 @@ public class StorageOrchestraEngineImpl implements StorageOrchestraEngine, Manag
         List<Volume> vols = new ArrayList<Volume>();
         vols.add(vol);
 
-        migrateVolumes(vols, destPool);
+        _volumeMgr.migrateVolumes(vols, destPool);
         return vol;
     }
     
@@ -534,7 +577,22 @@ public class StorageOrchestraEngineImpl implements StorageOrchestraEngine, Manag
             throw new InvalidParameterValueException("Please specify a valid User VM.");
         }
         _accountMgr.checkAccess(caller, null, true, volume, vm);
-        return _volumeMgr.attachVolumeToVM(volume, vm, deviceId);
+        
+        try {
+			return _volumeMgr.attachVolumeToVM(volume, vm, deviceId);
+		} catch (StorageUnavailableException e) {
+			s_logger.debug("Failed to attache volume " + volume + ", due to " + e.toString());
+			return null;
+		} catch (AgentUnavailableException e) {
+			s_logger.debug("Failed to attache volume " + volume + ", due to " + e.toString());
+			return null;
+		} catch (ConcurrentOperationException e) {
+			s_logger.debug("Failed to attache volume " + volume + ", due to " + e.toString());
+			return null;
+		} catch (OperationTimedoutException e) {
+			s_logger.debug("Failed to attache volume " + volume + ", due to " + e.toString());
+			return null;
+		}
     }
 
 	
@@ -542,7 +600,6 @@ public class StorageOrchestraEngineImpl implements StorageOrchestraEngine, Manag
     @ActionEvent(eventType = EventTypes.EVENT_ISO_ATTACH, eventDescription = "attaching ISO", async = true)
 	public boolean attachIsoToVm(long isoId, long vmId) {
         Account caller = UserContext.current().getCaller();
-        Long userId = UserContext.current().getCallerUserId();
 
     	UserVmVO vm = _userVmDao.findById(vmId);
     	if (vm == null) {
@@ -584,5 +641,258 @@ public class StorageOrchestraEngineImpl implements StorageOrchestraEngine, Manag
         
         _volumeMgr.detachISOToVM(vm);
         return true;
+	}
+	
+	@Override
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume", async = true)
+    public Volume detachVolumeFromVM(DetachVolumeCmd cmd) {
+        Account caller = UserContext.current().getCaller();
+        if ((cmd.getId() == null && cmd.getDeviceId() == null && cmd.getVirtualMachineId() == null) || (cmd.getId() != null && (cmd.getDeviceId() != null || cmd.getVirtualMachineId() != null))
+                || (cmd.getId() == null && (cmd.getDeviceId() == null || cmd.getVirtualMachineId() == null))) {
+            throw new InvalidParameterValueException("Please provide either a volume id, or a tuple(device id, instance id)");
+        }
+
+        Long volumeId = cmd.getId();
+        VolumeVO volume = null;
+
+        if (volumeId != null) {
+            volume = _volumeDao.findById(volumeId);
+        } else {
+            volume = _volumeDao.findByInstanceAndDeviceId(cmd.getVirtualMachineId(), cmd.getDeviceId()).get(0);
+        }
+
+        if (volume == null) {
+            throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId);
+        }
+
+        _accountMgr.checkAccess(caller, null, true, volume);
+        
+        Long vmId = null;
+        if (cmd.getVirtualMachineId() == null) {
+            vmId = volume.getInstanceId();
+        } else {
+            vmId = cmd.getVirtualMachineId();
+        }
+        
+        UserVmVO vm = _userVmDao.findById(vmId);
+        
+        return _volumeMgr.detachVolumeFromVM(volume, vm);
+	}
+	
+	@Override
+	@DB
+	@ActionEvent(eventType = EventTypes.EVENT_VOLUME_DELETE, eventDescription = "deleting volume")
+	public boolean deleteVolume(DeleteVolumeCmd cmd) {
+		Long volumeId = cmd.getId();
+		Account caller = UserContext.current().getCaller();
+		VolumeVO volume = _volumeDao.findById(volumeId);
+		if (volume == null) {
+			throw new InvalidParameterValueException("Unable to find volume with ID: " + volumeId);
+		}
+		
+		_accountMgr.checkAccess(caller, null, true, volume);
+		try {
+			return _volumeMgr.deleteVolume(volume);
+		} catch (ConcurrentOperationException e) {
+			s_logger.debug("Failed to delete volume " + volume + ", due to " + e.toString());
+			return false;
+		}
+	}
+
+	@Override
+	public StoragePool createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceUnavailableException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean deletePool(DeletePoolCmd cmd) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public StoragePool prepareStorageForMaintenance(Long primaryStorageId) throws ResourceUnavailableException, InsufficientCapacityException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public StoragePool cancelStorageForMaintenance(CancelPrimaryStorageMaintenanceCmd cmd) throws ResourceUnavailableException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public StoragePool updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public StoragePool getStoragePool(long id) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean deleteVolume(long volumeId) throws ConcurrentOperationException {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public Volume copyVolume(Long volumeId, Long destStoragePoolId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<? extends Volume> searchForVolumes(ListVolumesCmd cmd) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<? extends Snapshot> listSnapshots(ListSnapshotsCmd cmd) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean deleteSnapshot(long snapshotId) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public SnapshotPolicy createPolicy(CreateSnapshotPolicyCmd cmd, Account policyOwner) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<? extends SnapshotSchedule> findRecurringSnapshotSchedule(ListRecurringSnapshotScheduleCmd cmd) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<? extends SnapshotPolicy> listPoliciesforVolume(ListSnapshotPoliciesCmd cmd) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean deleteSnapshotPolicies(DeleteSnapshotPoliciesCmd cmd) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public Snapshot allocSnapshot(Long volumeId, Long policyId) throws ResourceAllocationException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Snapshot createSnapshot(Long volumeId, Long policyId, Long snapshotId, Account snapshotOwner) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public VirtualMachineTemplate registerTemplate(RegisterTemplateCmd cmd) throws URISyntaxException, ResourceAllocationException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public VirtualMachineTemplate registerIso(RegisterIsoCmd cmd) throws IllegalArgumentException, ResourceAllocationException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public VirtualMachineTemplate copyTemplate(CopyTemplateCmd cmd) throws StorageUnavailableException, ResourceAllocationException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public VirtualMachineTemplate prepareTemplate(long templateId, long zoneId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean detachIso(long vmId) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean attachIso(long isoId, long vmId) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean deleteTemplate(DeleteTemplateCmd cmd) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean deleteIso(DeleteIsoCmd cmd) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public Long extract(ExtractIsoCmd cmd) throws InternalErrorException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Long extract(ExtractTemplateCmd cmd) throws InternalErrorException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public VirtualMachineTemplate getTemplate(long templateId) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public List<String> listTemplatePermissions(ListTemplateOrIsoPermissionsCmd cmd) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean updateTemplateOrIsoPermissions(UpdateTemplateOrIsoPermissionsCmd cmd) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public Volume uploadVolume(UploadVolumeCmd cmd) throws ResourceAllocationException {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void cleanupVolumes(long vmId) throws ConcurrentOperationException {
+		_volumeMgr.cleanupVolumes(vmId);
+	}
+
+	@Override
+	public void recreateVolume(long volumeId, long vmId) throws ConcurrentOperationException {
+		VolumeVO volume = _volumeDao.findById(volumeId);
+		_volumeMgr.recreateVolume(volume, vmId);
 	}
 }
