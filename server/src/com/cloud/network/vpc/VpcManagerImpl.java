@@ -1054,8 +1054,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
             for (Network ntwk : ntwks) {
                 assert (cidr != null) : "Why the network cidr is null when it belongs to vpc?";
                 
-                if (NetUtils.isNetworkAWithinNetworkB(ntwk.getCidr(), vpc.getCidr()) 
-                        || NetUtils.isNetworkAWithinNetworkB(vpc.getCidr(), ntwk.getCidr())) {
+                if (NetUtils.isNetworkAWithinNetworkB(ntwk.getCidr(), cidr) 
+                        || NetUtils.isNetworkAWithinNetworkB(cidr, ntwk.getCidr())) {
                     throw new InvalidParameterValueException("Network cidr " + cidr + " crosses other network cidr " + ntwk + 
                             " belonging to the same vpc " + vpc);
                 }
