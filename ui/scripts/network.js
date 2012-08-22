@@ -944,7 +944,7 @@
                       },
 											
 											
-                      add: {
+                      add: {  //basic zone - elastic IP - Add Load Balancer tab - Add VMs button
                         label: 'label.add.vms',
                         action: function(args) {                         
                           var data = {
