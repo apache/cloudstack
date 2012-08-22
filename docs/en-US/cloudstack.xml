@@ -23,11 +23,12 @@
 -->
 
 <book>
-    <xi:include href="Book_Info.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="Book_Info_Build_All.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="concepts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="installation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="ui.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="provisioning.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="cloud-infrastructure-concepts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="provisioning-steps.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="admin-guide.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="developer-guide.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </book>

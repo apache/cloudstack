@@ -22,7 +22,7 @@
  under the License.
 -->
 
-<section id="cloud-infrastructure-concepts">
+<chapter id="cloud-infrastructure-concepts">
     <title>Cloud Infrastructure Concepts</title>
   <xi:include href="about-zones.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="about-pods.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
@@ -31,4 +31,4 @@
   <xi:include href="about-primary-storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="about-secondary-storage.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
   <xi:include href="about-physical-networks.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-</section>
+</chapter>
