@@ -22,7 +22,7 @@
  under the License.
 -->
 
-<section id="provisioning-steps">
+<chapter id="provisioning-steps">
     <title>Steps to Provisioning Your Cloud Infrastructure</title>
     <para>This section tells how to add zones, pods, clusters, hosts, storage, and networks to your cloud. If you are unfamiliar with these entities, please begin by looking through <xref linkend="cloud-infrastructure-concepts" />.</para>
     <xi:include href="provisioning-steps-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
@@ -34,5 +34,4 @@
     <xi:include href="primary-storage-add.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="secondary-storage-add.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="initialize-and-test.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="citrix-xenserver-installation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-</section>
+</chapter>
