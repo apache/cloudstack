@@ -130,7 +130,7 @@ class Services:
                                     "publicport": 22,
                                     "protocol": 'TCP',
                                 },
-                         "ostypeid": 'a9935e08-837e-4fdf-9f32-2e5596355c26',
+                         "ostypeid": '0c22776c-f0b4-4e62-a8fe-f87fbba70723',
                          # Cent OS 5.3 (64 bit)
                          "sleep": 90,
                          "timeout": 10,
@@ -210,13 +210,11 @@ class TestSharedNetworks(cloudstackTestCase):
         except Exception as e:
              raise Exception("Warning: Exception during project cleanup : %s" % e)
         
-        
         try:
             for account in self.cleanup_accounts:
                 account.delete(self.api_client)    
         except Exception as e:
             raise Exception("Warning: Exception during account cleanup : %s" % e)
-        
         
         try:
             for domain in self.cleanup_domains:
@@ -226,6 +224,7 @@ class TestSharedNetworks(cloudstackTestCase):
             
         #Wait till all resources created are cleaned up completely and then attempt to delete Network
         time.sleep(self.services["sleep"])
+        
         try:
             for network in self.cleanup_networks:
                 network.delete(self.api_client)
@@ -234,7 +233,26 @@ class TestSharedNetworks(cloudstackTestCase):
         return
 
     def test_sharedNetworkOffering_01(self):
+        """  Test shared network Offering 01 """
         
+        # Steps,
+        #  1. create an Admin Account - admin-XABU1
+        #  2. listPhysicalNetworks in available zone
+        #  3. createNetworkOffering: 
+        #   - name = "MySharedOffering"
+        #   - guestiptype="shared"
+        #   - services = {Dns, Dhcp, UserData}
+        #   -  conservemode = false
+        #   - specifyVlan = true
+        #   - specifyIpRanges = true
+        #  4. Enable network offering - updateNetworkOffering - state=Enabled
+        #  5. delete the admin account
+        # Validations,
+        #  1. listAccounts name=admin-XABU1, state=enabled returns your account
+        #  2. listPhysicalNetworks should return at least one active physical network
+        #  3. listNetworkOfferings - name=mysharedoffering , should list offering in disabled state
+        #  4. listNetworkOfferings - name=mysharedoffering, should list enabled offering
+
         #Create an account
         self.account = Account.create(
                          self.api_client,
@@ -352,6 +370,23 @@ class TestSharedNetworks(cloudstackTestCase):
         self.debug("NetworkOffering created and enabled: %s" % self.shared_network_offering.id)
 
     def test_sharedNetworkOffering_02(self):
+        """ Test Shared Network Offering 02 """
+        
+        # Steps,
+        #  1. create an Admin Account - admin-XABU1
+        #  2. listPhysicalNetworks in available zone
+        #  3. createNetworkOffering: 
+        #    - name = "MySharedOffering"
+        #    - guestiptype="shared"
+        #    - services = {Dns, Dhcp, UserData}
+        #    -  conservemode = false
+        #    - specifyVlan = false
+        #    - specifyIpRanges = false
+        #  4. delete the admin account
+        # Validations,
+        #  1. listAccounts name=admin-XABU1, state=enabled returns your account
+        #  2. listPhysicalNetworks should return at least one active physical network
+        #  3. createNetworkOffering fails - vlan should be specified in advanced zone
         
         #Create an account
         self.account = Account.create(
@@ -422,6 +457,24 @@ class TestSharedNetworks(cloudstackTestCase):
             self.debug("Network Offering creation failed with vlan as False in advance mode and shared guest type.")
 
     def test_sharedNetworkOffering_03(self):
+        """ Test Shared Network Offering 03 """
+        
+        # Steps,
+        #  1. create an Admin Account - admin-XABU1
+        #  2. listPhysicalNetworks in available zone
+        #  3. createNetworkOffering: 
+        #    - name = "MySharedOffering"
+        #    - guestiptype="shared"
+        #    - services = {Dns, Dhcp, UserData}
+        #    -  conservemode = false
+        #    - specifyVlan = true
+        #    - specifyIpRanges = false
+        #  4. delete the admin account
+        # Validations,
+        #  1. listAccounts name=admin-XABU1, state=enabled returns your account
+        #  2. listPhysicalNetworks should return at least one active physical network
+        #  3. createNetworkOffering fails - ip ranges should be specified when creating shared network offering
+
         
         #Create an account
         self.account = Account.create(
@@ -492,6 +545,37 @@ class TestSharedNetworks(cloudstackTestCase):
             self.debug("Network Offering creation failed with vlan as true and ip ranges as False in advance mode and with shared guest type.")
 
     def test_createSharedNetwork_All(self):
+        """ Test Shared Network ALL  """
+        
+        # Steps,
+        #  1. create an Admin Account - admin-XABU1
+        #  2. listPhysicalNetworks in available zone
+        #  3. createNetworkOffering: 
+        #    - name = "MySharedOffering"
+        #    - guestiptype="shared"
+        #    - services = {Dns, Dhcp, UserData}
+        #    -  conservemode = false
+        #    - specifyVlan = true
+        #    - specifyIpRanges = true
+        #  4. Enable network offering - updateNetworkOffering - state=Enabled
+        #  5. createNetwork
+        #    - name = mysharednetwork, displaytext = mysharednetwork
+        #    - vlan = 123 (say)
+        #    - networkofferingid = <mysharedoffering>
+        #    - gw = 172.16.15.1, startip = 172.16.15.2 , endip = 172.16.15.200, netmask=255.255.255.0
+        #    - scope = all
+        #  6. create User account - user-ASJDK
+        #  7. deployVirtualMachine in this account and in admin account & within networkid = <mysharednetwork>
+        #  8. delete the admin account and the user account
+        # Validations,
+        #  1. listAccounts name=admin-XABU1, state=enabled returns your account
+        #  2. listPhysicalNetworks should return at least one active physical network
+        #  3. listNetworkOfferings - name=mysharedoffering , should list offering in disabled state
+        #  4. listNetworkOfferings - name=mysharedoffering, should list enabled offering
+        #  5. listNetworks - name = mysharednetwork should list the successfully created network, verify the guestIp ranges and CIDR are as given in the createNetwork call
+        #  6. No checks reqd
+        #  7. a. listVirtualMachines should show both VMs in running state in the user account and the admin account
+        #     b. VM's IPs shoud be in the range of the shared network ip ranges
         
         #Create admin account
         self.admin_account = Account.create(
@@ -743,6 +827,37 @@ class TestSharedNetworks(cloudstackTestCase):
             self.fail("Virtual machine ip should be from the ip range assigned to network created.")
 
     def test_createSharedNetwork_accountSpecific(self):
+        """ Test Shared Networm with scope account """
+        
+        # Steps,
+        #  1. create an Admin Account - admin-XABU1
+        #     create a user account = user-SOPJD
+        #  2. listPhysicalNetworks in available zone
+        #  3. createNetworkOffering: 
+        #    - name = "MySharedOffering"
+        #    - guestiptype="shared"
+        #    - services = {Dns, Dhcp, UserData}
+        #    -  conservemode = false
+        #    - specifyVlan = true
+        #    - specifyIpRanges = true
+        #  4. Enable network offering - updateNetworkOffering - state=Enabled
+        #  5. createNetwork
+        #    - name = mysharednetwork, displaytext = mysharednetwork
+        #    - vlan = 123 (say)
+        #    - networkofferingid = <mysharedoffering>
+        #    - gw = 172.16.15.1, startip = 172.16.15.2 , endip = 172.16.15.200, netmask=255.255.255.0
+        #    - scope = account, account = user-SOPJD, domain = ROOT
+        #  6. deployVirtualMachine in this account and in admin account & within networkid = <mysharednetwork>
+        #  7. delete the admin account and the user account
+        # Validations,
+        #  1. listAccounts name=admin-XABU1 and user-SOPJD, state=enabled returns your account
+        #  2. listPhysicalNetworks should return at least one active physical network
+        #  3. listNetworkOfferings - name=mysharedoffering , should list offering in disabled state
+        #  4. listNetworkOfferings - name=mysharedoffering, should list enabled offering
+        #  5. listNetworks - name = mysharednetwork should list the successfully created network, verify the guestIp ranges and CIDR are as given in the createNetwork call
+        #  6. VM deployed in admin account should FAIL to deploy
+        #     VM should be deployed in user account only
+        #    verify VM's IP is within shared network range
         
         #Create admin account
         self.admin_account = Account.create(
@@ -975,6 +1090,39 @@ class TestSharedNetworks(cloudstackTestCase):
             self.fail("Virtual machine ip should be from the ip range assigned to network created.")
 
     def test_createSharedNetwork_domainSpecific(self):
+        """ Test Shared Network with scope domain """
+        
+        # Steps,
+        #  1. create an Admin Account - admin-XABU1
+        #    create a domain - DOM
+        #    create a domain admin account = domadmin-SOPJD
+        #    create a user in domain - DOM
+        #  2. listPhysicalNetworks in available zone
+        #  3. createNetworkOffering: 
+        #    - name = "MySharedOffering"
+        #    - guestiptype="shared"
+        #    - services = {Dns, Dhcp, UserData}
+        #    -  conservemode = false
+        #    - specifyVlan = true
+        #    - specifyIpRanges = true
+        #  4. Enable network offering - updateNetworkOffering - state=Enabled
+        #  5. createNetwork
+        #    - name = mysharednetwork, displaytext = mysharednetwork
+        #    - vlan = 123 (say)
+        #    - networkofferingid = <mysharedoffering>
+        #    - gw = 172.16.15.1, startip = 172.16.15.2 , endip = 172.16.15.200, netmask=255.255.255.0
+        #    - scope = domain, domain = DOM
+        #  6. deployVirtualMachine in this admin, domainadmin and user account & within networkid = <mysharednetwork>
+        #  7. delete all the accounts
+        # Validations,
+        #  1. listAccounts state=enabled returns your accounts, listDomains - DOM should be created
+        #  2. listPhysicalNetworks should return at least one active physical network
+        #  3. listNetworkOfferings - name=mysharedoffering , should list offering in disabled state
+        #  4. listNetworkOfferings - name=mysharedoffering, should list enabled offering
+        #  5. listNetworks - name = mysharednetwork should list the successfully created network, verify the guestIp ranges and CIDR are as given in the createNetwork call
+        #  6. VM should NOT be deployed in admin account
+        #     VM should be deployed in user account and domain admin account
+        #     verify VM's IP are within shared network range
         
         #Create admin account
         self.admin_account = Account.create(
@@ -1296,6 +1444,38 @@ class TestSharedNetworks(cloudstackTestCase):
             self.fail("Virtual machine ip should be from the ip range assigned to network created.")
 
     def test_createSharedNetwork_projectSpecific(self):
+        """ Test Shared Network with scope project  """
+        
+        # Steps,
+        #  1. create an Admin Account - admin-XABU1
+        #     create a project - proj-SADJKS
+        #     create another project - proj-SLDJK
+        #  2. listPhysicalNetworks in available zone
+        #  3. createNetworkOffering: 
+        #    - name = "MySharedOffering"
+        #    - guestiptype="shared"
+        #    - services = {Dns, Dhcp, UserData}
+        #    -  conservemode = false
+        #    - specifyVlan = true
+        #    - specifyIpRanges = true
+        #  4. Enable network offering - updateNetworkOffering - state=Enabled
+        #  5. createNetwork
+        #    - name = mysharednetwork, displaytext = mysharednetwork
+        #    - vlan = 123 (say)
+        #    - networkofferingid = <mysharedoffering>
+        #    - gw = 172.16.15.1, startip = 172.16.15.2 , endip = 172.16.15.200, netmask=255.255.255.0
+        #    - scope = project, project =  proj-SLDJK
+        #  6. deployVirtualMachine in admin, project and user account & within networkid = <mysharednetwork>
+        #  7. delete all the accounts
+        # Validations,
+        #  1. listAccounts state=enabled returns your accounts, listDomains - DOM should be created
+        #  2. listPhysicalNetworks should return at least one active physical network
+        #  3. listNetworkOfferings - name=mysharedoffering , should list offering in disabled state
+        #  4. listNetworkOfferings - name=mysharedoffering, should list enabled offering
+        #  5. listNetworks - name = mysharednetwork should list the successfully created network, verify the guestIp ranges and CIDR are as given in the createNetwork call
+        #  6. VM should NOT be deployed in admin account and user account
+        #     VM should be deployed in project account only
+        #     verify VM's IP are within shared network range
         
         #Create admin account
         self.admin_account = Account.create(
@@ -1558,6 +1738,27 @@ class TestSharedNetworks(cloudstackTestCase):
             self.fail("Virtual machine ip should be from the ip range assigned to network created.")
 		
     def test_createSharedNetwork_usedVlan(self):
+        """ Test Shared Network with used vlan 01 """
+        
+        # Steps,
+        #  1. create an Admin account
+        #  2. create a shared NetworkOffering
+        #  3. enable the network offering
+        #  4. listPhysicalNetworks 
+        #    - vlan = guest VLAN range = 10-90 (say)
+        #  5. createNetwork
+        #    - name = mysharednetwork, displaytext = mysharednetwork
+        #    - vlan = any vlan between 10-90
+        #    - networkofferingid = <mysharedoffering>
+        #    - gw = 172.16.15.1, startip = 172.16.15.2 , endip = 172.16.15.200, netmask=255.255.255.0
+        #    - scope = all
+        #  6. delete admin account
+        # Validations,
+        #  1. listAccounts state=enabled returns your account
+        #  2. listNetworkOfferings - name=mysharedoffering , should list offering in disabled state
+        #  3. listNetworkOfferings - name=mysharedoffering, should list enabled offering
+        #  4. listPhysicalNetworks should return at least one active physical network
+        #  5. network creation should FAIL since VLAN is used for guest networks 
         
         #Create admin account
         self.admin_account = Account.create(
@@ -1678,7 +1879,7 @@ class TestSharedNetworks(cloudstackTestCase):
             )
         
         #create network using the shared network offering created
-        self.services["network"]["vlan"] = str.split(physical_network.vlan, "-")[0]
+        self.services["network"]["vlan"] = str.split(str(physical_network.vlan), "-")[0]
         self.services["network"]["acltype"] = "domain"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
@@ -1695,6 +1896,29 @@ class TestSharedNetworks(cloudstackTestCase):
             self.debug("Network creation failed because the valn id being used by another network.")
     
     def test_createSharedNetwork_usedVlan2(self):
+        """ Test Shared Network with used vlan 02 """
+        
+        # Steps,
+        #  1. create an Admin account
+        #  2. create a shared NetworkOffering
+        #  3. enable the network offering
+        #  4. listPhysicalNetworks 
+        #    - vlan = guest VLAN range = 10-90 (say)
+        #  5. createNetwork
+        #    - name = mysharednetwork, displaytext = mysharednetwork
+        #    - vlan = any vlan beyond 10-90 (123 for eg)
+        #    - networkofferingid = <mysharedoffering>
+        #    - gw = 172.16.15.1, startip = 172.16.15.2 , endip = 172.16.15.200, netmask=255.255.255.0
+        #    - scope = all
+        #  6. createNetwork again with same VLAN  but different IP ranges and gw
+        #  7. delete admin account
+        # Validations,
+        #  1. listAccounts state=enabled returns your account
+        #  2. listNetworkOfferings - name=mysharedoffering , should list offering in disabled state
+        #  3. listNetworkOfferings - name=mysharedoffering, should list enabled offering
+        #  4. listPhysicalNetworks should return at least one active physical network
+        #  5. network creation shoud PASS
+        #  6. network creation should FAIL since VLAN is already used by previously created network
         
         #Create admin account
         self.admin_account = Account.create(
@@ -1817,7 +2041,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.services["network"]["acltype"] = "Domain"
         self.services["network"]["networkofferingid"] = self.shared_network_offering.id
         self.services["network"]["physicalnetworkid"] = physical_network.id
-	self.services["network"]["vlan"] = "567"
+        self.services["network"]["vlan"] = "567"
         self.network = Network.create(
                          self.api_client,
                          self.services["network"],
@@ -1867,10 +2091,21 @@ class TestSharedNetworks(cloudstackTestCase):
             self.debug("Network creation failed because the valn id being used by another network.")
 
     def test_deployVM_multipleSharedNetwork(self):
-
+        """ Test Vm deployment with multiple shared networks """
+        
+        # Steps,
+        #  0. create a user account
+        #  1. Create two shared Networks (scope=ALL, different IP ranges)
+        #  2. deployVirtualMachine in both the above networkids within the user account
+        #  3. delete the user account
+        # Validations,
+        #  1. shared networks should be created successfully
+        #  2. a. VM should deploy successfully
+        #     b. VM should bedeployed in both networks and have IP in both the networks
+        
         #Create admin account
-	self.admin_account = Account.create(
-	                                     self.api_client,
+        self.admin_account = Account.create(
+	                     self.api_client,
 					     self.services["account"],
 					     admin=True,
 					     domainid=self.domain.id
@@ -2113,6 +2348,22 @@ class TestSharedNetworks(cloudstackTestCase):
         self.assertTrue(self.network1_admin_account_virtual_machine.nic[0].ipaddress is not None, "ip should be assigned to running virtual machine")
 
     def test_deployVM_isolatedAndShared(self):
+        """ Test VM deployment in shared and isolated networks """
+        
+        # Steps,
+        #  0. create a user account
+        #  1. Create one shared Network (scope=ALL, different IP ranges)
+        #  2. Create one Isolated Network 
+        #  3. deployVirtualMachine in both the above networkids within the user account
+        #  4. apply FW rule and enable PF for port 22 for guest VM on isolated network
+        #  5. delete the user account
+        # Validations,
+        #  1. shared network should be created successfully
+        #  2. isolated network should be created successfully
+        #  3. 
+        #    a. VM should deploy successfully
+        #    b. VM should bedeployed in both networks and have IP in both the networks
+        #  4. FW and PF should apply successfully, ssh into the VM should work over isolated network
         
         #Create admin account
         self.admin_account = Account.create(
@@ -2268,10 +2519,10 @@ class TestSharedNetworks(cloudstackTestCase):
         
         physical_network = list_physical_networks_response[0]        
 
-	#create network using the shared network offering created
-	self.services["network"]["acltype"] = "domain"
-	self.services["network"]["networkofferingid"] = self.shared_network_offering.id
-	self.services["network"]["physicalnetworkid"] = physical_network.id
+	    #create network using the shared network offering created
+        self.services["network"]["acltype"] = "domain"
+        self.services["network"]["networkofferingid"] = self.shared_network_offering.id
+        self.services["network"]["physicalnetworkid"] = physical_network.id
         self.shared_network = Network.create(
                          self.api_client,
                          self.services["network"],
@@ -2307,7 +2558,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.isolated_network = Network.create(
                          self.api_client,
                          self.services["isolated_network"],
-			 accountid=self.admin_account.account.name,
+		accountid=self.admin_account.account.name,
                          domainid=self.admin_account.account.domainid,
                          networkofferingid=self.isolated_network_offering.id,
                          zoneid=self.zone.id
@@ -2399,7 +2650,7 @@ class TestSharedNetworks(cloudstackTestCase):
         self.debug("Associated %s with network %s" % (self.public_ip.ipaddress.ipaddress, self.isolated_network.id))
         self.debug("Creating PF rule for IP address: %s" % self.public_ip.ipaddress.ipaddress)
 	    
-	public_ip = self.public_ip.ipaddress
+        public_ip = self.public_ip.ipaddress
 
         # Enable Static NAT for VM
         StaticNATRule.enable(
@@ -2408,7 +2659,7 @@ class TestSharedNetworks(cloudstackTestCase):
                              self.isolated_network_admin_account_virtual_machine.id
                             )
         
-	self.debug("Enabled static NAT for public IP ID: %s" % public_ip.id)
+        self.debug("Enabled static NAT for public IP ID: %s" % public_ip.id)
         #Create Firewall rule on source NAT
         fw_rule = FireWallRule.create(
                             self.api_client,
@@ -2444,6 +2695,12 @@ class TestSharedNetworks(cloudstackTestCase):
             self.fail("SSH Access failed for %s: %s" % (self.isolated_network_admin_account_virtual_machine.ipaddress, e))
 
     def test_networkWithsubdomainaccessTrue(self):
+        """ Test Shared Network with subdomainaccess=True """
+        
+        # Steps,
+        #  1. create Network using shared network offering for scope=Account and subdomainaccess=true.
+        # Validations,
+        #  (Expected) API should fail saying that subdomainaccess cannot be given when scope is Account
         
         #Create admin account
         self.admin_account = Account.create(
@@ -2582,6 +2839,12 @@ class TestSharedNetworks(cloudstackTestCase):
             self.debug("Network creation failed because subdomainaccess parameter was passed when scope was account.")
 
     def test_networkWithsubdomainaccessFalse(self):
+        """ Test shared Network with subdomainaccess=False """
+        
+        # Steps,
+        #  1. create Network using shared network offering for scope=Account and subdomainaccess=false
+        # Validations,
+        #  (Expected) API should fail saying that subdomainaccess cannot be given when scope is Account
         
         #Create admin account
         self.admin_account = Account.create(
