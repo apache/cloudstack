@@ -133,7 +133,7 @@ import com.cloud.vm.dao.NicDao;
 
 @Local(value = { ElasticLoadBalancerManager.class })
 public class ElasticLoadBalancerManagerImpl implements
-        ElasticLoadBalancerManager, Manager, VirtualMachineGuru<DomainRouterVO> {
+ElasticLoadBalancerManager, Manager, VirtualMachineGuru<DomainRouterVO> {
     private static final Logger s_logger = Logger
             .getLogger(ElasticLoadBalancerManagerImpl.class);
 
@@ -330,7 +330,7 @@ public class ElasticLoadBalancerManagerImpl implements
     @Override
     public boolean applyLoadBalancerRules(Network network,
             List<? extends FirewallRule> rules)
-            throws ResourceUnavailableException {
+                    throws ResourceUnavailableException {
         if (rules == null || rules.isEmpty()) {
             return true;
         }
@@ -452,7 +452,7 @@ public class ElasticLoadBalancerManagerImpl implements
     }
 
     public DomainRouterVO deployELBVm(Network guestNetwork, DeployDestination dest, Account owner, Map<Param, Object> params) throws
-            ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
+    ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         long dcId = dest.getDataCenter().getId();
 
         // lock guest network
@@ -531,7 +531,7 @@ public class ElasticLoadBalancerManagerImpl implements
     }
 
     private DomainRouterVO start(DomainRouterVO elbVm, User user, Account caller, Map<Param, Object> params) throws StorageUnavailableException, InsufficientCapacityException,
-            ConcurrentOperationException, ResourceUnavailableException {
+    ConcurrentOperationException, ResourceUnavailableException {
         s_logger.debug("Starting ELB VM " + elbVm);
         if (_itMgr.start(elbVm, params, user, caller) != null) {
             return _routerDao.findById(elbVm.getId());
@@ -649,7 +649,7 @@ public class ElasticLoadBalancerManagerImpl implements
                 }
             } else {
                 s_logger.warn("ELB: Found existing load balancers matching requested new LB");
-                throw new NetworkRuleConflictException("ELB: Found existing load balancers matching requested new LB");
+                throw new NetworkRuleConflictException("ELB: Found existing load balancers matching requested new LB", null);
             }
 
             Network network = _networkMgr.getNetwork(networkId);

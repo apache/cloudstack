@@ -235,7 +235,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
                 serviceResponse.setName(service.getName());
                 if ("Lb".equalsIgnoreCase(service.getName())) {
                     Map<Capability, String> serviceCapabilities = serviceCapabilitiesMap
-                    .get(service);
+                            .get(service);
                     if (serviceCapabilities != null) {
                         for (Capability capability : serviceCapabilities
                                 .keySet()) {
@@ -964,13 +964,15 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             if (ipVO == null) {
                 throw new InvalidParameterValueException("Unable to create load balance rule; can't find/allocate source IP", null);
             } else if (ipVO.isOneToOneNat()) {
-                throw new NetworkRuleConflictException("Can't do load balance on ip address: " + ipVO.getAddress());
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(ipVO, ipVO.getId(), "ipId"));
+                throw new NetworkRuleConflictException("Can't do load balance on ip address with specified id", idList);
             }
 
             try {
                 if (ipVO.getAssociatedWithNetworkId() == null) {
                     boolean assignToVpcNtwk = network.getVpcId() != null
-                    && ipVO.getVpcId() != null && ipVO.getVpcId().longValue() == network.getVpcId();
+                            && ipVO.getVpcId() != null && ipVO.getVpcId().longValue() == network.getVpcId();
                     if (assignToVpcNtwk) {
                         // set networkId just for verification purposes
                         _networkMgr.checkIpForService(ipVO, Service.Lb, lb.getNetworkId());

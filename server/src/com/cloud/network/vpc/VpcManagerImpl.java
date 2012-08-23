@@ -579,7 +579,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         if (!NetUtils.isValidCIDR(cidr)) {
             throw new InvalidParameterValueException("Invalid CIDR specified " + cidr, null);
         }
-        
+
         //cidr has to be RFC 1918 complient
         if (!NetUtils.validateGuestCidr(cidr)) {
             throw new InvalidParameterValueException("Guest Cidr " + cidr + " is not RFC1918 compliant", null);
@@ -942,7 +942,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
             Account networkOwner, Vpc vpc, Long networkId, String gateway) {
 
         NetworkOffering guestNtwkOff = _configMgr.getNetworkOffering(ntwkOffId);
-        
+
         if (guestNtwkOff == null) {
             throw new InvalidParameterValueException("Can't find network offering by id specified", null);
         }
@@ -999,7 +999,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
                         + " is supported for network offering that can be used in VPC", null);
             }
         }
-        
+
         //2) Only Isolated networks with Source nat service enabled can be added to vpc
         if (!(guestNtwkOff.getGuestType() == GuestType.Isolated 
                 && supportedSvcs.contains(Service.SourceNat))) {
@@ -1105,7 +1105,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         if (vpcElement == null) {
             throw new CloudRuntimeException("Failed to initialize vpc element");
         }
-        
+
         return vpcElement;
     }
 
@@ -1586,13 +1586,13 @@ public class VpcManagerImpl implements VpcManager, Manager{
         if (!NetUtils.isValidCIDR(cidr)){
             throw new InvalidParameterValueException("Invalid format for cidr " + cidr, null);
         }
-        
+
         //validate the cidr
         //1) CIDR should be outside of VPC cidr for guest networks
         if (NetUtils.isNetworksOverlap(vpc.getCidr(), cidr)) {
             throw new InvalidParameterValueException("CIDR should be outside of VPC cidr " + vpc.getCidr(), null);
         }
-        
+
         //2) CIDR should be outside of link-local cidr
         if (NetUtils.isNetworksOverlap(vpc.getCidr(), NetUtils.getLinkLocalCIDR())) {
             throw new InvalidParameterValueException("CIDR should be outside of link local cidr " + NetUtils.getLinkLocalCIDR(), null);
@@ -1698,7 +1698,9 @@ public class VpcManagerImpl implements VpcManager, Manager{
             }
 
             if (NetUtils.isNetworksOverlap(route.getCidr(), newRoute.getCidr())) {
-                throw new NetworkRuleConflictException("New static route cidr conflicts with existing route " + route);
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(route, route.getId(), "routeId"));
+                throw new NetworkRuleConflictException("New static route cidr conflicts with existing route with specified id", idList);
             }
         }
     }

@@ -316,7 +316,9 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
             idList.add(new IdentityProxy(ipAddress, ipAddrId, "ipId"));
             throw new InvalidParameterValueException("Unable to create static nat rule; ip with specified ipId doesn't exist in the system", idList);
         } else if (ipAddress.isSourceNat() || !ipAddress.isOneToOneNat() || ipAddress.getAssociatedWithVmId() == null) {
-            throw new NetworkRuleConflictException("Can't do static nat on ip address: " + ipAddress.getAddress());
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(ipAddress, ipAddress.getId(), "ipId"));
+            throw new NetworkRuleConflictException("Can't do static nat on ip address with specified id", idList);
         }
 
         _firewallMgr.validateFirewallRule(caller, ipAddress, rule.getSourcePortStart(), rule.getSourcePortEnd(), rule.getProtocol(), Purpose.StaticNat, FirewallRuleType.User);
@@ -514,15 +516,22 @@ public class RulesManagerImpl implements RulesManager, RulesService, Manager {
         if (!ipAddress.isOneToOneNat()) { // Dont allow to enable static nat if PF/LB rules exist for the IP
             List<FirewallRuleVO> portForwardingRules = _firewallDao.listByIpAndPurposeAndNotRevoked(ipAddress.getId(), Purpose.PortForwarding);
             if (portForwardingRules != null && !portForwardingRules.isEmpty()) {
-                throw new NetworkRuleConflictException("Failed to enable static nat for the ip address " + ipAddress + " as it already has PortForwarding rules assigned");
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(ipAddress, ipAddress.getId(), "ipId"));
+                throw new NetworkRuleConflictException("Failed to enable static nat for the ip address with specified id as it already has PortForwarding rules assigned", idList);
             }
 
             List<FirewallRuleVO> loadBalancingRules = _firewallDao.listByIpAndPurposeAndNotRevoked(ipAddress.getId(), Purpose.LoadBalancing);
             if (loadBalancingRules != null && !loadBalancingRules.isEmpty()) {
-                throw new NetworkRuleConflictException("Failed to enable static nat for the ip address " + ipAddress + " as it already has LoadBalancing rules assigned");
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(ipAddress, ipAddress.getId(), "ipId"));
+                throw new NetworkRuleConflictException("Failed to enable static nat for the ip address with specified id as it already has LoadBalancing rules assigned", idList);
             }
         } else if (ipAddress.getAssociatedWithVmId() != null && ipAddress.getAssociatedWithVmId().longValue() != vmId) {
-            throw new NetworkRuleConflictException("Failed to enable static for the ip address " + ipAddress + " and vm id=" + vmId + " as it's already assigned to antoher vm");
+            List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+            idList.add(new IdentityProxy(ipAddress, ipAddress.getId(), "ipId"));
+            idList.add(new IdentityProxy("vm_instance", vmId, "vmId"));
+            throw new NetworkRuleConflictException("Failed to enable static nat for the ip address with specified id on vm with specified id as it's already assigned to antoher vm", idList);
         }
 
         IPAddressVO oldIP = _ipAddressDao.findByAssociatedVmId(vmId);

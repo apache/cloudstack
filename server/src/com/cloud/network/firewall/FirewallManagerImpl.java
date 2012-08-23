@@ -37,7 +37,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IPAddressVO;
-import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Service;
@@ -314,18 +313,18 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
             }
 
             if (!oneOfRulesIsFirewall) {
+                List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                idList.add(new IdentityProxy(newRule, newRule.getSourceIpAddressId(), "ipId"));
                 if (rule.getPurpose() == Purpose.StaticNat && newRule.getPurpose() != Purpose.StaticNat) {
-                    throw new NetworkRuleConflictException("There is 1 to 1 Nat rule specified for the ip address id=" 
-                            + newRule.getSourceIpAddressId());
+                    throw new NetworkRuleConflictException("There is 1 to 1 Nat rule specified for the ip address with specified id", idList);
                 } else if (rule.getPurpose() != Purpose.StaticNat && newRule.getPurpose() == Purpose.StaticNat) {
-                    throw new NetworkRuleConflictException("There is already firewall rule specified for the ip address id="
-                            + newRule.getSourceIpAddressId());
+                    throw new NetworkRuleConflictException("There is already firewall rule specified for the ip address with specified id", idList);
                 }
             }
 
             if (rule.getNetworkId() != newRule.getNetworkId() && rule.getState() != State.Revoke) {
                 throw new NetworkRuleConflictException("New rule is for a different network than what's specified in rule "
-                        + rule.getXid());
+                        + rule.getXid(), null);
             }
 
             if (newRule.getProtocol().equalsIgnoreCase(NetUtils.ICMP_PROTO) && newRule.getProtocol().equalsIgnoreCase(rule.getProtocol())) {
@@ -359,8 +358,10 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
                         && !newRule.getProtocol().equalsIgnoreCase(rule.getProtocol()));
 
                 if (!(allowPf || allowStaticNat || oneOfRulesIsFirewall)) {
-                    throw new NetworkRuleConflictException("The range specified, " + newRule.getSourcePortStart() + "-" + newRule.getSourcePortEnd() + ", conflicts with rule " + rule.getId()
-                            + " which has " + rule.getSourcePortStart() + "-" + rule.getSourcePortEnd());
+                    List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
+                    idList.add(new IdentityProxy(rule, rule.getId(), "ruleId"));
+                    throw new NetworkRuleConflictException("The range specified, " + newRule.getSourcePortStart() + "-" + newRule.getSourcePortEnd() + ", conflicts with rule with specified id " +
+                            " which has " + rule.getSourcePortStart() + "-" + rule.getSourcePortEnd(), idList);
                 }
             }
         }
