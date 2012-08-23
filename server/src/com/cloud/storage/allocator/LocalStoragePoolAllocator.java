@@ -31,6 +31,8 @@ import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.DateUtil;
@@ -97,18 +99,34 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
             s_logger.debug("LocalStoragePoolAllocator trying to find storage pool to fit the vm");
         }
 
-        List<StoragePool> availablePool;
-        while (!(availablePool = super.allocateToPool(dskCh, vmProfile, plan, myAvoids, 1)).isEmpty()) {
-            StoragePool pool = availablePool.get(0);
-            myAvoids.addPool(pool.getId());
-            List<StoragePoolHostVO> hostsInSPool = _poolHostDao.listByPoolId(pool.getId());
-            assert (hostsInSPool.size() == 1) : "Local storage pool should be one host per pool";
+        // data disk and host identified from deploying vm (attach volume case)
+        if (dskCh.getType() == Volume.Type.DATADISK && vmProfile.getVirtualMachine() != null && vmProfile.getVirtualMachine().getHostId() != null) {
+            List<StoragePoolHostVO> hostPools = _poolHostDao.listByHostId(vmProfile.getVirtualMachine().getHostId());
+            for (StoragePoolHostVO hostPool: hostPools) {
+                StoragePoolVO pool = _storagePoolDao.findById(hostPool.getPoolId());
+                if (pool != null && pool.isLocal()) {
+                    s_logger.debug("Found suitable local storage pool " + pool.getId() + ", adding to list");
+                    suitablePools.add(pool);
+                }
 
-            s_logger.debug("Found suitable local storage pool " + pool.getId() + ", adding to list");
-            suitablePools.add(pool);
+                if (suitablePools.size() == returnUpTo) {
+                    break;
+                }
+            }
+        } else {
+            List<StoragePool> availablePool;
+            while (!(availablePool = super.allocateToPool(dskCh, vmProfile, plan, myAvoids, 1)).isEmpty()) {
+                StoragePool pool = availablePool.get(0);
+                myAvoids.addPool(pool.getId());
+                List<StoragePoolHostVO> hostsInSPool = _poolHostDao.listByPoolId(pool.getId());
+                assert (hostsInSPool.size() == 1) : "Local storage pool should be one host per pool";
 
-            if (suitablePools.size() == returnUpTo) {
-                break;
+                s_logger.debug("Found suitable local storage pool " + pool.getId() + ", adding to list");
+                suitablePools.add(pool);
+
+                if (suitablePools.size() == returnUpTo) {
+                    break;
+                }
             }
         }
 

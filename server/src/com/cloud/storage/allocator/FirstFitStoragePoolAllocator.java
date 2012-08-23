@@ -26,6 +26,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
@@ -73,23 +74,11 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
         	s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
         }
 
-        List<StoragePoolVO> pools = null;
-        // volume is shared "or" vm is not known "or" no host associated then go here
-        if (!dskCh.useLocalStorage() || vmProfile.getVirtualMachine() == null || vmProfile.getVirtualMachine().getHostId() == null) {
-            pools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags(), !dskCh.useLocalStorage());
-        } else { // volume is local and vm host id is known
-            pools = new ArrayList<StoragePoolVO>();
-            List<StoragePoolHostVO> hostPools = _poolHostDao.listByHostId(vmProfile.getVirtualMachine().getHostId());
-            for (StoragePoolHostVO hostPool: hostPools) {
-                StoragePoolVO pool = _storagePoolDao.findById(hostPool.getPoolId());
-                if (pool != null && pool.isLocal()) {
-                    pools.add(pool);
-                }
-            }
-        }
+        List<StoragePoolVO> pools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags(), null);
         if (pools.size() == 0) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("No storage pools available for " + (dskCh.useLocalStorage() ? "local" : "shared") + " volume allocation, returning");
+            	String storageType = dskCh.useLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString();
+                s_logger.debug("No storage pools available for " + storageType + " volume allocation, returning");
             }
             return suitablePools;
         }
