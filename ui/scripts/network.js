@@ -162,8 +162,9 @@
       preFilter: function(args) {
         var havingSecurityGroupNetwork = false;
         var havingBasicZones = false;
+        var havingAdvancedZones = true;
 
-        // Get basic zones
+        // Get zone types
         $.ajax({
           url: createURL('listZones'),
           async: false,
@@ -173,8 +174,12 @@
             var basicZones = $.grep(zones, function(zone) {
               return zone.networktype == 'Basic';
             });
+            var advancedZones = $.grep(zones, function(zone) {
+              return zone.networktype == 'Advanced';
+            });
 
             havingBasicZones = basicZones.length ? true : false;
+            havingAdvancedZones = advancedZones.length ? true : false;
           }
         });
 
@@ -194,7 +199,7 @@
 
         var sectionsToShow = ['networks', 'vpnCustomerGateway'];
 
-        if (!havingBasicZones) {
+        if (havingAdvancedZones) {
           sectionsToShow.push('vpc');
         }
 
