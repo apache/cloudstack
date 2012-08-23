@@ -3827,7 +3827,7 @@
 
             tabFilter:function(args) {
                 var hiddenTabs=[];
-                var isRouterOwner = isAdmin() ;
+                var isRouterOwner = isAdmin() || isDomainAdmin();
                 if(!isRouterOwner)
                   hiddenTabs.push("router");
                return hiddenTabs;
