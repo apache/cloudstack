@@ -212,6 +212,8 @@ class deployDataCenters():
                     vrconfig.id = vrprovid
                     self.apiClient.configureVirtualRouterElement(vrconfig)
                     self.enableProvider(pnetprovres[0].id)
+                elif provider.name == 'SecurityGroupProvider':
+                    self.enableProvider(pnetprovres[0].id)
             elif provider.name in ['Netscaler', 'JuniperSRX', 'F5BigIp']:
                 netprov = addNetworkServiceProvider.addNetworkServiceProviderCmd()
                 netprov.name = provider.name
