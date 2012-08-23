@@ -1462,7 +1462,7 @@
 										});
 
 										$.ajax({
-                      url: createURL("listNetworks&listAll=true&projectid=-1&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&physicalnetworkid=" + selectedPhysicalNetworkObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
+                      url: createURL("listNetworks&listAll=true&trafficType=Guest&zoneId=" + selectedZoneObj.id + "&physicalnetworkid=" + selectedPhysicalNetworkObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
                       dataType: "json",
 											async: false,
                       success: function(json) {
@@ -1786,7 +1786,7 @@
                         ],
                         dataProvider: function(args) {			
 													$.ajax({
-														url: createURL("listNetworks&id=" + args.context.networks[0].id + "&listAll=true" + "&projectid=-1"), //pass "&listAll=true" to "listNetworks&id=xxxxxxxx" for now before API gets fixed.
+														url: createURL("listNetworks&id=" + args.context.networks[0].id + "&listAll=true"), //pass "&listAll=true" to "listNetworks&id=xxxxxxxx" for now before API gets fixed.
 														dataType: "json",
 														async: false,
 														success: function(json) {														 
