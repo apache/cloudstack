@@ -476,9 +476,26 @@ public class MockVmManagerImpl implements MockVmManager {
 	}
 
     @Override
-    public Answer rebootVM(RebootCommand cmd) {
-        return new RebootAnswer(cmd, "Rebooted "+cmd.getVmName(), false);
-    }
+	public Answer rebootVM(RebootCommand cmd) {
+		Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+		try {
+			txn.start();
+			MockVm vm = _mockVmDao.findByVmName(cmd.getVmName());
+			if (vm != null) {
+				vm.setState(State.Running);
+				_mockVmDao.update(vm.getId(), (MockVMVO) vm);
+			}
+			txn.commit();
+			return new RebootAnswer(cmd, "Rebooted " + cmd.getVmName(), true);
+		} catch (Exception ex) {
+			txn.rollback();
+			throw new CloudRuntimeException("unable to stop vm " + cmd.getVmName(), ex);
+		} finally {
+			txn.close();
+			txn = Transaction.open(Transaction.CLOUD_DB);
+			txn.close();
+		}
+	}
 
     @Override
     public Answer getVncPort(GetVncPortCommand cmd) {
