@@ -33,7 +33,6 @@ import javax.naming.ConfigurationException;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
-import org.apache.tools.ant.taskdefs.Length.When;
 
 import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.agent.AgentManager;

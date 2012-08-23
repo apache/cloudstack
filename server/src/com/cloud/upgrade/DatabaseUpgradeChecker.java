@@ -334,6 +334,9 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                     currentVersion = this.getClass().getSuperclass().getPackage().getImplementationVersion();
                 }
 
+                if ( currentVersion == null )
+                	return;
+                
                 s_logger.info("DB version = " + dbVersion + " Code Version = " + currentVersion);
 
                 if (Version.compare(Version.trimToPatch(dbVersion), Version.trimToPatch(currentVersion)) > 0) {
