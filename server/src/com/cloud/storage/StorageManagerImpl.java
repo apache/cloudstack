@@ -3841,9 +3841,11 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
         // display UserVM volumes only
         SearchBuilder<VMInstanceVO> vmSearch = _vmInstanceDao.createSearchBuilder();
+        vmSearch.and("state", vmSearch.entity().getState(), SearchCriteria.Op.NEQ);
         vmSearch.and("type", vmSearch.entity().getType(), SearchCriteria.Op.NIN);
         vmSearch.or("nulltype", vmSearch.entity().getType(), SearchCriteria.Op.NULL);
         sb.join("vmSearch", vmSearch, sb.entity().getInstanceId(), vmSearch.entity().getId(), JoinBuilder.JoinType.LEFTOUTER);
+        
 
         if (tags != null && !tags.isEmpty()) {
             SearchBuilder<ResourceTagVO> tagSearch = _resourceTagDao.createSearchBuilder();
@@ -3903,7 +3905,13 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         }
 
         // Don't return DomR and ConsoleProxy volumes
-        sc.setJoinParameters("vmSearch", "type", VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
+        sc.setJoinParameters("vmSearch", "type", VirtualMachine.Type.ConsoleProxy, 
+                VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.DomainRouter);
+        
+        //if caller is the regular user, don't return volumes of Destroyed vms
+        if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
+            sc.setJoinParameters("vmSearch", "state", VirtualMachine.State.Destroyed);
+        }
 
         // Only return volumes that are not destroyed
         sc.setParameters("state", Volume.State.Destroy);
