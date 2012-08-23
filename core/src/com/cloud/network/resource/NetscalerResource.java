@@ -1855,7 +1855,12 @@ public class NetscalerResource implements ServerResource {
                             try {
                                 monitor_metric_binding.set_monitorname(monitorName);
                                 monitor_metric_binding.set_metric(counterName);
-                                monitor_metric_binding.set_metricthreshold(1);
+                                /*
+                                 * Setting it to max to make sure traffic is not affected due to 'LOAD' monitoring.
+                                 * For Ex. if CPU is tracked and CPU is greater than 80, it is still < than Integer.MAX_VALUE
+                                 * so traffic will continue to flow.
+                                 */
+                                monitor_metric_binding.set_metricthreshold(Integer.MAX_VALUE);
                                 monitor_metric_binding.add(_netscalerService, monitor_metric_binding);
                             } catch (Exception e) {
                                 // Ignore Exception on cleanup
