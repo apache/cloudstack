@@ -37,6 +37,18 @@ db.cloud.trustStorePassword=
 db.cloud.encryption.type=none
 db.cloud.encrypt.secret=
 
+# Simulator Database settings
+db.simulator.name=simulator
+db.simulator.host=@DBHOST@
+db.simulator.port=3306
+db.simulator.username=@DBUSER@
+db.simulator.password=@DBPW@
+db.simulator.maxIdle=30
+db.simulator.maxActive=100
+db.simulator.maxWait=10000
+db.simulator.autoReconnect=true
+
+
 # usage database settings
 db.usage.username=@DBUSER@
 db.usage.password=@DBPW@
