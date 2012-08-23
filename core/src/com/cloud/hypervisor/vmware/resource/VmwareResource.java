@@ -1466,7 +1466,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             VirtualDevice nic = findVirtualNicDevice(vmMo, cmd.getNic().getMac());
-
+            if ( nic == null ) {
+                return new UnPlugNicAnswer(cmd, true, "success");
+            }
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
             deviceConfigSpecArray[0] = new VirtualDeviceConfigSpec();
