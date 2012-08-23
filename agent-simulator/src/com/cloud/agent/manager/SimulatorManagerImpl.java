@@ -106,7 +106,7 @@ public class SimulatorManagerImpl implements SimulatorManager {
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         try {
-            Connection conn = Transaction.getStandaloneConnectionWithException();
+            Connection conn = Transaction.getStandaloneSimulatorConnection();
             conn.setAutoCommit(true);
             _concierge = new ConnectionConcierge("SimulatorConnection", conn, true);
         } catch (SQLException e) {
@@ -299,7 +299,9 @@ public class SimulatorManagerImpl implements SimulatorManager {
             txn.rollback();
             return new Answer(cmd, false, e.toString());
         } finally {
-            txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);
+            txn.transitToAutoManagedConnection(Transaction.SIMULATOR_DB);
+            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn.close();
         }
     }
 
@@ -335,7 +337,9 @@ public class SimulatorManagerImpl implements SimulatorManager {
         try {
             return _mockVmMgr.getVmStates(hostGuid);
         } finally {
-            txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);
+            txn.transitToAutoManagedConnection(Transaction.SIMULATOR_DB);
+            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn.close();
         }
     }
     
@@ -347,7 +351,9 @@ public class SimulatorManagerImpl implements SimulatorManager {
         try {
             return _mockVmMgr.getVms(hostGuid);
         } finally {
-            txn.transitToAutoManagedConnection(Transaction.CLOUD_DB);
+            txn.transitToAutoManagedConnection(Transaction.SIMULATOR_DB);
+            txn = Transaction.open(Transaction.CLOUD_DB);
+            txn.close();
         }
     }
 
