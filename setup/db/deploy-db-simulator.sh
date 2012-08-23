@@ -51,6 +51,11 @@ if [ ! -f create-index-fk.sql ]; then
   exit 6;
 fi
 
+if [ ! -f create-database-simulator.sql ]; then
+  printf "Error: Unable to find create-database-simulator.sql\n"
+  exit 7;
+fi
+
 PATHSEP=':'
 if [[ $OSTYPE == "cygwin" ]] ; then
   export CATALINA_HOME=`cygpath -m $CATALINA_HOME`
@@ -72,6 +77,23 @@ elif [ $mysqlout -eq 127 ]; then
   exit 11
 elif [ $mysqlout -ne 0 ]; then
   printf "Error: Cannot execute create-database.sql\n"
+  exit 11
+fi
+
+mysql --user=root --password=$3 < create-database-simulator.sql > /dev/null 2>/dev/null
+mysqlout=$?
+if [ $mysqlout -eq 1 ]; then
+  printf "Please enter root password for MySQL.\n" 
+  mysql --user=root --password < create-database-simulator.sql
+  if [ $? -ne 0 ]; then
+    printf "Error: Cannot execute create-database-simulator.sql\n"
+    exit 10
+  fi
+elif [ $mysqlout -eq 127 ]; then
+  printf "Error: Cannot execute create-database-simulator.sql - mysql command not found.\n"
+  exit 11
+elif [ $mysqlout -ne 0 ]; then
+  printf "Error: Cannot execute create-database-simulator.sql\n"
   exit 11
 fi
 
