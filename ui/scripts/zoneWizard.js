@@ -497,7 +497,26 @@
           },
           localstorageenabled: {
             label: 'label.local.storage.enabled',
-            isBoolean: true
+            isBoolean: true,
+            onChange: function(args) {
+              var $checkbox = args.$checkbox;
+
+              if ($checkbox.is(':checked')) {
+                cloudStack.dialog.confirm({
+                  message: 'message.zoneWizard.enable.local.storage',
+                  action: function() {
+                    $checkbox.attr('checked', true);
+                  },
+                  cancelAction: function() {
+                    $checkbox.attr('checked', false);
+                  }
+                });
+
+                return false;
+              }
+
+              return true;
+            }
           }
         }
       },

@@ -7,6 +7,7 @@
 <% long now = System.currentTimeMillis(); %>
 <script language="javascript">
 dictionary = {
+'message.zoneWizard.enable.local.storage': '<fmt:message key="message.zoneWizard.enable.local.storage"/>',
 'label.edit.tags': '<fmt:message key="label.edit.tags"/>',  
 'label.local.storage.enabled': '<fmt:message key="label.local.storage.enabled"/>',
 'label.tier.details': '<fmt:message key="label.tier.details"/>',
