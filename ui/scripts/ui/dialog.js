@@ -273,6 +273,15 @@
               }, 100);
             }
           }
+
+          // Setup on click event
+          if (field.onChange) {
+            $input.click(function() {
+              field.onChange({
+                $checkbox: $input
+              });
+            });
+          }
         } else if (field.dynamic) {
           // Generate a 'sub-create-form' -- append resulting fields
           $input = $('<div>').addClass('dynamic-input').appendTo($value);
