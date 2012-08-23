@@ -71,7 +71,7 @@
             var resourceLimits = $.grep(
               json.listresourcelimitsresponse.resourcelimit,
               function(resourceLimit) {
-                return resourceLimit.resourcetype != 5 && resourceLimit.resourcetype != 7;
+                return resourceLimit.resourcetype != 5 && resourceLimit.resourcetype != 8;
               }
             );
             
