@@ -169,3 +169,5 @@ CREATE TABLE `cloud`.`port_profile` (
 DELETE FROM `cloud`.`storage_pool_host_ref` WHERE pool_id IN (SELECT id FROM storage_pool WHERE removed IS NOT NULL);
 
 ALTER TABLE `cloud`.`service_offering` MODIFY `nw_rate` smallint(5) unsigned DEFAULT '200' COMMENT 'network rate throttle mbits/s';
+UPDATE `cloud`.`snapshots` set swift_id=null where swift_id=0;
+
