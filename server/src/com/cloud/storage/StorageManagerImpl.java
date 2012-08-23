@@ -121,6 +121,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.network.NetworkManager;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -1963,12 +1964,22 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             throw new InvalidParameterValueException("Zone is not configured to use local storage but volume's disk offering " + diskOffering.getName() + " uses it", null);
         }
 
-        // Check that there is a shared primary storage pool in the specified zone
+        // Check that there is appropriate primary storage pool in the specified zone
         List<StoragePoolVO> storagePools = _storagePoolDao.listByDataCenterId(zoneId);
-        boolean sharedPoolExists = false;
-        for (StoragePoolVO storagePool : storagePools) {
-            if (storagePool.isShared()) {
-                sharedPoolExists = true;
+        boolean appropriatePoolExists = false;
+        if (!diskOffering.getUseLocalStorage()) {
+            for (StoragePoolVO storagePool : storagePools) {
+                if (storagePool.isShared()) {
+                	appropriatePoolExists = true;
+                	break;
+                }
+            }
+        } else {
+            for (StoragePoolVO storagePool : storagePools) {
+                if (storagePool.isLocal()) {
+                	appropriatePoolExists = true;
+                	break;
+                }
             }
         }
 
@@ -1981,8 +1992,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                     "please check hosts' agent status and see if they are disabled", idList);
         }
 
-        if (!sharedPoolExists) {
-            throw new InvalidParameterValueException("Please specify a zone that has at least one shared primary storage pool.", null);
+        if (!appropriatePoolExists) {
+            String storageType = diskOffering.getUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString();
+            throw new InvalidParameterValueException("Volume's disk offering uses " + storageType + " storage, please specify a zone that has at least one " + storageType + " primary storage pool.", null);
         }
 
         String userSpecifiedName = cmd.getVolumeName();
