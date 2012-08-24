@@ -483,36 +483,54 @@ def cleanup_rules_for_dead_vms():
 
 
 def cleanup_rules():
-  try:
-
-    chainscmd = "iptables-save | grep '^:' | grep -v '.*-def' | grep -v '.*-eg' | awk '{print $1}' | cut -d':' -f2"
-    chains = execute(chainscmd).split('\n')
-    cleaned = 0
-    cleanup = []
-    for chain in chains:
-        if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
-            vm_name = chain
+    try:
+        chainscmd = "iptables-save | grep '^:' | grep -v '.*-def' | grep -v '.*-eg' | awk '{print $1}' | cut -d':' -f2"
+        chains = execute(chainscmd).split('\n')
+        cleanup = []
+        for chain in chains:
+            if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
+                vm_name = chain
                 
-            cmd = "virsh list |grep " + vm_name 
-            try:
-                result = execute(cmd)
-            except:
-                result = None
+                cmd = "virsh list |grep " + vm_name 
+                try:
+                    result = execute(cmd)
+                except:
+                    result = None
 
-            if result == None or len(result) == 0:
-                logging.debug("chain " + chain + " does not correspond to a vm, cleaning up")
-                cleanup.append(vm_name)
-                continue
-            if result.find("running") == -1:
-                logging.debug("vm " + vm_name + " is not running, cleaning up")
-                cleanup.append(vm_name)
-                
-    for vmname in cleanup:
-        destroy_network_rules_for_vm(vmname)
+                if result == None or len(result) == 0:
+                    logging.debug("chain " + chain + " does not correspond to a vm, cleaning up")
+                    cleanup.append(vm_name)
+                    continue
+                if result.find("running") == -1:
+                    logging.debug("vm " + vm_name + " is not running, cleaning up")
+                    cleanup.append(vm_name)
+        
+        chainscmd = "ebtables-save |grep :i |awk '{print $1}' |sed -e 's/\-in//g' |sed -e 's/\-out//g' |sed -e 's/^://g'"
+        chains = execute(chainscmd).split('\n')
+        for chain in chains:
+            if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
+                vm_name = chain
+    
+                cmd = "virsh list |grep " + vm_name
+                try:
+                    result = execute(cmd)
+                except:
+                    result = None
+
+                if result == None or len(result) == 0:
+                    logging.debug("chain " + chain + " does not correspond to a vm, cleaning up")
+                    cleanup.append(vm_name)
+                    continue
+                if result.find("running") == -1:
+                    logging.debug("vm " + vm_name + " is not running, cleaning up")
+                    cleanup.append(vm_name)
+
+        for vmname in cleanup:
+            destroy_network_rules_for_vm(vmname)
                     
-    logging.debug("Cleaned up rules for " + str(len(cleanup)) + " chains")                
-  except:
-    logging.debug("Failed to cleanup rules !")
+        logging.debug("Cleaned up rules for " + str(len(cleanup)) + " chains")                
+    except:
+        logging.debug("Failed to cleanup rules !")
 
 def check_rule_log_for_vm(vmName, vmId, vmIP, domID, signature, seqno):
     vm_name = vmName;
