@@ -29,7 +29,7 @@ import com.cloud.vm.VirtualMachineProfile;
 public interface StoragePoolAllocator extends Adapter {
 	
 	//keeping since storageMgr is using this API for some existing functionalities
-	List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, long dcId, long podId, Long clusterId, Set<? extends StoragePool> avoids, int returnUpTo);	
+	List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, long dcId, long podId, Long clusterId, Long hostId, Set<? extends StoragePool> avoids, int returnUpTo);
 	
 	String chooseStorageIp(VirtualMachine vm, Host host, Host storage);
 

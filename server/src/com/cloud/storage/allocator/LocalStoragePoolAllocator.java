@@ -100,8 +100,8 @@ public class LocalStoragePoolAllocator extends FirstFitStoragePoolAllocator {
         }
 
         // data disk and host identified from deploying vm (attach volume case)
-        if (dskCh.getType() == Volume.Type.DATADISK && vmProfile.getVirtualMachine() != null && vmProfile.getVirtualMachine().getHostId() != null) {
-            List<StoragePoolHostVO> hostPools = _poolHostDao.listByHostId(vmProfile.getVirtualMachine().getHostId());
+        if (dskCh.getType() == Volume.Type.DATADISK && plan.getHostId() != null) {
+            List<StoragePoolHostVO> hostPools = _poolHostDao.listByHostId(plan.getHostId());
             for (StoragePoolHostVO hostPool: hostPools) {
                 StoragePoolVO pool = _storagePoolDao.findById(hostPool.getPoolId());
                 if (pool != null && pool.isLocal()) {
