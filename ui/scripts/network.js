@@ -298,45 +298,47 @@
                       });
                     }
                   },
-									vpcid: {
-										label: 'VPC',
-										dependsOn: 'networkOfferingId',
-										select: function(args) {										  
-											var networkOfferingObj;
-											$(networkOfferingObjs).each(function(key, value) {											  
-											  if(value.id == args.networkOfferingId) {
-												  networkOfferingObj = value;
-													return false; //break each loop
-												}												
-											});											
-											if(networkOfferingObj.forvpc == true) {
-											  args.$select.closest('.form-item').css('display', 'inline-block');
-											  $.ajax({
-												  url: createURL('listVPCs'),
-													data: {
-													  listAll: true
-													},
-													success: function(json) {													  
-														var items = json.listvpcsresponse.vpc;
-														var data;
-														if(items != null && items.length > 0) {
-														  data = $.map(items, function(item) {															  
-															  return {
-																  id: item.id,
-																	description: item.name
-																}
-															});															
-														}		
-														args.response.success({ data: data });
-													}
-												});											
-											}
-											else {
-											  args.$select.closest('.form-item').hide();
-											  args.response.success({ data: null });
-											}			
-										}
-									},
+
+                  vpcid: {
+                    label: 'label.vpc',
+                    dependsOn: 'networkOfferingId',
+                    select: function(args) {
+                      var networkOfferingObj;
+                      $(networkOfferingObjs).each(function(key, value) {
+                        if(value.id == args.networkOfferingId) {
+                          networkOfferingObj = value;
+                          return false; //break each loop
+                        }
+                      });
+                      if(networkOfferingObj.forvpc == true) {
+                        args.$select.closest('.form-item').css('display', 'inline-block');
+                        $.ajax({
+                          url: createURL('listVPCs'),
+                          data: {
+                            listAll: true
+                          },
+                          success: function(json) {
+                            var items = json.listvpcsresponse.vpc;
+                            var data;
+                            if(items != null && items.length > 0) {
+                              data = $.map(items, function(item) {
+                                return {
+                                  id: item.id,
+                                  description: item.name
+                                }
+                              });
+                            }
+                            args.response.success({ data: data });
+                          }
+                        });
+                      }
+                      else {
+                        args.$select.closest('.form-item').hide();
+                        args.response.success({ data: null });
+                      }
+                    }
+                  },
+
                   guestGateway: { label: 'label.guest.gateway' },
                   guestNetmask: { label: 'label.guest.netmask' }
                 }
@@ -385,21 +387,21 @@
           fields: {
             name: { label: 'label.name' },
             account: { label: 'label.account' },
-            //zonename: { label: 'Zone' },
+            //zonename: { label: 'label.zone' },
             type: { label: 'label.type' },
             vlan: { label: 'label.vlan' },
             cidr: { label: 'label.cidr' }
             /*
-            state: {
-              label: 'State',
-                indicator: {
-                'Implemented': 'on',
-                'Setup': 'on',
-                'Allocated': 'on',
-                'Destroyed': 'off'
-              }
-            }
-            */
+             state: {
+             label: 'label.state',
+             indicator: {
+             'Implemented': 'on',
+             'Setup': 'on',
+             'Allocated': 'on',
+             'Destroyed': 'off'
+             }
+             }
+             */
           },
           dataProvider: function(args) {
             var array1 = [];
@@ -773,7 +775,7 @@
                           return "No";
                       }
                     },
-                    vlan: { label: 'VLAN ID' },
+                    vlan: { label: 'label.vlan.id' },
 
                     networkofferingname: { label: 'label.network.offering' },
 
@@ -815,8 +817,8 @@
 
                     gateway: { label: 'label.gateway' },
 
-                    //netmask: { label: 'Netmask' },
-                    cidr: { label: 'CIDR' },
+                    //netmask: { label: 'label.netmask' },
+                    cidr: { label: 'label.cidr' },
 
                     networkdomaintext: {
                       label: 'label.network.domain.text'
@@ -828,10 +830,10 @@
 
                     domain: { label: 'label.domain' },
                     account: { label: 'label.account' },
-										
-										vpcid: { 
-										  label: 'VPC ID',	
-                      converter: function(args) {											  
+
+                    vpcid: {
+                      label: 'label.vpc.id',
+                      converter: function(args) {
                         if(args != null)
 												  return args;
 												else
@@ -1069,10 +1071,10 @@
         title: 'label.menu.ipaddresses',
         listView: {
           id: 'ipAddresses',
-          label: 'IPs',          
+          label: 'label.ips',
           fields: {
             ipaddress: {
-              label: 'IP',
+              label: 'label.ips',
               converter: function(text, item) {
                 if (item.issourcenat) {
                   return text + ' [' + _l('label.source.nat') + ']';
@@ -1081,9 +1083,8 @@
                 return text;
               }
             },
-            zonename: { label: 'label.zone' },
-            //vlanname: { label: 'VLAN' },   					  
-						virtualmachinedisplayname: { label: 'label.vm.name' },						 
+            zonename: { label: 'label.zone' },            
+            virtualmachinedisplayname: { label: 'label.vm.name' },
             state: {
               converter: function(str) {
                 // For localization
@@ -1655,12 +1656,12 @@
 								
                 fields: [
                   {
-                    ipaddress: { label: 'IP' }
+                    ipaddress: { label: 'label.ip' }
                   },
                   {
                     id: { label: 'label.id' },    
                     associatednetworkid: { label: 'label.associated.network.id' },
-										networkname: { label: 'Associated Network' },
+										networkname: { label: 'label.associated.network' },
                     state: { label: 'label.state' },
 										networkid: { label: 'label.network.id' },
                     issourcenat: { label: 'label.source.nat', converter: cloudStack.converters.toBooleanText },
@@ -2221,9 +2222,9 @@
                     }),
                     headerFields: {
                       tier: {
-                        label: 'Tier',
-                        select: function(args) {	
-													if('vpc' in args.context) {		
+                        label: 'label.tier',
+                        select: function(args) {
+                          if('vpc' in args.context) {
                             var data = {
 														  //listAll: true,  //do not pass listAll to listNetworks under VPC
 															supportedservices: 'Lb'
@@ -2624,7 +2625,7 @@
                   portForwarding: {
                     headerFields: {
                       tier: {
-                        label: 'Tier',
+                        label: 'label.tier',
                         select: function(args) {
 													if('vpc' in args.context) {		
                             var data = {
@@ -2776,7 +2777,7 @@
                                 jobId: data.createportforwardingruleresponse.jobid
                               },
                               notification: {
-                                label: 'Add port forwarding rule',
+                                label: 'label.add.port.forwarding.rule',
                                 poll: pollAsyncJobResult
                               }
                             });
@@ -3121,7 +3122,7 @@
                     name: { label: 'label.name' }
                   },
                   {
-                    id: { label: 'ID' },
+                    id: { label: 'label.id' },
                     description: { label: 'label.description' },
                     domain: { label: 'label.domain' },
                     account: { label: 'label.account' }
@@ -3201,7 +3202,7 @@
                     'endport': { edit: true, label: 'label.end.port' },
                     'icmptype': { edit: true, label: 'ICMP.type', isHidden: true },
                     'icmpcode': { edit: true, label: 'ICMP.code', isHidden: true },
-                    'cidr': { edit: true, label: 'CIDR', isHidden: true },
+                    'cidr': { edit: true, label: 'label.cidr', isHidden: true },
                     'accountname': {
                       edit: true,
                       label: 'label.account.and.security.group',
@@ -3381,7 +3382,7 @@
                     'endport': { edit: true, label: 'label.end.port' },
                     'icmptype': { edit: true, label: 'ICMP.type', isHidden: true },
                     'icmpcode': { edit: true, label: 'ICMP.code', isHidden: true },
-                    'cidr': { edit: true, label: 'CIDR', isHidden: true },
+                    'cidr': { edit: true, label: 'label.cidr', isHidden: true },
                     'accountname': {
                       edit: true,
                       label: 'label.account.and.security.group',
@@ -3550,17 +3551,17 @@
       },
       vpc: {
         type: 'select',
-        title: 'VPC',
+        title: 'label.vpc',
         id: 'vpc',
         listView: {
           id: 'vpc',
-          label: 'VPC',
+          label: 'label.vpc',
           fields: {
-            name: { label: 'label.name' },                  
-						displaytext: { label: 'label.description' },										
-						zonename: { label: 'label.zone' },
-						cidr: { label: 'label.cidr' },
-                                                state: {label: 'State', indicator: { 'Enabled': 'on', 'Disabled': 'off'}}
+            name: { label: 'label.name' },
+            displaytext: { label: 'label.description' },
+            zonename: { label: 'label.zone' },
+            cidr: { label: 'label.cidr' },
+            state: {label: 'label.state', indicator: { 'Enabled': 'on', 'Disabled': 'off'}}
           },
           dataProvider: function(args) {            
 						var array1 = [];  
@@ -3587,19 +3588,19 @@
           },
           actions: {
             add: {
-              label: 'Add VPC',							
-							messages: {								
-								notification: function(args) {
-									return 'Add VPC';
-								}
-							},
+              label: 'label.add.vpc',
+              messages: {
+                notification: function(args) {
+                  return 'label.add.vpc';
+                }
+              },
               createForm: {
-                title: 'Add VPC',
-								messages: {
-									notification: function(args) { 
-										return 'Add VPC'; 
-									}
-								},
+                title: 'label.add.vpc',
+                messages: {
+                  notification: function(args) {
+                    return 'label.add.vpc';
+                  }
+                },
                 fields: {
                   name: { 
 									  label: 'label.name', 
@@ -3607,10 +3608,10 @@
 									},   
                   displaytext: {
                     label: 'label.description',
-										validation: { required: true } 
-                  },									
-									zoneid: {
-                    label: 'Zone',
+                    validation: { required: true }
+                  },
+                  zoneid: {
+                    label: 'label.zone',
                     validation: { required: true },
                     select: function(args) {
                       var data = { listAll: true };
@@ -3634,13 +3635,13 @@
                       });
                     }
                   },
-									cidr: { 
-									  label: 'Super CIDR for Guest Networks',
-										validation: { required: true } 
-									},		
-									networkdomain: { 
-									  label: 'DNS domain for Guest Networks'
-									}		
+                  cidr: {
+                    label: 'label.super.cidr.for.guest.networks',
+                    validation: { required: true }
+                  },
+                  networkdomain: {
+                    label: 'label.DNS.domain.for.guest.networks'
+                  }
                 }
               },              
               action: function(args) {										
@@ -3696,7 +3697,7 @@
 							
             },
             configureVpc: {
-              label: 'Configure VPC',
+              label: 'label.configure.vpc',
               textLabel: 'label.configure',
               action: {
                 custom: cloudStack.uiCustom.vpc(cloudStack.vpc)
@@ -3708,7 +3709,7 @@
             name: 'label.details',											
 						actions: {
               configureVpc: {
-                label: 'Edit VPC',
+                label: 'label.edit.vpc',
                 textLabel: 'label.configure',
                 action: {
                   custom: cloudStack.uiCustom.vpc(cloudStack.vpc)
@@ -3748,15 +3749,15 @@
                   poll: pollAsyncJobResult
                 }								
               },
-														
-							restart: {
-                label: 'restart VPC',
+
+              restart: {
+                label: 'label.restart.vpc',
                 messages: {
                   confirm: function(args) {
-                    return 'Please confirm that you want to restart the VPC';
+                    return 'message.restart.vpc';
                   },
                   notification: function(args) {
-                    return 'restart VPC';
+                    return 'label.restart.vpc';
                   }
                 },
                 action: function(args) {								 
@@ -3789,13 +3790,13 @@
               },							
 							
               remove: {
-                label: 'remove VPC',
+                label: 'label.remove.vpc',
                 messages: {
                   confirm: function(args) {
-                    return 'Please confirm that you want to delete the VPC';
+                    return 'message.remove.vpc';
                   },
                   notification: function(args) {
-                    return 'remove VPC';
+                    return 'label.remove.vpc';
                   }
                 },
                 action: function(args) {								 
@@ -3884,20 +3885,20 @@
                   title: 'VPC Router Details',
                   fields:[
                        {
-                         name: {label:'Router Name'}
+                         name: {label:'label.name'}
                        },
                        {
-                          id:{ label:'ID'},
+                          id:{ label:'label.id'},
                           zonename: { label: 'label.zone'},
-                          dns1: {label: 'DNS'},
-                          gateway: {label:'Gateway'},
-                          publicip: {label: 'Public IP'},
-                          guestipaddress:{ label: 'Guest IP'},
-                          linklocalip: {label: 'Link Local IP'},
-                          state: { label:'State'},
-                          serviceofferingname: {label:'Service Offering'},
+                          dns1: {label: 'label.dns'},
+                          gateway: {label:'label.gateway'},
+                          publicip: {label: 'label.public.ip'},
+                          guestipaddress:{ label: 'label.guest.ip'},
+                          linklocalip: {label: 'label.linklocal.ip'},
+                          state: { label:'label.state'},
+                          serviceofferingname: {label:'label.service.offering'},
                           isredundantrouter:{
-                                label: 'Redundant Router',
+                                label: 'label.redundant.router',
                                 converter: function(booleanValue) {
                                       if (booleanValue == true) {
                                           return "<font color='red'>Yes</font>";
@@ -3932,15 +3933,15 @@
       
 			vpnCustomerGateway: {
         type: 'select',
-        title: 'VPN Customer Gateway',
+        title: 'label.vpn.customer.gateway',
         listView: {
           id: 'vpnCustomerGateway',
-          label: 'VPN Customer Gateway',
+          label: 'label.vpn.customer.gateway',
           fields: {
-            name: { label: 'label.name' },
-						gateway: { label: 'label.gateway' },
-            cidrlist: { label: 'CIDR list' },
-						ipsecpsk: { label: 'IPsec Preshared-Key' }
+					  name: { label: 'label.name' },
+            gateway: { label: 'label.gateway' },
+            cidrlist: { label: 'label.CIDR.list' },
+            ipsecpsk: { label: 'label.IPsec.preshared.key' }
           },
           dataProvider: function(args) {					  
 						var array1 = [];  
@@ -3965,19 +3966,19 @@
               }
             });
           },
-										
-					actions: {
-						add: {
-							label: 'Add VPN Customer Gateway',
-							messages: {                
-								notification: function(args) {
-									return 'Add VPN Customer Gateway';
-								}
-							},
-							createForm: {
-								title: 'Add VPN Customer Gateway',
-								fields: {		
-                  name: {
+
+          actions: {
+            add: {
+              label: 'label.add.vpn.customer.gateway',
+              messages: {
+                notification: function(args) {
+                  return 'label.add.vpn.customer.gateway';
+                }
+              },
+              createForm: {
+                title: 'label.add.vpn.customer.gateway',
+                fields: {
+								  name: {
 									  label: 'label.name',
 										validation: { required: true }
 									},								
@@ -3987,25 +3988,26 @@
 									}, 
 									cidrlist: { 
 										label: 'CIDR list',
-                                                                                desc: 'Please enter a comma separated list of CIDRs if more than one',
-                                                                                validation: { required: true }
+										desc: 'Please enter a comma separated list of CIDRs if more than one',
+										validation: { required: true }
 									},
                   gateway: {
                     label: 'label.gateway',
                     validation: { required: true }
                   },
                   cidrlist: {
-                    label: 'CIDR list',
+                    label: 'label.CIDR.list',
+                    desc:'Please enter a comma separated list of CIDRs if more than one',    
                     validation: { required: true }
                   },
                   ipsecpsk: {
-                    label: 'IPsec Preshared-Key',
+                    label: 'label.IPsec.preshared.key',
                     validation: { required: true }
                   },                 								
 									
                   //IKE Policy									
 									ikeEncryption: {
-                    label: 'IKE Encryption',
+                    label: 'label.IKE.encryption',
                     select: function(args) {
                       var items = [];
                       items.push({id: '3des', description: '3des'});
@@ -4016,7 +4018,7 @@
                     }
                   },									
 									ikeHash: {
-                    label: 'IKE Hash',
+                    label: 'label.IKE.hash',
                     select: function(args) {
                       var items = [];
                       items.push({id: 'md5', description: 'md5'});
@@ -4025,7 +4027,7 @@
                     }
                   },									
 									ikeDh: {
-                    label: 'IKE DH',
+                    label: 'label.IKE.DH',
                     select: function(args) {
                       var items = [];
                       items.push({id: '', description: 'None'});
@@ -4037,7 +4039,7 @@
 									
 									//ESP Policy
                   espEncryption: {
-                    label: 'ESP Encryption',
+                    label: 'label.ESP.encryption',
                     select: function(args) {
                       var items = [];
                       items.push({id: '3des', description: '3des'});
@@ -4048,7 +4050,7 @@
                     }
                   },									
 									espHash: {
-                    label: 'ESP Hash',
+                    label: 'label.ESP.hash',
                     select: function(args) {
                       var items = [];
                       items.push({id: 'md5', description: 'md5'});
@@ -4057,7 +4059,7 @@
                     }
                   },									
 									perfectForwardSecrecy: {
-                    label: 'Perfect Forward Secrecy',
+                    label: 'label.perfect.forward.secrecy',
                     select: function(args) {
                       var items = [];
                       items.push({id: '', description: 'None'});
@@ -4068,18 +4070,18 @@
                   },																	
 									
 									ikelifetime: {
-                    label: 'IKE lifetime (second)',
+                    label: 'label.IKE.lifetime',
                     defaultValue: '86400',
                     validation: { required: false, number: true }
                   },
 									esplifetime: {
-                    label: 'ESP Lifetime (second)',
+                    label: 'label.ESP.lifetime',
                     defaultValue: '3600',
                     validation: { required: false, number: true }
                   },
 									
 									dpd: {
-									  label: 'Dead Peer Detection',
+									  label: 'label.dead.peer.detection',
 										isBoolean: true,
 										isChecked: false
 									}                 
@@ -4195,13 +4197,13 @@
               },
 
               remove: {
-                label: 'delete VPN Customer Gateway',
+                label: 'label.delete.VPN.customer.gateway',
                 messages: {
                   confirm: function(args) {
-                    return 'Please confirm that you want to delete this VPN Customer Gateway';
+                    return 'message.delete.VPN.customer.gateway';
                   },
                   notification: function(args) {
-                    return 'delete VPN Customer Gateway';
+                    return 'label.delete.VPN.customer.gateway';
                   }
                 },
                 action: function(args) {								  
@@ -4246,19 +4248,19 @@
 					            validation: { required: true }
 										},
                     cidrlist: { 
-										  label: 'CIDR list',
+										  label: 'label.CIDR.list',
                       isEditable: true,
 					            validation: { required: true } 
 										},
                     ipsecpsk: { 
-										  label: 'IPsec Preshared-Key',
+										  label: 'label.IPsec.preshared.key',
                       isEditable: true,
 					            validation: { required: true } 
 										},   					
 										
 										//IKE Policy									
 										ikeEncryption: {
-											label: 'IKE Encryption',
+											label: 'label.IKE.encryption',
 											isEditable: true,
 											select: function(args) {
 												var items = [];
@@ -4270,7 +4272,7 @@
 											}
 										},									
 										ikeHash: {
-											label: 'IKE Hash',
+											label: 'label.IKE.hash',
 											isEditable: true,
 											select: function(args) {
 												var items = [];
@@ -4280,7 +4282,7 @@
 											}
 										},									
 										ikeDh: {
-											label: 'IKE DH',
+											label: 'label.IKE.DH',
 											isEditable: true,
 											select: function(args) {
 												var items = [];
@@ -4293,7 +4295,7 @@
 										
 										//ESP Policy
 										espEncryption: {
-											label: 'ESP Encryption',
+											label: 'label.ESP.encryption',
 											isEditable: true,
 											select: function(args) {
 												var items = [];
@@ -4305,7 +4307,7 @@
 											}
 										},									
 										espHash: {
-											label: 'ESP Hash',
+											label: 'label.ESP.hash',
 											isEditable: true,
 											select: function(args) {
 												var items = [];
@@ -4315,7 +4317,7 @@
 											}
 										},									
 										perfectForwardSecrecy: {
-											label: 'Perfect Forward Secrecy',
+											label: 'label.perfect.forward.secrecy',
 											isEditable: true,
 											select: function(args) {
 												var items = [];
@@ -4327,18 +4329,18 @@
 										},	           
 									 
 									 	ikelifetime: {
-											label: 'IKE lifetime (second)',
+											label: 'label.IKE.lifetime',
 											isEditable: true,											
 											validation: { required: false, number: true }
 										},
 										esplifetime: {
-											label: 'ESP Lifetime (second)',
+											label: 'label.ESP.lifetime',
 											isEditable: true,											
 											validation: { required: false, number: true }
 										},
 										
 										dpd: {
-											label: 'Dead Peer Detection',											
+											label: 'label.dead.peer.detection',											
                       isBoolean: true,
                       isEditable: true,
                       converter:cloudStack.converters.toBooleanText
