@@ -41,7 +41,7 @@
     <compile-java jar.name="${usage.jar}" top.dir="${usage.dir}" classpath="usage.classpath" />
   </target>
 
-  <target name="build-usage" depends="build-all, compile-usage">
+  <target name="build-usage" depends="compile-usage">
     <mkdir dir="${usage.dist.dir}/conf" />
 
     <copy overwrite="true" todir="${usage.dist.dir}/lib">
@@ -51,14 +51,14 @@
     </copy>
   </target>
 
-  <target name="run-usage" depends="build-usage">
+  <target name="run-usage" depends="build-usage, deploy-usage">
     <java classname="com.cloud.usage.UsageServer" fork="true">
         <classpath refid="usage.classpath"/>
     	<jvmarg value="-Dpid=${pid}"/>
     </java>
   </target>	
 	
-    <target name="debug-usage" depends="build-usage">
+    <target name="debug-usage" depends="build-usage, deploy-usage">
     	<java classname="com.cloud.usage.UsageServer" fork="true">
 	        <classpath refid="usage.classpath"/>
 	        <jvmarg value="-Dpid=${pid}"/>
