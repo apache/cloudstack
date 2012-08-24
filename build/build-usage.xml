@@ -42,14 +42,8 @@
   </target>
 
   <target name="build-usage" depends="build-all, compile-usage">
-    <mkdir dir="${usage.dist.dir}/bin" />
     <mkdir dir="${usage.dist.dir}/conf" />
 
-    <copy todir="${usage.dist.dir}/bin">
-      <fileset dir="${usage.dir}/scripts">
-        <include name="usageserver.sh" />
-      </fileset>
-    </copy>
     <copy overwrite="true" todir="${usage.dist.dir}/lib">
       <fileset dir="${jar.dir}">
         <include name="${usage.jar}" />
