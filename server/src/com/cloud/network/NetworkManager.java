@@ -225,8 +225,6 @@ public interface NetworkManager extends NetworkService {
 
     List<Long> listNetworkOfferingsForUpgrade(long networkId);
 
-    PhysicalNetwork translateZoneIdToPhysicalNetwork(long zoneId);
-
     boolean isSecurityGroupSupportedInNetwork(Network network);
 
     boolean isProviderSupportServiceInNetwork(long networkId, Service service, Provider provider);

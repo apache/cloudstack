@@ -2206,13 +2206,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 throw new InvalidParameterValueException("Unable to find network offering with availability=" + Availability.Required + " to automatically create the network as a part of vm creation");
             }
 
-            PhysicalNetwork physicalNetwork = _networkMgr.translateZoneIdToPhysicalNetwork(zone.getId());
             if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
                 // get Virtual networks
                 List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated);
 
                 if (virtualNetworks.isEmpty()) {
-                    s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId() + " as a part of deployVM process");
+                    long physicalNetworkId = _networkMgr.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
+                    // Validate physical network
+                    PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+                    if (physicalNetwork == null) {
+                        throw new InvalidParameterValueException("Unable to find physical network with id: "+physicalNetworkId   + " and tag: " +requiredOfferings.get(0).getTags());
+                    }
+                    s_logger.debug("Creating network for account " + owner + " from the network offering id=" +requiredOfferings.get(0).getId() + " as a part of deployVM process");
                     Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), 
                             owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
                             null, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null);
@@ -3593,13 +3598,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         throw new InvalidParameterValueException("Unable to find network offering with availability="
                     + Availability.Required + " to automatically create the network as a part of vm creation");
                     }
-                    
-                    PhysicalNetwork physicalNetwork = _networkMgr.translateZoneIdToPhysicalNetwork(zone.getId());
                     if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
                         // get Virtual networks
                         List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
 
                         if (virtualNetworks.isEmpty()) {
+                            long physicalNetworkId = _networkMgr.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
+                            // Validate physical network
+                            PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+                            if (physicalNetwork == null) {
+                                throw new InvalidParameterValueException("Unable to find physical network with id: "+physicalNetworkId   + " and tag: " +requiredOfferings.get(0).getTags());
+                            }
+                            
                             s_logger.debug("Creating network for account " + newAccount + " from the network offering id=" + 
                         requiredOfferings.get(0).getId() + " as a part of deployVM process");
                             Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), 
