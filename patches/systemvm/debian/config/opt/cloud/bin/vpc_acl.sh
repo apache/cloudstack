@@ -85,7 +85,6 @@ acl_chain_for_guest_network () {
   sudo iptables -A FORWARD -o $dev -d $gcidr -j ACL_INBOUND_$dev  2>/dev/null
   # outbound
   sudo iptables -t mangle -N ACL_OUTBOUND_$dev 2>/dev/null
-  sudo iptables -t mangle -A ACL_OUTBOUND_$dev -j DROP 2>/dev/null
   sudo iptables -t mangle -A PREROUTING -m state --state NEW -i $dev -s $gcidr ! -d $ip -j ACL_OUTBOUND_$dev  2>/dev/null
 }
 
@@ -109,6 +108,7 @@ acl_entry_for_guest_network() {
   
   # note that rules are inserted after the RELATED,ESTABLISHED rule 
   # but before the DROP rule
+  local egress=0
   for lcidr in $cidrs
   do
     [ "$prot" == "reverted" ] && continue;
@@ -124,6 +124,7 @@ acl_entry_for_guest_network() {
       else
         sudo iptables -t mangle -I ACL_OUTBOUND_$dev -p $prot -d $lcidr  \
                     --icmp-type $typecode  -j ACCEPT
+        let egress++
       fi
     else
       if [ "$ttype" == "Ingress" ]
@@ -133,6 +134,7 @@ acl_entry_for_guest_network() {
       else
         sudo iptables -t mangle -I ACL_OUTBOUND_$dev -p $prot -d $lcidr \
                     $DPORT -j ACCEPT
+        let egress++
       fi
     fi
     result=$?
@@ -140,7 +142,14 @@ acl_entry_for_guest_network() {
        logger -t cloud "Error adding iptables entry for guest network : $gcidr,inbound:$inbound:$prot:$sport:$eport:$cidrs" &&
        break
   done
-      
+
+  if [ $egress -eq 0 ]
+  then
+    sudo iptables -t mangle -A ACL_OUTBOUND_$dev -j ACCEPT 2>/dev/null
+  else
+    sudo iptables -t mangle -A ACL_OUTBOUND_$dev -j DROP 2>/dev/null
+  fi     
+ 
   logger -t cloud "$(basename $0): exit apply acl rules for guest network : $gcidr"  
   return $result
 }
