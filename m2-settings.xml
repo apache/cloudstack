@@ -38,7 +38,7 @@
           </snapshots>
           <id>repo1</id>
           <name>repo1</name>
-          <url>http://repo1.maven.org/maven2</url>
+          <url>http://repo.maven.apache.org/maven2</url>
         </repository>
         <repository>
           <snapshots>
