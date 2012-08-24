@@ -19,7 +19,7 @@
 package org.apache.cloudstack.platform.subsystem.api.network;
 
 public interface NetworkSubsystem {
-    String createNetwork();
+    String create();
 
     String start(String network, String reservationId);
 

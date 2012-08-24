@@ -1011,6 +1011,7 @@ CREATE TABLE  `cloud`.`vm_instance` (
   `uuid` varchar(40),
   `instance_name` varchar(255) NOT NULL COMMENT 'name of the vm instance running on the hosts',
   `state` varchar(32) NOT NULL,
+  `desired_state` varchar(32) NULL,
   `vm_template_id` bigint unsigned,
   `guest_os_id` bigint unsigned NOT NULL,
   `private_mac_address` varchar(17),

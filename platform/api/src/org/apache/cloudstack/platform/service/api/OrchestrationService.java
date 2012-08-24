@@ -28,7 +28,7 @@ import com.cloud.vm.VirtualMachine;
 
 public interface OrchestrationService {
     /**
-     * Reserves  a new virtual machine
+     * creates a new virtual machine
      * 
      * @param uuid externally unique name to reference the virtual machine
      * @param template reference to the template
@@ -42,7 +42,7 @@ public interface OrchestrationService {
      * @param details extra details to store for the VM
      * @return VirtualMachine
      */
-    VirtualMachine create(String uuid, 
+    VirtualMachine create(String name, 
             String template,
             String hostName,
             int cpu, 
@@ -84,7 +84,6 @@ public interface OrchestrationService {
      * @return job Id
      * @throws CloudRuntimeException if error 
      */
-    @Job(callback=)
     String deploy(String reservationId);
 
     /**

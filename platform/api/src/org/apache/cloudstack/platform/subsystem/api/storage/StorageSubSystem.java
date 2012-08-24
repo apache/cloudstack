@@ -8,6 +8,8 @@ public interface StorageSubSystem {
     String getType();
     Class<? extends Grouping> getScope();
 
+    create();
+
     URI grantAccess(String vol, String reservationId);
     URI RemoveAccess(String vol, String reservationId);
 }

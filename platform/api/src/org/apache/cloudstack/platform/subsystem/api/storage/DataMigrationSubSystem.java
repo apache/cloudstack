@@ -18,6 +18,12 @@
  */
 package org.apache.cloudstack.platform.subsystem.api.storage;
 
+import java.net.URI;
+
+import com.cloud.org.Grouping;
+
 public interface DataMigrationSubSystem {
-    void migrate(String volume, String storagePool, String reservationId);
+
+    Class<? extends Grouping> getScopeCoverage();
+    void migrate(URI source, URI dest, String reservationId);
 }
