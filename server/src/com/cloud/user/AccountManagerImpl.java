@@ -85,6 +85,7 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.region.RegionManager;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.VMTemplateVO;
@@ -199,8 +200,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private ProjectAccountDao _projectAccountDao;
     @Inject
     private IPAddressDao _ipAddressDao;
-    //@Inject
-    //private RegionManager _regionMgr;
+    @Inject
+    private RegionManager _regionMgr;
     
     private Adapters<UserAuthenticator> _userAuthenticators;
 
@@ -678,7 +679,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account")
     public UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain,
-            Map<String, String> details) {
+            Map<String, String> details, String accountUUID, String userUUID, Long regionId) {
 
         if (accountName == null) {
             accountName = userName;
@@ -720,25 +721,51 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             }
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        if(regionId == null){
+            Transaction txn = Transaction.currentTxn();
+            txn.start();
 
-        // create account
-        Account account = createAccount(accountName, accountType, domainId, networkDomain, details);
-        long accountId = account.getId();
+        	// create account
+        	AccountVO account = createAccount(accountName, accountType, domainId, networkDomain, details, UUID.randomUUID().toString(), _regionMgr.getId());
+        	long accountId = account.getId();
 
-        // create the first user for the account
-        UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone);
+        	// create the first user for the account
+        	UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone);
 
-        if (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
-            // set registration token
-            byte[] bytes = (domainId + accountName + userName + System.currentTimeMillis()).getBytes();
-            String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
-            user.setRegistrationToken(registrationToken);
+        	if (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+        		// set registration token
+        		byte[] bytes = (domainId + accountName + userName + System.currentTimeMillis()).getBytes();
+        		String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
+        		user.setRegistrationToken(registrationToken);
+        	}
+        	txn.commit();
+        	//Propogate Add account to other Regions
+        	_regionMgr.propogateAddAccount(userName, password, firstName, lastName, email, timezone, accountName, accountType, domainId, 
+        			networkDomain, details, account.getUuid(), user.getUuid(), _regionMgr.getId());
+        	//check success
+            return _userAccountDao.findById(user.getId());
+        } else {
+        	// Account is propogated from another Region
+
+        	Transaction txn = Transaction.currentTxn();
+            txn.start();
+
+            // create account
+            AccountVO account = createAccount(accountName, accountType, domainId, networkDomain, details, accountUUID, regionId);
+            long accountId = account.getId();
+
+            // create the first user for the account
+            UserVO user = createUser(accountId, userName, password, firstName, lastName, email, timezone, userUUID, regionId);
+
+            if (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN) {
+                // set registration token
+                byte[] bytes = (domainId + accountName + userName + System.currentTimeMillis()).getBytes();
+                String registrationToken = UUID.nameUUIDFromBytes(bytes).toString();
+                user.setRegistrationToken(registrationToken);
+            }
+            txn.commit();
+            return _userAccountDao.findById(user.getId());
         }
-
-        txn.commit();
-        return _userAccountDao.findById(user.getId());
     }
 
     @Override
@@ -1061,7 +1088,6 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
             throw new InvalidParameterValueException("The account id=" + accountId + " manages project(s) with ids " + projectIds + "and can't be removed");
         }
-
         return deleteAccount(account, callerUserId, caller);
     }
 
@@ -1161,7 +1187,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         String newAccountName = cmd.getNewName();
         String networkDomain = cmd.getNetworkDomain();
         Map<String, String> details = cmd.getDetails();
-
+        
         boolean success = false;
         Account account = null;
         if (accountId != null) {
@@ -1516,7 +1542,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     @Override
     @DB
-    public Account createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details) {
+    public AccountVO createAccount(String accountName, short accountType, Long domainId, String networkDomain, Map details, String uuid, long regionId) {
         // Validate domain
         Domain domain = _domainMgr.getDomain(domainId);
         if (domain == null) {
@@ -1560,7 +1586,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         Transaction txn = Transaction.currentTxn();
         txn.start();
 
-        Account account = _accountDao.persist(new AccountVO(accountName, domainId, networkDomain, accountType));
+        AccountVO account = _accountDao.persist(new AccountVO(accountName, domainId, networkDomain, accountType, uuid, regionId));
 
         if (account == null) {
             throw new CloudRuntimeException("Failed to create account name " + accountName + " in domain id=" + domainId);
@@ -1589,7 +1615,18 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
         }
-        UserVO user = _userDao.persist(new UserVO(accountId, userName, password, firstName, lastName, email, timezone));
+        
+        UserVO user = _userDao.persist(new UserVO(accountId, userName, password, firstName, lastName, email, timezone, UUID.randomUUID().toString(), _regionMgr.getId()));
+
+        return user;
+    }
+
+    //ToDo Add events??
+    public UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String uuid, long regionId) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
+        }
+        UserVO user = _userDao.persist(new UserVO(accountId, userName, password, firstName, lastName, email, timezone, uuid, regionId));
 
         return user;
     }

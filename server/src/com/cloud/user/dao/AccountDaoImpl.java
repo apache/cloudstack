@@ -49,7 +49,6 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     protected final SearchBuilder<AccountVO> CleanupForRemovedAccountsSearch;
     protected final SearchBuilder<AccountVO> CleanupForDisabledAccountsSearch;
     protected final SearchBuilder<AccountVO> NonProjectAccountSearch;
-    private final long _regionId = 1;
     
     protected AccountDaoImpl() {
         AllFieldsSearch = createSearchBuilder();
@@ -260,10 +259,4 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
 		}
 	}
 	
-	@Override
-	@DB
-	public AccountVO persist(AccountVO account) {
-		account.setRegionId(_regionId);
-		return super.persist(account);
-	}
 }

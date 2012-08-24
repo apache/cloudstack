@@ -19,6 +19,7 @@ package com.cloud.region;
 import java.util.List;
 
 import com.cloud.api.commands.ListRegionsCmd;
+import com.cloud.api.commands.UpdateAccountCmd;
 import com.cloud.user.Account;
 
 
@@ -27,4 +28,9 @@ public interface RegionService {
 	public Region updateRegion(long id, String name, String endPoint);
 	public boolean removeRegion(long id);
 	public List<? extends Region> listRegions(ListRegionsCmd cmd);
+	boolean deleteUserAccount(long accountId);
+	Account updateAccount(UpdateAccountCmd cmd);
+	public Account lockAccount(String accountName, Long domainId, Long id);
+	public Account disableAccount(String accountName, Long domainId, Long id);
+	public Account enableAccount(String accountName, Long domainId, Long id);
 }

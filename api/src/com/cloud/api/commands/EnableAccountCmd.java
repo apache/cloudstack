@@ -24,6 +24,7 @@ import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.user.Account;
 
@@ -46,6 +47,9 @@ public class EnableAccountCmd extends BaseCmd {
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="Enables specified account in this domain.")
     private Long domainId;
 
+    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
+    private Boolean isPropagate;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -62,6 +66,10 @@ public class EnableAccountCmd extends BaseCmd {
         return domainId;
     }
 
+	public Boolean getIsPropagate() {
+		return isPropagate;
+	}
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -88,7 +96,13 @@ public class EnableAccountCmd extends BaseCmd {
 
     @Override
     public void execute(){
-        Account result = _accountService.enableAccount(getAccountName(), getDomainId(), getId());
+    	boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false;
+    	Account result = null;
+    	if(isPopagate){
+    		result = _accountService.enableAccount(getAccountName(), getDomainId(), getId());
+    	} else {
+    		result = _regionService.enableAccount(getAccountName(), getDomainId(), getId());
+    	}
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(result);
             response.setResponseName(getCommandName());

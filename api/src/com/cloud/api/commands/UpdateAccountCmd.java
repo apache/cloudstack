@@ -27,6 +27,7 @@ import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.user.Account;
 
@@ -59,6 +60,9 @@ public class UpdateAccountCmd extends BaseCmd{
 	@Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
     private Map details;
 
+    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
+    private Boolean isPropagate;
+	
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -93,6 +97,10 @@ public class UpdateAccountCmd extends BaseCmd{
     	return params;
     }
 
+	public Boolean getIsPropagate() {
+		return isPropagate;
+	}
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -118,7 +126,13 @@ public class UpdateAccountCmd extends BaseCmd{
     
     @Override
     public void execute(){
-        Account result = _accountService.updateAccount(this);
+    	boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false;
+    	Account result = null;
+    	if(isPopagate){
+    		result = _accountService.updateAccount(this);
+        } else {
+        	result = _regionService.updateAccount(this);
+        }
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(result);
             response.setResponseName(getCommandName());

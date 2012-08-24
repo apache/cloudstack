@@ -101,7 +101,7 @@ public class UserVO implements User, Identity {
     	this.uuid = UUID.randomUUID().toString();
     }
     
-    public UserVO(long accountId, String username, String password, String firstName, String lastName, String email, String timezone) {
+    public UserVO(long accountId, String username, String password, String firstName, String lastName, String email, String timezone, String uuid, long regionId) {
         this.accountId = accountId;
         this.username = username;
         this.password = password;
@@ -110,9 +110,10 @@ public class UserVO implements User, Identity {
         this.email = email;
         this.timezone = timezone;
         this.state = State.enabled;
-    	this.uuid = UUID.randomUUID().toString();
+    	this.uuid = uuid;
+    	this.regionId = regionId;
     }
-
+    
     @Override
     public long getId() {
         return id;

@@ -76,6 +76,20 @@ public class CreateAccountCmd extends BaseCmd {
 
 	@Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
     private Map<String, String> details;
+	
+	//@Parameter(name = ApiConstants.REGION_DETAILS, type = CommandType.MAP, description = "details for account used to store region specific parameters")
+    //private Map<String, String> regionDetails;
+	
+    @Parameter(name=ApiConstants.ACCOUNT_ID, type=CommandType.STRING, description="Account UUID, required for adding account from another Region")
+    private String accountUUID;
+
+    @Parameter(name=ApiConstants.USER_ID, type=CommandType.STRING, description="User UUID, required for adding account from another Region")
+    private String userUUID;
+
+    @Parameter(name=ApiConstants.REGION_ID, type=CommandType.LONG, description="Id of the Region creating the account")
+    private Long regionId;
+
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -130,11 +144,31 @@ public class CreateAccountCmd extends BaseCmd {
     	return params;
     }
 
+    /*public Map<String, String> getRegionDetails() {
+    	if (regionDetails == null || regionDetails.isEmpty()) {
+    		return null;
+    	}
+    	
+		return regionDetails;
+	}*/
+    
+    public String getAccountUUID() {
+		return accountUUID;
+	}
+
+	public String getUserUUID() {
+		return userUUID;
+	}
+
+	public Long getRegionId() {
+		return regionId;
+	}
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    @Override
+	@Override
     public String getCommandName() {
         return s_name;
     }
@@ -144,10 +178,11 @@ public class CreateAccountCmd extends BaseCmd {
         return Account.ACCOUNT_ID_SYSTEM;
     }
     
-    @Override
+	@Override
     public void execute(){
         UserContext.current().setEventDetails("Account Name: "+getAccountName()+", Domain Id:"+getDomainId());
-        UserAccount userAccount = _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(), getDomainId(), getNetworkDomain(), getDetails());
+        UserAccount userAccount = _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(), getDomainId(), getNetworkDomain(), getDetails(), 
+        		getAccountUUID(), getUserUUID(), getRegionId());
         if (userAccount != null) {
             AccountResponse response = _responseGenerator.createUserAccountResponse(userAccount);
             response.setResponseName(getCommandName());

@@ -75,12 +75,14 @@ public class AccountVO implements Account, Identity {
     	this.uuid = UUID.randomUUID().toString();
     }
     
-    public AccountVO(String accountName, long domainId, String networkDomain, short type) {
+    public AccountVO(String accountName, long domainId, String networkDomain, short type, String uuid, long regionId) {
         this.accountName = accountName;
         this.domainId = domainId;
         this.networkDomain = networkDomain;
         this.type = type;
         this.state = State.enabled;
+        this.uuid = uuid;
+        this.regionId = regionId;
     }
     
     public void setNeedsCleanup(boolean value) {

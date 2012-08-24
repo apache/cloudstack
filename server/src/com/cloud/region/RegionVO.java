@@ -34,17 +34,17 @@ public class RegionVO implements Region{
 
     @Id
     @Column(name="id")
-    long id;
+    private long id;
     
     @Column(name="name")
-    String name;
+    private String name;
 
     @Column(name="end_point")
-    String endPoint;
+    private String endPoint;
     
     @Column(name="status")
     @Enumerated(value=EnumType.STRING)
-    Region.State status;
+    private Region.State status;
     
     @Column(name=GenericDao.REMOVED_COLUMN)
     private Date removed;

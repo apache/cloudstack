@@ -16,11 +16,12 @@
 // under the License.
 package com.cloud.region;
 
+import java.util.Map;
+
 
 public interface RegionManager {
-	public boolean propogateAddResource();
-	public boolean propogateUpdateResource();
-	public boolean propogateDeleteResource();
+	public boolean propogateAddAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain,
+            Map<String, String> details, String accountUUID, String userUUID, long regionId);
 	public boolean addResource();
 	public boolean updateResource();
 	public boolean deleteResource();

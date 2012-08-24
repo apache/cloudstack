@@ -199,7 +199,7 @@ public class ProjectManagerImpl implements ProjectManager, Manager{
         StringBuilder acctNm = new StringBuilder("PrjAcct-");
         acctNm.append(name).append("-").append(owner.getDomainId());
         
-        Account projectAccount = _accountMgr.createAccount(acctNm.toString(), Account.ACCOUNT_TYPE_PROJECT, domainId, null, null);
+        Account projectAccount = _accountMgr.createAccount(acctNm.toString(), Account.ACCOUNT_TYPE_PROJECT, domainId, null, null, "", 0L);
         
         Project project = _projectDao.persist(new ProjectVO(name, displayText, owner.getDomainId(), projectAccount.getId()));
         

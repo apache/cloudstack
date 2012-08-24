@@ -46,15 +46,21 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Account id")
     private Long id;
 
+    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
+    private Boolean isPropagate;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getId() {
+
+	public Long getId() {
         return id;
     }
-
+    
+	public Boolean getIsPropagate() {
+		return isPropagate;
+	}
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
@@ -93,7 +99,13 @@ public class DeleteAccountCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Account Id: "+getId());
-        boolean result = _accountService.deleteUserAccount(getId());
+        boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false; 
+        boolean result = false;
+        if(isPopagate){
+        	result = _accountService.deleteUserAccount(getId());
+        } else {
+        	result = _regionService.deleteUserAccount(getId());
+        }
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

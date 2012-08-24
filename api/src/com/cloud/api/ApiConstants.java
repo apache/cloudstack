@@ -358,7 +358,10 @@ public class ApiConstants {
     public static final String VSM_DEVICE_STATE = "vsmdevicestate";
     public static final String ADD_VSM_FLAG = "addvsmflag";
 	public static final String END_POINT = "endpoint";
-    
+	//public static final String REGION_DETAILS = "regiondetails";
+	public static final String REGION_ID = "regionid";
+	public static final String IS_PROPAGATE = "ispropagate";
+	
     public enum HostDetails {
         all, capacity, events, stats, min;
     }

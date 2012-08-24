@@ -25,6 +25,7 @@ import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.AccountResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
@@ -55,6 +56,9 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.LOCK, type=CommandType.BOOLEAN, required=true, description="If true, only lock the account; else disable the account")
     private Boolean lockRequested;
 
+    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
+    private Boolean isPropagate;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -71,6 +75,10 @@ public class DisableAccountCmd extends BaseAsyncCmd {
         return domainId;
     }
 
+	public Boolean getIsPropagate() {
+		return isPropagate;
+	}
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -109,10 +117,18 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException{
         UserContext.current().setEventDetails("Account Name: "+getAccountName()+", Domain Id:"+getDomainId());
     	Account result = null;
-    	if(lockRequested)
-    		result = _accountService.lockAccount(getAccountName(), getDomainId(), getId());
-    	else
-    		result = _accountService.disableAccount(getAccountName(), getDomainId(), getId());
+    	boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false;
+    	if(isPopagate){
+    		if(lockRequested)
+    			result = _accountService.lockAccount(getAccountName(), getDomainId(), getId());
+    		else
+    			result = _accountService.disableAccount(getAccountName(), getDomainId(), getId());
+    	} else {
+    		if(lockRequested)
+    			result = _regionService.lockAccount(getAccountName(), getDomainId(), getId());
+    		else
+    			result = _regionService.disableAccount(getAccountName(), getDomainId(), getId());
+    	}
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(result);
             response.setResponseName(getCommandName());
