@@ -17,99 +17,99 @@
   under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<artifactId>cloud-awsapi</artifactId>
-	<version>4.0.0-SNAPSHOT</version>
-	<name>Apache CloudStack AWS API Bridge</name>
-	<parent>
-		<groupId>com.cloud</groupId>
-		<artifactId>cloud-parent</artifactId>
-		<version>4.0.0-SNAPSHOT</version>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <artifactId>cloud-awsapi</artifactId>
+  <version>4.0.0-SNAPSHOT</version>
+  <name>Apache CloudStack AWS API Bridge</name>
+  <parent>
+    <groupId>com.cloud</groupId>
+    <artifactId>cloud-parent</artifactId>
+    <version>4.0.0-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
-	</parent>
-	<dependencies>
+  </parent>
+  <dependencies>
     <dependency>
       <groupId>org.apache.axis2</groupId>
       <artifactId>axis2</artifactId>
       <version>${cs.axis2.version}</version>
     </dependency>
-				<dependency>
-						<groupId>org.apache.ws.commons.axiom</groupId>
-						<artifactId>axiom-api</artifactId>
-						<version>${cs.axiom.version}</version>
-				</dependency>
-<dependency>
-    <groupId>org.hibernate</groupId>
-    <artifactId>hibernate-core</artifactId>
-    <version>${cs.hibernate.version}</version>
-</dependency>
-<dependency>
-    <groupId>org.hibernate</groupId>
-    <artifactId>hibernate-annotations</artifactId>
-    <version>${cs.hibernate.version}</version>
-</dependency>
-<dependency>
-    <groupId>org.hibernate</groupId>
-    <artifactId>hibernate-entitymanager</artifactId>
-    <version>${cs.hibernate.version}</version>
-</dependency>
-<dependency>
-    <groupId>log4j</groupId>
-    <artifactId>log4j</artifactId>
-    <version>${cs.log4j.version}</version>
-</dependency>
-<dependency>
-    <groupId>org.apache.neethi</groupId>
-    <artifactId>neethi</artifactId>
-    <version>${cs.neethi.version}</version>
-</dependency>
-<dependency>
-<groupId>com.google.code.gson</groupId>
-<artifactId>gson</artifactId>
-<version>${cs.gson.version}</version>
-</dependency>
-<dependency>
-<groupId>commons-codec</groupId>
-<artifactId>commons-codec</artifactId>
-<version>${cs.codec.version}</version>
-</dependency>
-<dependency>
-    <groupId>javax.servlet</groupId>
-    <artifactId>servlet-api</artifactId>
-    <version>${cs.servlet.version}</version>
-		<scope>provided</scope>
-</dependency>
-<dependency>
-    <groupId>com.googlecode.json-simple</groupId>
-    <artifactId>json-simple</artifactId>
-    <version>1.1</version>
-</dependency>
-<dependency>
-<groupId>org.jasypt</groupId>
-<artifactId>jasypt</artifactId>
-<version>${cs.jasypt.version}</version>
-</dependency>
-	</dependencies>
-	<build>
-		<defaultGoal>install</defaultGoal>
-		<sourceDirectory>src</sourceDirectory>
-<!--
-		<testSourceDirectory>test</testSourceDirectory>
-    <plugins>
-     <plugin>
-       <groupId>org.apache.maven.plugins</groupId>
-       <artifactId>maven-jar-plugin</artifactId>
-       <version>2.2</version>
-       <executions>
-         <execution>
-           <goals>
-             <goal>test-jar</goal>
-           </goals>
-         </execution>
-       </executions>
-     </plugin>
-    </plugins>
--->
-	</build>
+    <dependency>
+      <groupId>org.apache.ws.commons.axiom</groupId>
+      <artifactId>axiom-api</artifactId>
+      <version>${cs.axiom.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-core</artifactId>
+      <version>${cs.hibernate.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-annotations</artifactId>
+      <version>${cs.hibernate.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate</groupId>
+      <artifactId>hibernate-entitymanager</artifactId>
+      <version>${cs.hibernate.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>${cs.log4j.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.neethi</groupId>
+      <artifactId>neethi</artifactId>
+      <version>${cs.neethi.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <version>${cs.gson.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-codec</groupId>
+      <artifactId>commons-codec</artifactId>
+      <version>${cs.codec.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>servlet-api</artifactId>
+      <version>${cs.servlet.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.googlecode.json-simple</groupId>
+      <artifactId>json-simple</artifactId>
+      <version>1.1</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jasypt</groupId>
+      <artifactId>jasypt</artifactId>
+      <version>${cs.jasypt.version}</version>
+    </dependency>
+  </dependencies>
+  <build>
+    <defaultGoal>install</defaultGoal>
+    <sourceDirectory>src</sourceDirectory>
+    <!--
+        <testSourceDirectory>test</testSourceDirectory>
+        <plugins>
+         <plugin>
+           <groupId>org.apache.maven.plugins</groupId>
+           <artifactId>maven-jar-plugin</artifactId>
+           <version>2.2</version>
+           <executions>
+             <execution>
+               <goals>
+                 <goal>test-jar</goal>
+               </goals>
+             </execution>
+           </executions>
+         </plugin>
+        </plugins>
+    -->
+  </build>
 </project>

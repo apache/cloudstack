@@ -17,170 +17,170 @@
   under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.cloud</groupId>
-	<artifactId>cloudstack</artifactId>
-	<version>4.0.0-SNAPSHOT</version>
-	<packaging>pom</packaging>
-	<name>Apache CloudStack</name>
-	<description>CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
-	<url>http://www.cloudstack.org</url>
-	<scm>
-		<connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git</connection>
-		<developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git</developerConnection>
-	</scm>
-	<issueManagement>
-		<system>jira</system>
-		<url>https://issues.apache.org/jira/browse/CLOUDSTACK</url>
-	</issueManagement>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.cloud</groupId>
+  <artifactId>cloudstack</artifactId>
+  <version>4.0.0-SNAPSHOT</version>
+  <packaging>pom</packaging>
+  <name>Apache CloudStack</name>
+  <description>CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
+  <url>http://www.cloudstack.org</url>
+  <scm>
+    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-cloudstack.git</developerConnection>
+  </scm>
+  <issueManagement>
+    <system>jira</system>
+    <url>https://issues.apache.org/jira/browse/CLOUDSTACK</url>
+  </issueManagement>
 
-	<properties>
-		<cs.jdk.version>1.6</cs.jdk.version>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-	</properties>
+  <properties>
+    <cs.jdk.version>1.6</cs.jdk.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
 
-	<distributionManagement>
-		<repository>
-			<id>apache.releases.https</id>
-			<name>Apache Release Distribution Repository</name>
-			<url>https://repository.apache.org/service/local/staging/deploy/maven2</url>
-		</repository>
-		<snapshotRepository>
-			<id>apache.snapshots.https</id>
-			<name>Apache Development Snapshot Repository</name>
-			<url>https://repository.apache.org/content/repositories/snapshots</url>
-			<!--uniqueVersion>false</uniqueVersion -->
-		</snapshotRepository>
-		<site>
-			<id>apache.cloudstack.site</id>
-			<url>${site.deploy.url}</url>
-		</site>
-	</distributionManagement>
-	<repositories>
-		<repository>
-			<id>apache.snapshots</id>
-			<url>http://repository.apache.org/snapshots/</url>
-			<name>Apache Snapshot Repo</name>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-		</repository>
-	</repositories>
-	<pluginRepositories>
-		<pluginRepository>
-			<id>apache.snapshots</id>
-			<url>http://repository.apache.org/snapshots/</url>
-			<snapshots>
-				<enabled>true</enabled>
-			</snapshots>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-		</pluginRepository>
-	</pluginRepositories>
+  <distributionManagement>
+    <repository>
+      <id>apache.releases.https</id>
+      <name>Apache Release Distribution Repository</name>
+      <url>https://repository.apache.org/service/local/staging/deploy/maven2</url>
+    </repository>
+    <snapshotRepository>
+      <id>apache.snapshots.https</id>
+      <name>Apache Development Snapshot Repository</name>
+      <url>https://repository.apache.org/content/repositories/snapshots</url>
+      <!--uniqueVersion>false</uniqueVersion -->
+    </snapshotRepository>
+    <site>
+      <id>apache.cloudstack.site</id>
+      <url>${site.deploy.url}</url>
+    </site>
+  </distributionManagement>
+  <repositories>
+    <repository>
+      <id>apache.snapshots</id>
+      <url>http://repository.apache.org/snapshots/</url>
+      <name>Apache Snapshot Repo</name>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </repository>
+  </repositories>
+  <pluginRepositories>
+    <pluginRepository>
+      <id>apache.snapshots</id>
+      <url>http://repository.apache.org/snapshots/</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </pluginRepository>
+  </pluginRepositories>
 
-	<inceptionYear>2012</inceptionYear>
+  <inceptionYear>2012</inceptionYear>
 
-	<mailingLists>
-		<mailingList>
-			<name>Apache CloudStack User List</name>
-			<subscribe>cloudstack-users-subscribe@incubator.apache.org</subscribe>
-			<unsubscribe>cloudstack-users-unsubscribe@incubator.apache.org</unsubscribe>
-			<post>cloudstack-users@incubator.apache.org</post>
-			<archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-users</archive>
-		</mailingList>
-		<mailingList>
-			<name>Apache CloudStack Developer List</name>
-			<subscribe>cloudstack-dev-subscribe@incubator.apache.org</subscribe>
-			<unsubscribe>cloudstack-dev-unsubscribe@incubator.apache.org</unsubscribe>
-			<post>cloudstack-dev@incubator.apache.org</post>
-			<archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-dev</archive>
-		</mailingList>
-		<mailingList>
-			<name>Apache CloudStack Commits List</name>
-			<subscribe>cloudstack-commits-subscribe@incubator.apache.org</subscribe>
-			<unsubscribe>cloudstack-commits-unsubscribe@incubator.apache.org</unsubscribe>
-			<post>cloudstack-commits@incubator.apache.org</post>
-			<archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-commits</archive>
-		</mailingList>
-	</mailingLists>
+  <mailingLists>
+    <mailingList>
+      <name>Apache CloudStack User List</name>
+      <subscribe>cloudstack-users-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>cloudstack-users-unsubscribe@incubator.apache.org</unsubscribe>
+      <post>cloudstack-users@incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-users</archive>
+    </mailingList>
+    <mailingList>
+      <name>Apache CloudStack Developer List</name>
+      <subscribe>cloudstack-dev-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>cloudstack-dev-unsubscribe@incubator.apache.org</unsubscribe>
+      <post>cloudstack-dev@incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-dev</archive>
+    </mailingList>
+    <mailingList>
+      <name>Apache CloudStack Commits List</name>
+      <subscribe>cloudstack-commits-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>cloudstack-commits-unsubscribe@incubator.apache.org</unsubscribe>
+      <post>cloudstack-commits@incubator.apache.org</post>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-cloudstack-commits</archive>
+    </mailingList>
+  </mailingLists>
 
-	<developers>
-		<developer>
-			<name>The Apache CloudStack Team</name>
-			<email>cloudstack-dev@incubator.apache.org</email>
-			<url>http://incubator.apache.org/projects/cloudstack.html</url>
-			<organization>Apache Software Foundation</organization>
-			<organizationUrl>http://apache.org/</organizationUrl>
-		</developer>
-	</developers>
+  <developers>
+    <developer>
+      <name>The Apache CloudStack Team</name>
+      <email>cloudstack-dev@incubator.apache.org</email>
+      <url>http://incubator.apache.org/projects/cloudstack.html</url>
+      <organization>Apache Software Foundation</organization>
+      <organizationUrl>http://apache.org/</organizationUrl>
+    </developer>
+  </developers>
 
-	<ciManagement>
-		<system>Jenkin</system>
-		<url>http://jenkins.cloudstack.org/</url>
-	</ciManagement>
+  <ciManagement>
+    <system>Jenkin</system>
+    <url>http://jenkins.cloudstack.org/</url>
+  </ciManagement>
 
-	<licenses>
-		<license>
-			<name>The Apache Software License, Version 2.0</name>
-			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-			<distribution>repo</distribution>
-		</license>
-	</licenses>
+  <licenses>
+    <license>
+      <name>The Apache Software License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
 
-	<organization>
-		<name>The Apache Software Foundation</name>
-		<url>http://www.apache.org/</url>
-	</organization>
+  <organization>
+    <name>The Apache Software Foundation</name>
+    <url>http://www.apache.org/</url>
+  </organization>
 
-	<modules>
-		<module>parent</module>
-		<module>api</module>
-		<module>agent</module>
-		<module>console-proxy</module>
-		<module>core</module>
-		<module>server</module>
-		<module>usage</module>
-		<module>utils</module>
-		<module>deps/XenServerJava</module>
-		<module>vmware-base</module>
-		<module>plugins</module>
-		<module>awsapi</module>
-	</modules>
+  <modules>
+    <module>parent</module>
+    <module>api</module>
+    <module>agent</module>
+    <module>console-proxy</module>
+    <module>core</module>
+    <module>server</module>
+    <module>usage</module>
+    <module>utils</module>
+    <module>deps/XenServerJava</module>
+    <module>vmware-base</module>
+    <module>plugins</module>
+    <module>awsapi</module>
+  </modules>
 
-	<build>
-		<defaultGoal>install</defaultGoal>
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>org.apache.rat</groupId>
-					<artifactId>apache-rat-plugin</artifactId>
-					<version>0.8</version>
-					<configuration>
-						<numUnapprovedLicenses>350</numUnapprovedLicenses>
-						<excludeSubProjects>false</excludeSubProjects>
-						<excludes>
-							<exclude>.git/**</exclude>
-							<exclude>.gitignore</exclude>
-							<exclude>velocity.log</exclude>
-							<exclude>**/target/**</exclude>
-							<exclude>distribution/**</exclude>
-							<exclude>**/jaxb.index</exclude>
-							<exclude>**/META-INF/MANIFEST</exclude>
-							<exclude>**/src/test/**/*.txt</exclude>
-							<exclude>**/.classpath</exclude>
-							<exclude>**/.settings/**/*</exclude>
-							<exclude>**/.project</exclude>
-						</excludes>
-					</configuration>
-				</plugin>
-			</plugins>
-		</pluginManagement>
-	</build>
+  <build>
+    <defaultGoal>install</defaultGoal>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.rat</groupId>
+          <artifactId>apache-rat-plugin</artifactId>
+          <version>0.8</version>
+          <configuration>
+            <numUnapprovedLicenses>350</numUnapprovedLicenses>
+            <excludeSubProjects>false</excludeSubProjects>
+            <excludes>
+              <exclude>.git/**</exclude>
+              <exclude>.gitignore</exclude>
+              <exclude>velocity.log</exclude>
+              <exclude>**/target/**</exclude>
+              <exclude>distribution/**</exclude>
+              <exclude>**/jaxb.index</exclude>
+              <exclude>**/META-INF/MANIFEST</exclude>
+              <exclude>**/src/test/**/*.txt</exclude>
+              <exclude>**/.classpath</exclude>
+              <exclude>**/.settings/**/*</exclude>
+              <exclude>**/.project</exclude>
+            </excludes>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
 
 
 </project>
