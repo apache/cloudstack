@@ -22,7 +22,7 @@
   <artifactId>cloud-utils</artifactId>
   <name>Apache CloudStack Utils</name>
   <parent>
-    <groupId>com.cloud</groupId>
+    <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloud-parent</artifactId>
     <version>4.0.0-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>

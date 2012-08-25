@@ -22,14 +22,14 @@
   <artifactId>cloud-plugin-hypervisor-kvm</artifactId>
   <name>Apache CloudStack Plugin - Hypervisor KVM</name>
   <parent>
-    <groupId>com.cloud</groupId>
+    <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloud-plugin-parent</artifactId>
     <version>4.0.0-SNAPSHOT</version>
     <relativePath>../../parent/pom.xml</relativePath>
   </parent>
   <dependencies>
     <dependency>
-      <groupId>com.cloud</groupId>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-agent</artifactId>
       <version>${project.version}</version>
     </dependency>

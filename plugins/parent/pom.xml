@@ -23,14 +23,14 @@
   <name>Apache CloudStack Plugin POM</name>
   <packaging>pom</packaging>
   <parent>
-    <groupId>com.cloud</groupId>
+    <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloud-parent</artifactId>
     <version>4.0.0-SNAPSHOT</version>
     <relativePath>../../parent/pom.xml</relativePath>
   </parent>
   <dependencies>
     <dependency>
-      <groupId>com.cloud</groupId>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-server</artifactId>
       <version>${project.version}</version>
     </dependency>

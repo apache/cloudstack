@@ -21,7 +21,7 @@
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <artifactId>cloud-parent</artifactId>
-    <groupId>com.cloud</groupId>
+    <groupId>org.apache.cloudstack</groupId>
     <version>4.0.0-SNAPSHOT</version>
     <relativePath>../../parent/pom.xml</relativePath>
   </parent>

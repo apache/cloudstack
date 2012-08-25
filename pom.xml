@@ -26,7 +26,7 @@
     <version>11</version>
   </parent>
 
-  <groupId>com.cloud</groupId>
+  <groupId>org.apache.cloudstack</groupId>
   <artifactId>cloudstack</artifactId>
   <version>4.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>

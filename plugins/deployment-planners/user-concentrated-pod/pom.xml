@@ -22,7 +22,7 @@
   <artifactId>cloud-plugin-planner-user-concentrated-pod</artifactId>
   <name>Apache CloudStack Plugin - User Concentrated Pod Deployment Planner</name>
   <parent>
-    <groupId>com.cloud</groupId>
+    <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloud-plugin-parent</artifactId>
     <version>4.0.0-SNAPSHOT</version>
     <relativePath>../../parent/pom.xml</relativePath>
