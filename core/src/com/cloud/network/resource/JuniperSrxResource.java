@@ -71,7 +71,6 @@ public class JuniperSrxResource implements ServerResource {
 
     private String _name;
     private String _zoneId;
-    private String _physicalNetworkId;
     private String _ip;
     private String _username;
     private String _password;
@@ -294,11 +293,6 @@ public class JuniperSrxResource implements ServerResource {
             _zoneId = (String) params.get("zoneId");
             if (_zoneId == null) {
                 throw new ConfigurationException("Unable to find zone");
-            }
-
-            _physicalNetworkId = (String) params.get("physicalNetworkId");
-            if (_physicalNetworkId == null) {
-                throw new ConfigurationException("Unable to find physical network id in the configuration parameters");
             }
 
             _ip = (String) params.get("ip");

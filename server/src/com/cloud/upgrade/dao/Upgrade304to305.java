@@ -13,6 +13,7 @@ limitations under the License.*/
 package com.cloud.upgrade.dao;
 
 import java.io.File;
+import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,6 +24,7 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
@@ -59,7 +61,7 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
         addHostDetailsUniqueKey(conn);
         addVpcProvider(conn);
         updateRouterNetworkRef(conn);
-        correctNetworkUsingExternalDevices(conn);
+        fixZoneUsingExternalDevices(conn);
         updateSystemVms(conn);
         fixForeignKeys(conn);
     }
@@ -259,9 +261,14 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
         }
     }
 
-    // ensure that networks using external load balancer/firewall in 2.2.14 or prior releases deployments has entry 
-    // in network_external_lb_device_map and network_external_firewall_device_map
-    private void correctNetworkUsingExternalDevices(Connection conn) {
+    // This fix does two things
+    //
+    // 1) ensure that networks using external load balancer/firewall in 2.2.14 or prior releases deployments
+    //    has entry in network_external_lb_device_map and network_external_firewall_device_map
+    //
+    // 2) Some keys of host details for F5 and SRX devices were stored in Camel Case in 2.x releases. From 3.0
+    //    they are made in lowercase. On upgrade change the host details name to lower case
+    private void fixZoneUsingExternalDevices(Connection conn) {
         //Get zones to upgrade
         List<Long> zoneIds = new ArrayList<Long>();
         PreparedStatement pstmt = null;
@@ -300,7 +307,7 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
 
         for (Long zoneId : zoneIds) {
             try {
-            	    // find the F5 device id  in the zone
+		// find the F5 device id  in the zone
                 pstmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalLoadBalancer' AND removed IS NULL");
                 pstmt.setLong(1, zoneId);
                 rs = pstmt.executeQuery();
@@ -318,7 +325,7 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
                     throw new CloudRuntimeException("Cannot upgrade as there is no F5 load balancer device with host ID " + f5HostId + " found in external_load_balancer_device");
                 }
 
-        	       // find the SRX device id  in the zone
+		    // find the SRX device id  in the zone
                 pstmt = conn.prepareStatement("SELECT id FROM host WHERE data_center_id=? AND type = 'ExternalFirewall' AND removed IS NULL");
                 pstmt.setLong(1, zoneId);
                 rs = pstmt.executeQuery();
@@ -336,13 +343,13 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
                     throw new CloudRuntimeException("Cannot upgrade as there is no SRX firewall device found with host ID " + srxHostId + " found in external_firewall_devices");
                 }
 
-        	       // check if network any uses F5 or SRX devices  in the zone
+		    // check if network any uses F5 or SRX devices  in the zone
                 pstmt = conn.prepareStatement("select id from `cloud`.`networks` where guest_type='Virtual' and data_center_id=? and network_offering_id=? and removed IS NULL");
                 pstmt.setLong(1, zoneId);
                 pstmt.setLong(2, networkOfferingId);
                 rs = pstmt.executeQuery();
                 while (rs.next()) {
-                	    // get the network Id
+			// get the network Id
                   	networkId = rs.getLong(1);
 
              	    // add mapping for the network in network_external_lb_device_map
@@ -363,13 +370,48 @@ public class Upgrade304to305 extends Upgrade30xBase implements DbUpgrade {
                     pstmtUpdate.executeUpdate();
                     s_logger.debug("Successfully added entry in network_external_firewall_device_map for network " +  networkId + " and SRX device ID " +  srxDevivceId);
                 }
+
+                // update host details for F5 and SRX devices
+                s_logger.debug("Updating the host details for F5 and SRX devices");
+                pstmt = conn.prepareStatement("SELECT host_id, name FROM `cloud`.`host_details` WHERE  host_id=? OR host_id=?");
+                pstmt.setLong(1, f5HostId);
+                pstmt.setLong(2, srxHostId);
+                rs = pstmt.executeQuery();
+                while (rs.next()) {
+                    long hostId = rs.getLong(1);
+                    String camlCaseName = rs.getString(2);
+                    if (!(camlCaseName.equalsIgnoreCase("numRetries") ||
+                            camlCaseName.equalsIgnoreCase("publicZone") ||
+                            camlCaseName.equalsIgnoreCase("privateZone") ||
+                            camlCaseName.equalsIgnoreCase("publicInterface") ||
+                            camlCaseName.equalsIgnoreCase("privateInterface") ||
+                            camlCaseName.equalsIgnoreCase("usageInterface") )) {
+                        continue;
+                    }
+                    String lowerCaseName = camlCaseName.toLowerCase();
+                    pstmt = conn.prepareStatement("update `cloud`.`host_details` set name=? where host_id=? AND name=?");
+                    pstmt.setString(1, lowerCaseName);
+                    pstmt.setLong(2, hostId);
+                    pstmt.setString(3, camlCaseName);
+                    pstmt.executeUpdate();
+                }
+                s_logger.debug("Successfully updated host details for F5 and SRX devices");
             } catch (SQLException e) {
                 throw new CloudRuntimeException("Unable create a mapping for the networks in network_external_lb_device_map and network_external_firewall_device_map", e);
+            }  finally {
+                try {
+                    if (rs != null) {
+                        rs.close();
+                    }
+                    if (pstmt != null) {
+                        pstmt.close();
+                    }
+                } catch (SQLException e) {
+                }
             }
             s_logger.info("Successfully upgraded network using F5 and SRX devices to have a entry in the network_external_lb_device_map and network_external_firewall_device_map");
         }
     }
-
 
     private void fixForeignKeys(Connection conn) {
         s_logger.debug("Fixing foreign keys' names in ssh_keypairs table");
