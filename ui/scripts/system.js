@@ -2160,7 +2160,8 @@
                                     var hostObjs = json.listhostsresponse.host;
                                     var items = [];
                                     $(hostObjs).each(function() {
-                                      items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))});
+                                      //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
+																			items.push({id: this.id, description: this.name});
                                     });
                                     args.response.success({data: items});
                                   }
@@ -2693,7 +2694,8 @@
                                     var hostObjs = json.listhostsresponse.host;
                                     var items = [];
                                     $(hostObjs).each(function() {
-                                      items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))});
+                                      //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
+																			items.push({id: this.id, description: this.name});
                                     });
                                     args.response.success({data: items});
                                   }
@@ -4333,7 +4335,8 @@
                                         var hostObjs = json.listhostsresponse.host;
                                         var items = [];
                                         $(hostObjs).each(function() {
-                                          items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))});
+                                          //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
+																					items.push({id: this.id, description: this.name});
                                         });
                                         args.response.success({data: items});
                                       }
@@ -5071,7 +5074,8 @@
                             var hostObjs = json.listhostsresponse.host;
                             var items = [];
                             $(hostObjs).each(function() {
-                              items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))});
+                              //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
+															items.push({id: this.id, description: this.name});
                             });
                             args.response.success({data: items});
                           }
@@ -5490,7 +5494,8 @@
                             var hostObjs = json.listhostsresponse.host;
                             var items = [];
                             $(hostObjs).each(function() {
-                              items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))});
+                              //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
+															items.push({id: this.id, description: this.name});
                             });
                             args.response.success({data: items});
                           }
