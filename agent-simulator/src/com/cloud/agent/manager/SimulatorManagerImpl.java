@@ -109,6 +109,7 @@ public class SimulatorManagerImpl implements SimulatorManager {
     private ConnectionConcierge _concierge;
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+    /*
         try {
             Connection conn = Transaction.getStandaloneConnectionWithException();
             conn.setAutoCommit(true);
@@ -116,6 +117,7 @@ public class SimulatorManagerImpl implements SimulatorManager {
         } catch (SQLException e) {
             throw new CloudRuntimeException("Unable to get a db connection", e);
         }
+	*/
         return true;
     }
 
@@ -152,8 +154,8 @@ public class SimulatorManagerImpl implements SimulatorManager {
     @DB
     @Override
     public Answer simulate(Command cmd, String hostGuid) {
-        Transaction txn = Transaction.currentTxn();
-        txn.transitToUserManagedConnection(_concierge.conn());
+        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+ //       txn.transitToUserManagedConnection(_concierge.conn());
         
         try {
             MockHost host = _mockHost.findByGuid(hostGuid);
