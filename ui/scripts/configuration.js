@@ -1360,6 +1360,9 @@
 																	args.response.success({
 																		data: items
 																	});
+
+                                  // Disable VPC virtual router by default
+                                  args.$select.find('option[value=VpcVirtualRouter]').attr('disabled', true);
 																																																	
 																	args.$select.change(function() {		
                                     var $thisProviderDropdown = $(this);																	
