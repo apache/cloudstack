@@ -158,6 +158,45 @@ class User:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listUsers(cmd))
 
+    @classmethod
+    def registerUserKeys(cls, apiclient, userid):
+        cmd = registerUserKeys.registerUserKeysCmd()
+        cmd.id = userid
+        return apiclient.registerUserKeys(cmd)
+
+    def update(self, apiclient, **kwargs):
+        """Updates the user details"""
+
+        cmd = updateUser.updateUserCmd()
+        cmd.id = self.id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return (apiclient.updateUser(cmd))
+
+    @classmethod
+    def update(cls, apiclient, id, **kwargs):
+        """Updates the user details (class method)"""
+
+        cmd = updateUser.updateUserCmd()
+        cmd.id = id
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return (apiclient.updateUser(cmd))
+
+    @classmethod
+    def login(cls, apiclient, username, password, domain=None, domainid=None):
+        """Logins to the CloudStack"""
+
+        cmd = login.loginCmd()
+        cmd.username = username
+        # MD5 hashcoded password
+        mdf = hashlib.md5()
+        mdf.update(password)
+        cmd.password = mdf.hexdigest()
+        if domain:
+            cmd.domain = domain
+        if domainid:
+            cmd.domainid = domainid
+        return apiclient.login(cmd)
+
 
 class VirtualMachine:
     """Manage virtual machine lifecycle"""
@@ -174,7 +213,8 @@ class VirtualMachine:
     @classmethod
     def create(cls, apiclient, services, templateid=None, accountid=None,
                     domainid=None, networkids=None, serviceofferingid=None,
-                    securitygroupids=None, projectid=None, mode='basic'):
+                    securitygroupids=None, projectid=None, startvm=None,
+                    diskofferingid=None, hostid=None, mode='basic'):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -218,6 +258,12 @@ class VirtualMachine:
 
         if projectid:
             cmd.projectid = projectid
+
+        if startvm is not None:
+            cmd.startvm = startvm
+
+        if hostid:
+            cmd.hostid = hostid
 
         virtual_machine = apiclient.deployVirtualMachine(cmd)
 
@@ -392,12 +438,17 @@ class Volume:
         return Volume(apiclient.createVolume(cmd).__dict__)
 
     @classmethod
-    def create_custom_disk(cls, apiclient, services,
-                                                account=None, domainid=None):
+    def create_custom_disk(cls, apiclient, services, account=None,
+                                    domainid=None, diskofferingid=None):
         """Create Volume from Custom disk offering"""
         cmd = createVolume.createVolumeCmd()
         cmd.name = services["diskname"]
-        cmd.diskofferingid = services["customdiskofferingid"]
+
+        if diskofferingid:
+            cmd.diskofferingid = diskofferingid
+        elif "customdiskofferingid" in services:
+            cmd.diskofferingid = services["customdiskofferingid"]
+
         cmd.size = services["customdisksize"]
         cmd.zoneid = services["zoneid"]
 

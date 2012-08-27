@@ -62,8 +62,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100,    # in MHz
-                                    "memory": 64,       # In MBs
+                                    "cpuspeed": 100, # in MHz
+                                    "memory": 64, # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Tiny Disk Offering",
@@ -89,7 +89,30 @@ class Services:
                                     "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                     "templatefilter": 'self',
                         },
-                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                        "network_offering": {
+                                    "name": 'Network offering-VR services',
+                                    "displaytext": 'Network offering-VR services',
+                                    "guestiptype": 'Isolated',
+                                    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
+                                    "traffictype": 'GUEST',
+                                    "availability": 'Optional',
+                                    "serviceProviderList": {
+                                            "Dhcp": 'VirtualRouter',
+                                            "Dns": 'VirtualRouter',
+                                            "SourceNat": 'VirtualRouter',
+                                            "PortForwarding": 'VirtualRouter',
+                                            "Vpn": 'VirtualRouter',
+                                            "Firewall": 'VirtualRouter',
+                                            "Lb": 'VirtualRouter',
+                                            "UserData": 'VirtualRouter',
+                                            "StaticNat": 'VirtualRouter',
+                                        },
+                                    },
+                         "network": {
+                                  "name": "Test Network",
+                                  "displaytext": "Test Network",
+                                },
+                        "ostypeid": 'bc66ada0-99e7-483b-befc-8fb0c2129b70',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
@@ -156,7 +179,7 @@ class TestProjectLimits(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_01_project_limits(self):
         """ Test project limits
         """
@@ -303,7 +326,7 @@ class TestProjectLimits(cloudstackTestCase):
                                       )
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     @unittest.skip("No provision for updating resource limits from account through API")
     def test_02_project_limits_normal_user(self):
         """ Test project limits
@@ -527,7 +550,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_03_vm_per_project(self):
         """Test VM limit per project
         """
@@ -543,7 +566,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              0,    # Instance
+                              0, # Instance
                               max=2,
                               projectid=self.project.id
                               )
@@ -589,7 +612,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                                 )
         return
 
-    @attr(tags = ["advanced", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "eip", "advancedns", "simulator"])
     def test_04_publicip_per_project(self):
         """Test Public IP limit per project
         """
@@ -607,7 +630,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              1,    # Public Ip
+                              1, # Public Ip
                               max=2,
                               projectid=self.project.id
                               )
@@ -674,7 +697,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                                            )
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_05_snapshots_per_project(self):
         """Test Snapshot limit per project
         """
@@ -691,7 +714,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              3,    # Snapshot
+                              3, # Snapshot
                               max=1,
                               projectid=self.project.id
                               )
@@ -751,7 +774,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                             )
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_06_volumes_per_project(self):
         """Test Volumes limit per project
         """
@@ -768,7 +791,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              2,    # Volume
+                              2, # Volume
                               max=2,
                               projectid=self.project.id
                               )
@@ -800,7 +823,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
                         )
         return
 
-    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
+    @attr(tags=["advanced", "basic", "sg", "eip", "advancedns"])
     def test_07_templates_per_project(self):
         """Test Templates limit per project
         """
@@ -813,7 +836,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
         # Reset the volume limits
         update_resource_limit(
                               self.apiclient,
-                              2,    # Volume
+                              2, # Volume
                               max=5,
                               projectid=self.project.id
                               )
@@ -823,7 +846,7 @@ class TestResourceLimitsProject(cloudstackTestCase):
         # Set usage_vm=1 for Account 1
         update_resource_limit(
                               self.apiclient,
-                              4,    # Template
+                              4, # Template
                               max=1,
                               projectid=self.project.id
                               )
@@ -883,4 +906,142 @@ class TestResourceLimitsProject(cloudstackTestCase):
                             volumeid=volume.id,
                             projectid=self.project.id
                             )
+        return
+
+
+class TestMaxProjectNetworks(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(
+                               TestMaxProjectNetworks,
+                               cls
+                               ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostypeid"]
+                            )
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
+        cls.network_offering = NetworkOffering.create(
+                                            cls.api_client,
+                                            cls.services["network_offering"],
+                                            conservemode=True
+                                            )
+        # Enable Network offering
+        cls.network_offering.update(cls.api_client, state='Enabled')
+
+        cls._cleanup = [
+                        cls.service_offering,
+                        cls.network_offering
+                        ]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            #Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.account = Account.create(
+                                     self.apiclient,
+                                     self.services["account"],
+                                     admin=True,
+                                     domainid=self.domain.id
+                                     )
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created network offerings
+            cleanup_resources(self.apiclient, self.cleanup)
+            self.account.delete(self.apiclient)
+            interval = list_configurations(
+                                    self.apiclient,
+                                    name='account.cleanup.interval'
+                                    )
+            # Sleep to ensure that all resources are deleted
+            time.sleep(int(interval[0].value) * 2)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=["advanced", "advancedns", "simulator",
+                "api", "basic", "eip", "sg"])
+    def test_maxAccountNetworks(self):
+        """Test Limit number of guest account specific networks
+        """
+
+        # Steps for validation
+        # 1. Fetch max.account.networks from configurations
+        # 2. Create an account. Create account more that max.accout.network
+        # 3. Create network should fail
+
+        self.debug("Creating project with '%s' as admin" %
+                                            self.account.account.name)
+        # Create project as a domain admin
+        project = Project.create(
+                                 self.apiclient,
+                                 self.services["project"],
+                                 account=self.account.account.name,
+                                 domainid=self.account.account.domainid
+                                 )
+        # Cleanup created project at end of test
+        self.cleanup.append(project)
+        self.debug("Created project with domain admin with ID: %s" %
+                                                                project.id)
+
+        config = Configurations.list(
+                                    self.apiclient,
+                                    name='max.project.networks',
+                                    listall=True
+                                    )
+        self.assertEqual(
+                isinstance(config, list),
+                True,
+                "List configurations hsould have max.project.networks"
+                )
+
+        config_value = int(config[0].value)
+        self.debug("max.project.networks: %s" % config_value)
+
+        for ctr in range(config_value):
+            # Creating network using the network offering created
+            self.debug("Creating network with network offering: %s" %
+                                                    self.network_offering.id)
+            network = Network.create(
+                                    self.apiclient,
+                                    self.services["network"],
+                                    projectid=project.id,
+                                    networkofferingid=self.network_offering.id,
+                                    zoneid=self.zone.id
+                                    )
+            self.debug("Created network with ID: %s" % network.id)
+        self.debug(
+            "Creating network in account already having networks : %s" %
+                                                            config_value)
+
+        with self.assertRaises(Exception):
+            Network.create(
+                                    self.apiclient,
+                                    self.services["network"],
+                                    projectid=project.id,
+                                    networkofferingid=self.network_offering.id,
+                                    zoneid=self.zone.id
+                                    )
+        self.debug('Create network failed (as expected)')
         return

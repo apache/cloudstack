@@ -79,10 +79,14 @@ class Services:
                           "name": "testISO",
                           "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
                           # Source URL where ISO is located
-                          "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                          "ostypeid": 'bc66ada0-99e7-483b-befc-8fb0c2129b70',
                           },
+                         "custom_volume": {
+                                           "customdisksize": 2,
+                                           "diskname": "Custom disk",
+                        },
                         "sleep": 50,
-                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
+                        "ostypeid": 'bc66ada0-99e7-483b-befc-8fb0c2129b70',
                         "mode": 'advanced',
                     }
 
@@ -1026,4 +1030,140 @@ class TestVolumes(cloudstackTestCase):
                         None,
                         "Check if volume exists in ListVolumes"
                     )
+        return
+
+
+class TestDeployVmWithCustomDisk(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(
+                               TestDeployVmWithCustomDisk,
+                               cls
+                               ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.disk_offering = DiskOffering.create(
+                                    cls.api_client,
+                                    cls.services["disk_offering"],
+                                    custom=True
+                                    )
+        template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostypeid"]
+                            )
+        cls.services["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = template.id
+
+        # Create VMs, NAT Rules etc
+        cls.account = Account.create(
+                            cls.api_client,
+                            cls.services["account"],
+                            domainid=cls.domain.id
+                            )
+
+        cls.services["account"] = cls.account.account.name
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
+        cls._cleanup = [
+                        cls.service_offering,
+                        cls.disk_offering,
+                        cls.account
+                        ]
+
+    def setUp(self):
+
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+    @attr(tags=["advanced", "configuration", "advancedns", "simulator",
+                "api", "basic", "eip", "sg"])
+    def test_deployVmWithCustomDisk(self):
+        """Test custom disk sizes beyond range
+        """
+        # Steps for validation
+        # 1. listConfigurations - custom.diskoffering.size.min
+        #    and custom.diskoffering.size.max
+        # 2. deployVm with custom disk offering size < min
+        # 3. deployVm with custom disk offering min< size < max
+        # 4. deployVm with custom disk offering size > max
+        # Validate the following
+        # 2. and 4. of deploy VM should fail.
+        #    Only case 3. should succeed.
+        #    cleanup all created data disks from the account
+
+        config = Configurations.list(
+                                    self.apiclient,
+                                    name="custom.diskoffering.size.min"
+                                    )
+        self.assertEqual(
+            isinstance(config, list),
+            True,
+            "custom.diskoffering.size.min should be present in global config"
+            )
+        # minimum size of custom disk (in GBs)
+        min_size = int(config[0].value)
+        self.debug("custom.diskoffering.size.min: %s" % min_size)
+
+        config = Configurations.list(
+                                    self.apiclient,
+                                    name="custom.diskoffering.size.max"
+                                    )
+        self.assertEqual(
+            isinstance(config, list),
+            True,
+            "custom.diskoffering.size.min should be present in global config"
+            )
+        # maximum size of custom disk (in GBs)
+        max_size = int(config[0].value)
+        self.debug("custom.diskoffering.size.max: %s" % max_size)
+
+        self.debug("Creating a volume with size less than min cust disk size")
+        self.services["custom_volume"]["customdisksize"] = (min_size - 1)
+        self.services["custom_volume"]["zoneid"] = self.zone.id
+        with self.assertRaises(Exception):
+            Volume.create_custom_disk(
+                                    self.apiclient,
+                                    self.services["custom_volume"],
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid,
+                                    diskofferingid=self.disk_offering.id
+                                    )
+        self.debug("Create volume failed!")
+
+        self.debug("Creating a volume with size more than max cust disk size")
+        self.services["custom_volume"]["customdisksize"] = (max_size + 1)
+        with self.assertRaises(Exception):
+            Volume.create_custom_disk(
+                                    self.apiclient,
+                                    self.services["custom_volume"],
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid,
+                                    diskofferingid=self.disk_offering.id
+                                    )
+        self.debug("Create volume failed!")
+
+        self.debug("Creating a volume with size more than min cust disk " +
+                   "but less than max cust disk size"
+                   )
+        self.services["custom_volume"]["customdisksize"] = (min_size + 1)
+        try:
+            Volume.create_custom_disk(
+                                    self.apiclient,
+                                    self.services["custom_volume"],
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid,
+                                    diskofferingid=self.disk_offering.id
+                                    )
+            self.debug("Create volume of cust disk size succeeded")
+        except Exception as e:
+            self.fail("Create volume failed with exception: %s" % e)
         return
