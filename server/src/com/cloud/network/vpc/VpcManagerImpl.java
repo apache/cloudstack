@@ -524,10 +524,11 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
         // Validate vpc offering
         VpcOfferingVO vpcOff = _vpcOffDao.findById(vpcOffId);
-        if (vpcOff == null) {
+        if (vpcOff == null || vpcOff.getState() != State.Enabled) {
             List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
             idList.add(new IdentityProxy("vpc_offerings", vpcOffId, "vpcOfferingId"));
-            throw new InvalidParameterValueException("Unable to find vpc offering by specified id", idList);
+            throw new InvalidParameterValueException("Unable to find vpc offering in " + State.Enabled +
+                    " state by specified id", idList);
         }
 
         //Validate zone
