@@ -59,6 +59,7 @@ class zone():
         self.dns2 = None
         self.internaldns2 = None
         self.securitygroupenabled = None
+        self.localstorageenabled = None
         ''' Guest Vlan range - only advanced zone'''
         self.vlan = None
         '''default public network, in advanced mode'''
