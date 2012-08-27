@@ -49,9 +49,10 @@ public class Site2SiteCustomerGatewayDaoImpl extends GenericDaoBase<Site2SiteCus
     }
 
     @Override
-    public Site2SiteCustomerGatewayVO findByName(String name) {
+    public Site2SiteCustomerGatewayVO findByNameAndAccountId(String name, long accountId) {
         SearchCriteria<Site2SiteCustomerGatewayVO> sc = AllFieldsSearch.create();
         sc.setParameters("name", name);
+        sc.setParameters("accountId", accountId);
         return findOneBy(sc);
     }
 

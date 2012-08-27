@@ -210,7 +210,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         }
         Long espLifetime = cmd.getEspLifetime();
         if (espLifetime == null) {
-            // Default value of lifetime is 1 day
+            // Default value of lifetime is 1 hour
             espLifetime = (long) 3600;
         }
         if (espLifetime > 86400) {
@@ -222,16 +222,17 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
             dpd = false;
         }
 
+        long accountId = owner.getAccountId();
         if (_customerGatewayDao.findByGatewayIp(gatewayIp) != null) {
-            throw new InvalidParameterValueException("The customer gateway with ip " + gatewayIp + " already existed!");
+            throw new InvalidParameterValueException("The customer gateway with ip " + gatewayIp + " already existed in the system!");
         }
-        if (_customerGatewayDao.findByName(name) != null) {
+        if (_customerGatewayDao.findByNameAndAccountId(name, accountId) != null) {
             throw new InvalidParameterValueException("The customer gateway with name " + name + " already existed!");
         }
         
         checkCustomerGatewayCidrList(guestCidrList);
         
-        Site2SiteCustomerGatewayVO gw = new Site2SiteCustomerGatewayVO(name, owner.getAccountId(), owner.getDomainId(), gatewayIp, guestCidrList, ipsecPsk,
+        Site2SiteCustomerGatewayVO gw = new Site2SiteCustomerGatewayVO(name, accountId, owner.getDomainId(), gatewayIp, guestCidrList, ipsecPsk,
                 ikePolicy, espPolicy, ikeLifetime, espLifetime, dpd);
         _customerGatewayDao.persist(gw);
         return gw;
@@ -454,7 +455,7 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         }
         Long espLifetime = cmd.getEspLifetime();
         if (espLifetime == null) {
-            // Default value of lifetime is 1 day
+            // Default value of lifetime is 1 hour
             espLifetime = (long) 3600;
         }
         if (espLifetime > 86400) {
@@ -467,6 +468,14 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         }
 
         checkCustomerGatewayCidrList(guestCidrList);
+        
+        long accountId = gw.getAccountId();
+        if (_customerGatewayDao.findByGatewayIp(gatewayIp) != null) {
+            throw new InvalidParameterValueException("The customer gateway with ip " + gatewayIp + " already existed in the system!");
+        }
+        if (_customerGatewayDao.findByNameAndAccountId(name, accountId) != null) {
+            throw new InvalidParameterValueException("The customer gateway with name " + name + " already existed!");
+        }
 
         gw.setName(name);
         gw.setGatewayIp(gatewayIp);
