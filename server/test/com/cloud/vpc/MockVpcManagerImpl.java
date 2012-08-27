@@ -28,6 +28,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
@@ -450,6 +451,15 @@ public class MockVpcManagerImpl implements VpcManager, Manager{
     public void validateNtwkOffForVpc(NetworkOffering guestNtwkOff, List<Service> supportedSvcs) {
         // TODO Auto-generated method stub
         
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.vpc.VpcManager#getSupportedVpcHypervisors()
+     */
+    @Override
+    public List<HypervisorType> getSupportedVpcHypervisors() {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

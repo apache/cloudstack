@@ -1488,13 +1488,14 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager{
         return null;
     }
 
+
     /* (non-Javadoc)
-     * @see com.cloud.network.NetworkManager#translateZoneIdToPhysicalNetwork(long)
+     * @see com.cloud.network.NetworkManager#getNetworkLockTimeout()
      */
     @Override
-    public PhysicalNetwork translateZoneIdToPhysicalNetwork(long zoneId) {
+    public int getNetworkLockTimeout() {
         // TODO Auto-generated method stub
-        return null;
+        return 0;
     }
 
 }
