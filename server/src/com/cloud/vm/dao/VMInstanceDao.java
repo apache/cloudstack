@@ -46,7 +46,14 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 	 * @return list of VMInstanceVO in the specified zone
 	 */
 	List<VMInstanceVO> listByZoneId(long zoneId);
-	
+
+    /**
+     * List VMs by pod ID
+     * @param podId
+     * @return list of VMInstanceVO in the specified pod
+     */
+    List<VMInstanceVO> listByPodId(long podId);
+
 	/**
 	 * Lists non-expunged VMs by zone ID and templateId
 	 * @param zoneId

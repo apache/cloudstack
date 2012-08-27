@@ -604,15 +604,9 @@
 											success: function(json){											  
 											  zoneObj = json.listzonesresponse.zone[0];												
 											}
-										});																				
-										if(zoneObj.networktype == "Basic") {										  								
-											args.$form.find('.form-item[rel=cleanup]').find('input').removeAttr('checked'); //unchecked
-											args.$form.find('.form-item[rel=cleanup]').hide(); //hidden
-										}
-										else {										  												
-											args.$form.find('.form-item[rel=cleanup]').find('input').attr('checked', 'checked'); //checked											
-											args.$form.find('.form-item[rel=cleanup]').css('display', 'inline-block'); //shown
-                    }											
+                                        });
+                                        args.$form.find('.form-item[rel=cleanup]').find('input').attr('checked', 'checked'); //checked
+                                        args.$form.find('.form-item[rel=cleanup]').css('display', 'inline-block'); //shown
 									},
 									fields: {
                     cleanup: {
