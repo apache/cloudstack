@@ -267,9 +267,9 @@ public class MockVmManagerImpl implements MockVmManager {
 			Map<String, State> states = new HashMap<String, State>();
 			List<MockVMVO> vms = _mockVmDao.findByHostGuid(hostGuid);
 			if (vms.isEmpty()) {
+				txn.commit();
 				return states;
 			}
-
 			for (MockVm vm : vms) {
 				states.put(vm.getName(), vm.getState());
 			}
