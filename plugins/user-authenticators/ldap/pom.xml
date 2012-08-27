@@ -23,7 +23,7 @@
   <name>Apache CloudStack Plugin - User Authenticator LDAP</name>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
-    <artifactId>cloud-plugins</artifactId>
+    <artifactId>cloudstack-plugins</artifactId>
     <version>4.0.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
