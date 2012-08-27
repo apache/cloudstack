@@ -23,9 +23,9 @@
   <name>Apache CloudStack Plugin - F5</name>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
-    <artifactId>cloud-plugin-parent</artifactId>
+    <artifactId>cloud-plugins</artifactId>
     <version>4.0.0-SNAPSHOT</version>
-    <relativePath>../../parent/pom.xml</relativePath>
+    <relativePath>../../../pom.xml</relativePath>
   </parent>
   <dependencies>
     <dependency>
