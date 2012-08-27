@@ -18,6 +18,15 @@
  */
 package org.apache.cloudstack.platform.subsystem.api.storage;
 
-public interface DataMigrationSubSystem {
-    void migrate(String volume, String storagePool, String reservationId);
+public interface FileSystem {
+	DataObject create(DataObject obj);
+	DataObject copy(DataObject Obj, DataStore destStore);
+	DataObject copy(DataObject obj, DataObject destObj);
+	DataObject move(DataObject srcObj, DataObject destObj);
+	boolean delete(DataObject obj);
+	long getStats(DataObject obj);
+	String getFileType();
+	boolean isWritable(DataObject obj);
+	boolean contains(DataObject obj);
+	DataObject ioctl(DataObject obj, Object... objects);
 }

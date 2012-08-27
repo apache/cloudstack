@@ -42,6 +42,11 @@ public interface DataStore {
 	StoreType getType();
 	StoreScope getScope();
 	Long getId();
-	DataStoreDriverRef getDataStoreDriver();
+	DataStoreDriver getDataStoreDriver();
+	void setEndPointSelector(DataStoreEndPointSelector selector);
 	FileSystem getFileSystem();
+	VolumeStrategy getVolumeStrategy();
+	SnapshotStrategy getSnapshotStrategy();
+	BackupStrategy getBackupStrategy();
+	DataStoreLifeCycle getLifeCycle();
 }
