@@ -1269,7 +1269,28 @@
                     }
                   },
 
-                  specifyVlan: { label: 'label.specify.vlan', isBoolean: true },																
+                  specifyVlan: { label: 'label.specify.vlan', isBoolean: true },
+
+                  useVpc: {
+                    label: 'VPC',
+                    isBoolean: true,
+                    onChange: function(args) {
+                      var $checkbox = args.$checkbox;
+                      var $selects = $checkbox.closest('form').find('.dynamic-input select');
+                      var $vpcOptions = $selects.find('option[value=VpcVirtualRouter]');
+                      
+                      if ($checkbox.is(':checked')) {
+                        $vpcOptions.siblings().attr('disabled', true);
+                        $selects.val('VpcVirtualRouter');
+                      } else {
+                        $vpcOptions.siblings().attr('disabled', false);
+                        $vpcOptions.attr('disabled', true);
+                        $selects.each(function() {
+                          $(this).val($(this).find('option:first'));
+                        });
+                      }
+                    }
+                  },
 								
                   supportedServices: {
                     label: 'label.supported.services',
