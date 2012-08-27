@@ -30,6 +30,7 @@ import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.CleanupNetworkRulesCmd;
+import com.cloud.agent.api.ClusterSyncAnswer;
 import com.cloud.agent.api.ClusterSyncCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.ComputeChecksumCommand;
@@ -110,7 +111,7 @@ public class SimulatorManagerImpl implements SimulatorManager {
             conn.setAutoCommit(true);
             _concierge = new ConnectionConcierge("SimulatorConnection", conn, true);
         } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to get a db connection", e);
+            throw new CloudRuntimeException("Unable to get a db connection to simulator", e);
         }
         return true;
     }
@@ -289,17 +290,18 @@ public class SimulatorManagerImpl implements SimulatorManager {
             	return _mockVmMgr.getDomRVersion((GetDomRVersionCmd)cmd);
             } else if (cmd instanceof ClusterSyncCommand) {
             	return new Answer(cmd);
+            	//return new ClusterSyncAnswer(((ClusterSyncCommand) cmd).getClusterId(), this.getVmStates(hostGuid));
             } else if (cmd instanceof CopyVolumeCommand) {
             	return _mockStorageMgr.CopyVolume((CopyVolumeCommand)cmd);
             } else {
                 return Answer.createUnsupportedCommandAnswer(cmd);
             }
         } catch(Exception e) {
-            s_logger.debug("Failed execute cmd: " + e.toString());
+            s_logger.error("Failed execute cmd: " + e.toString());
             txn.rollback();
             return new Answer(cmd, false, e.toString());
         } finally {
-            txn.transitToAutoManagedConnection(Transaction.SIMULATOR_DB);
+            txn.close();
             txn = Transaction.open(Transaction.CLOUD_DB);
             txn.close();
         }
@@ -311,57 +313,50 @@ public class SimulatorManagerImpl implements SimulatorManager {
     }
 
     @Override
-    public boolean configureSimulator(Long zoneId, Long podId, Long clusterId, Long hostId, String command, String values) {
-    	MockConfigurationVO config = _mockConfigDao.findByCommand(zoneId, podId, clusterId, hostId, command);
-    	if (config == null) {
-    		config = new MockConfigurationVO();
-    		config.setClusterId(clusterId);
-    		config.setDataCenterId(zoneId);
-    		config.setPodId(podId);
-    		config.setHostId(hostId);
-    		config.setName(command);
-    		config.setValues(values);
-    		_mockConfigDao.persist(config);
-    	} else {
-    		config.setValues(values);
-    		_mockConfigDao.update(config.getId(), config);
-    	}
-        return true;
-    }
-    
-    @Override
-    @DB
     public Map<String, State> getVmStates(String hostGuid) {
-        Transaction txn = Transaction.currentTxn();
-        txn.transitToUserManagedConnection(_concierge.conn());
-        try {
-            return _mockVmMgr.getVmStates(hostGuid);
-        } finally {
-            txn.transitToAutoManagedConnection(Transaction.SIMULATOR_DB);
-            txn = Transaction.open(Transaction.CLOUD_DB);
-            txn.close();
-        }
+    	return _mockVmMgr.getVmStates(hostGuid);
     }
     
     @Override
-    @DB
     public Map<String, MockVMVO> getVms(String hostGuid) {
-        Transaction txn = Transaction.currentTxn();
-        txn.transitToUserManagedConnection(_concierge.conn());
-        try {
-            return _mockVmMgr.getVms(hostGuid);
-        } finally {
-            txn.transitToAutoManagedConnection(Transaction.SIMULATOR_DB);
-            txn = Transaction.open(Transaction.CLOUD_DB);
-            txn.close();
-        }
+    	return _mockVmMgr.getVms(hostGuid);
     }
-
+    
     @Override
     public HashMap<String, Pair<Long, Long>> syncNetworkGroups(String hostGuid) {
     	SimulatorInfo info = new SimulatorInfo();
     	info.setHostUuid(hostGuid);
-        return _mockVmMgr.syncNetworkGroups(info);
+    	return _mockVmMgr.syncNetworkGroups(info);
     }
 
+    @Override
+	public boolean configureSimulator(Long zoneId, Long podId, Long clusterId, Long hostId, String command,
+			String values) {
+		Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
+		try {
+			txn.start();
+			MockConfigurationVO config = _mockConfigDao.findByCommand(zoneId, podId, clusterId, hostId, command);
+			if (config == null) {
+				config = new MockConfigurationVO();
+				config.setClusterId(clusterId);
+				config.setDataCenterId(zoneId);
+				config.setPodId(podId);
+				config.setHostId(hostId);
+				config.setName(command);
+				config.setValues(values);
+				_mockConfigDao.persist(config);
+				txn.commit();
+			} else {
+				config.setValues(values);
+				_mockConfigDao.update(config.getId(), config);
+				txn.commit();
+			}
+		} catch (Exception ex) {
+			txn.rollback();
+			throw new CloudRuntimeException("Unable to configure simulator because of " + ex.getMessage(), ex);
+		} finally {
+			txn.close();
+		}
+		return true;
+	}
 }
