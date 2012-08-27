@@ -626,7 +626,6 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 Map<String, String> vlanMacAddress = new HashMap<String, String>();
                 List<PublicIpAddress> ipsToSend = new ArrayList<PublicIpAddress>();
                 for (PublicIpAddress ipAddr : ipAddress) {
-                    
                     String broadcastURI = BroadcastDomainType.Vlan.toUri(ipAddr.getVlanTag()).toString();
                     Nic nic = _nicDao.findByNetworkIdInstanceIdAndBroadcastUri(ipAddr.getNetworkId(), 
                             router.getId(), broadcastURI);
@@ -645,8 +644,12 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                         ipsToSend.add(ipAddr);
                     }   
                 }
-                createVpcAssociatePublicIPCommands(router, ipsToSend, cmds, vlanMacAddress);
-                return sendCommandsToRouter(router, cmds);
+                if (!ipsToSend.isEmpty()) {
+                    createVpcAssociatePublicIPCommands(router, ipsToSend, cmds, vlanMacAddress);
+                    return sendCommandsToRouter(router, cmds);
+                }else {
+                    return true;
+                }
             }
         });
         if(result && netUsagecmds.size() > 0){
