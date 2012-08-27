@@ -3782,7 +3782,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
 				NodeInfo node = conn.nodeInfo();
 				utilization = utilization / node.cpus;
-				stats.setCPUUtilization(utilization * 100);
+				if(utilization > 0){
+					stats.setCPUUtilization(utilization * 100);
+				}
 			}
 
 			/* get network stats */
