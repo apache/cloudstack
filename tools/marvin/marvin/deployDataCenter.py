@@ -276,6 +276,7 @@ class deployDataCenters():
             createzone.internaldns2 = zone.internaldns2
             createzone.name = zone.name
             createzone.securitygroupenabled = zone.securitygroupenabled
+            createzone.localstorageenabled = zone.localstorageenabled
             createzone.networktype = zone.networktype
             createzone.guestcidraddress = zone.guestcidraddress
             
