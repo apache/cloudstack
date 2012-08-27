@@ -588,10 +588,10 @@ public class MockStorageManagerImpl implements MockStorageManager {
 					return new GetStorageStatsAnswer(cmd, "Can't find the secondary storage:" + secUrl);
 				}
 				Long totalUsed = _mockVolumeDao.findTotalStorageId(secondary.getId());
+				txn.commit();
 				return new GetStorageStatsAnswer(cmd, secondary.getCapacity(), totalUsed);
 			} else {
 				MockStoragePoolVO pool = _mockStoragePoolDao.findByUuid(uuid);
-				txn.commit();
 				if (pool == null) {
 					return new GetStorageStatsAnswer(cmd, "Can't find the pool");
 				}
@@ -599,6 +599,7 @@ public class MockStorageManagerImpl implements MockStorageManager {
 				if (totalUsed == null) {
 					totalUsed = 0L;
 				}
+				txn.commit();
 				return new GetStorageStatsAnswer(cmd, pool.getCapacity(), totalUsed);
 			}
 		} catch (Exception ex) {

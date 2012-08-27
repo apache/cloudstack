@@ -149,7 +149,7 @@ public class SimulatorManagerImpl implements SimulatorManager {
     @DB
     @Override
     public Answer simulate(Command cmd, String hostGuid) {
-        Transaction txn = Transaction.currentTxn();
+        Transaction txn = Transaction.open(Transaction.SIMULATOR_DB);
         txn.transitToUserManagedConnection(_concierge.conn());
         
         try {
