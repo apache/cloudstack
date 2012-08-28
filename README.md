@@ -41,4 +41,6 @@ http://cloudstack.org/download.html
 [Users Mailing list](mailto:cloudstack-users-subscribe@incubator.apache.org)
 [Commits mailing list](mailto:cloudstack-commits-subscribe@incubator.apache.org)
 
-
+#Maven build
+Some third parties jars are non available in Maven central.
+So install it with: cd deps&&sh ./install-non-oss.sh
