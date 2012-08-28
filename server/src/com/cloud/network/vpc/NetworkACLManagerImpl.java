@@ -293,9 +293,9 @@ public class NetworkACLManagerImpl implements Manager,NetworkACLManager{
 
                 List<IdentityProxy> idList = new ArrayList<IdentityProxy>();
                 idList.add(new IdentityProxy(rule, rule.getId(), "ruleId"));
-                throw new NetworkRuleConflictException("The range specified, " + newRule.getSourcePortStart() + "-" 
-                        + newRule.getSourcePortEnd() + ", conflicts with rule with specified ruleId" + rule.getId()
-                        + " which has " + rule.getSourcePortStart() + "-" + rule.getSourcePortEnd(), idList);
+                throw new NetworkRuleConflictException("The port range specified, " + newRule.getSourcePortStart() + "-" 
+                        + newRule.getSourcePortEnd() + ", conflicts with rule with specified ruleId " +
+                        "which has the port range " + rule.getSourcePortStart() + "-" + rule.getSourcePortEnd(), idList);
 
             }
         }
