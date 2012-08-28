@@ -1007,12 +1007,12 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                             umanageHost(host.getId());
                         }
                     }
-                    int retry = 10;
+                    int retry = 40;
                     boolean lsuccess = true;
                     for ( int i = 0; i < retry; i++) {
                         lsuccess = true;
                         try {
-                            Thread.sleep(20 * 1000);
+                            Thread.sleep(5 * 1000);
                         } catch (Exception e) {
                         }
                         hosts = listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId()); 
