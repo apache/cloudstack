@@ -44,3 +44,13 @@ http://cloudstack.org/download.html
 #Maven build
 Some third parties jars are non available in Maven central.
 So install it with: cd deps&&sh ./install-non-oss.sh
+
+to run webapp client:
+mvn org.apache.tomcat.maven:tomcat7-maven-plugin:2.0-beta-1:run -pl :cloud-client-ui -am
+then hit: http://localhost:8080/cloud-client-ui/
+or add in your ~/.m2/settings.xml
+  <pluginGroups>
+    <pluginGroup>org.apache.tomcat.maven</pluginGroup>
+  </pluginGroups>
+and save your fingers with mvn tomcat7:run -pl :cloud-client-ui -am
+
