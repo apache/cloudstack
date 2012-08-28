@@ -5,7 +5,11 @@ import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreDriver;
 
 public class XenDataStoreDriver implements DataStoreDriver {
-
+	protected DataStore _ds;
+	public XenDataStoreDriver(DataStore ds) {
+		_ds = ds;
+	}
+	
 	public String getDriverType() {
 		// TODO Auto-generated method stub
 		return null;

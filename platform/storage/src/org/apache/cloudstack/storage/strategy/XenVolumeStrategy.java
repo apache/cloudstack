@@ -1,12 +1,17 @@
 package org.apache.cloudstack.storage.strategy;
 
+import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.platform.subsystem.api.storage.Snapshot;
 import org.apache.cloudstack.platform.subsystem.api.storage.Template;
 import org.apache.cloudstack.platform.subsystem.api.storage.Volume;
 import org.apache.cloudstack.platform.subsystem.api.storage.VolumeStrategy;
 
 public class XenVolumeStrategy implements VolumeStrategy {
-
+	protected DataStore _ds;
+	public XenVolumeStrategy(DataStore ds) {
+		_ds = ds;
+	}
+	
 	public Volume createVolume(Volume vol) {
 		// TODO Auto-generated method stub
 		return null;

@@ -50,7 +50,7 @@ public class StoragePoolVO implements StoragePool, Identity {
     
     @Column(name="pool_type", updatable=false, nullable=false, length=32)
     @Enumerated(value=EnumType.STRING)
-    private StoragePoolType poolType;
+    private StoragePoolType protocol;
     
     @Column(name=GenericDao.CREATED_COLUMN)
     Date created;
@@ -78,6 +78,12 @@ public class StoragePoolVO implements StoragePool, Identity {
     @Enumerated(value=EnumType.STRING)
     private StoragePoolStatus status;
     
+    @Column(name="storage_provider", updatable=true, nullable=false)
+    private String storageProvider;
+    
+    @Column(name="storage_type", nullable=false)
+    private String storageType;
+    
 	@Override
     public long getId() {
 		return id;
@@ -104,7 +110,7 @@ public class StoragePoolVO implements StoragePool, Identity {
 	
 	@Override
     public StoragePoolType getPoolType() {
-		return poolType;
+		return protocol;
 	}
 
 	@Override
@@ -129,6 +135,24 @@ public class StoragePoolVO implements StoragePool, Identity {
 	@Override
     public long getAvailableBytes() {
 		return availableBytes;
+	}
+	
+	@Override
+	public String getStorageProvider() {
+		return storageProvider;
+	}
+	
+	public void setStorageProvider(String provider) {
+		storageProvider = provider;
+	}
+	
+	@Override
+	public String getStorageType() {
+		return storageType;
+	}
+	
+	public void setStorageType(String type) {
+		storageType = type;
 	}
 
 	@Override
@@ -189,7 +213,7 @@ public class StoragePoolVO implements StoragePool, Identity {
         this.name  = name;
         this.id = poolId;
         this.uuid = uuid;
-        this.poolType = type;
+        this.protocol = type;
         this.dataCenterId = dataCenterId;
         this.availableBytes = availableBytes;
         this.capacityBytes = capacityBytes;
@@ -197,29 +221,29 @@ public class StoragePoolVO implements StoragePool, Identity {
         this.path = hostPath;
         this.port = port;
         this.podId = podId;
-        this.setStatus(StoragePoolStatus.Up);
+        this.setStatus(StoragePoolStatus.Creating);
     }
     
     public StoragePoolVO(StoragePoolVO that) {
-        this(that.id, that.name, that.uuid, that.poolType, that.dataCenterId, that.podId, that.availableBytes, that.capacityBytes, that.hostAddress, that.port, that.path);
+        this(that.id, that.name, that.uuid, that.protocol, that.dataCenterId, that.podId, that.availableBytes, that.capacityBytes, that.hostAddress, that.port, that.path);
     }
     
     public StoragePoolVO(StoragePoolType type, String hostAddress, int port, String path) {
-        this.poolType = type;
+        this.protocol = type;
         this.hostAddress = hostAddress;
         this.port = port;
         this.path = path;
-        this.setStatus(StoragePoolStatus.Up);
+        this.setStatus(StoragePoolStatus.Creating);
         this.uuid = UUID.randomUUID().toString();
     }
 
     public StoragePoolVO(StoragePoolType type, String hostAddress, int port, String path, String userInfo) {
-        this.poolType = type;
+        this.protocol = type;
         this.hostAddress = hostAddress;
         this.port = port;
         this.path = path;
         this.userInfo = userInfo;
-        this.setStatus(StoragePoolStatus.Up);
+        this.setStatus(StoragePoolStatus.Creating);
         this.uuid = UUID.randomUUID().toString();
     }
     
@@ -259,12 +283,12 @@ public class StoragePoolVO implements StoragePool, Identity {
     
     @Override
     public boolean isShared() {
-    	return poolType.isShared();
+    	return protocol.isShared();
     }
     
     @Override
     public boolean isLocal() {
-    	return !poolType.isShared();
+    	return !protocol.isShared();
     }
     
     @Transient
@@ -315,6 +339,6 @@ public class StoragePoolVO implements StoragePool, Identity {
 	
     @Override
     public String toString() {
-        return new StringBuilder("Pool[").append(id).append("|").append(poolType).append("]").toString();
+        return new StringBuilder("Pool[").append(id).append("|").append(protocol).append("]").toString();
     }
 }

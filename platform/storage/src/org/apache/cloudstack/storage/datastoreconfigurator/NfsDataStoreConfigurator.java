@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreConfigurator;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolVO;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -48,19 +49,12 @@ public abstract class NfsDataStoreConfigurator implements DataStoreConfigurator 
 	}
 
 	public boolean validate(Map<String, String> configs) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	public StoragePoolVO getStoragePool(Map<String, String> configs) {
-		String nfsServer = configs.get(NfsConfigName.SERVER.toString());
-		String nfsPath = configs.get(NfsConfigName.PATH.toString());
-		String uuid = UUID.nameUUIDFromBytes(new String(nfsServer + nfsPath).getBytes()).toString();
-		StoragePoolVO pool = new StoragePoolVO(StoragePoolType.NetworkFilesystem, 
-				nfsServer, -1, 
-				nfsPath);
-		pool.setUuid(uuid);
-		return pool;
+		  String uriHost = configs.get(NfsConfigName.SERVER.toString());
+          String uriPath = configs.get(NfsConfigName.PATH.toString());
+          if (uriHost == null || uriPath == null || uriHost.trim().isEmpty() || uriPath.trim().isEmpty()) {
+              throw new InvalidParameterValueException("host or path is null, should be nfs://hostname/path");
+          }
+          return true;
 	}
 
 	public DataStore getDataStore(StoragePool pool) {

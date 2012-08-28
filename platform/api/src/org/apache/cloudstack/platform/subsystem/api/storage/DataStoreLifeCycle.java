@@ -5,7 +5,7 @@ public interface DataStoreLifeCycle {
 		HOSTUP,
 		HOSTDOWN,
 	}
-	void create();
+	void add();
 	void delete();
 	void enable();
 	void disable();

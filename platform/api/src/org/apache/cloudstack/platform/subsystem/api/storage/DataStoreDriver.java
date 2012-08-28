@@ -18,11 +18,15 @@
  */
 package org.apache.cloudstack.platform.subsystem.api.storage;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+
 public interface DataStoreDriver {
 	String getDriverType();
 	DataObject create(DataObject obj);
 	DataObject copy(DataObject src, DataStore dest);
 	DataObject copy(DataObject src, DataObject dest);
 	DataObject move(DataObject src, DataObject dest);
+	Answer sendMessage(DataStoreEndPoint dsep, Command cmd);
 	boolean delete(DataObject obj);
 }

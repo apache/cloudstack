@@ -103,4 +103,14 @@ public interface StoragePool {
     int getPort();
 
     Long getPodId();
+
+	/**
+	 * @return
+	 */
+	String getStorageProvider();
+
+	/**
+	 * @return
+	 */
+	String getStorageType();
 }

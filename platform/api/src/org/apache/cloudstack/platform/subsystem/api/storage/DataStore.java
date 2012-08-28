@@ -39,11 +39,14 @@ public interface DataStore {
 	
 	String getURI();
 	String getUUID();
+	long getCluterId();
+	long getPodId();
+	long getZoneId();
 	StoreType getType();
 	StoreScope getScope();
 	Long getId();
 	DataStoreDriver getDataStoreDriver();
-	void setEndPointSelector(DataStoreEndPointSelector selector);
+	DataStoreEndPointSelector getEndPointSelector();
 	FileSystem getFileSystem();
 	VolumeStrategy getVolumeStrategy();
 	SnapshotStrategy getSnapshotStrategy();
