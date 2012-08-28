@@ -154,6 +154,7 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
 
         final List<SecurityGroupWorkVO> vos = lockRows(sc, filter, true);
         if (vos.size() == 0) {
+        	txn.commit();
             return;
         }
         SecurityGroupWorkVO work = vos.get(0);
@@ -179,6 +180,7 @@ public class SecurityGroupWorkDaoImpl extends GenericDaoBase<SecurityGroupWorkVO
         
         SecurityGroupWorkVO work = lockRow(workId, true);
         if (work == null) {
+        	txn.commit();
         	return;
         }
         work.setStep(step);
