@@ -73,6 +73,7 @@ import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.Site2SiteCustomerGatewayVO;
 import com.cloud.network.Site2SiteVpnConnectionVO;
 import com.cloud.network.VpnUserVO;
+import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
@@ -210,6 +211,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private ProjectAccountDao _projectAccountDao;
     @Inject
     private IPAddressDao _ipAddressDao;
+    @Inject
+    private AutoScaleManager _autoscaleMgr;
     @Inject
     private VpcManager _vpcMgr;
     @Inject
@@ -613,10 +616,18 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 for (IpAddress ip : ipsToRelease) {
                     s_logger.debug("Releasing ip " + ip + " as a part of account id=" + accountId + " cleanup");
                     if (!_networkMgr.disassociatePublicIpAddress(ip.getId(), callerUserId, caller)) {
-                        s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " clenaup");
+                        s_logger.warn("Failed to release ip address " + ip + " as a part of account id=" + accountId + " cleanup");
                         accountCleanupNeeded = true;
                     }
                 }
+            }
+
+            // Delete autoscale resources if any
+            try {
+                _autoscaleMgr.cleanUpAutoScaleResources(accountId);
+            } catch (CloudRuntimeException ex) {
+                s_logger.warn("Failed to cleanup AutoScale resources as a part of account id=" + accountId + " cleanup due to exception:", ex);
+                accountCleanupNeeded = true;
             }
 
             // Delete Site 2 Site VPN customer gateway

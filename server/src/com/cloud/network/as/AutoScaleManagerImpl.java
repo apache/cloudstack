@@ -91,8 +91,8 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
 
-@Local(value = { AutoScaleService.class })
-public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
+@Local(value = { AutoScaleService.class, AutoScaleManager.class })
+public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleService, Manager {
     private static final Logger s_logger = Logger.getLogger(AutoScaleManagerImpl.class);
 
     String _name;
@@ -1142,4 +1142,20 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
         return success;
     }
 
+    public void cleanUpAutoScaleResources(Long accountId) {
+        // cleans Autoscale VmProfiles, AutoScale Policies and Conditions belonging to an account
+        int count = 0;
+        count = _autoScaleVmProfileDao.removeByAccountId(accountId);
+        if (count > 0) {
+            s_logger.debug("Deleted " + count + " AutoScale Vm Profile for account Id: " + accountId);
+        }
+        count = _autoScalePolicyDao.removeByAccountId(accountId);
+        if (count > 0) {
+            s_logger.debug("Deleted " + count + " AutoScale Policies for account Id: " + accountId);
+        }
+        count = _conditionDao.removeByAccountId(accountId);
+        if (count > 0) {
+            s_logger.debug("Deleted " + count + " Conditions for account Id: " + accountId);
+        }
+    }
 }

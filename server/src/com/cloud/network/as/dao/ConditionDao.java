@@ -24,4 +24,6 @@ public interface ConditionDao extends GenericDao<ConditionVO, Long> {
 
     ConditionVO findByCounterId(long ctrId);
 
+    int removeByAccountId(long accountId);
+
 }

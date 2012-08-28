@@ -268,7 +268,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         }
         AutoScaleVmProfile autoScaleVmProfile = _autoScaleVmProfileDao.findById(vmGroup.getProfileId());
         Long autoscaleUserId = autoScaleVmProfile.getAutoScaleUserId();
-        User user = _userDao.findById(autoscaleUserId);
+        User user = _userDao.findByIdIncludingRemoved(autoscaleUserId);
         String apiKey = user.getApiKey();
         String secretKey = user.getSecretKey();
         String csUrl = _configDao.getValue(Config.EndpointeUrl.key());

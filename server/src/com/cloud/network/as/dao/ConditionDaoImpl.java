@@ -17,6 +17,7 @@
 
 package com.cloud.network.as.dao;
 
+
 import javax.ejb.Local;
 
 import com.cloud.network.as.ConditionVO;
@@ -42,5 +43,13 @@ public class ConditionDaoImpl extends GenericDaoBase<ConditionVO, Long> implemen
         SearchCriteria<ConditionVO> sc = AllFieldsSearch.create();
         sc.setParameters("counterId", ctrId);
         return findOneBy(sc);
+    }
+
+    public int removeByAccountId(long accountId) {
+        SearchCriteria<ConditionVO> sc = createSearchCriteria();
+
+        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+
+        return remove(sc);
     }
 }
