@@ -35,7 +35,7 @@
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>servlet-api</artifactId>
-      <version>2.4</version>
+      <version>${cs.servlet.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
