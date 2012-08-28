@@ -67,6 +67,8 @@ public class CloudStackUserVm {
     private String jobId;
     @SerializedName(ApiConstants.JOB_STATUS)
     private Integer jobStatus;
+    @SerializedName(ApiConstants.SSH_KEYPAIR)
+    private String keyPairName;
     @SerializedName(ApiConstants.MEMORY)
     private Integer memory;
     @SerializedName(ApiConstants.NAME)
@@ -339,6 +341,13 @@ public class CloudStackUserVm {
 	public String getServiceOfferingName() {
 		return serviceOfferingName;
 	}
+
+    /**
+      * @return the sshKeyPairName
+      */
+    public String getKeyPairName() {
+        return keyPairName;
+    }
 
 	/**
 	 * @return the state

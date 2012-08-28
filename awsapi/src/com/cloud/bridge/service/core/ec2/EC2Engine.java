@@ -1521,6 +1521,7 @@ public class EC2Engine {
 				vm.setDomainId(resp.getDomainId());
 				vm.setHypervisor(resp.getHypervisor());
 				vm.setServiceOffering( svcOffering.getName());
+                vm.setKeyPairName(resp.getKeyPairName());
 				instances.addInstance(vm);
 				countCreated++;
 			}    		
@@ -1905,7 +1906,8 @@ public class EC2Engine {
     			ec2Vm.setRootDeviceType(cloudVm.getRootDeviceType());
     			ec2Vm.setRootDeviceId(cloudVm.getRootDeviceId());
     			ec2Vm.setServiceOffering(serviceOfferingIdToInstanceType(cloudVm.getServiceOfferingId().toString()));
-    
+                ec2Vm.setKeyPairName(cloudVm.getKeyPairName());
+
     			List<CloudStackNic> nics = cloudVm.getNics();
     			for(CloudStackNic nic : nics) {
     				if(nic.getIsDefault()) {
