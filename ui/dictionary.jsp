@@ -1379,6 +1379,12 @@ dictionary = {
 'label.ESP.lifetime': '<fmt:message key="label.ESP.lifetime" />',
 'label.dead.peer.detection': '<fmt:message key="label.dead.peer.detection" />',
 'label.delete.VPN.customer.gateway': '<fmt:message key="label.delete.VPN.customer.gateway" />',
-'message.delete.VPN.customer.gateway': '<fmt:message key="message.delete.VPN.customer.gateway" />'
+'message.delete.VPN.customer.gateway': '<fmt:message key="message.delete.VPN.customer.gateway" />',
+'label.configure.network.ACLs': '<fmt:message key="label.configure.network.ACLs" />',
+'label.network.ACLs': '<fmt:message key="label.network.ACLs" />',
+'label.add.network.ACL': '<fmt:message key="label.add.network.ACL" />',
+'label.private.Gateway': '<fmt:message key="label.private.Gateway" />',
+'label.VPC.router.details': '<fmt:message key="label.VPC.router.details" />',
+'label.VMs.in.tier': '<fmt:message key="label.VMs.in.tier" />'
 };
 </script>
