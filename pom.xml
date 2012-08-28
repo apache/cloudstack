@@ -202,19 +202,4 @@
     </pluginManagement>
   </build>
 
-  <repositories>
-    <repository>
-      <id>cloudstack-third-parties</id>
-      <name>libs-release</name>
-      <url>http://cs.ibuildthecloud.com/artifactory/libs-release</url>
-      <releases>
-        <enabled>true</enabled>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-    </repository>
-  </repositories>
-
-
 </project>
