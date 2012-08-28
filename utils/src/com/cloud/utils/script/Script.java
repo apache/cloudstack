@@ -343,6 +343,12 @@ public class Script implements Callable<String> {
             return file.getAbsolutePath();
         }
 
+        url = Script.class.getClassLoader().getResource(path);
+        if (url != null) {
+            file = new File(url.getFile());
+            return file.getAbsolutePath();
+        }
+        
         if (path.endsWith(File.separator)) {
             path = path.substring(0, path.lastIndexOf(File.separator));
         }
