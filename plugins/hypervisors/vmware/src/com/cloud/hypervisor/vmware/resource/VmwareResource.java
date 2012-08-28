@@ -1344,11 +1344,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         args += vlanGateway;
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Run command on domain router " + privateIpAddress + ", /root/ipassoc.sh " + args);
+            s_logger.debug("Run command on domain router " + privateIpAddress + ", /opt/cloud/bin/ipassoc.sh " + args);
         }
 
         VmwareManager mgr = getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
-        Pair<Boolean, String> result = SshHelper.sshExecute(privateIpAddress, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/root/ipassoc.sh " + args);
+        Pair<Boolean, String> result = SshHelper.sshExecute(privateIpAddress, DEFAULT_DOMR_SSHPORT, "root", mgr.getSystemVMKeyFile(), null, "/opt/cloud/bin/ipassoc.sh " + args);
 
         if (!result.first()) {
             s_logger.error("ipassoc command on domain router " + privateIpAddress + " failed. message: " + result.second());
