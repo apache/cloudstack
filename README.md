@@ -44,6 +44,7 @@ http://cloudstack.org/download.html
 #Maven build
 Some third parties jars are non available in Maven central.
 So install it with: cd deps&&sh ./install-non-oss.sh
+Now you are able to activate nonoss build with adding -Dnonoss to maven cli.
 
 to run webapp client:
 mvn org.apache.tomcat.maven:tomcat7-maven-plugin:2.0-beta-1:run -pl :cloud-client-ui -am
