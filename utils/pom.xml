@@ -127,5 +127,10 @@
         </executions>
       </plugin>
     </plugins>
+    <resources>
+       <resource>
+          <directory>certs</directory>
+       </resource>
+    </resources>
   </build>
 </project>
