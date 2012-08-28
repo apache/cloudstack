@@ -3165,7 +3165,7 @@ public class ManagementServerImpl implements ManagementServer {
     public String getVersion() {
         final Class<?> c = ManagementServer.class;
         String fullVersion = c.getPackage().getImplementationVersion();
-        if (fullVersion.length() > 0) {
+        if (fullVersion != null && fullVersion.length() > 0) {
             return fullVersion;
         }
 

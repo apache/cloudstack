@@ -34,7 +34,7 @@
     </dependency>
     <dependency>
       <groupId>cglib</groupId>
-      <artifactId>cglib</artifactId>
+      <artifactId>cglib-nodep</artifactId>
       <version>${cs.cglib.version}</version>
     </dependency>
     <dependency>
@@ -62,6 +62,21 @@
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
       <version>${cs.codec.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-collections</groupId>
+      <artifactId>commons-collections</artifactId>
+      <version>${cs.collections.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-discovery</groupId>
+      <artifactId>commons-discovery</artifactId>
+      <version>${cs.discovery.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>commons-logging</groupId>
+      <artifactId>commons-logging</artifactId>
+      <version>${cs.logging.version}</version>
     </dependency>
     <dependency>
       <groupId>org.bouncycastle</groupId>
@@ -127,5 +142,10 @@
         </executions>
       </plugin>
     </plugins>
+    <resources>
+       <resource>
+          <directory>certs</directory>
+       </resource>
+    </resources>
   </build>
 </project>

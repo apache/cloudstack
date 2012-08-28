@@ -59,11 +59,11 @@
       <artifactId>mail</artifactId>
       <version>${cs.mail.version}</version>
     </dependency>
-    <!-- <dependency> <groupId>org.apache.cloudstack</groupId> <artifactId>cloud-utils</artifactId>
-       <version>${project.version}</version> <classifier>tests</classifier> <scope>test</scope>
-       </dependency> <dependency> <groupId>org.apache.cloudstack</groupId> <artifactId>cloud-agent</artifactId>
-       <version>${project.version}</version> <classifier>tests</classifier> <scope>test</scope>
-       </dependency> -->
+    <dependency>
+      <groupId>jstl</groupId>
+      <artifactId>jstl</artifactId>
+      <version>${cs.jstl.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>

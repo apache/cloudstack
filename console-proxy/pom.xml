@@ -46,5 +46,13 @@
   <build>
     <defaultGoal>install</defaultGoal>
     <sourceDirectory>src</sourceDirectory>
+    <resources>
+      <resource>
+        <directory>certs</directory>
+        <excludes>
+          <exclude>realhostip.csr</exclude>
+        </excludes>
+      </resource>
+    </resources>
   </build>
 </project>
