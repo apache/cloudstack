@@ -833,6 +833,7 @@ CREATE TABLE `cloud`.`host_details` (
   `value` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_host_details__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE,
+  INDEX `fk_host_details__host_id`(`host_id`),
   CONSTRAINT UNIQUE KEY `uk_host_id_name` (`host_id`, `name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
