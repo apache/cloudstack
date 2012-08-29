@@ -67,7 +67,7 @@
     // UI actions to appear in dialog
     autoscaleActions: {
       enable: {
-        label: 'Enable Autoscale VM Group',
+        label: 'Enable Autoscale ',
         action: function(args) {				
 				  $.ajax({
 					  url: createURL('enableAutoScaleVmGroup'),
@@ -95,7 +95,7 @@
         }
       },
       disable: {
-        label: 'Disable Autoscale VM Group',
+        label: 'Disable Autoscale',
         action: function(args) {				  
 				  $.ajax({
 					  url: createURL('disableAutoScaleVmGroup'),
