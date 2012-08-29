@@ -4,7 +4,7 @@ BINDINGJAVAFILES := $(wildcard com/xensource/xenapi/*.java)
 BINDINGCLASSFILES := $(BINDINGJAVAFILES:.java=.class)
 BINDINGJAR := xenserver-5.6.100-1.jar
 
-CLASSPATH := :xmlrpc-client-3.1.jar:xmlrpc-common-3.1.jar:ws-commons-util-1.0.2.jar
+CLASSPATH := :../cloud-xmlrpc-client-3.1.3.jar:../cloud-xmlrpc-common-3.1.3.jar:../cloud-ws-commons-util-1.0.2.jar
 EXAMPLECLASSPATH := :$(BINDINGJAR)$(CLASSPATH)
 
 .PHONY: all

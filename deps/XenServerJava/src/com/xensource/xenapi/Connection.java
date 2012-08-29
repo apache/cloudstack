@@ -38,6 +38,7 @@ import org.apache.xmlrpc.client.XmlRpcClient;
 import org.apache.xmlrpc.client.XmlRpcClientConfig;
 import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 import org.apache.xmlrpc.client.XmlRpcHttpClientConfig;
+import org.apache.xmlrpc.client.XmlRpcSun15HttpTransportFactory;
 
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.SessionAuthenticationFailed;
@@ -64,6 +65,8 @@ public class Connection
     public Boolean rioConnection = false;
 
     private APIVersion apiVersion;
+
+    protected int _wait = 600;
 
     /**
      * Updated when Session.login_with_password() is called.
@@ -159,10 +162,10 @@ public class Connection
      * When this constructor is used, a call to dispose() will do nothing. The programmer is responsible for manually
      * logging out the Session.
      */
-    public Connection(URL url)
+    public Connection(URL url, int wait)
     {
         deprecatedConstructorUsed = false;
-
+        _wait = wait;
         this.client = getClientFromURL(url);
     }
 
@@ -274,6 +277,8 @@ public class Connection
     {
         config.setTimeZone(TimeZone.getTimeZone("UTC"));
         config.setServerURL(url);
+        config.setReplyTimeout(_wait * 1000);
+        config.setConnectionTimeout(5000);
         XmlRpcClient client = new XmlRpcClient();
         client.setConfig(config);
         return client;
@@ -293,7 +298,7 @@ public class Connection
     /**
      * The (auto-generated parts of) the bindings dispatch XMLRPC calls on this Connection's client through this method.
      */
-    Map dispatch(String method_call, Object[] method_params) throws XmlRpcException, XenAPIException
+    protected Map dispatch(String method_call, Object[] method_params) throws XmlRpcException, XenAPIException
     {
         Map response = (Map) client.execute(method_call, method_params);
 
@@ -337,7 +342,7 @@ public class Connection
                                 new Connection(new URL(client_url.getProtocol(),
                                                        (String)error[1],
                                                        client_url.getPort(),
-                                                       client_url.getFile()));
+                                                       client_url.getFile()), _wait);
                             tmp_conn.sessionReference = sessionReference;
                             try
                             {
