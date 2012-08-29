@@ -2411,28 +2411,36 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         });
     }
 
-	private String findDefaultDnsIp(long userVmId) {
-		NicVO defaultNic = _nicDao.findDefaultNicForVM(userVmId);
-		
-		//check if DNS provider is the domR
-		if (!_networkMgr.isProviderSupportServiceInNetwork(defaultNic.getNetworkId(), Service.Dns, Provider.VirtualRouter)) {
-			return null;
-		}
-		
-		NetworkOfferingVO offering = _networkOfferingDao.findById(_networkDao.findById(defaultNic.getNetworkId()).getNetworkOfferingId());
-		if (offering.getRedundantRouter()) {
-		    return findGatewayIp(userVmId);
-		}
-		
-		//find domR's nic in the network
-		NicVO domrDefaultNic = _nicDao.findByNetworkIdTypeAndGateway(defaultNic.getNetworkId(), VirtualMachine.Type.DomainRouter, defaultNic.getGateway());
-		return domrDefaultNic.getIp4Address();
-	}
-	
-	private String findGatewayIp(long userVmId) {
-		NicVO defaultNic = _nicDao.findDefaultNicForVM(userVmId);
-		return defaultNic.getGateway();
-	}
+    private String findDefaultDnsIp(long userVmId) {
+        NicVO defaultNic = _nicDao.findDefaultNicForVM(userVmId);
+        
+        //check if DNS provider is the domR
+        if (!_networkMgr.isProviderSupportServiceInNetwork(defaultNic.getNetworkId(), Service.Dns, Provider.VirtualRouter)) {
+            return null;
+        }
+        
+        NetworkOfferingVO offering = _networkOfferingDao.findById(_networkDao.findById(defaultNic.getNetworkId()).getNetworkOfferingId());
+        if (offering.getRedundantRouter()) {
+            return findGatewayIp(userVmId);
+        }
+        
+        DataCenter dc = _dcDao.findById(_networkMgr.getNetwork(defaultNic.getNetworkId()).getDataCenterId());
+        boolean isZoneBasic = (dc.getNetworkType() == NetworkType.Basic);
+        
+        //find domR's nic in the network
+        NicVO domrDefaultNic;
+        if (isZoneBasic){
+            domrDefaultNic = _nicDao.findByNetworkIdTypeAndGateway(defaultNic.getNetworkId(), VirtualMachine.Type.DomainRouter, defaultNic.getGateway());
+        } else{
+            domrDefaultNic = _nicDao.findByNetworkIdAndType(defaultNic.getNetworkId(), VirtualMachine.Type.DomainRouter);
+        }
+        return domrDefaultNic.getIp4Address();
+    }
+
+    private String findGatewayIp(long userVmId) {
+        NicVO defaultNic = _nicDao.findDefaultNicForVM(userVmId);
+        return defaultNic.getGateway();
+     }
 
     @Override
     public boolean applyUserData(Network network, final NicProfile nic, VirtualMachineProfile<UserVm> profile, DeployDestination dest, List<DomainRouterVO> routers)
