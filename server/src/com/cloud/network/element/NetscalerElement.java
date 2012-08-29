@@ -71,6 +71,8 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.as.AutoScaleCounter;
+import com.cloud.network.as.AutoScaleCounter.AutoScaleCounterType;
 import com.cloud.network.dao.ExternalLoadBalancerDeviceDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkExternalLoadBalancerDao;
@@ -99,7 +101,7 @@ import com.google.gson.Gson;
 
 @Local(value = NetworkElement.class)
 public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager, IpDeployer,
-        StaticNatServiceProvider {
+StaticNatServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(NetscalerElement.class);
 
@@ -150,7 +152,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException,
-            InsufficientNetworkCapacityException {
+    InsufficientNetworkCapacityException {
 
         if (!canHandle(guestConfig, Service.Lb)) {
             return false;
@@ -176,7 +178,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
     @Override
     public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
-            InsufficientNetworkCapacityException, ResourceUnavailableException {
+    InsufficientNetworkCapacityException, ResourceUnavailableException {
         return true;
     }
 
@@ -249,8 +251,20 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         // Specifies that load balancing rules can only be made with public IPs that aren't source NAT IPs
         lbCapabilities.put(Capability.LoadBalancingSupportedIps, "additional");
 
-        // Specifies that load balancing rules can support autoscaling
-        lbCapabilities.put(Capability.AutoScaleCounters, "snmp,netscaler");
+        // Specifies that load balancing rules can support autoscaling and the list of counters it supports
+        AutoScaleCounter counter;
+        List<AutoScaleCounter> counterList = new ArrayList<AutoScaleCounter>();
+        counter = new AutoScaleCounter(AutoScaleCounterType.Snmp);
+        counterList.add(counter);
+        counter.addParam("snmpcommunity", true, "the community string that has to be used to do a SNMP GET on the AutoScaled Vm", false);
+        counter.addParam("snmpport", false, "the port at which SNMP agent is running on the AutoScaled Vm", false);
+
+        counter = new AutoScaleCounter(AutoScaleCounterType.Netscaler);
+        counterList.add(counter);
+
+        Gson gson = new Gson();
+        String autoScaleCounterList = gson.toJson(counterList);
+        lbCapabilities.put(Capability.AutoScaleCounters, autoScaleCounterList);
 
         LbStickinessMethod method;
         List<LbStickinessMethod> methodList = new ArrayList<LbStickinessMethod>();
@@ -266,7 +280,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
         methodList.add(method);
         method.addParam("holdtime", false, "time period for which persistence is in effect.", false);
 
-        Gson gson = new Gson();
+        gson = new Gson();
         String stickyMethodList = gson.toJson(methodList);
         lbCapabilities.put(Capability.SupportedStickinessMethods, stickyMethodList);
 
@@ -523,7 +537,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
 
     @Override
     public boolean shutdownProviderInstances(PhysicalNetworkServiceProvider provider, ReservationContext context) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+    ResourceUnavailableException {
         // TODO reset the configuration on all of the netscaler devices in this physical network
         return true;
     }

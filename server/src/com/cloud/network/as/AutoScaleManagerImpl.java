@@ -14,7 +14,6 @@ package com.cloud.network.as;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +54,7 @@ import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.LoadBalancerVO;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.as.AutoScaleCounter.AutoScaleCounterParam;
 import com.cloud.network.as.dao.AutoScalePolicyConditionMapDao;
 import com.cloud.network.as.dao.AutoScalePolicyDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupDao;
@@ -78,6 +78,7 @@ import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.IdentityProxy;
+import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.component.Manager;
@@ -90,6 +91,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.net.NetUtils;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 @Local(value = { AutoScaleService.class, AutoScaleManager.class })
 public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleService, Manager {
@@ -156,25 +159,51 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
         return _name;
     }
 
-    public List<String> getSupportedAutoScaleCounters(long networkid)
+    public List<AutoScaleCounter> getSupportedAutoScaleCounters(long networkid)
     {
-        String autoScaleCapability = _lbRulesMgr.getLBCapability(networkid, Capability.AutoScaleCounters.getName());
-        if (autoScaleCapability == null || autoScaleCapability.length() == 0) {
+        String capability = _lbRulesMgr.getLBCapability(networkid, Capability.AutoScaleCounters.getName());
+        if (capability == null) {
             return null;
         }
-        return Arrays.asList(autoScaleCapability.split(","));
+        Gson gson = new Gson();
+        java.lang.reflect.Type listType = new TypeToken<List<AutoScaleCounter>>() {
+        }.getType();
+        List<AutoScaleCounter> result = gson.fromJson(capability, listType);
+        return result;
     }
 
-    public void validateAutoScaleCounters(long networkid, List<Counter> counters)
-    {
-        List<String> supportedCounters = getSupportedAutoScaleCounters(networkid);
+    public void validateAutoScaleCounters(long networkid, List<Counter> counters, List<Pair<String, String>> counterParamPassed) {
+        List<AutoScaleCounter> supportedCounters = getSupportedAutoScaleCounters(networkid);
         if (supportedCounters == null) {
             throw new InvalidParameterException("AutoScale is not supported in the network");
         }
         for (Counter counter : counters) {
-            if (!supportedCounters.contains(counter.getSource().name().toString())) {
-                throw new InvalidParameterException("AutoScale counter with source='" + counter.getSource() + "' is not supported " +
-                "in the network where lb is configured");
+            String counterName = counter.getSource().name().toString();
+            boolean isCounterSupported = false;
+            for (AutoScaleCounter autoScaleCounter : supportedCounters) {
+                if(autoScaleCounter.getName().equals(counterName)) {
+                    isCounterSupported = true;
+                    List<AutoScaleCounterParam> counterParams = autoScaleCounter.getParamList();
+                    for (AutoScaleCounterParam autoScaleCounterParam : counterParams) {
+                        boolean isRequiredParameter = autoScaleCounterParam.getRequired();
+                        if(isRequiredParameter) {
+                            boolean isRequiredParamPresent = false;
+                            for (Pair<String, String> pair : counterParamPassed) {
+                                if(pair.first().equals(autoScaleCounterParam.getParamName()))
+                                    isRequiredParamPresent = true;
+
+                            }
+                            if(!isRequiredParamPresent) {
+                                throw new InvalidParameterException("Parameter " + autoScaleCounterParam.getParamName() + " has to be set in AutoScaleVmProfile's "
+                                        + ApiConstants.COUNTERPARAM_LIST);
+                            }
+                        }
+                    }
+                }
+            }
+            if (!isCounterSupported) {
+                throw new InvalidParameterException("AutoScale counter with source='" + counter.getSource().name() + "' is not supported " +
+                "in the network");
             }
         }
     }
@@ -329,8 +358,9 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
             autoscaleUserId = UserContext.current().getCallerUserId();
         }
 
+        // TODO: Donot checkin
         AutoScaleVmProfileVO profileVO = new AutoScaleVmProfileVO(cmd.getZoneId(), cmd.getDomainId(), cmd.getAccountId(), cmd.getServiceOfferingId(), cmd.getTemplateId(), cmd.getOtherDeployParams(),
-                cmd.getSnmpCommunity(), cmd.getSnmpPort(), cmd.getDestroyVmGraceperiod(), autoscaleUserId);
+                cmd.getCounterParamList(), cmd.getDestroyVmGraceperiod(), autoscaleUserId);
         profileVO = checkValidityAndPersist(profileVO);
         s_logger.info("Successfully create AutoScale Vm Profile with Id: " + profileVO.getId());
 
@@ -343,8 +373,8 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
         Long profileId = cmd.getId();
         Long templateId = cmd.getTemplateId();
         Long autoscaleUserId = cmd.getAutoscaleUserId();
-        Integer snmpPort = cmd.getSnmpPort();
-        String snmpCommunity = cmd.getSnmpCommunity();
+        Map counterParamList = cmd.getCounterParamList();
+
         Integer destroyVmGraceperiod = cmd.getDestroyVmGraceperiod();
 
         AutoScaleVmProfileVO vmProfile = getEntityInDatabase(UserContext.current().getCaller(), "Auto Scale Vm Profile", profileId, _autoScaleVmProfileDao);
@@ -357,12 +387,8 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
             vmProfile.setAutoscaleUserId(autoscaleUserId);
         }
 
-        if (snmpCommunity != null) {
-            vmProfile.setSnmpCommunity(snmpCommunity);
-        }
-
-        if (snmpPort != null) {
-            vmProfile.setSnmpPort(snmpPort);
+        if (counterParamList != null) {
+            vmProfile.setCounterParams(counterParamList);
         }
 
         if (destroyVmGraceperiod != null) {
@@ -876,11 +902,11 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
             getAutoScalePolicies("scaledownpolicyid", bakupScaleDownPolicyIds, counters, interval, true);
             policyIds.addAll(bakupScaleDownPolicyIds);
         }
+        AutoScaleVmProfileVO profileVO = getEntityInDatabase(UserContext.current().getCaller(), ApiConstants.VMPROFILE_ID, vmGroup.getProfileId(), _autoScaleVmProfileDao);
 
         LoadBalancerVO loadBalancer = getEntityInDatabase(UserContext.current().getCaller(), ApiConstants.LBID, vmGroup.getLoadBalancerId(), _lbDao);
-        validateAutoScaleCounters(loadBalancer.getNetworkId(), counters);
+        validateAutoScaleCounters(loadBalancer.getNetworkId(), counters, profileVO.getCounterParams());
 
-        AutoScaleVmProfileVO profileVO = getEntityInDatabase(UserContext.current().getCaller(), ApiConstants.VMPROFILE_ID, vmGroup.getProfileId(), _autoScaleVmProfileDao);
 
         ControlledEntity[] sameOwnerEntities = policies.toArray(new ControlledEntity[policies.size() + 2]);
         sameOwnerEntities[sameOwnerEntities.length - 2] = loadBalancer;

@@ -281,8 +281,7 @@ public class LoadBalancerTO implements Serializable {
         private final String serviceOfferingId;
         private final String templateId;
         private final String otherDeployParams;
-        private final String snmpCommunity;
-        private final Integer snmpPort;
+        private final List<Pair<String, String>> counterParamList;
         private final Integer destroyVmGraceperiod;
         private final String cloudStackApiUrl;
         private final String autoScaleUserApiKey;
@@ -291,14 +290,13 @@ public class LoadBalancerTO implements Serializable {
         private final String networkId;
 
         public AutoScaleVmProfileTO(String zoneId, String domainId, String cloudStackApiUrl, String autoScaleUserApiKey, String autoScaleUserSecretKey, String serviceOfferingId,
-                String templateId, String vmName, String networkId, String otherDeployParams, String snmpCommunity, Integer snmpPort, Integer destroyVmGraceperiod) {
+                String templateId, String vmName, String networkId, String otherDeployParams, List<Pair<String, String>> counterParamList, Integer destroyVmGraceperiod) {
             this.zoneId = zoneId;
             this.domainId = domainId;
             this.serviceOfferingId = serviceOfferingId;
             this.templateId = templateId;
             this.otherDeployParams = otherDeployParams;
-            this.snmpCommunity = snmpCommunity;
-            this.snmpPort = snmpPort;
+            this.counterParamList = counterParamList;
             this.destroyVmGraceperiod = destroyVmGraceperiod;
             this.cloudStackApiUrl = cloudStackApiUrl;
             this.autoScaleUserApiKey = autoScaleUserApiKey;
@@ -327,12 +325,8 @@ public class LoadBalancerTO implements Serializable {
             return otherDeployParams;
         }
 
-        public String getSnmpCommunity() {
-            return snmpCommunity;
-        }
-
-        public Integer getSnmpPort() {
-            return snmpPort;
+        public List<Pair<String, String>> getCounterParamList() {
+            return counterParamList;
         }
 
         public Integer getDestroyVmGraceperiod() {
@@ -446,8 +440,8 @@ public class LoadBalancerTO implements Serializable {
         AutoScaleVmProfileTO autoScaleVmProfileTO = new AutoScaleVmProfileTO(lbAutoScaleVmProfile.getZoneId(), lbAutoScaleVmProfile.getDomainId(),
                 lbAutoScaleVmProfile.getCsUrl(), lbAutoScaleVmProfile.getAutoScaleUserApiKey(), lbAutoScaleVmProfile.getAutoScaleUserSecretKey(),
                 lbAutoScaleVmProfile.getServiceOfferingId(), lbAutoScaleVmProfile.getTemplateId(), lbAutoScaleVmProfile.getVmName(),
-                lbAutoScaleVmProfile.getNetworkId(),autoScaleVmProfile.getOtherDeployParams(), autoScaleVmProfile.getSnmpCommunity(),
-                autoScaleVmProfile.getSnmpPort(), autoScaleVmProfile.getDestroyVmGraceperiod());
+                lbAutoScaleVmProfile.getNetworkId(),autoScaleVmProfile.getOtherDeployParams(), autoScaleVmProfile.getCounterParams(),
+                autoScaleVmProfile.getDestroyVmGraceperiod());
 
         AutoScaleVmGroup autoScaleVmGroup = lbAutoScaleVmGroup.getVmGroup();
         autoScaleVmGroupTO = new AutoScaleVmGroupTO(autoScaleVmGroup.getUuid(), autoScaleVmGroup.getMinMembers(), autoScaleVmGroup.getMaxMembers(), autoScaleVmGroup.getMemberPort(),

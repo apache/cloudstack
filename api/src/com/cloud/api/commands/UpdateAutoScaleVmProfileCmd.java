@@ -17,6 +17,8 @@
 
 package com.cloud.api.commands;
 
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiConstants;
@@ -54,11 +56,8 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.AUTOSCALE_VM_DESTROY_TIME, type = CommandType.INTEGER, description = "the time allowed for existing connections to get closed before a vm is destroyed")
     private Integer destroyVmGraceperiod;
 
-    @Parameter(name = ApiConstants.SNMP_COMMUNITY, type = CommandType.STRING, description = "snmp community string to be used to contact a virtual machine deployed by this profile")
-    private String snmpCommunity;
-
-    @Parameter(name = ApiConstants.SNMP_PORT, type = CommandType.INTEGER, description = "port at which snmp agent is listening in a virtual machine deployed by this profile")
-    private Integer snmpPort;
+    @Parameter(name = ApiConstants.COUNTERPARAM_LIST, type = CommandType.MAP, description = "counterparam list. Example: counterparam[0].name=snmpcommunity&counterparam[0].value=public&counterparam[1].name=snmpport&counterparam[1].value=161")
+    private Map counterParamList;
 
     @IdentityMapper(entityTableName = "user")
     @Parameter(name = ApiConstants.AUTOSCALE_USER_ID, type = CommandType.LONG, description = "the ID of the user used to launch and destroy the VMs")
@@ -93,12 +92,8 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCmd {
         return templateId;
     }
 
-    public Integer getSnmpPort() {
-        return snmpPort;
-    }
-
-    public String getSnmpCommunity() {
-        return snmpCommunity;
+    public Map getCounterParamList() {
+        return counterParamList;
     }
 
     public Long getAutoscaleUserId() {

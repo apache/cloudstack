@@ -383,8 +383,6 @@ public class ApiConstants {
     public static final String AGGR_VALUE = "aggrvalue";
     public static final String THRESHOLD = "threshold";
     public static final String RELATIONAL_OPERATOR = "relationaloperator";
-    public static final String SNMP_COMMUNITY = "snmpcommunity";
-    public static final String SNMP_PORT = "snmpport";
     public static final String OTHER_DEPLOY_PARAMS = "otherdeployparams";
     public static final String MIN_MEMBERS = "minmembers";
     public static final String MAX_MEMBERS = "maxmembers";
@@ -401,6 +399,7 @@ public class ApiConstants {
     public static final String ACTION = "action";
     public static final String CONDITION_ID = "conditionid";
     public static final String CONDITION_IDS = "conditionids";
+    public static final String COUNTERPARAM_LIST = "counterparam";
     public static final String AUTOSCALE_USER_ID = "autoscaleuserid";
 
     public enum HostDetails {
@@ -410,7 +409,7 @@ public class ApiConstants {
     public enum VMDetails {
         all, group, nics, stats, secgrp, tmpl, servoff, iso, volume, min;
     }
-    
+
     public enum VolumeDetails {
         all, vm, account, storage_type, disk_offering, min;
     }

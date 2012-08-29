@@ -1432,14 +1432,6 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         return loadBalancerInstances;
     }
 
-    public List<String> getSupportedAutoScaleCounters(long networkid)
-    {
-        String capability = getLBCapability(networkid, Capability.AutoScaleCounters.getName());
-        if (capability == null || capability.length() == 0) {
-            return null;
-        }
-        return Arrays.asList(capability.split(","));
-    }
 
     @Override
     public List<LbStickinessMethod> getStickinessMethods(long networkid)

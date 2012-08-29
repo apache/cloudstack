@@ -11,7 +11,10 @@
 //
 package com.cloud.network.as;
 
+import java.util.List;
+
 import com.cloud.acl.ControlledEntity;
+import com.cloud.utils.Pair;
 
 /**
  * AutoScaleVmProfile
@@ -28,11 +31,10 @@ public interface AutoScaleVmProfile extends ControlledEntity {
 
     public String getOtherDeployParams();
 
-    public String getSnmpCommunity();
-
-    public Integer getSnmpPort();
+    List<Pair<String, String>> getCounterParams();
 
     public Integer getDestroyVmGraceperiod();
 
     public long getAutoScaleUserId();
+
 }

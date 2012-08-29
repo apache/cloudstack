@@ -3841,8 +3841,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setServiceOfferingId(profile.getServiceOfferingId());
         response.setTemplateId(profile.getTemplateId());
         response.setOtherDeployParams(profile.getOtherDeployParams());
-        response.setSnmpCommunity(profile.getSnmpCommunity());
-        response.setSnmpPort(profile.getSnmpPort());
+        response.setCounterParams(profile.getCounterParams());
         response.setDestroyVmGraceperiod(profile.getDestroyVmGraceperiod());
         response.setAutoscaleUserId(profile.getAutoScaleUserId());
         response.setObjectName("autoscalevmprofile");
