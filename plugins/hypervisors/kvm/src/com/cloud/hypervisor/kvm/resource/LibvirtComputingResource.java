@@ -1249,12 +1249,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements
                 if (nic.getBrName().equalsIgnoreCase(_linkLocalBridgeName)) {
                     vlanAllocatedToVM.put("LinkLocal", nicPos);
                 } else {
-                    String vlanId = getVlanIdFromBridge(nic.getBrName());
-                    if (vlanId != null) {
-                        vlanAllocatedToVM.put(vlanId, nicPos);
-                    } else {
-                        vlanAllocatedToVM.put(Vlan.UNTAGGED, nicPos);
-                    }
+                	if (nic.getBrName().equalsIgnoreCase(_publicBridgeName) || nic.getBrName().equalsIgnoreCase(_privBridgeName) || nic.getBrName().equalsIgnoreCase(_guestBridgeName)) {
+                		vlanAllocatedToVM.put(Vlan.UNTAGGED, nicPos);
+                	} else {
+                		String vlanId = getVlanIdFromBridge(nic.getBrName());
+                		vlanAllocatedToVM.put(vlanId, nicPos);
+                	}
                 }
                 nicPos++;
             }
