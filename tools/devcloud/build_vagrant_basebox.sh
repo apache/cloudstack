@@ -57,6 +57,8 @@ cd vagrant || error_exit
 bundle install || error_exit "could not bundle install vagrant"
 rake install  || error_exit "could not rake vagrant"
 cd ~/builddevcloud/veewee || error_exit
+cp -R templates/ubuntu-12.04-server-i386 templates/ubuntu-12.04.1-server-i386
+cp -R templates/ubuntu-12.04-server-i386-packages templates/ubuntu-12.04.1-server-i386-packages
 bundle install || error_exit
 rake install || error_exit
 bundle exec vagrant basebox define 'devcloudbase' 'ubuntu-12.04.1-server-i386' || error_exit "couldn't basebox define"
