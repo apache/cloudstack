@@ -195,10 +195,11 @@
           }
         });
 
-        var sectionsToShow = ['networks', 'vpnCustomerGateway'];
+        var sectionsToShow = ['networks'];
 
         if (!havingBasicZones) {
           sectionsToShow.push('vpc');
+          sectionsToShow.push('vpnCustomerGateway');
         }
         
         if(havingSecurityGroupNetwork == true)
