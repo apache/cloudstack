@@ -754,7 +754,9 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                 s_logger.info("Could not to find a Discoverer to load the resource: "+ host.getId() +" for hypervisor type: "+host.getHypervisorType());
                 resource = loadResourcesWithoutHypervisor(host);
             }else{
+                s_logger.debug("Reloading resource " + host);
                 resource = discoverer.reloadResource(host);
+                s_logger.debug("Reloaded resource " + host);
             }
             
             if(resource == null){

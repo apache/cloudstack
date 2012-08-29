@@ -139,15 +139,18 @@ public abstract class DiscovererBase implements Discoverer {
     @Override
     public ServerResource reloadResource(HostVO host) {
         String resourceName = host.getResource();
+        s_logger.debug("Reloading resource " + resourceName + " for host " + host);
         ServerResource resource = getResource(resourceName);
         
         if(resource != null){
             _hostDao.loadDetails(host);
             updateNetworkLabels(host);
+            s_logger.debug("Updated network labels for host " + host);
             
             HashMap<String, Object> params = buildConfigParams(host);
             try {
                 resource.configure(host.getName(), params);
+                s_logger.debug("Configured resource " + resourceName);
             } catch (ConfigurationException e) {
                 s_logger.warn("Unable to configure resource due to " + e.getMessage());
                 return null;
