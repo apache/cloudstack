@@ -55,3 +55,4 @@ or add in your ~/.m2/settings.xml
   </pluginGroups>
 and save your fingers with mvn tomcat7:run -pl :cloud-client-ui -am -Pclient -Dnonoss
 
+If you want to use ide debug: replace mvn with mvnDebug and attach your ide debugger to port 8000
