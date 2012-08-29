@@ -47,11 +47,11 @@ So install it with: cd deps&&sh ./install-non-oss.sh
 Now you are able to activate nonoss build with adding -Dnonoss to maven cli.
 
 to run webapp client:
-mvn org.apache.tomcat.maven:tomcat7-maven-plugin:2.0-beta-1:run -pl :cloud-client-ui -am
+mvn org.apache.tomcat.maven:tomcat7-maven-plugin:2.0-beta-1:run -pl :cloud-client-ui -am -Pclient -Dnonoss
 then hit: http://localhost:8080/cloud-client-ui/
 or add in your ~/.m2/settings.xml
   <pluginGroups>
     <pluginGroup>org.apache.tomcat.maven</pluginGroup>
   </pluginGroups>
-and save your fingers with mvn tomcat7:run -pl :cloud-client-ui -am
+and save your fingers with mvn tomcat7:run -pl :cloud-client-ui -am -Pclient -Dnonoss
 

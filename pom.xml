@@ -157,7 +157,6 @@
     <module>vmware-base</module>
     <module>plugins</module>
     <module>awsapi</module>
-    <module>client</module>
   </modules>
 
   <dependencies>
@@ -212,5 +211,14 @@
       </plugins>
     </pluginManagement>
   </build>
+
+  <profiles>
+    <profile>
+      <id>client</id>
+      <modules>
+        <module>client</module>
+      </modules>
+    </profile>
+  </profiles>
 
 </project>
