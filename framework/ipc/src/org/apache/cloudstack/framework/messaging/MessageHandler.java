@@ -16,28 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.framework.ipc;
+package org.apache.cloudstack.framework.messaging;
 
-public interface MessageSystem {
-    /**
-     * Creates the publisher
-     * @param name of the publisher
-     * @return publisher
-     */
-    Publisher createPublisher(String name);
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-    /**
-     * Creates the subscriber
-     * @param name of the subscriber
-     * @return subscriber
-     */
-    Subscriber createSubscriber(String name);
-
-    /**
-     * registers the subscriber
-     * @param subscriber subscriber
-     * @param topic topic to listen to
-     * @return subscriber
-     */
-    boolean registerSubscriber(Subscriber subscriber, String topic);
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface MessageHandler {
+    String messageTitle();
 }

@@ -16,24 +16,32 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.framework.ipc;
+package org.apache.cloudstack.framework.messaging;
 
-import org.apache.cloudstack.framework.messaging.Message;
+import org.apache.cloudstack.framework.ipc.Publisher;
+import org.apache.cloudstack.framework.ipc.Subscriber;
 
-/**
- * Event subscriber interface
- *
- */
-public interface Subscriber {
+public interface MessageSystem {
+	
+    /**
+     * Creates the publisher
+     * @param name of the publisher
+     * @return publisher
+     */
+    Publisher createPublisher(String name);
 
     /**
-     * Message received
+     * Creates the subscriber
+     * @param name of the subscriber
+     * @return subscriber
      */
-    Message receive();
+    Subscriber createSubscriber(String name);
 
     /**
-     * @return the name of the subscriber
+     * registers the subscriber
+     * @param subscriber subscriber
+     * @param topic topic to listen to
+     * @return subscriber
      */
-    String getName();
-
+    boolean registerSubscriber(Subscriber subscriber, String topic);
 }

@@ -3,4 +3,11 @@
   <groupId>cloudstack</groupId>
   <artifactId>cloud-framework-ipc</artifactId>
   <version>0.0.1-SNAPSHOT</version>
+  <dependencies>
+  	<dependency>
+  		<groupId>org.hornetq</groupId>
+  		<artifactId>hornetq-core-client</artifactId>
+  		<version>snap-r9548</version>
+  	</dependency>
+  </dependencies>
 </project>

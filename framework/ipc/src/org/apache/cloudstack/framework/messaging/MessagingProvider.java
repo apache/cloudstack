@@ -16,11 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.framework.ipc;
+package org.apache.cloudstack.framework.messaging;
 
-import java.util.Map;
-
-public interface Message {
-    String getTopic();
-    Map<String, Object> getContent();
+public interface MessagingProvider {
+	void createChanel(String topic, MessagingDeliveryStrategy deliveryStrategy);
+	
+	void pulishMessage(String topic, Message message);
+	
+	void publishCertifiedMessage(String topic, Message message, 
+		int retryIntervalMillis, int timeoutMillis, 
+		MessagingDeliveryListener deliveryListener);
+	
+	void subscribe(String topicChannel, String messageTitle, MessagingSubscriber subscriber);
+	void unsubscribe(String topicChannel, String messageTitle, MessagingSubscriber subscriber);
 }

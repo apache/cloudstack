@@ -16,24 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.framework.ipc;
 
-import org.apache.cloudstack.framework.messaging.Message;
+package org.apache.cloudstack.framework.messaging;
 
-/**
- * Event subscriber interface
- *
- */
-public interface Subscriber {
+public class SubscriberDelegate implements MessagingSubscriber {
 
-    /**
-     * Message received
-     */
-    Message receive();
-
-    /**
-     * @return the name of the subscriber
-     */
-    String getName();
-
+	public void onMessage(String topic, Message message) {
+		// ???
+	}
 }
