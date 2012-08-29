@@ -303,7 +303,7 @@
       var $browser = args.$browser;
       var detailView = args.detailView;
       var $router = $('<li>').addClass('tier virtual-router');
-      var $title = $('<span>').addClass('title').html('Virtual Router');
+      var $title = $('<span>').addClass('title').html(_l('label.virtual.router'));
 
       $router.append($title);
 
@@ -401,7 +401,7 @@
 
       if (isPlaceholder) {
         $tier.addClass('placeholder');
-        $title.html('Create Tier');
+        $title.html(_l('label.add.new.tier'));
       } else {        
         $title.html(
           cloudStack.concat(name, 8)
@@ -410,7 +410,7 @@
         $cidr.html(cidr);
         $vmCount.append(
           $('<span>').addClass('total').html(virtualMachines != null? virtualMachines.length: 0),
-          ' VMs'
+          _l('label.vms')
         );
         $tier.append($actions);
 
