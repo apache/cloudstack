@@ -3907,7 +3907,7 @@
                                   }
                               },
                           account: {label:'label.account'},
-                          domain: {label: 'label.domain'},
+                          domain: {label: 'label.domain'}
                         }
                       ],
                         dataProvider: function(args) {
