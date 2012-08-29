@@ -228,8 +228,8 @@
 									destroyVMgracePeriod: autoscaleVmProfile.destroyvmgraceperiod,
 									securityGroups: securityGroups, 
 									diskOfferingId: diskOfferingId, 
-									snmpCommunity: autoscaleVmProfile.snmpcommunity,
-									snmpPort: autoscaleVmProfile.snmpport,
+									snmpCommunity: autoscaleVmProfile.counterparam.snmpcommunity,
+									snmpPort: autoscaleVmProfile.counterparam.snmpport,
 									username: autoscaleVmProfile.autoscaleuserid,
 									context: {
 									  autoscaleVmGroup: autoscaleVmGroup,
@@ -1117,7 +1117,26 @@
 							destroyvmgraceperiod: args.data.destroyVMgracePeriod,
 							snmpcommunity: args.data.snmpCommunity,
 							snmpport: args.data.snmpPort							
-						};	
+						};
+
+            var allParamNames=$.map(data,function(value,key){
+                             return key;
+                          });
+						  
+            var notParams =['zoneid','serviceofferingid','templateid','destroyvmgraceperiod'];
+            var index=0;
+            $(allParamNames).each(function() {
+                 var param='counterparam[' + index + ']';
+                 var name = this.toString();
+                 var value = data[name];
+                 if(!value || $.inArray(name,notParams) >-1 ) return true;
+                 data[param+ '.name']=name;
+		 data[param+ '.value']=value;
+                 index++;
+
+                 return true;
+               });
+	
 
             if(args.data.username != null && args.data.username.length > 0) {
 						  $.extend(data, {
