@@ -2115,11 +2115,14 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     @Override
     public void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long allocated) {
         SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
+
+        List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
+        capacitySC = _capacityDao.createSearchCriteria();
         capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, storagePool.getId());
         capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, storagePool.getDataCenterId());
         capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
 
-        List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
+        capacities = _capacityDao.search(capacitySC, null);
 
         long totalOverProvCapacity;
         if (storagePool.getPoolType() == StoragePoolType.NetworkFilesystem) {
@@ -2371,13 +2374,15 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
                             if (snapshots == null) {
                                 continue;
                             }
-                            CleanupSnapshotBackupCommand cmd = new CleanupSnapshotBackupCommand(secondaryStorageHost.getStorageUrl(), secondaryStorageHost.getDataCenterId(), volume.getAccountId(),
-                                    volumeId, snapshots);
-
-                            Answer answer = _agentMgr.sendToSecStorage(secondaryStorageHost, cmd);
-                            if ((answer == null) || !answer.getResult()) {
-                                String details = "Failed to cleanup snapshots for volume " + volumeId + " due to " + (answer == null ? "null" : answer.getDetails());
-                                s_logger.warn(details);
+                            List<SnapshotVO> backingupSnapshots = _snapshotDao.listByStatus(volumeId, Snapshot.Status.BackingUp);                            
+                            if(backingupSnapshots == null) {
+	                            CleanupSnapshotBackupCommand cmd = new CleanupSnapshotBackupCommand(secondaryStorageHost.getStorageUrl(), secondaryStorageHost.getDataCenterId(), volume.getAccountId(),
+	                                    volumeId, snapshots);
+	                            Answer answer = _agentMgr.sendToSecStorage(secondaryStorageHost, cmd);
+	                            if ((answer == null) || !answer.getResult()) {
+	                                String details = "Failed to cleanup snapshots for volume " + volumeId + " due to " + (answer == null ? "null" : answer.getDetails());
+	                                s_logger.warn(details);
+	                            }
                             }
                         } catch (Exception e1) {
                             s_logger.warn("problem cleaning up snapshots in secondary storage " + secondaryStorageHost, e1);
