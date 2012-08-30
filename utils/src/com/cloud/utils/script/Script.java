@@ -340,15 +340,18 @@ public class Script implements Callable<String> {
         File file = null;
         if (url != null) {
             file = new File(url.getFile());
+            s_logger.debug("Absolute path =  " + file.getAbsolutePath());
             return file.getAbsolutePath();
         }
 
-        url = Script.class.getClassLoader().getResource(path);
-        if (url != null) {
-            file = new File(url.getFile());
-            return file.getAbsolutePath();
-        }
-        
+/*        url = Script.class.getClassLoader().getResource(path);
+ *        s_logger.debug("Classpath resource: " + url);
+ *        if (url != null) {
+ *            file = new File(url.getFile());
+ *            s_logger.debug("Absolute path =  " + file.getAbsolutePath());
+ *            return file.getAbsolutePath();
+ *        }
+ */        
         if (path.endsWith(File.separator)) {
             path = path.substring(0, path.lastIndexOf(File.separator));
         }
