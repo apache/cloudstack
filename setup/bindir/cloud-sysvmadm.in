@@ -5,7 +5,7 @@
 #set -x
 
 usage() {
-  printf "\nThe tool stopping/starting running system vms and domain routers \n\nUsage: %s: [-d] [-u] [-p] [-m] [-s] [-r] [-a] [-t] [-e]\n\n -d - cloud DB server ip address, defaulted to localhost if not specified \n -u - user name to access cloud DB, defaulted to "root" if not specified \n -p - cloud DB user password, defaulted to no password if not specified \n\n -m - the ip address of management server, defaulted to localhost if not specified\n\n -s - stop then start all running SSVMs and Console Proxies \n -r - stop then start all running Virtual Routers\n -a - stop then start all running SSVMs, Console Proxies, and Virtual Routers \n -e - restart all Guest networks \n -t - number of parallel threads used for stopping Domain Routers. Default is 10.\n -l - log file location. Default is cloud.log under current directory.\n\n" $(basename $0) >&2
+  printf "\nThe tool stopping/starting or destroying/recreating running system vms and domain routers \n\nUsage: %s: [-c] [-d] [-u] [-p] [-m] [-s] [-r] [-a] [-t] [-e]\n\n -d - cloud DB server ip address, defaulted to localhost if not specified \n -u - user name to access cloud DB, defaulted to "root" if not specified \n -p - cloud DB user password, defaulted to no password if not specified \n\n -m - the ip address of management server, defaulted to localhost if not specified\n\n -s - stop then start all running SSVMs and Console Proxies \n -c - destroy SSVM \n -r - stop then start all running Virtual Routers\n -a - stop then start all running SSVMs, Console Proxies, and Virtual Routers \n -e - restart all Guest networks \n -t - number of parallel threads used for stopping Domain Routers. Default is 10.\n -l - log file location. Default is cloud.log under current directory.\n\n" $(basename $0) >&2
 }
 
 
@@ -19,11 +19,14 @@ password=
 help=
 maxthreads=10
 LOGFILE=cloud.log
+destroyssvm=
 
 
-while getopts 'sarhnd:m:u:p:t:l:' OPTION
+while getopts 'sarhncd:m:u:p:t:l:' OPTION
 do
   case $OPTION in
+  c)    destroyssvm=1
+        ;;
   s)    system=1
         ;;
   r)    router=1
@@ -49,6 +52,9 @@ do
 done
 
  
+if [ $destroyssvm == "1" ]; then
+    system=0
+fi
 
 
 stop_start_system() {
@@ -58,30 +64,53 @@ length_secondary=(${#secondary[@]})
 length_console=(${#console[@]})
 
 
-echo -e "\nStopping and starting $length_secondary secondary storage vm(s)..."
-echo -e "Stopping and starting $length_secondary secondary storage vm(s)..." >>$LOGFILE
+if [ $system == "1" ]; then
+    echo -e "\nStopping and starting $length_secondary secondary storage vm(s)..."
+    echo -e "Stopping and starting $length_secondary secondary storage vm(s)..." >>$LOGFILE
+fi
+if [ $destroyssvm == "1" ]; then
+    echo -e "\nDestroying $length_secondary secondary storage vm(s)... Management server will automatically recreate them in a few minutes ..."
+    echo -e "\nDestroying $length_secondary secondary storage vm(s)... Management server will automatically recreate them in a few minutes ..." >>$LOGFILE
+fi
 
-for d in "${secondary[@]}"; do
-	echo "INFO: Stopping secondary storage vm with id $d" >>$LOGFILE
-	jobresult=$(send_request stopSystemVm $d)
-	if [ "$jobresult" != "1" ]; then
-	    echo -e "ERROR: Failed to stop secondary storage vm with id $d \n"
-		echo "ERROR: Failed to stop secondary storage vm with id $d" >>$LOGFILE
-	else	
-		echo "INFO: Starting secondary storage vm with id $d" >>$LOGFILE
-		jobresult=$(send_request startSystemVm $d SSVM)
-		if [ "$jobresult" != "1" ]; then
-		    echo "ERROR: Failed to start secondary storage vm with id $d" >>$LOGFILE
-        	echo "ERROR: Failed to start secondary storage vm with id $d" >>$LOGFILE
-		fi
-	fi
-done
+if [ $system == "1" ]; then
+    for d in "${secondary[@]}"; do
+        echo "INFO: Stopping secondary storage vm with id $d" >>$LOGFILE
+        jobresult=$(send_request stopSystemVm $d)
+        if [ "$jobresult" != "1" ]; then
+            echo -e "ERROR: Failed to stop secondary storage vm with id $d \n"
+            echo "ERROR: Failed to stop secondary storage vm with id $d" >>$LOGFILE
+        else	
+            echo "INFO: Starting secondary storage vm with id $d" >>$LOGFILE
+            jobresult=$(send_request startSystemVm $d SSVM)
+            if [ "$jobresult" != "1" ]; then
+                echo "ERROR: Failed to start secondary storage vm with id $d" >>$LOGFILE
+                echo "ERROR: Failed to start secondary storage vm with id $d" >>$LOGFILE
+            fi
+        fi
+    done
 
-if [ "$length_secondary" == "0" ];then
-	echo -e "No running secondary storage vms found \n"
-else 
-	echo -e "Done stopping and starting secondary storage vm(s)"
-	echo -e "Done stopping and starting secondary storage vm(s)." >>$LOGFILE
+    if [ "$length_secondary" == "0" ];then
+        echo -e "No running secondary storage vms found \n"
+    else 
+        echo -e "Done stopping and starting secondary storage vm(s)"
+        echo -e "Done stopping and starting secondary storage vm(s)." >>$LOGFILE
+    fi
+fi
+
+if [ $destroyssvm == "1" ]; then
+    for d in "${secondary[@]}"; do
+        echo "INFO: Destroying secondary storage vm with id $d"
+        echo "INFO: Destroying secondary storage vm with id $d" >>$LOGFILE
+        jobresult=$(send_request destroySystemVm $d)
+        if [ "$jobresult" != "1" ]; then
+            echo -e "ERROR: Failed to destroy secondary storage vm with id $d \n"
+            echo "ERROR: Failed to destroy secondary storage vm with id $d" >>$LOGFILE
+        else	
+            echo "INFO: Successfully destroyed secondary storage vm with id $d, please wait management server automatically recreate it in a few minutes"
+            echo "INFO: Successfully destroyed secondary storage vm with id $d, please wait management server automatically recreate it in a few minutes" >>$LOGFILE
+        fi
+    done
 fi
 
 echo -e "\nStopping and starting $length_console console proxy vm(s)..."
@@ -323,7 +352,7 @@ then
       exit
 fi
 
-if [ "$system" == "1" ]
+if [ "$system" == "1" ] || [ "$destroyssvm" == "1" ]
 then
       stop_start_system
 fi
