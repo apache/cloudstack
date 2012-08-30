@@ -40,6 +40,7 @@ public interface Snapshot extends ControlledEntity {
             return max;
         }
 
+        @Override
         public String toString() {
             return this.name();
         }
@@ -56,6 +57,7 @@ public interface Snapshot extends ControlledEntity {
         BackedUp,
         Error;
 
+        @Override
         public String toString() {
             return this.name();
         }
@@ -67,8 +69,9 @@ public interface Snapshot extends ControlledEntity {
 
     public static final long MANUAL_POLICY_ID = 0L;
 
-    Long getId();
+    long getId();
 
+    @Override
     long getAccountId();
 
     long getVolumeId();
