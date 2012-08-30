@@ -4646,7 +4646,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     /* return : if setup is needed */
     protected boolean setupServer(Connection conn) {
-        String version = this.getClass().getName() + "-" + CitrixResourceBase.class.getPackage().getImplementationVersion();
+        String packageVersion = CitrixResourceBase.class.getPackage().getImplementationVersion();
+        String version = this.getClass().getName() + "-" + ( packageVersion == null ? Long.toString(System.currentTimeMillis()) : packageVersion );
 
         try {
             Host host = Host.getByUuid(conn, _host.uuid);

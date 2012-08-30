@@ -1601,6 +1601,15 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 return null;
             }
 
+            /* Generate a random version in a dev setup situation */
+            if ( this.getClass().getPackage().getImplementationVersion() == null ) {
+                for ( StartupCommand cmd : cmds ) {
+                    if ( cmd.getVersion() == null ) {
+                        cmd.setVersion(Long.toString(System.currentTimeMillis()));
+                    }
+                }
+            }
+            
             if (s_logger.isDebugEnabled()) {
                 new Request(-1l, -1l, cmds, true, false).logD("Startup request from directly connected host: ", true);
             }
