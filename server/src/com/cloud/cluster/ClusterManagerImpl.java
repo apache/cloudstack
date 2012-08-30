@@ -149,7 +149,7 @@ public class ClusterManagerImpl implements ClusterManager {
         // executor to perform remote-calls in another thread context, to avoid potential
         // recursive remote calls between nodes
         //
-        _executor = Executors.newCachedThreadPool(new NamedThreadFactory("Cluster-Worker"));
+        _executor = Executors.newFixedThreadPool(1, new NamedThreadFactory("Cluster-Worker"));
     }
     
     private void registerRequestPdu(ClusterServiceRequestPdu pdu) {
