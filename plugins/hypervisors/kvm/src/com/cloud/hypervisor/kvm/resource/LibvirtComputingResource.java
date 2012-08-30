@@ -115,6 +115,8 @@ import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PlugNicAnswer;
+import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.ReadyAnswer;
@@ -131,6 +133,8 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.UnPlugNicAnswer;
+import com.cloud.agent.api.UnPlugNicCommand;
 import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
@@ -1020,6 +1024,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements
                 return execute((FenceCommand) cmd);
             } else if (cmd instanceof StartCommand) {
                 return execute((StartCommand) cmd);
+            } else if (cmd instanceof PlugNicCommand) {
+                return execute((PlugNicCommand) cmd);
+            } else if (cmd instanceof UnPlugNicCommand) {
+                return execute((UnPlugNicCommand) cmd);
             } else if (cmd instanceof IpAssocCommand) {
                 return execute((IpAssocCommand) cmd);
             } else if (cmd instanceof NetworkElementCommand) {
@@ -1232,6 +1240,44 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
         Domain vm = getDomain(conn, vmName);
         vm.attachDevice(_vifDriver.plug(nicTO, "Other PV").toString());
+    }
+
+    private PlugNicAnswer execute(PlugNicCommand cmd) {
+        Connect conn;
+        NicTO nic = cmd.getNic();
+        String vmName = cmd.getVmName();
+        try {
+            conn = LibvirtConnection.getConnection();
+            Domain vm = getDomain(conn, vmName);
+            vm.attachDevice(_vifDriver.plug(nic, "Other PV").toString());
+            return new PlugNicAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = " Plug Nic failed due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new PlugNicAnswer(cmd, false, msg);
+        }
+    }
+
+    private UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
+        Connect conn;
+        NicTO nic = cmd.getNic();
+        String vmName = cmd.getInstanceName();
+        try {
+            conn = LibvirtConnection.getConnection();
+            Domain vm = getDomain(conn, vmName);
+            List<InterfaceDef> pluggedNics = getInterfaces(conn, vmName);
+            for (InterfaceDef pluggedNic : pluggedNics) {
+                if (pluggedNic.getMacAddress().equalsIgnoreCase(nic.getMac())) {
+                    vm.detachDevice(pluggedNic.toString());
+                    return new UnPlugNicAnswer(cmd, true, "success");
+                }
+            }
+            return new UnPlugNicAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = " Unplug Nic failed due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new UnPlugNicAnswer(cmd, false, msg);
+        } 
     }
 
     public Answer execute(IpAssocCommand cmd) {
