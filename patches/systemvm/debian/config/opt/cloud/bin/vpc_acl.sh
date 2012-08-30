@@ -121,9 +121,11 @@ acl_entry_for_guest_network() {
       then
         sudo iptables -I ACL_INBOUND_$dev -p $prot -s $lcidr  \
                     --icmp-type $typecode  -j ACCEPT
+        result=$?
       else
         sudo iptables -t mangle -I ACL_OUTBOUND_$dev -p $prot -d $lcidr  \
                     --icmp-type $typecode  -j ACCEPT
+        result=$?
         let egress++
       fi
     else
@@ -131,13 +133,14 @@ acl_entry_for_guest_network() {
       then
         sudo iptables -I ACL_INBOUND_$dev -p $prot -s $lcidr \
                     $DPORT -j ACCEPT
+        result=$?
       else
         sudo iptables -t mangle -I ACL_OUTBOUND_$dev -p $prot -d $lcidr \
                     $DPORT -j ACCEPT
+        result=$?
         let egress++
       fi
     fi
-    result=$?
     [ $result -gt 0 ] && 
        logger -t cloud "Error adding iptables entry for guest network : $gcidr,inbound:$inbound:$prot:$sport:$eport:$cidrs" &&
        break
