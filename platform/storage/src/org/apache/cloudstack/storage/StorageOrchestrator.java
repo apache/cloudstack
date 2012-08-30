@@ -20,6 +20,8 @@ package org.apache.cloudstack.storage;
 
 import java.util.List;
 
+import com.cloud.deploy.DeploymentPlan;
+
 public interface StorageOrchestrator {
 
     /**
@@ -27,7 +29,7 @@ public interface StorageOrchestrator {
      * @param vm
      * @param reservationId
      */
-    void prepare(String vm, String reservationId);
+    void prepare(long vmId, DeploymentPlan plan, String reservationId);
 
     /**
      * Releases all storage that were used for a VM shutdown
@@ -35,18 +37,23 @@ public interface StorageOrchestrator {
      * @param disks
      * @param reservationId
      */
-    void release(String vm, String reservationId);
+    void release(long vmId, String reservationId);
 
     /**
      * Destroy all disks
      * @param disks
      * @param reservationId
      */
-    void destroy(List<String> disks, String reservationId);
+    void destroy(List<Long> disks, String reservationId);
 
     /**
      * Cancel a reservation
      * @param reservationId reservation to 
      */
     void cancel(String reservationId);
+    
+    /**
+     * If attaching a volume in allocated state to a running vm, need to create this volume
+     */
+    void prepareAttachDiskToVM(long diskId, long vmId, String reservationId);
 }

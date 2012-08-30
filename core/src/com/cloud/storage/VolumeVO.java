@@ -131,6 +131,9 @@ public class VolumeVO implements Volume, Identity {
     @Column(name = "uuid")
     String uuid;
     
+    @Column(name="reservation")
+    String reservationId;
+    
     // Real Constructor
     public VolumeVO(Type type, String name, long dcId, long domainId, long accountId, long diskOfferingId, long size) {
         this.volumeType = type;
@@ -427,6 +430,16 @@ public class VolumeVO implements Volume, Identity {
         } else {
             return false;
         }
+    }
+    
+    @Override
+    public String getReservationId() {
+    	return this.reservationId;
+    }
+    
+    @Override
+    public void setReservationId(String reserv) {
+    	this.reservationId = reserv;
     }
     
     @Override

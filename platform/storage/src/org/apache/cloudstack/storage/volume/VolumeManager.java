@@ -16,7 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.platform.subsystem.api.storage;
+package org.apache.cloudstack.storage.volume;
 
-public interface Volume extends DataObject {
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.utils.fsm.NoTransitionException;
+
+public interface VolumeManager {
+	VolumeVO allocateDuplicateVolume(VolumeVO oldVol);
+	VolumeVO processEvent(Volume vol, Volume.Event event) throws NoTransitionException;
 }

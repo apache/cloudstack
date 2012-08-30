@@ -147,4 +147,14 @@ public interface Volume extends ControlledEntity, BasedOn, StateObject<Volume.St
     public void incrUpdatedCount();
 
     public Date getUpdated();
+
+	/**
+	 * @return
+	 */
+	String getReservationId();
+
+	/**
+	 * @param reserv
+	 */
+	void setReservationId(String reserv);
 }

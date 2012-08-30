@@ -6,9 +6,9 @@ import org.apache.cloudstack.platform.subsystem.api.storage.Template;
 import org.apache.cloudstack.platform.subsystem.api.storage.Volume;
 import org.apache.cloudstack.platform.subsystem.api.storage.VolumeStrategy;
 
-public class XenVolumeStrategy implements VolumeStrategy {
+public class DefaultVolumeStrategy implements VolumeStrategy {
 	protected DataStore _ds;
-	public XenVolumeStrategy(DataStore ds) {
+	public DefaultVolumeStrategy(DataStore ds) {
 		_ds = ds;
 	}
 	

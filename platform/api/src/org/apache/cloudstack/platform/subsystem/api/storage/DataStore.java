@@ -44,6 +44,7 @@ public interface DataStore {
 	long getZoneId();
 	StoreType getType();
 	StoreScope getScope();
+	boolean isSharedStorage();
 	Long getId();
 	DataStoreDriver getDataStoreDriver();
 	DataStoreEndPointSelector getEndPointSelector();
