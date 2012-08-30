@@ -1791,9 +1791,6 @@ public class ManagementServerImpl implements ManagementServer {
             }
         }
 
-        // We should not display public IPs assigned to System VMs which is a case in Basic Zone with EIP/ELB
-        sc.setParameters("isSystem", false);
-
         if (zone != null) {
             sc.setParameters("dataCenterId", zone);
         }

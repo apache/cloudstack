@@ -805,12 +805,14 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         if (ipAddr.getAssociatedWithVmId() != null) {
             UserVm vm = ApiDBUtils.findUserVmById(ipAddr.getAssociatedWithVmId());
-            ipResponse.setVirtualMachineId(vm.getId());
-            ipResponse.setVirtualMachineName(vm.getHostName());
-            if (vm.getDisplayName() != null) {
-                ipResponse.setVirtualMachineDisplayName(vm.getDisplayName());
-            } else {
-                ipResponse.setVirtualMachineDisplayName(vm.getHostName());
+            if (vm != null) {
+                ipResponse.setVirtualMachineId(vm.getId());
+                ipResponse.setVirtualMachineName(vm.getHostName());
+                if (vm.getDisplayName() != null) {
+                    ipResponse.setVirtualMachineDisplayName(vm.getDisplayName());
+                } else {
+                    ipResponse.setVirtualMachineDisplayName(vm.getHostName());
+                }
             }
         }
 
