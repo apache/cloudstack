@@ -772,11 +772,17 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                         List<? extends Nic> routerNics = _nicDao.listByVmId(router.getId());
                         for (Nic routerNic : routerNics) {
                             Network network = _networkMgr.getNetwork(routerNic.getNetworkId());
-                            if ((forVpc && network.getTrafficType() == TrafficType.Public) || (!forVpc && network.getTrafficType() == TrafficType.Guest)) {
+                            //Send network usage command for public nic in VPC VR
+                            //Send network usage command for isolated guest nic of non VPC VR                            
+                            if ((forVpc && network.getTrafficType() == TrafficType.Public) || (!forVpc && network.getTrafficType() == TrafficType.Guest && network.getGuestType() == Network.GuestType.Isolated)) {
                                 final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(),
                                         forVpc, routerNic.getIp4Address());
+                                String routerType = router.getType().toString();
+                                if(forVpc){
+                                	routerType = "VPC"+routerType;
+                                }
                                 UserStatisticsVO previousStats = _statsDao.findBy(router.getAccountId(),
-                                        router.getDataCenterIdToDeployIn(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), router.getType().toString());
+                                        router.getDataCenterIdToDeployIn(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), routerType);
                                 NetworkUsageAnswer answer = null;
                                 try {
                                     answer = (NetworkUsageAnswer) _agentMgr.easySend(router.getHostId(), usageCmd);
@@ -798,7 +804,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                                         }
                                         txn.start();
                                         UserStatisticsVO stats = _statsDao.lock(router.getAccountId(),
-                                                router.getDataCenterIdToDeployIn(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), router.getType().toString());
+                                                router.getDataCenterIdToDeployIn(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), routerType);
                                         if (stats == null) {
                                             s_logger.warn("unable to find stats for account: " + router.getAccountId());
                                             continue;
@@ -3414,11 +3420,15 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             for (Nic routerNic : routerNics) {
                 Network network = _networkMgr.getNetwork(routerNic.getNetworkId());
                 boolean forVpc = router.getVpcId() != null;
-                if ((forVpc && network.getTrafficType() == TrafficType.Public) || (!forVpc && network.getTrafficType() == TrafficType.Guest)) {
+                if ((forVpc && network.getTrafficType() == TrafficType.Public) || (!forVpc && network.getTrafficType() == TrafficType.Guest && network.getGuestType() == Network.GuestType.Isolated)) {
                     final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(),
                             forVpc, routerNic.getIp4Address());
+                    String routerType = router.getType().toString();
+                    if(forVpc){
+                    	routerType = "VPC"+routerType;
+                    }                    
                     UserStatisticsVO previousStats = _statsDao.findBy(router.getAccountId(),
-                            router.getDataCenterIdToDeployIn(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), router.getType().toString());
+                            router.getDataCenterIdToDeployIn(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), routerType);
                     NetworkUsageAnswer answer = null;
                     try {
                         answer = (NetworkUsageAnswer) _agentMgr.easySend(router.getHostId(), usageCmd);
@@ -3440,7 +3450,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                             }
                             txn.start();
                             UserStatisticsVO stats = _statsDao.lock(router.getAccountId(),
-                                    router.getDataCenterIdToDeployIn(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), router.getType().toString());
+                                    router.getDataCenterIdToDeployIn(), network.getId(), (forVpc ? routerNic.getIp4Address() : null), router.getId(), routerType);
                             if (stats == null) {
                                 s_logger.warn("unable to find stats for account: " + router.getAccountId());
                                 continue;

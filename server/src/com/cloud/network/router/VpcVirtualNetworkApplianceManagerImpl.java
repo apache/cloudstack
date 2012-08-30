@@ -610,7 +610,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             NetworkUsageCommand netUsageCmd = new NetworkUsageCommand(router.getPrivateIpAddress(), router.getInstanceName(), true, defaultNic.getIp4Address(), vpc.getCidr());
         	netUsagecmds.addCommand(netUsageCmd);
         	UserStatisticsVO stats = _userStatsDao.findBy(router.getAccountId(), router.getDataCenterIdToDeployIn(), 
-            		publicNtwk.getId(), publicNic.getIp4Address(), router.getId(), router.getType().toString());
+            		publicNtwk.getId(), publicNic.getIp4Address(), router.getId(), "VPC"+router.getType().toString());
             if (stats == null) {
                 stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), publicNic.getIp4Address(), router.getId(),
                         router.getType().toString(), publicNtwk.getId());
@@ -831,7 +831,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 		publicNtwk.getId(), publicNic.getIp4Address(), router.getId(), router.getType().toString());
                 if (stats == null) {
                     stats = new UserStatisticsVO(router.getAccountId(), router.getDataCenterIdToDeployIn(), publicNic.getIp4Address(), router.getId(),
-                            router.getType().toString(), publicNtwk.getId());
+                    		"VPC"+router.getType().toString(), publicNtwk.getId());
                     _userStatsDao.persist(stats);
                 }
             }
