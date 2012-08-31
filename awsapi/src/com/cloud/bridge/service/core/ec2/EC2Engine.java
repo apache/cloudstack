@@ -22,6 +22,9 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.security.SignatureException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -32,12 +35,15 @@ import java.util.UUID;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.log4j.Logger;
-import org.hibernate.ejb.criteria.expression.UnaryArithmeticOperation.Operation;
 import org.xml.sax.SAXException;
 
-import com.cloud.bridge.persist.dao.CloudStackSvcOfferingDao;
+import com.cloud.bridge.model.CloudStackServiceOfferingVO;
 import com.cloud.bridge.persist.dao.CloudStackAccountDao;
-import com.cloud.bridge.persist.dao.OfferingDao;
+import com.cloud.bridge.persist.dao.CloudStackAccountDaoImpl;
+import com.cloud.bridge.persist.dao.CloudStackSvcOfferingDao;
+import com.cloud.bridge.persist.dao.CloudStackSvcOfferingDaoImpl;
+import com.cloud.bridge.persist.dao.OfferingDaoImpl;
+import com.cloud.bridge.persist.dao.SObjectItemDaoImpl;
 import com.cloud.bridge.service.UserContext;
 
 import com.cloud.bridge.service.core.ec2.EC2ImageAttributes.ImageAttribute;
@@ -70,6 +76,8 @@ import com.cloud.stack.models.CloudStackUser;
 import com.cloud.stack.models.CloudStackUserVm;
 import com.cloud.stack.models.CloudStackVolume;
 import com.cloud.stack.models.CloudStackZone;
+import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.db.Transaction;
 
 /**
  * EC2Engine processes the ec2 commands and calls their cloudstack analogs
@@ -80,6 +88,9 @@ public class EC2Engine {
 	String managementServer = null;
 	String cloudAPIPort = null;
 
+	protected final CloudStackSvcOfferingDao scvoDao = ComponentLocator.inject(CloudStackSvcOfferingDaoImpl.class);
+    protected final OfferingDaoImpl ofDao = ComponentLocator.inject(OfferingDaoImpl.class);
+    CloudStackAccountDao accDao = ComponentLocator.inject(CloudStackAccountDaoImpl.class);
 	private CloudStackApi _eng = null;
 	
 	private CloudStackAccount currentAccount = null;
@@ -110,7 +121,6 @@ public class EC2Engine {
 			managementServer = EC2Prop.getProperty( "managementServer" );
 			cloudAPIPort = EC2Prop.getProperty( "cloudAPIPort", null );
 			
-			OfferingDao ofDao = new OfferingDao();
 			try {
 				if(ofDao.getOfferingCount() == 0) {
 					String strValue = EC2Prop.getProperty("m1.small.serviceId");
@@ -1469,7 +1479,7 @@ public class EC2Engine {
 			if(request.getInstanceType() != null){ 
 			    instanceType = request.getInstanceType();
 			}
-			CloudStackServiceOffering svcOffering = getCSServiceOfferingId(instanceType);
+			CloudStackServiceOfferingVO svcOffering = getCSServiceOfferingId(instanceType);
 			if(svcOffering == null){
 			    logger.info("No ServiceOffering found to be defined by name, please contact the administrator "+instanceType );
 			    throw new EC2ServiceException(ClientError.Unsupported, "instanceType: [" + instanceType + "] not found!");
@@ -1779,12 +1789,11 @@ public class EC2Engine {
      * 
 	 */
 	
-	private CloudStackServiceOffering getCSServiceOfferingId(String instanceType){
+	private CloudStackServiceOfferingVO getCSServiceOfferingId(String instanceType){
        try {
-           if (null == instanceType) instanceType = "m1.small";                      
+           if (null == instanceType) instanceType = "m1.small";
            
-           CloudStackSvcOfferingDao dao = new CloudStackSvcOfferingDao();
-           return dao.getSvcOfferingByName(instanceType);
+           return scvoDao.getSvcOfferingByName(instanceType);
            
         } catch(Exception e) {
             logger.error( "Error while retrieving ServiceOffering information by name - ", e);
@@ -1802,8 +1811,8 @@ public class EC2Engine {
 	 */
 	private String serviceOfferingIdToInstanceType( String serviceOfferingId ){	
         try{
-            CloudStackSvcOfferingDao dao = new CloudStackSvcOfferingDao();
-            CloudStackServiceOffering offering =  dao.getSvcOfferingById(serviceOfferingId);
+            
+            CloudStackServiceOfferingVO offering =  scvoDao.getSvcOfferingById(serviceOfferingId); //dao.getSvcOfferingById(serviceOfferingId);
             if(offering == null){
                 logger.warn( "No instanceType match for serviceOfferingId: [" + serviceOfferingId + "]" );
                 return "m1.small";
@@ -2260,9 +2269,7 @@ public class EC2Engine {
          */
         private String getDefaultZoneId(String accountId) {
             try {
-                CloudStackAccountDao dao = new CloudStackAccountDao();
-                CloudStackAccount account = dao.getdefaultZoneId(accountId);
-                return account.getDefaultZoneId();
+                return accDao.getDefaultZoneId(accountId);
             } catch(Exception e) {
                 logger.error( "Error while retrieving Account information by id - ", e);
                 throw new EC2ServiceException(ServerError.InternalError, e.getMessage());

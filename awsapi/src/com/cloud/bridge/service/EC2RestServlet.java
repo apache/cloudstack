@@ -94,10 +94,9 @@ import com.amazon.ec2.RunInstancesResponse;
 import com.amazon.ec2.StartInstancesResponse;
 import com.amazon.ec2.StopInstancesResponse;
 import com.amazon.ec2.TerminateInstancesResponse;
-import com.cloud.bridge.model.UserCredentials;
-import com.cloud.bridge.persist.PersistContext;
-import com.cloud.bridge.persist.dao.OfferingDao;
-import com.cloud.bridge.persist.dao.UserCredentialsDao;
+import com.cloud.bridge.model.UserCredentialsVO;
+import com.cloud.bridge.persist.dao.OfferingDaoImpl;
+import com.cloud.bridge.persist.dao.UserCredentialsDaoImpl;
 import com.cloud.bridge.service.controller.s3.ServiceProvider;
 import com.cloud.bridge.service.core.ec2.EC2AssociateAddress;
 import com.cloud.bridge.service.core.ec2.EC2AuthorizeRevokeSecurityGroup;
@@ -140,11 +139,15 @@ import com.cloud.bridge.util.AuthenticationUtils;
 import com.cloud.bridge.util.ConfigurationHelper;
 import com.cloud.bridge.util.EC2RestAuth;
 import com.cloud.stack.models.CloudStackAccount;
+import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.db.Transaction;
 
 
 public class EC2RestServlet extends HttpServlet {
 
 	private static final long serialVersionUID = -6168996266762804888L;
+	protected final UserCredentialsDaoImpl ucDao = ComponentLocator.inject(UserCredentialsDaoImpl.class);
+	protected final OfferingDaoImpl ofDao = ComponentLocator.inject(OfferingDaoImpl.class);
 	
 	public static final Logger logger = Logger.getLogger(EC2RestServlet.class);
 	
@@ -278,8 +281,6 @@ public class EC2RestServlet extends HttpServlet {
         		logger.error("Unsupported action " + action);
         		throw new EC2ServiceException(ClientError.Unsupported, "This operation is not available");
     	    }
-    	    PersistContext.commitTransaction();     
-    	    PersistContext.commitTransaction(true);
     	    
         } catch( EC2ServiceException e ) {
     		response.setStatus(e.getErrorCode());
@@ -306,8 +307,6 @@ public class EC2RestServlet extends HttpServlet {
 			} catch (IOException e) {
 	    		logger.error("Unexpected exception " + e.getMessage(), e);
 			}
-			PersistContext.closeSession();
-			PersistContext.closeSession(true);
         }       
     }
    
@@ -343,7 +342,7 @@ public class EC2RestServlet extends HttpServlet {
     private void setUserKeys( HttpServletRequest request, HttpServletResponse response ) {
     	String[] accessKey = null;
     	String[] secretKey = null;
-    	
+    	Transaction txn = null;
     	try {
 		    // -> all these parameters are required
             accessKey = request.getParameterValues( "accesskey" );
@@ -369,15 +368,20 @@ public class EC2RestServlet extends HttpServlet {
     	UserContext context = UserContext.current();
 
         try {
+            txn = Transaction.open(Transaction.AWSAPI_DB);
             // -> use the keys to see if the account actually exists
     	    ServiceProvider.getInstance().getEC2Engine().validateAccount( accessKey[0], secretKey[0] );
-    	    UserCredentialsDao credentialDao = new UserCredentialsDao();
-    	    credentialDao.setUserKeys( accessKey[0], secretKey[0] ); 
-    	    
+/*    	    UserCredentialsDao credentialDao = new UserCredentialsDao();
+    	    credentialDao.setUserKeys(  ); 
+*/    	    UserCredentialsVO user = new UserCredentialsVO(accessKey[0], secretKey[0]);
+	        ucDao.persist(user);
+	        txn.commit();
+	    
         } catch( Exception e ) {
    		    logger.error("SetUserKeys " + e.getMessage(), e);
     		response.setStatus(401);
         	endResponse(response, e.toString());
+        	txn.close();
         	return;
         }
     	response.setStatus(200);	
@@ -402,6 +406,7 @@ public class EC2RestServlet extends HttpServlet {
      */
     private void setCertificate( HttpServletRequest request, HttpServletResponse response ) 
         throws Exception { 
+        Transaction txn = null;
     	try {
     	    // [A] Pull the cert and cloud AccessKey from the request
             String[] certificate = request.getParameterValues( "cert" );
@@ -437,10 +442,16 @@ public class EC2RestServlet extends HttpServlet {
     	    // [C] Associate the cert's uniqueId with the Cloud API keys
             String uniqueId = AuthenticationUtils.X509CertUniqueId( userCert );
             logger.debug( "SetCertificate, uniqueId: " + uniqueId );
-    	    UserCredentialsDao credentialDao = new UserCredentialsDao();
-    	    credentialDao.setCertificateId( accessKey[0], uniqueId ); 
-    		response.setStatus(200);
+/*    	    UserCredentialsDao credentialDao = new UserCredentialsDao();
+    	    credentialDao.setCertificateId( accessKey[0], uniqueId );
+*/	        
+            txn = Transaction.open(Transaction.AWSAPI_DB);
+            UserCredentialsVO user = ucDao.getByAccessKey(accessKey[0]);
+            user.setCertUniqueId(uniqueId);
+            ucDao.update(user.getId(), user);
+            response.setStatus(200);
             endResponse(response, "User certificate set successfully");
+            txn.commit();
     	    
     	} catch( NoSuchObjectException e ) {
     		logger.error("SetCertificate exception " + e.getMessage(), e);
@@ -449,7 +460,10 @@ public class EC2RestServlet extends HttpServlet {
         } catch( Exception e ) {
     		logger.error("SetCertificate exception " + e.getMessage(), e);
     		response.sendError(500, "SetCertificate exception " + e.getMessage());
+        } finally {
+            txn.close();
         }
+    	
     }
  
     /**
@@ -464,7 +478,8 @@ public class EC2RestServlet extends HttpServlet {
      * algorithm.
      */
     private void deleteCertificate( HttpServletRequest request, HttpServletResponse response ) 
-        throws Exception { 
+        throws Exception {
+        Transaction txn = null;
 	    try {
             String [] accessKey = request.getParameterValues( "AWSAccessKeyId" );
 		    if ( null == accessKey || 0 == accessKey.length ) { 
@@ -483,10 +498,16 @@ public class EC2RestServlet extends HttpServlet {
 	             certStore.store( fsOut, keystorePassword.toCharArray());
 	             
 	     	     // -> dis-associate the cert's uniqueId with the Cloud API keys
-	     	     UserCredentialsDao credentialDao = new UserCredentialsDao();
-	     	     credentialDao.setCertificateId( accessKey[0], null ); 
+/*	     	     UserCredentialsDao credentialDao = new UserCredentialsDao();
+	     	     credentialDao.setCertificateId( accessKey[0], null );
+	     	     
+*/	     	     txn = Transaction.open(Transaction.AWSAPI_DB);
+	             UserCredentialsVO user = ucDao.getByAccessKey(accessKey[0]);
+	     	     user.setCertUniqueId(null);
+	     	     ucDao.update(user.getId(), user);
 		         response.setStatus(200);
-		           endResponse(response, "User certificate deleted successfully");
+		         endResponse(response, "User certificate deleted successfully");
+		         txn.commit();
 	        }
 	        else response.setStatus(404);
 	        
@@ -497,6 +518,8 @@ public class EC2RestServlet extends HttpServlet {
         } catch( Exception e ) {
 		    logger.error("DeleteCertificate exception " + e.getMessage(), e);
 		    response.sendError(500, "DeleteCertificate exception " + e.getMessage());
+        } finally {
+            txn.close();
         }
     }
    
@@ -547,7 +570,7 @@ public class EC2RestServlet extends HttpServlet {
     	}
 
         try {
-    	    OfferingDao ofDao = new OfferingDao();
+    	    
     	    ofDao.setOfferMapping( amazonOffer, cloudOffer ); 
     	    
         } catch( Exception e ) {
@@ -596,9 +619,7 @@ public class EC2RestServlet extends HttpServlet {
         }
 
         try {
-    	    OfferingDao ofDao = new OfferingDao();
     	    ofDao.deleteOfferMapping( amazonOffer ); 
-    	    
         } catch( Exception e ) {
    		    logger.error("DeleteOfferMapping " + e.getMessage(), e);
     		response.setStatus(401);
@@ -1695,8 +1716,8 @@ public class EC2RestServlet extends HttpServlet {
 		} 
 		
 		// [B] Use the cloudAccessKey to get the users secret key in the db
-	    UserCredentialsDao credentialDao = new UserCredentialsDao();
-	    UserCredentials cloudKeys = credentialDao.getByAccessKey( cloudAccessKey ); 
+	    UserCredentialsVO cloudKeys = ucDao.getByAccessKey( cloudAccessKey );
+
 	    if ( null == cloudKeys ) 
 	    {
 	    	 logger.debug( cloudAccessKey + " is not defined in the EC2 service - call SetUserKeys" );

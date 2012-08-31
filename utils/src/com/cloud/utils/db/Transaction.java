@@ -79,6 +79,7 @@ public class Transaction {
 
     public static final short CLOUD_DB = 0;
     public static final short USAGE_DB = 1;
+    public static final short AWSAPI_DB = 2;
     public static final short CONNECTED_DB = -1;
 
     private static AtomicLong s_id = new AtomicLong();
@@ -223,7 +224,18 @@ public class Transaction {
             return null;
         }
     }
-
+    public static Connection getStandaloneAwsapiConnection() {
+        try {
+            Connection conn = s_awsapiDS.getConnection();
+            if (s_connLogger.isTraceEnabled()) {
+                s_connLogger.trace("Retrieving a standalone connection for usage: dbconn" + System.identityHashCode(conn));
+            }
+            return conn;
+        } catch (SQLException e) {
+            s_logger.warn("Unexpected exception: ", e);
+            return null;
+        }
+}
     protected void attach(TransactionAttachment value) {
         _stack.push(new StackElement(ATTACHMENT, value));
     }
@@ -525,8 +537,18 @@ public class Transaction {
                     throw new CloudRuntimeException("Database is not initialized, process is dying?");
                 }
                 break;
+            case AWSAPI_DB:
+        	if(s_awsapiDS != null) {
+        	    _conn = s_awsapiDS.getConnection();
+        	} else {
+        	    s_logger.warn("A static-initialized variable becomes null, process is dying?");
+                throw new CloudRuntimeException("Database is not initialized, process is dying?");
+        	}
+                break;
+
             default:
-                throw new CloudRuntimeException("No database selected for the transaction");
+
+        	throw new CloudRuntimeException("No database selected for the transaction");
             }
             _conn.setAutoCommit(!_txn);
 
@@ -953,6 +975,7 @@ public class Transaction {
 
     private static DataSource s_ds;
     private static DataSource s_usageDS;
+    private static DataSource s_awsapiDS;
     static {
         try {
             final File dbPropsFile = PropertiesUtil.findConfigFile("db.properties");
@@ -1035,6 +1058,17 @@ public class Transaction {
             final PoolableConnectionFactory usagePoolableConnectionFactory = new PoolableConnectionFactory(usageConnectionFactory, usageConnectionPool,
                     new StackKeyedObjectPoolFactory(), null, false, false);
             s_usageDS = new PoolingDataSource(usagePoolableConnectionFactory.getPool());
+            
+            //configure awsapi db
+            final String awsapiDbName = dbProps.getProperty("db.awsapi.name");
+            final GenericObjectPool awsapiConnectionPool = new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION,
+            usageMaxWait, usageMaxIdle);
+            final ConnectionFactory awsapiConnectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://"+cloudHost + ":" + cloudPort + "/" + awsapiDbName +
+            "?autoReconnect="+usageAutoReconnect, cloudUsername, cloudPassword);
+            final PoolableConnectionFactory awsapiPoolableConnectionFactory = new PoolableConnectionFactory(awsapiConnectionFactory, awsapiConnectionPool,
+            new StackKeyedObjectPoolFactory(), null, false, false);
+            s_awsapiDS = new PoolingDataSource(awsapiPoolableConnectionFactory.getPool());
+            
         } catch (final Exception e) {
             final GenericObjectPool connectionPool = new GenericObjectPool(null, 5);
             final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/cloud", "cloud", "cloud");
