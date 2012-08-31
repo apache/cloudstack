@@ -21,8 +21,8 @@ import org.apache.axis2.description.AxisService;
 import org.apache.axis2.engine.ServiceLifeCycle;
 import org.apache.log4j.Logger;
 
-import com.cloud.bridge.persist.dao.UserCredentialsDao;
 import com.cloud.bridge.service.controller.s3.ServiceProvider;
+import com.cloud.utils.db.Transaction;
 
 
 /**
@@ -38,7 +38,7 @@ public class ServiceEngineLifecycle implements ServiceLifeCycle {
 	public void startUp(ConfigurationContext config, AxisService service) {
 		// initialize service provider during Axis engine startup
 	    try{
-	        UserCredentialsDao.preCheckTableExistence();
+	        //UserCredentialsDao.preCheckTableExistence();
 	        ServiceProvider.getInstance();
 	        ServiceEngineLifecycle.initialized = true;
 	    }catch(Exception e){

@@ -223,6 +223,7 @@
 			<fileset dir="${jar.dir}">
 				<include name="cloud-awsapi.jar" />
 				<include name="cloud-jasypt-1.8.jar" />
+                                <include name="cloud-utils.jar" />
 			</fileset>
 		</copy>
 		<copy todir="${server.deploy.to.dir}/webapps7080/awsapi/WEB-INF/lib">

@@ -37,8 +37,7 @@ import com.cloud.bridge.util.Triple;
  *         < permission1, permission2, symbol >
  * when given an aclRequestString, a target (i.e. bucket or object) and the ID of the owner.
  */
-public class SAcl implements Serializable {
-	private static final long serialVersionUID = 7900837117165018850L;
+public interface SAcl {
 
 	public static final int GRANTEE_USER = 0;
 	public static final int GRANTEE_ALLUSERS = 1;
@@ -52,95 +51,6 @@ public class SAcl implements Serializable {
 	public static final int PERMISSION_WRITE_ACL = 8;
 	public static final int PERMISSION_FULL = (PERMISSION_READ | PERMISSION_WRITE | PERMISSION_READ_ACL | PERMISSION_WRITE_ACL);
 	
-	private Long id;
-	
-	private String target;
-	private long targetId;
-
-	private int granteeType;
-	private String granteeCanonicalId;
-	
-	private int permission;
-	private int grantOrder;
-	
-	private Date createTime;
-	private Date lastModifiedTime;
-	
-	public SAcl() {
-	}
-	
-	public Long getId() {
-		return id;
-	}
-	
-	private void setId(Long id) {
-		this.id = id;
-	}
-	
-	public String getTarget() {
-		return target;
-	}
-	
-	public void setTarget(String target) {
-		this.target = target;
-	}
-	
-	public long getTargetId() {
-		return targetId;
-	}
-	
-	public void setTargetId(long targetId) {
-		this.targetId = targetId;
-	}
-	
-	public int getGranteeType() {
-		return granteeType;
-	}
-	
-	public void setGranteeType(int granteeType) {
-		this.granteeType = granteeType;
-	}
-	
-	public String getGranteeCanonicalId() {
-		return granteeCanonicalId;
-	}
-	
-	public void setGranteeCanonicalId(String granteeCanonicalId) {
-		this.granteeCanonicalId = granteeCanonicalId;
-	}
-	
-	public int getPermission() {
-		return permission;
-	}
-	
-	public void setPermission(int permission) {
-		this.permission = permission;
-	}
-	
-	public int getGrantOrder() {
-		return grantOrder;
-	}
-	
-	public void setGrantOrder(int grantOrder) {
-		this.grantOrder = grantOrder;
-	}
-	
-	public Date getCreateTime() {
-		return createTime;
-	}
-	
-	public void setCreateTime(Date createTime) {
-		this.createTime = createTime;
-	}
-	
-	public Date getLastModifiedTime() {
-		return lastModifiedTime;
-	}
-	
-	public void setLastModifiedTime(Date lastModifiedTime) {
-		this.lastModifiedTime = lastModifiedTime;
-	}
-	
 	/** Return an OrderedPair 
 	 *              < permission, grantee >
 	 * comprising
@@ -153,9 +63,9 @@ public class SAcl implements Serializable {
 	 * @param aclRequestString - The requested ACL from the set of AWS S3 canned ACLs
 	 * @param target - Either "SBucket" or otherwise assumed to be for a single object item
 	 */
-	public static OrderedPair <Integer,Integer> getCannedAccessControls ( String aclRequestString, String target )
-		     throws UnsupportedException
-		{
+	//public static OrderedPair <Integer,Integer> getCannedAccessControls ( String aclRequestString, String target );
+
+/*		{
 		    if ( aclRequestString.equalsIgnoreCase( "public-read" )) 
 	             // All users granted READ access.
 		    	 return new OrderedPair <Integer,Integer> (PERMISSION_READ,GRANTEE_ALLUSERS);
@@ -184,7 +94,7 @@ public class SAcl implements Serializable {
 		    }
 		    else throw new UnsupportedException( "Unknown Canned Access Policy: " + aclRequestString + " is not supported" );
 		}
-	
+*/	
 	/** Return a Triple 
 	 *         < permission1, permission2, symbol >
 	 *  comprising
@@ -200,8 +110,8 @@ public class SAcl implements Serializable {
 	 * @param target - Either "SBucket" or otherwise assumed to be for a single object item
 	 * @param ownerID - An ID for the owner, if used in place of symbols "A" or "*"
 	 */
-	public static Triple <Integer,Integer,String> getCannedAccessControls ( String aclRequestString, String target, String ownerID )
-	     throws UnsupportedException
+	//public static Triple <Integer,Integer,String> getCannedAccessControls ( String aclRequestString, String target, String ownerID );
+/*	     throws UnsupportedException
 	{
 	    if ( aclRequestString.equalsIgnoreCase( "public-read" )) 
              // Owner gets FULL_CONTROL and the anonymous principal (the 'A' symbol here) is granted READ access.
@@ -235,5 +145,5 @@ public class SAcl implements Serializable {
 	    }
 	    else throw new UnsupportedException( "Unknown Canned Access Policy: " + aclRequestString + " is not supported" );
 	}
-		
+*/		
 }

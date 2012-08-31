@@ -49,14 +49,18 @@ import com.amazon.s3.GetBucketAccessControlPolicyResponse;
 import com.amazon.s3.ListAllMyBucketsResponse;
 import com.amazon.s3.ListBucketResponse;
 import com.cloud.bridge.io.MTOMAwareResultStreamWriter;
+import com.cloud.bridge.model.BucketPolicyVO;
 import com.cloud.bridge.model.SAcl;
+import com.cloud.bridge.model.SAclVO;
 import com.cloud.bridge.model.SBucket;
+import com.cloud.bridge.model.SBucketVO;
 import com.cloud.bridge.model.SHost;
-import com.cloud.bridge.persist.PersistContext;
 import com.cloud.bridge.persist.dao.BucketPolicyDao;
+import com.cloud.bridge.persist.dao.BucketPolicyDaoImpl;
 import com.cloud.bridge.persist.dao.MultipartLoadDao;
-import com.cloud.bridge.persist.dao.SAclDao;
+import com.cloud.bridge.persist.dao.SAclDaoImpl;
 import com.cloud.bridge.persist.dao.SBucketDao;
+import com.cloud.bridge.persist.dao.SBucketDaoImpl;
 import com.cloud.bridge.service.S3Constants;
 import com.cloud.bridge.service.S3RestServlet;
 import com.cloud.bridge.service.controller.s3.ServiceProvider;
@@ -81,16 +85,13 @@ import com.cloud.bridge.service.core.s3.S3ListAllMyBucketsResponse;
 import com.cloud.bridge.service.core.s3.S3ListBucketObjectEntry;
 import com.cloud.bridge.service.core.s3.S3ListBucketRequest;
 import com.cloud.bridge.service.core.s3.S3ListBucketResponse;
-import com.cloud.bridge.service.core.s3.S3MetaDataEntry;
 import com.cloud.bridge.service.core.s3.S3MultipartUpload;
 import com.cloud.bridge.service.core.s3.S3PolicyContext;
-import com.cloud.bridge.service.core.s3.S3PutObjectRequest;
 import com.cloud.bridge.service.core.s3.S3Response;
 import com.cloud.bridge.service.core.s3.S3SetBucketAccessControlPolicyRequest;
 import com.cloud.bridge.service.core.s3.S3BucketPolicy.PolicyAccess;
 import com.cloud.bridge.service.core.s3.S3PolicyAction.PolicyActions;
 import com.cloud.bridge.service.core.s3.S3PolicyCondition.ConditionKeys;
-import com.cloud.bridge.service.exception.InternalErrorException;
 import com.cloud.bridge.service.exception.InvalidBucketName;
 import com.cloud.bridge.service.exception.InvalidRequestContentException;
 import com.cloud.bridge.service.exception.NetworkIOException;
@@ -108,10 +109,14 @@ import com.cloud.bridge.util.Triple;
 import com.cloud.bridge.util.XSerializer;
 import com.cloud.bridge.util.XSerializerXmlAdapter;
 import com.cloud.bridge.util.XmlHelper;
+import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.db.Transaction;
 
 
 public class S3BucketAction implements ServletAction {
     protected final static Logger logger = Logger.getLogger(S3BucketAction.class);
+    protected final BucketPolicyDao bPolicyDao = ComponentLocator.inject(BucketPolicyDaoImpl.class);
+    protected final SBucketDao bucketDao = ComponentLocator.inject(SBucketDaoImpl.class);
     
     private DocumentBuilderFactory dbf = null;
 	public S3BucketAction() {
@@ -347,18 +352,16 @@ private void executeMultiObjectDelete(HttpServletRequest request, HttpServletRes
 		String policy = streamToString( request.getInputStream());
 		        
 		// [A] Is there an owner of an existing policy or bucket?
-        BucketPolicyDao policyDao = new BucketPolicyDao();
-		SBucketDao bucketDao = new SBucketDao();
-		SBucket bucket = bucketDao.getByName( bucketName );
+        SBucketVO bucket = bucketDao.getByName( bucketName );
         String owner = null;
         
         if ( null != bucket ) 
         {
-        	 owner = bucket.getOwnerCanonicalId();
+            owner = bucket.getOwnerCanonicalId();
         }
         else 
         {    try {
-        	     owner = policyDao.getPolicyOwner( bucketName );
+        	     owner = bPolicyDao.getByName(bucketName).getOwnerCanonicalID();
              }
              catch( Exception e ) {}
         }
@@ -366,36 +369,42 @@ private void executeMultiObjectDelete(HttpServletRequest request, HttpServletRes
         
 		// [B] "The bucket owner by default has permissions to attach bucket policies to their buckets using PUT Bucket policy." 
 		//  -> the bucket owner may want to restrict the IP address from where this can be executed
-	    String client = UserContext.current().getCanonicalUserId();
-		S3PolicyContext context = new S3PolicyContext( PolicyActions.PutBucketPolicy, bucketName );
-	    switch( S3Engine.verifyPolicy( context )) {
-	    case ALLOW:
-             break;
-             
-		case DEFAULT_DENY:
-		     if (null != owner && !client.equals( owner )) {
-		    	 response.setStatus(405);
-		    	 return;
-		     }
-		     break;
-		    	 
-		case DENY:
-             response.setStatus(403);
-             return;
-		}
-			
-	    
+	String client = UserContext.current().getCanonicalUserId();
+	S3PolicyContext context = new S3PolicyContext(
+		PolicyActions.PutBucketPolicy, bucketName);
+	
+	switch (S3Engine.verifyPolicy(context)) {
+	case ALLOW:
+	    break;
+
+	case DEFAULT_DENY:
+	    if (null != owner && !client.equals(owner)) {
+		response.setStatus(405);
+		return;
+	    }
+	    break;
+	case DENY:
+	    response.setStatus(403);
+	    return;
+	}			
+	    Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
 	    // [B] Place the policy into the database over writting an existing policy
     	try {
     		// -> first make sure that the policy is valid by parsing it
        		PolicyParser parser = new PolicyParser();
     		S3BucketPolicy sbp = parser.parse( policy, bucketName );
-
-	        policyDao.deletePolicy( bucketName );
-	        if (null != policy && !policy.isEmpty()) policyDao.addPolicy( bucketName, client, policy );
+    		bPolicyDao.deletePolicy(bucketName);
+    		
+	        if (null != policy && !policy.isEmpty()) {
+	            BucketPolicyVO bpolicy = new BucketPolicyVO(bucketName, client, policy);
+	            bpolicy = bPolicyDao.persist(bpolicy);
+	            //policyDao.addPolicy( bucketName, client, policy );
+	        }
 	                
     		if (null != sbp) ServiceProvider.getInstance().setBucketPolicy( bucketName, sbp );
-    		response.setStatus(200);  		
+    		response.setStatus(200);
+    		txn.commit();
+    		txn.close();
     	}
     	catch( PermissionDeniedException e ) {
 			logger.error("Put Bucket Policy failed due to " + e.getMessage(), e);	
@@ -416,185 +425,193 @@ private void executeMultiObjectDelete(HttpServletRequest request, HttpServletRes
 		String bucketName = (String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
 
 		// [A] Is there an owner of an existing policy or bucket?
-        BucketPolicyDao policyDao = new BucketPolicyDao();
-		SBucketDao bucketDao = new SBucketDao();
-		SBucket bucket = bucketDao.getByName( bucketName );
-        String owner = null;
-        
-        if ( null != bucket ) 
-        {
-        	 owner = bucket.getOwnerCanonicalId();
-        }
-        else 
-        {    try {
-        	     owner = policyDao.getPolicyOwner( bucketName );
-             }
-             catch( Exception e ) {}
-        }
+	SBucketVO bucket = bucketDao.getByName(bucketName);
+	String owner = null;
 
-        
-		// [B] "The bucket owner by default has permissions to retrieve bucket policies using GET Bucket policy."
-		//  -> the bucket owner may want to restrict the IP address from where this can be executed
-		String client = UserContext.current().getCanonicalUserId();
-		S3PolicyContext context = new S3PolicyContext( PolicyActions.GetBucketPolicy, bucketName );
-		switch( S3Engine.verifyPolicy( context )) {
-		case ALLOW:
-             break;
-             
-		case DEFAULT_DENY:
-		  	 if (null != owner && !client.equals( owner )) {
-		   		 response.setStatus(405);
-		   		 return;
-		   	 }
-		   	 break;
-		    	 
-		case DENY:
-             response.setStatus(403);
-             return;
-		}
-
-	    
-	    // [B] Pull the policy from the database if one exists
-    	try {
-	        String policy = policyDao.getPolicy( bucketName );
-	        if ( null == policy ) {
-	    		 response.setStatus(404);
-	        }
-	        else {
-    		     response.setStatus(200);
-    			 response.setContentType("application/json");
-    			 S3RestServlet.endResponse(response, policy);
-	        }
-    	}
-		catch( Exception e ) {
-			logger.error("Get Bucket Policy failed due to " + e.getMessage(), e);	
-			response.setStatus(500);
-		}
+	if (null != bucket) {
+	    owner = bucket.getOwnerCanonicalId();
+	} else {
+	    try {
+		owner = bPolicyDao.getByName(bucketName).getOwnerCanonicalID();
+	    } catch (Exception e) {
+	    }
 	}
 
-	private void executeDeleteBucketPolicy(HttpServletRequest request, HttpServletResponse response) 
-	{
-		String bucketName = (String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
-		
-		SBucketDao bucketDao = new SBucketDao();
-		SBucket bucket = bucketDao.getByName( bucketName );
-		if (bucket != null) 
-		{
-		    String client = UserContext.current().getCanonicalUserId();
-		    if (!client.equals( bucket.getOwnerCanonicalId())) {
-		        response.setStatus(405);
-		        return;
-		    }
-		}
+	// [B]
+	// "The bucket owner by default has permissions to retrieve bucket policies using GET Bucket policy."
+	// -> the bucket owner may want to restrict the IP address from where
+	// this can be executed
+	String client = UserContext.current().getCanonicalUserId();
+	S3PolicyContext context = new S3PolicyContext(
+		PolicyActions.GetBucketPolicy, bucketName);
+	switch (S3Engine.verifyPolicy(context)) {
+	case ALLOW:
+	    break;
 
-    	try {
-	        BucketPolicyDao policyDao = new BucketPolicyDao();
-	        String policy = policyDao.getPolicy( bucketName );
-	        if ( null == policy ) {
-	    		 response.setStatus(204);
-	        }
-	        else {
-	   	         ServiceProvider.getInstance().deleteBucketPolicy( bucketName );
-    	         policyDao.deletePolicy( bucketName );
-    		     response.setStatus(200);
-	        }
-    	}
-		catch( Exception e ) {
-			logger.error("Delete Bucket Policy failed due to " + e.getMessage(), e);	
-			response.setStatus(500);
-		}
+	case DEFAULT_DENY:
+	    if (null != owner && !client.equals(owner)) {
+		response.setStatus(405);
+		return;
+	    }
+	    break;
+
+	case DENY:
+	    response.setStatus(403);
+	    return;
 	}
 
-	public void executeGetAllBuckets(HttpServletRequest request, HttpServletResponse response) 
-	    throws IOException, XMLStreamException 
-	{
-		Calendar cal = Calendar.getInstance();
-		cal.set( 1970, 1, 1 );    
-		S3ListAllMyBucketsRequest engineRequest = new S3ListAllMyBucketsRequest();
-		engineRequest.setAccessKey(UserContext.current().getAccessKey());
-		engineRequest.setRequestTimestamp( cal );
-		engineRequest.setSignature( "" );
-		
-		
+	// [B] Pull the policy from the database if one exists
+	try {
+	    String policy = bPolicyDao.getByName(bucketName).getPolicy();
+	    if (null == policy) {
+		response.setStatus(404);
+	    } else {
+		response.setStatus(200);
+		response.setContentType("application/json");
+		S3RestServlet.endResponse(response, policy);
+	    }
+	} catch (Exception e) {
+	    logger.error("Get Bucket Policy failed due to " + e.getMessage(), e);
+	    response.setStatus(500);
+	}
+    }
 
+    private void executeDeleteBucketPolicy(HttpServletRequest request,
+	    HttpServletResponse response) {
+	String bucketName = (String) request
+		.getAttribute(S3Constants.BUCKET_ATTR_KEY);
 
-		S3ListAllMyBucketsResponse engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest(engineRequest);
-		
-		// To allow the all buckets list to be serialized via Axiom classes
-		ListAllMyBucketsResponse allBuckets = S3SerializableServiceImplementation.toListAllMyBucketsResponse( engineResponse );
-		
-		OutputStream outputStream = response.getOutputStream();
-		response.setStatus(200);	
-	    response.setContentType("application/xml");   
-	         // The content-type literally should be "application/xml; charset=UTF-8" 
-	         // but any compliant JVM supplies utf-8 by default
-		
-//		MTOMAwareResultStreamWriter resultWriter = new MTOMAwareResultStreamWriter ("ListAllMyBucketsResult", outputStream );
-//		resultWriter.startWrite();
-//		resultWriter.writeout(allBuckets);
-//		resultWriter.stopWrite();
-	    StringBuffer xml = new StringBuffer();
-        xml.append( "<?xml version=\"1.0\" encoding=\"utf-8\"?>" );
-        xml.append("<ListAllMyBucketsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">");
-        xml.append("<Owner><ID>");
-        xml.append(engineResponse.getOwner().getID()).append("</ID>");
-        xml.append("<DisplayName>").append(engineResponse.getOwner().getDisplayName()).append("</DisplayName>");
-        xml.append("</Owner>").append("<Buckets>");
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
-        for (S3ListAllMyBucketsEntry entry :engineResponse.getBuckets()) {
-            xml.append("<Bucket>").append("<Name>").append(entry.getName()).append("</Name>");
-            xml.append("<CreationDate>").append(sdf.format(entry.getCreationDate().getTime())).append("</CreationDate>");
-            xml.append("</Bucket>");
-        }
-        xml.append("</Buckets>").append("</ListAllMyBucketsResult>");
-        response.setStatus(200);
-        response.setContentType("text/xml; charset=UTF-8");
-        S3RestServlet.endResponse(response, xml.toString());
+	SBucketVO bucket = bucketDao.getByName(bucketName);
+	if (bucket != null) {
+	    String client = UserContext.current().getCanonicalUserId();
+	    if (!client.equals(bucket.getOwnerCanonicalId())) {
+		response.setStatus(405);
+		return;
+	    }
+	}
+
+	try {
+
+	    String policy = bPolicyDao.getByName(bucketName).getPolicy();
+	    if (null == policy) {
+		response.setStatus(204);
+	    } else {
+		ServiceProvider.getInstance().deleteBucketPolicy(bucketName);
+		bPolicyDao.deletePolicy(bucketName);
+		response.setStatus(200);
+	    }
+	} catch (Exception e) {
+	    logger.error(
+		    "Delete Bucket Policy failed due to " + e.getMessage(), e);
+	    response.setStatus(500);
+	}
+    }
+
+    public void executeGetAllBuckets(HttpServletRequest request,
+	    HttpServletResponse response) throws IOException,
+	    XMLStreamException {
+	Calendar cal = Calendar.getInstance();
+	cal.set(1970, 1, 1);
+	S3ListAllMyBucketsRequest engineRequest = new S3ListAllMyBucketsRequest();
+	engineRequest.setAccessKey(UserContext.current().getAccessKey());
+	engineRequest.setRequestTimestamp(cal);
+	engineRequest.setSignature("");
+
+	S3ListAllMyBucketsResponse engineResponse = ServiceProvider
+		.getInstance().getS3Engine().handleRequest(engineRequest);
+
+	// To allow the all buckets list to be serialized via Axiom classes
+	ListAllMyBucketsResponse allBuckets = S3SerializableServiceImplementation
+		.toListAllMyBucketsResponse(engineResponse);
+
+	OutputStream outputStream = response.getOutputStream();
+	response.setStatus(200);
+	response.setContentType("application/xml");
+	// The content-type literally should be "application/xml; charset=UTF-8"
+	// but any compliant JVM supplies utf-8 by default
+
+	// MTOMAwareResultStreamWriter resultWriter = new
+	// MTOMAwareResultStreamWriter ("ListAllMyBucketsResult", outputStream
+	// );
+	// resultWriter.startWrite();
+	// resultWriter.writeout(allBuckets);
+	// resultWriter.stopWrite();
+	StringBuffer xml = new StringBuffer();
+	xml.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+	xml.append("<ListAllMyBucketsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">");
+	xml.append("<Owner><ID>");
+	xml.append(engineResponse.getOwner().getID()).append("</ID>");
+	xml.append("<DisplayName>")
+		.append(engineResponse.getOwner().getDisplayName())
+		.append("</DisplayName>");
+	xml.append("</Owner>").append("<Buckets>");
+	SimpleDateFormat sdf = new SimpleDateFormat(
+		"yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+	for (S3ListAllMyBucketsEntry entry : engineResponse.getBuckets()) {
+	    xml.append("<Bucket>").append("<Name>").append(entry.getName())
+		    .append("</Name>");
+	    xml.append("<CreationDate>")
+		    .append(sdf.format(entry.getCreationDate().getTime()))
+		    .append("</CreationDate>");
+	    xml.append("</Bucket>");
+	}
+	xml.append("</Buckets>").append("</ListAllMyBucketsResult>");
+	response.setStatus(200);
+	response.setContentType("text/xml; charset=UTF-8");
+	S3RestServlet.endResponse(response, xml.toString());
 		
 	}
 
 	public void executeGetBucket(HttpServletRequest request, HttpServletResponse response) 
 	    throws IOException, XMLStreamException 
 	{
-		S3ListBucketRequest engineRequest = new S3ListBucketRequest();
-		engineRequest.setBucketName((String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY));
-		engineRequest.setDelimiter(request.getParameter("delimiter"));
-		engineRequest.setMarker(request.getParameter("marker"));
-		engineRequest.setPrefix(request.getParameter("prefix"));
-		
-		int maxKeys = Converter.toInt(request.getParameter("max-keys"), 1000);
-		engineRequest.setMaxKeys(maxKeys);
-		try {
-		S3ListBucketResponse engineResponse = ServiceProvider.getInstance().getS3Engine().listBucketContents( engineRequest, false );
-		
-		// To allow the all list buckets result to be serialized via Axiom classes
-		ListBucketResponse oneBucket = S3SerializableServiceImplementation.toListBucketResponse( engineResponse );
-	
-		OutputStream outputStream = response.getOutputStream();
-		response.setStatus(200);	
-	    response.setContentType("application/xml");   
-	         // The content-type literally should be "application/xml; charset=UTF-8" 
-	         // but any compliant JVM supplies utf-8 by default;
-	    
-		MTOMAwareResultStreamWriter resultWriter = new MTOMAwareResultStreamWriter ("ListBucketResult", outputStream );
-		resultWriter.startWrite();
-		resultWriter.writeout(oneBucket);
-		resultWriter.stopWrite();
-		} catch (NoSuchObjectException nsoe) {
-		    response.setStatus(404);
-		    response.setContentType("application/xml");   
+	S3ListBucketRequest engineRequest = new S3ListBucketRequest();
+	engineRequest.setBucketName((String) request
+		.getAttribute(S3Constants.BUCKET_ATTR_KEY));
+	engineRequest.setDelimiter(request.getParameter("delimiter"));
+	engineRequest.setMarker(request.getParameter("marker"));
+	engineRequest.setPrefix(request.getParameter("prefix"));
 
-		    StringBuffer xmlError = new StringBuffer();
-		    xmlError.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
+	int maxKeys = Converter.toInt(request.getParameter("max-keys"), 1000);
+	engineRequest.setMaxKeys(maxKeys);
+	try {
+	    S3ListBucketResponse engineResponse = ServiceProvider.getInstance()
+		    .getS3Engine().listBucketContents(engineRequest, false);
+
+	    // To allow the all list buckets result to be serialized via Axiom
+	    // classes
+	    ListBucketResponse oneBucket = S3SerializableServiceImplementation
+		    .toListBucketResponse(engineResponse);
+
+	    OutputStream outputStream = response.getOutputStream();
+	    response.setStatus(200);
+	    response.setContentType("application/xml");
+	    // The content-type literally should be
+	    // "application/xml; charset=UTF-8"
+	    // but any compliant JVM supplies utf-8 by default;
+
+	    MTOMAwareResultStreamWriter resultWriter = new MTOMAwareResultStreamWriter(
+		    "ListBucketResult", outputStream);
+	    resultWriter.startWrite();
+	    resultWriter.writeout(oneBucket);
+	    resultWriter.stopWrite();
+	} catch (NoSuchObjectException nsoe) {
+	    response.setStatus(404);
+	    response.setContentType("application/xml");
+
+	    StringBuffer xmlError = new StringBuffer();
+	    xmlError.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
 		    .append("<Error><Code>NoSuchBucket</Code><Message>The specified bucket does not exist</Message>")
-		    .append("<BucketName>").append((String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY))
+		    .append("<BucketName>")
+		    .append((String) request
+			    .getAttribute(S3Constants.BUCKET_ATTR_KEY))
 		    .append("</BucketName>")
-		    .append("<RequestId>1DEADBEEF9</RequestId>") //TODO
-		    .append("<HostId>abCdeFgHiJ1k2LmN3op4q56r7st89</HostId>") //TODO
+		    .append("<RequestId>1DEADBEEF9</RequestId>") // TODO
+		    .append("<HostId>abCdeFgHiJ1k2LmN3op4q56r7st89</HostId>") // TODO
 		    .append("</Error>");
-	        S3RestServlet.endResponse(response, xmlError.toString());
+	    S3RestServlet.endResponse(response, xmlError.toString());
 
-		}
+	}
 
 	}
 	
@@ -640,8 +657,7 @@ private void executeMultiObjectDelete(HttpServletRequest request, HttpServletRes
 			return; 
 		}
 		
-		SBucketDao bucketDao = new SBucketDao();
-		SBucket sbucket = bucketDao.getByName( bucketName );
+		SBucketVO sbucket = bucketDao.getByName( bucketName );
 		if (sbucket == null) {
 			response.setStatus( 404 );
 			return;
@@ -834,111 +850,124 @@ private void executeMultiObjectDelete(HttpServletRequest request, HttpServletRes
 	public void executePutBucketAcl(HttpServletRequest request, HttpServletResponse response) throws IOException 
 	{ 
 		// [A] Determine that there is an applicable bucket which might have an ACL set
-		
-		String bucketName = (String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY);	
-		SBucketDao bucketDao = new SBucketDao();
-		SBucket bucket = bucketDao.getByName( bucketName );
-		String owner = null;        
-        if ( null != bucket ) 
-        	 owner = bucket.getOwnerCanonicalId();
-        if (null == owner)
-                {
-            	   logger.error( "ACL update failed since " + bucketName + " does not exist" );
-                   throw new IOException("ACL update failed");
-                 }
-        
-        // [B] Obtain the grant request which applies to the acl request string.  This latter is supplied as the value of the x-amz-acl header.
-        
-		S3SetBucketAccessControlPolicyRequest engineRequest = new S3SetBucketAccessControlPolicyRequest();
-		S3Grant grantRequest = new S3Grant();
-		S3AccessControlList aclRequest = new S3AccessControlList();
-		
-		String aclRequestString = request.getHeader("x-amz-acl");
-		OrderedPair <Integer,Integer> accessControlsForBucketOwner = SAcl.getCannedAccessControls(aclRequestString,"SBucket");
-		grantRequest.setPermission(accessControlsForBucketOwner.getFirst());
-		grantRequest.setGrantee(accessControlsForBucketOwner.getSecond());
-		grantRequest.setCanonicalUserID(owner);
-		aclRequest.addGrant(grantRequest);
-		engineRequest.setAcl(aclRequest);
-		engineRequest.setBucketName(bucketName);
-		
-		
-		// [C] Allow an S3Engine to handle the S3SetBucketAccessControlPolicyRequest
-	    S3Response engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest(engineRequest);	
-	    response.setStatus( engineResponse.getResultCode());
+
+	String bucketName = (String) request
+		.getAttribute(S3Constants.BUCKET_ATTR_KEY);
+	SBucketVO bucket = bucketDao.getByName(bucketName);
+	String owner = null;
+	if (null != bucket)
+	    owner = bucket.getOwnerCanonicalId();
+	if (null == owner) {
+	    logger.error("ACL update failed since " + bucketName
+		    + " does not exist");
+	    throw new IOException("ACL update failed");
+	}
+
+	// [B] Obtain the grant request which applies to the acl request string.
+	// This latter is supplied as the value of the x-amz-acl header.
+
+	S3SetBucketAccessControlPolicyRequest engineRequest = new S3SetBucketAccessControlPolicyRequest();
+	S3Grant grantRequest = new S3Grant();
+	S3AccessControlList aclRequest = new S3AccessControlList();
+
+	String aclRequestString = request.getHeader("x-amz-acl");
+	OrderedPair<Integer, Integer> accessControlsForBucketOwner = SAclVO.getCannedAccessControls(aclRequestString, "SBucket");
+	grantRequest.setPermission(accessControlsForBucketOwner.getFirst());
+	grantRequest.setGrantee(accessControlsForBucketOwner.getSecond());
+	grantRequest.setCanonicalUserID(owner);
+	aclRequest.addGrant(grantRequest);
+	engineRequest.setAcl(aclRequest);
+	engineRequest.setBucketName(bucketName);
+
+	// [C] Allow an S3Engine to handle the
+	// S3SetBucketAccessControlPolicyRequest
+	S3Response engineResponse = ServiceProvider.getInstance().getS3Engine()
+		.handleRequest(engineRequest);
+	response.setStatus(engineResponse.getResultCode());
 
 	}
 	
 	public void executePutBucketVersioning(HttpServletRequest request, HttpServletResponse response) throws IOException 
 	{
-		String bucketName       = (String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
-		String versioningStatus = null;
-		Node   item             = null;
+	String bucketName = (String) request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
+	String versioningStatus = null;
+	Node item = null;
 
-		if (null == bucketName) {
-			logger.error( "executePutBucketVersioning - no bucket name given" );
-			response.setStatus( 400 ); 
-			return; 
-		}
-		
-		// -> is the XML as defined?
-		try {
-		    DocumentBuilder db = dbf.newDocumentBuilder();
-		    Document restXML = db.parse( request.getInputStream());
-		    NodeList match = S3RestServlet.getElement( restXML, "http://s3.amazonaws.com/doc/2006-03-01/", "Status" ); 
-	        if ( 0 < match.getLength()) 
-	        {
-	    	     item = match.item(0);
-	    	     versioningStatus = new String( item.getFirstChild().getNodeValue());
-	        }
-	        else
-	        {    logger.error( "executePutBucketVersioning - cannot find Status tag in XML body" );
-				 response.setStatus( 400 ); 
-				 return; 
-	        }
-		}
-		catch( Exception e ) {
-			logger.error( "executePutBucketVersioning - failed to parse XML due to " + e.getMessage(), e);
-			response.setStatus(400);
-			return;
-		}
-	     
-	    try {
-			// Irrespective of what the ACLs say only the owner can turn on versioning on a bucket.
-	        // The bucket owner may want to restrict the IP address from which this can occur.
-			SBucketDao bucketDao = new SBucketDao();
-			SBucket sbucket = bucketDao.getByName( bucketName );
-		
-			String client = UserContext.current().getCanonicalUserId();
-			if (!client.equals( sbucket.getOwnerCanonicalId()))
-			    throw new PermissionDeniedException( "Access Denied - only the owner can turn on versioing on a bucket" );
-		
-			S3PolicyContext context = new S3PolicyContext( PolicyActions.PutBucketVersioning, bucketName );
-		    if (PolicyAccess.DENY == S3Engine.verifyPolicy( context )) {
-	             response.setStatus(403);
-	             return;
-		    }
+	if (null == bucketName) {
+	    logger.error("executePutBucketVersioning - no bucket name given");
+	    response.setStatus(400);
+	    return;
+	}
 
-			
-			     if (versioningStatus.equalsIgnoreCase( "Enabled"  )) sbucket.setVersioningStatus( 1 );
-			else if (versioningStatus.equalsIgnoreCase( "Suspended")) sbucket.setVersioningStatus( 2 );
-			else { 
-				 logger.error( "executePutBucketVersioning - unknown state: [" + versioningStatus + "]" );
-				 response.setStatus( 400 ); 
-				 return; 
-		    }
-			bucketDao.update( sbucket );
-			
-		} catch( PermissionDeniedException e ) {
-			logger.error( "executePutBucketVersioning - failed due to " + e.getMessage(), e);
-			throw e;
-			
-		} catch( Exception e ) {
-			logger.error( "executePutBucketVersioning - failed due to " + e.getMessage(), e);
-			response.setStatus(500);
-			return;
-		}		
-		response.setStatus(200);
+	// -> is the XML as defined?
+	try {
+	    DocumentBuilder db = dbf.newDocumentBuilder();
+	    Document restXML = db.parse(request.getInputStream());
+	    NodeList match = S3RestServlet.getElement(restXML,
+		    "http://s3.amazonaws.com/doc/2006-03-01/", "Status");
+	    if (0 < match.getLength()) {
+		item = match.item(0);
+		versioningStatus = new String(item.getFirstChild()
+			.getNodeValue());
+	    } else {
+		logger.error("executePutBucketVersioning - cannot find Status tag in XML body");
+		response.setStatus(400);
+		return;
+	    }
+	} catch (Exception e) {
+	    logger.error(
+		    "executePutBucketVersioning - failed to parse XML due to "
+			    + e.getMessage(), e);
+	    response.setStatus(400);
+	    return;
+	}
+
+	try {
+	    // Irrespective of what the ACLs say only the owner can turn on
+	    // versioning on a bucket.
+	    // The bucket owner may want to restrict the IP address from which
+	    // this can occur.
+	    
+	    SBucketVO sbucket = bucketDao.getByName(bucketName);
+
+	    String client = UserContext.current().getCanonicalUserId();
+	    if (!client.equals(sbucket.getOwnerCanonicalId()))
+		throw new PermissionDeniedException(
+			"Access Denied - only the owner can turn on versioing on a bucket");
+
+	    S3PolicyContext context = new S3PolicyContext(
+		    PolicyActions.PutBucketVersioning, bucketName);
+	    if (PolicyAccess.DENY == S3Engine.verifyPolicy(context)) {
+		response.setStatus(403);
+		return;
+	    }
+
+	    if (versioningStatus.equalsIgnoreCase("Enabled"))
+		sbucket.setVersioningStatus(1);
+	    else if (versioningStatus.equalsIgnoreCase("Suspended"))
+		sbucket.setVersioningStatus(2);
+	    else {
+		logger.error("executePutBucketVersioning - unknown state: ["
+			+ versioningStatus + "]");
+		response.setStatus(400);
+		return;
+	    }
+	    bucketDao.update(sbucket.getId(), sbucket);
+
+	} catch (PermissionDeniedException e) {
+	    logger.error(
+		    "executePutBucketVersioning - failed due to "
+			    + e.getMessage(), e);
+	    throw e;
+
+	} catch (Exception e) {
+	    logger.error(
+		    "executePutBucketVersioning - failed due to "
+			    + e.getMessage(), e);
+	    response.setStatus(500);
+	    return;
+	}
+	response.setStatus(200);
 	}
 	
 	public void executePutBucketLogging(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -949,7 +978,7 @@ private void executeMultiObjectDelete(HttpServletRequest request, HttpServletRes
 	public void executePutBucketWebsite(HttpServletRequest request, HttpServletResponse response) throws IOException {
 		// TODO -- LoPri - Undertake checks on Put Bucket Website
 		// Tested using configuration <Directory /Users/john1/S3-Mount>\nAllowOverride FileInfo AuthConfig Limit...</Directory> in httpd.conf
-        // Need some way of using  AllowOverride to allow use of .htaccess and then pushing .httaccess file to bucket subdirectory of mount point
+	    // 	Need some way of using  AllowOverride to allow use of .htaccess and then pushing .httaccess file to bucket subdirectory of mount point
 		// Currently has noop effect in the sense that a running apachectl process sees the directory contents without further action
 		response.setStatus(200);
 	}
@@ -976,128 +1005,145 @@ private void executeMultiObjectDelete(HttpServletRequest request, HttpServletRes
 	public void executeListMultipartUploads(HttpServletRequest request, HttpServletResponse response) throws IOException 
 	{
 		// [A] Obtain parameters and do basic bucket verification
-		String bucketName     = (String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
-		String delimiter      = request.getParameter("delimiter");
-		String keyMarker      = request.getParameter("key-marker");
-		String prefix         = request.getParameter("prefix");
-		int maxUploads        = 1000;
-		int nextUploadId      = 0;
-		String nextKey        = null;
-		boolean isTruncated   = false;
-		S3MultipartUpload[] uploads = null;
-		S3MultipartUpload onePart = null;
-		
-		String temp = request.getParameter("max-uploads");
-    	if (null != temp) {
-    		maxUploads = Integer.parseInt( temp );
-    		if (maxUploads > 1000 || maxUploads < 0) maxUploads = 1000;
-    	}
-    	
-    	// -> upload-id-marker is ignored unless key-marker is also specified
-		String uploadIdMarker = request.getParameter("upload-id-marker");
-        if (null == keyMarker) uploadIdMarker = null;
-    	
-		// -> does the bucket exist, we may need it to verify access permissions
-		SBucketDao bucketDao = new SBucketDao();
-		SBucket bucket = bucketDao.getByName(bucketName);
-		if (bucket == null) {
-			logger.error( "listMultipartUpload failed since " + bucketName + " does not exist" );
-	    	response.setStatus(404);
-	    	return;
+	String bucketName = (String) request
+		.getAttribute(S3Constants.BUCKET_ATTR_KEY);
+	String delimiter = request.getParameter("delimiter");
+	String keyMarker = request.getParameter("key-marker");
+	String prefix = request.getParameter("prefix");
+	int maxUploads = 1000;
+	int nextUploadId = 0;
+	String nextKey = null;
+	boolean isTruncated = false;
+	S3MultipartUpload[] uploads = null;
+	S3MultipartUpload onePart = null;
+	String temp = request.getParameter("max-uploads");
+	if (null != temp) {
+	    maxUploads = Integer.parseInt(temp);
+	    if (maxUploads > 1000 || maxUploads < 0)
+		maxUploads = 1000;
+	}
+
+	// -> upload-id-marker is ignored unless key-marker is also specified
+	String uploadIdMarker = request.getParameter("upload-id-marker");
+	if (null == keyMarker)
+	    uploadIdMarker = null;
+
+	// -> does the bucket exist, we may need it to verify access permissions
+	SBucketVO bucket = bucketDao.getByName(bucketName);
+	if (bucket == null) {
+	    logger.error("listMultipartUpload failed since " + bucketName
+		    + " does not exist");
+	    response.setStatus(404);
+	    return;
+	}
+
+	S3PolicyContext context = new S3PolicyContext(
+		PolicyActions.ListBucketMultipartUploads, bucketName);
+	context.setEvalParam(ConditionKeys.Prefix, prefix);
+	context.setEvalParam(ConditionKeys.Delimiter, delimiter);
+	S3Engine.verifyAccess(context, "SBucket", bucket.getId(),
+		SAcl.PERMISSION_READ);
+
+	// [B] Query the multipart table to get the list of current uploads
+	try {
+	    MultipartLoadDao uploadDao = new MultipartLoadDao();
+	    OrderedPair<S3MultipartUpload[], Boolean> result = uploadDao
+		    .getInitiatedUploads(bucketName, maxUploads, prefix,
+			    keyMarker, uploadIdMarker);
+	    uploads = result.getFirst();
+	    isTruncated = result.getSecond().booleanValue();
+	} catch (Exception e) {
+	    logger.error(
+		    "List Multipart Uploads failed due to " + e.getMessage(), e);
+	    response.setStatus(500);
+	}
+
+	StringBuffer xml = new StringBuffer();
+	xml.append("<?xml version=\"1.0\" encoding=\"utf-8\"?>");
+	xml.append("<ListMultipartUploadsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">");
+	xml.append("<Bucket>").append(bucketName).append("</Bucket>");
+	xml.append("<KeyMarker>").append((null == keyMarker ? "" : keyMarker))
+		.append("</KeyMarker>");
+	xml.append("<UploadIdMarker>")
+		.append((null == uploadIdMarker ? "" : uploadIdMarker))
+		.append("</UploadIdMarker>");
+
+	// [C] Construct the contents of the <Upload> element
+	StringBuffer partsList = new StringBuffer();
+	for (int i = 0; i < uploads.length; i++) {
+	    onePart = uploads[i];
+	    if (null == onePart)
+		break;
+
+	    if (delimiter != null && !delimiter.isEmpty()) {
+		// -> is this available only in the CommonPrefixes element?
+		if (StringHelper.substringInBetween(onePart.getKey(), prefix,
+			delimiter) != null)
+		    continue;
+	    }
+
+	    nextKey = onePart.getKey();
+	    nextUploadId = onePart.getId();
+	    partsList.append("<Upload>");
+	    partsList.append("<Key>").append(nextKey).append("</Key>");
+	    partsList.append("<UploadId>").append(nextUploadId)
+		    .append("</UploadId>");
+	    partsList.append("<Initiator>");
+	    partsList.append("<ID>").append(onePart.getAccessKey())
+		    .append("</ID>");
+	    partsList.append("<DisplayName></DisplayName>");
+	    partsList.append("</Initiator>");
+	    partsList.append("<Owner>");
+	    partsList.append("<ID>").append(onePart.getAccessKey())
+		    .append("</ID>");
+	    partsList.append("<DisplayName></DisplayName>");
+	    partsList.append("</Owner>");
+	    partsList.append("<StorageClass>STANDARD</StorageClass>");
+	    partsList
+		    .append("<Initiated>")
+		    .append(DatatypeConverter.printDateTime(onePart
+			    .getLastModified())).append("</Initiated>");
+	    partsList.append("</Upload>");
+	}
+
+	// [D] Construct the contents of the <CommonPrefixes> elements (if any)
+	for (int i = 0; i < uploads.length; i++) {
+	    onePart = uploads[i];
+	    if (null == onePart)
+		break;
+
+	    if (delimiter != null && !delimiter.isEmpty()) {
+		String subName = StringHelper.substringInBetween(
+			onePart.getKey(), prefix, delimiter);
+		if (subName != null) {
+		    partsList.append("<CommonPrefixes>");
+		    partsList.append("<Prefix>");
+		    if (prefix != null && prefix.length() > 0)
+			partsList.append(prefix + delimiter + subName);
+		    else
+			partsList.append(subName);
+		    partsList.append("</Prefix>");
+		    partsList.append("</CommonPrefixes>");
 		}
-		
-		S3PolicyContext context = new S3PolicyContext( PolicyActions.ListBucketMultipartUploads, bucketName );
-		context.setEvalParam( ConditionKeys.Prefix, prefix );
-		context.setEvalParam( ConditionKeys.Delimiter, delimiter );
-		S3Engine.verifyAccess( context, "SBucket", bucket.getId(), SAcl.PERMISSION_READ );
+	    }
+	}
 
-  			
-		// [B] Query the multipart table to get the list of current uploads
-    	try {
-	        MultipartLoadDao uploadDao = new MultipartLoadDao();
-	        OrderedPair<S3MultipartUpload[],Boolean> result = uploadDao.getInitiatedUploads( bucketName, maxUploads, prefix, keyMarker, uploadIdMarker );
-    	    uploads = result.getFirst();
-    	    isTruncated = result.getSecond().booleanValue();
-    	}
-		catch( Exception e ) {
-			logger.error("List Multipart Uploads failed due to " + e.getMessage(), e);	
-			response.setStatus(500);
-		}
+	// [D] Finish off the response
+	xml.append("<NextKeyMarker>").append((null == nextKey ? "" : nextKey))
+		.append("</NextKeyMarker>");
+	xml.append("<NextUploadIdMarker>")
+		.append((0 == nextUploadId ? "" : nextUploadId))
+		.append("</NextUploadIdMarker>");
+	xml.append("<MaxUploads>").append(maxUploads).append("</MaxUploads>");
+	xml.append("<IsTruncated>").append(isTruncated)
+		.append("</IsTruncated>");
 
-		StringBuffer xml = new StringBuffer();
-	    xml.append( "<?xml version=\"1.0\" encoding=\"utf-8\"?>" );
-	    xml.append( "<ListMultipartUploadsResult xmlns=\"http://s3.amazonaws.com/doc/2006-03-01/\">" );
-	    xml.append( "<Bucket>" ).append( bucketName ).append( "</Bucket>" );
-	    xml.append( "<KeyMarker>").append((null == keyMarker ? "" : keyMarker)).append( "</KeyMarker>" );
-	    xml.append( "<UploadIdMarker>").append((null == uploadIdMarker ? "" : uploadIdMarker)).append( "</UploadIdMarker>" );
-	    
-	    
-	    // [C] Construct the contents of the <Upload> element
-		StringBuffer partsList = new StringBuffer();
-	    for( int i=0; i < uploads.length; i++ ) 
-	    {
-	        onePart = uploads[i];
-	        if (null == onePart) break;
-	        
-			if (delimiter != null && !delimiter.isEmpty()) 
-			{
-				// -> is this available only in the CommonPrefixes element?
-				if (StringHelper.substringInBetween(onePart.getKey(), prefix, delimiter) != null)
-					continue;
-			}
-	        	
-	        nextKey      = onePart.getKey();
-	        nextUploadId = onePart.getId();
-	        partsList.append( "<Upload>" );
-	        partsList.append( "<Key>" ).append( nextKey ).append( "</Key>" );
-	        partsList.append( "<UploadId>" ).append( nextUploadId ).append( "</UploadId>" );
-	        partsList.append( "<Initiator>" );
-	        partsList.append( "<ID>" ).append( onePart.getAccessKey()).append( "</ID>" );
-	        partsList.append( "<DisplayName></DisplayName>" );
-	        partsList.append( "</Initiator>" );
-	        partsList.append( "<Owner>" );
-	        partsList.append( "<ID>" ).append( onePart.getAccessKey()).append( "</ID>" );
-	        partsList.append( "<DisplayName></DisplayName>" );
-	        partsList.append( "</Owner>" );       
-	        partsList.append( "<StorageClass>STANDARD</StorageClass>" );
-	        partsList.append( "<Initiated>" ).append( DatatypeConverter.printDateTime( onePart.getLastModified())).append( "</Initiated>" );
-	        partsList.append( "</Upload>" );        	
-	    }  
-	        
-	    // [D] Construct the contents of the <CommonPrefixes> elements (if any)
-	    for( int i=0; i < uploads.length; i++ ) 
-	    {
-	        onePart = uploads[i];
-	        if (null == onePart) break;
+	xml.append(partsList.toString());
+	xml.append("</ListMultipartUploadsResult>");
 
-			if (delimiter != null && !delimiter.isEmpty()) 
-			{
-				String subName = StringHelper.substringInBetween(onePart.getKey(), prefix, delimiter);
-				if (subName != null) 
-				{
-			        partsList.append( "<CommonPrefixes>" );
-			        partsList.append( "<Prefix>" );
-					if ( prefix != null && prefix.length() > 0 )
-						partsList.append( prefix + delimiter + subName );
-					else partsList.append( subName );
-			        partsList.append( "</Prefix>" );
-			        partsList.append( "</CommonPrefixes>" );
-				}
-			}		
-		}
-	    
-	    // [D] Finish off the response
-	    xml.append( "<NextKeyMarker>" ).append((null == nextKey ? "" : nextKey)).append( "</NextKeyMarker>" );
-	    xml.append( "<NextUploadIdMarker>" ).append((0 == nextUploadId ? "" : nextUploadId)).append( "</NextUploadIdMarker>" );
-	    xml.append( "<MaxUploads>" ).append( maxUploads ).append( "</MaxUploads>" );   
-	    xml.append( "<IsTruncated>" ).append( isTruncated ).append( "</IsTruncated>" );
-
-	    xml.append( partsList.toString());
-	    xml.append( "</ListMultipartUploadsResult>" );
-	      
-		response.setStatus(200);
-		response.setContentType("text/xml; charset=UTF-8");
-	    S3RestServlet.endResponse(response, xml.toString());
+	response.setStatus(200);
+	response.setContentType("text/xml; charset=UTF-8");
+	S3RestServlet.endResponse(response, xml.toString());
 	}
 	
 	private String streamToString( InputStream is ) throws IOException 

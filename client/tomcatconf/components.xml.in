@@ -226,4 +226,31 @@ under the License.
         <dao name="Site2SiteVpnGatewayDao" class="com.cloud.network.dao.Site2SiteVpnGatewayDaoImpl" singleton="false"/>
         <dao name="Site2SiteVpnConnectionDao" class="com.cloud.network.dao.Site2SiteVpnConnectionDaoImpl" singleton="false"/>
     </configuration-server>
+    
+    <awsapi-ec2server class="com.cloud.bridge.service.EC2MainServlet">
+        <dao name="CloudStackConfigurationDao" class="com.cloud.bridge.persist.dao.CloudStackConfigurationDaoImpl" singleton="false"/>
+        <dao name="UserCredentialsDao" class="com.cloud.bridge.persist.dao.UserCredentialsDaoImpl" singleton="false"/>
+        <dao name="CloudStackSvcOfferingDao" class="com.cloud.bridge.persist.dao.CloudStackSvcOfferingDaoImpl" singleton="false"/>
+        <dao name="OfferingDao" class="com.cloud.bridge.persist.dao.OfferingDaoImpl" singleton="false"/>
+        <dao name="CloudStackAccountDao" class="com.cloud.bridge.persist.dao.CloudStackAccountDaoImpl" singleton="false"/>
+    </awsapi-ec2server>
+    
+    <awsapi-s3server class="com.cloud.bridge.service.S3RestServlet">
+        <dao name="CloudStackConfigurationDao" class="com.cloud.bridge.persist.dao.CloudStackConfigurationDaoImpl" singleton="false"/>
+        <dao name="MHostDao" class="com.cloud.bridge.persist.dao.MHostDaoImpl" singleton="false"/>
+        <dao name="SHostDao" class="com.cloud.bridge.persist.dao.SHostDaoImpl" singleton="false"/>
+        <dao name="UserCredentialsDao" class="com.cloud.bridge.persist.dao.UserCredentialsDaoImpl" singleton="false"/>
+        <dao name="BucketPolicyDao" class="com.cloud.bridge.persist.dao.BucketPolicyDaoImpl" singleton="false"/>
+        <dao name="MHostMountDao" class="com.cloud.bridge.persist.dao.MHostMountDaoImpl" singleton="false"/>
+        <dao name="SAclDao" class="com.cloud.bridge.persist.dao.SAclDaoImpl" singleton="false"/>
+        <dao name="SBucketDao" class="com.cloud.bridge.persist.dao.SBucketDaoImpl" singleton="false"/>
+        <dao name="SMetaDao" class="com.cloud.bridge.persist.dao.SMetaDaoImpl" singleton="false"/>
+        <dao name="SObjectDao" class="com.cloud.bridge.persist.dao.SObjectDaoImpl" singleton="false"/>
+        <dao name="SObjectItemDao" class="com.cloud.bridge.persist.dao.SObjectItemDaoImpl" singleton="false"/>
+        <dao name="MultiPartPartsDao" class="com.cloud.bridge.persist.dao.MultiPartPartsDaoImpl" singleton="false"/>
+        <dao name="MultiPartUploadsDao" class="com.cloud.bridge.persist.dao.MultiPartUploadsDaoImpl" singleton="false"/>
+        <dao name="MultipartMetaDao" class="com.cloud.bridge.persist.dao.MultipartMetaDaoImpl" singleton="false"/>
+        <dao name="UserCredentialsDao" class="com.cloud.bridge.persist.dao.UserCredentialsDaoImpl" singleton="false"/>
+    </awsapi-s3server>
+    
 </components.xml>
