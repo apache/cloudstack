@@ -4316,15 +4316,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<? extends UserDataServiceProvider> getPasswordResetElements() {
-        List<UserDataServiceProvider> elements = new ArrayList<UserDataServiceProvider>();
-        for (NetworkElement element : _networkElements) {
-            if (element instanceof UserDataServiceProvider) {
-                UserDataServiceProvider e = (UserDataServiceProvider) element;
-                elements.add(e);
-            }
+    public UserDataServiceProvider getPasswordResetProvider(Network network) {
+        String passwordProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.UserData);
+
+        if (passwordProvider == null) {
+            s_logger.debug("Network " + network + " doesn't support service " + Service.UserData.getName());
+            return null;
         }
-        return elements;
+        
+        return (UserDataServiceProvider)getElementImplementingProvider(passwordProvider);
     }
 
     @Override
