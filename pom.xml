@@ -219,6 +219,12 @@
         <module>client</module>
       </modules>
     </profile>
+    <profile>
+      <id>deps</id>
+      <modules>
+        <module>deps</module>
+      </modules>
+    </profile>
   </profiles>
 
 </project>
