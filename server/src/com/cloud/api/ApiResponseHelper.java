@@ -1240,7 +1240,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
         StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
-        long allocatedSize = ApiDBUtils.getStorageCapacitybyPool(pool.getId(), Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED);
+        short capacityType = pool.isShared() ? Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED : Capacity.CAPACITY_TYPE_LOCAL_STORAGE;
+        long allocatedSize = ApiDBUtils.getStorageCapacitybyPool(pool.getId(), capacityType);
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
 
