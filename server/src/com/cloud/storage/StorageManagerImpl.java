@@ -595,7 +595,13 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
         SnapshotVO snapshot = _snapshotDao.findById(snapshotId); // Precondition: snapshot is not null and not removed.
 
         Pair<VolumeVO, String> volumeDetails = createVolumeFromSnapshot(volume, snapshot);
-        createdVolume = volumeDetails.first();
+        createdVolume = volumeDetails.first();        
+        if (createdVolume != null) {
+        	UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, createdVolume.getAccountId(), createdVolume.getDataCenterId(), createdVolume.getId(), createdVolume.getName(), 
+        	                                           createdVolume.getDiskOfferingId(), null, createdVolume.getSize());
+        	_usageEventDao.persist(usageEvent);
+        	
+        }
         return createdVolume;
     }
 
@@ -1792,8 +1798,10 @@ public class StorageManagerImpl implements StorageManager, StorageService, Manag
             volume.setState(Volume.State.Creating);
         }
         volume = _volsDao.persist(volume);
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size);
-        _usageEventDao.persist(usageEvent);
+        if(cmd.getSnapshotId() == null){
+        	UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(), diskOfferingId, null, size);
+        	_usageEventDao.persist(usageEvent);
+        }
         txn.commit();
         
         UserContext.current().setEventDetails("Volume Id: " + volume.getId());
