@@ -109,10 +109,6 @@ CP=./
 
 CP=${CP}$PATHSEP$CATALINA_HOME/conf
 
-# Add mysql jar from mysql-connector-java package to CP
-# for Jenkins
-CP=${CP}${PATHSEP}/usr/share/java/mysql-connector-java.jar
-
 for file in $CATALINA_HOME/webapps/client/WEB-INF/lib/*.jar
 do
   CP=${CP}$PATHSEP$file
