@@ -18,25 +18,35 @@
  */
 package org.apache.cloudstack.storage;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.platform.subsystem.api.storage.DataObjectBackupStorageOperationState;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.platform.subsystem.api.storage.StorageProvider;
+import org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile;
+import org.apache.cloudstack.platform.subsystem.api.storage.VolumeProfile;
 import org.apache.cloudstack.platform.subsystem.api.storage.VolumeStrategy;
+import org.apache.cloudstack.storage.db.VolumeHostVO;
+import org.apache.cloudstack.storage.manager.BackupStorageManager;
+import org.apache.cloudstack.storage.manager.ImageManager;
+import org.apache.cloudstack.storage.manager.SecondaryStorageManager;
 import org.apache.cloudstack.storage.volume.VolumeManager;
 import org.apache.log4j.Logger;
 
 import com.cloud.deploy.DeploymentPlan;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeHostVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeHostDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
@@ -63,21 +73,43 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 	StorageProviderManager _storageProviderMgr;
 	@Inject
 	VolumeManager _volumeMgr;
+	@Inject
+	SecondaryStorageManager _secondaryStorageMgr;
+	@Inject
+	ImageManager _imageMgr;
+	@Inject
+	VMTemplateDao _templateDao;
 	
-	protected Volume copyVolumeFromBackupStorage(VolumeVO volume, DataStore destStore, String reservationId) {
-		StorageProvider sp = _storageProviderMgr.getBackupStorageProvider(volume.getDataCenterId());
+	@DB
+	protected Volume copyVolumeFromBackupStorage(VolumeVO volume, DataStore destStore, String reservationId) throws NoTransitionException {
+		DataStore ds = _secondaryStorageMgr.getBackupDataStore(volume);
+		if (!ds.contains(volume)) {
+			throw new CloudRuntimeException("volume: " + volume + "doesn't exist on backup storage");
+		}
 		
-		VolumeHostVO volumeHostVO = _volumeHostDao.findByVolumeId(volume.getId());
-		long poolId = volumeHostVO.getHostId();
-		DataStore srcStore = _storageProviderMgr.getDataStore(poolId);
+		VolumeProfile vp = ds.prepareVolume(volume, destStore);
 		
+		VolumeStrategy vs = destStore.getVolumeStrategy();
+
+		Transaction txn = Transaction.currentTxn();
+		volume.setReservationId(reservationId);
+		_volumeMgr.processEvent(volume, Volume.Event.CopyRequested);
+		VolumeVO destVolume = _volumeMgr.allocateDuplicateVolume(volume);
+		destVolume = _volumeMgr.processEvent(destVolume, Volume.Event.CreateRequested);
+		txn.commit();
 		
+		vs.copyVolumeFromBackup(vp, destVolume, destStore);
 		
+		txn.start();
+		volume = _volumeMgr.processEvent(volume, Volume.Event.OperationSucceeded);
+		destVolume = _volumeMgr.processEvent(destVolume, Volume.Event.OperationSucceeded);
+		txn.commit();
+		
+		return destVolume;
 	}
 	
+	@DB
 	protected Volume migrateVolume(VolumeVO volume, DataStore srcStore, DataStore destStore, String reservationId) throws NoTransitionException {
-		VolumeStrategy vs = srcStore.getVolumeStrategy();
-		
 		Transaction txn = Transaction.currentTxn();
 		txn.start();
 		volume.setReservationId(reservationId);
@@ -86,14 +118,72 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 		destVolume = _volumeMgr.processEvent(destVolume, Volume.Event.CreateRequested);
 		txn.commit();
 		
+		VolumeStrategy vs = srcStore.getVolumeStrategy();
 		vs.migrateVolume(volume, srcStore, destVolume, destStore);
 		
 		txn.start();
 		volume = _volumeMgr.processEvent(volume, Volume.Event.OperationSucceeded);
 		destVolume = _volumeMgr.processEvent(destVolume, Volume.Event.OperationSucceeded);
 		txn.commit();
-		_volumeDao.remove(volume.getId());
+		
+		volume = _volumeMgr.processEvent(volume, Volume.Event.DestroyRequested);
+		
+		vs.deleteVolume(volume);
+		
+		_volumeMgr.processEvent(volume, Volume.Event.OperationSucceeded);
 		return destVolume;
+	}
+	
+	@DB
+	protected Volume recreateVolume(VolumeVO srcVolume, DataStore destStore, String reservationId) throws NoTransitionException {
+		Transaction txn = Transaction.currentTxn();
+		txn.start();
+		srcVolume.setReservationId(reservationId);
+		srcVolume = _volumeMgr.processEvent(srcVolume, Volume.Event.CopyRequested);
+		Volume destVolume = _volumeMgr.allocateDuplicateVolume(srcVolume);
+		destVolume = _volumeMgr.processEvent(destVolume, Volume.Event.CreateRequested);
+		txn.commit();
+		
+		DataStore srcStore = _storageProviderMgr.getDataStore(srcVolume.getPoolId());
+		VolumeStrategy vs = srcStore.getVolumeStrategy();
+		
+		vs.migrateVolume(srcVolume, srcStore, destVolume, destStore);
+		
+		txn.start();
+		srcVolume = _volumeMgr.processEvent(srcVolume, Volume.Event.OperationSucceeded);
+		destVolume = _volumeMgr.processEvent(destVolume, Volume.Event.OperationSucceeded);
+		txn.commit();
+		
+		srcVolume = _volumeMgr.processEvent(srcVolume, Volume.Event.DestroyRequested);
+		
+		vs.deleteVolume(srcVolume);
+		
+		_volumeMgr.processEvent(srcVolume, Volume.Event.OperationSucceeded);
+		
+		return destVolume;
+	}
+	
+	protected Volume createVolumeOnStorage(Volume volume, DataStore destStore, String reservationId) throws NoTransitionException {
+		VolumeStrategy vs = destStore.getVolumeStrategy();
+		volume.setReservationId(reservationId);
+		volume = _volumeMgr.processEvent(volume, Volume.Event.CreateRequested);
+		
+		if (volume.getTemplateId() != null) {
+			VirtualMachineTemplate template = _templateDao.findById(volume.getTemplateId());
+			DataStore ds = _secondaryStorageMgr.getBackupDataStore(template);
+			TemplateProfile tp = ds.prepareTemplate(template, destStore);
+			if (!destStore.contains(template)) {
+				tp  = vs.createBaseVolume(tp, destStore);
+			} else {
+				tp = destStore.get(template);
+			}
+			volume = vs.createVolumeFromBaseTemplate(tp, destStore);
+		} else {
+			volume = vs.createDataVolume(volume, destStore);
+		}
+		
+		volume = _volumeMgr.processEvent(volume, Volume.Event.OperationSucceeded);
+		return volume;
 	}
 	
 	@DB
@@ -126,36 +216,35 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 				if (s_logger.isDebugEnabled()) {
 					s_logger.debug("Mismatch in storage pool " + destStore.getId() + " assigned by deploymentPlanner and the one associated with volume " + volume);
 				}
-
-				if (Volume.Type.ROOT == volume.getVolumeType()) {
-					needToMigrateVolume = true;
+				
+				if (volume.isRecreatable()) {
+					needToRecreateVolume = true;
 				} else {
-					if (destStore.getCluterId() != srcStore.getCluterId()) {
-						needToMigrateVolume = true;
-					} else if (!srcStore.isSharedStorage() && srcStore.getId() != destStore.getId()) {
+					if (Volume.Type.ROOT == volume.getVolumeType()) {
 						needToMigrateVolume = true;
 					} else {
-						continue;
-					}
-				}	
+						if (destStore.getCluterId() != srcStore.getCluterId()) {
+							needToMigrateVolume = true;
+						} else if (!srcStore.isSharedStorage() && srcStore.getId() != destStore.getId()) {
+							needToMigrateVolume = true;
+						} else {
+							continue;
+						}
+					}	
+				}
 			} else {
 				continue;
 			}
 			
-			VolumeStrategy vs = srcStore.getVolumeStrategy();
+			
 			if (needToCreateVolume) {
-				volume.setReservationId(reservationId);
-				volume = _volumeMgr.processEvent(volume, Volume.Event.CreateRequested);
-				
-				vs.createVolume(volume, destStore);
-				
-				volume = _volumeMgr.processEvent(volume, Volume.Event.OperationSucceeded);
+				createVolumeOnStorage(volume, destStore, reservationId);
 			} else if (needToMigrateVolume) {
 				migrateVolume(volume, srcStore, destStore, reservationId);
 			} else if (needToCopyFromSec) {
-				_volumeMgr.processEvent(volume, Volume.Event.CopyRequested);
+				copyVolumeFromBackupStorage(volume, destStore, reservationId);
 			} else if (needToRecreateVolume) {
-				
+				recreateVolume(volume, destStore, reservationId);
 			}
 		}
 	}
@@ -168,8 +257,12 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Prepare " + vols.size() + " volumes for " + vm.getInstanceName());
         }
-
         
+        try {
+        	prepareVolumes(vols, plan.getPoolId(), reservationId);
+        } catch (NoTransitionException e) {
+        	s_logger.debug("Failed to prepare volume: " + e.toString());
+        }
     }
 
 
@@ -188,9 +281,36 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 		
 	}
 
-	public void prepareAttachDiskToVM(long disk, long vm, String reservationId) {
-		// TODO Auto-generated method stub
+	public void prepareAttachDiskToVM(long diskId, long vmId, String reservationId) {
+		VirtualMachine vm = _vmDao.findById(vmId);
 		
+		if (vm == null || vm.getState() != VirtualMachine.State.Running) {
+			return;
+		}
+		
+		VolumeVO volume = _volumeDao.findById(diskId);
+		if (volume.getInstanceId() != null) {
+			if (volume.getInstanceId() != vmId) {
+				throw new InvalidParameterValueException("Volume " + volume + "already attached to " + volume.getInstanceId());
+			} else {
+				return;
+			}
+		}
+		
+		List<VolumeVO> vols = new ArrayList<VolumeVO>();
+		vols.add(volume);
+		
+		List<VolumeVO> rootDisks = _volumeDao.findByInstanceAndType(vmId, Volume.Type.ROOT);
+		VolumeVO rootDisk = rootDisks.get(0);
+		try {
+			prepareVolumes(vols, rootDisk.getPoolId(), reservationId);
+		} catch (NoTransitionException e) {
+			s_logger.debug("Failed to prepare volume: " + volume + ", due to" + e.toString());
+			throw new CloudRuntimeException(e.toString());
+		}
+		
+		volume = _volumeDao.findById(diskId);
+		volume.setInstanceId(vmId);
+		_volumeDao.update(volume.getId(), volume);
 	}
-
 }

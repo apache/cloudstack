@@ -1,10 +1,12 @@
 package org.apache.cloudstack.storage.strategy;
 
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.platform.subsystem.api.storage.Snapshot;
-import org.apache.cloudstack.platform.subsystem.api.storage.Template;
-import org.apache.cloudstack.platform.subsystem.api.storage.Volume;
+import org.apache.cloudstack.platform.subsystem.api.storage.SnapshotProfile;
+import org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile;
+import org.apache.cloudstack.platform.subsystem.api.storage.VolumeProfile;
 import org.apache.cloudstack.platform.subsystem.api.storage.VolumeStrategy;
+
+import com.cloud.storage.Volume;
 
 public class DefaultVolumeStrategy implements VolumeStrategy {
 	protected DataStore _ds;
@@ -16,30 +18,39 @@ public class DefaultVolumeStrategy implements VolumeStrategy {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	public Volume copyVolume(Volume srcVol, Volume destVol) {
+	public Volume createDataVolume(Volume vol, DataStore store) {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	public Volume createVolumeFromSnapshot(Volume vol, Snapshot snapshot) {
+	public Volume copyVolumeFromBackup(VolumeProfile srcVol, Volume destVol, DataStore destStore) {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	public Volume createVolumeFromTemplate(Volume vol, Template template) {
+	public Volume createVolumeFromSnapshot(SnapshotProfile snapshot, Volume vol, DataStore destStore) {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
-	public Volume migrateVolume(Volume srcVol, Volume destVol) {
+	public Volume createVolumeFromTemplate(TemplateProfile template, Volume vol, DataStore destStore) {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	public Volume migrateVolume(Volume srcVol, DataStore srcStore, Volume destVol, DataStore destStore) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	public TemplateProfile createBaseVolume(TemplateProfile tp, DataStore destStore) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	public Volume createVolumeFromBaseTemplate(TemplateProfile tp, DataStore destStore) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	public boolean deleteVolume(Volume vol) {
 		// TODO Auto-generated method stub
 		return false;
 	}
+
+
 
 }

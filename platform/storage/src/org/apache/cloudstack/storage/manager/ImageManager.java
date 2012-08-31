@@ -16,53 +16,19 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.platform.subsystem.api.storage;
+package org.apache.cloudstack.storage.manager;
+
+import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.platform.subsystem.api.storage.SnapshotProfile;
+import org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile;
+import org.apache.cloudstack.platform.subsystem.api.storage.VolumeProfile;
 
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 
-public interface DataStore {
-	public class DataStoreRef {
-		
-	}
-	
-	public class DataStoreDriverRef {
-		
-	}
-	
-	public enum StoreType {
-		Primary,
-		Backup;
-	}
-	public class StoreScope {
-		public long zoneId;
-		private long clusterId;
-		private long hostId;
-	}
-	
-	String getURI();
-	String getUUID();
-	long getCluterId();
-	long getPodId();
-	long getZoneId();
-	StoreType getType();
-	StoreScope getScope();
-	boolean isSharedStorage();
-	Long getId();
-	DataStoreDriver getDataStoreDriver();
-	DataStoreEndPointSelector getEndPointSelector();
-	FileSystem getFileSystem();
-	VolumeStrategy getVolumeStrategy();
-	SnapshotStrategy getSnapshotStrategy();
-	BackupStrategy getBackupStrategy();
-	DataStoreLifeCycle getLifeCycle();
-	
+public interface ImageManager {
 	VolumeProfile prepareVolume(Volume volume, DataStore destStore);
 	SnapshotProfile prepareSnapshot(Snapshot snapshot, DataStore destStore);
 	TemplateProfile prepareTemplate(VirtualMachineTemplate template, DataStore destStore);
-	boolean contains(Volume volume);
-	boolean contains(Snapshot snapshot);
-	boolean contains(VirtualMachineTemplate template);
-	TemplateProfile get(VirtualMachineTemplate template);
 }
