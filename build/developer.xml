@@ -286,6 +286,12 @@
   <path id="test.classpath">
     <path refid="deps.classpath" />
     <path refid="dist.classpath"/>
+    <!-- external deps, added for jenkins
+         depends on mysql-connector-java rpm 
+    -->
+    <fileset dir="/usr/share/java/" erroronmissingdir="true">
+      <include name="mysql-connector-java.jar" />
+    </fileset>
     <fileset dir="${unittest.jar.dir}">
       <include name="*.jar"/>
     </fileset>
