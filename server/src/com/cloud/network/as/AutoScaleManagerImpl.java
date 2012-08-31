@@ -278,6 +278,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
         return policies;
     }
 
+    @DB
     protected AutoScaleVmProfileVO checkValidityAndPersist(AutoScaleVmProfileVO vmProfile) {
         long templateId = vmProfile.getTemplateId();
         long autoscaleUserId = vmProfile.getAutoScaleUserId();
@@ -388,7 +389,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
         }
 
         if (counterParamList != null) {
-            vmProfile.setCounterParams(counterParamList);
+            vmProfile.setCounterParamsForUpdate(counterParamList);
         }
 
         if (destroyVmGraceperiod != null) {
@@ -1168,6 +1169,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
         return success;
     }
 
+    @Override
     public void cleanUpAutoScaleResources(Long accountId) {
         // cleans Autoscale VmProfiles, AutoScale Policies and Conditions belonging to an account
         int count = 0;

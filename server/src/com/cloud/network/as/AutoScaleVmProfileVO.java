@@ -96,8 +96,7 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
         if (destroyVmGraceperiod != null) {
             this.destroyVmGraceperiod = destroyVmGraceperiod;
         }
-        setCounterParams(counterParamList);
-
+        setCounterParamsForUpdate(counterParamList);
     }
 
     @Override
@@ -141,8 +140,11 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
         return paramsList;
     }
 
+    public void setCounterParams(String counterParam) {
+        this.counterParams = counterParam;
+    }
 
-    public void setCounterParams(Map counterParamList) {
+    public void setCounterParamsForUpdate(Map counterParamList) {
         StringBuilder sb = new StringBuilder("");
         boolean isFirstParam = true;
         if (counterParamList != null) {
@@ -158,7 +160,12 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity {
                 isFirstParam  = false;
             }
         }
-        counterParams = sb.toString();
+        /*
+         * setCounterParams(String counterParam)'s String param is caught by UpdateBuilder and stored in an internal list.
+         * Which is used later to update the db. The variables in a VO object is not used to update the db.
+         * Hence calling the function which is intercepted.
+         * */
+        setCounterParams(sb.toString());
     }
 
     @Override
