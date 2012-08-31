@@ -447,10 +447,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
             List<? extends UserDataServiceProvider> elements = _networkMgr.getPasswordResetElements();
 
-            boolean result = true;
+            boolean result = false;
             for (UserDataServiceProvider element : elements) {
-                if (!element.savePassword(defaultNetwork, defaultNicProfile, vmProfile)) {
-                    result = false;
+                if (element.savePassword(defaultNetwork, defaultNicProfile, vmProfile)) {
+                    result = true;
+                    break;
                 }
             }
 
