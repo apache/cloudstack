@@ -301,6 +301,16 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             }
             AgentAttache attache = findAttache(hostId);
             if (attache != null) {
+                if (_clusterMgr.isAgentRebalanceEnabled()) {
+                    //don't process disconnect if the host is being rebalanced
+                    HostTransferMapVO transferVO = _hostTransferDao.findById(hostId);
+                    if (transferVO != null) {
+                        if (transferVO.getFutureOwner() == _nodeId && transferVO.getState() == HostTransferState.TransferStarted) {
+                            s_logger.debug("Not processing disconnect event as the host is being connected to " + _nodeId);
+                            return true;
+                        }
+                    }
+                }
                 handleDisconnect(attache, Event.AgentDisconnected, false, false);
             }
 
@@ -932,9 +942,24 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             HostVO host = _hostDao.findById(hostId);
             try {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Loading directly connected host " + host.getId() + "(" + host.getName() + ") to the management server " + _nodeId + " as a part of rebalance process");
+                    s_logger.debug("Disconnecting host " + host.getId() + "(" + host.getName() + " as a part of rebalance process without notification");
                 }
-                result = loadDirectlyConnectedHost(host, true);
+
+                AgentAttache attache = findAttache(hostId);
+                if (attache != null) {
+                    result = handleDisconnect(attache, Event.AgentDisconnected, false, false);
+                }
+
+                if (result) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Loading directly connected host " + host.getId() + "(" + host.getName() + ") to the management server " + _nodeId + " as a part of rebalance process");
+                    }
+                    result = loadDirectlyConnectedHost(host, true);
+                } else {
+                    s_logger.warn("Failed to disconnect " + host.getId() + "(" + host.getName() + 
+                            " as a part of rebalance process without notification");
+                }
+                
             } catch (Exception ex) {
                 s_logger.warn("Failed to load directly connected host " + host.getId() + "(" + host.getName() + ") to the management server " + _nodeId + " as a part of rebalance process due to:", ex);
                 result = false;
