@@ -164,6 +164,7 @@ Requires: %{name}-utils = %{version}
 Requires: apache-commons-dbcp
 Requires: apache-commons-collections
 Requires: jakarta-commons-httpclient
+Requires: mysql-connector-java
 %endif
 
 Group:     System Environment/Libraries
@@ -478,7 +479,6 @@ fi
 %{_javadir}/%{name}-log4j.jar
 %{_javadir}/%{name}-trilead-ssh2-build213.jar
 %{_javadir}/%{name}-cglib.jar
-%{_javadir}/%{name}-mysql-connector-java-5.1.7-bin.jar
 %{_javadir}/%{name}-xenserver-5.6.100-1.jar
 %{_javadir}/%{name}-xmlrpc-common-3.*.jar
 %{_javadir}/%{name}-xmlrpc-client-3.*.jar
@@ -589,7 +589,7 @@ fi
 %defattr(0644,cloud,cloud,0755)
 %{_datadir}/cloud/bridge/conf/*
 %{_datadir}/cloud/bridge/lib/*
-%{_datadir}/cloud/bridge/webapps/*
+%{_datadir}/cloud/bridge/webapps7080/*
 %attr(0644,root,root) %{_datadir}/cloud/setup/bridge/db/*
 %attr(0755,root,root) %{_bindir}/cloudstack-aws-api-register
 %attr(0755,root,root) %{_bindir}/cloud-setup-bridge
