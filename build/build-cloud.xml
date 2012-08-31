@@ -574,7 +574,7 @@
     <mkdir dir="${dep.cache.dir}" />
 
     <!-- Download all dependencies using maven -->
-    <exec executable="mvn" >
+    <exec executable="mvn" failifexecutionfails="false">
       <arg value="-P"/>
       <arg value="deps"/>
       <arg value="-pl"/>
