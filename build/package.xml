@@ -156,7 +156,8 @@
     </zip>
   </target>
 
-  <target name="build-all" depends="build-opensource, build-plugins, build-ui, build-war-oss, compile-testclient, compile-usage, build-awsapi">
+  <!-- <target name="build-all" depends="build-opensource, build-plugins, build-ui, build-war-oss, compile-testclient, compile-usage, build-awsapi"> -->
+  <target name="build-all" depends="build-opensource, build-plugins, build-ui, build-war-oss, compile-usage, build-awsapi">
   </target>
 
   <target name="build-all-with-simulator" depends="build-all, compile-agent-simulator">

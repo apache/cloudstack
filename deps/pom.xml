@@ -94,6 +94,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-awsapi</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>mysql</groupId>
       <artifactId>mysql-connector-java</artifactId>
       <version>5.1.21</version>
@@ -130,6 +135,12 @@
       <artifactId>cloud-plugin-network-netscaler</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- for awsapi build -->
+    <dependency>
+      <groupId>org.apache.axis2</groupId>
+      <artifactId>axis2-ant-plugin</artifactId>
+      <version>1.4.1</version>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
@@ -150,7 +161,7 @@
               <overWriteReleases>false</overWriteReleases>
               <overWriteSnapshots>false</overWriteSnapshots>
               <overWriteIfNewer>true</overWriteIfNewer>
-              <excludeArtifactIds>cloud-core,cloud-server,cloud-api,cloud-utils,cloud-vmware-base,cloud-agent,cloud-plugin-host-allocator-random,cloud-plugin-hypervisor-kvm,cloud-plugin-hypervisor-ovm,cloud-plugin-hypervisor-vmware,cloud-plugin-hypervisor-xen,cloud-plugin-netapp,cloud-plugin-network-elb,cloud-plugin-network-f5,cloud-plugin-network-netscaler,cloud-plugin-network-nvp,cloud-plugin-network-ovs,cloud-plugin-network-srx,cloud-plugin-planner-user-concentrated-pod,cloud-plugin-planner-user-dispersing,cloud-plugin-storage-allocator-random,cloud-plugin-user-authenticator-ldap,cloud-plugin-user-authenticator-md5,cloud-plugin-user-authenticator-plaintext,cloud-utils,cloud-vmware-base</excludeArtifactIds>
+              <excludeArtifactIds>cloud-core,cloud-server,cloud-api,cloud-utils,cloud-vmware-base,cloud-agent,cloud-plugin-host-allocator-random,cloud-plugin-hypervisor-kvm,cloud-plugin-hypervisor-ovm,cloud-plugin-hypervisor-vmware,cloud-plugin-hypervisor-xen,cloud-plugin-netapp,cloud-plugin-network-elb,cloud-plugin-network-f5,cloud-plugin-network-netscaler,cloud-plugin-network-nvp,cloud-plugin-network-ovs,cloud-plugin-network-srx,cloud-plugin-planner-user-concentrated-pod,cloud-plugin-planner-user-dispersing,cloud-plugin-storage-allocator-random,cloud-plugin-user-authenticator-ldap,cloud-plugin-user-authenticator-md5,cloud-plugin-user-authenticator-plaintext,cloud-utils,cloud-vmware-base,cloud-awsapi</excludeArtifactIds>
             </configuration>
           </execution>
         </executions>

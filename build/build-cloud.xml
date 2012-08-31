@@ -78,7 +78,6 @@
   <property name="build.log" location="${target.dir}/ant_verbose.txt" />
 
   <property name="deps.dir" location="${base.dir}/deps" />
-  <property name="tools.jar.dir" location="${base.dir}/tools/tooljars" />
 
   <!-- directories for client compilation-->
   <property name="client.dir" location="${base.dir}/client" />
@@ -150,9 +149,6 @@
   </path>
 
   <path id="compile.deps.classpath">
-      <fileset dir="${tools.jar.dir}" erroronmissingdir="true">
-          <include name="*.jar" />
-      </fileset>
   </path>
 
   <path id="deps.classpath">
@@ -576,6 +572,14 @@
     <mkdir dir="${jar.dir}" />
     <mkdir dir="${docs.dir}" />
     <mkdir dir="${dep.cache.dir}" />
+
+    <!-- Download all dependencies using maven -->
+    <exec executable="mvn" >
+      <arg value="-P"/>
+      <arg value="deps"/>
+      <arg value="-pl"/>
+      <arg value="deps"/>
+    </exec>
     <record name="${build.log}" action="stop" />
   </target>
 

@@ -26,12 +26,12 @@
 	<dirname property="base.dir" file="${ant.file.awsapi}/.." />
 	<property environment="env" />
 	<property name="axis2.home" value="${base.dir}" />
-	<path id="axis2.class.path">
+	<path id="axis2.classpath">
 		<fileset dir="${axis2.home}">
-			<include name="deps/awsapi-lib/*.jar" />
+			<include name="deps/*.jar" />
 		</fileset>
 	</path>
-	<taskdef name="wsdl2code" classname="org.apache.axis2.tool.ant.AntCodegenTask" classpathref="axis2.class.path" />
+	<taskdef name="wsdl2code" classname="org.apache.axis2.tool.ant.AntCodegenTask" classpathref="axis2.classpath" />
 	<!-- directories for build and distribution -->
 	<!-- property name="env.CATALINA_HOME" value="${base.dir}/tomcat" / -->
 	<property name="catalina.dir" value="${env.CATALINA_HOME}" />
@@ -113,7 +113,7 @@
 	</target>
 	<path id="awsapi.classpath">
 		<path refid="deps.classpath" />
-		<path refid="thirdparty.classpath" />
+		<!-- <path refid="thirdparty.classpath" /> -->
 		<path refid="rampart.classpath" />
 		<path refid="dist.classpath" />
 	</path>
