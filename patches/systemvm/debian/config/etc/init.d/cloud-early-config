@@ -540,7 +540,8 @@ setup_router() {
     fi
   fi
   
-  
+  sudo iptables -A INPUT -i eth0 -p tcp -m state --state NEW --dport 8080 -j ACCEPT
+  sudo iptables -A INPUT -i eth0 -p tcp -m state --state NEW --dport 80 -j ACCEPT  
   
   setup_dnsmasq
   

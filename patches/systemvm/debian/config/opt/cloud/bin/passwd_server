@@ -1,11 +1,10 @@
 #!/bin/bash
 
 . /etc/default/cloud-passwd-srvr
-#guestIp=$(ifconfig eth0 | grep 'inet addr:' | cut -d: -f2 | awk '{ print $1}')
 
 while [ "$ENABLED" == "1" ]
 do
-	socat -lf /var/log/cloud.log TCP4-LISTEN:8080,reuseaddr,crnl,bindtodevice=eth0 SYSTEM:"/opt/cloud/bin/serve_password.sh \"\$SOCAT_PEERADDR\""
+	socat -lf /var/log/cloud.log TCP4-LISTEN:8080,reuseaddr,crnl,bind=0.0.0.0 SYSTEM:"/opt/cloud/bin/serve_password.sh \"\$SOCAT_PEERADDR\""
 
 	rc=$?
 	if [ $rc -ne 0 ]
