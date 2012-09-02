@@ -18,7 +18,9 @@
  */
 package org.apache.cloudstack.platform.subsystem.api.storage;
 
+import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 
@@ -46,7 +48,9 @@ public interface DataStore {
 	long getCluterId();
 	long getPodId();
 	long getZoneId();
+	String getPath();
 	StoreType getType();
+	StoragePoolType getPoolType();
 	StoreScope getScope();
 	boolean isSharedStorage();
 	Long getId();
@@ -56,6 +60,7 @@ public interface DataStore {
 	VolumeStrategy getVolumeStrategy();
 	SnapshotStrategy getSnapshotStrategy();
 	BackupStrategy getBackupStrategy();
+	TemplateStrategy getTemplateStrategy();
 	DataStoreLifeCycle getLifeCycle();
 	
 	VolumeProfile prepareVolume(Volume volume, DataStore destStore);
@@ -63,6 +68,7 @@ public interface DataStore {
 	TemplateProfile prepareTemplate(VirtualMachineTemplate template, DataStore destStore);
 	boolean contains(Volume volume);
 	boolean contains(Snapshot snapshot);
-	boolean contains(VirtualMachineTemplate template);
-	TemplateProfile get(VirtualMachineTemplate template);
+	boolean contains(TemplateProfile template);
+	TemplateProfile get(TemplateProfile template);
+	StorageFilerTO getTO();
 }

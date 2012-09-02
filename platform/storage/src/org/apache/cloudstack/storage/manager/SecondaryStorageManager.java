@@ -18,6 +18,14 @@
  */
 package org.apache.cloudstack.storage.manager;
 
-public interface SecondaryStorageManager {
+import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
 
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
+import com.cloud.template.VirtualMachineTemplate;
+
+public interface SecondaryStorageManager {
+	DataStore getStore(Volume volume);
+	DataStore getImageStore(DataStore destStore);
+	DataStore getStore(Snapshot snapshot);
 }

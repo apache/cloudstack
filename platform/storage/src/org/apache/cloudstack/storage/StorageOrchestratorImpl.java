@@ -29,7 +29,7 @@ import org.apache.cloudstack.platform.subsystem.api.storage.VolumeProfile;
 import org.apache.cloudstack.platform.subsystem.api.storage.VolumeStrategy;
 import org.apache.cloudstack.storage.db.VolumeHostVO;
 import org.apache.cloudstack.storage.manager.BackupStorageManager;
-import org.apache.cloudstack.storage.manager.ImageManager;
+import org.apache.cloudstack.storage.manager.TemplateManager;
 import org.apache.cloudstack.storage.manager.SecondaryStorageManager;
 import org.apache.cloudstack.storage.volume.VolumeManager;
 import org.apache.log4j.Logger;
@@ -76,13 +76,13 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 	@Inject
 	SecondaryStorageManager _secondaryStorageMgr;
 	@Inject
-	ImageManager _imageMgr;
+	TemplateManager _templateMgr;
 	@Inject
 	VMTemplateDao _templateDao;
 	
 	@DB
 	protected Volume copyVolumeFromBackupStorage(VolumeVO volume, DataStore destStore, String reservationId) throws NoTransitionException {
-		DataStore ds = _secondaryStorageMgr.getBackupDataStore(volume);
+		DataStore ds = _secondaryStorageMgr.getStore(volume);
 		if (!ds.contains(volume)) {
 			throw new CloudRuntimeException("volume: " + volume + "doesn't exist on backup storage");
 		}
@@ -98,7 +98,7 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 		destVolume = _volumeMgr.processEvent(destVolume, Volume.Event.CreateRequested);
 		txn.commit();
 		
-		vs.copyVolumeFromBackup(vp, destVolume, destStore);
+		vs.copyVolumeFromBackup(vp, destVolume);
 		
 		txn.start();
 		volume = _volumeMgr.processEvent(volume, Volume.Event.OperationSucceeded);
@@ -119,7 +119,7 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 		txn.commit();
 		
 		VolumeStrategy vs = srcStore.getVolumeStrategy();
-		vs.migrateVolume(volume, srcStore, destVolume, destStore);
+		vs.migrateVolume(volume, destVolume, destStore);
 		
 		txn.start();
 		volume = _volumeMgr.processEvent(volume, Volume.Event.OperationSucceeded);
@@ -147,7 +147,7 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 		DataStore srcStore = _storageProviderMgr.getDataStore(srcVolume.getPoolId());
 		VolumeStrategy vs = srcStore.getVolumeStrategy();
 		
-		vs.migrateVolume(srcVolume, srcStore, destVolume, destStore);
+		vs.migrateVolume(srcVolume, destVolume, destStore);
 		
 		txn.start();
 		srcVolume = _volumeMgr.processEvent(srcVolume, Volume.Event.OperationSucceeded);
@@ -170,16 +170,17 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 		
 		if (volume.getTemplateId() != null) {
 			VirtualMachineTemplate template = _templateDao.findById(volume.getTemplateId());
-			DataStore ds = _secondaryStorageMgr.getBackupDataStore(template);
+			DataStore ds = _secondaryStorageMgr.getImageStore(destStore);
 			TemplateProfile tp = ds.prepareTemplate(template, destStore);
-			if (!destStore.contains(template)) {
-				tp  = vs.createBaseVolume(tp, destStore);
+			if (!destStore.contains(tp)) {
+				tp = _templateMgr.AssociateTemplateStoragePool(tp, destStore);
+				tp  = destStore.getTemplateStrategy().install(tp);
 			} else {
-				tp = destStore.get(template);
+				tp = destStore.getTemplateStrategy().get(tp.getId());
 			}
-			volume = vs.createVolumeFromBaseTemplate(tp, destStore);
+			volume = vs.createVolumeFromBaseTemplate(volume, tp);
 		} else {
-			volume = vs.createDataVolume(volume, destStore);
+			volume = vs.createDataVolume(volume);
 		}
 		
 		volume = _volumeMgr.processEvent(volume, Volume.Event.OperationSucceeded);

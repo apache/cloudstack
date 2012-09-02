@@ -6,6 +6,7 @@ import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStore.StoreType;
 import org.apache.cloudstack.storage.datastore.DefaultDataStore;
 import org.apache.cloudstack.storage.datastore.XenDataStoreDriver;
+import org.apache.cloudstack.storage.driver.XenServerStorageDriver;
 import org.apache.cloudstack.storage.epselector.DefaultPrimaryEndpointSelector;
 import org.apache.cloudstack.storage.filesystem.DefaultFileSystem;
 import org.apache.cloudstack.storage.lifecycle.DefaultPrimaryDataStoreLifeCycle;
@@ -24,7 +25,7 @@ public class XenNfsDataStoreConfigurator extends NfsDataStoreConfigurator {
 		ds.setType(StoreType.Primary);
 		ds.setURI(pool.getHostAddress() + "/" + pool.getPath());
 		ds.setUUID(pool.getUuid());
-		ds.setDataStoreDriver(new XenDataStoreDriver(ds));
+		ds.setDataStoreDriver(new XenServerStorageDriver(ds));
 		ds.setBackupStrategy(new XenBackupStrategy(ds));
 		ds.setVolumeStrategy(new DefaultVolumeStrategy(ds));
 		ds.setSnapshotStrategy(new XenSnapshotStrategy(ds));

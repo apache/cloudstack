@@ -18,6 +18,16 @@
  */
 package org.apache.cloudstack.storage.manager;
 
-public class ImageManagerImpl implements ImageManager {
+import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.platform.subsystem.api.storage.SnapshotProfile;
+import org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile;
+import org.apache.cloudstack.platform.subsystem.api.storage.VolumeProfile;
 
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
+import com.cloud.template.VirtualMachineTemplate;
+
+public interface TemplateManager {
+	TemplateProfile AssociateTemplateStoragePool(TemplateProfile tp, DataStore ds);
+	TemplateProfile getProfile(long templateId);
 }

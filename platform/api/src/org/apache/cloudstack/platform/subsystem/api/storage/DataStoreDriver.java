@@ -20,9 +20,12 @@ package org.apache.cloudstack.platform.subsystem.api.storage;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.vm.DiskProfile;
 
 public interface DataStoreDriver {
 	String getDriverType();
+	TemplateProfile install(TemplateProfile tp, DataStoreEndPoint ep);
+	DiskProfile createVolumeFromTemplate(DiskProfile volProfile, TemplateProfile tp, DataStoreEndPoint ep);
 	DataObject create(DataObject obj);
 	DataObject copy(DataObject src, DataStore dest);
 	DataObject copy(DataObject src, DataObject dest);

@@ -23,4 +23,12 @@ public class VolumeProfile {
 	public String getURI() {
 		return _uri;
 	}
+	
+	public String getPath() {
+		return null;
+	}
+	
+	public long getSize() {
+		return 0;
+	}
 }

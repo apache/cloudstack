@@ -7,12 +7,14 @@ import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreEndPointSel
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.platform.subsystem.api.storage.FileSystem;
 import org.apache.cloudstack.platform.subsystem.api.storage.SnapshotStrategy;
+import org.apache.cloudstack.platform.subsystem.api.storage.TemplateStrategy;
 import org.apache.cloudstack.platform.subsystem.api.storage.VolumeStrategy;
 
 public class DefaultDataStore implements DataStore {
 	protected VolumeStrategy _volumeStrategy;
 	protected SnapshotStrategy _snapshotStrategy;
 	protected BackupStrategy _backupStrategy;
+	protected TemplateStrategy _templateStrategy;
 	protected String _uri;
 	protected String _uuid;
 	protected StoreType _type;
@@ -118,6 +120,14 @@ public class DefaultDataStore implements DataStore {
 	
 	public void setBackupStrategy(BackupStrategy bs) {
 		this._backupSt = bs;
+	}
+	
+	public TemplateStrategy getTemplateStrategy() {
+		return this._templateStrategy;
+	}
+	
+	public void setTemplateStrategy(TemplateStrategy ts) {
+		this._templateStrategy = ts;
 	}
 
 	public DataStoreLifeCycle getLifeCycle() {
