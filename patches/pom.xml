@@ -19,8 +19,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <artifactId>cloud-console-proxy</artifactId>
-  <name>Apache CloudStack Console Proxy</name>
+  <artifactId>cloud-patches</artifactId>
+  <name>Apache CloudStack SystemVM Patches</name>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
@@ -68,106 +68,29 @@
       <artifactId>cloud-utils</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-patches</artifactId>
-      <version>${project.version}</version>
-    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src</sourceDirectory>
-    <resources>
-      <resource>
-        <directory>certs</directory>
-        <excludes>
-          <exclude>realhostip.csr</exclude>
-        </excludes>
-      </resource>
-    </resources>
     <plugins>
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <version>2.3</version>
         <configuration>
-          <finalName>systemvm</finalName>
+          <finalName>cloud-scripts</finalName>
           <appendAssemblyId>false</appendAssemblyId>
           <descriptors>
-            <descriptor>systemvm-descriptor.xml</descriptor>
+            <descriptor>cloudpatch-descriptor.xml</descriptor>
           </descriptors>
         </configuration>
         <executions>
           <execution>
-            <id>make-systemvm</id>
+            <id>make-cloud-scripts</id>
             <phase>package</phase>
             <goals>
               <goal>single</goal>
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>2.6</version>
-        <executions>
-          <execution>
-            <id>copy-resources</id>
-            <!-- here the phase you need -->
-            <phase>package</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>dist</outputDirectory>
-              <resources>          
-                <resource>
-                  <directory>target</directory>
-                  <includes>
-                    <include>systemvm.zip</include>
-                  </includes>
-                </resource>
-                <resource>
-                  <directory>../patches/target/</directory>
-                  <includes>
-                    <include>cloud-scripts.tar.gz</include>
-                  </includes>
-                </resource>
-                <resource>
-                  <directory>../patches/systemvm/debian/config/root/.ssh</directory>
-                  <includes>
-                    <include>authorized_keys</include>
-                  </includes>
-                </resource>
-              </resources>              
-            </configuration>            
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>1.2.1</version>
-        <executions>
-          <execution>
-            <phase>package</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <executable>mkisofs</executable>
-          <workingDirectory>dist</workingDirectory>
-          <arguments>
-            <argument>-quiet</argument>
-            <argument>-r</argument>
-            <argument>-o</argument>
-            <argument>systemvm.iso</argument>
-            <argument>systemvm.zip</argument>
-            <argument>cloud-scripts.tar.gz</argument>
-            <argument>authorized_keys</argument>
-          </arguments>
-        </configuration>
       </plugin>
     </plugins>
   </build>
