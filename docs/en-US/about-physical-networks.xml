@@ -40,4 +40,5 @@
     <xi:include href="advanced-zone-network-traffic-types.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="advanced-zone-guest-ip-addresses.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="advanced-zone-public-ip-addresses.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="system-reserved-ip-addresses.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>
