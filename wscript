@@ -307,6 +307,26 @@ def runant(tsk):
 	return ret
 Utils.runant = runant
 
+def runmvn(tsk):
+	environ = dict(os.environ)
+	environ["CATALINA_HOME"] = tsk.env.TOMCATHOME
+        if not "M2_HOME" in environ:
+                raise Utils.WafError("Maven not installed or M2_HOME not set")
+	if tsk.generator.env.DISTRO == "Windows":
+		stanzas = [
+			_join(environ["M2_HOME"],"bin","mvn.bat")
+		]
+	else:
+		stanzas = [
+			_join(environ["M2_HOME"],"bin","mvn")
+		]
+	#stanzas += tsk.generator.mvnargs
+	ret = Utils.exec_command(" ".join(stanzas),cwd=tsk.generator.bld.srcnode.abspath(),env=environ,log=True)
+	if ret != 0: raise Utils.WafError("Maven phase %s failed with error value %s"%(stanzas,ret))
+	return ret
+Utils.runmvn = runmvn
+
+
 @throws_command_errors
 def run_java(classname,classpath,options=None,arguments=None):
 	if not options: options = []

@@ -105,31 +105,30 @@ def build_jars ():
 	Implementation_Version = bld.env.VERSION
 
 	# this is to trigger recompilation / cache avoidance if the relevant environment for ant changes
-	ant_args = [
-		"build-all",
+	mvn_args = [
+		"package",
 		"-Dimpl.version=%s" % Implementation_Version,
 		"-Dtarget.dir=%s" % targetdir,
 		"-Ddist.dir=%s" % distdir,
-		"-Dbase.dir=%s" % sourcedir,
-		"-f %s" % Utils.relpath (_join(sourcedir, "build.xml")),
+		"-Dbase.dir=%s" % sourcedir
 	]
 
 	if buildpremium:
-		ant_args.append("-Dbuild.premium=true")
+		mvn_args.append("-Dbuild.premium=true")
 
 	tgen = bld(features='subst', name='version-info', source="version-info.in", target="version-info")
-	tgen.dict = { "Implementation_Version":Implementation_Version,"ant_args":ant_args }
+	tgen.dict = { "Implementation_Version":Implementation_Version,"mvn_args":mvn_args }
 	bld.install_files("${DOCDIR}","version-info")
 
 	bld.srcnode.ensure_dir_node_from_path("target/jar")
 	bld.srcnode.ensure_dir_node_from_path("dist")
 
-	tgen = bld.new_task_gen (rule = Utils.runant,
-							 name = "runant",
-							 antargs = ant_args)
+	tgen = bld.new_task_gen (rule = Utils.runmvn,
+							 name = "runmvn",
+							 mvnargs = mvn_args)
 
-	jarnode = bld.srcnode.find_dir ('target/jar')
-	jars_str = jarnode.ant_glob ('*.jar').split ()
+	jarnode = bld.srcnode.find_dir ('.')
+	jars_str = jarnode.ant_glob ('**/target/*.jar').split ()
 	ant_jars = []
 	excludes = ["cloud-xstream-1.3.1.jar", "cloud-commons-dbcp-1.2.2.jar", 
 			"cloud-commons-httpclient-3.1.jar", "cloud-commons-pool-1.4.jar",
@@ -145,7 +144,6 @@ def build_jars ():
 			ant_jars.append (a)
 	
 	bld.install_files ('${JAVADIR}', ant_jars)
-
 
 def build_premium ():
 	if buildpremium: bld.recurse(["cloudstack-proprietary/"],'build')
@@ -201,9 +199,9 @@ def build_patches ():
 def build_systemvm_patch ():
 	if bld.env.DISTRO not in ["Windows","Mac"]:
 		# patch creation
-		bld.install_files ("${AGENTLIBDIR}/vms", "%s/systemvm.zip" % distdir)
+		bld.install_files ("${AGENTLIBDIR}/vms", "console-proxy/dist/systemvm.zip" )
 		# ISO creation
-		bld.install_as("${AGENTLIBDIR}/vms/systemvm.iso", "%s/systemvm.iso" % distdir)
+		bld.install_as("${AGENTLIBDIR}/vms/systemvm.iso", "console-proxy/dist/systemvm.iso" )
 
 def build_systemvm_iso ():
 	if buildpremium:
@@ -361,13 +359,14 @@ def build_xml_api_description ():
 		relationship = Utils.relpath(sourcedir,os.getcwd())
 		cp = [ _join(relationship,x) for x in task.generator.env.CLASSPATH.split(pathsep) ]
 
-		jarnames = ['utils','server','core', 'api', 'server-extras']
+		jarnames = ['utils','server','core', 'api']
 		props = ["client/tomcatconf/commands.properties.in"]
 
 		sources = []
 		for i in jarnames:
-			str = 'target/jar/cloud-%s.jar' % i
-			sources.append (str)
+                        str = _glob("../%s/target/*jar" % i )
+                        for j in str:
+			        sources.append ("%s/target/%s" % (i, os.path.basename(j)))
 		sources.append ("client/tomcatconf/commands.properties.in")
 		if buildpremium:
 			sources.append("client/tomcatconf/commands-ext.properties.in")
