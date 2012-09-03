@@ -759,5 +759,3 @@ UPDATE `cloud`.`networks` n  SET n.display_text=(CONCAT('guestNetworkForBasicZon
 UPDATE `cloud`.`configuration` SET description='Bypass internal dns, use external dns1 and dns2' WHERE name='use.external.dns';
 UPDATE `cloud`.`configuration` SET category='Alert' WHERE name='capacity.check.period';
 UPDATE `cloud`.`vm_instance` SET vnc_password = '' where removed is not null;
-
-DELETE FROM `cloud`.`host_details` where name in ('storage.network.device1', 'storage.network.device2');

@@ -381,4 +381,4 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 
 DROP TABLE IF EXISTS `cloud`.`ovs_tunnel_account`;
 UPDATE `cloud`.`snapshots` set swift_id=null where swift_id=0;
-
+DELETE FROM `cloud`.`host_details` where name in ('storage.network.device1', 'storage.network.device2');
