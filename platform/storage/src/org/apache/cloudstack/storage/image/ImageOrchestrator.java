@@ -16,10 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.platform.subsystem.api.storage;
+package org.apache.cloudstack.storage.image;
 
-public enum StorageEvent {
-	DownloadTemplateToPrimary,
-	RegisterTemplate,
-	CreateVolumeFromTemplate;
+public interface ImageOrchestrator {
+	void registerTemplate(long templateId);
+	void registerSnapshot(long snapshotId);
+	void registerVolume(long volumeId);
+	void registerIso(long isoId);
 }

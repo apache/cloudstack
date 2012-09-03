@@ -24,6 +24,7 @@ import com.cloud.api.commands.RegisterIsoCmd;
 import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Adapter;

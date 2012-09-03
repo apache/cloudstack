@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.storage.manager;
 
+import java.util.List;
+
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
 
 import com.cloud.storage.Snapshot;
@@ -27,5 +29,6 @@ import com.cloud.template.VirtualMachineTemplate;
 public interface SecondaryStorageManager {
 	DataStore getStore(Volume volume);
 	DataStore getImageStore(DataStore destStore);
+	List<DataStore> getImageStores(long zoneId);
 	DataStore getStore(Snapshot snapshot);
 }

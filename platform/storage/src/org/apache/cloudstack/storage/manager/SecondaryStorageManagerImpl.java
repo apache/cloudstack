@@ -18,6 +18,34 @@
  */
 package org.apache.cloudstack.storage.manager;
 
+import java.util.List;
+
+import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
+
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Volume;
+import com.cloud.storage.dao.VMTemplateZoneDao;
+import com.cloud.utils.component.Inject;
+
 public class SecondaryStorageManagerImpl implements SecondaryStorageManager {
+	public DataStore getStore(Volume volume) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public DataStore getImageStore(DataStore destStore) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	public List<DataStore> getImageStores() {
+		
+		return null;
+	}
+
+	public DataStore getStore(Snapshot snapshot) {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
 }

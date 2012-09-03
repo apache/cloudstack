@@ -28,8 +28,8 @@ import org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile;
 import org.apache.cloudstack.platform.subsystem.api.storage.VolumeProfile;
 import org.apache.cloudstack.platform.subsystem.api.storage.VolumeStrategy;
 import org.apache.cloudstack.storage.db.VolumeHostVO;
+import org.apache.cloudstack.storage.image.ImageManager;
 import org.apache.cloudstack.storage.manager.BackupStorageManager;
-import org.apache.cloudstack.storage.manager.TemplateManager;
 import org.apache.cloudstack.storage.manager.SecondaryStorageManager;
 import org.apache.cloudstack.storage.volume.VolumeManager;
 import org.apache.log4j.Logger;
@@ -76,7 +76,7 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 	@Inject
 	SecondaryStorageManager _secondaryStorageMgr;
 	@Inject
-	TemplateManager _templateMgr;
+	ImageManager _templateMgr;
 	@Inject
 	VMTemplateDao _templateDao;
 	
@@ -169,9 +169,8 @@ public class StorageOrchestratorImpl implements StorageOrchestrator {
 		volume = _volumeMgr.processEvent(volume, Volume.Event.CreateRequested);
 		
 		if (volume.getTemplateId() != null) {
-			VirtualMachineTemplate template = _templateDao.findById(volume.getTemplateId());
 			DataStore ds = _secondaryStorageMgr.getImageStore(destStore);
-			TemplateProfile tp = ds.prepareTemplate(template, destStore);
+			TemplateProfile tp = ds.prepareTemplate(volume.getTemplateId(), destStore);
 			if (!destStore.contains(tp)) {
 				tp = _templateMgr.AssociateTemplateStoragePool(tp, destStore);
 				tp  = destStore.getTemplateStrategy().install(tp);

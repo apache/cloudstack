@@ -45,6 +45,7 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.download.DownloadMonitor;
@@ -150,7 +151,7 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 	public boolean delete(TemplateProfile profile) {
 		boolean success = true;
     	
-    	VMTemplateVO template = profile.getTemplate();
+    	VMTemplateVO template = (VMTemplateVO)profile.getTemplate();
     	Long zoneId = profile.getZoneId();
     	Long templateId = template.getId();
         
@@ -267,7 +268,7 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 	
 	public TemplateProfile prepareDelete(DeleteTemplateCmd cmd) {
 		TemplateProfile profile = super.prepareDelete(cmd);
-		VMTemplateVO template = profile.getTemplate();
+		VMTemplateVO template = (VMTemplateVO)profile.getTemplate();
 		Long zoneId = profile.getZoneId();
 		
 		if (template.getTemplateType() == TemplateType.SYSTEM) {

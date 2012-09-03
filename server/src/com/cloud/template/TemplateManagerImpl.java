@@ -94,6 +94,7 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
+import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.Upload;
 import com.cloud.storage.Upload.Type;
 import com.cloud.storage.UploadVO;

@@ -42,6 +42,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.storage.GuestOS;
+import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateVO;

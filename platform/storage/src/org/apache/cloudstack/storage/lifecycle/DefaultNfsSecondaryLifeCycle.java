@@ -16,10 +16,39 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.platform.subsystem.api.storage;
+package org.apache.cloudstack.storage.lifecycle;
 
-public enum StorageEvent {
-	DownloadTemplateToPrimary,
-	RegisterTemplate,
-	CreateVolumeFromTemplate;
+import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreLifeCycle;
+
+public class DefaultNfsSecondaryLifeCycle implements DataStoreLifeCycle {
+	protected DataStore _ds;
+	public DefaultNfsSecondaryLifeCycle(DataStore ds) {
+		_ds = ds;
+	}
+	public void add() {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void delete() {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void enable() {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void disable() {
+		// TODO Auto-generated method stub
+
+	}
+
+	public void processEvent(DataStoreEvent event, Object... objs) {
+		// TODO Auto-generated method stub
+
+	}
+
 }

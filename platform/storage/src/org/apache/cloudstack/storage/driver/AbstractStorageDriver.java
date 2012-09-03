@@ -23,14 +23,17 @@ import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreEndPoint;
 import org.apache.cloudstack.platform.subsystem.api.storage.VolumeProfile;
 
-import org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile;
 import org.apache.cloudstack.platform.subsystem.api.storage.TemplateStrategy;
-
+import com.cloud.agent.api.storage.DownloadProgressCommand;
+import com.cloud.agent.api.storage.DownloadProgressCommand.RequestType;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.CreateAnswer;
 import com.cloud.agent.api.storage.CreateCommand;
+import com.cloud.agent.api.storage.DownloadCommand;
+import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.storage.TemplateProfile;
 import com.cloud.vm.DiskProfile;
 
 
@@ -45,18 +48,29 @@ public abstract class AbstractStorageDriver implements DataStoreDriver {
 	}
 	
 	public TemplateProfile install(TemplateProfile tp, DataStoreEndPoint ep) {
-		PrimaryStorageDownloadCommand dcmd = new PrimaryStorageDownloadCommand(tp.getUniqueName(), tp.getURI(), tp.getFormat(), 
+		PrimaryStorageDownloadCommand dcmd = new PrimaryStorageDownloadCommand(tp.getName(), tp.getUrl(), tp.getFormat(), 
 				0, _ds.getId(), _ds.getUUID(), _ts.getDownloadWait());
 		dcmd.setSecondaryStorageUrl(tp.getImageStorageUri());
 		dcmd.setPrimaryStorageUrl(_ds.getURI());
-		Answer asw = ep.sendCommand(dcmd);
+		PrimaryStorageDownloadAnswer asw = (PrimaryStorageDownloadAnswer)ep.sendCommand(dcmd);
 
-		TemplateProfile tpn = new TemplateProfile();
-		tpn.setLocalPath("/mnt/test");
-		tpn.setTemplatePoolRefId(tp.getTemplatePoolRefId());
-		return tpn;
+		tp.setLocalPath(asw.getInstallPath());
+		return tp;
 	}
 	
+	public TemplateProfile register(TemplateProfile tp, DataStoreEndPoint ep, boolean freshDownload) {
+		
+		DownloadCommand dcmd =
+				new DownloadCommand(_ds.getURI(), tp.getTemplate(), _ts.getMaxTemplateSizeInBytes());
+		dcmd.setProxy(_ts.getHttpProxy());
+		if (!freshDownload) {
+			dcmd = new DownloadProgressCommand(dcmd, tp.getJobId(), RequestType.GET_OR_RESTART);
+		}
+		
+		ep.sendCommand(dcmd);
+		return tp;
+	}
+
 	public DiskProfile createVolumeFromTemplate(DiskProfile volProfile, TemplateProfile tp, DataStoreEndPoint ep) {
 		CreateCommand cmd = new CreateCommand(volProfile, tp.getLocalPath(), _ds.getTO());
 		CreateAnswer ans = (CreateAnswer)ep.sendCommand(cmd);

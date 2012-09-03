@@ -21,6 +21,7 @@ package org.apache.cloudstack.platform.subsystem.api.storage;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.Volume;
 import com.cloud.template.VirtualMachineTemplate;
 
@@ -35,6 +36,7 @@ public interface DataStore {
 	
 	public enum StoreType {
 		Primary,
+		Image,
 		Backup;
 	}
 	public class StoreScope {
@@ -55,6 +57,7 @@ public interface DataStore {
 	boolean isSharedStorage();
 	Long getId();
 	DataStoreDriver getDataStoreDriver();
+	StorageProvider getProvider();
 	DataStoreEndPointSelector getEndPointSelector();
 	FileSystem getFileSystem();
 	VolumeStrategy getVolumeStrategy();
@@ -65,7 +68,7 @@ public interface DataStore {
 	
 	VolumeProfile prepareVolume(Volume volume, DataStore destStore);
 	SnapshotProfile prepareSnapshot(Snapshot snapshot, DataStore destStore);
-	TemplateProfile prepareTemplate(VirtualMachineTemplate template, DataStore destStore);
+	TemplateProfile prepareTemplate(long templateId, DataStore destStore);
 	boolean contains(Volume volume);
 	boolean contains(Snapshot snapshot);
 	boolean contains(TemplateProfile template);

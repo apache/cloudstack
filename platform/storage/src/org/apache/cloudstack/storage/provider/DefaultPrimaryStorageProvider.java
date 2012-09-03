@@ -1,4 +1,4 @@
-package org.apache.cloudstack.storage;
+package org.apache.cloudstack.storage.provider;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -51,8 +51,10 @@ public class DefaultPrimaryStorageProvider implements StorageProvider {
 		_supportedProtocols.put(HypervisorType.XenServer, dscs);
 	}
 
-	public StoreType supportedStoreType() {
-		return StoreType.Primary;
+	public List<StoreType> supportedStoreType() {
+		List<StoreType> type = new ArrayList<StoreType>();
+		type.add(StoreType.Primary);
+		return type;
 	}
 
 	public void configure(Map<String, String> storeProviderInfo) {

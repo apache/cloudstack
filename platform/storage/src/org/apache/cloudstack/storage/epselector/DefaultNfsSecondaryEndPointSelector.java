@@ -16,10 +16,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.platform.subsystem.api.storage;
+package org.apache.cloudstack.storage.epselector;
 
-public enum StorageEvent {
-	DownloadTemplateToPrimary,
-	RegisterTemplate,
-	CreateVolumeFromTemplate;
+import java.util.List;
+
+import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreEndPoint;
+import org.apache.cloudstack.platform.subsystem.api.storage.DataStoreEndPointSelector;
+import org.apache.cloudstack.platform.subsystem.api.storage.StorageEvent;
+
+public class DefaultNfsSecondaryEndPointSelector implements DataStoreEndPointSelector {
+	protected DataStore _ds;
+    public DefaultNfsSecondaryEndPointSelector(DataStore ds) {
+    	_ds = ds;
+    }
+	public List<DataStoreEndPoint> getEndPoints(StorageEvent event) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

@@ -37,11 +37,11 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.template.TemplateAdapter;
 import com.cloud.template.TemplateAdapterBase;
-import com.cloud.template.TemplateProfile;
 import com.cloud.user.Account;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
@@ -131,7 +131,7 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 	
 	@Override @DB
 	public boolean delete(TemplateProfile profile) {
-		VMTemplateVO template = profile.getTemplate();
+		VMTemplateVO template = (VMTemplateVO)profile.getTemplate();
     	Long templateId = template.getId();
     	boolean success = true;
     	String zoneName;

@@ -16,18 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.storage.manager;
+package org.apache.cloudstack.storage.image;
 
 import org.apache.cloudstack.platform.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.platform.subsystem.api.storage.SnapshotProfile;
-import org.apache.cloudstack.platform.subsystem.api.storage.TemplateProfile;
-import org.apache.cloudstack.platform.subsystem.api.storage.VolumeProfile;
 
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Volume;
-import com.cloud.template.VirtualMachineTemplate;
 
-public interface TemplateManager {
+import com.cloud.api.commands.RegisterTemplateCmd;
+
+import com.cloud.storage.TemplateProfile;
+
+public interface ImageManager {
 	TemplateProfile AssociateTemplateStoragePool(TemplateProfile tp, DataStore ds);
 	TemplateProfile getProfile(long templateId);
+	com.cloud.storage.TemplateProfile allocateTemplateInDB(RegisterTemplateCmd cmd);
 }

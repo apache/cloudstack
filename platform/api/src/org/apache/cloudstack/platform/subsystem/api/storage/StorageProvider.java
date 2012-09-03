@@ -12,7 +12,7 @@ import com.cloud.utils.component.Adapter;
 public interface StorageProvider extends Adapter {
 	List<HypervisorType> supportedHypervisors();
 	String getProviderName();
-	StoreType supportedStoreType();
+	List<StoreType> supportedStoreTypes();
 	void configure(Map<String, String> storeProviderInfo);
 	DataStore addDataStore(StoragePool sp, String uri, Map<String, String> params);
 	DataStore getDataStore(StoragePool pool);
