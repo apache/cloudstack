@@ -117,6 +117,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         LHVMClusterSearch = createSearchBuilder();
         SearchBuilder<HostVO> hostSearch1 = _hostDao.createSearchBuilder();
         LHVMClusterSearch.join("hostSearch1", hostSearch1, hostSearch1.entity().getId(), LHVMClusterSearch.entity().getLastHostId(), JoinType.INNER);
+        LHVMClusterSearch.and("hostid", LHVMClusterSearch.entity().getHostId(), Op.NULL);
         hostSearch1.and("clusterId", hostSearch1.entity().getClusterId(), SearchCriteria.Op.EQ);
         LHVMClusterSearch.done();
 

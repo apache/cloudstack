@@ -106,12 +106,19 @@
                       })
                       .val(id)
                       .click(function() {
-                        var $radio = $(this).closest('.select').find('input[type=radio]');
+                        var $select = $(this).closest('.select');
+                        var $radio = $select.find('input[type=radio]');
+                        var $newNetwork = $(this).closest('.content').find('.select.new-network');
+                        var $otherSelects = $select.siblings().filter(':visible');
+                        var isCheckbox = $(this).attr('type') == 'checkbox';
+                        var isSingleSelect = $(this).closest('.select-container').hasClass('single-select');
 
-                        if ($(this).attr('type') == 'checkbox') {
-                          if ($(this).closest('.select-container').hasClass('single-select')) {
-                            $(this).closest('.select').siblings().find('input[type=checkbox]')
-                              .attr('checked', false);
+                        if (isCheckbox) {
+                          if ((isSingleSelect || !$otherSelects.size()) &&
+                              $newNetwork.find('input[type=checkbox]').is(':unchecked')) {
+                            $otherSelects.find('input[type=checkbox]').attr('checked', false);
+
+                            // Set as default
                             $(this).closest('.select').find('input[type=radio]').click();
                           }
                         }
@@ -120,9 +127,7 @@
                           if (!$radio.closest('.select').index()) {
                             return false;
                           } else {
-                            $radio
-                              .closest('.select')
-                              .siblings().filter(':first')
+                            $otherSelects.filter(':first')
                               .find('input[type=radio]').click();
                           }
                         }
@@ -476,7 +481,7 @@
 
               // Select another default if hiding field
               if ($newNetwork.hasClass('unselected')) {
-                $step.find('input[type=radio]:first').click();
+                $step.find('input[type=radio]:visible:first').click();
               } else {
                 $newNetwork.find('input[type=radio]').click();
               }
@@ -490,8 +495,7 @@
                 $checkbox.attr('checked', false);
                 $newNetwork.addClass('unselected');
               } else {
-                $checkbox.attr('checked', true);
-                $newNetwork.removeClass('unselected');
+                $newNetwork.find('input[name=defaultNetwork]').filter('[value=new-network]').click();
               }
 
               $checkbox.change();

@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
-import org.apache.axis.encoding.Base64;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.xml.DOMConfigurator;
 
 import com.cloud.consoleproxy.util.Logger;
@@ -77,7 +77,7 @@ public class ConsoleProxy {
             
             byte[] randomBytes = new byte[16];
             random.nextBytes(randomBytes);
-            return Base64.encode(randomBytes);
+            return Base64.encodeBase64String(randomBytes);
         } catch (NoSuchAlgorithmException e) {
             s_logger.error("Unexpected exception ", e);
             assert(false);

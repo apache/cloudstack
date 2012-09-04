@@ -33,10 +33,10 @@
     inputArea: function(args) {
       var $form = $('<form>').addClass('tag-input');
       var $keyField = $('<div>').addClass('field key');
-      var $keyLabel = $('<label>').attr('for', 'key').html('Key:');
+      var $keyLabel = $('<label>').attr('for', 'key').html(_l('label.key') + ':');
       var $key = $('<input>').addClass('key').attr('name', 'key');
       var $valueField = $('<div>').addClass('field value');
-      var $valueLabel = $('<label>').attr('for', 'value').html('Value:');
+      var $valueLabel = $('<label>').attr('for', 'value').html(_l('label.value') + ':');
       var $value = $('<input>').addClass('value').attr('name', 'value');
       var $submit = $('<input>').attr('type', 'submit').val('Add');
 
@@ -117,7 +117,7 @@
       var actions = this.options.actions;
       var $container = this.element.addClass('tagger');
       var $tagArea = $('<ul>').addClass('tags');
-      var $title = elems.info('Tags').addClass('title');
+      var $title = elems.info(_l('label.tags')).addClass('title');
       var $loading = $('<div>').addClass('loading-overlay');
 
       var onRemoveItem = function($item, data) {

@@ -29,7 +29,7 @@
       // Show ACL dialog
       if (isDialog) {
         $acl.dialog({
-          title: 'Configure Network ACLs',
+          title: _l('label.configure.network.ACLs'),
           dialogClass: 'configure-acl',
           width: 900,
           height: 600,
@@ -53,10 +53,10 @@
       var gateways = args.gateways;
       var siteToSiteVPN = args.siteToSiteVPN;
       var links = {
-        'ip-addresses': 'IP Addresses',
-        'gateways': 'Private Gateway',
-        'site-to-site-vpn': 'Site-to-site VPN',
-        'network-acls':  'Network ACLs'
+        'ip-addresses': _l('label.menu.ipaddresses'),
+        'gateways': _l('label.private.Gateway'),
+        'site-to-site-vpn': _l('label.site.to.site.VPN'),
+        'network-acls':  _l('label.network.ACLs')
       };
       var $links = $('<ul>').addClass('links');
       var $tooltip = $('<div>').addClass('vpc-configure-tooltip').append(
@@ -77,7 +77,7 @@
           switch (id) {
           case 'network-acls':
               $browser.cloudBrowser('addPanel', {
-              title: 'Network ACLs',
+              title: _l('label.network.ACLs'),
               maximizeIfSelected: true,
               complete: function($panel) {
                 $panel.listView(
@@ -85,7 +85,7 @@
                     listView: {
                       actions: {
                         add: {
-                          label: 'Add network ACL',
+                          label: 'label.add.network.ACL',
                           action: {
                             custom: function() {
                               elems.aclDialog({
@@ -97,7 +97,15 @@
                           }
                         }
                       },
-                      detailView: tierDetailView
+                      detailView: function() {
+                        var detailView = $.extend(true, {}, tierDetailView);
+
+                        detailView.tabs = {
+                          acl: tierDetailView.tabs.acl
+                        };
+
+                        return detailView;
+                      }
                     }
                   }),
                   { context: acl.context }
@@ -108,7 +116,7 @@
 
           case 'ip-addresses':
             $browser.cloudBrowser('addPanel', {
-              title: 'IP Addresses',
+              title: _l('label.menu.ipaddresses'),
               maximizeIfSelected: true,
               complete: function($panel) {
                 //ipAddresses.listView is a function
@@ -122,7 +130,7 @@
             var isGatewayPresent = addAction.preCheck({ context: gateways.context });
             var showGatewayListView = function() {
               $browser.cloudBrowser('addPanel', {
-                title: 'Private Gateway',
+                title: _l('label.private.Gateway'),
                 maximizeIfSelected: true,
                 complete: function($panel) {
                   $panel.listView(gateways.listView(), { context: gateways.context });
@@ -185,7 +193,7 @@
             var isVPNPresent = addAction.preCheck({ context: siteToSiteVPN.context });
             var showVPNListView = function() {
               $browser.cloudBrowser('addPanel', {
-                title: 'Site-to-site VPN',
+                title: _l('label.site.to.site.VPN'),
                 maximizeIfSelected: true,
                 complete: function($panel) {
                   $panel.listView(siteToSiteVPN, {context: siteToSiteVPN.context});
@@ -301,7 +309,7 @@
       var $browser = args.$browser;
       var detailView = args.detailView;
       var $router = $('<li>').addClass('tier virtual-router');
-      var $title = $('<span>').addClass('title').html('Virtual Router');
+      var $title = $('<span>').addClass('title').html(_l('label.virtual.router'));
 
       $router.append($title);
 
@@ -312,7 +320,7 @@
         if ($router.hasClass('disabled')) return false;
 
         $browser.cloudBrowser('addPanel', {
-          title: 'VPC router details',
+          title: _l('label.VPC.router.details'),
           complete: function($panel) {
             $panel.detailView(detailView);
           }
@@ -368,7 +376,7 @@
 
         $dialog.append($listView);
         $dialog.dialog({
-          title: 'VMs in tier: ' + name,
+          title: _l('label.VMs.in.tier') + ': ' + name,
           dialogClass: 'multi-edit-add-list panel configure-acl',
           width: 825,
           height: 600,
@@ -399,7 +407,7 @@
 
       if (isPlaceholder) {
         $tier.addClass('placeholder');
-        $title.html('Create Tier');
+        $title.html(_l('label.add.new.tier'));
       } else {        
         $title.html(
           cloudStack.concat(name, 8)
@@ -408,7 +416,7 @@
         $cidr.html(cidr);
         $vmCount.append(
           $('<span>').addClass('total').html(virtualMachines != null? virtualMachines.length: 0),
-          ' VMs'
+          _l('label.vms')
         );
         $tier.append($actions);
 
@@ -421,7 +429,7 @@
           $action.addClass(action.id);
 
           if (action.id != 'remove') {
-            $action.append($('<span>').addClass('label').html(shortLabel));
+            $action.append($('<span>').addClass('label').html(_l(shortLabel)));
           } else {
             $action.append($('<span>').addClass('icon').html('&nbsp;'));
           }
@@ -490,7 +498,7 @@
         })
       });
 
-      if (!isAdmin() && !isDomainAdmin()) $router.addClass('disabled');
+      if (!isAdmin()) $router.addClass('disabled');
 
       var $chart = $('<div>').addClass('vpc-chart');
       var $title = $('<div>').addClass('vpc-title')
@@ -832,7 +840,7 @@
 
       $browser.cloudBrowser('addPanel', {
         maximizeIfSelected: true,
-        title: 'Configure VPC: ' + vpc.name,
+        title: _l('label.configure.vpc') + ': ' + vpc.name,
         complete: function($panel) {
           var $loading = $('<div>').addClass('loading-overlay').appendTo($panel);
 

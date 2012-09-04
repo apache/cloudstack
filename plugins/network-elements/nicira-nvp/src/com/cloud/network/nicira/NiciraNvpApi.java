@@ -195,6 +195,22 @@ public class NiciraNvpApi {
         return ccs;
     }
 
+    public NiciraNvpList<LogicalSwitchPort> findLogicalSwitchPortsByUuid(String logicalSwitchUuid, String logicalSwitchPortUuid) throws NiciraNvpApiException {
+        String uri = "/ws.v1/lswitch/" + logicalSwitchUuid + "/lport";
+        Map<String,String> params = new HashMap<String,String>();
+        params.put("uuid", logicalSwitchPortUuid);
+        params.put("fields", "uuid");
+            
+        NiciraNvpList<LogicalSwitchPort> lspl = executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalSwitchPort>>(){}.getType(), uri, params);
+                
+        if (lspl == null ) {
+            throw new NiciraNvpApiException("Unexpected response from API");
+        }
+        
+        return lspl;
+    }
+    
+    
     private <T> void executeUpdateObject(T newObject, String uri, Map<String,String> parameters) throws NiciraNvpApiException {
         String url;
         try {
@@ -255,7 +271,7 @@ public class NiciraNvpApi {
         
         T result;
         try {
-            result = gson.fromJson(pm.getResponseBodyAsString(), TypeToken.get(newObject.getClass()).getType());
+            result = (T)gson.fromJson(pm.getResponseBodyAsString(), TypeToken.get(newObject.getClass()).getType());
         } catch (IOException e) {
             throw new NiciraNvpApiException("Failed to decode json response body", e);
         }
@@ -314,7 +330,7 @@ public class NiciraNvpApi {
         Gson gson = new Gson();
         T returnValue;
         try {
-            returnValue = gson.fromJson(gm.getResponseBodyAsString(), returnObjectType);
+            returnValue = (T)gson.fromJson(gm.getResponseBodyAsString(), returnObjectType);
         } catch (IOException e) {
             s_logger.error("IOException while retrieving response body",e);
             throw new NiciraNvpApiException(e);

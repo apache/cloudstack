@@ -27,8 +27,18 @@ shift
 DISTDIR="$1"
 shift
 
-thisdir=$(readlink -f $(dirname "$0"))
+canonical_readlink ()
+{
+    cd `dirname $1`;
+    __filename=`basename $1`;
+    if [ -h "$__filename" ]; then
+        canonical_readlink `readlink $__filename`;
+    else
+        echo "`pwd -P`";
+    fi
+}
 
+thisdir=$(canonical_readlink $0)
 
 PATHSEP=':'
 if [[ $OSTYPE == "cygwin" ]] ; then
@@ -50,7 +60,7 @@ java -cp $CP com.cloud.api.doc.ApiXmlDocWriter -d "$DISTDIR" $*
 
 if [ $? -ne 0 ]
 then
-	exit 1
+       exit 1
 fi
 
 set -e
@@ -61,7 +71,7 @@ set -e
  sed -e 's,%API_HEADER%,Root Admin API,g' "$thisdir/generatetoc_header.xsl" >generatetocforadmin.xsl
  sed -e 's,%API_HEADER%,Domain Admin API,g' "$thisdir/generatetoc_header.xsl" >generatetocfordomainadmin.xsl
 
- python "$thisdir/gen_toc.py" $(find -type f)
+ python "$thisdir/gen_toc.py" $(find . -type f)
 
  cat generatetocforuser_include.xsl >>generatetocforuser.xsl
  cat generatetocforadmin_include.xsl >>generatetocforadmin.xsl

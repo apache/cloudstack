@@ -29,31 +29,38 @@
         <listitem>
             <para>Install libvirt</para>
             <para>On RHEL or CentOS:</para>
-            <programlisting># yum install libvirt</programlisting>
+            <programlisting language="Bash">yum install libvirt</programlisting>
             <para>On Ubuntu:</para>
-            <programlisting># apt-get install libvirt-bin</programlisting>
+            <programlisting language="Bash">apt-get install libvirt-bin</programlisting>
         </listitem>
         <listitem>
             <para>In order to have live migration working libvirt has to listen for unsecured TCP connections.</para>
-            <programlisting># vi /etc/libvirt/libvirtd.conf</programlisting>
+            <programlisting language="Bash">vi /etc/libvirt/libvirtd.conf</programlisting>
             <para>Set the following paramaters:</para>
             <programlisting>listen_tls = 0</programlisting>
             <programlisting>listen_tcp = 1</programlisting>
             <programlisting>tcp_port = 16059</programlisting>
-            <programlisting>auth_tcp none</programlisting>
+            <programlisting>auth_tcp = "none"</programlisting>
         </listitem>
         <listitem>
-            <para>In order to have libvirt listening on TCP we have to change the execution arguments.</para>
+            <para>Turning on "listen_tcp" in libvirtd.conf is not enough, we have to change the parameters as well:</para>
             <para>On RHEL or CentOS:</para>
-            <programlisting># vi /etc/sysconfig/libvirtd</programlisting>
+            <programlisting language="Bash">vi /etc/sysconfig/libvirtd</programlisting>
             <para>Uncomment the following line:</para>
             <programlisting>#LIBVIRTD_ARGS="--listen"</programlisting>
             <para>On Ubuntu:</para>
-            <programlisting># vi /etc/init/libvirt-bin.conf</programlisting>
-            <para>Change the following line:</para>
+            <programlisting language="Bash">vi /etc/init/libvirt-bin.conf</programlisting>
+            <para>Change the following line (at the end of the file):</para>
             <programlisting>exec /usr/sbin/libvirtd -d</programlisting>
             <para>to (just add -l)</para>
             <programlisting>exec /usr/sbin/libvirtd -d -l</programlisting>
+        </listitem>
+        <listitem>
+            <para>Restart libvirt</para>
+            <para>In RHEL or CentOS:</para>
+            <programlisting language="Bash">service libvirtd restart</programlisting>
+            <para>In Ubuntu:</para>
+            <programlisting language="Bash">service libvirt-bin restart</programlisting>
         </listitem>
     </orderedlist>
 </section>

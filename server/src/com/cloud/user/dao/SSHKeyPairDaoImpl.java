@@ -61,7 +61,14 @@ public class SSHKeyPairDaoImpl extends GenericDaoBase<SSHKeyPairVO, Long> implem
 		sc.addAnd("name", SearchCriteria.Op.EQ, name);
 		return findOneBy(sc);
 	}
-	
+
+    @Override
+    public SSHKeyPairVO findByPublicKey(String publicKey) {
+        SearchCriteria<SSHKeyPairVO> sc = createSearchCriteria();
+        sc.addAnd("publicKey", SearchCriteria.Op.EQ, publicKey);
+        return findOneBy(sc);
+    }
+
 	@Override
 	public boolean deleteByName(long accountId, long domainId, String name) {
 		SSHKeyPairVO pair = findByName(accountId, domainId, name);

@@ -54,6 +54,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
@@ -527,8 +528,9 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
         // Validate vpc offering
         VpcOfferingVO vpcOff = _vpcOffDao.findById(vpcOffId);
-        if (vpcOff == null) {
-            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find vpc offering by specified id");
+        if (vpcOff == null || vpcOff.getState() != State.Enabled) {
+            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find vpc offering in " + State.Enabled +
+                    " state by specified id");
             ex.addProxyObject("vpc_offerings", vpcOffId, "vpcOfferingId");
             throw ex;
         }
@@ -1054,8 +1056,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
             for (Network ntwk : ntwks) {
                 assert (cidr != null) : "Why the network cidr is null when it belongs to vpc?";
                 
-                if (NetUtils.isNetworkAWithinNetworkB(ntwk.getCidr(), vpc.getCidr()) 
-                        || NetUtils.isNetworkAWithinNetworkB(vpc.getCidr(), ntwk.getCidr())) {
+                if (NetUtils.isNetworkAWithinNetworkB(ntwk.getCidr(), cidr) 
+                        || NetUtils.isNetworkAWithinNetworkB(cidr, ntwk.getCidr())) {
                     throw new InvalidParameterValueException("Network cidr " + cidr + " crosses other network cidr " + ntwk + 
                             " belonging to the same vpc " + vpc);
                 }
@@ -1954,5 +1956,13 @@ public class VpcManagerImpl implements VpcManager, Manager{
         
         return _ntwkMgr.updateGuestNetwork(networkId, name, displayText, callerAccount, callerUser, domainSuffix,
                 ntwkOffId, changeCidr);
-    } 
+    }
+
+    @Override
+    public List<HypervisorType> getSupportedVpcHypervisors() {
+        List<HypervisorType> hTypes = new ArrayList<HypervisorType>();
+        hTypes.add(HypervisorType.XenServer);
+        hTypes.add(HypervisorType.VMware);
+        return hTypes;
+    }
 }

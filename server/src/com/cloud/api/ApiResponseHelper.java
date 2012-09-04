@@ -211,6 +211,7 @@ import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.InstanceGroupVO;
 import com.cloud.vm.NicProfile;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -806,7 +807,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
-        ipResponse.setAssociatedNetworkId(ipAddr.getAssociatedWithNetworkId());
+        if (ipAddr.getAssociatedWithNetworkId() != null) {
+            Network ntwk = ApiDBUtils.findNetworkById(ipAddr.getAssociatedWithNetworkId());
+            ipResponse.setAssociatedNetworkId(ipAddr.getAssociatedWithNetworkId());
+            ipResponse.setAssociatedNetworkName(ntwk.getName());
+        }
+
         ipResponse.setVpcId(ipAddr.getVpcId());
 
         // Network id the ip is associated with (if associated networkId is null, try to get this information from vlan)
@@ -3326,6 +3332,12 @@ public class ApiResponseHelper implements ResponseGenerator {
             tagResponses.add(tagResponse);
         }
         userVmResponse.setTags(tagResponses);
+
+        UserVmDetailVO userVmDetail =  ApiDBUtils.findPublicKeyByVmId(userVmData.getId());
+        if (userVmDetail != null && userVmDetail.getValue() != null) {
+            String keyPairName = ApiDBUtils.getKeyPairName(userVmDetail.getValue());
+            userVmResponse.setKeyPairName(keyPairName);
+        }
 
         return userVmResponse;
     }

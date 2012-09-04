@@ -114,7 +114,7 @@
       'icmptype': { edit: true, label: 'ICMP.type', isDisabled: true, desc:'Please specify -1 if you want to allow all ICMP types', defaultValue:'-1' },
       'icmpcode': { edit: true, label: 'ICMP.code', isDisabled: true, desc:'Please specify -1 if you want to allow all ICMP codes', defaultValue:'-1' },
       'traffictype' : {
-        label: 'Traffic type',
+        label: 'label.traffic.type',
         select: function(args) {
           args.response.success({
             data: [
@@ -133,7 +133,7 @@
     tags: cloudStack.api.tags({ resourceType: 'NetworkACL', contextId: 'multiRule' }),
 
     add: {
-      label: 'Add',
+      label: 'label.add',
       action: function(args) {
         var $multi = args.$multi;
         
@@ -163,7 +163,7 @@
                 }
               },
               notification: {
-                label: 'Add ACL',
+                label: 'label.add.ACL',
                 poll: pollAsyncJobResult
               }
             });
@@ -176,7 +176,7 @@
     },
     actions: {
       destroy: {
-        label: 'Remove ACL',
+        label: 'label.remove.ACL',
         action: function(args) {
           $.ajax({
             url: createURL('deleteNetworkACL'),
@@ -195,7 +195,7 @@
                   }
                 },
                 notification: {
-                  label: 'Remove ACL',
+                  label: 'label.remove.ACL',
                   poll: pollAsyncJobResult
                 }
               });
@@ -260,16 +260,17 @@
       id: 'vpcTierInstances',
       listView: {
         filters: {
-          all: { label: 'All instances' },
-          running: { label: 'Running instances' },
-          destroyed: { label: 'Destroyed instances' }
+          all: { label: 'label.menu.all.instances' },
+          running: { label: 'label.menu.running.instances' },
+          stopped: { label: 'label.menu.stopped.instances' },
+          destroyed: { label: 'label.menu.destroyed.instances' }
         },
         fields: {
-          name: { label: 'Name', editable: true },
-          account: { label: 'Account' },
-          zonename: { label: 'Zone' },
+          name: { label: 'label.name', editable: true },
+          account: { label: 'label.account' },
+          zonename: { label: 'label.zone' },
           state: {
-            label: 'Status',
+            label: 'label.status',
             indicator: {
               'Running': 'on',
               'Stopped': 'off',
@@ -532,7 +533,16 @@
     },
     ipAddresses: {
       listView: function() {
-        return cloudStack.sections.network.sections.ipAddresses;
+        var listView = $.extend(true, {}, cloudStack.sections.network.sections.ipAddresses);
+        
+        listView.listView.fields = {
+          ipaddress: listView.listView.fields.ipaddress,
+          zonename: listView.listView.fields.zonename,
+          associatednetworkname: { label: 'label.network.name' },
+          state: listView.listView.fields.state
+        };
+
+        return listView;
       }
     },
     acl: {
@@ -542,8 +552,8 @@
         listView: {
           id: 'networks',
           fields: {
-            tierName: { label: 'Tier' },
-            aclTotal: { label: 'Network ACL Total' }
+            tierName: { label: 'label.tier' },
+            aclTotal: { label: 'label.network.ACL.total' }
           },
           dataProvider: function(args) {
             $.ajax({
@@ -613,15 +623,15 @@
 					  return true; //show private gateway listView instead of create private gateway dialog because only root-admin is allowed to create private gateway
 					}
         },
-        label: 'Add new gateway',
+        label: 'label.add.new.gateway',
         messages: {
           notification: function(args) {
-            return 'Add new gateway';
+            return 'label.add.new.gateway';
           }
         },
         createForm: {
-          title: 'Add new gateway',
-          desc: 'Please specify the information to add a new gateway to this VPC.',
+          title: 'label.add.new.gateway',
+          desc: 'message.add.new.gateway.to.vpc',
           fields: {
 					  physicalnetworkid: { 
 						  label: 'label.physical.network',
@@ -704,16 +714,16 @@
               });
             },
             detailView: {
-              name: 'Gateway details',
+              name: 'label.details',
               actions: {
                 remove: {
-                  label: 'delete gateway',
+                  label: 'label.delete.gateway',
                   messages: {
                     confirm: function(args) {
-                      return 'Please confirm you want to delete the gateway';
+                      return 'message.delete.gateway';
                     },
                     notification: function(args) {
-                      return 'delete gateway';
+                      return 'label.delete.gateway';
                     }
                   },
                   action: function(args) {
@@ -786,9 +796,9 @@
                       noSelect: true,
                       context: args.context,
                       fields: {
-                        cidr: { edit: true, label: 'CIDR of destination network' },
+                        cidr: { edit: true, label: 'label.CIDR.of.destination.network' },
                         'add-rule': {
-                          label: 'Add route',
+                          label: 'label.add.route',
                           addButton: true
                         }
                       },
@@ -796,7 +806,7 @@
                       tags: cloudStack.api.tags({ resourceType: 'StaticRoute', contextId: 'multiRule' }),
 
                       add: {
-                        label: 'Add',
+                        label: 'label.add',
                         action: function(args) {
                           $.ajax({
                             url: createURL('createStaticRoute'),
@@ -810,7 +820,7 @@
                                   jobId: data.createstaticrouteresponse.jobid
                                 },
                                 notification: {
-                                  label: 'Add static route',
+                                  label: 'label.add.static.route',
                                   poll: pollAsyncJobResult
                                 }
                               });
@@ -823,7 +833,7 @@
                       },
                       actions: {
                         destroy: {
-                          label: 'Remove static route',
+                          label: 'label.remove.static.route',
                           action: function(args) {
                             $.ajax({
                               url: createURL('deleteStaticRoute'),
@@ -840,7 +850,7 @@
                                     jobId: jobID
                                   },
                                   notification: {
-                                    label: 'Remove static route',
+                                    label: 'label.remove.static.route',
                                     poll: pollAsyncJobResult
                                   }
                                 });
@@ -872,7 +882,7 @@
       }
     },
     siteToSiteVPN: {
-      title: 'site-to-site VPN',
+      title: 'label.site.to.site.VPN',
       id: 'siteToSiteVpn',
       sectionSelect: {
         preFilter: function(args) {
@@ -905,15 +915,15 @@
 
           return false;
         },
-        label: 'Add VPN Gateway',
+        label: 'label.add.VPN.gateway',
         messages: {
           notification: function(args) {
-            return 'Add VPN Gateway';
+            return 'label.add.VPN.gateway';
           }
         },
         createForm: {
-          title: 'Add VPN Gateway',
-          desc: 'Please confirm that you want to add a VPN Gateway',
+          title: 'label.add.VPN.gateway',
+          desc: 'message.add.VPN.gateway',
           fields: {}
         },
         action: function(args) {
@@ -945,10 +955,10 @@
       sections: {
         vpnGateway: {
           type: 'select',
-          title: 'VPN Gateway',
+          title: 'label.VPN.gateway',
           listView: {
             id: 'vpnGateway',
-            label: 'VPN Gateway',
+            label: 'label.VPN.gateway',
             fields: {
               publicip: { label: 'label.ip.address' },
               account: { label: 'label.account' },
@@ -982,13 +992,13 @@
               name: 'label.details',
               actions: {
                 remove: {
-                  label: 'delete VPN Gateway',
+                  label: 'label.delete.VPN.gateway',
                   messages: {
                     confirm: function(args) {
-                      return 'Please confirm that you want to delete this VPN Gateway';
+                      return 'message.delete.VPN.gateway';
                     },
                     notification: function(args) {
-                      return 'delete VPN Gateway';
+                      return 'label.delete.VPN.gateway';
                     }
                   },
                   action: function(args) {
@@ -1047,10 +1057,10 @@
         },
         vpnConnection: {
           type: 'select',
-          title: 'VPN Connection',
+          title: 'label.VPN.connection',
           listView: {
             id: 'vpnConnection',
-            label: 'VPN Connection',
+            label: 'label.VPN.connection',
             fields: {
               publicip: { label: 'label.ip.address' },
               gateway: { label: 'label.gateway' },
@@ -1062,9 +1072,9 @@
                   'Error': 'off'
                 }
               },
-              ipsecpsk: { label: 'IPsec Preshared-Key' },
-              ikepolicy: { label: 'IKE policy' },
-              esppolicy: { label: 'ESP policy' }
+              ipsecpsk: { label: 'label.IPsec.preshared.key' },
+              ikepolicy: { label: 'label.IKE.policy' },
+              esppolicy: { label: 'label.ESP.policy' }
             },
             dataProvider: function(args) {
               var array1 = [];
@@ -1092,17 +1102,17 @@
             
 						actions:{             
 							add: {               
-                label: 'Create VPN Connection',
+                label: 'label.create.VPN.connection',
                 messages: {                 
                   notification: function(args) {
-                    return 'Create VPN Connection';
+                    return 'label.create.VPN.connection';
                   }
                 },
                 createForm: {
-                  title: 'Create VPN Connection',
+                  title: 'label.create.VPN.connection',
                   fields: {                    
 										vpncustomergatewayid: {
-                      label: 'VPN Customer Gateway',
+                      label: 'label.VPN.customer.gateway',
                       validation: { required: true },
                       select: function(args) {											 
 												$.ajax({
@@ -1191,19 +1201,19 @@
 
                       //s2scustomergatewayid: { label: 'Customer gateway ID' },
                       gateway: { label: 'label.gateway' },
-                      cidrlist: { label: 'CIDR list' },
-                      ipsecpsk: { label: 'IPsec Preshared-Key' },
-                      ikepolicy: { label: 'IKE policy' },
-                      esppolicy: { label: 'ESP policy' },
-                      ikelifetime: { label: 'IKE Lifetime (second)' },
-                      esplifetime: {label: 'ESP Lifetime(second)' },
+                      cidrlist: { label: 'label.CIDR.list' },
+                      ipsecpsk: { label: 'label.IPsec.preshared.key' },
+                      ikepolicy: { label: 'label.IKE.policy' },
+                      esppolicy: { label: 'label.ESP.policy' },
+                      ikelifetime: { label: 'label.IKE.lifetime' },
+                      esplifetime: {label: 'label.ESP.lifetime' },
 									    dpd: {
-									      label: 'Dead Peer Detection',
+									      label: 'label.dead.peer.detection',
                         converter: function(str) {
                           return str ? 'Yes' : 'No';
                         }
 									    },               
-                      state: {label: 'State' },
+                      state: {label: 'label.state' },
                       created: { label: 'label.date', converter: cloudStack.converters.toLocalDate }
                     }
                   ],
@@ -1223,13 +1233,13 @@
               },
               actions: {
                 restart: {
-                  label: 'Reset VPN connection',
+                  label: 'label.reset.VPN.connection',
                   messages: {
                     confirm: function(args) {
-                      return 'Please confirm that you want to reset VPN connection' ;
+                      return 'message.reset.VPN.connection' ;
                     },
                     notification: function(args) {
-                      return 'Reset VPN connection';
+                      return 'label.reset.VPN.connection';
                     }
                   },
                   action: function(args) {
@@ -1261,13 +1271,13 @@
                 },
 
                 remove: {
-                  label: 'delete VPN connection',
+                  label: 'label.delete.VPN.connection',
                   messages: {
                     confirm: function(args) {
-                      return 'Please confirm that you want to delete VPN connection';
+                      return 'message.delete.VPN.connection';
                     },
                     notification: function(args) {
-                      return 'delete VPN connection';
+                      return 'label.delete.VPN.connection';
                     }
                   },
                   action: function(args) {
@@ -1647,7 +1657,7 @@
                       return "No";
                   }
                 },
-                vlan: { label: 'VLAN ID' },
+                vlan: { label: 'label.vlan.id' },
 
                 networkofferingname: { label: 'label.network.offering' },
 
@@ -1690,7 +1700,7 @@
                 gateway: { label: 'label.gateway' },
 
                 //netmask: { label: 'Netmask' },
-                cidr: { label: 'CIDR' },
+                cidr: { label: 'label.cidr' },
 
                 networkdomaintext: {
                   label: 'label.network.domain.text'
@@ -1724,7 +1734,7 @@
           },
 
           acl: {
-            title: 'Network ACL',
+            title: 'label.network.ACL',
             custom: function(args) {
               // Widget renders ACL multi-edit, overriding this fn
               return $('<div>');
@@ -1813,12 +1823,12 @@
                       }
                     },
                     'add-vm': {
-                      label: 'label.add.vms',
+                      label: 'label.add.vm',
                       addButton: true
                     }
                   },
                   add: {
-                    label: 'label.add.vms',
+                    label: 'label.add.vm',
                     action: function(args) {
                       var data = {
                         algorithm: args.data.algorithm,
@@ -1942,9 +1952,9 @@
       },
       actions: {
         add: {
-          label: 'Add new tier',
+          label: 'label.add.new.tier',
           createForm: {
-            title: 'Add new tier',
+            title: 'label.add.new.tier',
             fields: {
               name: { label: 'label.name',
                       validation: { required: true }
@@ -2082,8 +2092,8 @@
          */
 
         addVM: {
-          label: 'Add VM to tier',
-          shortLabel: 'Add VM',
+          label: 'label.add.VM.to.tier',
+          shortLabel: 'label.add.vm',
           action: cloudStack.uiCustom.instanceWizard(
             $.extend(true, {}, cloudStack.instanceWizard, {
               pluginForm: {
@@ -2104,7 +2114,7 @@
         }, */
             
         remove: {
-          label: 'Remove tier',
+          label: 'label.remove.tier',
           action: function(args) {
             $.ajax({
               url: createURL('deleteNetwork'),

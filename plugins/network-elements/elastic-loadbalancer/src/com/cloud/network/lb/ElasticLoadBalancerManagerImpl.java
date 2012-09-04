@@ -1025,14 +1025,6 @@ public class ElasticLoadBalancerManagerImpl implements
         throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
      }
 
-
-    @Override
-    public boolean recreateNeeded(
-        VirtualMachineProfile<DomainRouterVO> profile, long hostId, Commands cmds, ReservationContext context) {
-	// TODO Auto-generated method stub
-	return false;
-    }
-
     @Override
     public void prepareStop(VirtualMachineProfile<DomainRouterVO> profile) {
     } 

@@ -24,6 +24,7 @@
 
 <section id="hypervisor-host-install-security-policies">
     <title>Configure the Security Policies</title>
+    <para>&PRODUCT; does various things which can be blocked by security mechanisms like AppArmor and SELinux. These have to be disabled to ensure the Agent has all the required permissions.</para>
     <orderedlist>
         <listitem>
             <para>Configure SELinux (RHEL and CentOS)</para>
@@ -31,12 +32,12 @@
                 <listitem>
                     <para>Check to see whether SELinux is installed on your machine. If not, you can skip this section.</para>
                     <para>In RHEL or CentOS, SELinux is installed and enabled by default. You can verify this with:</para>
-                    <programlisting># rpm -qa | grep selinux</programlisting>
+                    <programlisting language="Bash">rpm -qa | grep selinux</programlisting>
                 </listitem>
                 <listitem>
                     <para>Set the SELINUX variable in /etc/selinux/config to "permissive". This ensures that the permissive setting will be maintained after a system reboot.</para>
                     <para>In RHEL or CentOS:</para>
-                    <programlisting># vi /etc/selinux/config</programlisting>
+                    <programlisting language="Bash">vi /etc/selinux/config</programlisting>
                     <para>Change the following line</para>
                     <programlisting>SELINUX=enforcing</programlisting>
                     <para>to this</para>
@@ -44,7 +45,7 @@
                 </listitem>
                 <listitem>
                     <para>Then set SELinux to permissive starting immediately, without requiring a system reboot.</para>
-                    <programlisting># setenforce permissive</programlisting>
+                    <programlisting language="Bash">setenforce permissive</programlisting>
                 </listitem>
             </orderedlist>
         </listitem>
@@ -54,14 +55,14 @@
                 <listitem>
                     <para>Check to see whether AppArmor is installed on your machine. If not, you can skip this section.</para>
                     <para>In Ubuntu AppArmor is installed and enabled by default. You can verify this with:</para>
-                    <programlisting># dpkg --list 'apparmor'</programlisting>
+                    <programlisting language="Bash">dpkg --list 'apparmor'</programlisting>
                 </listitem>
                 <listitem>
                     <para>Disable the AppArmor profiles for libvirt</para>
-                    <programlisting>ln -s /etc/apparmor.d/usr.sbin.libvirtd /etc/apparmor.d/disable/</programlisting>
-                    <programlisting>ln -s /etc/apparmor.d/usr.lib.libvirt.virt-aa-helper /etc/apparmor.d/disable/</programlisting>
-                    <programlisting>apparmor_parser -R /etc/apparmor.d/usr.sbin.libvirtd</programlisting>
-                    <programlisting>apparmor_parser -R /etc/apparmor.d/usr.lib.libvirt.virt-aa-helper</programlisting>
+                    <programlisting language="Bash">ln -s /etc/apparmor.d/usr.sbin.libvirtd /etc/apparmor.d/disable/</programlisting>
+                    <programlisting language="Bash">ln -s /etc/apparmor.d/usr.lib.libvirt.virt-aa-helper /etc/apparmor.d/disable/</programlisting>
+                    <programlisting language="Bash">apparmor_parser -R /etc/apparmor.d/usr.sbin.libvirtd</programlisting>
+                    <programlisting language="Bash">apparmor_parser -R /etc/apparmor.d/usr.lib.libvirt.virt-aa-helper</programlisting>
                 </listitem>
             </orderedlist>
         </listitem>

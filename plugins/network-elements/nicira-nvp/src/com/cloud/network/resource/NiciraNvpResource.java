@@ -35,6 +35,8 @@ import com.cloud.agent.api.DeleteLogicalSwitchAnswer;
 import com.cloud.agent.api.DeleteLogicalSwitchCommand;
 import com.cloud.agent.api.DeleteLogicalSwitchPortAnswer;
 import com.cloud.agent.api.DeleteLogicalSwitchPortCommand;
+import com.cloud.agent.api.FindLogicalSwitchPortAnswer;
+import com.cloud.agent.api.FindLogicalSwitchPortCommand;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.PingCommand;
@@ -42,6 +44,8 @@ import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupNiciraNvpCommand;
+import com.cloud.agent.api.UpdateLogicalSwitchPortAnswer;
+import com.cloud.agent.api.UpdateLogicalSwitchPortCommand;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.network.nicira.ControlClusterStatus;
@@ -49,6 +53,7 @@ import com.cloud.network.nicira.LogicalSwitch;
 import com.cloud.network.nicira.LogicalSwitchPort;
 import com.cloud.network.nicira.NiciraNvpApi;
 import com.cloud.network.nicira.NiciraNvpApiException;
+import com.cloud.network.nicira.NiciraNvpList;
 import com.cloud.network.nicira.NiciraNvpTag;
 import com.cloud.network.nicira.TransportZoneBinding;
 import com.cloud.network.nicira.VifAttachment;
@@ -186,6 +191,12 @@ public class NiciraNvpResource implements ServerResource {
         else if (cmd instanceof DeleteLogicalSwitchPortCommand) {
             return executeRequest((DeleteLogicalSwitchPortCommand) cmd, numRetries);
         }
+        else if (cmd instanceof UpdateLogicalSwitchPortCommand) {
+        	return executeRequest((UpdateLogicalSwitchPortCommand) cmd, numRetries);
+        }
+        else if (cmd instanceof FindLogicalSwitchPortCommand) {
+        	return executeRequest((FindLogicalSwitchPortCommand) cmd, numRetries);
+        }
         s_logger.debug("Received unsupported command " + cmd.toString());
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
@@ -284,6 +295,51 @@ public class NiciraNvpResource implements ServerResource {
         }
     }
 
+    private Answer executeRequest(UpdateLogicalSwitchPortCommand cmd, int numRetries) {
+        String logicalSwitchUuid = cmd.getLogicalSwitchUuid();
+        String logicalSwitchPortUuid = cmd.getLogicalSwitchPortUuid();
+        String attachmentUuid = cmd.getAttachmentUuid();
+        
+        try {
+            // Tags set to scope cs_account and account name
+            List<NiciraNvpTag> tags = new ArrayList<NiciraNvpTag>();
+            tags.add(new NiciraNvpTag("cs_account",cmd.getOwnerName()));
+
+            _niciraNvpApi.modifyLogicalSwitchPortAttachment(logicalSwitchUuid, logicalSwitchPortUuid, new VifAttachment(attachmentUuid));
+            return new UpdateLogicalSwitchPortAnswer(cmd, true, "Attachment for  " + logicalSwitchPortUuid + " updated", logicalSwitchPortUuid);
+        } catch (NiciraNvpApiException e) {
+        	if (numRetries > 0) {
+        		return retry(cmd, --numRetries);
+        	} 
+        	else {
+        		return new UpdateLogicalSwitchPortAnswer(cmd, e);
+        	}
+        }
+    	
+    }
+    
+    private Answer executeRequest(FindLogicalSwitchPortCommand cmd, int numRetries) {
+    	String logicalSwitchUuid = cmd.getLogicalSwitchUuid();
+        String logicalSwitchPortUuid = cmd.getLogicalSwitchPortUuid();
+        
+        try {
+        	NiciraNvpList<LogicalSwitchPort> ports = _niciraNvpApi.findLogicalSwitchPortsByUuid(logicalSwitchUuid, logicalSwitchPortUuid);
+        	if (ports.getResult_count() == 0) {
+        		return new FindLogicalSwitchPortAnswer(cmd, false, "Logical switchport " + logicalSwitchPortUuid + " not found", null);
+        	}
+        	else {
+        		return new FindLogicalSwitchPortAnswer(cmd, true, "Logical switchport " + logicalSwitchPortUuid + " found", logicalSwitchPortUuid);
+        	}
+        } catch (NiciraNvpApiException e) {
+        	if (numRetries > 0) {
+        		return retry(cmd, --numRetries);
+        	} 
+        	else {
+        		return new FindLogicalSwitchPortAnswer(cmd, e);
+        	}
+        }    	
+    }
+    
     private Answer executeRequest(ReadyCommand cmd) {
         return new ReadyAnswer(cmd);
     }

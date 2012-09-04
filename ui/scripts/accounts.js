@@ -181,6 +181,8 @@
                 var password = args.data.password;
                 if (md5Hashed)
                   password = $.md5(password);
+								else
+                  password = todb(password);
                 array1.push("&password=" + password);
 
                 array1.push("&email=" + todb(args.data.email));

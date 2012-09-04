@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="hypervisor-host-install-firewall">
+    <title>Configuring the firewall</title>
+    <para>The hypervisor needs to be able to communicate with other hypervisors and the management server needs to be able to reach the hypervisor.</para>
+    <para>In order to do so we have to open the following TCP ports (if you are using a firewall):</para>
+    <orderedlist>
+        <listitem><para>22 (SSH)</para></listitem>
+        <listitem><para>1798</para></listitem>
+        <listitem><para>16509 (libvirt)</para></listitem>
+        <listitem><para>5900 - 6100 (VNC consoles)</para></listitem>
+        <listitem><para>49152 - 49216 (libvirt live migration)</para></listitem>
+    </orderedlist>
+    <para>It depends on the firewall you are using how to open these ports. Below you'll find examples how to open these ports in RHEL/CentOS and Ubuntu.</para>
+    <section id="hypervisor-host-install-firewall-rhel">
+        <title>Open ports in RHEL/CentOS</title>
+        <para>RHEL and CentOS use iptables for firewalling the system, you can open extra ports by executing the following iptable commands:</para>
+        <programlisting language="Bash">iptables -I INPUT -p tcp -m tcp --dport 22 -j ACCEPT</programlisting>
+        <programlisting language="Bash">iptables -I INPUT -p tcp -m tcp --dport 1798 -j ACCEPT</programlisting>
+        <programlisting language="Bash">iptables -I INPUT -p tcp -m tcp --dport 16509 -j ACCEPT</programlisting>
+        <programlisting language="Bash">iptables -I INPUT -p tcp -m tcp --dport 5900:6100 -j ACCEPT</programlisting>
+        <programlisting language="Bash">iptables -I INPUT -p tcp -m tcp --dport 49152:492160 -j ACCEPT</programlisting>
+        <para>These iptable settings are not persistent accross reboots, we have to save them first.</para>
+        <programlisting language="Bash">iptables-save > /etc/sysconfig/iptables</programlisting>
+    </section>
+    <section id="hypervisor-host-install-firewall-ubuntu">
+        <title>Open ports in Ubuntu</title>
+        <para>The default firewall under Ubuntu is UFW (Uncomplicated FireWall), which is a Python wrapper around iptables.</para>
+        <para>To open the required ports, execute the following commands:</para>
+        <programlisting language="Bash">ufw allow proto tcp from any to any port 22</programlisting>
+        <programlisting language="Bash">ufw allow proto tcp from any to any port 1798</programlisting>
+        <programlisting language="Bash">ufw allow proto tcp from any to any port 16509</programlisting>
+        <programlisting language="Bash">ufw allow proto tcp from any to any port 5900:6100</programlisting>
+        <programlisting language="Bash">ufw allow proto tcp from any to any port 49152:492160</programlisting>
+        <note><para>By default UFW is not enabled on Ubuntu. Executing these commands with the firewall disabled does not enable the firewall.</para></note>
+    </section>
+</section>

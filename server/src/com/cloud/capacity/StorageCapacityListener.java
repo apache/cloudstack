@@ -76,13 +76,6 @@ public class StorageCapacityListener implements Listener {
         if (!(startup instanceof StartupStorageCommand)) {
             return;
         }
-        SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
-        capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, server.getId());
-        capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ,
-                server.getDataCenterId());
-        capacitySC.addAnd("podId", SearchCriteria.Op.EQ, server.getPodId());
-        List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
-
 
         StartupStorageCommand ssCmd = (StartupStorageCommand) startup;
         if (ssCmd.getResourceType() == Storage.StorageResourceType.STORAGE_HOST) {

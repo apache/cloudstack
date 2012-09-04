@@ -187,7 +187,7 @@ public interface NetworkManager extends NetworkService {
 
     Nic getDefaultNic(long vmId);
 
-    List<? extends UserDataServiceProvider> getPasswordResetElements();
+    UserDataServiceProvider getPasswordResetProvider(Network network);
 
     boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkId);
 
@@ -224,8 +224,6 @@ public interface NetworkManager extends NetworkService {
     Long getPodIdForVlan(long vlanDbId);
 
     List<Long> listNetworkOfferingsForUpgrade(long networkId);
-
-    PhysicalNetwork translateZoneIdToPhysicalNetwork(long zoneId);
 
     boolean isSecurityGroupSupportedInNetwork(Network network);
 
@@ -475,5 +473,11 @@ public interface NetworkManager extends NetworkService {
      * @throws InsufficientAddressCapacityException
      */
     PublicIp assignDedicateIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId, boolean isSourceNat) throws ConcurrentOperationException, InsufficientAddressCapacityException;
+
+
+    /**
+     * @return
+     */
+    int getNetworkLockTimeout();
 
 }

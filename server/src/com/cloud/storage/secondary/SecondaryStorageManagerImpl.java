@@ -1064,9 +1064,14 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
 
         if (_configDao.isPremium()) {
             if (profile.getHypervisorType() == HypervisorType.Hyperv) {
+            	s_logger.debug("Hyperv hypervisor configured, telling the ssvm to load the CifsSecondaryStorageResource");
                 buf.append(" resource=com.cloud.storage.resource.CifsSecondaryStorageResource");
+            } else if (profile.getHypervisorType() == HypervisorType.VMware) {
+            	s_logger.debug("VmWare hypervisor configured, telling the ssvm to load the PremiumSecondaryStorageResource");
+            	buf.append(" resource=com.cloud.storage.resource.PremiumSecondaryStorageResource");
             } else {
-                buf.append(" resource=com.cloud.storage.resource.PremiumSecondaryStorageResource");
+            	s_logger.debug("Telling the ssvm to load the NfsSecondaryStorageResource");
+                buf.append(" resource=com.cloud.storage.resource.NfsSecondaryStorageResource");
             }
         } else {
             buf.append(" resource=com.cloud.storage.resource.NfsSecondaryStorageResource");
@@ -1467,15 +1472,6 @@ public class SecondaryStorageManagerImpl implements SecondaryStorageVmManager, V
             ReservationContext context, DeployDestination dest) throws ConcurrentOperationException, ResourceUnavailableException {
         //not supported
         throw new UnsupportedOperationException("Unplug nic is not supported for vm of type " + vm.getType());
-    }
-
-    
-    @Override
-    public boolean recreateNeeded(
-			VirtualMachineProfile<SecondaryStorageVmVO> profile, long hostId,
-			Commands cmds, ReservationContext context) {
-		// TODO Auto-generated method stub
-		return false;
     }
 
 	@Override

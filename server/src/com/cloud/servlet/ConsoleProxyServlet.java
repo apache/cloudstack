@@ -336,8 +336,9 @@ public class ConsoleProxyServlet extends HttpServlet {
             param.setClientTunnelSession(parsedHostInfo.third());
         }
 
-        sb.append("/ajax?token=" + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
-        sb.append("&w=").append(w).append("&h=").append(h);
+        sb.append("/ajaximg?token="
+                + encryptor.encryptObject(ConsoleProxyClientParam.class, param));
+        sb.append("&w=").append(w).append("&h=").append(h).append("&key=0");
 
         if(s_logger.isDebugEnabled()) {
             s_logger.debug("Compose thumbnail url: " + sb.toString());

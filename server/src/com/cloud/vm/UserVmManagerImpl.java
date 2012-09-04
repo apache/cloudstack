@@ -128,6 +128,7 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.rules.FirewallManager;
@@ -139,6 +140,7 @@ import com.cloud.network.security.SecurityGroup;
 import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
@@ -352,7 +354,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected VolumeHostDao _volumeHostDao;
     @Inject
     ResourceTagDao _resourceTagDao;
-
+    @Inject
+    PhysicalNetworkDao _physicalNetworkDao;
+    @Inject
+    VpcManager _vpcMgr;
 
     protected ScheduledExecutorService _executor = null;
     protected int _expungeInterval;
@@ -416,6 +421,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 userVm.setDetail("Encrypted.Password", encryptedPasswd);
                 _vmDao.saveDetails(userVm);
             }
+        } else {
+            throw new CloudRuntimeException("Failed to reset password for the virtual machine ");
         }
 
         return userVm;
@@ -443,14 +450,13 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             VirtualMachineProfile<VMInstanceVO> vmProfile = new VirtualMachineProfileImpl<VMInstanceVO>(vmInstance);
             vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
 
-            List<? extends UserDataServiceProvider> elements = _networkMgr.getPasswordResetElements();
-
-            boolean result = true;
-            for (UserDataServiceProvider element : elements) {
-                if (!element.savePassword(defaultNetwork, defaultNicProfile, vmProfile)) {
-                    result = false;
-                }
+            UserDataServiceProvider element = _networkMgr.getPasswordResetProvider(defaultNetwork);
+            if (element == null) {
+                throw new CloudRuntimeException("Can't find network element for " + Service.UserData.getName() + 
+                        " provider needed for password reset");
             }
+
+            boolean result = element.savePassword(defaultNetwork, defaultNicProfile, vmProfile);
 
             // Need to reboot the virtual machine so that the password gets redownloaded from the DomR, and reset on the VM
             if (!result) {
@@ -1523,7 +1529,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         }
                     }
                 }
-                if( snapshot.getSwiftId() != null ) {
+                if( snapshot.getSwiftId() != null && snapshot.getSwiftId() != 0 ) {
                     _snapshotMgr.downloadSnapshotsFromSwift(snapshot);
                 }
                 cmd = new CreatePrivateTemplateFromSnapshotCommand(pool.getUuid(), secondaryStorageURL, dcId, accountId, snapshot.getVolumeId(), backupSnapshotUUID, snapshot.getName(),
@@ -2185,6 +2191,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         // Verify that caller can perform actions in behalf of vm owner
         _accountMgr.checkAccess(caller, null, true, owner);
 
+        List<HypervisorType> vpcSupportedHTypes = _vpcMgr.getSupportedVpcHypervisors();
         if (networkIdList == null || networkIdList.isEmpty()) {
             NetworkVO defaultNetwork = null;
 
@@ -2199,13 +2206,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 throw new InvalidParameterValueException("Unable to find network offering with availability=" + Availability.Required + " to automatically create the network as a part of vm creation");
             }
 
-            PhysicalNetwork physicalNetwork = _networkMgr.translateZoneIdToPhysicalNetwork(zone.getId());
             if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
                 // get Virtual networks
                 List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(owner.getId(), zone.getId(), Network.GuestType.Isolated);
 
                 if (virtualNetworks.isEmpty()) {
-                    s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId() + " as a part of deployVM process");
+                    long physicalNetworkId = _networkMgr.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
+                    // Validate physical network
+                    PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+                    if (physicalNetwork == null) {
+                        throw new InvalidParameterValueException("Unable to find physical network with id: "+physicalNetworkId   + " and tag: " +requiredOfferings.get(0).getTags());
+                    }
+                    s_logger.debug("Creating network for account " + owner + " from the network offering id=" +requiredOfferings.get(0).getId() + " as a part of deployVM process");
                     Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), 
                             owner.getAccountName() + "-network", owner.getAccountName() + "-network", null, null,
                             null, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null);
@@ -2227,7 +2239,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 if (network == null) {
                     throw new InvalidParameterValueException("Unable to find network by id " + networkIdList.get(0).longValue());
                 }
+                if (network.getVpcId() != null) {
+                    //Only XenServer and VmWare hypervisors are supported for vpc networks
+                    if (!vpcSupportedHTypes.contains(template.getHypervisorType())) {
+                        throw new InvalidParameterValueException("Can't create vm from template with hypervisor "
+                                + template.getHypervisorType() + " in vpc network " + network);
+                    }
 
+                }
+                
                 _networkMgr.checkNetworkPermissions(owner, network);
 
                 //don't allow to use system networks 
@@ -3448,6 +3468,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.volume);
             _usageEventDao.persist(new UsageEventVO(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                     volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize()));
+            //snapshots: mark these removed in db
+            List<SnapshotVO> snapshots = _snapshotDao.listByVolumeIdIncludingRemoved(volume.getId());
+            for (SnapshotVO snapshot: snapshots){
+                _snapshotDao.remove(snapshot.getId());
+            }
         }
 
         _resourceLimitMgr.incrementResourceCount(newAccount.getAccountId(), ResourceType.user_vm);
@@ -3573,13 +3598,18 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                         throw new InvalidParameterValueException("Unable to find network offering with availability="
                     + Availability.Required + " to automatically create the network as a part of vm creation");
                     }
-                    
-                    PhysicalNetwork physicalNetwork = _networkMgr.translateZoneIdToPhysicalNetwork(zone.getId());
                     if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
                         // get Virtual networks
                         List<NetworkVO> virtualNetworks = _networkMgr.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
 
                         if (virtualNetworks.isEmpty()) {
+                            long physicalNetworkId = _networkMgr.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
+                            // Validate physical network
+                            PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+                            if (physicalNetwork == null) {
+                                throw new InvalidParameterValueException("Unable to find physical network with id: "+physicalNetworkId   + " and tag: " +requiredOfferings.get(0).getTags());
+                            }
+                            
                             s_logger.debug("Creating network for account " + newAccount + " from the network offering id=" + 
                         requiredOfferings.get(0).getId() + " as a part of deployVM process");
                             Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), 
@@ -3619,15 +3649,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         s_logger.info("AssignVM: vm " + vm.getInstanceName() + " now belongs to account " + cmd.getAccountName());
         return vm;
     }
-
-
-    @Override
-    public boolean recreateNeeded(VirtualMachineProfile<UserVmVO> profile,
-            long hostId, Commands cmds, ReservationContext context) {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
 
     @Override
     public UserVm restoreVM(RestoreVMCmd cmd) {

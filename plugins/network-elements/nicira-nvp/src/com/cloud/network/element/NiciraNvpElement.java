@@ -51,8 +51,12 @@ import com.cloud.agent.api.CreateLogicalSwitchPortAnswer;
 import com.cloud.agent.api.CreateLogicalSwitchPortCommand;
 import com.cloud.agent.api.DeleteLogicalSwitchPortAnswer;
 import com.cloud.agent.api.DeleteLogicalSwitchPortCommand;
+import com.cloud.agent.api.FindLogicalSwitchPortAnswer;
+import com.cloud.agent.api.FindLogicalSwitchPortCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupNiciraNvpCommand;
+import com.cloud.agent.api.UpdateLogicalSwitchPortAnswer;
+import com.cloud.agent.api.UpdateLogicalSwitchPortCommand;
 import com.cloud.api.commands.AddNiciraNvpDeviceCmd;
 import com.cloud.api.commands.DeleteNiciraNvpDeviceCmd;
 import com.cloud.api.commands.ListNiciraNvpDeviceNetworksCmd;
@@ -198,6 +202,26 @@ public class NiciraNvpElement extends AdapterBase implements ConnectivityProvide
         }
         NiciraNvpDeviceVO niciraNvpDevice = devices.get(0);
         HostVO niciraNvpHost = _hostDao.findById(niciraNvpDevice.getHostId());
+
+        NiciraNvpNicMappingVO existingNicMap = _niciraNvpNicMappingDao.findByNicUuid(nicVO.getUuid());
+        if (existingNicMap != null) {
+            FindLogicalSwitchPortCommand findCmd = new FindLogicalSwitchPortCommand(existingNicMap.getLogicalSwitchUuid(), 
+            		existingNicMap.getLogicalSwitchPortUuid());
+            FindLogicalSwitchPortAnswer answer = (FindLogicalSwitchPortAnswer) _agentMgr.easySend(niciraNvpHost.getId(), findCmd);
+            
+            if (answer.getResult()) {
+	            s_logger.warn("Existing Logical Switchport found for nic " + nic.getName() + " with uuid " + existingNicMap.getLogicalSwitchPortUuid());
+	            UpdateLogicalSwitchPortCommand cmd = new UpdateLogicalSwitchPortCommand(existingNicMap.getLogicalSwitchPortUuid(), 
+	            		network.getBroadcastUri().getSchemeSpecificPart(), nicVO.getUuid(), 
+	                    context.getDomain().getName() + "-" + context.getAccount().getAccountName(), nic.getName());
+	            _agentMgr.easySend(niciraNvpHost.getId(), cmd);
+	            return true;
+            }
+            else {
+	            s_logger.error("Stale entry found for nic " + nic.getName() + " with logical switchport uuid " + existingNicMap.getLogicalSwitchPortUuid());
+	            _niciraNvpNicMappingDao.remove(existingNicMap.getId());
+            }
+        }
         
         CreateLogicalSwitchPortCommand cmd = new CreateLogicalSwitchPortCommand(network.getBroadcastUri().getSchemeSpecificPart(), nicVO.getUuid(), 
                 context.getDomain().getName() + "-" + context.getAccount().getAccountName(), nic.getName());
@@ -244,7 +268,7 @@ public class NiciraNvpElement extends AdapterBase implements ConnectivityProvide
             s_logger.error("No mapping for nic " + nic.getName());
             return false;
         }
-        
+                
         DeleteLogicalSwitchPortCommand cmd = new DeleteLogicalSwitchPortCommand(nicMap.getLogicalSwitchUuid(), nicMap.getLogicalSwitchPortUuid());
         DeleteLogicalSwitchPortAnswer answer = (DeleteLogicalSwitchPortAnswer) _agentMgr.easySend(niciraNvpHost.getId(), cmd);
         

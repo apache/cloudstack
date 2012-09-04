@@ -1,15 +1,21 @@
-# Copyright 2012 Citrix Systems, Inc. Licensed under the
-# Apache License, Version 2.0 (the "License"); you may not use this
-# file except in compliance with the License.  Citrix Systems, Inc.
-# reserves all rights not expressly granted by the License.
-# You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 #!/usr/bin/env bash
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 source /root/func.sh
 
 lock="biglock"
@@ -54,9 +60,9 @@ start_ipsec() {
 enable_iptables_subnets() {
   for net in $rightnets
   do
-    sudo iptables -A FORWARD -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
+    sudo iptables -I FORWARD -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
     sudo iptables -A OUTPUT -t mangle -s $leftnet -d $net -j MARK --set-mark $vpnoutmark
-    sudo iptables -A FORWARD -t mangle -s $net -d $leftnet -j MARK --set-mark $vpninmark
+    sudo iptables -I FORWARD -t mangle -s $net -d $leftnet -j MARK --set-mark $vpninmark
     sudo iptables -A INPUT -t mangle -s $net -d $leftnet -j MARK --set-mark $vpninmark
   done
   return 0
@@ -68,6 +74,7 @@ check_and_enable_iptables() {
   then
       sudo iptables -A INPUT -i $outIf -p udp -m udp --dport 500 -j ACCEPT
       sudo iptables -A INPUT -i $outIf -p udp -m udp --dport 4500 -j ACCEPT
+      sudo iptables -A INPUT -i $outIf -p 50 -j ACCEPT
       # Prevent NAT on "marked" VPN traffic, so need to be the first one on POSTROUTING chain
       sudo iptables -t nat -I POSTROUTING -t nat -o $outIf -m mark --mark $vpnoutmark -j ACCEPT
   fi
@@ -92,6 +99,7 @@ check_and_disable_iptables() {
     #Nobody else use s2s vpn now, so delete the iptables rules
     sudo iptables -D INPUT -i $outIf -p udp -m udp --dport 500 -j ACCEPT
     sudo iptables -D INPUT -i $outIf -p udp -m udp --dport 4500 -j ACCEPT
+    sudo iptables -D INPUT -i $outIf -p 50 -j ACCEPT
     sudo iptables -t nat -D POSTROUTING -t nat -o $outIf -m mark --mark $vpnoutmark -j ACCEPT
   fi
   return 0

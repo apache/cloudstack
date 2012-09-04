@@ -16,7 +16,7 @@
 -- under the License.
 
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text, format, guest_os_id, featured, cross_zones, hypervisor_type)
-    VALUES (1, 'routing-1', 'SystemVM Template (XenServer)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2', 'f613f38c96bf039f2e5cbf92fa8ad4f8', 0, 'SystemVM Template (XenServer)', 'VHD', 15, 0, 1, 'XenServer');
+    VALUES (1, 'routing-1', 'SystemVM Template (XenServer)', 0, now(), 'SYSTEM', 0, 64, 1, 'http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2', 'f613f38c96bf039f2e5cbf92fa8ad4f8', 0, 'SystemVM Template (XenServer)', 'VHD', 133, 0, 1, 'XenServer');
 INSERT INTO `cloud`.`vm_template` (id, unique_name, name, public, created, removed, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
     VALUES (2, 'centos53-x86_64', 'CentOS 5.3(64-bit) no GUI (XenServer)', 1, now(), now(), 'BUILTIN', 0, 64, 1, 'http://download.cloud.com/templates/builtin/f59f18fb-ae94-4f97-afd2-f84755767aca.vhd.bz2', 'b63d854a9560c013142567bbae8d98cf', 0, 'CentOS 5.3(64-bit) no GUI (XenServer)', 'VHD', 12, 1, 1, 'XenServer', 1);
 
@@ -48,7 +48,7 @@ INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (7, 'Other');
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (8, 'Novel');
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (9, 'Unix');
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (10, 'Ubuntu');
-
+INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (11, 'None');
 
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (1, 1, 'CentOS 4.5 (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (2, 1, 'CentOS 4.6 (32-bit)');

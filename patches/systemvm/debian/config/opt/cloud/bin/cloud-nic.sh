@@ -17,13 +17,21 @@ unplug_nic() {
   sudo sed -i /"$tableNo $tableName"/d /etc/iproute2/rt_tables 2>/dev/null
   sudo ip route flush cache
   # remove network usage rules
-  sudo iptables -t mangle -F NETWORK_STATS_$dev 2>/dev/null
-  iptables-save -t mangle | grep NETWORK_STATS_$dev | grep "\-A"  | while read rule
+  sudo iptables -F NETWORK_STATS_$dev 2>/dev/null
+  iptables-save | grep NETWORK_STATS_$dev | grep "\-A"  | while read rule
+  do
+    rule=$(echo $rule | sed 's/\-A/\-D/')
+    sudo iptables $rule
+  done
+  sudo iptables -X NETWORK_STATS_$dev 2>/dev/null
+  # remove vpn network usage rules
+  sudo iptables -t mangle -F VPN_STATS_$dev 2>/dev/null
+  iptables-save -t mangle | grep VPN_STATS_$dev | grep "\-A"  | while read rule
   do
     rule=$(echo $rule | sed 's/\-A/\-D/')
     sudo iptables -t mangle $rule
   done
-  sudo iptables -t mangle -X NETWORK_STATS_$dev 2>/dev/null
+  sudo iptables -t mangle -X VPN_STATS_$dev 2>/dev/null  
   # remove rules on this dev
   iptables-save -t mangle | grep $dev | grep "\-A"  | while read rule
   do

@@ -26,7 +26,6 @@ import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
-import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.server.ManagementServer;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.allocator.StoragePoolAllocator;
@@ -178,6 +177,7 @@ public enum Config {
 	XapiWait("Advanced", AgentManager.class, Integer.class, "xapiwait", "600", "Time (in seconds) to wait for XAPI to return", null),
 	MigrateWait("Advanced", AgentManager.class, Integer.class, "migratewait", "3600", "Time (in seconds) to wait for VM migrate finish", null),
 	Workers("Advanced", AgentManager.class, Integer.class, "workers", "5", "Number of worker threads.", null),
+	HAWorkers("Advanced", AgentManager.class, Integer.class, "ha.workers", "5", "Number of ha worker threads.", null),
 	MountParent("Advanced", ManagementServer.class, String.class, "mount.parent", "/var/lib/cloud/management/mnt", "The mount point on the Management Server for Secondary Storage.", null),
 //	UpgradeURL("Advanced", ManagementServer.class, String.class, "upgrade.url", "http://example.com:8080/client/agent/update.zip", "The upgrade URL is the URL of the management server that agents will connect to in order to automatically upgrade.", null),
 	SystemVMUseLocalStorage("Advanced", ManagementServer.class, Boolean.class, "system.vm.use.local.storage", "false", "Indicates whether to use local storage pools or shared storage pools for system VMs.", null),
@@ -229,6 +229,7 @@ public enum Config {
     SortKeyAlgorithm("Advanced", ManagementServer.class, Boolean.class, "sortkey.algorithm", "false", "Sort algorithm for those who use sort key(template, disk offering, service offering, network offering), true means ascending sort while false means descending sort", null),
     EnableEC2API("Advanced", ManagementServer.class, Boolean.class, "enable.ec2.api", "false", "enable EC2 API on CloudStack", null),
     EnableS3API("Advanced", ManagementServer.class, Boolean.class, "enable.s3.api", "false", "enable Amazon S3 API on CloudStack", null),
+    RecreateSystemVmEnabled("Advanced", ManagementServer.class, Boolean.class, "recreate.systemvm.enabled", "false", "If true, will recreate system vm root disk whenever starting system vm", "true,false"),
     
     // Ovm
     OvmPublicNetwork("Hidden", ManagementServer.class, String.class, "ovm.public.network.device", null, "Specify the public bridge on host for public network", null),

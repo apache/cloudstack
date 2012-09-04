@@ -18,6 +18,13 @@
 %define __os_install_post %{nil}
 %global debug_package %{nil}
 
+%if "%{?_nonoss}" != ""
+%define _wafargs %{nil}
+%else
+%define _wafargs "--oss"
+%endif
+
+
 # DISABLE the post-percentinstall java repacking and line number stripping
 # we need to find a way to just disable the java repacking and line number stripping, but not the autodeps
 
@@ -27,8 +34,10 @@ Version:   %{_ver}
 #http://fedoraproject.org/wiki/PackageNamingGuidelines#Pre-Release_packages
 %if "%{?_prerelease}" != ""
 Release:   0.%{_build_number}%{dist}.%{_prerelease}
+%define _maven_ver %{_ver}-SNAPSHOT
 %else
 Release:   %{_rel}%{dist}
+%define _maven_ver %{_ver}
 %endif
 License:   Apache License 2.0
 Vendor:    CloudStack <engineering@cloud.com>
@@ -80,6 +89,18 @@ Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = 
 Group:     System Environment/Libraries
 %description server
 The CloudStack server libraries provide a set of Java classes for CloudStack.
+
+%if "%{?_nonoss}" != ""
+%package server-nonoss
+Summary:   CloudStack server library with non-oss dependencies
+Requires: java >= 1.6.0
+Obsoletes: vmops-server < %{version}-%{release}
+Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-server = %{version}, tomcat6-servlet-2.5-api
+Group:     System Environment/Libraries
+%description server-nonoss
+The CloudStack server libraries provide a set of Java classes for CloudStack. This package contain the classes ther require
+external non-oss libraries.
+%endif
 
 %package agent-scripts
 Summary:   CloudStack agent scripts
@@ -164,6 +185,7 @@ Requires: %{name}-utils = %{version}
 Requires: apache-commons-dbcp
 Requires: apache-commons-collections
 Requires: jakarta-commons-httpclient
+Requires: mysql-connector-java
 %endif
 
 Group:     System Environment/Libraries
@@ -300,17 +322,94 @@ echo Doing CloudStack build
 # this fixes the /usr/com bug on centos5
 %define _localstatedir /var
 %define _sharedstatedir /var/lib
-./waf configure --prefix=%{_prefix} --libdir=%{_libdir} --bindir=%{_bindir} --javadir=%{_javadir} --sharedstatedir=%{_sharedstatedir} --localstatedir=%{_localstatedir} --sysconfdir=%{_sysconfdir} --mandir=%{_mandir} --docdir=%{_docdir}/%{name}-%{version} --with-tomcat=%{_datadir}/tomcat6 --tomcat-user=%{name} --fast --build-number=%{_ver}-%{release} --package-version=%{_ver}
-./waf build --build-number=%{?_build_number} --package-version=%{_ver}
+./waf configure --prefix=%{_prefix} --libdir=%{_libdir} --bindir=%{_bindir} --javadir=%{_javadir} --sharedstatedir=%{_sharedstatedir} --localstatedir=%{_localstatedir} --sysconfdir=%{_sysconfdir} --mandir=%{_mandir} --docdir=%{_docdir}/%{name}-%{version} --with-tomcat=%{_datadir}/tomcat6 --tomcat-user=%{name} --fast --build-number=%{_ver}-%{release} --package-version=%{_ver} %{_wafargs}
+./waf build --build-number=%{?_build_number} --package-version=%{_ver} %{_wafargs}
 
 %install
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 # we put the build number again here, otherwise state checking will cause an almost-full recompile
-./waf install --destdir=$RPM_BUILD_ROOT --nochown --build-number=%{?_build_number}
+./waf install --destdir=$RPM_BUILD_ROOT --nochown --build-number=%{?_build_number} %{_wafargs}
 rm $RPM_BUILD_ROOT/etc/rc.d/init.d/cloud-console-proxy
 rm $RPM_BUILD_ROOT/usr/bin/cloud-setup-console-proxy
 rm $RPM_BUILD_ROOT/usr/libexec/console-proxy-runner
-./tools/ant/apache-ant-1.7.1/bin/ant deploy-rpm-install -Drpm.install.dir=$RPM_BUILD_ROOT
+#
+# Remove a lot of deps that maven pulled in, dirty fix
+#
+rm $RPM_BUILD_ROOT/usr/share/java/XmlSchema-1.4.2.jar
+rm $RPM_BUILD_ROOT/usr/share/java/activation-1.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/annogen-0.1.0.jar
+rm $RPM_BUILD_ROOT/usr/share/java/ant-1.7.0.jar
+rm $RPM_BUILD_ROOT/usr/share/java/ant-launcher-1.7.0.jar
+rm $RPM_BUILD_ROOT/usr/share/java/antlr-2.7.6.jar
+rm $RPM_BUILD_ROOT/usr/share/java/asm-3.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/axiom-api-1.2.8.jar
+rm $RPM_BUILD_ROOT/usr/share/java/axiom-dom-1.2.7.jar
+rm $RPM_BUILD_ROOT/usr/share/java/axiom-impl-1.2.7.jar
+rm $RPM_BUILD_ROOT/usr/share/java/axis-jaxrpc-1.4.jar
+rm $RPM_BUILD_ROOT/usr/share/java/axis2-1.5.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/axis2-adb-1.4.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/axis2-adb-codegen-1.4.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/axis2-ant-plugin-1.4.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/axis2-codegen-1.4.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/axis2-java2wsdl-1.4.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/axis2-kernel-1.4.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/cglib-nodep-2.2.2.jar
+rm $RPM_BUILD_ROOT/usr/share/java/cloud-agent-4.0.0-SNAPSHOT-tests.jar
+rm $RPM_BUILD_ROOT/usr/share/java/cloud-com.thoughtworks.selenium-1.0.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/cloud-console-proxy-4.0.0-SNAPSHOT.jar
+rm $RPM_BUILD_ROOT/usr/share/java/cloud-iControl.jar
+rm $RPM_BUILD_ROOT/usr/share/java/cloud-manageontap.jar
+rm $RPM_BUILD_ROOT/usr/share/java/cloud-netscaler-sdx.jar
+rm $RPM_BUILD_ROOT/usr/share/java/cloud-netscaler.jar
+rm $RPM_BUILD_ROOT/usr/share/java/cloud-patches-4.0.0-SNAPSHOT.jar
+rm $RPM_BUILD_ROOT/usr/share/java/cloud-utils-4.0.0-SNAPSHOT-tests.jar
+rm $RPM_BUILD_ROOT/usr/share/java/commons-collections-3.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/commons-collections-3.2.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/commons-fileupload-1.2.jar
+rm $RPM_BUILD_ROOT/usr/share/java/commons-io-1.4.jar
+rm $RPM_BUILD_ROOT/usr/share/java/commons-logging-1.0.4.jar
+rm $RPM_BUILD_ROOT/usr/share/java/commons-logging-1.1.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/dom4j-1.6.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/geronimo-activation_1.1_spec-1.0.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/geronimo-javamail_1.4_spec-1.2.jar
+rm $RPM_BUILD_ROOT/usr/share/java/geronimo-jms_1.1_spec-1.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/geronimo-stax-api_1.0_spec-1.0.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/hamcrest-core-1.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/hibernate-annotations-3.5.1-Final.jar
+rm $RPM_BUILD_ROOT/usr/share/java/hibernate-commons-annotations-3.2.0.Final.jar
+rm $RPM_BUILD_ROOT/usr/share/java/hibernate-core-3.5.1-Final.jar
+rm $RPM_BUILD_ROOT/usr/share/java/hibernate-entitymanager-3.5.1-Final.jar
+rm $RPM_BUILD_ROOT/usr/share/java/httpcore-nio-4.0-beta1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/icontrol-1.0.jar
+rm $RPM_BUILD_ROOT/usr/share/java/javassist-3.9.0.GA.jar
+rm $RPM_BUILD_ROOT/usr/share/java/jaxen-1.1.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/json-simple-1.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/jsr107cache-1.0.jar
+rm $RPM_BUILD_ROOT/usr/share/java/jta-1.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/manageontap-1.0.jar
+rm $RPM_BUILD_ROOT/usr/share/java/mysql-connector-java-5.1.21.jar
+rm $RPM_BUILD_ROOT/usr/share/java/neethi-2.0.4.jar
+rm $RPM_BUILD_ROOT/usr/share/java/netscaler-1.0.jar
+rm $RPM_BUILD_ROOT/usr/share/java/netscaler-sdx-1.0.jar
+rm $RPM_BUILD_ROOT/usr/share/java/selenium-server-1.0.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/servlet-api-2.3.jar
+rm $RPM_BUILD_ROOT/usr/share/java/servlet-api-2.5-20081211.jar
+rm $RPM_BUILD_ROOT/usr/share/java/slf4j-api-1.5.8.jar
+rm $RPM_BUILD_ROOT/usr/share/java/stax-api-1.0.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/woden-api-1.0M8.jar
+rm $RPM_BUILD_ROOT/usr/share/java/woden-impl-dom-1.0M8.jar
+rm $RPM_BUILD_ROOT/usr/share/java/ws-commons-util-1.0.2.jar
+rm $RPM_BUILD_ROOT/usr/share/java/wstx-asl-3.2.4.jar
+rm $RPM_BUILD_ROOT/usr/share/java/xalan-2.7.0.jar
+rm $RPM_BUILD_ROOT/usr/share/java/xercesImpl-2.6.2.jar
+rm $RPM_BUILD_ROOT/usr/share/java/xercesImpl-2.8.1.jar
+rm $RPM_BUILD_ROOT/usr/share/java/xml-apis-1.0.b2.jar
+rm $RPM_BUILD_ROOT/usr/share/java/xml-apis-1.3.04.jar
+rm $RPM_BUILD_ROOT/usr/share/java/xmlParserAPIs-2.6.0.jar
+rm $RPM_BUILD_ROOT/usr/share/java/xpp3_min-1.1.4c.jar
+rm $RPM_BUILD_ROOT/usr/share/java/xstream-1.3.1.jar
+# TODO: This is for awsapi, need to think about this
+#./tools/ant/apache-ant-1.7.1/bin/ant deploy-rpm-install -Drpm.install.dir=$RPM_BUILD_ROOT
 
 %clean
 
@@ -414,8 +513,8 @@ fi
 
 %files utils
 %defattr(0644,root,root,0755)
-%{_javadir}/%{name}-utils.jar
-%{_javadir}/%{name}-api.jar
+%{_javadir}/%{name}-utils-%{_maven_ver}.jar
+%{_javadir}/%{name}-api-%{_maven_ver}.jar
 %attr(0755,root,root) %{_bindir}/cloud-sccs
 %attr(0755,root,root) %{_bindir}/cloud-gitrevs
 %doc %{_docdir}/%{name}-%{version}/version-info
@@ -430,26 +529,32 @@ fi
 
 %files server
 %defattr(0644,root,root,0755)
-%{_javadir}/%{name}-server.jar
-%{_javadir}/%{name}-vmware-base.jar
-%{_javadir}/%{name}-ovm.jar
-%{_javadir}/%{name}-dp-user-concentrated-pod.jar
-%{_javadir}/%{name}-dp-user-dispersing.jar
-%{_javadir}/%{name}-host-allocator-random.jar
-%{_javadir}/%{name}-plugin-f5.jar
-%{_javadir}/%{name}-plugin-netscaler.jar
-%{_javadir}/%{name}-plugin-ovs.jar
-%{_javadir}/%{name}-plugin-srx.jar
-%{_javadir}/%{name}-storage-allocator-random.jar
-%{_javadir}/%{name}-user-authenticator-ldap.jar
-%{_javadir}/%{name}-user-authenticator-md5.jar
-%{_javadir}/%{name}-user-authenticator-plaintext.jar
-%{_javadir}/%{name}-vmware.jar
-%{_javadir}/%{name}-xen.jar
-%{_javadir}/%{name}-plugin-nicira-nvp.jar
-%{_javadir}/%{name}-plugin-elb.jar
-%{_javadir}/%{name}-plugin-netapp.jar
+%{_javadir}/%{name}-server-%{_maven_ver}.jar
+%{_javadir}/%{name}-vmware-base-%{_maven_ver}.jar
+%{_javadir}/%{name}-plugin-hypervisor-ovm-%{_maven_ver}.jar
+%{_javadir}/%{name}-plugin-hypervisor-xen-%{_maven_ver}.jar
+%{_javadir}/%{name}-plugin-planner-user-concentrated-pod-%{_maven_ver}.jar
+%{_javadir}/%{name}-plugin-planner-user-dispersing-%{_maven_ver}.jar
+%{_javadir}/%{name}-plugin-host-allocator-random-%{_maven_ver}.jar
+%{_javadir}/%{name}-plugin-network-ovs-%{_maven_ver}.jar
+%{_javadir}/%{name}-plugin-network-nvp-%{_maven_ver}.jar
+%{_javadir}/%{name}-plugin-network-elb-%{_maven_ver}.jar
+%{_javadir}/%{name}-plugin-storage-allocator-random-%{_maven_ver}.jar
+%{_javadir}/%{name}-plugin-user-authenticator-ldap-%{_maven_ver}.jar
+%{_javadir}/%{name}-plugin-user-authenticator-md5-%{_maven_ver}.jar
+%{_javadir}/%{name}-plugin-user-authenticator-plaintext-%{_maven_ver}.jar
 %config(noreplace) %{_sysconfdir}/%{name}/server/*
+
+%if "%{?_nonoss}" != ""
+%files server-nonoss
+%defattr(0644,root,root,0755)
+%{_javadir}/%{name}-plugin-hypervisor-kvm-4.0.0-SNAPSHOT.jar
+%{_javadir}/%{name}-plugin-hypervisor-vmware-4.0.0-SNAPSHOT.jar
+%{_javadir}/%{name}-plugin-netapp-4.0.0-SNAPSHOT.jar
+%{_javadir}/%{name}-plugin-network-f5-4.0.0-SNAPSHOT.jar
+%{_javadir}/%{name}-plugin-network-netscaler-4.0.0-SNAPSHOT.jar
+%{_javadir}/%{name}-plugin-network-srx-4.0.0-SNAPSHOT.jar
+%endif
 
 %files agent-scripts
 %defattr(-,root,root,-)
@@ -461,50 +566,47 @@ fi
 
 %files deps
 %defattr(0644,root,root,0755)
-%{_javadir}/%{name}-commons-codec-1.5.jar
-%{_javadir}/%{name}-commons-dbcp-1.4.jar
-%{_javadir}/%{name}-commons-pool-1.5.6.jar
-%{_javadir}/%{name}-commons-httpclient-3.1.jar
-%{_javadir}/%{name}-google-gson-1.7.1.jar
-%{_javadir}/%{name}-netscaler.jar
-%{_javadir}/%{name}-netscaler-sdx.jar
-%{_javadir}/%{name}-log4j-extras.jar
-%{_javadir}/%{name}-backport-util-concurrent-3.0.jar
-%{_javadir}/%{name}-plugin-hypervisor-kvm.jar
-%{_javadir}/%{name}-ehcache.jar
-%{_javadir}/%{name}-email.jar
-%{_javadir}/%{name}-httpcore-4.0.jar
+%{_javadir}/commons-codec-1.6.jar
+%{_javadir}/commons-dbcp-1.4.jar
+%{_javadir}/commons-pool-1.6.jar
+%{_javadir}/commons-httpclient-3.1.jar
+%{_javadir}/gson-1.7.1.jar
+%{_javadir}/apache-log4j-extras-1.1.jar
+%{_javadir}/backport-util-concurrent-3.1.jar
+%{_javadir}/ehcache-1.5.0.jar
+%{_javadir}/mail-1.4.jar
+%{_javadir}/httpcore-4.0.jar
 %{_javadir}/libvirt-0.4.8.jar
-%{_javadir}/%{name}-log4j.jar
-%{_javadir}/%{name}-trilead-ssh2-build213.jar
-%{_javadir}/%{name}-cglib.jar
-%{_javadir}/%{name}-mysql-connector-java-5.1.7-bin.jar
-%{_javadir}/%{name}-xenserver-5.6.100-1.jar
-%{_javadir}/%{name}-xmlrpc-common-3.*.jar
-%{_javadir}/%{name}-xmlrpc-client-3.*.jar
-%{_javadir}/%{name}-jstl-1.2.jar
+%{_javadir}/log4j-1.2.16.jar
+%{_javadir}/trilead-ssh2-build213-svnkit-1.3-patch.jar
+%{_javadir}/cglib-2.2.jar
+%{_javadir}/xapi-5.6.100-1-SNAPSHOT.jar
+%{_javadir}/xmlrpc-common-3.*.jar
+%{_javadir}/xmlrpc-client-3.*.jar
+%{_javadir}/jstl-1.2.jar
 %{_javadir}/jetty-6.1.26.jar
 %{_javadir}/jetty-util-6.1.26.jar
-%{_javadir}/%{name}-axis.jar
-%{_javadir}/%{name}-commons-discovery.jar
-%{_javadir}/%{name}-wsdl4j-1.6.2.jar
-%{_javadir}/%{name}-bcprov-jdk16-1.45.jar
-%{_javadir}/%{name}-jsch-0.1.42.jar
-%{_javadir}/%{name}-iControl.jar
-%{_javadir}/%{name}-manageontap.jar
+%{_javadir}/axis-1.4.jar
+%{_javadir}/commons-discovery-0.5.jar
+%{_javadir}/wsdl4j-1.6.2.jar
+%{_javadir}/bcprov-jdk16-1.46.jar
+%{_javadir}/jsch-0.1.42.jar
 %{_javadir}/vmware*.jar
-%{_javadir}/%{name}-jnetpcap.jar
-%{_javadir}/%{name}-junit.jar
-%{_javadir}/%{name}-jasypt-1.8.jar
-%{_javadir}/%{name}-commons-configuration-1.8.jar
-%{_javadir}/%{name}-commons-lang-2.6.jar
-%{_javadir}/%{name}-ejb-api-3.0.jar
-%{_javadir}/%{name}-javax.persistence-2.0.0.jar
+%{_javadir}/junit-4.10.jar
+%{_javadir}/jasypt-1.9.0.jar
+%{_javadir}/commons-configuration-1.8.jar
+%{_javadir}/commons-lang-2.6.jar
+%{_javadir}/ejb-api-3.0.jar
+%{_javadir}/hibernate-jpa-2.0-api-1.0.0.Final.jar
+#%{_javadir}/%{name}-netscaler.jar
+#%{_javadir}/%{name}-netscaler-sdx.jar
+#%{_javadir}/%{name}-iControl.jar
+#%{_javadir}/%{name}-manageontap.jar
 
 
 %files core
 %defattr(0644,root,root,0755)
-%{_javadir}/%{name}-core.jar
+%{_javadir}/%{name}-core-%{_maven_ver}.jar
 
 %files python
 %defattr(0644,root,root,0755)
@@ -551,7 +653,7 @@ fi
 
 %files agent-libs
 %defattr(0644,root,root,0755)
-%{_javadir}/%{name}-agent.jar
+%{_javadir}/%{name}-agent-%{_maven_ver}.jar
 
 %files agent
 %defattr(0644,root,root,0755)
@@ -578,7 +680,7 @@ fi
 
 %files usage
 %defattr(0644,root,root,0775)
-%{_javadir}/%{name}-usage.jar
+%{_javadir}/%{name}-usage-%{_maven_ver}.jar
 %attr(0755,root,root) %{_initrddir}/%{name}-usage
 %dir %attr(0770,root,%{name}) %{_localstatedir}/log/%{name}/usage
 %config(noreplace) %{_sysconfdir}/%{name}/usage/usage-components.xml
@@ -589,7 +691,7 @@ fi
 %defattr(0644,cloud,cloud,0755)
 %{_datadir}/cloud/bridge/conf/*
 %{_datadir}/cloud/bridge/lib/*
-%{_datadir}/cloud/bridge/webapps/*
+%{_datadir}/cloud/bridge/webapps7080/*
 %attr(0644,root,root) %{_datadir}/cloud/setup/bridge/db/*
 %attr(0755,root,root) %{_bindir}/cloudstack-aws-api-register
 %attr(0755,root,root) %{_bindir}/cloud-setup-bridge

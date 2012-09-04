@@ -45,9 +45,12 @@ import com.amazon.s3.CopyObjectResponse;
 import com.amazon.s3.GetObjectAccessControlPolicyResponse;
 import com.cloud.bridge.io.MTOMAwareResultStreamWriter;
 import com.cloud.bridge.model.SAcl;
+import com.cloud.bridge.model.SAclVO;
 import com.cloud.bridge.model.SBucket;
+import com.cloud.bridge.model.SBucketVO;
 import com.cloud.bridge.persist.dao.MultipartLoadDao;
 import com.cloud.bridge.persist.dao.SBucketDao;
+import com.cloud.bridge.persist.dao.SBucketDaoImpl;
 import com.cloud.bridge.service.S3Constants;
 import com.cloud.bridge.service.S3RestServlet;
 import com.cloud.bridge.service.UserContext;
@@ -79,9 +82,11 @@ import com.cloud.bridge.util.DateHelper;
 import com.cloud.bridge.util.HeaderParam;
 import com.cloud.bridge.util.ServletRequestDataSource;
 import com.cloud.bridge.util.OrderedPair;
+import com.cloud.utils.component.ComponentLocator;
 
 public class S3ObjectAction implements ServletAction {
     protected final static Logger logger = Logger.getLogger(S3ObjectAction.class);
+    protected final SBucketDao bucketDao = ComponentLocator.inject(SBucketDaoImpl.class);
 
     private DocumentBuilderFactory dbf = null;
     
@@ -273,8 +278,7 @@ public class S3ObjectAction implements ServletAction {
 		String bucketName = (String)request.getAttribute(S3Constants.BUCKET_ATTR_KEY);
 		String key        = (String)request.getAttribute(S3Constants.OBJECT_ATTR_KEY);
 		
-		SBucketDao bucketDao = new SBucketDao();
-		SBucket bucket = bucketDao.getByName( bucketName );
+		SBucketVO bucket = bucketDao.getByName( bucketName );
 		String owner = null;        
         if ( null != bucket ) 
         	 owner = bucket.getOwnerCanonicalId();
@@ -296,7 +300,7 @@ public class S3ObjectAction implements ServletAction {
      	 S3AccessControlList aclRequest = new S3AccessControlList();
      		
      	 String aclRequestString = request.getHeader("x-amz-acl");
-     	 OrderedPair <Integer,Integer> accessControlsForObjectOwner = SAcl.getCannedAccessControls(aclRequestString,"SObject");
+     	 OrderedPair <Integer,Integer> accessControlsForObjectOwner = SAclVO.getCannedAccessControls(aclRequestString,"SObject");
      	 grantRequest.setPermission(accessControlsForObjectOwner.getFirst());
      	 grantRequest.setGrantee(accessControlsForObjectOwner.getSecond());
      	 grantRequest.setCanonicalUserID(owner);
@@ -484,6 +488,11 @@ public class S3ObjectAction implements ServletAction {
 
 		S3GetObjectResponse engineResponse = ServiceProvider.getInstance().getS3Engine().handleRequest( engineRequest );		
 		response.setStatus( engineResponse.getResultCode());
+
+		//bucket lookup for non-existance key 
+		
+		if ( engineResponse.getResultCode() == 404 )
+		    return;
 		
 		String deleteMarker = engineResponse.getDeleteMarker();
 		if ( null != deleteMarker ) {
@@ -891,8 +900,7 @@ public class S3ObjectAction implements ServletAction {
 
     	
 		// -> does the bucket exist, we may need it to verify access permissions
-		SBucketDao bucketDao = new SBucketDao();
-		SBucket bucket = bucketDao.getByName(bucketName);
+		SBucketVO bucket = bucketDao.getByName(bucketName);
 		if (bucket == null) {
 			logger.error( "listUploadParts failed since " + bucketName + " does not exist" );
 	    	response.setStatus(404);

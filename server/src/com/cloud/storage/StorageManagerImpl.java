@@ -358,6 +358,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     private double _storageAllocatedThreshold = 1.0d;
     protected BigDecimal _storageOverprovisioningFactor = new BigDecimal(1);
 
+	private boolean _recreateSystemVmEnabled;
+
     public boolean share(VMInstanceVO vm, List<VolumeVO> vols, HostVO host, boolean cancelPreviousShare) throws StorageUnavailableException {
 
         // if pool is in maintenance and it is the ONLY pool available; reject
@@ -958,6 +960,9 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         value = configDao.getValue(Config.CopyVolumeWait.toString());
         _copyvolumewait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
 
+        value = configDao.getValue(Config.RecreateSystemVmEnabled.key());
+        _recreateSystemVmEnabled = Boolean.parseBoolean(value);
+        
         value = configDao.getValue(Config.StorageTemplateCleanupEnabled.key());
         _templateCleanupEnabled = (value == null ? true : Boolean.parseBoolean(value));
 
@@ -2119,14 +2124,11 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     @Override
     public void createCapacityEntry(StoragePoolVO storagePool, short capacityType, long allocated) {
         SearchCriteria<CapacityVO> capacitySC = _capacityDao.createSearchCriteria();
-
-        List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
-        capacitySC = _capacityDao.createSearchCriteria();
         capacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, storagePool.getId());
         capacitySC.addAnd("dataCenterId", SearchCriteria.Op.EQ, storagePool.getDataCenterId());
         capacitySC.addAnd("capacityType", SearchCriteria.Op.EQ, capacityType);
 
-        capacities = _capacityDao.search(capacitySC, null);
+        List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
 
         long totalOverProvCapacity;
         if (storagePool.getPoolType() == StoragePoolType.NetworkFilesystem) {
@@ -3217,7 +3219,7 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
     }
 
     @Override
-    public void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest, boolean recreate) throws StorageUnavailableException, InsufficientStorageCapacityException {
+    public void prepare(VirtualMachineProfile<? extends VirtualMachine> vm, DeployDestination dest) throws StorageUnavailableException, InsufficientStorageCapacityException {
 
         if (dest == null) {
             if (s_logger.isDebugEnabled()) {
@@ -3229,6 +3231,8 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Checking if we need to prepare " + vols.size() + " volumes for " + vm);
         }
+        
+        boolean recreate = _recreateSystemVmEnabled;
 
         List<VolumeVO> recreateVols = new ArrayList<VolumeVO>(vols.size());
 

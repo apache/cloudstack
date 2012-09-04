@@ -26,6 +26,7 @@
     <title>Hypervisor Host Installation Overview</title>
     <para>This section describes installing a Hypervisor host. This is targeted towards hosts running Linux Kernel Virtual Machine (KVM)</para>
     <warning><para>Before continuing, make sure that you have applied the latest updates to your host.</para></warning>
+    <warning><para>It is NOT recommended to run services on this host not controlled by &PRODUCT;.</para></warning>
     <para>The procedure for installing the Hypervisor Host is:</para>
     <orderedlist>
         <listitem><para>Prepare the Operating System</para></listitem>

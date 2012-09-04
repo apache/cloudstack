@@ -35,18 +35,19 @@ import java.util.TimerTask;
 import org.apache.axis2.AxisFault;
 import org.apache.log4j.Logger;
 import org.apache.log4j.xml.DOMConfigurator;
-import org.hibernate.SessionException;
 
 import com.amazon.s3.AmazonS3SkeletonInterface;
 import com.amazon.ec2.AmazonEC2SkeletonInterface;
-import com.cloud.bridge.model.MHost;
+import com.cloud.bridge.model.MHostVO;
 import com.cloud.bridge.model.SHost;
-import com.cloud.bridge.model.UserCredentials;
-import com.cloud.bridge.persist.PersistContext;
-import com.cloud.bridge.persist.PersistException;
+import com.cloud.bridge.model.SHostVO;
+import com.cloud.bridge.model.UserCredentialsVO;
 import com.cloud.bridge.persist.dao.MHostDao;
+import com.cloud.bridge.persist.dao.MHostDaoImpl;
 import com.cloud.bridge.persist.dao.SHostDao;
+import com.cloud.bridge.persist.dao.SHostDaoImpl;
 import com.cloud.bridge.persist.dao.UserCredentialsDao;
+import com.cloud.bridge.persist.dao.UserCredentialsDaoImpl;
 import com.cloud.bridge.service.EC2SoapServiceImpl;
 import com.cloud.bridge.service.UserInfo;
 import com.cloud.bridge.service.core.ec2.EC2Engine;
@@ -57,17 +58,23 @@ import com.cloud.bridge.util.ConfigurationHelper;
 import com.cloud.bridge.util.DateHelper;
 import com.cloud.bridge.util.NetHelper;
 import com.cloud.bridge.util.OrderedPair;
+import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
 
 public class ServiceProvider {
 	protected final static Logger logger = Logger.getLogger(ServiceProvider.class);
-
+	protected final MHostDao mhostDao = ComponentLocator.inject(MHostDaoImpl.class);
+	protected final SHostDao shostDao = ComponentLocator.inject(SHostDaoImpl.class);
+	protected final UserCredentialsDao ucDao = ComponentLocator.inject(UserCredentialsDaoImpl.class);
+	
 	public final static long HEARTBEAT_INTERVAL = 10000;
 
 	private static ServiceProvider instance;
 
 	private Map<Class<?>, Object> serviceMap = new HashMap<Class<?>, Object>();
 	private Timer timer = new Timer();
-	private MHost mhost;
+	private MHostVO mhost;
 	private Properties properties;
 	private boolean useSubDomain = false;		 // use DNS sub domain for bucket name
 	private String serviceEndpoint = null;
@@ -81,6 +88,8 @@ public class ServiceProvider {
 
 	protected ServiceProvider() throws IOException {
 		// register service implementation object
+	    Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+	    txn.close();
 		engine = new S3Engine();
 		EC2_engine = new EC2Engine();
 		serviceMap.put(AmazonS3SkeletonInterface.class, new S3SerializableServiceImplementation(engine));
@@ -93,11 +102,9 @@ public class ServiceProvider {
 			try {
 				instance = new ServiceProvider();
 				instance.initialize();
-				PersistContext.commitTransaction();
 			} catch(Throwable e) {
 				logger.error("Unexpected exception " + e.getMessage(), e);
 			} finally {
-				PersistContext.closeSession();
 			}
 		}
 		return instance;
@@ -172,27 +179,34 @@ public class ServiceProvider {
 		return properties;
 	}
 
-	public UserInfo getUserInfo(String accessKey) 
-			throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
+	public UserInfo getUserInfo(String accessKey) {
 		UserInfo info = new UserInfo();
-
-		UserCredentialsDao credentialDao = new UserCredentialsDao();
-		UserCredentials cloudKeys = credentialDao.getByAccessKey( accessKey ); 
-		if ( null == cloudKeys ) {
-			logger.debug( accessKey + " is not defined in the S3 service - call SetUserKeys" );
-			return null; 
-		} else {
-			info.setAccessKey( accessKey );
-			info.setSecretKey( cloudKeys.getSecretKey());
-			info.setCanonicalUserId(accessKey);
-			info.setDescription( "S3 REST request" );
-			return info;
+		Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+		try {
+    		txn.start();
+    		UserCredentialsVO cloudKeys = ucDao.getByAccessKey( accessKey ); 
+    		if ( null == cloudKeys ) {
+    			logger.debug( accessKey + " is not defined in the S3 service - call SetUserKeys" );
+    			return null; 
+    		} else {
+    			info.setAccessKey( accessKey );
+    			info.setSecretKey( cloudKeys.getSecretKey());
+    			info.setCanonicalUserId(accessKey);
+    			info.setDescription( "S3 REST request" );
+    			return info;
+    		}
+		}finally {
+		    txn.commit();
 		}
 	}
-
+	
+	@DB
 	protected void initialize() {
 		if(logger.isInfoEnabled())
 			logger.info("Initializing ServiceProvider...");
+		
+		Transaction txn = Transaction.open(Transaction.AWSAPI_DB);
+		//txn.close();
 
 		File file = ConfigurationHelper.findConfigurationFile("log4j-cloud.xml");
 		if(file != null) {
@@ -226,14 +240,16 @@ public class ServiceProvider {
 		setupHost(hostKey, host);
 
 		// we will commit and start a new transaction to allow host info be flushed to DB
-		PersistContext.flush();
+		//PersistContext.flush();
 
 		String localStorageRoot = properties.getProperty("storage.root");
 		if (localStorageRoot != null) setupLocalStorage(localStorageRoot);
 
 		multipartDir = properties.getProperty("storage.multipartDir");
-
+		
+		Transaction txn1 = Transaction.open(Transaction.AWSAPI_DB);
 		timer.schedule(getHeartbeatTask(), HEARTBEAT_INTERVAL, HEARTBEAT_INTERVAL);
+		txn1.close();
 
 		if(logger.isInfoEnabled())
 			logger.info("ServiceProvider initialized");
@@ -264,45 +280,41 @@ public class ServiceProvider {
 			@Override
 			public void run() {
 				try {
-					MHostDao mhostDao = new MHostDao();
 					mhost.setLastHeartbeatTime(DateHelper.currentGMTTime());
-					mhostDao.update(mhost);
-					PersistContext.commitTransaction();
+					mhostDao.updateHeartBeat(mhost);
 				} catch(Throwable e){
 					logger.error("Unexpected exception " + e.getMessage(), e);
 				} finally {
-					PersistContext.closeSession();
 				}
 			}
 		};
 	}
 
 	private void setupHost(String hostKey, String host) {
-		MHostDao mhostDao = new MHostDao();
-		mhost = mhostDao.getByHostKey(hostKey);
+
+	    mhost = mhostDao.getByHostKey(hostKey);
 		if(mhost == null) {
-			mhost = new MHost();
+			mhost = new MHostVO();
 			mhost.setHostKey(hostKey);
 			mhost.setHost(host);
 			mhost.setLastHeartbeatTime(DateHelper.currentGMTTime());
-			mhostDao.save(mhost);
+			mhost = mhostDao.persist(mhost);
 		} else {
 			mhost.setHost(host);
-			mhostDao.update(mhost);
+			mhostDao.update(mhost.getId(), mhost);
 		}
 	}
 
 	private void setupLocalStorage(String storageRoot) {
-		SHostDao shostDao = new SHostDao();
-		SHost shost = shostDao.getLocalStorageHost(mhost.getId(), storageRoot);
+		SHostVO shost = shostDao.getLocalStorageHost(mhost.getId(), storageRoot);
 		if(shost == null) {
-			shost = new SHost();
+			shost = new SHostVO();
 			shost.setMhost(mhost);
-			mhost.getLocalSHosts().add(shost);
+			shost.setMhostid(mhost.getId());
 			shost.setHostType(SHost.STORAGE_HOST_TYPE_LOCAL);
 			shost.setHost(NetHelper.getHostName());
 			shost.setExportRoot(storageRoot);
-			PersistContext.getSession().save(shost);
+			shostDao.persist(shost);
 		}
 	}
 
@@ -318,35 +330,36 @@ public class ServiceProvider {
 		return (T) Proxy.newProxyInstance(serviceObject.getClass().getClassLoader(),
 				new Class[] { serviceInterface },
 				new InvocationHandler() {
-			public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-				Object result = null;
-				try {
-					result = method.invoke(serviceObject, args);
-					PersistContext.commitTransaction();
-			        PersistContext.commitTransaction(true);
-				} catch (PersistException e) {
-				} catch (SessionException e) {
-				} catch(Throwable e) {
-					// Rethrow the exception to Axis:
-						// Check if the exception is an AxisFault or a RuntimeException
-						// enveloped AxisFault and if so, pass it on as such. Otherwise
-					// log to help debugging and throw as is.
-					if (e.getCause() != null && e.getCause() instanceof AxisFault)
-						throw e.getCause();
-					else if (e.getCause() != null && e.getCause().getCause() != null
-							&& e.getCause().getCause() instanceof AxisFault)
-						throw e.getCause().getCause();
-					else {
-						logger.warn("Unhandled exception " + e.getMessage(), e);
-						throw e;
-					}
-				} finally {
-					PersistContext.closeSession();
-			        PersistContext.closeSession(true);
-				}
-				return result;
-			}
-		});
+                    public Object invoke(Object proxy, Method method,
+                            Object[] args) throws Throwable {
+                        Object result = null;
+                        try {
+                            result = method.invoke(serviceObject, args);
+                        } catch (Throwable e) {
+                            // Rethrow the exception to Axis:
+                            // Check if the exception is an AxisFault or a
+                            // RuntimeException
+                            // enveloped AxisFault and if so, pass it on as
+                            // such. Otherwise
+                            // log to help debugging and throw as is.
+                            if (e.getCause() != null
+                                    && e.getCause() instanceof AxisFault)
+                                throw e.getCause();
+                            else if (e.getCause() != null
+                                    && e.getCause().getCause() != null
+                                    && e.getCause().getCause() instanceof AxisFault)
+                                throw e.getCause().getCause();
+                            else {
+                                logger.warn(
+                                        "Unhandled exception " + e.getMessage(),
+                                        e);
+                                throw e;
+                            }
+                        } finally {
+                        }
+                        return result;
+                    }
+                });
 	}
 
 	@SuppressWarnings("unchecked")

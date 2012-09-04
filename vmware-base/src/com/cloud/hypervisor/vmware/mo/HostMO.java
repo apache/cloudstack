@@ -59,6 +59,7 @@ import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualNicManagerNetConfig;
+import com.vmware.vim25.NasDatastoreInfo;
 
 public class HostMO extends BaseMO implements VmwareHypervisorHost {
     private static final Logger s_logger = Logger.getLogger(HostMO.class);
@@ -697,6 +698,39 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 		return result;
 	}
 
+	public ManagedObjectReference getExistingDataStoreOnHost(boolean vmfsDatastore, String hostAddress,
+			int hostPort, String path, String uuid, HostDatastoreSystemMO hostDatastoreSystemMo) {
+		// First retrieve the list of Datastores on the host.
+		ManagedObjectReference[] morArray;
+		try {
+			morArray = hostDatastoreSystemMo.getDatastores();
+		} catch (Exception e) {
+			s_logger.info("Failed to retrieve list of Managed Object References");
+			return null;
+		}
+		// Next, get all the NAS datastores from this array of datastores.
+		if (morArray.length > 0) {
+			int i;
+			for (i = 0; i < morArray.length; i++) {
+				NasDatastoreInfo nasDS;
+				try {
+					nasDS = hostDatastoreSystemMo.getNasDatastoreInfo(morArray[i]);
+					if (nasDS != null) {
+						//DatastoreInfo info = (DatastoreInfo)_context.getServiceUtil().getDynamicProperty(morDatastore, "info");
+						if (nasDS.getNas().getRemoteHost().equalsIgnoreCase(hostAddress) &&
+								nasDS.getNas().getRemotePath().equalsIgnoreCase(path)) {
+							return morArray[i];
+						}
+					}
+				}  catch (Exception e) {
+					s_logger.info("Encountered exception when retrieving nas datastore info");
+					return null;
+				}
+			}
+		}
+		return null;
+	}
+
 	@Override
 	public ManagedObjectReference mountDatastore(boolean vmfsDatastore, String poolHostAddress, 
 		int poolHostPort, String poolPath, String poolUuid) throws Exception {
@@ -709,11 +743,27 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         ManagedObjectReference morDatastore = hostDatastoreSystemMo.findDatastore(poolUuid);
         if(morDatastore == null) {
         	if(!vmfsDatastore) {
-	        	morDatastore = hostDatastoreSystemMo.createNfsDatastore(
-	        		poolHostAddress,
-	        		poolHostPort, 
-	        		poolPath, 
-	        		poolUuid);
+                try {
+                    morDatastore = hostDatastoreSystemMo.createNfsDatastore(
+                            poolHostAddress,
+                            poolHostPort,
+                            poolPath,
+                            poolUuid);
+                } catch (com.vmware.vim25.AlreadyExists e) {
+                    s_logger.info("Creation of NFS datastore on vCenter failed since datastore already exists." +
+                            " Details: vCenter API trace - mountDatastore(). target MOR: " + _mor.get_value() + ", vmfs: " +
+                            vmfsDatastore + ", poolHost: " + poolHostAddress + ", poolHostPort: " + poolHostPort +
+                            ", poolPath: " + poolPath + ", poolUuid: " + poolUuid);
+                    // Retrieve the morDatastore and return it.
+                    return (getExistingDataStoreOnHost(vmfsDatastore, poolHostAddress,
+                            poolHostPort, poolPath, poolUuid, hostDatastoreSystemMo));
+                } catch (Exception e) {
+                    s_logger.info("Creation of NFS datastore on vCenter failed. " +
+                            " Details: vCenter API trace - mountDatastore(). target MOR: " + _mor.get_value() + ", vmfs: " +
+                            vmfsDatastore + ", poolHost: " + poolHostAddress + ", poolHostPort: " + poolHostPort +
+                            ", poolPath: " + poolPath + ", poolUuid: " + poolUuid + ". Exception mesg: " + e.getMessage());
+                    throw new Exception("Creation of NFS datastore on vCenter failed.");
+                }
 	        	if(morDatastore == null) {
 	        		String msg = "Unable to create NFS datastore. host: " + poolHostAddress + ", port: " 
 	    			+ poolHostPort + ", path: " + poolPath + ", uuid: " + poolUuid;

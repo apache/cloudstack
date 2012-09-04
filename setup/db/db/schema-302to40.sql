@@ -397,6 +397,8 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Account Defaults', 'DEFAULT', 'management-server', 'max.account.vpcs', '20', 'The default maximum number of vpcs that can be created for an account');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Project Defaults', 'DEFAULT', 'management-server', 'max.project.vpcs', '20', 'The default maximum number of vpcs that can be created for a project');
 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'AgentManager', 'ha.workers', 5, 'Number of HA worker threads.');
+
 CREATE TABLE `cloud`.`s2s_vpn_gateway` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
@@ -462,3 +464,7 @@ UPDATE `cloud`.`configuration` SET component='StorageManager' WHERE name='storag
 UPDATE `cloud`.`configuration` SET component='StorageManager' WHERE name='storage.cleanup.interval';
 UPDATE `cloud`.`configuration` SET description='Comma separated list of cidrs internal to the datacenter that can host template download servers, please note 0.0.0.0 is not a valid site ' WHERE name='secstorage.allowed.internal.sites';
 
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'site2site.vpn.vpngateway.connection.limit', '4', 'The maximum number of VPN connection per VPN gateway');
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'site2site.vpn.customergateway.subnets.limit', '10', 'The maximum number of subnets per customer gateway');
+
+INSERT IGNORE INTO `cloud`.`guest_os_category` VALUES ('11','None',NULL); 
