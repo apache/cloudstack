@@ -20,24 +20,57 @@ version='TESTBUILD'
 sourcedir=~/incubator-cloudstack/
 outputdir=~/cs-asf-build/
 branch='master'
-while getopts v:s:o:b: opt
+tag='no'
+certid='X'
+
+
+usage(){
+    echo "usage: $0 -v version [-b branch] [-s source dir] [-o output dir] [-t [-u]] [-h]"
+    echo "  -v sets the version"
+    echo "  -b sets the branch (defaults to 'master')"
+    echo "  -s sets the source directory (defaults to $sourcedir)"
+    echo "  -o sets the output directory (defaults to $outputdir)"
+    echo "  -t tags the git repo with the version"
+    echo "     -u sets the certificate ID to sign the tag with (if not provided, the default key is attempted)"
+    echo "  -h"
+}
+
+while getopts v:s:o:b:tu:h opt
 do
     case "$opt" in
       v)  version="$OPTARG";;
       s)  sourcedir="$OPTARG";;
       o)  outputdir="$OPTARG";;
       b)  branch="$OPTARG";;
+      t)  tag='yes';;
+      u)  certid="$OPTARG";;
+      h)  usage
+          exit 0;;
       \?)       # unknown flag
-          echo >&2 \
-      "usage: $0 [-v version number] [-s source directory (defaults to $sourcedir)] [-o output directory (defaults to $outputdir)]"
-      exit 1;;
+          usage
+          exit 1;;
     esac
 done
 shift `expr $OPTIND - 1`
 
-echo $version
-echo $sourcedir
-echo $outputdir
+if [ $version == 'TESTBUILD' ]; then
+    echo >&2 "A version must be specified with the -v option: build_asf.sh -v 4.0.0RC1"
+    exit 1
+fi
+
+echo "Using version: $version"
+echo "Using source directory: $sourcedir"
+echo "Using output directory: $outputdir"
+echo "Using branch: $branch"
+if [ $tag == 'yes' ]; then
+    if [ $certid == 'X' ]; then
+        echo "Tagging the branch with the version number, and signing the branch with your default certificate."
+    else
+        echo "Tagging the branch with the version number, and signing the branch with certificate ID $certid."
+    fi
+else
+    echo "The branch will not be tagged.  You should consider doing this."
+fi
 
 if [ -d "$outputdir" ]; then
     rm $outputdir/*
@@ -61,3 +94,12 @@ gpg -v --print-md SHA512 cloudstack-source-$version.zip > cloudstack-source-$ver
 
 gpg -v --verify cloudstack-source-$version.tar.gz.asc cloudstack-source-$version.tar.gz
 gpg -v --verify cloudstack-source-$version.zip.asc cloudstack-source-$version.zip
+
+if [ $tag == 'yes' ]; then
+  cd $sourcedir
+  if [ $certid == 'X' ]; then
+      git tag -s $version -m "Tagging release $version on branch $branch."
+  else
+      git tag -u $certid -s $version -m "Tagging release $version on branch $branch."
+  fi
+fi
