@@ -18,6 +18,13 @@
 %define __os_install_post %{nil}
 %global debug_package %{nil}
 
+%if "%{?_nonoss}" != ""
+%define _wafargs %{nil}
+%else
+%define _wafargs "--oss"
+%endif
+
+
 # DISABLE the post-percentinstall java repacking and line number stripping
 # we need to find a way to just disable the java repacking and line number stripping, but not the autodeps
 
@@ -82,6 +89,18 @@ Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = 
 Group:     System Environment/Libraries
 %description server
 The CloudStack server libraries provide a set of Java classes for CloudStack.
+
+%if "%{?_nonoss}" != ""
+%package server-nonoss
+Summary:   CloudStack server library with non-oss dependencies
+Requires: java >= 1.6.0
+Obsoletes: vmops-server < %{version}-%{release}
+Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-server = %{version}, tomcat6-servlet-2.5-api
+Group:     System Environment/Libraries
+%description server-nonoss
+The CloudStack server libraries provide a set of Java classes for CloudStack. This package contain the classes ther require
+external non-oss libraries.
+%endif
 
 %package agent-scripts
 Summary:   CloudStack agent scripts
@@ -303,13 +322,13 @@ echo Doing CloudStack build
 # this fixes the /usr/com bug on centos5
 %define _localstatedir /var
 %define _sharedstatedir /var/lib
-./waf configure --prefix=%{_prefix} --libdir=%{_libdir} --bindir=%{_bindir} --javadir=%{_javadir} --sharedstatedir=%{_sharedstatedir} --localstatedir=%{_localstatedir} --sysconfdir=%{_sysconfdir} --mandir=%{_mandir} --docdir=%{_docdir}/%{name}-%{version} --with-tomcat=%{_datadir}/tomcat6 --tomcat-user=%{name} --fast --build-number=%{_ver}-%{release} --package-version=%{_ver}
-./waf build --build-number=%{?_build_number} --package-version=%{_ver}
+./waf configure --prefix=%{_prefix} --libdir=%{_libdir} --bindir=%{_bindir} --javadir=%{_javadir} --sharedstatedir=%{_sharedstatedir} --localstatedir=%{_localstatedir} --sysconfdir=%{_sysconfdir} --mandir=%{_mandir} --docdir=%{_docdir}/%{name}-%{version} --with-tomcat=%{_datadir}/tomcat6 --tomcat-user=%{name} --fast --build-number=%{_ver}-%{release} --package-version=%{_ver} %{_wafargs}
+./waf build --build-number=%{?_build_number} --package-version=%{_ver} %{_wafargs}
 
 %install
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -rf ${RPM_BUILD_ROOT}
 # we put the build number again here, otherwise state checking will cause an almost-full recompile
-./waf install --destdir=$RPM_BUILD_ROOT --nochown --build-number=%{?_build_number}
+./waf install --destdir=$RPM_BUILD_ROOT --nochown --build-number=%{?_build_number} %{_wafargs}
 rm $RPM_BUILD_ROOT/etc/rc.d/init.d/cloud-console-proxy
 rm $RPM_BUILD_ROOT/usr/bin/cloud-setup-console-proxy
 rm $RPM_BUILD_ROOT/usr/libexec/console-proxy-runner
@@ -525,12 +544,17 @@ fi
 %{_javadir}/%{name}-plugin-user-authenticator-md5-%{_maven_ver}.jar
 %{_javadir}/%{name}-plugin-user-authenticator-plaintext-%{_maven_ver}.jar
 %config(noreplace) %{_sysconfdir}/%{name}/server/*
-#%{_javadir}/%{name}-plugin-f5-%{_maven_ver}.jar
-#%{_javadir}/%{name}-plugin-netscaler-%{_maven_ver}.jar
-#%{_javadir}/%{name}-plugin-srx-%{_maven_ver}.jar
-#%{_javadir}/%{name}-vmware-%{_maven_ver}.jar
-#%{_javadir}/%{name}-plugin-netapp-%{_maven_ver}.jar
-#%{_javadir}/%{name}-plugin-hypervisor-kvm-%{_maven_ver}.jar
+
+%if "%{?_nonoss}" != ""
+%files server-nonoss
+%defattr(0644,root,root,0755)
+%{_javadir}/%{name}-plugin-hypervisor-kvm-4.0.0-SNAPSHOT.jar
+%{_javadir}/%{name}-plugin-hypervisor-vmware-4.0.0-SNAPSHOT.jar
+%{_javadir}/%{name}-plugin-netapp-4.0.0-SNAPSHOT.jar
+%{_javadir}/%{name}-plugin-network-f5-4.0.0-SNAPSHOT.jar
+%{_javadir}/%{name}-plugin-network-netscaler-4.0.0-SNAPSHOT.jar
+%{_javadir}/%{name}-plugin-network-srx-4.0.0-SNAPSHOT.jar
+%endif
 
 %files agent-scripts
 %defattr(-,root,root,-)

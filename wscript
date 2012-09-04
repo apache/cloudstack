@@ -320,7 +320,7 @@ def runmvn(tsk):
 		stanzas = [
 			_join(environ["M2_HOME"],"bin","mvn")
 		]
-	#stanzas += tsk.generator.mvnargs
+	stanzas += tsk.generator.mvnargs
 	ret = Utils.exec_command(" ".join(stanzas),cwd=tsk.generator.bld.srcnode.abspath(),env=environ,log=True)
 	if ret != 0: raise Utils.WafError("Maven phase %s failed with error value %s"%(stanzas,ret))
 	return ret
@@ -642,6 +642,10 @@ def rpm(context):
 	else: ver = SHORTVERSION
 
 	packagever = ["--define", "_ver %s" % ver]
+
+        nonoss = [ ]
+        if not Options.options.OSS:
+                 nonoss = ["--define", "_nonoss 1"]
 	
 	# FIXME wrap the source tarball in POSIX locking!
 	if not Options.options.blddir: outputdir = _join(context.curdir,blddir,"rpmbuild")
@@ -656,8 +660,8 @@ def rpm(context):
 	shutil.move(tarball,_join(sourcedir,tarball))
 
 	specfile = "%s.spec"%APPNAME
-	checkdeps = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"--nobuild",specfile]+packagever+releasever)
-	dorpm = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"-bb",specfile]+buildnumber+prerelease+packagever+releasever)
+	checkdeps = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"--nobuild",specfile]+packagever+releasever+nonoss)
+	dorpm = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"-bb",specfile]+buildnumber+prerelease+packagever+releasever+nonoss)
 	try: checkdeps()
 	except (CalledProcessError,OSError),e:
 		Utils.pprint("YELLOW","Dependencies might be missing.  Trying to auto-install them...")

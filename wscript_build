@@ -112,6 +112,9 @@ def build_jars ():
 		"-Ddist.dir=%s" % distdir,
 		"-Dbase.dir=%s" % sourcedir
 	]
+   
+        if not Options.options.OSS:
+		mvn_args.append("-Dnonoss")
 
 	if buildpremium:
 		mvn_args.append("-Dbuild.premium=true")
