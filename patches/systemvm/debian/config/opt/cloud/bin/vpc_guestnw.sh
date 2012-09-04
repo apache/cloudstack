@@ -58,19 +58,31 @@ create_acl_chain() {
 
 
 setup_apache2() {
-  logger_it "Setting up apache web server for $dev"
+  logger -t cloud "Setting up apache web server for $dev"
   cp /etc/apache2/vhostexample.conf /etc/apache2/conf.d/vhost$dev.conf
   sed -i -e "s/<VirtualHost.*:80>/<VirtualHost $ip:80>/" /etc/apache2/conf.d/vhost$dev.conf
   sed -i -e "s/<VirtualHost.*:443>/<VirtualHost $ip:443>/" /etc/apache2/conf.d/vhost$dev.conf
   sed -i -e "s/\tServerName.*/\tServerName vhost$dev.cloudinternal.com/" /etc/apache2/conf.d/vhost$dev.conf
   sed -i -e "s/Listen .*:80/Listen $ip:80/g" /etc/apache2/conf.d/vhost$dev.conf
   sed -i -e "s/Listen .*:443/Listen $ip:443/g" /etc/apache2/conf.d/vhost$dev.conf
+  if [ -e "/etc/apache2/sites-enabled/000-default" ]
+  then
+    sed -i -e "s/^#*/#/g" /etc/apache2/sites-enabled/000-default
+  fi
+  if [ -e "/etc/apache2/sites-enabled/default-ssl" ]
+  then
+    sed -i -e "s/^#*/#/g" /etc/apache2/sites-enabled/default-ssl
+  fi
+  if [ -e "/etc/apache2/ports.conf" ]
+  then
+    sed -i -e "s/^#*/#/g" /etc/apache2/ports.conf
+  fi
   service apache2 restart
   sudo iptables -A INPUT -i $dev -d $ip -p tcp -m state --state NEW --dport 80 -j ACCEPT
 }
 
 desetup_apache2() {
-  logger_it "Desetting up apache web server for $dev"
+  logger -t cloud "Desetting up apache web server for $dev"
   rm -f /etc/apache2/conf.d/vhost$dev.conf
   service apache2 restart
   sudo iptables -D INPUT -i $dev -d $ip -p tcp -m state --state NEW --dport 80 -j ACCEPT

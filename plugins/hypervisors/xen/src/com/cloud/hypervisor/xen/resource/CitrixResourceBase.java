@@ -7378,7 +7378,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             }
             return new SetupGuestNetworkAnswer(cmd, true, "success");
         } catch (Exception e) {
-            String msg = " UnPlug Nic failed due to " + e.toString();
+            String msg = "Creating guest network failed due to " + e.toString();
             s_logger.warn(msg, e);
             return new SetupGuestNetworkAnswer(cmd, false, msg);
         }
