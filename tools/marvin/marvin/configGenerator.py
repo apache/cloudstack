@@ -384,6 +384,14 @@ def describe_setup_in_eip_mode():
         z.internaldns2 = "192.168.110.253"
         z.name = "test"+str(l)
         z.networktype = 'Basic'
+
+        ips = iprange()
+        ips.vlan = "49"
+        ips.startip = "10.147.49.200"
+        ips.endip = "10.147.49.250"
+        ips.gateway = "10.147.49.1"
+        ips.netmask = "255.255.255.0"
+        z.ipranges.append(ips)
         
         #If security groups are reqd
         sgprovider = provider()
