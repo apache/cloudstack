@@ -135,7 +135,8 @@ def build_jars ():
 			"cloud-servlet-api.jar", "cloud-commons-logging-1.1.1.jar",
 			"cloud-ws-commons-util-1.0.2.jar",
 			"cloud-commons-collections-3.2.1.jar", "vmware*.jar", "cloud-secstorage-extras.jar",
-			"cloud-agent-simulator.jar", "cloud-awsapi.jar", "cloud-test.jar", "cloud-wsdl4j.jar", "cloud-console-proxy.jar"]
+			"cloud-agent-simulator.jar", "cloud-awsapi.jar", "cloud-test.jar", "cloud-wsdl4j.jar", "cloud-console-proxy.jar",
+                        "cloud-*tests.jar" ]
 
 	for a in jars_str:
 		if _basename (a).startswith ("cloud-") \
@@ -428,7 +429,17 @@ def build_usage_dir ():
 			Utils.subst_vars("${MSCONF}/db.properties",bld.env))
 	Utils.pprint ("GREEN", "Installed files of usage/")
 
-
+def build_awsapi():
+	start_path = bld.path.find_dir ("awsapi")
+	bld.install_files_filtered("${DATADIR}/cloud/bridge/conf","conf/*", cwd = start_path)
+	bld.install_files_filtered("${DATADIR}/cloud/bridge/lib","target/cloud-awsapi-*/WEB-INF/lib/*jar", cwd = start_path)
+	bld.install_files_filtered("${DATADIR}/cloud/bridge/webapps7080/WEB-INF","web/*", cwd = start_path)
+	start_path = bld.path.find_dir ("awsapi-setup")
+	bld.install_files_filtered("${DATADIR}/cloud/setup/bridge/db","db/mysql/*.sql", cwd = start_path)
+	bld.install_files_filtered("${DATADIR}/cloud/setup/bridge/db","db/mysql/*.sh", cwd = start_path)
+	bld.install_files_filtered("${BINDIR}","setup/*", cwd = start_path)
+	Utils.pprint ("GREEN", "Installed files of awsapi/")
+     
 
 # Get started to execute here
 build_utils_docs ()
@@ -451,6 +462,7 @@ build_xml_api_description ()
 build_ovm ()
 #build_test()
 build_usage_dir()
+build_awsapi()
 
 # ====================== Magic! =========================================
 bld.use_the_magic()
