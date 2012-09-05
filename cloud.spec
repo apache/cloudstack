@@ -433,24 +433,18 @@ fi
 %files server
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-server.jar
-%{_javadir}/%{name}-vmware-base.jar
 %{_javadir}/%{name}-ovm.jar
 %{_javadir}/%{name}-dp-user-concentrated-pod.jar
 %{_javadir}/%{name}-dp-user-dispersing.jar
 %{_javadir}/%{name}-host-allocator-random.jar
-%{_javadir}/%{name}-plugin-f5.jar
-%{_javadir}/%{name}-plugin-netscaler.jar
 %{_javadir}/%{name}-plugin-ovs.jar
-%{_javadir}/%{name}-plugin-srx.jar
 %{_javadir}/%{name}-storage-allocator-random.jar
 %{_javadir}/%{name}-user-authenticator-ldap.jar
 %{_javadir}/%{name}-user-authenticator-md5.jar
 %{_javadir}/%{name}-user-authenticator-plaintext.jar
-%{_javadir}/%{name}-vmware.jar
 %{_javadir}/%{name}-xen.jar
-%{_javadir}/%{name}-plugin-nicira-nvp.jar
 %{_javadir}/%{name}-plugin-elb.jar
-%{_javadir}/%{name}-plugin-netapp.jar
+%{_javadir}/%{name}-plugin-nicira-nvp.jar
 %config(noreplace) %{_sysconfdir}/%{name}/server/*
 
 %files agent-scripts
@@ -467,8 +461,6 @@ fi
 %{_javadir}/commons-dbcp-1.4.jar
 %{_javadir}/commons-pool-1.6.jar
 %{_javadir}/gson-1.7.1.jar
-%{_javadir}/netscaler-1.0.jar
-%{_javadir}/netscaler-sdx-1.0.jar
 %{_javadir}/backport-util-concurrent-3.1.jar
 %{_javadir}/ehcache-1.5.0.jar
 %{_javadir}/httpcore-4.0.jar
@@ -481,19 +473,15 @@ fi
 %{_javadir}/hibernate-commons-annotations-3.2.0.Final.jar
 %{_javadir}/hibernate-annotations-3.5.1-Final.jar
 %{_javadir}/asm-3.1.jar
-%{_javadir}/xapi-5.6.100-1-20120825.123319-1.jar
+%{_javadir}/xapi-5.6.100-1-SNAPSHOT.jar
 %{_javadir}/log4j-*.jar
 %{_javadir}/trilead-ssh2-build213-svnkit-1.3-patch.jar
 %{_javadir}/cglib-2.2.jar
 %{_javadir}/xmlrpc-common-3.*.jar
 %{_javadir}/xmlrpc-client-3.*.jar
-%{_javadir}/axis-1.4.jar
 %{_javadir}/wsdl4j-1.6.2.jar
 %{_javadir}/bcprov-jdk16-1.46.jar
 %{_javadir}/jsch-0.1.42.jar
-%{_javadir}/icontrol-1.0.jar
-%{_javadir}/manageontap-1.0.jar
-%{_javadir}/vmware*.jar
 %{_javadir}/jasypt-1.*.jar
 %{_javadir}/commons-configuration-1.8.jar
 %{_javadir}/commons-lang-2.6.jar
@@ -550,7 +538,6 @@ fi
 %files agent-libs
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-agent.jar
-%{_javadir}/%{name}-plugin-hypervisor-kvm.jar
 
 %files agent
 %defattr(0644,root,root,0755)

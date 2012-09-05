@@ -636,6 +636,7 @@ def rpm(context):
 	shutil.move(tarball,_join(sourcedir,tarball))
 
 	specfile = "%s.spec"%APPNAME
+        Utils.exec_command("mvn install -P deps")
 	checkdeps = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"--nobuild",specfile]+packagever+releasever)
 	dorpm = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"-bb",specfile]+buildnumber+prerelease+packagever+releasever)
 	try: checkdeps()

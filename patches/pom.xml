@@ -50,11 +50,6 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-vmware-base</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-agent</artifactId>
       <version>${project.version}</version>
     </dependency>
