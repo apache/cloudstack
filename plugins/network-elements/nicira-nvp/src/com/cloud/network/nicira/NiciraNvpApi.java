@@ -195,6 +195,22 @@ public class NiciraNvpApi {
         return ccs;
     }
 
+    public NiciraNvpList<LogicalSwitchPort> findLogicalSwitchPortsByUuid(String logicalSwitchUuid, String logicalSwitchPortUuid) throws NiciraNvpApiException {
+        String uri = "/ws.v1/lswitch/" + logicalSwitchUuid + "/lport";
+        Map<String,String> params = new HashMap<String,String>();
+        params.put("uuid", logicalSwitchPortUuid);
+        params.put("fields", "uuid");
+            
+        NiciraNvpList<LogicalSwitchPort> lspl = executeRetrieveObject(new TypeToken<NiciraNvpList<LogicalSwitchPort>>(){}.getType(), uri, params);
+                
+        if (lspl == null ) {
+            throw new NiciraNvpApiException("Unexpected response from API");
+        }
+        
+        return lspl;
+    }
+    
+    
     private <T> void executeUpdateObject(T newObject, String uri, Map<String,String> parameters) throws NiciraNvpApiException {
         String url;
         try {

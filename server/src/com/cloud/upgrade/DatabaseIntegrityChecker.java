@@ -167,10 +167,10 @@ public class DatabaseIntegrityChecker implements SystemIntegrityChecker {
 		txn.start();
 		try {
 		    String dbVersion = _dao.getCurrentVersion();
-		    
+
 		    if ( dbVersion == null )
 		    	return false;
-		    
+
 		    if (Version.compare(Version.trimToPatch(dbVersion), Version.trimToPatch("2.2.8")) != 0) {
 		        return true;
 		    }

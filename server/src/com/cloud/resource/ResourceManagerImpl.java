@@ -1007,12 +1007,12 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                             umanageHost(host.getId());
                         }
                     }
-                    int retry = 10;
+                    int retry = 40;
                     boolean lsuccess = true;
                     for ( int i = 0; i < retry; i++) {
                         lsuccess = true;
                         try {
-                            Thread.sleep(20 * 1000);
+                            Thread.sleep(5 * 1000);
                         } catch (Exception e) {
                         }
                         hosts = listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId()); 
@@ -1211,7 +1211,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
             Map<String, String> hostDetails = _hostDetailsDao.findDetails(hostId);
 
-            if (guestOSCategory != null) {
+            if (guestOSCategory != null && !GuestOSCategoryVO.CATEGORY_NONE.equalsIgnoreCase(guestOSCategory.getName())) {
                 // Save a new entry for guest.os.category.id
                 hostDetails.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
             } else {
@@ -1601,6 +1601,15 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 return null;
             }
 
+            /* Generate a random version in a dev setup situation */
+            if ( this.getClass().getPackage().getImplementationVersion() == null ) {
+                for ( StartupCommand cmd : cmds ) {
+                    if ( cmd.getVersion() == null ) {
+                        cmd.setVersion(Long.toString(System.currentTimeMillis()));
+                    }
+                }
+            }
+            
             if (s_logger.isDebugEnabled()) {
                 new Request(-1l, -1l, cmds, true, false).logD("Startup request from directly connected host: ", true);
             }

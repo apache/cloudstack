@@ -29,7 +29,7 @@ public class AjaxFIFOImageCache {
 	private List<Integer> fifoQueue;
 	private Map<Integer, byte[]> cache;
 	private int cacheSize;
-	private int nextKey = 1;
+    private int nextKey = 0;
 	
 	public AjaxFIFOImageCache(int cacheSize) {
 		this.cacheSize = cacheSize;
@@ -61,20 +61,23 @@ public class AjaxFIFOImageCache {
 		return key;
 	}
 	
-	public synchronized byte[] getImage(int key) {
-		if(cache.containsKey(key)) {
-			if(s_logger.isTraceEnabled())
-				s_logger.trace("Retrieve image from cache, key: " + key);
-			
-			return cache.get(key);
-		}
-		
-		if(s_logger.isTraceEnabled())
-			s_logger.trace("Image is no long in cache, key: " + key);
-		return null;
-	}
-	
-	public synchronized int getNextKey() {
-		return nextKey++;
-	}
+    public synchronized byte[] getImage(int key) {
+        if (key == 0) {
+            key = nextKey;
+        }
+        if (cache.containsKey(key)) {
+            if (s_logger.isTraceEnabled())
+                s_logger.trace("Retrieve image from cache, key: " + key);
+
+            return cache.get(key);
+        }
+
+        if (s_logger.isTraceEnabled())
+            s_logger.trace("Image is no long in cache, key: " + key);
+        return null;
+    }
+
+    public synchronized int getNextKey() {
+        return ++nextKey;
+    }
 }

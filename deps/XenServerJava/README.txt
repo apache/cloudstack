@@ -17,9 +17,7 @@ For community content, blogs, and downloads, visit the XenServer Developer
 Network at http://community.citrix.com/cdn/xs.
 
 XenServerJava is free sofware.  You can redistribute and modify it under the
-terms of the GNU GPL version 2, with an additional linking exception that
-allows its use unmodified within closed-source applications.  See LICENSE.txt
-for details.
+terms of the BSD 2-clause license.  See LICENSE.txt for details.
 
 This library may be accompanied by pedagogical examples.  These do not form
 part of this library, and are licensed for redistribution and modification

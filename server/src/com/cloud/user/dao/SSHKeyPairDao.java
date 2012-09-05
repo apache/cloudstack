@@ -31,6 +31,8 @@ public interface SSHKeyPairDao extends GenericDao<SSHKeyPairVO, Long> {
 	
 	public SSHKeyPairVO findByName(long accountId, long domainId, String name);
 
+	public SSHKeyPairVO findByPublicKey(String publicKey);
+
 	public boolean deleteByName(long accountId, long domainId, String name);
 
 }

@@ -4180,9 +4180,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new CloudRuntimeException("Unable to find network offering with availability=" + 
             Availability.Required + " to automatically create the network as part of createVlanIpRange");
             }
-            PhysicalNetwork physicalNetwork = translateZoneIdToPhysicalNetwork(zoneId);
-            
             if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
+                
+                long physicalNetworkId = findPhysicalNetworkId(zoneId, requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
+                // Validate physical network
+                PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+                if (physicalNetwork == null) {
+                    throw new InvalidParameterValueException("Unable to find physical network with id: "+physicalNetworkId   + " and tag: " +requiredOfferings.get(0).getTags());
+                }
+                
                 s_logger.debug("Creating network for account " + owner + " from the network offering id=" + 
             requiredOfferings.get(0).getId() + " as a part of createVlanIpRange process");
                 guestNetwork = createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network"
@@ -4292,15 +4298,15 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     @Override
-    public List<? extends UserDataServiceProvider> getPasswordResetElements() {
-        List<UserDataServiceProvider> elements = new ArrayList<UserDataServiceProvider>();
-        for (NetworkElement element : _networkElements) {
-            if (element instanceof UserDataServiceProvider) {
-                UserDataServiceProvider e = (UserDataServiceProvider) element;
-                elements.add(e);
-            }
+    public UserDataServiceProvider getPasswordResetProvider(Network network) {
+        String passwordProvider = _ntwkSrvcDao.getProviderForServiceInNetwork(network.getId(), Service.UserData);
+
+        if (passwordProvider == null) {
+            s_logger.debug("Network " + network + " doesn't support service " + Service.UserData.getName());
+            return null;
         }
-        return elements;
+        
+        return (UserDataServiceProvider)getElementImplementingProvider(passwordProvider);
     }
 
     @Override
@@ -5874,20 +5880,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         } else {
             return pNtwks.get(0).getId();
         }
-    }
-
-    @Override
-    public PhysicalNetwork translateZoneIdToPhysicalNetwork(long zoneId) {
-        List<PhysicalNetworkVO> pNtwks = _physicalNetworkDao.listByZone(zoneId);
-        if (pNtwks.isEmpty()) {
-            throw new InvalidParameterValueException("Unable to find physical network in zone id=" + zoneId);
-        }
-
-        if (pNtwks.size() > 1) {
-            throw new InvalidParameterValueException("More than one physical networks exist in zone id=" + zoneId);
-        }
-
-        return pNtwks.get(0);
     }
 
     @Override

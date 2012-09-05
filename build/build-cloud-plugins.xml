@@ -84,7 +84,6 @@
   <property name="build.log" location="${target.dir}/ant_verbose.txt" />
 
   <property name="deps.dir" location="${base.dir}/deps" />
-  <property name="tools.jar.dir" location="${base.dir}/tools/tooljars" />
 
   <!-- directories for client compilation-->
   <property name="client.dir" location="${base.dir}/client" />
@@ -155,9 +154,6 @@
   </path>
 
   <path id="compile.deps.classpath">
-      <fileset dir="${tools.jar.dir}" erroronmissingdir="true">
-          <include name="*.jar" />
-      </fileset>
   </path>
 
   <path id="deps.classpath">

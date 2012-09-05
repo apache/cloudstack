@@ -259,6 +259,10 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
             List<String> resourceTypeList = new ArrayList<String>();
             if (items != null) {
                 for( int i=0; i < items.length; i++ ) {
+                    if (!items[i].getResourceId().contains(":") || items[i].getResourceId().split(":").length != 2) {
+                        throw new EC2ServiceException( ClientError.InvalidResourceId_Format,
+                                "Invalid Format. ResourceId format is resource-type:resource-uuid");
+                    }
                     String resourceType = items[i].getResourceId().split(":")[0];
                     if (resourceTypeList.isEmpty())
                         resourceTypeList.add(resourceType);
@@ -1374,7 +1378,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        param7.setPrivateDnsName( "" );
 	        param7.setDnsName( "" );
 	        param7.setReason( "" );
-	        param7.setKeyName( "" );
+            param7.setKeyName( inst.getKeyPairName());
 	        param7.setAmiLaunchIndex( "" );
 	        param7.setInstanceType( inst.getServiceOffering());
 	        
@@ -1696,7 +1700,7 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        param7.setPrivateDnsName( "" );
 	        param7.setDnsName( "" );
 	        param7.setReason( "" );
-	        param7.setKeyName( "" );
+            param7.setKeyName( inst.getKeyPairName());
 	        param7.setAmiLaunchIndex( "" );
 	        
 	        ProductCodesSetType param9 = new ProductCodesSetType();

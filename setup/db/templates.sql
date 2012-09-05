@@ -48,7 +48,7 @@ INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (7, 'Other');
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (8, 'Novel');
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (9, 'Unix');
 INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (10, 'Ubuntu');
-
+INSERT INTO `cloud`.`guest_os_category` (id, name) VALUES (11, 'None');
 
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (1, 1, 'CentOS 4.5 (32-bit)');
 INSERT INTO `cloud`.`guest_os` (id, category_id, display_name) VALUES (2, 1, 'CentOS 4.6 (32-bit)');

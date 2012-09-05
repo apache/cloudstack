@@ -2160,7 +2160,8 @@
                                     var hostObjs = json.listhostsresponse.host;
                                     var items = [];
                                     $(hostObjs).each(function() {
-                                      items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))});
+                                      //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
+																			items.push({id: this.id, description: this.name});
                                     });
                                     args.response.success({data: items});
                                   }
@@ -2693,7 +2694,8 @@
                                     var hostObjs = json.listhostsresponse.host;
                                     var items = [];
                                     $(hostObjs).each(function() {
-                                      items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))});
+                                      //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
+																			items.push({id: this.id, description: this.name});
                                     });
                                     args.response.success({data: items});
                                   }
@@ -4333,7 +4335,8 @@
                                         var hostObjs = json.listhostsresponse.host;
                                         var items = [];
                                         $(hostObjs).each(function() {
-                                          items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))});
+                                          //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
+																					items.push({id: this.id, description: this.name});
                                         });
                                         args.response.success({data: items});
                                       }
@@ -5071,7 +5074,8 @@
                             var hostObjs = json.listhostsresponse.host;
                             var items = [];
                             $(hostObjs).each(function() {
-                              items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))});
+                              //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
+															items.push({id: this.id, description: this.name});
                             });
                             args.response.success({data: items});
                           }
@@ -5490,7 +5494,8 @@
                             var hostObjs = json.listhostsresponse.host;
                             var items = [];
                             $(hostObjs).each(function() {
-                              items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))});
+                              //items.push({id: this.id, description: (this.name + ": " +(this.hasEnoughCapacity? "Available" : "Full"))}); //listHosts API no longer returns hasEnoughCapacity proprety
+															items.push({id: this.id, description: this.name});
                             });
                             args.response.success({data: items});
                           }
@@ -7630,7 +7635,7 @@
                   var array1 = [];
                   array1.push("&hosttags=" + todb(args.data.hosttags));
 
-                  if (args.data.oscategoryid != null && args.data.oscategoryid != 'None')
+                  if (args.data.oscategoryid != null)
                     array1.push("&osCategoryId=" + args.data.oscategoryid);
 
                   $.ajax({
@@ -7847,11 +7852,12 @@
                           async: true,
                           success: function(json) {
                             var oscategoryObjs = json.listoscategoriesresponse.oscategory;
-                            var items = [
-                              { id: null, description: _l('label.none') }
-                            ];
+                            var items = [];
                             $(oscategoryObjs).each(function() {
-                              items.push({id: this.id, description: this.name});
+                              if(this.name == 'None')
+                                items.unshift({ id: this.id, description: _l('label.none') });
+                              else
+                                items.push({id: this.id, description: this.name});
                             });
                             args.response.success({data: items});
                           }
@@ -9694,7 +9700,7 @@
     if (jsonObj.state == 'Running') {
       allowedActions.push("stop");
       			
-			if(jsonObj.vpcid != null) 
+		//	if(jsonObj.vpcid != null) 
         allowedActions.push("restart");
 				
       allowedActions.push("viewConsole");

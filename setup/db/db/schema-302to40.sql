@@ -237,7 +237,7 @@ ALTER TABLE physical_network_service_providers DROP FOREIGN KEY fk_pnetwork_serv
 SET @constraintname = (select CONCAT(CONCAT('DROP INDEX ', A.CONSTRAINT_NAME), ' ON physical_network_service_providers' )
 from information_schema.key_column_usage A
 JOIN information_schema.key_column_usage B ON B.table_name = 'physical_network_service_providers' AND B.COLUMN_NAME = 'provider_name' AND A.COLUMN_NAME ='physical_network_id' AND B.CONSTRAINT_NAME=A.CONSTRAINT_NAME
-where A.table_name = 'physical_network_service_providers');
+where A.table_name = 'physical_network_service_providers' LIMIT 1);
 
 PREPARE stmt1 FROM @constraintname; 
 EXECUTE stmt1; 
@@ -466,3 +466,5 @@ UPDATE `cloud`.`configuration` SET description='Comma separated list of cidrs in
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'site2site.vpn.vpngateway.connection.limit', '4', 'The maximum number of VPN connection per VPN gateway');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'site2site.vpn.customergateway.subnets.limit', '10', 'The maximum number of subnets per customer gateway');
+
+INSERT IGNORE INTO `cloud`.`guest_os_category` VALUES ('11','None',NULL); 

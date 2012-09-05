@@ -517,7 +517,7 @@ public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
                 s_logger.debug("Unique key already exists on host_details - not adding new one");
             }else{
                 //add the key
-                PreparedStatement pstmtUpdate = conn.prepareStatement("ALTER TABLE `cloud`.`host_details` ADD CONSTRAINT UNIQUE KEY `uk_host_id_name` (`host_id`, `name`)");
+                PreparedStatement pstmtUpdate = conn.prepareStatement("ALTER IGNORE TABLE `cloud`.`host_details` ADD CONSTRAINT UNIQUE KEY `uk_host_id_name` (`host_id`, `name`)");
                 pstmtUpdate.executeUpdate();
                 s_logger.debug("Unique key did not exist on host_details -  added new one");
                 pstmtUpdate.close();

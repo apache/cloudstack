@@ -123,7 +123,7 @@
     </zip>
   </target>
 
-  <target name="package-oss-systemvm-iso" depends="-init-package, package-oss-systemvm,  build-systemvm-patch">
+  <target name="package-oss-systemvm-iso" depends="-init-package, package-oss-systemvm, update-oss-systemvm-with-vmware, build-systemvm-patch">
     <exec executable="${mkisofs}" dir="${dist.dir}">
       <arg value="-quiet"/>
       <arg value="-r"/>
@@ -156,7 +156,8 @@
     </zip>
   </target>
 
-  <target name="build-all" depends="build-opensource, build-plugins, build-ui, build-war-oss, compile-testclient, compile-usage, build-awsapi">
+  <!-- <target name="build-all" depends="build-opensource, build-plugins, build-ui, build-war-oss, compile-testclient, compile-usage, build-awsapi"> -->
+  <target name="build-all" depends="build-opensource, build-plugins, build-ui, build-war-oss, compile-usage, build-awsapi">
   </target>
 
   <target name="build-all-with-simulator" depends="build-all, compile-agent-simulator">
@@ -225,8 +226,6 @@
         <include name="${utils.jar}" />
         <include name="${core.jar}" />
         <include name="${api.jar}" />
-        <include name="${vmware-base.jar}" />
-          <include name="${vmware.jar}" />
       </zipfileset>
       <zipfileset dir="${console-proxy.dist.dir}" filemode="555"/>
       <zipfileset dir="${scripts.dir}/storage/secondary" prefix="scripts/storage/secondary" filemode="555">
@@ -235,6 +234,15 @@
       </zipfileset>
     </zip>
   </target>
+
+  <target name="update-oss-systemvm-with-vmware" depends="-init-package" if="ssvm.include.vmware.jar">
+    <zip destfile="${dist.dir}/systemvm.zip" duplicate="preserve" update="true">
+      <zipfileset dir="${jar.dir}" >
+        <include name="${vmware.jar}" />
+        <include name="${vmware-base.jar}" />
+      </zipfileset>
+    </zip>
+  </target>	
 
   <target name="package-docs" depends="-init-package">
     <delete file="${dist.dir}/docs.zip" />

@@ -25,18 +25,20 @@
 <section id="hypervisor-host-install-network">
     <title>Configure the network bridges</title>
     <warning><para>This is a very important section, please make sure you read this thoroughly.</para></warning>
-    <para>In order to forward traffic to your instances you will need at least two bridges: public and private.</para>
-    <para>By default these bridges are called cloudbr0 and cloudbr1, but you do have to make sure they are available on each hypervisor.</para>
+    <para>In order to forward traffic to your instances you will need at least two bridges: <emphasis>public</emphasis> and <emphasis>private</emphasis>.</para>
+    <para>By default these bridges are called <emphasis>cloudbr0</emphasis> and <emphasis>cloudbr1</emphasis>, but you do have to make sure they are available on each hypervisor.</para>
+    <para>The most important factor is that you keep the configuration consistent on all your hypervisors.</para>
     <section id="hypervisor-host-install-network-vlan">
         <title>Network example</title>
         <para>There are many ways to configure your network. In the Basic networking mode you should have two (V)LAN's, one for your private network and one for the public network.</para>
-        <para>The hypervisor has one NIC (eth0) with three VLAN's:</para>
+        <para>We assume that the hypervisor has one NIC (eth0) with three tagged VLAN's:</para>
         <orderedlist>
             <listitem><para>VLAN 100 for management of the hypervisor</para></listitem>
             <listitem><para>VLAN 200 for public network of the instances (cloudbr0)</para></listitem>
             <listitem><para>VLAN 300 for private network of the instances (cloudbr1)</para></listitem>
         </orderedlist>
         <para>On VLAN 100 we give the Hypervisor the IP-Address 192.168.42.11/24 with the gateway 192.168.42.1</para>
+        <note><para>The Hypervisor and Management server don't have to be in the same subnet!</para></note>
     </section>
     <section id="hypervisor-host-install-network-configure">
         <title>Configuring the network bridges</title>
@@ -116,18 +118,14 @@ STP=yes]]></programlisting>
             <programlisting><![CDATA[auto lo
 iface lo inet loopback
 
-auto eth0.200
-iface eth0.200 inet manual
-
-auto eth0.300
-iface eth0.300 inet manual
-
 # The primary network interface
 auto eth0.100
 iface eth0.100 inet static
     address 192.168.42.11
     netmask 255.255.255.240
     gateway 192.168.42.1
+    dns-nameservers 8.8.8.8 8.8.4.4
+    dns-domain lab.example.org
 
 # Public network
 auto cloudbr0

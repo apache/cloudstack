@@ -57,9 +57,11 @@ cd vagrant || error_exit
 bundle install || error_exit "could not bundle install vagrant"
 rake install  || error_exit "could not rake vagrant"
 cd ~/builddevcloud/veewee || error_exit
+cp -R templates/ubuntu-12.04-server-i386 templates/ubuntu-12.04.1-server-i386
+cp -R templates/ubuntu-12.04-server-i386-packages templates/ubuntu-12.04.1-server-i386-packages
 bundle install || error_exit
 rake install || error_exit
-bundle exec vagrant basebox define 'devcloudbase' 'ubuntu-12.04-server-i386' || error_exit "couldn't basebox define"
+bundle exec vagrant basebox define 'devcloudbase' 'ubuntu-12.04.1-server-i386' || error_exit "couldn't basebox define"
 wget --no-check-certificate -O ./definitions/devcloudbase/definition.rb https://git-wip-us.apache.org/repos/asf\?p\=incubator-cloudstack.git\;a\=blob_plain\;f\=tools/devcloud/veewee/definition.rb\;hb\=HEAD || error_exit "couldn't get file"
 wget --no-check-certificate -O ./definitions/devcloudbase/postinstall.sh https://git-wip-us.apache.org/repos/asf\?p\=incubator-cloudstack.git\;a\=blob_plain\;f\=tools/devcloud/veewee/postinstall.sh\;hb\=HEAD || error_exit "couldn't get file"
 wget --no-check-certificate -O ./definitions/devcloudbase/preseed.cfg https://git-wip-us.apache.org/repos/asf\?p\=incubator-cloudstack.git\;a\=blob_plain\;f\=tools/devcloud/veewee/preseed.cfg\;hb\=HEAD || error_exit "couldn't get file"

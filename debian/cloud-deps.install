@@ -27,7 +27,6 @@
 /usr/share/java/cloud-log4j.jar
 /usr/share/java/cloud-trilead-ssh2-build213.jar
 /usr/share/java/cloud-cglib.jar
-/usr/share/java/cloud-mysql-connector-java-5.1.7-bin.jar
 /usr/share/java/cloud-xenserver-5.6.100-1.jar
 /usr/share/java/cloud-xmlrpc-common-3.*.jar
 /usr/share/java/cloud-xmlrpc-client-3.*.jar

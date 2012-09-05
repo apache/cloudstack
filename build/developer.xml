@@ -37,6 +37,7 @@
   <property name="unittest.jar.dir" location="${unittest.dir}/jar"/>
   <property name="unittest.formatter" value="plain" />
   <property name="ovm.dir" location="${base.dir}/ovm" />
+  <property name="usage.dir" location="${base.dir}/usage" />	
   
   <!-- directories for api doc -->
   <property name="api.docs.dir" location="${dist.dir}/apidocs" />
@@ -149,7 +150,7 @@
     <delete dir="${tomcat.home}/logs" />
     <delete quiet="false" >
       <fileset dir="${tomcat.home}/conf" >
-      	<include name="**/component*.xml" />
+      	<include name="**/*component*.xml" />
       </fileset>
     </delete>
   </target>
@@ -216,16 +217,12 @@
       <available file="${deploy.work.dir}/usage.zip" type="file" />
     </condition>
     <antcall target="unzip-usage" inheritAll="true" />
-    <copy todir="${server.deploy.to.dir}/bin">
-      <fileset dir="${deploy.work.dir}/usage/bin/">
-        <include name="*.sh"/>
-      </fileset>
-    </copy>
     <copy overwrite="true" todir="${server.deploy.to.dir}/conf">
-      <fileset dir="${deploy.work.dir}/usage/conf/">
-        <include name="**/*"/>
+      <fileset dir="${usage.dir}/conf/">
+        <include name="*.in" />
       </fileset>
-    </copy>
+      <globmapper from="*.in" to="*" />
+    </copy>  	
     <copy overwrite="true" todir="${server.deploy.to.dir}/webapps/client/WEB-INF/lib">
       <fileset dir="${deploy.work.dir}/usage/lib/">
         <include name="**/*.jar"/>
@@ -289,6 +286,12 @@
   <path id="test.classpath">
     <path refid="deps.classpath" />
     <path refid="dist.classpath"/>
+    <!-- external deps, added for jenkins
+         depends on mysql-connector-java rpm 
+    -->
+    <fileset dir="/usr/share/java/" erroronmissingdir="true">
+      <include name="mysql-connector-java.jar" />
+    </fileset>
     <fileset dir="${unittest.jar.dir}">
       <include name="*.jar"/>
     </fileset>

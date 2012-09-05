@@ -158,6 +158,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
     @SerializedName(ApiConstants.TAGS)  @Param(description="the list of resource tags associated with vm", responseObject = ResourceTagResponse.class)
     private List<ResourceTagResponse> tags;
 
+    @SerializedName(ApiConstants.SSH_KEYPAIR) @Param(description="ssh key-pair")
+    private String keyPairName;
+
 	public void setHypervisor(String hypervisor) {
 		this.hypervisor = hypervisor;
 	}
@@ -347,5 +350,9 @@ public class UserVmResponse extends BaseResponse implements ControlledEntityResp
 
     public void setTags(List<ResourceTagResponse> tags) {
         this.tags = tags;
+    }
+
+    public void setKeyPairName(String keyPairName) {
+        this.keyPairName = keyPairName;
     }
 }

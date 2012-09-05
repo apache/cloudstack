@@ -584,11 +584,6 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
         return null;
     }
 
-    @Override
-    public PhysicalNetwork translateZoneIdToPhysicalNetwork(long zoneId) {
-        // TODO Auto-generated method stub
-        return null;
-    }
 
     @Override
     public boolean isSecurityGroupSupportedInNetwork(Network network) {
@@ -615,7 +610,7 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     }
 
     @Override
-    public List<? extends UserDataServiceProvider> getPasswordResetElements() {
+    public UserDataServiceProvider getPasswordResetProvider(Network network) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -1136,5 +1131,14 @@ public class MockNetworkManagerImpl implements NetworkManager, Manager, NetworkS
     public Provider getDefaultUniqueProviderForService(String serviceName) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.network.NetworkManager#getNetworkLockTimeout()
+     */
+    @Override
+    public int getNetworkLockTimeout() {
+        // TODO Auto-generated method stub
+        return 0;
     }
 }

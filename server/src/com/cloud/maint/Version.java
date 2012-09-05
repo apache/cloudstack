@@ -47,11 +47,15 @@ public class Version {
     }
     
     public static String trimToPatch(String version) {
+    	int index = version.indexOf("-");
+    	
+    	if ( index > 0 )
+    		version = version.substring(0, index);
+
         String[] tokens = version.split("[.]");
-        
+
         if ( tokens.length < 3  )
         	return "0";
-        
         return tokens[0] + "." + tokens[1]+ "." + tokens[2];
     }
     

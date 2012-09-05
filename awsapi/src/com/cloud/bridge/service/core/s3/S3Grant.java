@@ -19,6 +19,7 @@ package com.cloud.bridge.service.core.s3;
 import java.util.List;
 
 import com.cloud.bridge.model.SAcl;
+import com.cloud.bridge.model.SAclVO;
 import com.cloud.bridge.model.SBucket;
 import com.cloud.bridge.service.exception.UnsupportedException;
 
@@ -64,12 +65,12 @@ public class S3Grant {
 	/* Return an array of S3Grants holding the permissions of grantees by grantee type and their canonicalUserIds.
 	 * Used by S3 engine to get ACL policy requests for buckets and objects.
 	 */
-	public static S3Grant[] toGrants(List<SAcl> grants) {
+	public static S3Grant[] toGrants(List<SAclVO> grants) {
 		if(grants != null) 
 		{
 			S3Grant[] entries = new S3Grant[grants.size()];
 			int i = 0;
-			for(SAcl acl: grants) {
+			for(SAclVO acl: grants) {
 				entries[i] = new S3Grant();
 				entries[i].setGrantee(acl.getGranteeType());
 				entries[i].setCanonicalUserID(acl.getGranteeCanonicalId());

@@ -61,14 +61,18 @@ import com.cloud.agent.api.routing.SetFirewallRulesAnswer;
 import com.cloud.agent.api.routing.SetFirewallRulesCommand;
 import com.cloud.agent.api.routing.SetPortForwardingRulesAnswer;
 import com.cloud.agent.api.routing.SetPortForwardingRulesCommand;
+import com.cloud.agent.api.routing.SetPortForwardingRulesVpcCommand;
 import com.cloud.agent.api.routing.SetStaticNatRulesAnswer;
 import com.cloud.agent.api.routing.SetStaticNatRulesCommand;
+import com.cloud.agent.api.routing.SetStaticRouteAnswer;
+import com.cloud.agent.api.routing.SetStaticRouteCommand;
 import com.cloud.agent.api.routing.Site2SiteVpnCfgCommand;
 import com.cloud.agent.api.routing.VmDataCommand;
 import com.cloud.agent.api.routing.VpnUsersCfgCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.PortForwardingRuleTO;
 import com.cloud.agent.api.to.StaticNatRuleTO;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.network.HAProxyConfigurator;
 import com.cloud.network.LoadBalancerConfigurator;
 import com.cloud.utils.NumbersUtil;
@@ -109,11 +113,15 @@ public class VirtualRoutingResource implements Manager {
 
     public Answer executeRequest(final Command cmd) {
         try {
-            if (cmd instanceof SetPortForwardingRulesCommand ) {
+            if (cmd instanceof SetPortForwardingRulesVpcCommand ) {
+                return execute((SetPortForwardingRulesVpcCommand)cmd);
+            } else if (cmd instanceof SetPortForwardingRulesCommand){
                 return execute((SetPortForwardingRulesCommand)cmd);
+            } else if (cmd instanceof SetStaticRouteCommand){
+                return execute((SetStaticRouteCommand)cmd);
             } else if (cmd instanceof SetStaticNatRulesCommand){
                 return execute((SetStaticNatRulesCommand)cmd);
-            }else if (cmd instanceof LoadBalancerConfigCommand) {
+            } else if (cmd instanceof LoadBalancerConfigCommand) {
                 return execute((LoadBalancerConfigCommand)cmd);
             } else if (cmd instanceof IpAssocCommand) {
                 return execute((IpAssocCommand)cmd);
@@ -232,12 +240,11 @@ public class VirtualRoutingResource implements Manager {
         String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
         String[] results = new String[cmd.getRules().length];
         int i = 0;
-        
         boolean endResult = true;
         for (PortForwardingRuleTO rule : cmd.getRules()) {
             String result = null;
             final Script command = new Script(_firewallPath, _timeout, s_logger);
-            
+
             command.add(routerIp);
             command.add(rule.revoked() ? "-D" : "-A");
             command.add("-P ", rule.getProtocol().toLowerCase());
@@ -672,6 +679,132 @@ public class VirtualRoutingResource implements Manager {
         command.add(localPath);
 
         return command.execute();
+    }
+
+    public String assignGuestNetwork(final String dev, final String routerIP,
+            final String routerGIP, final String gateway, final String cidr,
+            final String netmask, final String dns, final String domainName){
+
+        String args = " -C";
+        args += " -d " + dev;
+        args += " -i " + routerGIP;
+        args += " -g " + gateway;
+        args += " -m " + cidr;
+        args += " -n " + netmask;
+        if ( dns != null && !dns.isEmpty() ) {
+            args += " -s " + dns;
+        }
+        if ( domainName != null && !domainName.isEmpty() ) {
+            args += " -e " + domainName;
+        }
+        return routerProxy("vpc_guestnw.sh", routerIP, args);
+    }
+
+    public String assignNetworkACL(final String routerIP, final String dev,
+            final String routerGIP, final String netmask, final String rule){
+        String args = " -d " + dev;
+        args += " -i " + routerGIP;
+        args += " -m " + netmask;
+        args += " -a " + rule;
+        return routerProxy("vpc_acl.sh", routerIP, args);
+    }
+
+    public String assignSourceNat(final String routerIP, final String pubIP, final String dev) {
+        String args = " -A ";
+        args += " -l ";
+        args += pubIP;
+        args += " -c ";
+        args += dev;
+        return routerProxy("vpc_snat.sh", routerIP, args);
+    }
+
+    private SetPortForwardingRulesAnswer execute(SetPortForwardingRulesVpcCommand cmd) {
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String[] results = new String[cmd.getRules().length];
+        int i = 0;
+
+        boolean endResult = true;
+        for (PortForwardingRuleTO rule : cmd.getRules()) {
+            String args = rule.revoked() ? " -D" : " -A";
+            args += " -P " + rule.getProtocol().toLowerCase();
+            args += " -l " + rule.getSrcIp();
+            args += " -p " + rule.getStringSrcPortRange();
+            args += " -r " + rule.getDstIp();
+            args += " -d " + rule.getStringDstPortRange().replace(":", "-");
+
+            String result = routerProxy("vpc_portforwarding.sh", routerIp, args);
+
+            if (result != null) {
+                results[i++] = "Failed";
+                endResult = false;
+            } else {
+                results[i++] = null;
+            }
+        }
+        return new SetPortForwardingRulesAnswer(cmd, results, endResult);
+    }
+
+    public void assignVpcIpToRouter(final String routerIP, final boolean add, final String pubIP,
+            final String nicname, final String gateway, final String netmask, final String subnet) throws Exception {
+        try {
+            String args = "";
+
+            if (add) {
+                args += " -A ";
+            } else {
+                args += " -D ";
+            }
+
+            args += " -l ";
+            args += pubIP;
+            args += " -c ";
+            args += nicname;
+            args += " -g ";
+            args += gateway;
+            args += " -m ";
+            args += netmask;
+            args += " -n ";
+            args += subnet;
+
+            String result = routerProxy("vpc_ipassoc.sh", routerIP, args);
+            if (result != null) {
+                throw new InternalErrorException("KVM plugin \"vpc_ipassoc\" failed:"+result);
+            }
+        } catch (Exception e) {
+            String msg = "Unable to assign public IP address due to " + e.toString();
+            s_logger.warn(msg, e);
+            throw new Exception(msg);
+        }
+    }
+
+    private SetStaticRouteAnswer execute(SetStaticRouteCommand cmd) {
+        String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        try {
+            String[] results = new String[cmd.getStaticRoutes().length];
+            String [][] rules = cmd.generateSRouteRules();
+            StringBuilder sb = new StringBuilder();
+            String[] srRules = rules[0];
+
+            for (int i = 0; i < srRules.length; i++) {
+                sb.append(srRules[i]).append(',');
+            }
+
+            String args = " -a " + sb.toString();
+            String result = routerProxy("vpc_staticroute.sh", routerIP, args);
+
+            if (result != null) {
+                for (int i=0; i < results.length; i++) {
+                    results[i] = "Failed";
+                }
+                return new SetStaticRouteAnswer(cmd, false, results);
+            }
+
+            return new SetStaticRouteAnswer(cmd, true, results);
+        } catch (Exception e) {
+            String msg = "SetStaticRoute failed due to " + e.toString();
+            s_logger.error(msg, e);
+            return new SetStaticRouteAnswer(cmd, false, null);
+        }
     }
 
 

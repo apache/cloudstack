@@ -24,6 +24,7 @@
 
 <section id="hypervisor-host-install-security-policies">
     <title>Configure the Security Policies</title>
+    <para>&PRODUCT; does various things which can be blocked by security mechanisms like AppArmor and SELinux. These have to be disabled to ensure the Agent has all the required permissions.</para>
     <orderedlist>
         <listitem>
             <para>Configure SELinux (RHEL and CentOS)</para>

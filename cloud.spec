@@ -164,6 +164,8 @@ Requires: %{name}-utils = %{version}
 Requires: apache-commons-dbcp
 Requires: apache-commons-collections
 Requires: jakarta-commons-httpclient
+Requires: jakarta-taglibs-standard
+Requires: mysql-connector-java
 %endif
 
 Group:     System Environment/Libraries
@@ -461,45 +463,41 @@ fi
 
 %files deps
 %defattr(0644,root,root,0755)
-%{_javadir}/%{name}-commons-codec-1.5.jar
-%{_javadir}/%{name}-commons-dbcp-1.4.jar
-%{_javadir}/%{name}-commons-pool-1.5.6.jar
-%{_javadir}/%{name}-commons-httpclient-3.1.jar
-%{_javadir}/%{name}-google-gson-1.7.1.jar
-%{_javadir}/%{name}-netscaler.jar
-%{_javadir}/%{name}-netscaler-sdx.jar
-%{_javadir}/%{name}-log4j-extras.jar
-%{_javadir}/%{name}-backport-util-concurrent-3.0.jar
-%{_javadir}/%{name}-plugin-hypervisor-kvm.jar
-%{_javadir}/%{name}-ehcache.jar
-%{_javadir}/%{name}-email.jar
-%{_javadir}/%{name}-httpcore-4.0.jar
-%{_javadir}/libvirt-0.4.8.jar
-%{_javadir}/%{name}-log4j.jar
-%{_javadir}/%{name}-trilead-ssh2-build213.jar
-%{_javadir}/%{name}-cglib.jar
-%{_javadir}/%{name}-mysql-connector-java-5.1.7-bin.jar
-%{_javadir}/%{name}-xenserver-5.6.100-1.jar
-%{_javadir}/%{name}-xmlrpc-common-3.*.jar
-%{_javadir}/%{name}-xmlrpc-client-3.*.jar
-%{_javadir}/%{name}-jstl-1.2.jar
-%{_javadir}/jetty-6.1.26.jar
-%{_javadir}/jetty-util-6.1.26.jar
-%{_javadir}/%{name}-axis.jar
-%{_javadir}/%{name}-commons-discovery.jar
-%{_javadir}/%{name}-wsdl4j-1.6.2.jar
-%{_javadir}/%{name}-bcprov-jdk16-1.45.jar
-%{_javadir}/%{name}-jsch-0.1.42.jar
-%{_javadir}/%{name}-iControl.jar
-%{_javadir}/%{name}-manageontap.jar
+%{_javadir}/commons-codec-1.6.jar
+%{_javadir}/commons-dbcp-1.4.jar
+%{_javadir}/commons-pool-1.6.jar
+%{_javadir}/gson-1.7.1.jar
+%{_javadir}/netscaler-1.0.jar
+%{_javadir}/netscaler-sdx-1.0.jar
+%{_javadir}/backport-util-concurrent-3.1.jar
+%{_javadir}/ehcache-1.5.0.jar
+%{_javadir}/httpcore-4.0.jar
+%{_javadir}/mail-1.4.jar
+%{_javadir}/activation-1.1.jar
+%{_javadir}/mysql-connector-java-5.1.21.jar
+%{_javadir}/hibernate-jpa-2.0-api-1.0.0.Final.jar
+%{_javadir}/hibernate-entitymanager-3.5.1-Final.jar
+%{_javadir}/hibernate-core-3.5.1-Final.jar
+%{_javadir}/hibernate-commons-annotations-3.2.0.Final.jar
+%{_javadir}/hibernate-annotations-3.5.1-Final.jar
+%{_javadir}/asm-3.1.jar
+%{_javadir}/xapi-5.6.100-1-20120825.123319-1.jar
+%{_javadir}/log4j-*.jar
+%{_javadir}/trilead-ssh2-build213-svnkit-1.3-patch.jar
+%{_javadir}/cglib-2.2.jar
+%{_javadir}/xmlrpc-common-3.*.jar
+%{_javadir}/xmlrpc-client-3.*.jar
+%{_javadir}/axis-1.4.jar
+%{_javadir}/wsdl4j-1.6.2.jar
+%{_javadir}/bcprov-jdk16-1.46.jar
+%{_javadir}/jsch-0.1.42.jar
+%{_javadir}/icontrol-1.0.jar
+%{_javadir}/manageontap-1.0.jar
 %{_javadir}/vmware*.jar
-%{_javadir}/%{name}-jnetpcap.jar
-%{_javadir}/%{name}-junit.jar
-%{_javadir}/%{name}-jasypt-1.8.jar
-%{_javadir}/%{name}-commons-configuration-1.8.jar
-%{_javadir}/%{name}-commons-lang-2.6.jar
-%{_javadir}/%{name}-ejb-api-3.0.jar
-%{_javadir}/%{name}-javax.persistence-2.0.0.jar
+%{_javadir}/jasypt-1.*.jar
+%{_javadir}/commons-configuration-1.8.jar
+%{_javadir}/commons-lang-2.6.jar
+%{_javadir}/ejb-api-3.0.jar
 
 
 %files core
@@ -552,6 +550,7 @@ fi
 %files agent-libs
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-agent.jar
+%{_javadir}/%{name}-plugin-hypervisor-kvm.jar
 
 %files agent
 %defattr(0644,root,root,0755)
@@ -589,7 +588,7 @@ fi
 %defattr(0644,cloud,cloud,0755)
 %{_datadir}/cloud/bridge/conf/*
 %{_datadir}/cloud/bridge/lib/*
-%{_datadir}/cloud/bridge/webapps/*
+%{_datadir}/cloud/bridge/webapps7080/*
 %attr(0644,root,root) %{_datadir}/cloud/setup/bridge/db/*
 %attr(0755,root,root) %{_bindir}/cloudstack-aws-api-register
 %attr(0755,root,root) %{_bindir}/cloud-setup-bridge
