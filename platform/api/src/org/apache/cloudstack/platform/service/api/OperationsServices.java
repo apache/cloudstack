@@ -27,6 +27,8 @@ public interface OperationsServices {
 
     List<AsyncJob> listJobsInProgress();
 
+    List<AsyncJob> listJobsCompleted();
+
     List<AsyncJob> listJobsCompleted(Long from);
 
     List<AsyncJob> listJobsInWaiting();
