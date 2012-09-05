@@ -20,5 +20,7 @@ package org.apache.cloudstack.platform.cloud.entity.api;
 
 import org.apache.cloudstack.platform.entity.api.CloudEntity;
 
-public interface NetworkEntity extends CloudEntity {
+import com.cloud.network.Network;
+
+public interface NetworkEntity extends CloudEntity, Network {
 }

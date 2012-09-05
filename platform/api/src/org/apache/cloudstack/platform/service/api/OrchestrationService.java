@@ -24,6 +24,7 @@ import java.util.Map;
 
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 
 public interface OrchestrationService {
@@ -102,10 +103,6 @@ public interface OrchestrationService {
 
     void joinNetwork(String network1, String network2);
 
-    void attachNetwork(String network, String vm);
-
-    void detachNetwork(String network, String vm);
-
     void attachVolume(String vm, String vol);
 
     void createNetwork();
@@ -113,14 +110,6 @@ public interface OrchestrationService {
     void destroyNetwork();
 
     void createVolume();
-
-    void destroyVolume();
-
-    void snapshotVirtualMachine(String vm);
-
-    void snapshotVolume(String volume);
-
-    void backup(String snapshot);
 
     void registerTemplate(String name, URL path, String os, Hypervisor hypervisor);
 }
