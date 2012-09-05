@@ -164,6 +164,7 @@ Requires: %{name}-utils = %{version}
 Requires: apache-commons-dbcp
 Requires: apache-commons-collections
 Requires: jakarta-commons-httpclient
+Requires: jakarta-taglibs-standard
 Requires: mysql-connector-java
 %endif
 
