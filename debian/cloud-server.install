@@ -22,15 +22,10 @@
 /usr/share/java/cloud-dp-user-dispersing.jar
 /usr/share/java/cloud-host-allocator-random.jar
 /usr/share/java/cloud-plugin-elb.jar
-/usr/share/java/cloud-plugin-f5.jar
-/usr/share/java/cloud-plugin-netapp.jar
-/usr/share/java/cloud-plugin-netscaler.jar
 /usr/share/java/cloud-plugin-ovs.jar
-/usr/share/java/cloud-plugin-srx.jar
 /usr/share/java/cloud-plugin-nicira-nvp.jar
 /usr/share/java/cloud-storage-allocator-random.jar
 /usr/share/java/cloud-user-authenticator-ldap.jar
 /usr/share/java/cloud-user-authenticator-md5.jar
 /usr/share/java/cloud-user-authenticator-plaintext.jar
 /usr/share/java/cloud-xen.jar
-/usr/share/java/cloud-vmware.jar

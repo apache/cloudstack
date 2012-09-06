@@ -15,6 +15,5 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/usr/share/java/cloud-google-gson-1.7.1.jar
+/usr/share/java/gson-1.7.1.jar
 /usr/share/java/libvirt-0.4.8.jar
-/usr/share/java/cloud-log4j-extras.jar
