@@ -444,37 +444,21 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     }
 
     @Override
-    public boolean savePasswordToRouter(Network network, NicProfile nic, VirtualMachineProfile<UserVm> profile, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
-        if (routers == null || routers.isEmpty()) {
-            s_logger.warn("Unable save password, router doesn't exist in network " + network.getId());
-            throw new CloudRuntimeException("Unable to save password to router");
-        }
+    public boolean savePasswordToRouter(Network network, final NicProfile nic, VirtualMachineProfile<UserVm> profile, List<? extends VirtualRouter> routers) throws ResourceUnavailableException {
+        _userVmDao.loadDetails((UserVmVO) profile.getVirtualMachine());
 
-        UserVm userVm = profile.getVirtualMachine();
-        String password = (String) profile.getParameter(Param.VmPassword);
-        String encodedPassword = PasswordGenerator.rot13(password);
-        DataCenter dc = _dcDao.findById(userVm.getDataCenterIdToDeployIn());
+        final VirtualMachineProfile<UserVm> updatedProfile = profile;
 
-        boolean result = true;
-        for (VirtualRouter router : routers) {
-            boolean sendPassword = true;
-            if (dc.getNetworkType() == NetworkType.Basic && userVm.getPodIdToDeployIn().longValue() != router.getPodIdToDeployIn().longValue()) {
-                sendPassword = false;
+        return applyRules(network, routers, "save password entry", false, null, false, new RuleApplier() {
+            @Override
+            public boolean execute(Network network, VirtualRouter router) throws ResourceUnavailableException {
+                // for basic zone, send vm data/password information only to the router in the same pod
+                Commands cmds = new Commands(OnError.Stop);
+                NicVO nicVo = _nicDao.findById(nic.getId());
+                createPasswordCommand(router, updatedProfile, nicVo, cmds);
+                return sendCommandsToRouter(router, cmds);
             }
-
-            if (sendPassword) {
-                Commands cmds = new Commands(OnError.Continue);
-                SavePasswordCommand cmd = new SavePasswordCommand(encodedPassword, nic.getIp4Address(), userVm.getHostName());
-                cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
-                cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
-                DataCenterVO dcVo = _dcDao.findById(router.getDataCenterIdToDeployIn());
-                cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
-                cmds.addCommand("password", cmd);
-
-                result = result && sendCommandsToRouter(router, cmds);
-            }
-        }
-        return result;
+        });
     }
 
     @Override @ActionEvent(eventType = EventTypes.EVENT_ROUTER_STOP, eventDescription = "stopping router Vm", async = true)
