@@ -24,9 +24,11 @@ public interface SHost  {
 	
 	public static final int STORAGE_HOST_TYPE_LOCAL = 0;
 	public static final int STORAGE_HOST_TYPE_NFS = 1;
+    public static final int STORAGE_HOST_TYPE_CASTOR = 2;
 	public static enum StorageHostType {
 	    STORAGE_HOST_TYPE_LOCAL, //0
-	    STORAGE_HOST_TYPE_NFS //1
+        STORAGE_HOST_TYPE_NFS, //1
+        STORAGE_HOST_TYPE_CASTOR //2
 	}
 /*	private Long id;
 	
