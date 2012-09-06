@@ -538,6 +538,8 @@ fi
 %files agent-libs
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-agent.jar
+%{_javadir}/%{name}-plugin-hypervisor-kvm.jar
+%{_javadir}/libvirt-0.4.8.jar
 
 %files agent
 %defattr(0644,root,root,0755)
