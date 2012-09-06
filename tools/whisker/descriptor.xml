@@ -2400,6 +2400,10 @@ this distribution.
             id='citrix.com'
             name='Citrix Systems, Inc'
             url='http://www.citrix.com/' />
+        <organisation
+            id='caringo.com'
+            name='Caringo, Inc.'
+            url='http://www.caringo.com/' />
     </organisations>
     <primary-license id='ApacheLicenseVersion2'>
         <copyright-notice>Copyright (c) 2012 The Apache Software Foundation</copyright-notice>
@@ -2516,6 +2520,7 @@ Updated November 2009 with contributions from: btburnett3, Anthony Aragues and X
             </by-organisation>
         </with-license>
         <with-license id='MIT'>
+            <copyright-notice />
             <by-organisation id='person:ole.laursen'>
                 <resource name="jquery.colorhelpers.js" notice='jquery.colorhelpers.notice' />
             </by-organisation>
@@ -2523,6 +2528,7 @@ Updated November 2009 with contributions from: btburnett3, Anthony Aragues and X
     </within>
     <within dir='ui/lib/jquery-ui'>
         <with-license id='MIT'>
+            <copyright-notice />
             <by-organisation id='jqueryui.com'>
                 <resource name="css/jquery-ui.css" />
                 <resource name="js/jquery-ui.js" />
@@ -2531,10 +2537,10 @@ Updated November 2009 with contributions from: btburnett3, Anthony Aragues and X
         </with-license>
     </within>
     <within dir='ui/lib/qunit'>
-        <copyright-notice>
-Copyright © 2012 John Resig, Jörn Zaefferer
-        </copyright-notice>
         <with-license id='MIT'>
+	        <copyright-notice>
+Copyright © 2012 John Resig, Jörn Zaefferer
+	        </copyright-notice>
             <by-organisation id='person:jorn.zaefferer'>
                 <resource name="qunit.css" source='http://docs.jquery.com/QUnit' />
                 <resource name="qunit.js" source='http://docs.jquery.com/QUnit' />
@@ -2585,6 +2591,9 @@ Copyright © 2012 The Apache Software Foundation
             </by-organisation>
         </with-license>
         <with-license id="ApacheLicenseVersion1.1">
+            <copyright-notice>
+Copyright © 2012 The Apache Software Foundation
+            </copyright-notice>
             <by-organisation id="apache.org">
                 <resource name="cloud-commons-discovery.jar" source="http://commons.apache.org/discovery/" />
             </by-organisation>
@@ -2640,6 +2649,14 @@ Copyright © 2012 The Eclipse Foundation.
         </with-license>
         <with-license id='BSD3ClauseGeneric'>
             <copyright-notice>
+Copyright © 2009, Caringo, Inc.
+            </copyright-notice>
+            <by-organisation id='caringo.com'>
+                <resource name='CAStorSDK.jar' source='http://www.castor.org/download.html' />
+            </by-organisation>
+        </with-license>
+        <with-license id='BSD3ClauseGeneric'>
+            <copyright-notice>
 Copyright © 2002-2011 Atsuhiko Yamanaka, JCraft,Inc.
             </copyright-notice>
             <by-organisation id='jcraft.com'>
@@ -2656,11 +2673,13 @@ Copyright © IBM Corp 2006
             </by-organisation>
         </with-license>
         <with-license id='xstream.bsd'>
+            <copyright-notice />
             <by-organisation id='xstream.codehaus.com'>
                 <resource name='cloud-xstream-1.3.1.jar' source='http://xstream.codehaus.org/repository.html' />
             </by-organisation>
         </with-license>
         <with-license id='bouncy.mit'>
+            <copyright-notice />
             <by-organisation id='bouncy.castle'>
                 <resource name='cloud-bcprov-jdk16-1.45.jar' source='http://repo1.maven.org/maven2/org/bouncycastle/bcprov-jdk16/1.45/bcprov-jdk16-1.45-sources.jar' />
             </by-organisation>
@@ -2675,12 +2694,14 @@ All rights reserved.
             </by-organisation>
         </with-license>
         <with-license id='ApacheLicenseVersion2'>
+            <copyright-notice />
             <by-organisation id='jetty.codehaus.com'>
                 <resource name='jetty-6.1.26.jar' source='http://repo1.maven.org/maven2/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26-sources.jar' />
                 <resource name='jetty-util-6.1.26.jar' source='http://repo1.maven.org/maven2/org/mortbay/jetty/jetty-util/6.1.26/jetty-util-6.1.26-sources.jar' />
             </by-organisation>
         </with-license>
         <with-license id='CPL1'>
+            <copyright-notice />
         	<by-organisation id='junit.org'>
         		<resource name='cloud-junit.jar' source='http://kentbeck.github.com/junit/' />
             </by-organisation>
@@ -2731,6 +2752,7 @@ Copyright © 2004-2008 The Apache Software Foundation
 			</by-organisation>
 		</with-license>
 		<with-license id='antlr2'>
+            <copyright-notice />
 			<by-organisation id='antlr2.org'>
 				<resource name='antlr-2.7.6.jar' source='http://repo1.maven.org/maven2/antlr/antlr/2.7.6/antlr-2.7.6-sources.jar' />
 			</by-organisation>
@@ -2788,6 +2810,7 @@ Copyright © 2009 Google Inc.
             </by-organisation>
         </with-license>
         <with-license id='dom4j.license'>
+            <copyright-notice />
         	<by-organisation id='dom4j.sourceforge.net'>
         		<!-- TODO: Need to have a review of this license! -->
         		<resource name='dom4j-1.6.1.jar' source='http://dom4j.sourceforge.net/source-repository.html' />
@@ -2820,6 +2843,7 @@ Copyright © 2002-2011 Atsuhiko Yamanaka, JCraft,Inc.
             </by-organisation>
         </with-license>
         <with-license id='ApacheLicenseVersion2'>
+            <copyright-notice />
             <by-organisation id='json-simple'>
                 <resource name='json_simple-1.1.jar' source='http://code.google.com/p/json-simple/source/checkout' />
             </by-organisation>
@@ -2833,11 +2857,13 @@ Copyright © 1997-2010 Oracle and/or its affiliates. All rights reserved.
             </by-organisation>
         </with-license>
         <with-license id='CPL1'>
+            <copyright-notice />
         	<by-organisation id='junit.org'>
         		<resource name='junit-4.8.1.jar' source='http://kentbeck.github.com/junit/' />
             </by-organisation>
         </with-license>
         <with-license id='MPL1'>
+            <copyright-notice />
         	<license-parameters>
         		<parameter><name>PROJECT</name><value>Javassist</value></parameter>
         		<parameter><name>INITIAL_DEVELOPER</name><value>Shigeru Chiba</value></parameter>
