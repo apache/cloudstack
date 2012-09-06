@@ -61,12 +61,23 @@ systemjars = {
 		"tomcat6-servlet-2.5-api.jar",
 		"tomcat6-el-2.1-api-6.0.24.jar",
 		"tomcat6-jsp-2.1-api-6.0.24.jar",
+                "jakarta-taglibs-core-1.1.1.jar",
+                "jakarta-taglibs-standard-1.1.1.jar",
+                "tomcat6/jasper.jar",
+                "tomcat6/jasper-el.jar",
+                "tomcat6/jasper-jdt.jar",
+                
 	),
 	'CentOS':
 	(
 		"tomcat6-servlet-2.5-api.jar",
 		"tomcat6-jsp-2.1-api-6.0.24.jar",
 		"tomcat6-el-2.1-api-6.0.24.jar",
+                "jakarta-taglibs-core-1.1.1.jar",
+                "jakarta-taglibs-standard-1.1.1.jar",
+                "tomcat6/jasper.jar",
+                "tomcat6/jasper-el.jar",
+                "tomcat6/jasper-jdt.jar",
 		#"tomcat6/catalina.jar", # all supported distros put the file there
 	),
 	'Ubuntu':

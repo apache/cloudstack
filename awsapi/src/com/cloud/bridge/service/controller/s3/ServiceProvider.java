@@ -243,7 +243,13 @@ public class ServiceProvider {
 		//PersistContext.flush();
 
 		String localStorageRoot = properties.getProperty("storage.root");
-		if (localStorageRoot != null) setupLocalStorage(localStorageRoot);
+        if (localStorageRoot != null) {
+            if (localStorageRoot.toLowerCase().startsWith("castor")) {
+                setupCAStorStorage(localStorageRoot);
+            } else {
+                setupLocalStorage(localStorageRoot);
+            }
+        }
 
 		multipartDir = properties.getProperty("storage.multipartDir");
 		
@@ -318,7 +324,20 @@ public class ServiceProvider {
 		}
 	}
 
-	public void shutdown() {
+    private void setupCAStorStorage(String storageRoot) {
+		SHostVO shost = shostDao.getLocalStorageHost(mhost.getId(), storageRoot);
+		if(shost == null) {
+			shost = new SHostVO();
+			shost.setMhost(mhost);
+			shost.setMhostid(mhost.getId());
+			shost.setHostType(SHost.STORAGE_HOST_TYPE_CASTOR);
+			shost.setHost(NetHelper.getHostName());
+			shost.setExportRoot(storageRoot);
+			shostDao.persist(shost);
+		}
+    }
+
+   public void shutdown() {
 		timer.cancel();
 
 		if(logger.isInfoEnabled())

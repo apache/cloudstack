@@ -20,7 +20,6 @@ under the License.
 This is the version information for the manifests in the JAR files.
 
 Implementation_Version:                           @Implementation_Version@
-Ant arguments:                                    @ant_args@
 
 This file exists solely to trigger ant recompilation if it is needed.
 Otherwise, JAR files and all the dependent files are brought from cache.

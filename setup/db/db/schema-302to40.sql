@@ -466,3 +466,5 @@ UPDATE `cloud`.`configuration` SET description='Comma separated list of cidrs in
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'site2site.vpn.vpngateway.connection.limit', '4', 'The maximum number of VPN connection per VPN gateway');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'site2site.vpn.customergateway.subnets.limit', '10', 'The maximum number of subnets per customer gateway');
+
+INSERT IGNORE INTO `cloud`.`guest_os_category` VALUES ('11','None',NULL); 

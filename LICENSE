@@ -375,7 +375,7 @@ Within the deps/awsapi-lib directory
             cloud-gson.jar  http://code.google.com/p/google-gson/             
 
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
-    $license.CopyrightNotice
+    
         from Json.simple Project  http://code.google.com/p/json-simple/ 
             json_simple-1.1.jar  http://code.google.com/p/json-simple/source/checkout             
 
@@ -2368,7 +2368,8 @@ Within the target/jar directory
             cloud-backport-util-concurrent-3.0.jar
 
     licensed under the Apache License, Version 1.1 http://www.apache.org/licenses/LICENSE-1.1  (as follows)
- 
+
+            Copyright © 2012 The Apache Software Foundation 
             
             /* ====================================================================
              * The Apache Software License, Version 1.1
@@ -2462,10 +2463,41 @@ Within the target/jar directory
             cloud-google-gson-1.7.1.jar  http://code.google.com/p/google-gson/             
 
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
-    $license.CopyrightNotice
+    
         from Jetty Committers  http://jetty.codehaus.org/jetty/ 
             jetty-6.1.26.jar  http://repo1.maven.org/maven2/org/mortbay/jetty/jetty/6.1.26/jetty-6.1.26-sources.jar             
             jetty-util-6.1.26.jar  http://repo1.maven.org/maven2/org/mortbay/jetty/jetty-util/6.1.26/jetty-util-6.1.26-sources.jar             
+
+    licensed under the BSD (3-clause) http://www.opensource.org/licenses/BSD-3-Clause  (as follows)
+
+            Copyright © 2009, Caringo, Inc. 
+            
+              Redistribution and use in source and binary forms, with or without
+              modification, are permitted provided that the following conditions
+              are met:
+              1. Redistributions of source code must retain the above copyright
+                 notice, this list of conditions and the following disclaimer.
+              2. Redistributions in binary form must reproduce the above copyright
+                 notice, this list of conditions and the following disclaimer in the
+                 documentation and/or other materials provided with the distribution.
+              3. Neither the name of the copyright holders nor the names of its
+                 contributors may be used to endorse or promote products derived from
+                 this software without specific prior written permission.
+             
+              THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+              AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+              IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+              ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+              LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+              CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+              SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+              INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+              CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+              ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+              THE POSSIBILITY OF SUCH DAMAGE.
+                            
+        from Caringo, Inc.  http://www.caringo.com/ 
+            CAStorSDK.jar  http://www.castor.org/download.html             
 
     licensed under the BSD (3-clause) http://www.opensource.org/licenses/BSD-3-Clause  (as follows)
 
@@ -4118,7 +4150,8 @@ Within the ui/lib/jquery-ui directory
 
 Within the ui/lib/qunit directory
     licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
- 
+
+            Copyright © 2012 John Resig, Jörn Zaefferer 
             
             Permission is hereby granted, free  of charge, to any person obtaining
             a  copy  of this  software  and  associated  documentation files  (the

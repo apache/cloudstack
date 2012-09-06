@@ -1211,7 +1211,7 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
             GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
             Map<String, String> hostDetails = _hostDetailsDao.findDetails(hostId);
 
-            if (guestOSCategory != null) {
+            if (guestOSCategory != null && !GuestOSCategoryVO.CATEGORY_NONE.equalsIgnoreCase(guestOSCategory.getName())) {
                 // Save a new entry for guest.os.category.id
                 hostDetails.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
             } else {

@@ -187,7 +187,7 @@ public interface NetworkManager extends NetworkService {
 
     Nic getDefaultNic(long vmId);
 
-    List<? extends UserDataServiceProvider> getPasswordResetElements();
+    UserDataServiceProvider getPasswordResetProvider(Network network);
 
     boolean networkIsConfiguredForExternalNetworking(long zoneId, long networkId);
 

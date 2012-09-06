@@ -204,7 +204,7 @@
     <path refid="deps.classpath" />
     <path refid="dist.classpath" />
   </path>
-  <target name="compile-core" depends="-init, compile-utils, compile-api, compile-vmware-base" description="Compile the core business logic.">
+  <target name="compile-core" depends="-init, compile-utils, compile-api" description="Compile the core business logic.">
     <compile-java jar.name="${core.jar}" top.dir="${core.dir}" classpath="core.classpath" />
   </target>
 

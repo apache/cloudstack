@@ -126,6 +126,8 @@ import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
 import com.cloud.agent.api.SecurityGroupRuleAnswer;
 import com.cloud.agent.api.SecurityGroupRulesCmd;
+import com.cloud.agent.api.SetupGuestNetworkAnswer;
+import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -144,7 +146,12 @@ import com.cloud.agent.api.proxy.ConsoleProxyLoadAnswer;
 import com.cloud.agent.api.proxy.WatchConsoleProxyLoadCommand;
 import com.cloud.agent.api.routing.IpAssocAnswer;
 import com.cloud.agent.api.routing.IpAssocCommand;
+import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.api.routing.SetNetworkACLAnswer;
+import com.cloud.agent.api.routing.SetNetworkACLCommand;
+import com.cloud.agent.api.routing.SetSourceNatAnswer;
+import com.cloud.agent.api.routing.SetSourceNatCommand;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
@@ -1028,6 +1035,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements
                 return execute((PlugNicCommand) cmd);
             } else if (cmd instanceof UnPlugNicCommand) {
                 return execute((UnPlugNicCommand) cmd);
+            } else if (cmd instanceof SetupGuestNetworkCommand) {
+                return execute((SetupGuestNetworkCommand) cmd);
+            } else if (cmd instanceof SetNetworkACLCommand) {
+                return execute((SetNetworkACLCommand) cmd);
+            } else if (cmd instanceof SetSourceNatCommand) {
+                return execute((SetSourceNatCommand) cmd);
+            } else if (cmd instanceof IpAssocVpcCommand) {
+                return execute((IpAssocVpcCommand) cmd);
             } else if (cmd instanceof IpAssocCommand) {
                 return execute((IpAssocCommand) cmd);
             } else if (cmd instanceof NetworkElementCommand) {
@@ -1239,7 +1254,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         }
 
         Domain vm = getDomain(conn, vmName);
-        vm.attachDevice(_vifDriver.plug(nicTO, "Other PV").toString());
+        vm.attachDevice(_vifDriver.plug(nicTO, "Other PV (32-bit)").toString());
     }
 
     private PlugNicAnswer execute(PlugNicCommand cmd) {
@@ -1249,7 +1264,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         try {
             conn = LibvirtConnection.getConnection();
             Domain vm = getDomain(conn, vmName);
-            vm.attachDevice(_vifDriver.plug(nic, "Other PV").toString());
+            List<InterfaceDef> pluggedNics = getInterfaces(conn, vmName);
+            Integer nicnum = 0;
+            for (InterfaceDef pluggedNic : pluggedNics) {
+                if (pluggedNic.getMacAddress().equalsIgnoreCase(nic.getMac())) {
+                    s_logger.debug("found existing nic for mac "+ pluggedNic.getMacAddress() + " at index "+nicnum);
+                    return new PlugNicAnswer(cmd, true, "success");
+                }
+                nicnum++;
+            }
+            vm.attachDevice(_vifDriver.plug(nic, "Other PV (32-bit)").toString());
             return new PlugNicAnswer(cmd, true, "success");
         } catch (Exception e) {
             String msg = " Plug Nic failed due to " + e.toString();
@@ -1277,7 +1301,195 @@ public class LibvirtComputingResource extends ServerResourceBase implements
             String msg = " Unplug Nic failed due to " + e.toString();
             s_logger.warn(msg, e);
             return new UnPlugNicAnswer(cmd, false, msg);
-        } 
+        }
+    }
+
+    private SetupGuestNetworkAnswer execute(SetupGuestNetworkCommand cmd) {
+        Connect conn;
+        NicTO nic = cmd.getNic();
+        String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        String routerGIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP);
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String gateway = cmd.getAccessDetail(NetworkElementCommand.GUEST_NETWORK_GATEWAY);
+        String cidr = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));;
+        String domainName = cmd.getNetworkDomain();
+        String dns = cmd.getDefaultDns1();
+
+        if (dns == null || dns.isEmpty()) {
+            dns = cmd.getDefaultDns2();
+        } else {
+            String dns2= cmd.getDefaultDns2();
+            if ( dns2 != null && !dns2.isEmpty()) {
+                dns += "," + dns2;
+            }
+        }
+
+        try {
+            conn = LibvirtConnection.getConnection();
+            Domain vm = getDomain(conn, routerName);
+            List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
+            InterfaceDef routerNic = null;
+
+            for (InterfaceDef pluggedNic : pluggedNics) {
+                if (pluggedNic.getMacAddress().equalsIgnoreCase(nic.getMac())) {
+                    routerNic = pluggedNic;
+                    break;
+                }
+            }
+
+            if ( routerNic == null ) {
+                return new SetupGuestNetworkAnswer(cmd, false, "Can not find nic with mac " + nic.getMac() + " for VM " + routerName);
+            }
+
+            String args = "vpc_guestnw.sh " + routerIP + " -C";
+            String dev = "eth" + nic.getDeviceId();
+            String netmask = NetUtils.getSubNet(routerGIP, nic.getNetmask());
+            String result = _virtRouterResource.assignGuestNetwork(dev, routerIP,
+                           routerGIP, gateway, cidr, netmask, dns, domainName );
+
+            if (result != null) {
+                return new SetupGuestNetworkAnswer(cmd, false, "Creating guest network failed due to " + result);
+            }
+            return new SetupGuestNetworkAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = "Creating guest network failed due to " + e.toString();
+            s_logger.warn(msg, e);
+            return new SetupGuestNetworkAnswer(cmd, false, msg);
+        }
+    }
+
+    private SetNetworkACLAnswer execute(SetNetworkACLCommand cmd) {
+        String[] results = new String[cmd.getRules().length];
+        String callResult;
+        Connect conn;
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIp = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+
+        try {
+            conn = LibvirtConnection.getConnection();
+            Domain vm = getDomain(conn, routerName);
+            String [][] rules = cmd.generateFwRules();
+            String[] aclRules = rules[0];
+            NicTO nic = cmd.getNic();
+            String dev = "eth" + nic.getDeviceId();
+            String netmask = Long.toString(NetUtils.getCidrSize(nic.getNetmask()));
+            StringBuilder sb = new StringBuilder();
+
+            for (int i = 0; i < aclRules.length; i++) {
+                sb.append(aclRules[i]).append(',');
+            }
+
+            String rule =  sb.toString();
+            String result = _virtRouterResource.assignNetworkACL(routerIp,
+                           dev, nic.getIp(), netmask, rule);
+
+            if (result != null) {
+                for (int i=0; i < results.length; i++) {
+                    results[i] = "Failed";
+                }
+                return new SetNetworkACLAnswer(cmd, false, results);
+            }
+
+            return new SetNetworkACLAnswer(cmd, true, results);
+        } catch (Exception e) {
+            String msg = "SetNetworkACL failed due to " + e.toString();
+            s_logger.error(msg, e);
+            return new SetNetworkACLAnswer(cmd, false, results);
+        }
+    }
+
+    protected SetSourceNatAnswer execute(SetSourceNatCommand cmd) {
+        Connect conn;
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+        IpAddressTO pubIP = cmd.getIpAddress();
+
+        try {
+            conn = LibvirtConnection.getConnection();
+            Domain vm = getDomain(conn, routerName);
+            Integer devNum = 0;
+            String pubVlan = pubIP.getVlanId();
+            List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
+
+            for (InterfaceDef pluggedNic : pluggedNics) {
+            	String pluggedVlanBr = pluggedNic.getBrName();
+            	String pluggedVlanId = getVlanIdFromBridge(pluggedVlanBr);
+            	if (pubVlan.equalsIgnoreCase(Vlan.UNTAGGED) 
+            			&& pluggedVlanBr.equalsIgnoreCase(_publicBridgeName)) {
+            		break;
+            	} else if (pluggedVlanBr.equalsIgnoreCase(_linkLocalBridgeName)){
+            		/*skip over, no physical bridge device exists*/
+            	} else if (pluggedVlanId == null) {
+            		/*this should only be true in the case of link local bridge*/
+            		return new SetSourceNatAnswer(cmd, false, "unable to find the vlan id for bridge "+pluggedVlanBr+
+            				" when attempting to set up" + pubVlan + " on router " + routerName);
+            	} else if (pluggedVlanId.equals(pubVlan)) {
+            		break;
+            	}
+            	devNum++;
+            }
+
+            String dev = "eth" + devNum;
+            String result = _virtRouterResource.assignSourceNat(routerIP, pubIP.getPublicIp(), dev);
+
+            if (result != null) {
+                return new SetSourceNatAnswer(cmd, false, "KVM plugin \"vpc_snat\" failed:"+result);
+            }
+            return new SetSourceNatAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            String msg = "Ip SNAT failure due to " + e.toString();
+            s_logger.error(msg, e);
+            return new SetSourceNatAnswer(cmd, false, msg);
+        }
+    }
+
+    protected IpAssocAnswer execute(IpAssocVpcCommand cmd) {
+        Connect conn;
+        String[] results = new String[cmd.getIpAddresses().length];
+        int i = 0;
+        String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        String routerIP = cmd.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+
+        try {
+            conn = LibvirtConnection.getConnection();
+            IpAddressTO[] ips = cmd.getIpAddresses();
+            Domain vm = getDomain(conn, routerName);
+            Integer devNum = 0;
+            Map<String, Integer> vlanToNicNum = new HashMap<String, Integer>();
+            List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
+
+            for (InterfaceDef pluggedNic : pluggedNics) {
+                String pluggedVlan = pluggedNic.getBrName();
+                if (pluggedVlan.equalsIgnoreCase(_linkLocalBridgeName)) {
+                    vlanToNicNum.put("LinkLocal",devNum); 
+                }
+                else if (pluggedVlan.equalsIgnoreCase(_publicBridgeName)
+                         || pluggedVlan.equalsIgnoreCase(_privBridgeName)
+                         || pluggedVlan.equalsIgnoreCase(_guestBridgeName)) {
+                    vlanToNicNum.put(Vlan.UNTAGGED,devNum);
+                }
+                else {
+                    vlanToNicNum.put(getVlanIdFromBridge(pluggedVlan),devNum);
+                }
+                devNum++;
+            }
+
+            for (IpAddressTO ip : ips) {
+                String ipVlan = ip.getVlanId();
+                String nicName = "eth" + vlanToNicNum.get(ip.getVlanId());
+                String netmask = Long.toString(NetUtils.getCidrSize(ip.getVlanNetmask()));
+                String subnet = NetUtils.getSubNet(ip.getPublicIp(), ip.getVlanNetmask());
+                _virtRouterResource.assignVpcIpToRouter(routerIP, ip.isAdd(), ip.getPublicIp(),
+                               nicName, ip.getVlanGateway(), netmask, subnet);
+                results[i++] = ip.getPublicIp() + " - success";
+            }
+
+        } catch (Exception e) {
+            s_logger.error("Ip Assoc failure on applying one ip due to exception:  ", e);
+            results[i++] = IpAssocAnswer.errorResult;
+        }
+
+        return new IpAssocAnswer(cmd, results);
     }
 
     public Answer execute(IpAssocCommand cmd) {
@@ -1295,12 +1507,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements
                 if (nic.getBrName().equalsIgnoreCase(_linkLocalBridgeName)) {
                     vlanAllocatedToVM.put("LinkLocal", nicPos);
                 } else {
-                	if (nic.getBrName().equalsIgnoreCase(_publicBridgeName) || nic.getBrName().equalsIgnoreCase(_privBridgeName) || nic.getBrName().equalsIgnoreCase(_guestBridgeName)) {
-                		vlanAllocatedToVM.put(Vlan.UNTAGGED, nicPos);
-                	} else {
-                		String vlanId = getVlanIdFromBridge(nic.getBrName());
-                		vlanAllocatedToVM.put(vlanId, nicPos);
-                	}
+                       if (nic.getBrName().equalsIgnoreCase(_publicBridgeName) 
+                               || nic.getBrName().equalsIgnoreCase(_privBridgeName) 
+                               || nic.getBrName().equalsIgnoreCase(_guestBridgeName)) {
+                           vlanAllocatedToVM.put(Vlan.UNTAGGED, nicPos);
+                       } else {
+                           String vlanId = getVlanIdFromBridge(nic.getBrName());
+                           vlanAllocatedToVM.put(vlanId, nicPos);
+                       }
                 }
                 nicPos++;
             }
