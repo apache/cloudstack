@@ -157,7 +157,6 @@
 		<jar jarfile="${dist.files.dir}/cloud-ec2.aar" basedir="${target.dir}/classes/cloud-awsapi.jar" excludes="**/*">
 			<metainf dir="${base.dir}/awsapi/resource/AmazonEC2">
 				<include name="services.xml" />
-				<include name="AmazonEC2.wsdl" />
 			</metainf>
 		</jar>
 	</target>

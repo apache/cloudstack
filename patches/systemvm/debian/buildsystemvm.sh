@@ -542,10 +542,10 @@ echo "*************CONFIGURING VPN********************"
 vpn_config
 
 echo "*************FIX DHCP ISSUE********************"
-dhcp_fix
+#dhcp_fix
 
 echo "*************INSTALL XS TOOLS********************"
-install_xs_tool
+#install_xs_tool
 
 echo "*************CLEANING UP********************"
 cleanup 

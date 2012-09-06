@@ -180,9 +180,9 @@
   </path>
 
 
-  <target name="compile-plugins" description="Compile all of the jars corresponding to plugins" depends="compile-utils, compile-api, compile-core, compile-server, compile-hypervisors, compile-deployment-planners, compile-host-allocators, compile-network-elements, compile-user-authenticators, compile-storage-allocators, compile-file-systems "/>
+  <target name="compile-plugins" description="Compile all of the jars corresponding to plugins" depends="compile-utils, compile-api, compile-core, compile-server, compile-hypervisors, compile-deployment-planners, compile-host-allocators, compile-network-elements, compile-user-authenticators, compile-storage-allocators"/>
 
-  <target name="build-plugins" depends="build-hypervisors, build-network-elements, build-deployment-planners, build-host-allocators, build-storage-allocators, build-user-authenticators, build-file-systems" description="Builds all jar's for the plug-in's"/>
+  <target name="build-plugins" depends="build-hypervisors, build-network-elements, build-deployment-planners, build-host-allocators, build-storage-allocators, build-user-authenticators" description="Builds all jar's for the plug-in's"/>
 
   <target name="clean-plugins" description="Clean all of the generated files by the plugins">
       <delete file="${build.log}" />
@@ -194,8 +194,8 @@
 
   <!-- ===================== Hypervisors ========================= -->
 
-  <target name="compile-hypervisors" depends="compile-kvm, compile-ovm, compile-xen, compile-vmware" description="Compile all hypervisors"/>
-  <target name="build-hypervisors" depends="build-kvm, build-ovm, build-xen, build-vmware" description="Builds all hypervisors"/>
+  <target name="compile-hypervisors" depends="compile-kvm, compile-ovm, compile-xen" description="Compile all hypervisors"/>
+  <target name="build-hypervisors" depends="build-kvm, build-ovm, build-xen " description="Builds all hypervisors"/>
 
   <target name="compile-kvm" depends="-init, compile-core, compile-agent" description="Compile KVM">
   	<ant antfile="${base.dir}/plugins/hypervisors/kvm/build.xml" target="build"/>
@@ -280,8 +280,8 @@
 
   <!-- ===================== Network Elements ===================== -->
 
-  <target name="compile-network-elements" depends="compile-netscaler, compile-f5, compile-srx, compile-ovs, compile-elb, compile-nicira-nvp" description="Compile all network elements"/>
-  <target name="build-network-elements" depends="build-netscaler, build-f5, build-srx, build-ovs, build-elb, build-nicira-nvp" description="build all network elements"/>
+  <target name="compile-network-elements" depends="compile-ovs, compile-elb, compile-nicira-nvp" description="Compile all network elements"/>
+  <target name="build-network-elements" depends="build-ovs, build-elb, build-nicira-nvp" description="build all network elements"/>
  
   <target name="compile-netscaler" depends="-init, compile-server" description="Compile NetScaler plugin">
   	<ant antfile="${base.dir}/plugins/network-elements/netscaler/build.xml" target="build"/>

@@ -39,6 +39,7 @@ import org.apache.log4j.Logger;
 import org.json.simple.parser.ParseException;
 
 import com.cloud.bridge.io.S3FileSystemBucketAdapter;
+import com.cloud.bridge.io.S3CAStorBucketAdapter;
 import com.cloud.bridge.model.BucketPolicyVO;
 import com.cloud.bridge.model.MHostMountVO;
 import com.cloud.bridge.model.MHostVO;
@@ -115,6 +116,7 @@ public class S3Engine {
     
     public S3Engine() {
     	bucketAdapters.put(SHost.STORAGE_HOST_TYPE_LOCAL, new S3FileSystemBucketAdapter());
+        bucketAdapters.put(SHost.STORAGE_HOST_TYPE_CASTOR, new S3CAStorBucketAdapter());
     }
     
     
@@ -1398,6 +1400,10 @@ public class S3Engine {
 			return new OrderedPair<SHostVO, String>(shost, shost.getExportRoot());
 		}
 		
+        if(shost.getHostType() == SHost.STORAGE_HOST_TYPE_CASTOR ) {
+            return new OrderedPair<SHostVO, String>(shost, shost.getExportRoot());
+        }
+
 		MHostMountVO mount = mountDao.getHostMount(ServiceProvider.getInstance().getManagementHostId(), shost.getId());
 		if(mount != null) {
 			return new OrderedPair<SHostVO, String>(shost, mount.getMountPath());
