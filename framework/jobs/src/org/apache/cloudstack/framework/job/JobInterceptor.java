@@ -18,10 +18,6 @@
  */
 package org.apache.cloudstack.framework.job;
 
-/**
- * @author ahuang
- *
- */
 public class JobInterceptor {
 
 }
