@@ -1963,6 +1963,7 @@ public class VpcManagerImpl implements VpcManager, Manager{
         List<HypervisorType> hTypes = new ArrayList<HypervisorType>();
         hTypes.add(HypervisorType.XenServer);
         hTypes.add(HypervisorType.VMware);
+        hTypes.add(HypervisorType.KVM);
         return hTypes;
     }
 }
