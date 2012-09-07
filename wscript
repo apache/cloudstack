@@ -693,6 +693,8 @@ def deb(context):
 	tarball = Scripting.dist('', VERSION)	
 	srcdir = "%s/%s-%s"%(outputdir,APPNAME,VERSION)
 
+        Utils.exec_command("mvn install -P deps")
+
 	if _exists(srcdir): shutil.rmtree(srcdir)
 	mkdir_p(outputdir)
 
