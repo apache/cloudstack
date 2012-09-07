@@ -105,6 +105,7 @@ def getrpmdeps():
 		yield "rpm-build"
 
 	deps = set(rpmdeps(_glob("./*.spec")))
+	deps.add("ant")
 	return deps
 
 def getdebdeps():
@@ -122,6 +123,7 @@ def getdebdeps():
 		yield "debhelper"
 
 	deps = set(debdeps(["debian/control"]))
+	deps.add("ant")
 	return deps
 
 # CENTOS does not have this -- we have to put this here
@@ -299,7 +301,7 @@ def runant(tsk):
 	else:
 		stanzas = [
 			_join(environ["ANT_HOME"],"bin","ant"),
-			"-Dthirdparty.classpath=%s"%(tsk.env.CLASSPATH.replace(os.pathsep,",")),
+			"-Dthirdparty.classpath=./deps/*:%s"%(tsk.env.CLASSPATH.replace(os.pathsep,",")),
 		]
 	stanzas += tsk.generator.antargs
 	ret = Utils.exec_command(" ".join(stanzas),cwd=tsk.generator.bld.srcnode.abspath(),env=environ,log=True)
