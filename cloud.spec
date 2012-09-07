@@ -475,6 +475,7 @@ fi
 %{_javadir}/asm-3.1.jar
 %{_javadir}/xapi-5.6.100-1-SNAPSHOT.jar
 %{_javadir}/log4j-*.jar
+%{_javadir}/apache-log4j-extras-1.1.jar
 %{_javadir}/trilead-ssh2-build213-svnkit-1.3-patch.jar
 %{_javadir}/cglib-2.2.jar
 %{_javadir}/xmlrpc-common-3.*.jar
