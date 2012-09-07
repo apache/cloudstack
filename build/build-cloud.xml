@@ -78,6 +78,7 @@
   <property name="build.log" location="${target.dir}/ant_verbose.txt" />
 
   <property name="deps.dir" location="${base.dir}/deps" />
+  <property name="xenapi.dir" location="${deps.dir}/XenServerJava" />
 
   <!-- directories for client compilation-->
   <property name="client.dir" location="${base.dir}/client" />
@@ -129,6 +130,7 @@
   <property name="agent.jar" value="cloud-agent.jar" />
   <property name="console-proxy.jar" value="cloud-console-proxy.jar" />
   <property name="api.jar" value="cloud-api.jar"/>
+  <property name="xenapi.jar" value="cloud-xenapi.jar" />
   <property name="vmware-base.jar" value="cloud-vmware-base.jar" />
   <property name="vmware.jar" value="cloud-vmware.jar" />
 
@@ -215,12 +217,20 @@
   <target name="compile-vmware-base" depends="-init, compile-utils" description="Compile the VMware support library">
     <compile-java jar.name="${vmware-base.jar}" top.dir="${vmware-base.dir}" classpath="vmware-base.classpath" />
   </target>
-	
+
+  <path id="xenapi.classpath">
+    <path refid="deps.classpath" />
+    <path refid="dist.classpath" />
+  </path>
+  <target name="compile-xenapi" depends="-init" description="Compile XenServer java sdk.">
+    <compile-java jar.name="${xenapi.jar}" top.dir="${xenapi.dir}" classpath="xenapi.classpath" />
+  </target>
+
   <path id="server.classpath">
     <path refid="deps.classpath" />
     <path refid="dist.classpath" />
   </path>
-  <target name="compile-server" depends="-init, compile-utils, compile-core, compile-agent" description="Compile the management server.">
+  <target name="compile-server" depends="-init, compile-utils, compile-xenapi, compile-core, compile-agent" description="Compile the management server.">
     <compile-java jar.name="${server.jar}" top.dir="${server.dir}" classpath="server.classpath" />
   </target>
 
