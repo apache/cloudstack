@@ -87,10 +87,10 @@ git archive --format=zip --prefix=$version/ $branch > $outputdir/apache-cloudsta
 cd $outputdir
 gpg -v --armor --output apache-cloudstack-$version-incubating-src.tar.gz.asc --detach-sig apache-cloudstack-$version-incubating-src.tar.gz
 gpg -v --armor --output apache-cloudstack-$version-incubating-src.zip.asc --detach-sig apache-cloudstack-$version-incubating-src.zip
-gpg -v --print-md MD5 apache-cloudstack-$version.tar.gz > apache-cloudstack-$version-incubating-src.tar.gz.md5
-gpg -v --print-md MD5 apache-cloudstack-$version.zip > apache-cloudstack-$version-incubating-src.zip.md5
-gpg -v --print-md SHA512 apache-cloudstack-$version.tar.gz > apache-cloudstack-$version-incubating-src.tar.gz.sha
-gpg -v --print-md SHA512 apache-cloudstack-$version.zip > apache-cloudstack-$version-incubating-src.zip.sha
+gpg -v --print-md MD5 apache-cloudstack-$version-incubating-src.tar.gz > apache-cloudstack-$version-incubating-src.tar.gz.md5
+gpg -v --print-md MD5 apache-cloudstack-$version-incubating-src.zip > apache-cloudstack-$version-incubating-src.zip.md5
+gpg -v --print-md SHA512 apache-cloudstack-$version-incubating-src.tar.gz > apache-cloudstack-$version-incubating-src.tar.gz.sha
+gpg -v --print-md SHA512 apache-cloudstack-$version-incubating-src.zip > apache-cloudstack-$version-incubating-src.zip.sha
 
 gpg -v --verify apache-cloudstack-$version.tar.gz.asc apache-cloudstack-$version-incubating-src.tar.gz
 gpg -v --verify apache-cloudstack-$version.zip.asc apache-cloudstack-$version-incubating-src.zip
