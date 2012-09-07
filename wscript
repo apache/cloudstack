@@ -108,24 +108,6 @@ def getrpmdeps():
 	deps.add("ant")
 	return deps
 
-def getdebdeps():
-	def debdeps(fileset):
-		for f in fileset:
-			lines = file(f).readlines()
-			lines = [ x[len("Build-Depends: "):] for x in lines if x.startswith("Build-Depends") ]
-			for l in lines:
-				deps = [ x.strip() for x in l.split(",") ]
-				for d in deps:
-					if "%s-"%APPNAME in d: continue
-					yield d
-		yield "build-essential"
-		yield "devscripts"
-		yield "debhelper"
-
-	deps = set(debdeps(["debian/control"]))
-	deps.add("ant")
-	return deps
-
 # CENTOS does not have this -- we have to put this here
 try:
 	from subprocess import check_call as _check_call
@@ -603,6 +585,10 @@ def bindist(ctx):
 	_chdir(cwd)
 
 @throws_command_errors
+def deb(context):
+	raise Utils.WafError("Debian packages are no longer build with waf. Use dpkg-buildpackage instead.")
+
+@throws_command_errors
 def rpm(context):
 	buildnumber = Utils.getbuildnumber()
 	if buildnumber: buildnumber = ["--define","_build_number %s"%buildnumber]
@@ -647,74 +633,6 @@ def rpm(context):
 		installrpmdeps(context)
 	dorpm()
 
-@throws_command_errors
-def deb(context):
-	buildnumber = Utils.getbuildnumber()
-	if buildnumber: buildnumber = ["--set-envvar=BUILDNUMBER=%s"%buildnumber]
-	else: buildnumber = []
-	
-	if Options.options.VERNUM:
-		VERSION = Options.options.VERNUM
-	else:
-		VERSION = SHORTVERSION
-
-	version = ["--set-envvar=PACKAGEVERSION=%s"%VERSION]
-
-	if Options.options.PRERELEASE:
-		if not buildnumber:
-			raise Utils.WafError("Please specify a build number to go along with --prerelease")
-		# version/release numbers are read by dpkg-buildpackage from line 1 of debian/changelog
-		# http://www.debian.org/doc/debian-policy/ch-controlfields.html#s-f-Version
-		tempchangelog = """%s (%s-~%s%s) unstable; urgency=low
-
-  * Automatic prerelease build
-
- -- Automated build system <noreply@cloud.com>  %s"""%(
-			APPNAME,
-			VERSION,
-			Utils.getbuildnumber(),
-			Options.options.PRERELEASE,
-			email.Utils.formatdate(time.time())
-		)
-	else:
-		tempchangelog = """%s (%s-1) stable; urgency=low
-
-  * Automatic release build
-
- -- Automated build system <noreply@cloud.com>  %s"""%(
-			APPNAME,
-			VERSION,
-			email.Utils.formatdate(time.time())
-		)
-	
-	# FIXME wrap the source tarball in POSIX locking!
-	if not Options.options.blddir: outputdir = _join(context.curdir,blddir,"debbuild")
-	else:			   outputdir = _join(_abspath(Options.options.blddir),"debbuild")
-	Utils.pprint("GREEN","Building DEBs")
-
-	tarball = Scripting.dist('', VERSION)	
-	srcdir = "%s/%s-%s"%(outputdir,APPNAME,VERSION)
-
-
-	if _exists(srcdir): shutil.rmtree(srcdir)
-	mkdir_p(outputdir)
-
-	f = tarfile.open(tarball,'r:bz2')
-	f.extractall(path=outputdir)
-	if tempchangelog:
-		f = file(_join(srcdir,"debian","changelog"),"w")
-		f.write(tempchangelog)
-		f.flush()
-		f.close()
-	
-	checkdeps = lambda: c(["dpkg-checkbuilddeps"],srcdir)
-	dodeb = lambda: c(["debuild",'-e','WAFCACHE','--no-lintian', '--no-tgz-check']+buildnumber+version+["-us","-uc"],srcdir)
-	try: checkdeps()
-	except (CalledProcessError,OSError),e:
-		Utils.pprint("YELLOW","Dependencies might be missing.  Trying to auto-install them...")
-		installdebdeps(context)
-	dodeb()
-
 def uninstallrpms(context):
 	"""uninstalls any Cloud Stack RPMs on this system"""
 	Utils.pprint("GREEN","Uninstalling any installed RPMs")
@@ -722,34 +640,15 @@ def uninstallrpms(context):
 	Utils.pprint("BLUE",cmd)
 	system(cmd)
 
-def uninstalldebs(context):
-	"""uninstalls any Cloud Stack DEBs on this system"""
-	Utils.pprint("GREEN","Uninstalling any installed DEBs")
-	cmd = "dpkg -l '%s-*' | grep ^i | awk '{ print $2 } ' | xargs aptitude purge -y"%APPNAME
-	Utils.pprint("BLUE",cmd)
-	system(cmd)
-
 def viewrpmdeps(context):
 	"""shows all the necessary dependencies to build the RPM packages of the stack"""
 	for dep in getrpmdeps(): print dep
-
-def viewdebdeps(context):
-	"""shows all the necessary dependencies to build the DEB packages of the stack"""
-	for dep in getdebdeps(): print dep
 
 @throws_command_errors
 def installrpmdeps(context):
 	"""installs all the necessary dependencies to build the RPM packages of the stack"""
 	runnable = ["sudo","yum","install","-y"]+list(getrpmdeps())
 	Utils.pprint("GREEN","Installing RPM build dependencies")
-	Utils.pprint("BLUE"," ".join(runnable))
-	_check_call(runnable)
-
-@throws_command_errors
-def installdebdeps(context):
-	"""installs all the necessary dependencies to build the DEB packages of the stack"""
-	runnable = ["sudo","aptitude","install","-y"]+list( [ x.split()[0] for x in getdebdeps() ] )
-	Utils.pprint("GREEN","Installing DEB build dependencies")
 	Utils.pprint("BLUE"," ".join(runnable))
 	_check_call(runnable)
 
