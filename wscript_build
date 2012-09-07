@@ -430,9 +430,6 @@ def build_usage_dir ():
 	Utils.pprint ("GREEN", "Installed files of usage/")
 
 
-def install_mvn():
-        Utils.exec_command("mvn install -P deps")
-install_mvn()
 # Get started to execute here
 build_utils_docs ()
 build_jars ()
