@@ -196,11 +196,17 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
                     } else {
                         _tmpltHostDao.remove(templateHostVO.getId());
                     }
-					VMTemplateZoneVO templateZone = _tmpltZoneDao.findByZoneTemplate(sZoneId, templateId);
 					
+					/**check if the list is not null and empty.
+                     * check to see if there is a entry and remove it.
+                     */
+                    List<VMTemplateZoneVO> templateZones = _tmpltZoneDao.listByZoneTemplate(sZoneId, templateId);
+                    if (templateZones != null && templateZones.size()!=0) {
+                        VMTemplateZoneVO  templateZone = templateZones.get(0);
 					if (templateZone != null) {
 						_tmpltZoneDao.remove(templateZone.getId());
 					}
+                    }
 					
 					UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), sZoneId, templateId, null);
 					_usageEventDao.persist(usageEvent);

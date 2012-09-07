@@ -539,15 +539,19 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 				_templateDetailsDao.persist(tmplt.getId(), tmplt.getDetails());
 			}
 		}
-		VMTemplateZoneVO tmpltZoneVO = _templateZoneDao.findByZoneTemplate(zoneId, tmplt.getId());
-		if ( tmpltZoneVO == null ) {
-		    tmpltZoneVO = new VMTemplateZoneVO(zoneId, tmplt.getId(), new Date());
-		    _templateZoneDao.persist(tmpltZoneVO);
-		} else {
-		    tmpltZoneVO.setRemoved(null);
+        List<VMTemplateZoneVO> tmpltZoneVOs = _templateZoneDao.listByZoneTemplate(zoneId, tmplt.getId());
+        if (tmpltZoneVOs != null && tmpltZoneVOs.size()!=0) {
+            VMTemplateZoneVO  tmpltZoneVO = tmpltZoneVOs.get(0);
 		    tmpltZoneVO.setLastUpdated(new Date());
 		    _templateZoneDao.update(tmpltZoneVO.getId(), tmpltZoneVO);
 		}
+
+        else {
+            VMTemplateZoneVO tmpltZone = new VMTemplateZoneVO(zoneId, tmplt.getId(), new Date());
+               _templateZoneDao.persist(tmpltZone);
+        }
+
+
 		txn.commit();
 		
 		return tmplt.getId();
