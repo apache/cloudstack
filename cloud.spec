@@ -486,6 +486,9 @@ fi
 %{_javadir}/commons-configuration-1.8.jar
 %{_javadir}/commons-lang-2.6.jar
 %{_javadir}/ejb-api-3.0.jar
+%{_javadir}/axis2-1.5.1.jar
+%{_javadir}/commons-discovery-0.5.jar
+%{_javadir}/jstl-1.2.jar
 
 
 %files core
