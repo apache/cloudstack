@@ -124,6 +124,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 	private String _storageIp;
 	private String _storageNetmask;
 	private String _storageGateway;
+	private List<String> nfsIps = new ArrayList<String>();
 	final private String _parent = "/mnt/SecStorage";
 	final private String _tmpltDir = "/var/cloudstack/template";
     final private String _tmpltpp = "template.properties";
@@ -611,6 +612,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             configCerts(cmd.getCerts());
             
+            nfsIps.add(nfsHostIp);
             return new SecStorageSetupAnswer(dir);
         } catch (Exception e) {
             String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
@@ -730,6 +732,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 		boolean success = true;
 		StringBuilder result = new StringBuilder();
 		for (String cidr: cmd.getAllowedInternalSites()) {
+			if (nfsIps.contains(cidr)) {
+				/*
+				 * if the internal download ip is the same with secondary storage ip, adding internal sites will flush
+				 * ip route to nfs through storage ip. 
+				 */
+				continue;
+			}
 			String tmpresult = allowOutgoingOnPrivate(cidr);
 			if (tmpresult != null) {
 				result.append(", ").append(tmpresult);
@@ -814,10 +823,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     		return "Error in allowing outgoing to " + destCidr + ", err=" + result;
     	}
     	
-    	if (_storageIp == null) {
-    	    /* only set route when no storage network present */
-    	    addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, destCidr);
-    	}
+    	addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, destCidr);
     	
     	return null;
 	}
