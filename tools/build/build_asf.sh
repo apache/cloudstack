@@ -81,8 +81,8 @@ fi
 cp $sourcedir/KEYS $outputdir/KEYS
 
 cd $sourcedir
-git archive --format=tar.gz --prefix=$version/ $branch > $outputdir/apache-cloudstack-$version-incubating-src.tar.gz
-git archive --format=zip --prefix=$version/ $branch > $outputdir/apache-cloudstack-$version-incubating-src.zip
+git archive --format=tar.gz --prefix=apache-cloudstack-$version-incubating-src/ $branch > $outputdir/apache-cloudstack-$version-incubating-src.tar.gz
+git archive --format=zip --prefix=apache-cloudstack-$version-incubating-src/ $branch > $outputdir/apache-cloudstack-$version-incubating-src.zip
 
 cd $outputdir
 gpg -v --armor --output apache-cloudstack-$version-incubating-src.tar.gz.asc --detach-sig apache-cloudstack-$version-incubating-src.tar.gz
