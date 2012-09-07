@@ -554,7 +554,6 @@ fi
 %attr(0755,root,root) %{_initrddir}/%{name}-agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/agent
-%attr(0755,root,root) %{_bindir}/mycloud-setup-agent
 
 %files cli
 %{_bindir}/%{name}-tool
