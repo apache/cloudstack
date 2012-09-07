@@ -1639,6 +1639,13 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
     public boolean maintain(final long hostId) throws AgentUnavailableException {
         HostVO host = _hostDao.findById(hostId);
         Status state;
+        
+        state = host.getStatus();
+        if (state != Status.Up) {
+        	String msg = "Unable to put host " + hostId + " in matinenance mode because it is not in UP status";
+            s_logger.debug(msg);
+            throw new AgentUnavailableException(msg, hostId);
+        }
 
         MaintainAnswer answer = (MaintainAnswer) easySend(hostId, new MaintainCommand());
         if (answer == null || !answer.getResult()) {
@@ -1646,20 +1653,12 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
             return false;
         }
 
-        // Let's put this guy in maintenance state
-        do {
-            host = _hostDao.findById(hostId);
-            if (host == null) {
-                s_logger.debug("Unable to find host " + hostId);
-                return false;
-            }
-            state = host.getStatus();
-            if (state == Status.Disconnected || state == Status.Updating) {
-                s_logger.debug("Unable to put host " + hostId + " in matinenance mode because it is currently in " + state);
-                throw new AgentUnavailableException("Agent is in " + state + " state.  Please wait for it to become Alert state try again.", hostId);
-            }
-        } while (!_hostDao.updateStatus(host, Event.MaintenanceRequested, _nodeId));
-
+       // Let's put this guy in maintenance state
+	    if (!_hostDao.updateStatus(host, Event.MaintenanceRequested, _nodeId)) {
+		   String msg = "Unable to update host " + hostId + " to preparematinenance mode";
+		   s_logger.debug(msg);
+		   return false;
+		}
         AgentAttache attache = findAttache(hostId);
         if (attache != null) {
             attache.setMaintenanceMode(true);

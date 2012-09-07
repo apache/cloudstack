@@ -20,14 +20,9 @@ package com.cloud.hypervisor.xen.resource;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-
 import javax.ejb.Local;
-import javax.naming.ConfigurationException;
-
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
@@ -39,21 +34,14 @@ import com.cloud.agent.api.FenceAnswer;
 import com.cloud.agent.api.FenceCommand;
 import com.cloud.agent.api.NetworkUsageAnswer;
 import com.cloud.agent.api.NetworkUsageCommand;
-import com.cloud.agent.api.PoolEjectCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.resource.ServerResource;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import com.xensource.xenapi.Bond;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Network;
-import com.xensource.xenapi.PBD;
 import com.xensource.xenapi.PIF;
-import com.xensource.xenapi.SR;
-import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.IpConfigurationMode;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VLAN;
@@ -67,8 +55,6 @@ public class XenServer56Resource extends CitrixResourceBase {
     public Answer executeRequest(Command cmd) {
         if (cmd instanceof FenceCommand) {
             return execute((FenceCommand) cmd);
-        } else if (cmd instanceof PoolEjectCommand) {
-            return execute((PoolEjectCommand) cmd);
         } else if (cmd instanceof NetworkUsageCommand) {
             return execute((NetworkUsageCommand) cmd);
         } else {
@@ -178,36 +164,6 @@ public class XenServer56Resource extends CitrixResourceBase {
         long[] stats = getNetworkStats(conn, cmd.getPrivateIP());
         NetworkUsageAnswer answer = new NetworkUsageAnswer(cmd, "", stats[0], stats[1]);
         return answer;
-    }
-
-    @Override
-    protected Answer execute(PoolEjectCommand cmd) {
-        Connection conn = getConnection();
-        String hostuuid = cmd.getHostuuid();
-        try {
-            Host host = Host.getByUuid(conn, hostuuid);
-            // remove all tags cloud stack add before eject
-            Host.Record hr = host.getRecord(conn);
-            Iterator<String> it = hr.tags.iterator();
-            while (it.hasNext()) {
-                String tag = it.next();
-                if (tag.contains("cloud-heartbeat-")) {
-                    it.remove();
-                }
-            }
-            return super.execute(cmd);
-
-        } catch (XenAPIException e) {
-            String msg = "Unable to eject host " + _host.uuid + " due to " + e.toString();
-            s_logger.warn(msg, e);
-            return new Answer(cmd, false, msg);
-        } catch (Exception e) {
-            s_logger.warn("Unable to eject host " + _host.uuid, e);
-            String msg = "Unable to eject host " + _host.uuid + " due to " + e.getMessage();
-            s_logger.warn(msg, e);
-            return new Answer(cmd, false, msg);
-        }
-
     }
 
     protected FenceAnswer execute(FenceCommand cmd) {

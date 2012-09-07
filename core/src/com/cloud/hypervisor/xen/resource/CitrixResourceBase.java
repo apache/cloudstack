@@ -1240,37 +1240,19 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected MaintainAnswer execute(MaintainCommand cmd) {
         Connection conn = getConnection();
         try {
-            Pool pool = Pool.getByUuid(conn, _host.pool);
-            Pool.Record poolr = pool.getRecord(conn);
-
-            Host.Record hostr = poolr.master.getRecord(conn);
-            if (!_host.uuid.equals(hostr.uuid)) {
-                s_logger.debug("Not the master node so just return ok: " + _host.ip);
-                return new MaintainAnswer(cmd);
-            }
-            Map<Host, Host.Record> hostMap = Host.getAllRecords(conn);
-            if (hostMap.size() == 1) {
-                s_logger.debug("There is the last host in pool " + poolr.uuid );
-                return new MaintainAnswer(cmd);
-            }
-            Host newMaster = null;
-            Host.Record newMasterRecord = null;
-            for (Map.Entry<Host, Host.Record> entry : hostMap.entrySet()) {
-                if (!_host.uuid.equals(entry.getValue().uuid)) {
-                    newMaster = entry.getKey();
-                    newMasterRecord = entry.getValue();
-                    s_logger.debug("New master for the XenPool is " + newMasterRecord.uuid + " : " + newMasterRecord.address);
-                    try {
-                        _connPool.switchMaster(_host.ip, _host.pool, conn, newMaster, _username, _password, _wait);
-                        return new MaintainAnswer(cmd, "New Master is " + newMasterRecord.address);
-                    } catch (XenAPIException e) {
-                        s_logger.warn("Unable to switch the new master to " + newMasterRecord.uuid + ": " + newMasterRecord.address + " Trying again...");
-                    } catch (XmlRpcException e) {
-                        s_logger.warn("Unable to switch the new master to " + newMasterRecord.uuid + ": " + newMasterRecord.address + " Trying again...");
-                    }
+        	
+            Host host = Host.getByUuid(conn, _host.uuid);
+            // remove all tags cloud stack
+            Host.Record hr = host.getRecord(conn);
+            Iterator<String> it = hr.tags.iterator();
+            while (it.hasNext()) {
+                String tag = it.next();
+                if (tag.contains("cloud")) {
+                    it.remove();
                 }
             }
-            return new MaintainAnswer(cmd, false, "Unable to find an appropriate host to set as the new master");
+            host.setTags(conn, hr.tags);
+            return new MaintainAnswer(cmd);
         } catch (XenAPIException e) {
             s_logger.warn("Unable to put server in maintainence mode", e);
             return new MaintainAnswer(cmd, false, e.getMessage());
@@ -6396,37 +6378,58 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         Connection conn = getConnection();
         String hostuuid = cmd.getHostuuid();
         try {
-            Map<Host, Host.Record> hostrs = Host.getAllRecords(conn);
-            boolean found = false;
-            for( Host.Record hr : hostrs.values() ) {
-            	if( hr.uuid.equals(hostuuid)) {
-            		found = true;
-            	}
-            }
-            if( ! found) {
+            Host host = Host.getByUuid(conn, hostuuid);
+            if( isRefNull(host) ) {
                 s_logger.debug("host " + hostuuid + " has already been ejected from pool " + _host.pool);
                 return new Answer(cmd);
             }
-            
-            Pool pool = Pool.getAll(conn).iterator().next();
-            Pool.Record poolr = pool.getRecord(conn);
-
-            Host.Record masterRec = poolr.master.getRecord(conn);
-            if (hostuuid.equals(masterRec.uuid)) {
-                s_logger.debug("This is last host to eject, so don't need to eject: " + hostuuid);
-                return new Answer(cmd);
-            }
-            
-            Host host = Host.getByUuid(conn, hostuuid);
             // remove all tags cloud stack add before eject
             Host.Record hr = host.getRecord(conn);
             Iterator<String> it = hr.tags.iterator();
             while (it.hasNext()) {
                 String tag = it.next();
-                if (tag.startsWith("vmops-version-")) {
+                if (tag.contains("cloud")) {
                     it.remove();
                 }
             }
+            host.setTags(conn, hr.tags);
+            Pool pool = Pool.getByUuid(conn, _host.pool);
+            Pool.Record poolr = pool.getRecord(conn);
+
+            Host.Record hostr = poolr.master.getRecord(conn);
+            if (_host.uuid.equals(hostr.uuid)) {
+            	boolean mastermigrated = false;
+                Map<Host, Host.Record> hostMap = Host.getAllRecords(conn);
+                if (hostMap.size() != 1) {
+                	Host newMaster = null;
+                	Host.Record newMasterRecord = null;
+                	for (Map.Entry<Host, Host.Record> entry : hostMap.entrySet()) {
+                		if (_host.uuid.equals(entry.getValue().uuid)) {
+                			continue;
+                		}
+                		newMaster = entry.getKey();
+                		newMasterRecord = entry.getValue();
+                		s_logger.debug("New master for the XenPool is " + newMasterRecord.uuid + " : " + newMasterRecord.address);
+                		try {
+                			_connPool.switchMaster(_host.ip, _host.pool, conn, newMaster, _username, _password, _wait);
+                			mastermigrated = true;
+                			break;
+	                    } catch (Exception e) {
+	                        s_logger.warn("Unable to switch the new master to " + newMasterRecord.uuid + ": " + newMasterRecord.address + " due to " + e.toString());
+                		}
+                    }
+                } else {
+                    s_logger.debug("This is last host to eject, so don't need to eject: " + hostuuid);
+                    return new Answer(cmd);
+                }
+                if ( !mastermigrated ) {
+                	String msg = "this host is master, and cannot designate a new master";
+                	s_logger.debug(msg);
+                    return new Answer(cmd, false, msg);
+                	
+                }
+            }
+           
             // eject from pool
             try {
             	Pool.eject(conn, host);
@@ -6440,12 +6443,8 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 host.destroy(conn);
             }
             return new Answer(cmd);
-        } catch (XenAPIException e) {
-            String msg = "XenAPIException Unable to destroy host " + _host.uuid + " in xenserver database due to " + e.toString();
-            s_logger.warn(msg, e);
-            return new Answer(cmd, false, msg);
         } catch (Exception e) {
-            String msg = "Exception Unable to destroy host " + _host.uuid + " in xenserver database due to " + e.getMessage();
+            String msg = "Exception Unable to destroy host " + _host.uuid + " in xenserver database due to " + e.toString();
             s_logger.warn(msg, e);
             return new Answer(cmd, false, msg);
         }
