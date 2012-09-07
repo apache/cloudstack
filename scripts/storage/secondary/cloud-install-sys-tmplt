@@ -40,6 +40,7 @@ DISKSPACE=5120000  #free disk space required in kilobytes
 dbHost=
 dbUser=
 dbPassword=
+jasypt='/usr/share/java/jasypt-1.9.0.jar'
 while getopts 'm:h:f:u:Ft:e:s:o:r:d' OPTION
 do
   case $OPTION in
@@ -129,7 +130,7 @@ then
 	encPassword=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i | sed 's/^ENC(\(.*\))/\1/')
 	if [ ! $encPassword == "" ]
 	then
-		dbPassword=(`java -classpath /usr/share/java/cloud-jasypt-1.8.jar org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI decrypt.sh input=$encPassword password=$msKey verbose=false`)
+		dbPassword=(`java -classpath $jasypt org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI decrypt.sh input=$encPassword password=$msKey verbose=false`)
 		if [ ! $dbPassword ]
 		then
 			echo "Failed to decrypt DB password from db.properties"
