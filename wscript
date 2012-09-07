@@ -290,8 +290,9 @@ Utils.discover_ant_targets_and_properties = discover_ant_targets_and_properties
 # this is NOT a task for a task generator -- it is a plain function.
 # If you want to use it as a task function in a task generator, use a lambda x: runant("targetname")
 def runant(tsk):
-	conf = _getbuildcontext()
+
 	environ = dict(os.environ)
+	depsclasspath = [ os.path.abspath(x) for x in _glob(_join(".","deps","*.jar")) ]
 	environ["CATALINA_HOME"] = tsk.env.TOMCATHOME
 	environ["ANT_HOME"] = _join("tools","ant","apache-ant-1.7.1")
 	if tsk.generator.env.DISTRO == "Windows":
@@ -302,7 +303,7 @@ def runant(tsk):
 	else:
 		stanzas = [
 			_join(environ["ANT_HOME"],"bin","ant"),
-			"-Dthirdparty.classpath=%s:%s"%(tsk.env.CLASSPATH.replace(os.pathsep,","), conf.env.DEPSCLASSPATH),
+			"-Dthirdparty.classpath=%s:%s"%(tsk.env.CLASSPATH.replace(os.pathsep,","), pathsep.join(depsclasspath)),
 		]
 	stanzas += tsk.generator.antargs
 	ret = Utils.exec_command(" ".join(stanzas),cwd=tsk.generator.bld.srcnode.abspath(),env=environ,log=True)
