@@ -54,7 +54,7 @@ done
 shift `expr $OPTIND - 1`
 
 if [ $version == 'TESTBUILD' ]; then
-    echo >&2 "A version must be specified with the -v option: build_asf.sh -v 4.0.0RC1"
+    echo >&2 "A version must be specified with the -v option: build_asf.sh -v 4.0.0.RC1"
     exit 1
 fi
 
@@ -81,19 +81,19 @@ fi
 cp $sourcedir/KEYS $outputdir/KEYS
 
 cd $sourcedir
-git archive --format=tar.gz --prefix=$version/ $branch > $outputdir/cloudstack-source-$version.tar.gz
-git archive --format=zip --prefix=$version/ $branch > $outputdir/cloudstack-source-$version.zip
+git archive --format=tar.gz --prefix=$version/ $branch > $outputdir/apache-cloudstack-$version-incubating-src.tar.gz
+git archive --format=zip --prefix=$version/ $branch > $outputdir/apache-cloudstack-$version-incubating-src.zip
 
 cd $outputdir
-gpg -v --armor --output cloudstack-source-$version.tar.gz.asc --detach-sig cloudstack-source-$version.tar.gz
-gpg -v --armor --output cloudstack-source-$version.zip.asc --detach-sig cloudstack-source-$version.zip
-gpg -v --print-md MD5 cloudstack-source-$version.tar.gz > cloudstack-source-$version.tar.gz.md5
-gpg -v --print-md MD5 cloudstack-source-$version.zip > cloudstack-source-$version.zip.md5
-gpg -v --print-md SHA512 cloudstack-source-$version.tar.gz > cloudstack-source-$version.tar.gz.sha
-gpg -v --print-md SHA512 cloudstack-source-$version.zip > cloudstack-source-$version.zip.sha
+gpg -v --armor --output apache-cloudstack-$version-incubating-src.tar.gz.asc --detach-sig apache-cloudstack-$version-incubating-src.tar.gz
+gpg -v --armor --output apache-cloudstack-$version-incubating-src.zip.asc --detach-sig apache-cloudstack-$version-incubating-src.zip
+gpg -v --print-md MD5 apache-cloudstack-$version.tar.gz > apache-cloudstack-$version-incubating-src.tar.gz.md5
+gpg -v --print-md MD5 apache-cloudstack-$version.zip > apache-cloudstack-$version-incubating-src.zip.md5
+gpg -v --print-md SHA512 apache-cloudstack-$version.tar.gz > apache-cloudstack-$version-incubating-src.tar.gz.sha
+gpg -v --print-md SHA512 apache-cloudstack-$version.zip > apache-cloudstack-$version-incubating-src.zip.sha
 
-gpg -v --verify cloudstack-source-$version.tar.gz.asc cloudstack-source-$version.tar.gz
-gpg -v --verify cloudstack-source-$version.zip.asc cloudstack-source-$version.zip
+gpg -v --verify apache-cloudstack-$version.tar.gz.asc apache-cloudstack-$version-incubating-src.tar.gz
+gpg -v --verify apache-cloudstack-$version.zip.asc apache-cloudstack-$version-incubating-src.zip
 
 if [ $tag == 'yes' ]; then
   cd $sourcedir
