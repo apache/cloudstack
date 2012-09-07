@@ -1,10 +1,10 @@
 Source: cloud
 Section: libs
 Priority: extra
-Maintainer: Manuel Amador (Rudd-O) <manuel@cloud.com>
+Maintainer: Wido den Hollander <wido@widodh.nl>
 Build-Depends: debhelper (>= 7), openjdk-6-jdk, tomcat6, libws-commons-util-java, libcommons-dbcp-java, libcommons-collections-java, libcommons-httpclient-java, libservlet2.5-java, genisoimage, python-mysqldb
 Standards-Version: 3.8.1
-Homepage: http://techcenter.cloud.com/software/cloudstack
+Homepage: http://www.cloudstack.org/
 
 Package: cloud-deps
 Provides: vmops-deps
