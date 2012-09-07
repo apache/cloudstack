@@ -292,7 +292,6 @@ Utils.discover_ant_targets_and_properties = discover_ant_targets_and_properties
 def runant(tsk):
 
 	environ = dict(os.environ)
-	depsclasspath = [ os.path.abspath(x) for x in _glob(_join(".","deps","*.jar")) ]
 	environ["CATALINA_HOME"] = tsk.env.TOMCATHOME
 	environ["ANT_HOME"] = _join("tools","ant","apache-ant-1.7.1")
 	if tsk.generator.env.DISTRO == "Windows":
@@ -303,7 +302,7 @@ def runant(tsk):
 	else:
 		stanzas = [
 			_join(environ["ANT_HOME"],"bin","ant"),
-			"-Dthirdparty.classpath=%s:%s"%(tsk.env.CLASSPATH.replace(os.pathsep,","), pathsep.join(depsclasspath)),
+			"-Dthirdparty.classpath=%s"%(tsk.env.CLASSPATH.replace(os.pathsep,",")),
 		]
 	stanzas += tsk.generator.antargs
 	ret = Utils.exec_command(" ".join(stanzas),cwd=tsk.generator.bld.srcnode.abspath(),env=environ,log=True)
@@ -640,7 +639,6 @@ def rpm(context):
 	shutil.move(tarball,_join(sourcedir,tarball))
 
 	specfile = "%s.spec"%APPNAME
-        Utils.exec_command("mvn install -P deps")
 	checkdeps = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"--nobuild",specfile]+packagever+releasever)
 	dorpm = lambda: c(["rpmbuild","--define","_topdir %s"%outputdir,"-bb",specfile]+buildnumber+prerelease+packagever+releasever)
 	try: checkdeps()
@@ -697,7 +695,6 @@ def deb(context):
 	tarball = Scripting.dist('', VERSION)	
 	srcdir = "%s/%s-%s"%(outputdir,APPNAME,VERSION)
 
-        Utils.exec_command("mvn install -P deps")
 
 	if _exists(srcdir): shutil.rmtree(srcdir)
 	mkdir_p(outputdir)
