@@ -3668,7 +3668,7 @@ Dialogs*/
 .dashboard.admin .dashboard-container .stats ul li div.value {
   float: left;
   background: url(../images/bg-gradients.png) 0px -51px;
-  width: 204px;
+  width: 295px;
   height: 100%;
   border-left: 1px solid #C8C2C2;
   border-right: 1px solid #C8C2C2;
@@ -4239,7 +4239,7 @@ Dialogs*/
 }
 
 .system-chart.dashboard.admin .dashboard-container .stats .chart {
-  width: 216px;
+  width: 136px;
 }
 
 /** Compute*/
