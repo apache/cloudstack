@@ -1380,10 +1380,20 @@ def network_rules(session, args):
             cmds.append(iptables)
             util.SMlog(iptables)
       
-    vmchain = chain_name(vm_name)        
-    util.pread2(['iptables', '-F', vmchain])
-    egress_vmchain = egress_chain_name(vm_name)        
-    util.pread2(['iptables', '-F', egress_vmchain])
+    vmchain = chain_name(vm_name)
+    try:
+        util.pread2(['iptables', '-F', vmchain])
+    except:
+        util.SMlog("Ignoring failure to delete chain " + vmchain)
+        util.pread2(['iptables', '-N', vmchain])
+
+    egress_vmchain = egress_chain_name(vm_name)
+    try:
+        util.pread2(['iptables', '-F', egress_vmchain])
+    except:
+        util.SMlog("Ignoring failure to delete chain " + egress_vmchain)
+        util.pread2(['iptables', '-N', egress_vmchain])
+
     
     for cmd in cmds:
         util.pread2(cmd)
