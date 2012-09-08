@@ -182,12 +182,11 @@
     </condition>
     <antcall target="unzip" inheritAll="true"/>
     <unwar overwrite="true" src="${deploy.work.dir}/client/client.war" dest="${server.deploy.to.dir}/webapps/client"/>
-<!--    <copy todir="${server.deploy.to.dir}/lib">
-      <fileset dir="${deploy.work.dir}/client/lib/">
+    <copy todir="${server.deploy.to.dir}/lib">
+      <fileset dir="${deps.dir}/">
         <include name="*.jar"/>
       </fileset>
     </copy>
-    -->
     <touch file="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/scripts/vm/hypervisor/xenserver/version"/>
     <echo file="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/scripts/vm/hypervisor/xenserver/version" append="false" message="${version}.${build.number}"/>
     <copy overwrite="true" todir="${server.deploy.to.dir}/conf">
