@@ -182,12 +182,11 @@
     </condition>
     <antcall target="unzip" inheritAll="true"/>
     <unwar overwrite="true" src="${deploy.work.dir}/client/client.war" dest="${server.deploy.to.dir}/webapps/client"/>
-<!--    <copy todir="${server.deploy.to.dir}/lib">
-      <fileset dir="${deploy.work.dir}/client/lib/">
+    <copy todir="${server.deploy.to.dir}/lib">
+      <fileset dir="${deps.dir}/">
         <include name="*.jar"/>
       </fileset>
     </copy>
-    -->
     <touch file="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/scripts/vm/hypervisor/xenserver/version"/>
     <echo file="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/scripts/vm/hypervisor/xenserver/version" append="false" message="${version}.${build.number}"/>
     <copy overwrite="true" todir="${server.deploy.to.dir}/conf">
@@ -399,21 +398,17 @@
   
   
   <target name="build-apidocs" description="Generate api documentation" depends="build-all">
-      <property name="commands.file" location="${dist.dir}/client/conf/commands.properties" /> 
-      <property name="commands.ext.file" location="${dist.dir}/client/conf/commands-ext.properties" />
-  	  <property name="commands.f5.file" location="${dist.dir}/client/conf/f5bigip_commands.properties" />
-      <property name="commands.juniper.file" location="${dist.dir}/client/conf/junipersrx_commands.properties" />
-	  <property name="commands.cisco.file" location="${dist.dir}/client/conf/cisconexusvsm_commands.properties" />
-  	  <property name="commands.netscaler.file" location="${dist.dir}/client/conf/netscalerloadbalancer_commands.properties" />
-  	  <property name="commands.vr.file" location="${dist.dir}/client/conf/virtualrouter_commands.properties" />
+    <property name="commands.file" location="${dist.dir}/client/conf/commands.properties" /> 
+    <property name="commands.ext.file" location="${dist.dir}/client/conf/commands-ext.properties" />
+    <property name="commands.vr.file" location="${dist.dir}/client/conf/virtualrouter_commands.properties" />
   
-	<echo message="build-apidocs" />
+  <echo message="build-apidocs" />
     <exec dir="${apidoc.scripts.dir}" executable="bash" failonerror="true">
       <arg value="build-apidoc.sh" />
       <arg value="${target.dir}/jar" />
       <arg value="${deps.dir}" />
       <arg value="${dist.dir}" />
-      <arg value="-f ${commands.cisco.file},${commands.file},${commands.ext.file},${commands.f5.file},${commands.juniper.file},${commands.netscaler.file},${commands.vr.file}" />
+      <arg value="-f ${commands.file},${commands.ext.file},${commands.vr.file}" />
     </exec>
     <echo message="Result locates at ${dist.dir}/commands.xml" />
     

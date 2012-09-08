@@ -1295,7 +1295,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             VirtualDevice nic = findVirtualNicDevice(vmMo, cmd.getNic().getMac());
-
+            if ( nic == null ) {
+                return new UnPlugNicAnswer(cmd, true, "success");
+            }
             VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
             deviceConfigSpecArray[0] = new VirtualDeviceConfigSpec();
@@ -1324,7 +1326,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         int ethDeviceNum = this.findRouterEthDeviceIndex(domrName, routerIp, ip.getVifMacAddress());
         if (ethDeviceNum < 0) {
-            throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
+            if (ip.isAdd()) {
+                throw new InternalErrorException("Failed to find DomR VIF to associate/disassociate IP with.");
+            } else {
+                 s_logger.debug("VIF to deassociate IP with does not exist, return success");
+                return;
+            }
         }
 
         String args = "";
