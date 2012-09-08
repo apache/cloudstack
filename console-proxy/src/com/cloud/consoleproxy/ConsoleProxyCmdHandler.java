@@ -26,45 +26,45 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 public class ConsoleProxyCmdHandler implements HttpHandler {
-	private static final Logger s_logger = Logger.getLogger(ConsoleProxyCmdHandler.class);
-	
-	public void handle(HttpExchange t) throws IOException {
-		try {
-	        Thread.currentThread().setName("Cmd Thread " + 
-	        		Thread.currentThread().getId() + " " + t.getRemoteAddress());
-			s_logger.info("CmdHandler " + t.getRequestURI());
-			doHandle(t);
-		} catch (Exception e) {
-			s_logger.error(e.toString(), e);
-			String response = "Not found";
-			t.sendResponseHeaders(404, response.length());
-			OutputStream os = t.getResponseBody();
-			os.write(response.getBytes());
-			os.close();
-		} catch(OutOfMemoryError e) {
-			s_logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
-			System.exit(1);
-		} catch (Throwable e) {
-			s_logger.error(e.toString(), e);
-		} finally {
-			t.close();
-		}
-	}
-	
-	public void doHandle(HttpExchange t) throws Exception {
-		String path = t.getRequestURI().getPath();
-		int i = path.indexOf("/", 1);
-		String cmd = path.substring(i + 1);
-		s_logger.info("Get CMD request for " + cmd);
-		if (cmd.equals("getstatus")) {
-			ConsoleProxyClientStatsCollector statsCollector = ConsoleProxy.getStatsCollector();
-			
-			Headers hds = t.getResponseHeaders();
-			hds.set("Content-Type", "text/plain");
-			t.sendResponseHeaders(200, 0);
-			OutputStreamWriter os = new OutputStreamWriter(t.getResponseBody());
-			statsCollector.getStatsReport(os);
-			os.close();
-		}
-	}
+    private static final Logger s_logger = Logger.getLogger(ConsoleProxyCmdHandler.class);
+    
+    public void handle(HttpExchange t) throws IOException {
+        try {
+            Thread.currentThread().setName("Cmd Thread " + 
+                    Thread.currentThread().getId() + " " + t.getRemoteAddress());
+            s_logger.info("CmdHandler " + t.getRequestURI());
+            doHandle(t);
+        } catch (Exception e) {
+            s_logger.error(e.toString(), e);
+            String response = "Not found";
+            t.sendResponseHeaders(404, response.length());
+            OutputStream os = t.getResponseBody();
+            os.write(response.getBytes());
+            os.close();
+        } catch(OutOfMemoryError e) {
+            s_logger.error("Unrecoverable OutOfMemory Error, exit and let it be re-launched");
+            System.exit(1);
+        } catch (Throwable e) {
+            s_logger.error(e.toString(), e);
+        } finally {
+            t.close();
+        }
+    }
+    
+    public void doHandle(HttpExchange t) throws Exception {
+        String path = t.getRequestURI().getPath();
+        int i = path.indexOf("/", 1);
+        String cmd = path.substring(i + 1);
+        s_logger.info("Get CMD request for " + cmd);
+        if (cmd.equals("getstatus")) {
+            ConsoleProxyClientStatsCollector statsCollector = ConsoleProxy.getStatsCollector();
+            
+            Headers hds = t.getResponseHeaders();
+            hds.set("Content-Type", "text/plain");
+            t.sendResponseHeaders(200, 0);
+            OutputStreamWriter os = new OutputStreamWriter(t.getResponseBody());
+            statsCollector.getStatsReport(os);
+            os.close();
+        }
+    }
 }

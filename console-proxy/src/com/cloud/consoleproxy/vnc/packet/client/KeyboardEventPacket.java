@@ -23,20 +23,20 @@ import com.cloud.consoleproxy.vnc.RfbConstants;
 
 public class KeyboardEventPacket implements ClientPacket {
 
-  private final int downFlag, key;
-  
-  public KeyboardEventPacket(int downFlag, int key) {
-    this.downFlag = downFlag;
-    this.key = key;
-  }
+    private final int downFlag, key;
 
-  @Override
-  public void write(DataOutputStream os) throws IOException {
-    os.writeByte(RfbConstants.CLIENT_KEYBOARD_EVENT);
+    public KeyboardEventPacket(int downFlag, int key) {
+        this.downFlag = downFlag;
+        this.key = key;
+    }
 
-    os.writeByte(downFlag);
-    os.writeShort(0); // padding
-    os.writeInt(key);
-  }
+    @Override
+    public void write(DataOutputStream os) throws IOException {
+        os.writeByte(RfbConstants.CLIENT_KEYBOARD_EVENT);
+
+        os.writeByte(downFlag);
+        os.writeShort(0); // padding
+        os.writeInt(key);
+    }
 
 }

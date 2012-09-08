@@ -19,37 +19,37 @@ package com.cloud.consoleproxy.util;
 import java.awt.Rectangle;
 
 public class TileInfo {
-	private int row;
-	private int col;
-	private Rectangle tileRect;
+    private int row;
+    private int col;
+    private Rectangle tileRect;
 
-	public TileInfo(int row, int col, Rectangle tileRect) {
-		this.row = row;
-		this.col = col;
-		this.tileRect = tileRect;
-	}
-	
-	public int getRow() {
-		return row;
-	}
-	
-	public void setRow(int row) {
-		this.row = row;
-	}
-	
-	public int getCol() {
-		return col;
-	}
-	
-	public void setCol(int col) {
-		this.col = col;
-	}
-	
-	public Rectangle getTileRect() {
-		return tileRect;
-	}
-	
-	public void setTileRect(Rectangle tileRect) {
-		this.tileRect = tileRect;
-	}
+    public TileInfo(int row, int col, Rectangle tileRect) {
+        this.row = row;
+        this.col = col;
+        this.tileRect = tileRect;
+    }
+    
+    public int getRow() {
+        return row;
+    }
+    
+    public void setRow(int row) {
+        this.row = row;
+    }
+    
+    public int getCol() {
+        return col;
+    }
+    
+    public void setCol(int col) {
+        this.col = col;
+    }
+    
+    public Rectangle getTileRect() {
+        return tileRect;
+    }
+    
+    public void setTileRect(Rectangle tileRect) {
+        this.tileRect = tileRect;
+    }
 }
