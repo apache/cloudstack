@@ -119,7 +119,6 @@
   <property name="tools.dir" location="${base.dir}/tools" />
   <!--  <property name="antcontrib.dir" location="${tools.dir}/tools/ant/apache-ant-1.8.0/lib" />-->
   <property name="deploy.dir" location="${build.dir}/deploy" />
-  <property name="production.dir" location="${deploy.dir}/production" />
   <property name="meld.home" location="/usr/local/bin" />
   <property name="assertion" value="-da" />
 

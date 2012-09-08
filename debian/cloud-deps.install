@@ -35,3 +35,4 @@
 /usr/share/java/bcprov-jdk16-1.46.jar
 /usr/share/java/jsch-0.1.42.jar
 /usr/share/java/jasypt-1.*.jar
+/usr/share/java/CAStorSDK-*.jar
