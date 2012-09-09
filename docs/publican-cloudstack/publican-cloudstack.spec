@@ -1,7 +1,7 @@
 %define brand cloudstack
 
 Name:		publican-cloudstack
-Summary:	Common documentation files for %{brand}
+Summary:	Common documentation files for Apache %{brand}
 Version:	0.3
 Release:	1%{?dist}
 License:	ASLv2
@@ -15,7 +15,7 @@ URL:		http://cloudstack.org
 
 %description
 This package provides common files and templates needed to build documentation
-for %{brand} with publican.
+for Apache %{brand} with publican.
 
 %prep
 %setup -qn %{name} 
@@ -39,6 +39,10 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/publican/Common_Content/%{brand}
 
 %changelog
+* Sun Sep 22 2012 David Nalley <david@gnsa.us> 0.4-1
+- added 'Apache' to the description
+- moved the issue tracker url to the ASF jira instance
+
 * Tue Aug 14 2012 Joe Brockmeier <jzb@zonker.net> 0.3-1
 - Removed unneeded common files distributed with Publican
 * Tue Jun 26 2012  David Nalley <david@gnsa.us> 0.2-1
