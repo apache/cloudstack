@@ -2,13 +2,13 @@
 
 Name:		publican-cloudstack
 Summary:	Common documentation files for Apache %{brand}
-Version:	0.3
+Version:	0.4
 Release:	1%{?dist}
 License:	ASLv2
 Group:		Applications/Text
 Buildroot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Buildarch:	noarch
-Source:		%{name}-%{version}.tgz
+Source:		%{name}.tgz
 Requires:	publican >= 1.99
 BuildRequires:	publican >= 1.99
 URL:		http://cloudstack.org
