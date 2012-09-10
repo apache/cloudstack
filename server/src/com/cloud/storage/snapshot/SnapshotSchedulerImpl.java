@@ -50,6 +50,7 @@ import com.cloud.storage.dao.SnapshotScheduleDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
@@ -75,6 +76,7 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
     @Inject protected SnapshotPolicyDao       _snapshotPolicyDao;
     @Inject protected AsyncJobManager         _asyncMgr;
     @Inject protected SnapshotManager         _snapshotManager;
+    @Inject protected AccountManager          _accntManager;
     @Inject protected StoragePoolHostDao      _poolHostDao;
     @Inject protected VolumeDao               _volsDao;
 
@@ -209,10 +211,6 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
         List<SnapshotScheduleVO> snapshotsToBeExecuted = _snapshotScheduleDao.getSchedulesToExecute(_currentTimestamp);
         s_logger.debug("Got " + snapshotsToBeExecuted.size() + " snapshots to be executed at " + displayTime);
 
-        // This is done for recurring snapshots, which are executed by the system automatically
-        // Hence set user id to that of system
-        long userId = 1;
-
         for (SnapshotScheduleVO snapshotToBeExecuted : snapshotsToBeExecuted) {
             SnapshotScheduleVO tmpSnapshotScheduleVO = null;
             long snapshotScheId = snapshotToBeExecuted.getId();
@@ -234,17 +232,15 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
                             + snapshotToBeExecuted.getId() + " at " + displayTime);
                 }
 
-
-
-                tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);
-                Long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
+                tmpSnapshotScheduleVO = _snapshotScheduleDao.acquireInLockTable(snapshotScheId);               
+                Long eventId = EventUtils.saveScheduledEvent(User.UID_SYSTEM, volume.getAccountId(),
                         EventTypes.EVENT_SNAPSHOT_CREATE, "creating snapshot for volume Id:"+volumeId,0);
 
                 Map<String, String> params = new HashMap<String, String>();
                 params.put("volumeid", ""+volumeId);
                 params.put("policyid", ""+policyId);
                 params.put("ctxUserId", "1");
-                params.put("ctxAccountId", "1");
+                params.put("ctxAccountId", ""+volume.getAccountId());
                 params.put("ctxStartEventId", String.valueOf(eventId));
 
                 CreateSnapshotCmd cmd = new CreateSnapshotCmd();
@@ -253,10 +249,8 @@ public class SnapshotSchedulerImpl implements SnapshotScheduler {
                 params.put("ctxStartEventId", "1");
 
                 AsyncJobVO job = new AsyncJobVO();
-                job.setUserId(userId);
-                // Just have SYSTEM own the job for now.  Users won't be able to see this job, but
-                // it's an internal job so probably not a huge deal.
-                job.setAccountId(1L);
+                job.setUserId(User.UID_SYSTEM);
+                job.setAccountId(volume.getAccountId());
                 job.setCmd(CreateSnapshotCmd.class.getName());
                 job.setInstanceId(cmd.getEntityId());
                 job.setCmdInfo(ApiGsonHelper.getBuilder().create().toJson(params));
