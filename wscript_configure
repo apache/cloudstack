@@ -96,8 +96,8 @@ systemjars = {
 		"jetty-start-daemon.jar",
 		"jetty-sslengine.jar",
 		"jetty-start.jar",
-		"slf4j-log4j12.jar",
 		"jna.jar",
+		"log4j-1.2.jar",
 	),
 	'Windows':
 	(

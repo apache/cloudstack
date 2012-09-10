@@ -2,7 +2,7 @@ Source: cloud
 Section: libs
 Priority: extra
 Maintainer: Wido den Hollander <wido@widodh.nl>
-Build-Depends: debhelper (>= 7), openjdk-6-jdk, tomcat6, libws-commons-util-java, libcommons-dbcp-java, libcommons-collections-java, libcommons-httpclient-java, libservlet2.5-java, genisoimage, python-mysqldb, maven (>= 3.0.4)
+Build-Depends: debhelper (>= 7), openjdk-6-jdk, tomcat6, libws-commons-util-java, libcommons-dbcp-java, libcommons-collections-java, libcommons-httpclient-java, libservlet2.5-java, genisoimage, python-mysqldb, maven (>= 3.0.4), liblog4j1.2-java (>= 1.2.16)
 Standards-Version: 3.8.1
 Homepage: http://www.cloudstack.org/
 
@@ -119,7 +119,7 @@ Provides: vmops-agent
 Conflicts: vmops-agent
 Replaces: vmops-agent
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), libvirt0, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, uuid-runtime, rsync, grep, iproute, ebtables, vlan, libcglib-java, libcommons-httpclient-java, libservlet2.5-java, liblog4j1.2-java, libjna-java, wget, jsvc, lsb-base (>= 3.2)
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), libvirt0, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, uuid-runtime, rsync, grep, iproute, ebtables, vlan, libcglib-java, libcommons-httpclient-java, libservlet2.5-java, liblog4j1.2-java (>= 1.2.16), libjna-java, wget, jsvc, lsb-base (>= 3.2)
 Description: CloudStack agent
  The CloudStack agent is in charge of managing shared computing resources in
  a CloudStack powered cloud.  Install this package if this computer
