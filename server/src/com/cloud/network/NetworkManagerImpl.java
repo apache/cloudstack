@@ -68,7 +68,6 @@ import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
@@ -78,7 +77,6 @@ import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
-import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -204,7 +202,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -235,8 +232,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject
     DataCenterDao _dcDao = null;
     @Inject
-    HostPodDao _podDao = null;
-    @Inject
     VlanDao _vlanDao = null;
     @Inject
     IPAddressDao _ipAddressDao = null;
@@ -244,8 +239,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     AccountDao _accountDao = null;
     @Inject
     DomainDao _domainDao = null;
-    @Inject
-    DomainRouterDao _domainRouterDao = null;
     @Inject
     UserStatisticsDao _userStatsDao = null;
     @Inject
@@ -3814,6 +3807,12 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             throw new InvalidParameterValueException("Network is not in the right state to be restarted. Correct states are: " + Network.State.Implemented + ", " + Network.State.Setup);
         }
 
+        // don't allow clenaup=true for the network in Basic zone
+        DataCenter zone = _configMgr.getZone(network.getDataCenterId());
+        if (zone.getNetworkType() == NetworkType.Basic && cleanup) {
+            throw new InvalidParameterValueException("Cleanup can't be true when restart network in Basic zone");
+        }
+
         _accountMgr.checkAccess(callerAccount, null, true, network);
 
         boolean success = restartNetwork(networkId, callerAccount, callerUser, cleanup);
@@ -3858,6 +3857,10 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
 
         if (cleanup) {
+            if (network.getGuestType() != GuestType.Isolated) {
+                s_logger.warn("Only support clean up network for isolated network!");
+                return false;
+            }
             // shutdown the network
             s_logger.debug("Shutting down the network id=" + networkId + " as a part of network restart");
 
@@ -3870,43 +3873,14 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             s_logger.debug("Skip the shutting down of network id=" + networkId);
         }
 
+        // implement the network elements and rules again
+        DeployDestination dest = new DeployDestination(_dcDao.findById(network.getDataCenterId()), null, null, null);
+
         s_logger.debug("Implementing the network " + network + " elements and resources as a part of network restart");
         NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
 
         try {
-            DataCenter dc = _dcDao.findById(network.getDataCenterId());
-            //Pod based network restart for basic network, one VR per pod
-            if (dc.getNetworkType() == NetworkType.Basic) {
-                //Loop through all pods with running user vms and restart network
-                for (HostPodVO pod: _podDao.listByDataCenterId(dc.getId())) {
-                    s_logger.debug("Trying to restart network for Pod: " + pod.getName() + ", id=" + pod.getId());
-                    //If cleanup is false, don't implement network on running VRs
-                    List<DomainRouterVO> virtualRouters = _domainRouterDao.listByPodId(pod.getId());
-                    Boolean podHasSingleVR = (virtualRouters.size() == 1);
-                    if (!podHasSingleVR) {
-                        s_logger.warn("Pod should have only one VR in Basic Zone, please check!");
-                    }
-                    if (!cleanup && virtualRouters != null && podHasSingleVR
-                            && virtualRouters.get(0).getState() == VirtualMachine.State.Running) {
-                        s_logger.debug("Cleanup=false: Found a running VR, skipping network implementation for the pod");
-                        continue;
-                    }
-                    //Implement network only if there are running user vms in 'pod'
-                    List<VMInstanceVO> vms = _vmDao.listByPodId(pod.getId());
-                    for (VMInstanceVO vm: vms) {
-                        // implement the network elements and rules again
-                        if (vm.getType() == Type.User && vm.getState() == VirtualMachine.State.Running) {
-                            DeployDestination dest = new DeployDestination(dc, pod, null, null);
-                            implementNetworkElementsAndResources(dest, context, network, offering);
-                            break;
-                        }
-                    }
-                }
-            } else {
-                // implement the network elements and rules again
-                DeployDestination dest = new DeployDestination(dc, null, null, null);
-                implementNetworkElementsAndResources(dest, context, network, offering);
-            }
+            implementNetworkElementsAndResources(dest, context, network, offering);
             setRestartRequired(network, true);
         } catch (Exception ex) {
             s_logger.warn("Failed to implement network " + network + " elements and resources as a part of network restart due to ", ex);
