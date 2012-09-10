@@ -467,11 +467,6 @@ fi
 %{_javadir}/mail-1.4.jar
 %{_javadir}/activation-1.1.jar
 %{_javadir}/mysql-connector-java-5.1.21.jar
-%{_javadir}/hibernate-jpa-2.0-api-1.0.0.Final.jar
-%{_javadir}/hibernate-entitymanager-3.5.1-Final.jar
-%{_javadir}/hibernate-core-3.5.1-Final.jar
-%{_javadir}/hibernate-commons-annotations-3.2.0.Final.jar
-%{_javadir}/hibernate-annotations-3.5.1-Final.jar
 %{_javadir}/asm-3.1.jar
 %{_javadir}/xapi-5.6.100-1-SNAPSHOT.jar
 %{_javadir}/log4j-*.jar
@@ -490,7 +485,7 @@ fi
 %{_javadir}/axis2-1.5.1.jar
 %{_javadir}/commons-discovery-0.5.jar
 %{_javadir}/jstl-1.2.jar
-
+%{_javadir}/javax.persistence-2.0.0.jar
 
 %files core
 %defattr(0644,root,root,0755)
