@@ -353,7 +353,7 @@ Within the deps/awsapi-lib directory
             axis2-kernel-1.5.1.jar  http://axis.apache.org/axis/             
             axis2-transport-http-1.5.1.jar  http://axis.apache.org/axis/             
             axis2-transport-local-1.5.1.jar  http://axis.apache.org/axis/             
-            axis2.war  http://axis.apache.org/axis/             
+            axis2-webapp-1.5.1.war  http://axis.apache.org/axis/             
             commons-codec-1.4.jar  http://commons.apache.org/codec/             
             commons-collections-3.1.jar  http://commons.apache.org/collections/             
             commons-fileupload-1.2.jar  http://commons.apache.org/fileupload/             
