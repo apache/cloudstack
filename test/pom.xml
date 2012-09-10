@@ -19,7 +19,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>cloud-test</artifactId>
+    <artifactId>cloud-testclient</artifactId>
     <name>Apache CloudStack Test</name>
     <parent>
         <groupId>org.apache.cloudstack</groupId>
@@ -28,13 +28,18 @@
     </parent>
     <dependencies>
         <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-utils</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <version>${cs.log4j.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
-            <artifactId>org.junit</artifactId>
+            <artifactId>junit</artifactId>
             <version>${cs.junit.version}</version>
         </dependency>
         <dependency>
@@ -54,13 +59,23 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-java</artifactId>
-            <version>${cs.selenium.java.version}</version>
+            <groupId>org.openqa.selenium.server</groupId>
+            <artifactId>selenium-server</artifactId>
+            <version>${cs.selenium.server.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.seleniumhq.selenium.client-drivers</groupId>
+            <artifactId>selenium-java-client-driver</artifactId>
+            <version>1.0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>commons-httpclient</groupId>
+            <artifactId>commons-httpclient</artifactId>
+            <version>${cs.httpclient.version}</version>
         </dependency>
     </dependencies>
     <build>
-        <defaultGoal>install</defaultGoal>
+        <defaultGoal>compile</defaultGoal>
         <sourceDirectory>src</sourceDirectory>
         <testSourceDirectory>test</testSourceDirectory>
         <plugins>
