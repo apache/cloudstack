@@ -60,7 +60,7 @@
     <cs.junit.version>4.10</cs.junit.version>
     <cs.bcprov.version>1.46</cs.bcprov.version>
     <cs.jsch.version>0.1.42</cs.jsch.version>
-    <cs.jpa.version>1.0.0.Final</cs.jpa.version>
+    <cs.jpa.version>2.0.0</cs.jpa.version>
     <cs.jasypt.version>1.9.0</cs.jasypt.version>
     <cs.trilead.version>build213-svnkit-1.3-patch</cs.trilead.version>
     <cs.ehcache.version>1.5.0</cs.ehcache.version>
@@ -75,7 +75,6 @@
     <cs.axis.version>1.4</cs.axis.version>
     <cs.axis2.version>1.5.1</cs.axis2.version>
     <cs.axiom.version>1.2.8</cs.axiom.version>
-    <cs.hibernate.version>3.5.1-Final</cs.hibernate.version>
     <cs.neethi.version>2.0.4</cs.neethi.version>
     <cs.servlet.version>2.4</cs.servlet.version>
     <cs.jstl.version>1.2</cs.jstl.version>
