@@ -407,7 +407,7 @@ if [ "$1" == "1" ] ; then
         cp -f $root/lib/$j $root/webapps/awsapi/WEB-INF/lib/
     done
 
-    confs="cloud-bridge.properties ec2-service.properties hibernate.cfg.xml CloudStack.cfg.xml"
+    confs="cloud-bridge.properties ec2-service.properties"
     for c in $confs
     do
         cp -f $root/conf/$c $target/conf
