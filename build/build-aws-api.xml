@@ -272,12 +272,11 @@
 			</fileset>
 		</copy>
 	</target>
+<!-- 
 	<target name="deploy-debian-install" depends="build-awsapi-jar, build-awsapi">
 		<copy todir="${debian.tomcat.dir}/webapps7080/awsapi/WEB-INF/services">
 			<fileset dir="${dist.files.dir}">
-				<!--                
                 <include name="cloud-s3.aar"/>
--->
 				<include name="cloud-ec2.aar" />
 			</fileset>
 		</copy>
@@ -310,14 +309,14 @@
 				<include name="xes.keystore" />
 			</fileset>
 		</copy>
-		<!-- copy overwrite="true" todir="${debian.tomcat.dir}/conf">
+		<copy overwrite="true" todir="${debian.tomcat.dir}/conf">
 			<fileset dir="${base.dir}/awsapi/conf/">
 				<include name="**/*" />
 			</fileset>
 			<fileset dir="${base.dir}/awsapi-setup/tomcat">
 				<include name="**/*" />
 			</fileset>
-		</copy -->
+		</copy>
 		<copy overwrite="true" todir="${debian.tomcat.dir}/webapps7080/awsapi/WEB-INF/conf">
 			<fileset dir="${base.dir}/awsapi/resource/Axis2/">
 				<include name="axis2.xml" />
@@ -345,6 +344,8 @@
 			</fileset>
 		</copy>
 	</target>
+-->
+	
 	<target name="deploy-rpm-install" depends="build-awsapi-jar, build-awsapi">
 		<copy todir="${rpm.tomcat.dir}/webapps7080/awsapi/WEB-INF/services">
 			<fileset dir="${dist.files.dir}">
