@@ -1639,10 +1639,21 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                 if (cmds != null) {
                     resource.disconnected();
                 }
-
-                if (host != null) {
+                //In case of some db errors, we may land with the sitaution that host is null. We need to reload host from db and call disconnect on it so that it will be loaded for reconnection next time
+                HostVO tempHost = host;
+                if(tempHost == null){
+                    if (cmds != null) {
+                        StartupCommand firstCmd = cmds[0];
+                        tempHost = findHostByGuid(firstCmd.getGuid());
+                        if (tempHost == null) {
+                            tempHost = findHostByGuid(firstCmd.getGuidWithoutResource());
+                        }
+                    }
+                }
+                
+                if (tempHost != null) {
                     /* Change agent status to Alert */
-                    _agentMgr.agentStatusTransitTo(host, Status.Event.AgentDisconnected, _nodeId);
+                    _agentMgr.agentStatusTransitTo(tempHost, Status.Event.AgentDisconnected, _nodeId);
                     /* Don't change resource state here since HostVO is already in database, which means resource state has had an appropriate value*/
                 }
             }

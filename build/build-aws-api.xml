@@ -171,7 +171,7 @@
 		</jar>
 	</target>
 	<target name="deploy-axis" depends="-init-awsapi">
-		<unwar overwrite="true" src="${base.dir}/deps/awsapi-lib/axis2.war" dest="${server.deploy.to.dir}/webapps7080/awsapi" />
+		<unwar overwrite="true" src="${base.dir}/deps/awsapi-lib/axis2-webapp-1.5.1.war" dest="${server.deploy.to.dir}/webapps7080/awsapi" />
 	</target>
 	<condition property="access_key.private.notpresent">
 		<not>
@@ -260,7 +260,7 @@
 		</copy>
 		<!-- copying over rampart mar files for WS-Security -->
 		<copy todir="${server.deploy.to.dir}/webapps7080/awsapi/WEB-INF/modules">
-			<fileset dir="${base.dir}/awsapi/modules">
+			<fileset dir="${base.dir}/deps/awsapi-lib/modules">
 				<include name="*.mar" />
 			</fileset>
 		</copy>

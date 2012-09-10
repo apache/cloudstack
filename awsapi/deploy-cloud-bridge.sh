@@ -76,7 +76,7 @@ mkdir "$CATALINA_HOME/temp"
 mkdir "$CATALINA_HOME/webapps/bridge"
 
 
-if ! unzip -o ./axis2.war -d $deploydir/webapps/bridge
+if ! unzip -o ./axis2-webapp-1.5.1.war -d $deploydir/webapps/bridge
 then
    exit 10;
 fi

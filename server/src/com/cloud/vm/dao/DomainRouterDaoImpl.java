@@ -178,6 +178,13 @@ public class DomainRouterDaoImpl extends GenericDaoBase<DomainRouterVO, Long> im
     }
 
     @Override
+    public List<DomainRouterVO> listByPodId(Long podId) {
+        SearchCriteria<DomainRouterVO> sc = AllFieldsSearch.create();
+        sc.setParameters("podId", podId);
+       return listBy(sc);
+    }
+
+    @Override
     public List<DomainRouterVO> listIsolatedByHostId(Long hostId) {
         SearchCriteria<DomainRouterVO> sc = HostUpSearch.create();
         if (hostId != null) {

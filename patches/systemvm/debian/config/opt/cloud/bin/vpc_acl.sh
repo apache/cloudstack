@@ -89,7 +89,6 @@ acl_chain_for_guest_network () {
   sudo iptables -A FORWARD -o $dev -d $gcidr -j ACL_INBOUND_$dev  2>/dev/null
   # outbound
   sudo iptables -t mangle -N ACL_OUTBOUND_$dev 2>/dev/null
-  sudo iptables -t mangle -A ACL_OUTBOUND_$dev -j DROP 2>/dev/null
   sudo iptables -t mangle -A PREROUTING -m state --state NEW -i $dev -s $gcidr ! -d $ip -j ACL_OUTBOUND_$dev  2>/dev/null
 }
 
@@ -126,6 +125,7 @@ acl_entry_for_guest_network() {
         sudo iptables -I ACL_INBOUND_$dev -p $prot -s $lcidr  \
                     --icmp-type $typecode  -j ACCEPT
       else
+        let egress++
         sudo iptables -t mangle -I ACL_OUTBOUND_$dev -p $prot -d $lcidr  \
                     --icmp-type $typecode  -j ACCEPT
       fi
@@ -135,6 +135,7 @@ acl_entry_for_guest_network() {
         sudo iptables -I ACL_INBOUND_$dev -p $prot -s $lcidr \
                     $DPORT -j ACCEPT
       else
+        let egress++
         sudo iptables -t mangle -I ACL_OUTBOUND_$dev -p $prot -d $lcidr \
                     $DPORT -j ACCEPT
       fi
@@ -199,7 +200,7 @@ fi
 success=0
 
 acl_chain_for_guest_network
-
+egress=0
 for r in $rules_list
 do
   acl_entry_for_guest_network $r
@@ -219,6 +220,12 @@ then
   acl_restore
 else
   logger -t cloud "$(basename $0): deleting backup for guest network: $gcidr"
+  if [ $egress -eq 0 ]
+  then
+    sudo iptables -t mangle -A ACL_OUTBOUND_$dev -j ACCEPT 2>/dev/null
+  else
+    sudo iptables -t mangle -A ACL_OUTBOUND_$dev -j DROP 2>/dev/null
+  fi   
   acl_switch_to_new
 fi
 unlock_exit $success $lock $locked

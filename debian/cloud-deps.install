@@ -15,9 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/usr/share/java/commons-codec-1.6.jar
-/usr/share/java/commons-dbcp-1.4.jar
-/usr/share/java/commons-pool-1.6.jar
 /usr/share/java/backport-util-concurrent-3.1.jar
 /usr/share/java/ehcache-1.5.0.jar
 /usr/share/java/mail-1.4.jar
@@ -30,9 +27,7 @@
 /usr/share/java/xmlrpc-client-3.*.jar
 /usr/share/java/jstl-1.2.jar
 /usr/share/java/axis2-1.5.1.jar
-/usr/share/java/commons-discovery-0.5.jar
 /usr/share/java/wsdl4j-1.6.2.jar
 /usr/share/java/bcprov-jdk16-1.46.jar
 /usr/share/java/jsch-0.1.42.jar
 /usr/share/java/jasypt-1.*.jar
-/usr/share/java/CAStorSDK-*.jar

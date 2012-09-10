@@ -275,15 +275,14 @@ def runant(tsk):
 
 	environ = dict(os.environ)
 	environ["CATALINA_HOME"] = tsk.env.TOMCATHOME
-	environ["ANT_HOME"] = _join("tools","ant","apache-ant-1.7.1")
 	if tsk.generator.env.DISTRO == "Windows":
 		stanzas = [
-			_join(environ["ANT_HOME"],"bin","ant.bat"),
+			"ant",
 			"-Dthirdparty.classpath=\"%s\""%(tsk.env.CLASSPATH.replace(os.pathsep,",")),
 		]
 	else:
 		stanzas = [
-			_join(environ["ANT_HOME"],"bin","ant"),
+			"ant",
 			"-Dthirdparty.classpath=%s"%(tsk.env.CLASSPATH.replace(os.pathsep,",")),
 		]
 	stanzas += tsk.generator.antargs

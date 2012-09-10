@@ -1098,9 +1098,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
         List<HostVO> storageHosts = _resourceMgr.listAllHostsInOneZoneByType(Host.Type.SecondaryStorage, dataCenterId);
         if (storageHosts != null) {
             for (HostVO storageHost : storageHosts) {
-                VMTemplateHostVO templateHostVO = _vmTemplateHostDao.findByHostTemplate(storageHost.getId(), templateId);
-                if (templateHostVO != null) {
-                    isoPath = storageHost.getStorageUrl() + "/" + templateHostVO.getInstallPath();
+                List<VMTemplateHostVO> templateHostVOs = _vmTemplateHostDao.listByTemplateHostStatus(templateId, storageHost.getId(), VMTemplateStorageResourceAssoc.Status.DOWNLOADED );
+                if (templateHostVOs != null && !templateHostVOs.isEmpty()) {
+                    VMTemplateHostVO tmpHostVO = templateHostVOs.get(0);
+                    isoPath = storageHost.getStorageUrl() + "/" + tmpHostVO.getInstallPath();
                     return new Pair<String, String>(isoPath, storageHost.getStorageUrl());
                 }
             }

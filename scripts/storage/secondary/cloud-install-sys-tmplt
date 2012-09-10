@@ -106,7 +106,7 @@ fi
 if [ "$oflag" != 1 ]; then
     dbHost=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.host'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 fi
-if [ "$rflag" != 1]; then
+if [ "$rflag" != 1 ]; then
     dbUser=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.username'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
 fi
 

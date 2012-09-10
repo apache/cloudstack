@@ -394,6 +394,26 @@ setup_sshd(){
   [ -f /etc/ssh/sshd_config ] && sed -i -e "s/^[#]*ListenAddress.*$/ListenAddress $ip/" /etc/ssh/sshd_config
 }
 
+
+setup_vpc_apache2() {
+  log_it "Setting up apache web server for VPC"
+  chkconfig apache2 off
+  rm -f /etc/apache2/conf.d/vhost*.conf
+  [ -f /etc/apache2/sites-available/default ] && echo "" >/etc/apache2/sites-available/default
+  [ -f /etc/apache2/sites-available/default-ssl ] && echo "">/etc/apache2/sites-available/default-ssl
+  [ -f /etc/apache2/ports.conf ] && echo "">/etc/apache2/ports.conf
+  [ -f /etc/apache2/ports.conf ] && echo "">/etc/apache2/ports.conf
+  [ -f /etc/apache2/ports.conf ] && echo "">/etc/apache2/ports.conf
+  [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerTokens .*/ServerTokens Prod/g" /etc/apache2/conf.d/security
+  [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerSignature .*/ServerSignature Off/g" /etc/apache2/conf.d/security
+
+  # Disable listing of http://SSVM-IP/icons folder for security issue. see article http://www.i-lateral.com/tutorials/disabling-the-icons-folder-on-an-ubuntu-web-server/
+  [ -f /etc/apache2/mods-available/alias.conf ] && sed -i s/"Options Indexes MultiViews"/"Options -Indexes MultiViews"/ /etc/apache2/mods-available/alias.conf
+
+  echo "Options -Indexes" > /var/www/html/.htaccess
+}
+
+
 setup_apache2() {
   log_it "Setting up apache web server"
   local ip=$1
@@ -600,12 +620,18 @@ EOF
   fi
 
   ip route delete default
+  # create route table for static route
 
+  sudo echo "252 static_route" >> /etc/iproute2/rt_tables 2>/dev/null
+  sudo echo "251 static_route_back" >> /etc/iproute2/rt_tables 2>/dev/null
+  sudo ip rule add from $VPCCIDR table static_route 2>/dev/null
+  sudo ip rule add from $VPCCIDR table static_route_back 2>/dev/null
 
   sed -i  /gateway/d /etc/hosts
 
   echo "$ETH0_IP $NAME" >> /etc/hosts
   setup_sshd $ETH0_IP
+  setup_vpc_apache2
 
   enable_svc dnsmasq 1
   enable_svc haproxy 1
@@ -772,6 +798,7 @@ setup_default() {
 auto lo
 iface lo inet loopback
 EOF
+  cp -f /etc/iptables/rt_tables_init /etc/iproute2/rt_tables
 }
 
 change_password() {
@@ -950,6 +977,9 @@ for i in $CMDLINE
         ;;
       vmpassword)
         VM_PASSWORD=$VALUE
+        ;;
+      vpccidr)
+        VPCCIDR=$VALUE
         ;;
     esac
 done

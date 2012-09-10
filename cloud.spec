@@ -115,6 +115,7 @@ CloudStack uses.
 %package deps
 Summary:   CloudStack library dependencies
 Requires: java >= 1.6.0
+Requires: mysql-connector-java
 Obsoletes: vmops-deps < %{version}-%{release}
 Group:     System Environment/Libraries
 %description deps
@@ -407,7 +408,7 @@ if [ "$1" == "1" ] ; then
         cp -f $root/lib/$j $root/webapps/awsapi/WEB-INF/lib/
     done
 
-    confs="cloud-bridge.properties ec2-service.properties hibernate.cfg.xml CloudStack.cfg.xml"
+    confs="cloud-bridge.properties ec2-service.properties"
     for c in $confs
     do
         cp -f $root/conf/$c $target/conf
@@ -467,18 +468,11 @@ fi
 %{_javadir}/httpcore-4.0.jar
 %{_javadir}/mail-1.4.jar
 %{_javadir}/activation-1.1.jar
-%{_javadir}/mysql-connector-java-5.1.21.jar
-%{_javadir}/hibernate-jpa-2.0-api-1.0.0.Final.jar
-%{_javadir}/hibernate-entitymanager-3.5.1-Final.jar
-%{_javadir}/hibernate-core-3.5.1-Final.jar
-%{_javadir}/hibernate-commons-annotations-3.2.0.Final.jar
-%{_javadir}/hibernate-annotations-3.5.1-Final.jar
-%{_javadir}/asm-3.1.jar
 %{_javadir}/xapi-5.6.100-1-SNAPSHOT.jar
 %{_javadir}/log4j-*.jar
 %{_javadir}/apache-log4j-extras-1.1.jar
 %{_javadir}/trilead-ssh2-build213-svnkit-1.3-patch.jar
-%{_javadir}/cglib-2.2.jar
+%{_javadir}/cglib-nodep-2.2.2.jar
 %{_javadir}/xmlrpc-common-3.*.jar
 %{_javadir}/xmlrpc-client-3.*.jar
 %{_javadir}/wsdl4j-1.6.2.jar
@@ -491,7 +485,7 @@ fi
 %{_javadir}/axis2-1.5.1.jar
 %{_javadir}/commons-discovery-0.5.jar
 %{_javadir}/jstl-1.2.jar
-
+%{_javadir}/javax.persistence-2.0.0.jar
 
 %files core
 %defattr(0644,root,root,0755)
@@ -555,7 +549,6 @@ fi
 %attr(0755,root,root) %{_initrddir}/%{name}-agent
 %attr(0755,root,root) %{_bindir}/%{name}-setup-agent
 %dir %attr(0770,root,root) %{_localstatedir}/log/%{name}/agent
-%attr(0755,root,root) %{_bindir}/mycloud-setup-agent
 
 %files cli
 %{_bindir}/%{name}-tool
