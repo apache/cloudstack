@@ -260,7 +260,7 @@
 		</copy>
 		<!-- copying over rampart mar files for WS-Security -->
 		<copy todir="${server.deploy.to.dir}/webapps7080/awsapi/WEB-INF/modules">
-			<fileset dir="${base.dir}/awsapi/modules">
+			<fileset dir="${base.dir}/deps/awsapi-lib/modules">
 				<include name="*.mar" />
 			</fileset>
 		</copy>
