@@ -467,12 +467,11 @@ fi
 %{_javadir}/mail-1.4.jar
 %{_javadir}/activation-1.1.jar
 %{_javadir}/mysql-connector-java-5.1.21.jar
-%{_javadir}/asm-3.1.jar
 %{_javadir}/xapi-5.6.100-1-SNAPSHOT.jar
 %{_javadir}/log4j-*.jar
 %{_javadir}/apache-log4j-extras-1.1.jar
 %{_javadir}/trilead-ssh2-build213-svnkit-1.3-patch.jar
-%{_javadir}/cglib-2.2.jar
+%{_javadir}/cglib-nodep-2.2.2.jar
 %{_javadir}/xmlrpc-common-3.*.jar
 %{_javadir}/xmlrpc-client-3.*.jar
 %{_javadir}/wsdl4j-1.6.2.jar
