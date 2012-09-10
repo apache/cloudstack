@@ -115,6 +115,7 @@ CloudStack uses.
 %package deps
 Summary:   CloudStack library dependencies
 Requires: java >= 1.6.0
+Requires: mysql-connector-java
 Obsoletes: vmops-deps < %{version}-%{release}
 Group:     System Environment/Libraries
 %description deps
@@ -466,7 +467,6 @@ fi
 %{_javadir}/httpcore-4.0.jar
 %{_javadir}/mail-1.4.jar
 %{_javadir}/activation-1.1.jar
-%{_javadir}/mysql-connector-java-5.1.21.jar
 %{_javadir}/xapi-5.6.100-1-SNAPSHOT.jar
 %{_javadir}/log4j-*.jar
 %{_javadir}/apache-log4j-extras-1.1.jar
