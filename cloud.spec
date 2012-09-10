@@ -313,7 +313,7 @@ echo Doing CloudStack build
 rm $RPM_BUILD_ROOT/etc/rc.d/init.d/cloud-console-proxy
 rm $RPM_BUILD_ROOT/usr/bin/cloud-setup-console-proxy
 rm $RPM_BUILD_ROOT/usr/libexec/console-proxy-runner
-./tools/ant/apache-ant-1.7.1/bin/ant deploy-rpm-install -Drpm.install.dir=$RPM_BUILD_ROOT
+ant deploy-rpm-install -Drpm.install.dir=$RPM_BUILD_ROOT
 
 %clean
 
