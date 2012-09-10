@@ -39,6 +39,12 @@
       <version>${cs.axis2.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.axis2</groupId>
+      <artifactId>axis2-webapp</artifactId>
+      <type>war</type>
+      <version>${cs.axis2.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.ws.commons.axiom</groupId>
       <artifactId>axiom-api</artifactId>
       <version>${cs.axiom.version}</version>
@@ -84,6 +90,96 @@
       <artifactId>CAStorSDK</artifactId>
       <version>1.3.1-CS40</version>
     </dependency>
+    <dependency>
+      <groupId>com.apache.rampart</groupId>
+      <artifactId>rahas</artifactId>
+      <version>1.5</version>
+      <type>mar</type>
+    </dependency>
+    <dependency>
+      <groupId>com.apache.rampart</groupId>
+      <artifactId>rampart</artifactId>
+      <version>1.5</version>
+      <type>mar</type>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.rampart</groupId>
+        <artifactId>rampart-core</artifactId>
+        <version>1.5</version>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.rampart</groupId>
+        <artifactId>rampart-policy</artifactId>
+        <version>1.5</version>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.rampart</groupId>
+        <artifactId>rampart-trust</artifactId>
+        <version>1.5</version>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-jdk14</artifactId>
+        <version>1.5.11</version>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>1.5.11</version>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.ws.security</groupId>
+        <artifactId>wss4j</artifactId>
+        <version>1.5.8</version>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>joda-time</groupId>
+        <artifactId>joda-time</artifactId>
+        <version>1.5.2</version>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.opensaml</groupId>
+        <artifactId>xmltooling</artifactId>
+        <version>1.3.1</version>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.opensaml</groupId>
+        <artifactId>openws</artifactId>
+        <version>1.4.1</version>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>velocity</groupId>
+        <artifactId>velocity</artifactId>
+        <version>1.5</version>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.opensaml</groupId>
+        <artifactId>opensaml</artifactId>
+        <version>2.2.3</version>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.santuario</groupId>
+        <artifactId>xmlsec</artifactId>
+        <version>1.4.2</version>
+        <scope>runtime</scope>
+    </dependency>
+    <dependency>
+        <groupId>org.bouncycastle</groupId>
+        <artifactId>bcprov-jdk16</artifactId>
+        <version>1.45</version>
+        <scope>runtime</scope>
+    </dependency>
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
@@ -96,6 +192,57 @@
         </excludes>
       </resource>
     </resources>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.5.1</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>install</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>../deps/awsapi-lib/rampart-lib</outputDirectory>
+              <overWriteReleases>false</overWriteReleases>
+              <overWriteSnapshots>false</overWriteSnapshots>
+              <overWriteIfNewer>true</overWriteIfNewer>
+              <includeArtifactIds>rampart-core,rampart-policy,rampart-trust,slf4j-jdk14,slf4j-api,wss4j,joda-time,xmltooling,openws,velocity,opensaml,xmlsec,bcprov-jdk16</includeArtifactIds>
+            </configuration>
+          </execution>
+          <execution>
+            <id>copy-axis2-war</id>
+            <phase>install</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>../deps/awsapi-lib/</outputDirectory>
+              <overWriteReleases>false</overWriteReleases>
+              <overWriteSnapshots>false</overWriteSnapshots>
+              <overWriteIfNewer>true</overWriteIfNewer>
+              <includeArtifactIds>axis2-webapp</includeArtifactIds>
+            </configuration>
+          </execution>
+          <execution>
+            <id>copy-mars</id>
+            <phase>install</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>../deps/awsapi-lib/modules</outputDirectory>
+              <overWriteReleases>false</overWriteReleases>
+              <overWriteSnapshots>false</overWriteSnapshots>
+              <overWriteIfNewer>true</overWriteIfNewer>
+              <includeArtifactIds>rampart,rahas</includeArtifactIds>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
     <!--
         <testSourceDirectory>test</testSourceDirectory>
         <plugins>
