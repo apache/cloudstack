@@ -91,13 +91,13 @@
       <version>1.3.1-CS40</version>
     </dependency>
     <dependency>
-      <groupId>com.apache.rampart</groupId>
+      <groupId>org.apache.rampart</groupId>
       <artifactId>rahas</artifactId>
       <version>1.5</version>
       <type>mar</type>
     </dependency>
     <dependency>
-      <groupId>com.apache.rampart</groupId>
+      <groupId>org.apache.rampart</groupId>
       <artifactId>rampart</artifactId>
       <version>1.5</version>
       <type>mar</type>
