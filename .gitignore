@@ -44,3 +44,4 @@ deps/cloud.userlibraries
 git-remote-https.exe.stackdump
 *.swp
 tools/devcloud/devcloudbox/.vagrant
+deps/*.jar
