@@ -79,8 +79,7 @@
     <cs.neethi.version>2.0.4</cs.neethi.version>
     <cs.servlet.version>2.4</cs.servlet.version>
     <cs.jstl.version>1.2</cs.jstl.version>
-    <cs.selenium.java.version>2.24.1</cs.selenium.java.version>
-
+    <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
     <skipTests>true</skipTests>
 
   </properties>
@@ -158,6 +157,7 @@
     <module>plugins</module>
     <module>awsapi</module>
     <module>patches</module>
+    <module>test</module>
   </modules>
 
   <dependencies>
