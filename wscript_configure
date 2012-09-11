@@ -91,6 +91,7 @@ systemjars = {
 		"ecj.jar",
 		"cglib.jar",
 		"asm3.jar",
+		"jsch.jar",
 		"jetty.jar",
 		"jetty-util.jar",
 		"jetty-start-daemon.jar",
