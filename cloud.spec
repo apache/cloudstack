@@ -288,6 +288,7 @@ Summary:   CloudStack CloudBridge
 Group:     System Environment/Libraries
 Requires: java >= 1.6.0
 Requires: tomcat6
+Requires: apache-commons-lang
 Obsoletes: cloud-bridge < %{version}-%{release}
 %description aws-api
 This is the CloudStack CloudBridge
@@ -475,11 +476,9 @@ fi
 %{_javadir}/xmlrpc-common-3.*.jar
 %{_javadir}/xmlrpc-client-3.*.jar
 %{_javadir}/wsdl4j-1.6.2.jar
-%{_javadir}/bcprov-jdk16-1.46.jar
 %{_javadir}/jsch-0.1.42.jar
 %{_javadir}/jasypt-1.*.jar
 %{_javadir}/commons-configuration-1.8.jar
-%{_javadir}/commons-lang-2.6.jar
 %{_javadir}/ejb-api-3.0.jar
 %{_javadir}/axis2-1.5.1.jar
 %{_javadir}/commons-discovery-0.5.jar
@@ -573,7 +572,6 @@ fi
 %files aws-api
 %defattr(0644,cloud,cloud,0755)
 %{_datadir}/cloud/bridge/conf/*
-%{_datadir}/cloud/bridge/lib/*
 %{_datadir}/cloud/bridge/webapps7080/*
 %attr(0644,root,root) %{_datadir}/cloud/setup/bridge/db/*
 %attr(0755,root,root) %{_bindir}/cloudstack-aws-api-register
