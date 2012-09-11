@@ -5,34 +5,35 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
 -->
-
 <section id="sysprep-windows-server-2008R2">
-    <title>System Preparation for Windows Server 2008 R2</title>
-    <para>For Windows 2008 R2, you run Windows System Image Manager to create a custom sysprep response XML file. Windows System Image Manager is installed as part of the Windows Automated Installation Kit (AIK). Windows AIK can be downloaded from the Microsoft Download Center at the following location:</para>
-    <para><ulink url="http://www.microsoft.com/en-us/download/details.aspx?id=9085"></ulink>Microsoft Download Center.</para>
-    <para>Use the following steps to run sysprep for Windows 2008 R2:</para><note><para>The steps outlined here are derived from the excellent guide by Charity Shelbourne, originally published at <ulink url="http://blogs.technet.com/askcore/archive/2008/10/31/automating-the-oobe-process-during-windows-server-2008-sysprep-mini-setup.aspx"></ulink>Windows Server 2008 Sysprep Mini-Setup</para></note>
+	<title>System Preparation for Windows Server 2008 R2</title>
+    <para>For Windows 2008 R2, you run Windows System Image Manager to create a custom sysprep response XML file. Windows System Image Manager is installed as part of the Windows Automated Installation Kit (AIK). Windows AIK can be downloaded from <ulink url="http://www.microsoft.com/en-us/download/details.aspx?id=9085">Microsoft Download Center</ulink>.</para>
+    <para>Use the following steps to run sysprep for Windows 2008 R2:</para><note><para>The steps outlined here are derived from the excellent guide by Charity Shelbourne, originally published at <ulink url="http://blogs.technet.com/askcore/archive/2008/10/31/automating-the-oobe-process-during-windows-server-2008-sysprep-mini-setup.aspx">Windows Server 2008 Sysprep Mini-Setup.</ulink></para>
+        </note>
+    <para></para>
     <orderedlist>
         <listitem><para>Download and install the Windows AIK</para><note><para>Windows AIK should not be installed on the Windows 2008 R2 VM you just created. Windows AIK should not be part of the template you create. It is only used to create the sysprep answer file.</para></note></listitem>
         <listitem><para>Copy the install.wim file in the \sources directory of the Windows 2008 R2 installation DVD to the hard disk. This is a very large file and may take a long time to copy. Windows AIK requires the WIM file to be writable.</para></listitem>
         <listitem><para>Start the Windows System Image Manager, which is part of the Windows AIK.</para></listitem>
-        <listitem><para>In the Windows Image pane, right click “Select a Windows image or catalog file” to load the install.wim file you just copied.</para></listitem>
-        <listitem><para>Select the Windows 2008 R2 Edition</para><para>You may be prompted with a warning that the catalog file cannot be opened. Click Yes to create a new catalog file.</para></listitem>
+        <listitem><para>In the Windows Image pane, right click the Select a Windows image or catalog file option to
+                load the install.wim file you just copied.</para></listitem>
+        <listitem><para>Select the Windows 2008 R2 Edition.</para><para>You may be prompted with a warning that the catalog file cannot be opened. Click Yes to create a new catalog file.</para></listitem>
         <listitem><para>In the Answer File pane, right click to create a new answer file.</para></listitem>
         <listitem><para>Generate the answer file from the Windows System Image Manager using the following steps:</para>
             <orderedlist numeration="loweralpha">
@@ -63,5 +64,8 @@
             <programlisting>cd c:\Windows\System32\sysprep
 sysprep.exe /oobe /generalize /shutdown
 </programlisting><para>The Windows 2008 R2 VM will automatically shut down after sysprep is complete.</para></listitem>
+         
+     
     </orderedlist>
+  
 </section>

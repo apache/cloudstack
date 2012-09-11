@@ -5,24 +5,38 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
 -->
 
 <section id="host-add">
-    <title>Adding a Host</title>
-    <para>TODO</para>
+	<title>Adding a Host</title>
+        <orderedlist>
+            <listitem><para>Before adding a host to the &PRODUCT; configuration, you must first install your chosen hypervisor on the host. &PRODUCT; can manage hosts running VMs under a variety of hypervisors.</para> 
+              <para>The &PRODUCT; Installation Guide provides instructions on how to install each supported hypervisor
+                  and configure it for use with &PRODUCT;. See the Installation Guide for information about which version of your chosen hypervisor is supported, as well as crucial additional steps to configure the hosts for use with &PRODUCT;.</para>
+                <warning><para>Be sure you have performed the additional &PRODUCT;-specific configuration steps described in the hypervisor installation section for your particular hypervisor.</para></warning>
+            </listitem>
+            <listitem><para>Now add the hypervisor host to &PRODUCT;. The technique to use varies depending on the hypervisor.</para>
+                <itemizedlist>
+                    <listitem><para><xref linkend="host-add-xenserver-kvm-ovm" /></para></listitem>
+                    <listitem><para><xref linkend="host-add-vsphere" /></para></listitem>
+                </itemizedlist>
+            </listitem>
+        </orderedlist>
+    <xi:include href="host-add-xenserver-kvm-ovm.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="host-add-vsphere.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>

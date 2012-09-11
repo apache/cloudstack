@@ -2,43 +2,43 @@
 <!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
-]>    
+]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
--->
-
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
+-->	
 <section id="changing-secondary-storage-ip">
-        <title>Making API Requests</title>
-        <para>You can change the secondary storage IP address after it has been provisioned.  After changing the IP address on the host, log in to your management server and execute the following commands. Replace HOSTID below with your own value, and change the URL to use the appropriate IP address and path for your server:</para>
-        <programlisting>
-        # mysql -p
-        mysql> use cloud;
-        mysql> select id from host where type = 'SecondaryStorage';
-        mysql> update host_details set value = 'nfs://192.168.160.20/export/mike-ss1'
-          where host_id = HOSTID and name = 'orig.url';
-        mysql> update host set name = 'nfs://192.168.160.20/export/mike-ss1' where type
-          = 'SecondaryStorage' and id = #;
-        mysql> update host set url = 'nfs://192.168.160.20/export/mike-ss1' where type
-          = 'SecondaryStorage' and id = #;
-        mysql> update host set guid = 'nfs://192.168.160.20/export/mike-ss1' where type
-          = 'SecondaryStorage' and id = #;
-        </programlisting>
-        <note><para>When copying and pasting a command, be sure the command has pasted as a single line before executing. Some document viewers may introduce unwanted line breaks in copied text.</para></note>
-        <para>Then log in to the cloud console UI and stop and start (not reboot) the Secondary Storage VM for that Zone.</para>
-            
-    </section>
+		<title>Changing the Secondary Storage IP Address</title>
+		<para>You can change the secondary storage IP address after it has been provisioned.  After changing the IP address on the host, log in to your management server and execute the following commands. Replace HOSTID below with your own value, and change the URL to use the appropriate IP address and path for your server:</para>
+		<programlisting>
+		# mysql -p
+		mysql> use cloud;
+		mysql> select id from host where type = 'SecondaryStorage';
+		mysql> update host_details set value = 'nfs://192.168.160.20/export/mike-ss1'
+  		where host_id = HOSTID and name = 'orig.url';
+		mysql> update host set name = 'nfs://192.168.160.20/export/mike-ss1' where type
+  		= 'SecondaryStorage' and id = #;
+		mysql> update host set url = 'nfs://192.168.160.20/export/mike-ss1' where type
+ 		 = 'SecondaryStorage' and id = #;
+		mysql> update host set guid = 'nfs://192.168.160.20/export/mike-ss1' where type
+  		= 'SecondaryStorage' and id = #;
+		</programlisting>
+		<note><para>When copying and pasting a command, be sure the command has pasted as a single line before executing. Some document viewers may introduce unwanted line breaks in copied text.</para></note>
+	    <para>Then log in to the cloud console UI and stop and start (not reboot) the Secondary Storage VM for that Zone.</para>
+			
+	</section>
+
