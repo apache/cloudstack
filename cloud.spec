@@ -288,7 +288,12 @@ Summary:   CloudStack CloudBridge
 Group:     System Environment/Libraries
 Requires: java >= 1.6.0
 Requires: tomcat6
+%if 0%{?fedora} > 15
 Requires: apache-commons-lang
+%endif
+%if 0%{?rhel} >= 5
+Requires: jakarta-commons-lang
+%endif
 Obsoletes: cloud-bridge < %{version}-%{release}
 %description aws-api
 This is the CloudStack CloudBridge

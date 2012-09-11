@@ -126,7 +126,10 @@ public class DataCenterVO implements DataCenter, Identity {
     
     @Column(name="is_security_group_enabled")
     boolean securityGroupEnabled;
-    
+
+    @Column(name="is_local_storage_enabled")
+    boolean localStorageEnabled;
+
     @Override
     public String getDnsProvider() {
         return dnsProvider;
@@ -172,14 +175,14 @@ public class DataCenterVO implements DataCenter, Identity {
         this.firewallProvider = firewallProvider;
     }
     
-    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4,String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
-        this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix, false);
+    public DataCenterVO(long id, String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix) {
+        this(name, description, dns1, dns2, dns3, dns4, guestCidr, domain, domainId, zoneType, zoneToken, domainSuffix, false, false);
         this.id = id;
         this.allocationState = Grouping.AllocationState.Enabled;
         this.uuid = UUID.randomUUID().toString();
 	}
 
-    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled) {
+    public DataCenterVO(String name, String description, String dns1, String dns2, String dns3, String dns4, String guestCidr, String domain, Long domainId, NetworkType zoneType, String zoneToken, String domainSuffix, boolean securityGroupEnabled, boolean localStorageEnabled) {
         this.name = name;
         this.description = description;
         this.dns1 = dns1;
@@ -192,8 +195,8 @@ public class DataCenterVO implements DataCenter, Identity {
         this.networkType = zoneType;
         this.allocationState = Grouping.AllocationState.Enabled;
         this.securityGroupEnabled = securityGroupEnabled;
-        
-        
+        this.localStorageEnabled = localStorageEnabled;
+
         if (zoneType == NetworkType.Advanced) {
             loadBalancerProvider = Provider.VirtualRouter.getName();
             firewallProvider = Provider.VirtualRouter.getName();
@@ -344,7 +347,16 @@ public class DataCenterVO implements DataCenter, Identity {
     public void setSecurityGroupEnabled(boolean enabled) {
         this.securityGroupEnabled = enabled;
     }
-    
+
+    @Override
+    public boolean isLocalStorageEnabled() {
+        return localStorageEnabled;
+    }
+
+    public void setLocalStorageEnabled(boolean enabled) {
+        this.localStorageEnabled = enabled;
+    }
+
     @Override
     public Map<String, String> getDetails() {
         return details;

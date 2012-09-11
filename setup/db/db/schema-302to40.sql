@@ -246,6 +246,10 @@ DEALLOCATE PREPARE stmt1;
 AlTER TABLE physical_network_service_providers ADD CONSTRAINT `fk_pnetwork_service_providers__physical_network_id` FOREIGN KEY (`physical_network_id`) REFERENCES `physical_network`(`id`) ON DELETE CASCADE;
 UPDATE `cloud`.`configuration` SET description='In second, timeout for creating volume from snapshot' WHERE name='create.volume.from.snapshot.wait';
 
+ALTER TABLE `cloud`.`data_center` ADD COLUMN `is_local_storage_enabled` tinyint NOT NULL DEFAULT 0 COMMENT 'Is local storage offering enabled for this data center; 1: enabled, 0: not';
+UPDATE `cloud`.`data_center` SET `is_local_storage_enabled` = IF ((SELECT `value` FROM `cloud`.`configuration` WHERE `name`='use.local.storage')='true', 1, 0) WHERE `removed` IS NULL;
+DELETE FROM `cloud`.`configuration` where name='use.local.storage';
+
 ALTER TABLE `cloud`.`hypervisor_capabilities` ADD COLUMN `max_data_volumes_limit` int unsigned DEFAULT 6 COMMENT 'Max. data volumes per VM supported by hypervisor';
 UPDATE `cloud`.`hypervisor_capabilities` SET `max_data_volumes_limit`=13 WHERE `hypervisor_type`='XenServer' AND (`hypervisor_version`='6.0' OR `hypervisor_version`='6.0.2');
 INSERT INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`) VALUES ('Advanced', 'DEFAULT', 'management-server', 'event.purge.interval', '86400', 'The interval (in seconds) to wait before running the event purge thread');

@@ -774,6 +774,15 @@
                     label: 'label.description',
                     validation: { required: true }
                   },
+                  storageType: {
+                    label: 'label.storage.type',
+                    select: function(args) {
+                      var items = [];
+                      items.push({id: 'shared', description: 'shared'});
+                      items.push({id: 'local', description: 'local'});
+                      args.response.success({data: items});
+                    }
+                  },
                   isCustomized: {
                     label: 'label.custom.disk.size',
                     isBoolean: true,
@@ -822,6 +831,7 @@
                 array1.push("&name=" + args.data.name);
                 array1.push("&displaytext=" + todb(args.data.description));
 
+                array1.push("&storageType=" + todb(args.data.storageType));
                 array1.push("&customized=" + (args.data.isCustomized=="on"));
                 if(args.$form.find('.form-item[rel=disksize]').css("display") != "none")
                   array1.push("&disksize=" + args.data.disksize);
@@ -941,7 +951,8 @@
                       }
                     },
                     tags: { label: 'label.storage.tags' },
-                    domain: { label: 'label.domain' }
+                    domain: { label: 'label.domain' },
+                    storagetype: { label: 'label.storage.type' }
                   }
                 ],
 

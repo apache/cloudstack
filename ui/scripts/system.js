@@ -3973,6 +3973,7 @@
                       array1.push("&internaldns1=" + todb(args.data.internaldns1));
                       array1.push("&internaldns2=" + todb(args.data.internaldns2));  //internaldns2 can be empty ("") when passed to API
                       array1.push("&domain=" + todb(args.data.domain));
+                      array1.push("&localstorageenabled=" + todb(args.data.localstorageenabled));
                       $.ajax({
                         url: createURL("updateZone&id=" + args.context.physicalResources[0].id + array1.join("")),
                         dataType: "json",
@@ -4015,6 +4016,16 @@
                         guestcidraddress : { label: 'label.guest.cidr', isEditable:true },
                         domain: {
                           label: 'label.network.domain',
+                          isEditable: true
+                        },
+                        localstorageenabled: {
+                          label: 'label.local.storage.enabled',
+                          converter: function(args) {
+                            if(args)
+                              return "true";
+                            else
+                              return "false";
+                          },
                           isEditable: true
                         }
                       }
