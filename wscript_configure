@@ -92,6 +92,7 @@ systemjars = {
 		"asm3.jar",
 		"jsch.jar",
 		"backport-util-concurrent.jar",
+		"mysql-connector-java.jar",
 		"jetty.jar",
 		"jetty-util.jar",
 		"jetty-start-daemon.jar",
