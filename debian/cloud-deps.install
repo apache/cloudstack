@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/usr/share/java/backport-util-concurrent-3.1.jar
 /usr/share/java/ehcache-1.5.0.jar
 /usr/share/java/mail-1.4.jar
 /usr/share/java/httpcore-4.0.jar
