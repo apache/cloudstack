@@ -152,7 +152,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     }
 
     private VmDataCommand generateVmDataCommand(String vmPrivateIpAddress,
-            String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName, String vmInstanceName, long vmId, String publicKey) {
+            String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName, String vmInstanceName, String vmUuid, String publicKey) {
         VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName);
 
         cmd.addVmData("userdata", "user-data", userData);
@@ -163,7 +163,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
         cmd.addVmData("metadata", "public-ipv4", guestIpAddress);
         cmd.addVmData("metadata", "public-hostname", guestIpAddress);
         cmd.addVmData("metadata", "instance-id", vmInstanceName);
-        cmd.addVmData("metadata", "vm-id", String.valueOf(vmId));
+        cmd.addVmData("metadata", "vm-id", vmUuid);
         cmd.addVmData("metadata", "public-keys", publicKey);
 
         return cmd;
@@ -213,7 +213,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
             cmds.addCommand(
                     "vmdata",
                     generateVmDataCommand(nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), uservm.getVirtualMachine().getHostName(), uservm.getVirtualMachine().getInstanceName(),
-                            uservm.getId(), sshPublicKey));
+                            uservm.getUuid(), sshPublicKey));
             try {
                 _agentManager.send(dest.getHost().getId(), cmds);
             } catch (OperationTimedoutException e) {

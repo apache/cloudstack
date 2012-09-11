@@ -695,7 +695,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     private VmDataCommand generateVmDataCommand(VirtualRouter router, String vmPrivateIpAddress, String userData, 
             String serviceOffering, String zoneName, String guestIpAddress, String vmName,
-            String vmInstanceName, long vmId, String publicKey, long guestNetworkId) {
+            String vmInstanceName, String vmUuid, String publicKey, long guestNetworkId) {
         VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName);
 
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
@@ -723,7 +723,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             cmd.addVmData("metadata", "public-hostname", router.getPublicIpAddress());
         }
         cmd.addVmData("metadata", "instance-id", vmInstanceName);
-        cmd.addVmData("metadata", "vm-id", String.valueOf(vmId));
+        cmd.addVmData("metadata", "vm-id", vmUuid);
         cmd.addVmData("metadata", "public-keys", publicKey);
 
         String cloudIdentifier = _configDao.getValue("cloud.identifier");
@@ -2816,7 +2816,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String zoneName = _dcDao.findById(router.getDataCenterIdToDeployIn()).getName();
         cmds.addCommand("vmdata",
                 generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIp4Address(),
-                        vm.getHostName(), vm.getInstanceName(), vm.getId(), publicKey, nic.getNetworkId()));
+                        vm.getHostName(), vm.getInstanceName(), vm.getUuid(), publicKey, nic.getNetworkId()));
         
     }
 
