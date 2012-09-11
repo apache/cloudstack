@@ -28,3 +28,5 @@
 /usr/share/java/wsdl4j-1.6.2.jar
 /usr/share/java/bcprov-jdk16-1.46.jar
 /usr/share/java/jasypt-1.*.jar
+/usr/share/java/ejb-api-3.0.jar
+/usr/share/java/javax.persistence-2.0.0.jar
