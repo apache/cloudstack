@@ -75,4 +75,5 @@ public interface DataCenter extends Grouping {
 
     String getZoneToken();
 
+    boolean isLocalStorageEnabled();
 }

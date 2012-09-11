@@ -24,23 +24,29 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume.Type;
 import com.cloud.utils.component.ComponentLocator;
+import com.cloud.utils.component.Inject;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 @Local(value=StoragePoolAllocator.class)
 public class UseLocalForRootAllocator extends LocalStoragePoolAllocator implements StoragePoolAllocator {
-    boolean _useLocalStorage;
+
+    @Inject
+    DataCenterDao _dcDao;
 
     @Override
     public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
-        if (!_useLocalStorage) {
+        DataCenterVO dc = _dcDao.findById(plan.getDataCenterId());
+        if (!dc.isLocalStorageEnabled()) {
             return null;
         }
         
@@ -55,13 +61,6 @@ public class UseLocalForRootAllocator extends LocalStoragePoolAllocator implemen
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        
-        ComponentLocator locator = ComponentLocator.getCurrentLocator();
-        ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
-        Map<String, String> dbParams = configDao.getConfiguration(params);
-        
-        _useLocalStorage = Boolean.parseBoolean(dbParams.get(Config.UseLocalStorage.toString()));
-        
         return true;
     }
     
