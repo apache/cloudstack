@@ -294,8 +294,8 @@
     <fileset dir="${unittest.jar.dir}">
       <include name="*.jar"/>
     </fileset>
-    <fileset dir="${tools.dir}">
-      <include name="**/junit-4.8.1.jar"/>
+    <fileset dir="${deps.dir}">
+      <include name="junit-*.jar"/>
     </fileset>
     <dirset dir="${utils.test.dir}/resources"/>
     <dirset dir="${server.test.dir}/resources"/>
