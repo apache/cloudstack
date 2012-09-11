@@ -644,24 +644,24 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         int HOURLY_TIME = 60;
         final int DAILY_TIME = 60 * 24;
         if (_usageAggregationRange == DAILY_TIME) {
-        	cal.roll(Calendar.DAY_OF_YEAR, false);
-        	cal.set(Calendar.HOUR_OF_DAY, 0);
-        	cal.set(Calendar.MINUTE, 0);
-        	cal.set(Calendar.SECOND, 0);
-        	cal.set(Calendar.MILLISECOND, 0);
-        	cal.roll(Calendar.DAY_OF_YEAR, true);
-        	cal.add(Calendar.MILLISECOND, -1);
-        	endDate = cal.getTime().getTime();
+            cal.roll(Calendar.DAY_OF_YEAR, false);
+            cal.set(Calendar.HOUR_OF_DAY, 0);
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
+            cal.roll(Calendar.DAY_OF_YEAR, true);
+            cal.add(Calendar.MILLISECOND, -1);
+            endDate = cal.getTime().getTime();
         } else if (_usageAggregationRange == HOURLY_TIME) {
-        	cal.roll(Calendar.HOUR_OF_DAY, false);
-        	cal.set(Calendar.MINUTE, 0);
-        	cal.set(Calendar.SECOND, 0);
-        	cal.set(Calendar.MILLISECOND, 0);
-        	cal.roll(Calendar.HOUR_OF_DAY, true);
-        	cal.add(Calendar.MILLISECOND, -1);
-        	endDate = cal.getTime().getTime();
+            cal.roll(Calendar.HOUR_OF_DAY, false);
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
+            cal.roll(Calendar.HOUR_OF_DAY, true);
+            cal.add(Calendar.MILLISECOND, -1);
+            endDate = cal.getTime().getTime();
         } else {
-        	endDate = cal.getTime().getTime();
+            endDate = cal.getTime().getTime();
         }
 
         _networkStatsUpdateExecutor.scheduleAtFixedRate(new NetworkStatsUpdateTask(), (endDate - System.currentTimeMillis()),
@@ -741,7 +741,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         private void setVmInstanceId(String vmUuid, VmDataCommand cmd) {
             cmd.addVmData("metadata", "instance-id", vmUuid);
-	        cmd.addVmData("metadata", "vm-id", vmUuid);
+            cmd.addVmData("metadata", "vm-id", vmUuid);
         }
 
         private void setVmInstanceId(String vmInstanceName, long vmId,VmDataCommand cmd) {
@@ -757,96 +757,96 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         @Override
         public void run() {
-        	try{
-        		final List<DomainRouterVO> routers = _routerDao.listByStateAndNetworkType(State.Running, GuestType.Isolated, mgmtSrvrId);
-        		s_logger.debug("Found " + routers.size() + " running routers. ");
+            try{
+                final List<DomainRouterVO> routers = _routerDao.listByStateAndNetworkType(State.Running, GuestType.Isolated, mgmtSrvrId);
+                s_logger.debug("Found " + routers.size() + " running routers. ");
 
-        		for (DomainRouterVO router : routers) {
-        			String privateIP = router.getPrivateIpAddress();
+                for (DomainRouterVO router : routers) {
+                    String privateIP = router.getPrivateIpAddress();
 
-        			if (privateIP != null) {
-        				List<? extends Nic> routerNics = _nicDao.listByVmId(router.getId());
-        				for (Nic routerNic : routerNics) {
-        					Network network = _networkMgr.getNetwork(routerNic.getNetworkId());
-        					if (network.getTrafficType() == TrafficType.Public) {
-        						boolean forVpc = router.getVpcId() != null;
-        						final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(),
-        								forVpc, routerNic.getIp4Address());
-        						UserStatisticsVO previousStats = _statsDao.findBy(router.getAccountId(), 
-        								router.getDataCenterIdToDeployIn(), network.getId(), null, router.getId(), router.getType().toString());
-        						NetworkUsageAnswer answer = null;
-        						try {
-        							answer = (NetworkUsageAnswer) _agentMgr.easySend(router.getHostId(), usageCmd);
-        						} catch (Exception e) {
-        							s_logger.warn("Error while collecting network stats from router: "+router.getInstanceName()+" from host: "+router.getHostId(), e);
-        							continue;
-        						}
+                    if (privateIP != null) {
+                        List<? extends Nic> routerNics = _nicDao.listByVmId(router.getId());
+                        for (Nic routerNic : routerNics) {
+                            Network network = _networkMgr.getNetwork(routerNic.getNetworkId());
+                            if (network.getTrafficType() == TrafficType.Public) {
+                                boolean forVpc = router.getVpcId() != null;
+                                final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(),
+                                        forVpc, routerNic.getIp4Address());
+                                UserStatisticsVO previousStats = _statsDao.findBy(router.getAccountId(), 
+                                        router.getDataCenterIdToDeployIn(), network.getId(), null, router.getId(), router.getType().toString());
+                                NetworkUsageAnswer answer = null;
+                                try {
+                                    answer = (NetworkUsageAnswer) _agentMgr.easySend(router.getHostId(), usageCmd);
+                                } catch (Exception e) {
+                                    s_logger.warn("Error while collecting network stats from router: "+router.getInstanceName()+" from host: "+router.getHostId(), e);
+                                    continue;
+                                }
 
-        						if (answer != null) {
-        							if (!answer.getResult()) {
-        								s_logger.warn("Error while collecting network stats from router: "+router.getInstanceName()+" from host: "+router.getHostId() + "; details: " + answer.getDetails());
-        								continue;
-        							}
-        							Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-        							try {
-        								if ((answer.getBytesReceived() == 0) && (answer.getBytesSent() == 0)) {
-        									s_logger.debug("Recieved and Sent bytes are both 0. Not updating user_statistics");
-        									continue;
-        								}
-        								txn.start();
-        								UserStatisticsVO stats = _statsDao.lock(router.getAccountId(), 
-        										router.getDataCenterIdToDeployIn(), network.getId(), routerNic.getIp4Address(), router.getId(), router.getType().toString());
-        								if (stats == null) {
-        									s_logger.warn("unable to find stats for account: " + router.getAccountId());
-        									continue;
-        								}
+                                if (answer != null) {
+                                    if (!answer.getResult()) {
+                                        s_logger.warn("Error while collecting network stats from router: "+router.getInstanceName()+" from host: "+router.getHostId() + "; details: " + answer.getDetails());
+                                        continue;
+                                    }
+                                    Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+                                    try {
+                                        if ((answer.getBytesReceived() == 0) && (answer.getBytesSent() == 0)) {
+                                            s_logger.debug("Recieved and Sent bytes are both 0. Not updating user_statistics");
+                                            continue;
+                                        }
+                                        txn.start();
+                                        UserStatisticsVO stats = _statsDao.lock(router.getAccountId(), 
+                                                router.getDataCenterIdToDeployIn(), network.getId(), routerNic.getIp4Address(), router.getId(), router.getType().toString());
+                                        if (stats == null) {
+                                            s_logger.warn("unable to find stats for account: " + router.getAccountId());
+                                            continue;
+                                        }
 
-        								if(previousStats != null 
-        										&& ((previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived()) 
-        												|| (previousStats.getCurrentBytesSent() != stats.getCurrentBytesSent()))){
-        									s_logger.debug("Router stats changed from the time NetworkUsageCommand was sent. " +
-        											"Ignoring current answer. Router: "+answer.getRouterName()+" Rcvd: " + 
-        											answer.getBytesReceived()+ "Sent: " +answer.getBytesSent());
-        									continue;
-        								}
+                                        if(previousStats != null 
+                                                && ((previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived()) 
+                                                        || (previousStats.getCurrentBytesSent() != stats.getCurrentBytesSent()))){
+                                            s_logger.debug("Router stats changed from the time NetworkUsageCommand was sent. " +
+                                                    "Ignoring current answer. Router: "+answer.getRouterName()+" Rcvd: " + 
+                                                    answer.getBytesReceived()+ "Sent: " +answer.getBytesSent());
+                                            continue;
+                                        }
 
-        								if (stats.getCurrentBytesReceived() > answer.getBytesReceived()) {
-        									if (s_logger.isDebugEnabled()) {
-        										s_logger.debug("Received # of bytes that's less than the last one.  " +
-        												"Assuming something went wrong and persisting it. Router: " + 
-        												answer.getRouterName()+" Reported: " + answer.getBytesReceived()
-        												+ " Stored: " + stats.getCurrentBytesReceived());
-        									}
-        									stats.setNetBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
-        								}
-        								stats.setCurrentBytesReceived(answer.getBytesReceived());
-        								if (stats.getCurrentBytesSent() > answer.getBytesSent()) {
-        									if (s_logger.isDebugEnabled()) {
-        										s_logger.debug("Received # of bytes that's less than the last one.  " +
-        												"Assuming something went wrong and persisting it. Router: " + 
-        												answer.getRouterName()+" Reported: " + answer.getBytesSent()
-        												+ " Stored: " + stats.getCurrentBytesSent());
-        									}
-        									stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
-        								}
-        								stats.setCurrentBytesSent(answer.getBytesSent());
-        								_statsDao.update(stats.getId(), stats);
-        								txn.commit();
-        							} catch (Exception e) {
-        								txn.rollback();
-        								s_logger.warn("Unable to update user statistics for account: " + router.getAccountId()
-        										+ " Rx: " + answer.getBytesReceived() + "; Tx: " + answer.getBytesSent());
-        							} finally {
-        								txn.close();
-        							}
-        						}
-        					}
-        				}
-        			}
-        		}
-        	} catch (Exception e) {
-        		s_logger.warn("Error while collecting network stats", e);
-        	}
+                                        if (stats.getCurrentBytesReceived() > answer.getBytesReceived()) {
+                                            if (s_logger.isDebugEnabled()) {
+                                                s_logger.debug("Received # of bytes that's less than the last one.  " +
+                                                        "Assuming something went wrong and persisting it. Router: " + 
+                                                        answer.getRouterName()+" Reported: " + answer.getBytesReceived()
+                                                        + " Stored: " + stats.getCurrentBytesReceived());
+                                            }
+                                            stats.setNetBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
+                                        }
+                                        stats.setCurrentBytesReceived(answer.getBytesReceived());
+                                        if (stats.getCurrentBytesSent() > answer.getBytesSent()) {
+                                            if (s_logger.isDebugEnabled()) {
+                                                s_logger.debug("Received # of bytes that's less than the last one.  " +
+                                                        "Assuming something went wrong and persisting it. Router: " + 
+                                                        answer.getRouterName()+" Reported: " + answer.getBytesSent()
+                                                        + " Stored: " + stats.getCurrentBytesSent());
+                                            }
+                                            stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
+                                        }
+                                        stats.setCurrentBytesSent(answer.getBytesSent());
+                                        _statsDao.update(stats.getId(), stats);
+                                        txn.commit();
+                                    } catch (Exception e) {
+                                        txn.rollback();
+                                        s_logger.warn("Unable to update user statistics for account: " + router.getAccountId()
+                                                + " Rx: " + answer.getBytesReceived() + "; Tx: " + answer.getBytesSent());
+                                    } finally {
+                                        txn.close();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                s_logger.warn("Error while collecting network stats", e);
+            }
         }
     }
 
@@ -857,37 +857,37 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         @Override
         public void run() {
-        	GlobalLock scanLock = GlobalLock.getInternLock("network.stats");
+            GlobalLock scanLock = GlobalLock.getInternLock("network.stats");
             try {
                 if(scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
-                	//Check for ownership
-                	//msHost in UP state with min id should run the job
-                	ManagementServerHostVO msHost = _msHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
-                	if(msHost == null || (msHost.getMsid() != mgmtSrvrId)){
-                		s_logger.debug("Skipping aggregate network stats update");
-                		scanLock.unlock();
-                		return;
-                	}
-                	Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+                    //Check for ownership
+                    //msHost in UP state with min id should run the job
+                    ManagementServerHostVO msHost = _msHostDao.findOneInUpState(new Filter(ManagementServerHostVO.class, "id", true, 0L, 1L));
+                    if(msHost == null || (msHost.getMsid() != mgmtSrvrId)){
+                        s_logger.debug("Skipping aggregate network stats update");
+                        scanLock.unlock();
+                        return;
+                    }
+                    Transaction txn = Transaction.open(Transaction.CLOUD_DB);
                     try {
-                    	txn.start();
-                    	//get all stats with delta > 0
-                    	List<UserStatisticsVO> updatedStats = _statsDao.listUpdatedStats();
-                    	Date updatedTime = new Date();
-                    	for(UserStatisticsVO stat : updatedStats){
-                    		//update agg bytes            		
-                    		stat.setAggBytesReceived(stat.getCurrentBytesReceived() + stat.getNetBytesReceived());
-                    		stat.setAggBytesSent(stat.getCurrentBytesSent() + stat.getNetBytesSent());
-                    		_userStatsDao.update(stat.getId(), stat);
-                    		//insert into op_user_stats_log
-                    		UserStatsLogVO statsLog = new UserStatsLogVO(stat.getId(), stat.getNetBytesReceived(), stat.getNetBytesSent(), stat.getCurrentBytesReceived(), 
-                    													 stat.getCurrentBytesSent(), stat.getAggBytesReceived(), stat.getAggBytesSent(), updatedTime);
-                    		_userStatsLogDao.persist(statsLog);
-                    	}
-                    	s_logger.debug("Successfully updated aggregate network stats");
-                    	txn.commit();
+                        txn.start();
+                        //get all stats with delta > 0
+                        List<UserStatisticsVO> updatedStats = _statsDao.listUpdatedStats();
+                        Date updatedTime = new Date();
+                        for(UserStatisticsVO stat : updatedStats){
+                            //update agg bytes                    
+                            stat.setAggBytesReceived(stat.getCurrentBytesReceived() + stat.getNetBytesReceived());
+                            stat.setAggBytesSent(stat.getCurrentBytesSent() + stat.getNetBytesSent());
+                            _userStatsDao.update(stat.getId(), stat);
+                            //insert into op_user_stats_log
+                            UserStatsLogVO statsLog = new UserStatsLogVO(stat.getId(), stat.getNetBytesReceived(), stat.getNetBytesSent(), stat.getCurrentBytesReceived(), 
+                                                                         stat.getCurrentBytesSent(), stat.getAggBytesReceived(), stat.getAggBytesSent(), updatedTime);
+                            _userStatsLogDao.persist(statsLog);
+                        }
+                        s_logger.debug("Successfully updated aggregate network stats");
+                        txn.commit();
                     } catch (Exception e){
-                    	txn.rollback();
+                        txn.rollback();
                         s_logger.debug("Failed to update aggregate network stats", e);
                     } finally {
                         scanLock.unlock();
@@ -1592,8 +1592,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     private DomainRouterVO startVirtualRouter(DomainRouterVO router, User user, Account caller, Map<Param, Object> params) 
             throws StorageUnavailableException, InsufficientCapacityException,
     ConcurrentOperationException, ResourceUnavailableException {
-    	
-    	if (router.getRole() != Role.VIRTUAL_ROUTER || !router.getIsRedundantRouter()) {
+        
+        if (router.getRole() != Role.VIRTUAL_ROUTER || !router.getIsRedundantRouter()) {
             return this.start(router, user, caller, params, null);
         }
 
@@ -1726,7 +1726,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         buf.append(" name=").append(profile.getHostName());
 
         if (Boolean.valueOf(_configDao.getValue("system.vm.random.password"))) {
-        	buf.append(" vmpassword=").append(_configDao.getValue("system.vm.password"));
+            buf.append(" vmpassword=").append(_configDao.getValue("system.vm.password"));
         }
         
         NicProfile controlNic = null;
@@ -2473,7 +2473,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     @Override
     public DomainRouterVO persist(DomainRouterVO router) {
-    	DomainRouterVO virtualRouter =  _routerDao.persist(router);
+        DomainRouterVO virtualRouter =  _routerDao.persist(router);
         return virtualRouter;
     }
 
@@ -2615,7 +2615,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
             }
             //domR doesn't support release for sourceNat IP address; so reset the state
             if (ipAddress.isSourceNat() && ipAddress.getState() == IpAddress.State.Releasing) {
-            	ipAddress.setState(IpAddress.State.Allocated);
+                ipAddress.setState(IpAddress.State.Allocated);
             }
             ipList.add(ipAddress);
             vlanIpMap.put(vlanTag, ipList);
@@ -3322,94 +3322,94 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
     
     @Override
     public void prepareStop(VirtualMachineProfile<DomainRouterVO> profile){
-    	//Collect network usage before stopping Vm
-    	VMInstanceVO vm = profile.getVirtualMachine();
+        //Collect network usage before stopping Vm
+        VMInstanceVO vm = profile.getVirtualMachine();
 
-    	DomainRouterVO router = _routerDao.findById(vm.getId());
-    	if(router == null){
-    		return;
-    	}
+        DomainRouterVO router = _routerDao.findById(vm.getId());
+        if(router == null){
+            return;
+        }
 
-    	String privateIP = router.getPrivateIpAddress();
+        String privateIP = router.getPrivateIpAddress();
 
-    	if (privateIP != null) {
-    		List<? extends Nic> routerNics = _nicDao.listByVmId(router.getId());
-    		for (Nic routerNic : routerNics) {
-    			Network network = _networkMgr.getNetwork(routerNic.getNetworkId());
-    			if (network.getTrafficType() == TrafficType.Public) {
-    				boolean forVpc = router.getVpcId() != null;
-    				final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(),
-    						forVpc, routerNic.getIp4Address());
-    				UserStatisticsVO previousStats = _statsDao.findBy(router.getAccountId(), 
-    						router.getDataCenterIdToDeployIn(), network.getId(), null, router.getId(), router.getType().toString());
-    				NetworkUsageAnswer answer = null;
-    				try {
-    					answer = (NetworkUsageAnswer) _agentMgr.easySend(router.getHostId(), usageCmd);
-    				} catch (Exception e) {
-    					s_logger.warn("Error while collecting network stats from router: "+router.getInstanceName()+" from host: "+router.getHostId(), e);
-    					continue;
-    				}
+        if (privateIP != null) {
+            List<? extends Nic> routerNics = _nicDao.listByVmId(router.getId());
+            for (Nic routerNic : routerNics) {
+                Network network = _networkMgr.getNetwork(routerNic.getNetworkId());
+                if (network.getTrafficType() == TrafficType.Public) {
+                    boolean forVpc = router.getVpcId() != null;
+                    final NetworkUsageCommand usageCmd = new NetworkUsageCommand(privateIP, router.getHostName(),
+                            forVpc, routerNic.getIp4Address());
+                    UserStatisticsVO previousStats = _statsDao.findBy(router.getAccountId(), 
+                            router.getDataCenterIdToDeployIn(), network.getId(), null, router.getId(), router.getType().toString());
+                    NetworkUsageAnswer answer = null;
+                    try {
+                        answer = (NetworkUsageAnswer) _agentMgr.easySend(router.getHostId(), usageCmd);
+                    } catch (Exception e) {
+                        s_logger.warn("Error while collecting network stats from router: "+router.getInstanceName()+" from host: "+router.getHostId(), e);
+                        continue;
+                    }
 
-    				if (answer != null) {
-    					if (!answer.getResult()) {
-    						s_logger.warn("Error while collecting network stats from router: "+router.getInstanceName()+" from host: "+router.getHostId() + "; details: " + answer.getDetails());
-    						continue;
-    					}
-    					Transaction txn = Transaction.open(Transaction.CLOUD_DB);
-    					try {
-    						if ((answer.getBytesReceived() == 0) && (answer.getBytesSent() == 0)) {
-    							s_logger.debug("Recieved and Sent bytes are both 0. Not updating user_statistics");
-    							continue;
-    						}
-    						txn.start();
-    						UserStatisticsVO stats = _statsDao.lock(router.getAccountId(), 
-    								router.getDataCenterIdToDeployIn(), network.getId(), null, router.getId(), router.getType().toString());
-    						if (stats == null) {
-    							s_logger.warn("unable to find stats for account: " + router.getAccountId());
-    							continue;
-    						}
+                    if (answer != null) {
+                        if (!answer.getResult()) {
+                            s_logger.warn("Error while collecting network stats from router: "+router.getInstanceName()+" from host: "+router.getHostId() + "; details: " + answer.getDetails());
+                            continue;
+                        }
+                        Transaction txn = Transaction.open(Transaction.CLOUD_DB);
+                        try {
+                            if ((answer.getBytesReceived() == 0) && (answer.getBytesSent() == 0)) {
+                                s_logger.debug("Recieved and Sent bytes are both 0. Not updating user_statistics");
+                                continue;
+                            }
+                            txn.start();
+                            UserStatisticsVO stats = _statsDao.lock(router.getAccountId(), 
+                                    router.getDataCenterIdToDeployIn(), network.getId(), null, router.getId(), router.getType().toString());
+                            if (stats == null) {
+                                s_logger.warn("unable to find stats for account: " + router.getAccountId());
+                                continue;
+                            }
 
-    						if(previousStats != null 
-    								&& ((previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived()) 
-    										|| (previousStats.getCurrentBytesSent() != stats.getCurrentBytesSent()))){
-    							s_logger.debug("Router stats changed from the time NetworkUsageCommand was sent. " +
-    									"Ignoring current answer. Router: "+answer.getRouterName()+" Rcvd: " + 
-    									answer.getBytesReceived()+ "Sent: " +answer.getBytesSent());
-    							continue;
-    						}
+                            if(previousStats != null 
+                                    && ((previousStats.getCurrentBytesReceived() != stats.getCurrentBytesReceived()) 
+                                            || (previousStats.getCurrentBytesSent() != stats.getCurrentBytesSent()))){
+                                s_logger.debug("Router stats changed from the time NetworkUsageCommand was sent. " +
+                                        "Ignoring current answer. Router: "+answer.getRouterName()+" Rcvd: " + 
+                                        answer.getBytesReceived()+ "Sent: " +answer.getBytesSent());
+                                continue;
+                            }
 
-    						if (stats.getCurrentBytesReceived() > answer.getBytesReceived()) {
-    							if (s_logger.isDebugEnabled()) {
-    								s_logger.debug("Received # of bytes that's less than the last one.  " +
-    										"Assuming something went wrong and persisting it. Router: " + 
-    										answer.getRouterName()+" Reported: " + answer.getBytesReceived()
-    										+ " Stored: " + stats.getCurrentBytesReceived());
-    							}
-    							stats.setNetBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
-    						}
-    						stats.setCurrentBytesReceived(answer.getBytesReceived());
-    						if (stats.getCurrentBytesSent() > answer.getBytesSent()) {
-    							if (s_logger.isDebugEnabled()) {
-    								s_logger.debug("Received # of bytes that's less than the last one.  " +
-    										"Assuming something went wrong and persisting it. Router: " + 
-    										answer.getRouterName()+" Reported: " + answer.getBytesSent()
-    										+ " Stored: " + stats.getCurrentBytesSent());
-    							}
-    							stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
-    						}
-    						stats.setCurrentBytesSent(answer.getBytesSent());
-    						_statsDao.update(stats.getId(), stats);
-    						txn.commit();
-    					} catch (Exception e) {
-    						txn.rollback();
-    						s_logger.warn("Unable to update user statistics for account: " + router.getAccountId()
-    								+ " Rx: " + answer.getBytesReceived() + "; Tx: " + answer.getBytesSent());
-    					} finally {
-    						txn.close();
-    					}
-    				}
-    			}
-    		}
-    	}
+                            if (stats.getCurrentBytesReceived() > answer.getBytesReceived()) {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Received # of bytes that's less than the last one.  " +
+                                            "Assuming something went wrong and persisting it. Router: " + 
+                                            answer.getRouterName()+" Reported: " + answer.getBytesReceived()
+                                            + " Stored: " + stats.getCurrentBytesReceived());
+                                }
+                                stats.setNetBytesReceived(stats.getNetBytesReceived() + stats.getCurrentBytesReceived());
+                            }
+                            stats.setCurrentBytesReceived(answer.getBytesReceived());
+                            if (stats.getCurrentBytesSent() > answer.getBytesSent()) {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Received # of bytes that's less than the last one.  " +
+                                            "Assuming something went wrong and persisting it. Router: " + 
+                                            answer.getRouterName()+" Reported: " + answer.getBytesSent()
+                                            + " Stored: " + stats.getCurrentBytesSent());
+                                }
+                                stats.setNetBytesSent(stats.getNetBytesSent() + stats.getCurrentBytesSent());
+                            }
+                            stats.setCurrentBytesSent(answer.getBytesSent());
+                            _statsDao.update(stats.getId(), stats);
+                            txn.commit();
+                        } catch (Exception e) {
+                            txn.rollback();
+                            s_logger.warn("Unable to update user statistics for account: " + router.getAccountId()
+                                    + " Rx: " + answer.getBytesReceived() + "; Tx: " + answer.getBytesSent());
+                        } finally {
+                            txn.close();
+                        }
+                    }
+                }
+            }
+        }
     }
 }
