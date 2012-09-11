@@ -48,7 +48,6 @@ systemjars = {
 		"commons-pool.jar",
 		"commons-httpclient.jar",
 		"ws-commons-util.jar",
-		"jnetpcap.jar",
 	),
 	'Fedora':
 	(
