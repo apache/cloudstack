@@ -22,7 +22,6 @@
 /usr/share/java/log4j-*.jar
 /usr/share/java/apache-log4j-extras-1.1.jar
 /usr/share/java/trilead-ssh2-build213-svnkit-1.3-patch.jar
-/usr/share/java/cglib-2.2.jar
 /usr/share/java/xmlrpc-common-3.*.jar
 /usr/share/java/xmlrpc-client-3.*.jar
 /usr/share/java/jstl-1.2.jar
