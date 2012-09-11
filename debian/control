@@ -33,7 +33,7 @@ Provides: vmops-utils
 Conflicts: vmops-utils
 Replaces: vmops-utils
 Architecture: any
-Depends: openjdk-6-jre, python, libcglib-java (>= 2.2.2), libjsch-java (>= 0.1.42)
+Depends: openjdk-6-jre, python, libcglib-java (>= 2.2.2), libjsch-java (>= 0.1.42), libbackport-util-concurrent-java (>= 3.1)
 Description: CloudStack utility library
  The CloudStack utility libraries provide a set of Java classes used
  in the CloudStack environment.
