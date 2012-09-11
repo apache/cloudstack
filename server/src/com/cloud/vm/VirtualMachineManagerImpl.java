@@ -1725,6 +1725,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
 
         for (final AgentVmInfo left : infos.values()) {
+        	if (!VirtualMachineName.isValidVmName(left.name)) continue;  // if the vm doesn't follow CS naming ignore it for stopping
             try {
                 Host host = _hostDao.findByGuid(left.getHostUuid());
                 if (host != null){
