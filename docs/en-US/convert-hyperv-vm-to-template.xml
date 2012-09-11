@@ -5,64 +5,65 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
 -->
-
 <section id="convert-hyperv-vm-to-template">
-    <title>Converting a Hyper-V VM to a Template</title>
-    <para>To convert a Hyper-V VM to a XenServer-compatible &PRODUCT; template, you will need a standalone XenServer host with an attached NFS VHD SR.  Use whatever XenServer version you are using with &PRODUCT;, but use XenCenter 5.6 FP1 or SP2 (it is backwards compatible to 5.6).  Additionally, it may help to have an attached NFS ISO SR.</para>
-    <para>For Linux VMs, you may need to do some preparation in Hyper-V before trying to get the VM to work in XenServer.  Clone the VM and work on the clone if you still want to use the VM in Hyper-V.  Uninstall Hyper-V Integration Components and check for any references to device names in /etc/fstab:</para>
-    <orderedlist>
-        <listitem><para>From the linux_ic/drivers/dist directory, run make uninstall (where "linux_ic" is the path to the copied Hyper-V Integration Components files).</para></listitem>
-        <listitem><para>Restore the original initrd from backup in /boot/ (the backup is named *.backup0).</para></listitem>
-        <listitem><para>Remove the "hdX=noprobe" entries from /boot/grub/menu.lst.</para></listitem>
-        <listitem><para>Check /etc/fstab for any partitions mounted by device name.  Change those entries (if any) to mount by LABEL or UUID (get that information with the "blkid" command)..</para></listitem>
-    </orderedlist>
-    <para>The next step is make sure the VM is not running in Hyper-V, then get the VHD into XenServer.  There are two options for doing this.</para>
-    <para>Option one:</para>
-    <orderedlist>
-    <listitem><para>Import the VHD using XenCenter.  In XenCenter, go to Tools&gt;Virtual Appliance Tools&gt;Disk Image Import.</para></listitem>        
-        <listitem><para>Choose the VHD, then click Next.</para></listitem>
-        <listitem><para>Name the VM, choose the NFS VHD SR under Storage, enable "Run Operating System Fixups" and choose the NFS ISO SR.</para></listitem>
-        <listitem><para>Click Next, then Finish.  A VM should be created.</para></listitem>
-    </orderedlist>
-    <para>Option two</para>
-    <orderedlist>
-        <listitem><para>Run XenConvert, under From choose VHD, under To choose XenServer. Click Next.</para></listitem>
-        <listitem><para>Choose the VHD, then click Next.</para></listitem>        
-        <listitem><para>Input the XenServer host info, then click Next.</para></listitem>
-        <listitem><para>Name the VM, then click Next, then Convert.  A VM should be created</para></listitem>
-    </orderedlist>
-    <para>Once you have a VM created from the Hyper-V VHD, prepare it using the following steps:</para>
-    <orderedlist>
-        <listitem><para>Boot the VM, uninstall Hyper-V Integration Services, and reboot.</para></listitem>
-        <listitem><para>Install XenServer Tools, then reboot.</para></listitem>        
-        <listitem><para>Prepare the VM as desired. For example, run sysprep on Windows VMs. See <xref linkend="create-windows-template"/></para></listitem>
-    </orderedlist>
-    <para>Either option above will create a VM in HVM mode.  This is fine for Windows VMs, but Linux VMs may not perform optimally.  Converting a Linux VM to PV mode will require additional steps and will vary by distribution.</para>
-    <orderedlist>
-        <listitem><para>Shut down the VM and copy the VHD from the NFS storage to a web server; for example, mount the NFS share on the web server and copy it, or from the XenServer host use sftp or scp to upload it to the web server.</para></listitem>
-        <listitem><para>In &PRODUCT;, create a new template using the following values:</para>
-        <itemizedlist>
-            <listitem><para>URL. Give the URL for the VHD</para></listitem>
-            <listitem><para>OS Type. Use the appropriate OS. For PV mode on CentOS, choose Other PV (32-bit) or Other PV (64-bit). This choice is available only for XenServer.</para></listitem>
-            <listitem><para>Hypervisor. XenServer</para></listitem>
-            <listitem><para>Format. VHD</para></listitem>
-        </itemizedlist></listitem>
-    </orderedlist>
-    <para>The template will be created, and you can create instances from it.</para>
+	<title>Converting a Hyper-V VM to a Template</title>
+	<para>To convert a Hyper-V VM to a XenServer-compatible &PRODUCT; template, you will need a standalone XenServer host with an attached NFS VHD SR.  Use whatever XenServer version you are using with &PRODUCT;, but use XenCenter 5.6 FP1 or SP2 (it is backwards compatible to 5.6).  Additionally, it may help to have an attached NFS ISO SR.</para>
+	<para>For Linux VMs, you may need to do some preparation in Hyper-V before trying to get the VM to work in XenServer.  Clone the VM and work on the clone if you still want to use the VM in Hyper-V.  Uninstall Hyper-V Integration Components and check for any references to device names in /etc/fstab:</para>
+	<orderedlist>
+		<listitem><para>From the linux_ic/drivers/dist directory, run make uninstall (where "linux_ic" is the path to the copied Hyper-V Integration Components files).</para></listitem>
+		<listitem><para>Restore the original initrd from backup in /boot/ (the backup is named *.backup0).</para></listitem>
+		<listitem><para>Remove the "hdX=noprobe" entries from /boot/grub/menu.lst.</para></listitem>
+		<listitem><para>Check /etc/fstab for any partitions mounted by device name. Change those entries (if any) to
+				mount by LABEL or UUID. You can get that information with the blkid command.</para></listitem>
+	</orderedlist>
+	<para>The next step is make sure the VM is not running in Hyper-V, then get the VHD into XenServer.  There are two options for doing this.</para>
+	<para>Option one:</para>
+	<orderedlist>
+	<listitem><para>Import the VHD using XenCenter.  In XenCenter, go to Tools&gt;Virtual Appliance Tools&gt;Disk Image Import.</para></listitem>		
+		<listitem><para>Choose the VHD, then click Next.</para></listitem>
+		<listitem><para>Name the VM, choose the NFS VHD SR under Storage, enable "Run Operating System Fixups" and choose the NFS ISO SR.</para></listitem>
+		<listitem><para>Click Next, then Finish.  A VM should be created.</para></listitem>
+	</orderedlist>
+	<para>Option two:</para>
+	<orderedlist>
+		<listitem><para>Run XenConvert, under From choose VHD, under To choose XenServer. Click Next.</para></listitem>
+		<listitem><para>Choose the VHD, then click Next.</para></listitem>		
+		<listitem><para>Input the XenServer host info, then click Next.</para></listitem>
+		<listitem><para>Name the VM, then click Next, then Convert. A VM should be created.</para></listitem>
+	</orderedlist>
+	<para>Once you have a VM created from the Hyper-V VHD, prepare it using the following steps:</para>
+	<orderedlist>
+		<listitem><para>Boot the VM, uninstall Hyper-V Integration Services, and reboot.</para></listitem>
+		<listitem><para>Install XenServer Tools, then reboot.</para></listitem>		
+		<listitem><para>Prepare the VM as desired. For example, run sysprep on Windows VMs. See <xref linkend="create-windows-template"/>.</para></listitem>
+	</orderedlist>
+	<para>Either option above will create a VM in HVM mode.  This is fine for Windows VMs, but Linux VMs may not perform optimally.  Converting a Linux VM to PV mode will require additional steps and will vary by distribution.</para>
+	<orderedlist>
+		<listitem><para>Shut down the VM and copy the VHD from the NFS storage to a web server; for example, mount the NFS share on the web server and copy it, or from the XenServer host use sftp or scp to upload it to the web server.</para></listitem>
+		<listitem><para>In &PRODUCT;, create a new template using the following values:</para>
+		<itemizedlist>
+			<listitem><para>URL. Give the URL for the VHD</para></listitem>
+			<listitem><para>OS Type. Use the appropriate OS. For PV mode on CentOS, choose Other PV (32-bit) or Other PV (64-bit). This choice is available only for XenServer.</para></listitem>
+			<listitem><para>Hypervisor. XenServer</para></listitem>
+			<listitem><para>Format. VHD</para></listitem>
+		</itemizedlist></listitem>
+		
+	</orderedlist>
+	<para>The template will be created, and you can create instances from it.</para>
 </section>

@@ -5,31 +5,33 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
 -->
-
 <section id="create-templates-overview">
-    <title>Creating Templates: Overview</title>
-    <para>&PRODUCT; ships with a default template for the CentOS operating system. There are a variety of ways to add more templates. Administrators and end users can add templates. The typical sequence of events is:</para>
-    <orderedlist>
-        <listitem><para>Launch a VM instance that has the operating system you want. Make any other desired configuration changes to the VM.</para></listitem>
-        <listitem><para>Stop the VM.</para></listitem>
-        <listitem><para>Convert the volume into a template.</para></listitem>
-    </orderedlist>
-    <para>There are other ways to add templates to &PRODUCT;. For example, you can take a snapshot of the VM's volume and create a template from the snapshot, or import a VHD from another system into &PRODUCT;</para>
-    <para>The various techniques for creating templates are described in the next few sections.</para>
+	<title>Creating Templates: Overview</title>
+	<para>&PRODUCT; ships with a default template for the CentOS operating system. There are a variety of ways to add more templates. Administrators and end users can add templates. The typical sequence of events is:</para>
+	<orderedlist>
+		<listitem><para>Launch a VM instance that has the operating system you want. Make any other desired configuration changes to the VM.</para></listitem>
+		<listitem><para>Stop the VM.</para></listitem>
+		<listitem><para>Convert the volume into a template.</para></listitem>
+	</orderedlist>
+	<para>There are other ways to add templates to &PRODUCT;. For example, you can take a snapshot
+		of the VM's volume and create a template from the snapshot, or import a VHD from another
+		system into &PRODUCT;.</para>
+	<para>The various techniques for creating templates are described in the next few sections.</para>
+	
 </section>

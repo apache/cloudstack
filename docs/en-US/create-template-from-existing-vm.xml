@@ -5,45 +5,52 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
--->
-
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
+-->	
 <section id="create-template-from-existing-vm">
-    <title>Creating a Template from an Existing Virtual Machine</title>
-    <para>Once you have at least one VM set up in the way you want, you can use it as the prototype for other VMs.</para>
-    <orderedlist>
-        <listitem><para>Create and start a virtual machine using any of the techniques given in <xref linkend="creating-vms"/>.</para></listitem>
-        <listitem><para>Make any desired configuration changes on the running VM, then click Stop.</para></listitem>
-        <listitem><para>Wait for the VM to stop. When the status shows Stopped, go to the next step.</para></listitem>
-        <listitem><para>Click Create Template and provide the following:</para>
-        <itemizedlist>
-            <listitem><para><emphasis role="bold">Name and Display Text</emphasis>. These will be shown in the UI, so choose something descriptive.</para></listitem>
-            <listitem><para><emphasis role="bold">OS Type</emphasis>. This helps &PRODUCT; and the hypervisor perform certain operations and make assumptions that improve the performance of the guest. Select one of the following.</para>
-                <itemizedlist>
-                    <listitem><para>If the operating system of the stopped VM is listed, choose it.</para></listitem>
-                    <listitem><para>If the OS type of the stopped VM is not listed, choose Other.</para></listitem>
-                    <listitem><para>If you want to boot from this template in PV mode, choose Other PV (32-bit) or Other PV (64-bit). This choice is available only for XenServere:</para>
-                    <note><para>Note: Generally you should not choose an older version of the OS than the version in the image. For example, choosing CentOS 5.4 to support a CentOS 6.2 image will in general not work. In those cases you should choose Other.</para></note></listitem>
-                </itemizedlist>            
-            </listitem>    
-            <listitem><para><emphasis role="bold">Public</emphasis>. Choose Yes to make this template accessible to all users of this &PRODUCT; installation. The template will appear in the Community Templates list. See <xref linkend="private-public-template"/>.</para></listitem>
-            <listitem><para><emphasis role="bold">Password Enabled</emphasis>. Choose Yes if your template has the &PRODUCT; password change script installed. See Adding Password Management to Your Templates.</para></listitem>
-            </itemizedlist></listitem>
-        <listitem><para>Click Add.</para></listitem>        
-    </orderedlist>
-    <para>The new template will be visible in the Templates section when the template creation process has been completed. The template is then available when creating a new VM</para>
+	<title>Creating a Template from an Existing Virtual Machine</title>
+	<para>Once you have at least one VM set up in the way you want, you can use it as the prototype for other VMs.</para>
+	<orderedlist>
+		<listitem><para>Create and start a virtual machine using any of the techniques given in <xref linkend="creating-vms"/>.</para></listitem>
+		<listitem><para>Make any desired configuration changes on the running VM, then click Stop.</para></listitem>
+		<listitem><para>Wait for the VM to stop. When the status shows Stopped, go to the next step.</para></listitem>
+		<listitem><para>Click Create Template and provide the following:</para>
+		<itemizedlist>
+			<listitem><para><emphasis role="bold">Name and Display Text</emphasis>. These will be shown in the UI, so
+						choose something descriptive.</para></listitem>
+			<listitem><para><emphasis role="bold">OS Type</emphasis>. This helps &PRODUCT; and the hypervisor perform
+						certain operations and make assumptions that improve the performance of the
+						guest. Select one of the following.</para>
+				<itemizedlist>
+					<listitem><para>If the operating system of the stopped VM is listed, choose it.</para></listitem>
+					<listitem><para>If the OS type of the stopped VM is not listed, choose Other.</para></listitem>
+					<listitem><para>If you want to boot from this template in PV mode, choose Other PV (32-bit) or Other PV (64-bit). This choice is available only for XenServere:</para>
+					<note><para>Note: Generally you should not choose an older version of the OS than the version in the image. For example, choosing CentOS 5.4 to support a CentOS 6.2 image will in general not work. In those cases you should choose Other.</para></note></listitem>
+				</itemizedlist>			
+			</listitem>	
+			<listitem><para><emphasis role="bold">Public</emphasis>. Choose Yes to make this template accessible to all
+						users of this &PRODUCT; installation. The template will appear in the
+						Community Templates list. See <xref linkend="private-public-template"
+						/>.</para></listitem>
+			<listitem><para><emphasis role="bold">Password Enabled</emphasis>. Choose Yes if your template has the
+				&PRODUCT; password change script installed. See <xref linkend="add-password-management-to-templates"/>.</para></listitem>
+			</itemizedlist></listitem>
+		<listitem><para>Click Add.</para></listitem>		
+	</orderedlist>
+	<para>The new template will be visible in the Templates section when the template creation process
+		has been completed. The template is then available when creating a new VM.</para>
 </section>

@@ -5,42 +5,40 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
 -->
-
 <section id="provisioning-steps-overview">
-    <title>Overview of Provisioning Steps</title>
-    <para>After the Management Server is installed and running, you can add the compute resources for it to manage. For an overview of how a &PRODUCT; cloud infrastructure is organized, see <xref linkend="cloud-infrastructure-overview" />.</para>
-    <para>To provision the cloud infrastructure, or to scale it up at any time, follow these procedures:</para>
-    <orderedlist>
-        <listitem><para>Change the root password. See <xref linkend="changing-root-password" />.</para></listitem>
-        <listitem><para>Add a zone. See <xref linkend="zone-add" />.</para></listitem>
-        <listitem><para>Add more pods (optional). See <xref linkend="pod-add" />.</para></listitem>
-        <listitem><para>Add more clusters (optional). See <xref linkend="cluster-add" />.</para></listitem>
-        <listitem><para>Add more hosts (optional). See <xref linkend="host-add" />.</para></listitem>
-        <listitem><para>Add primary storage. See <xref linkend="primary-storage-add" />.</para></listitem>
-        <listitem><para>Add secondary storage. See <xref linkend="secondary-storage-add" />.</para></listitem>
-        <listitem><para>Initialize and test the new cloud. See <xref linkend="initialize-and-test" />.</para></listitem>
-    </orderedlist>
-    <para>When you have finished these steps, you will have a deployment with the following basic structure:</para>
-    <mediaobject>
-        <imageobject>
-            <imagedata fileref="./images/provisioning-overview.png" />
-        </imageobject>
-        <textobject><phrase>provisioning-overview.png: Conceptual overview of a basic deployment</phrase></textobject>
-    </mediaobject>
+	<title>Overview of Provisioning Steps</title>
+	<para>After the Management Server is installed and running, you can add the compute resources for it to manage. For an overview of how a &PRODUCT; cloud infrastructure is organized, see <xref linkend="cloud-infrastructure-overview" />.</para>
+	<para>To provision the cloud infrastructure, or to scale it up at any time, follow these procedures:</para>
+	<orderedlist>
+		<listitem><para>Add a zone. See <xref linkend="zone-add" />.</para></listitem>
+		<listitem><para>Add more pods (optional). See <xref linkend="pod-add" />.</para></listitem>
+		<listitem><para>Add more clusters (optional). See <xref linkend="cluster-add" />.</para></listitem>
+		<listitem><para>Add more hosts (optional). See <xref linkend="host-add" />.</para></listitem>
+		<listitem><para>Add primary storage. See <xref linkend="primary-storage-add" />.</para></listitem>
+		<listitem><para>Add secondary storage. See <xref linkend="secondary-storage-add" />.</para></listitem>
+		<listitem><para>Initialize and test the new cloud. See <xref linkend="initialize-and-test" />.</para></listitem>
+	</orderedlist>
+	<para>When you have finished these steps, you will have a deployment with the following basic structure:</para>
+	<mediaobject>
+		<imageobject>
+			<imagedata fileref="./images/provisioning-overview.png" />
+		</imageobject>
+		<textobject><phrase>provisioning-overview.png: Conceptual overview of a basic deployment</phrase></textobject>
+	</mediaobject>
 </section>

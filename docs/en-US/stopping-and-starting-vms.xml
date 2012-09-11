@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
@@ -23,6 +23,7 @@
 -->
 
 <section id="stopping-and-starting-vms">
-    <title>Stopping and Starting VMs</title>
-    <para>Any user can access their own virtual machines. The administrator can access all VMs running in the cloud.</para>
+	<title>Stopping and Starting VMs</title>
+    <para>Once a VM instance is created, you can stop, restart, or delete it as needed. In the &PRODUCT; UI, click Instances, select the VM, and use the Stop, Start, Reboot, and Destroy links.</para>
 </section>
+

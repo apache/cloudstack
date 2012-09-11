@@ -5,48 +5,49 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
--->
-
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
+-->	
 <section id="configure-vpn">
-    <title>Configuring VPN</title>
-    <para>To set up VPN for the cloud:</para>
-    <orderedlist>
-        <listitem><para>Log in to the &PRODUCT; UI as an administrator or end user. </para></listitem>
-        <listitem><para>In the left navigation, click Global Settings.</para></listitem>
-        <listitem><para>Set the following global configuration parameters.</para>
-        <itemizedlist>
-            <listitem><para>remote.access.vpn.client.ip.range – The range of IP addressess to be allocated to remote access VPN clients. The first IP in the range is used by the VPN server.</para></listitem>
-            <listitem><para>remote.access.vpn.psk.length – Length of the IPSec key.</para></listitem>
-            <listitem><para>remote.access.vpn.user.limit – Maximum number of VPN users per account.</para></listitem>
-        </itemizedlist></listitem></orderedlist>
-        <para>To enable VPN for a particular network:</para>    
-        <orderedlist>
-            <listitem><para>Log in as a user or administrator to the &PRODUCT; UI.</para></listitem>            
-            <listitem><para>In the left navigation, click Network.</para></listitem>
-            <listitem><para>Click the name of the network you want to work with.</para></listitem>
-            <listitem><para>Click View IP Addresses.</para></listitem>
-            <listitem><para>Click one of the displayed IP address names.</para></listitem>
-            <listitem><para>Click the Enable VPN button <inlinemediaobject>
-                <imageobject>
-                    <imagedata fileref="./images/vpn-icon.png" />
-                </imageobject>
-                <textobject><phrase>AttachDiskButton.png: button to attach a volume</phrase></textobject>
-            </inlinemediaobject>.</para>
-                <para>The IPsec key is displayed in a popup window.</para></listitem>
-        </orderedlist>    
+	<title>Configuring VPN</title>
+	<para>To set up VPN for the cloud:</para>
+	<orderedlist>
+		<listitem><para>Log in to the &PRODUCT; UI as an administrator or end user. </para></listitem>
+		<listitem><para>In the left navigation, click Global Settings.</para></listitem>
+		<listitem><para>Set the following global configuration parameters.</para>
+		<itemizedlist>
+			<listitem><para>remote.access.vpn.client.ip.range – The range of IP addressess to be allocated to remote access VPN clients. The first IP in the range is used by the VPN server.</para></listitem>
+			<listitem><para>remote.access.vpn.psk.length – Length of the IPSec key.</para></listitem>
+			<listitem><para>remote.access.vpn.user.limit – Maximum number of VPN users per account.</para></listitem>
+		</itemizedlist></listitem></orderedlist>
+		<para>To enable VPN for a particular network:</para>	
+		<orderedlist>
+			<listitem><para>Log in as a user or administrator to the &PRODUCT; UI.</para></listitem>			
+			<listitem><para>In the left navigation, click Network.</para></listitem>
+			<listitem><para>Click the name of the network you want to work with.</para></listitem>
+			<listitem><para>Click View IP Addresses.</para></listitem>
+			<listitem><para>Click one of the displayed IP address names.</para></listitem>
+			<listitem><para>Click the Enable VPN button. <inlinemediaobject>
+					<imageobject>
+						<imagedata fileref="./images/vpn-icon.png"/>
+					</imageobject>
+					<textobject>
+						<phrase>AttachDiskButton.png: button to attach a volume</phrase>
+					</textobject>
+				</inlinemediaobject></para>
+				<para>The IPsec key is displayed in a popup window.</para></listitem>
+		</orderedlist>	
 </section>

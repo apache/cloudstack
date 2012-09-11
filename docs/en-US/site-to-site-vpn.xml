@@ -5,41 +5,45 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
 -->
-
 <section id="site-to-site-vpn">
-    <title>Site-to-Site VPN</title>
-    <para></para>
-    <para>To add a Virtual Private Cloud (VPC):</para>
+    <title>Setting Up a Site-to-Site VPN Connection</title>
+    <para>A Site-to-Site VPN connection helps you establish a secure connection from an enterprise
+        datacenter to the cloud infrastructure. This allows users to access the guest VMs by
+        establishing a VPN connection to the virtual router of the account from a device in the
+        datacenter of the enterprise.  Having this facility eliminates the need to establish VPN
+        connections to individual VMs.</para>
+     <para>The supported endpoints on the remote datacenters are: </para>
+    <itemizedlist>
+        <listitem><para>Cisco ISR with IOS 12.4 or later</para></listitem>
+        <listitem><para>Juniper J-Series routers with JunOS 9.5 or later</para></listitem>
+    </itemizedlist><note><para>In addition to the specific Cisco and Juniper devices listed above, the expectation is that
+            any Cisco or Juniper device running on the supported operating systems are able to
+            establish VPN connections.</para></note>
+    <para> To set up a Site-to-Site VPN connection, perform the following:</para>
     <orderedlist>
-        <listitem><para>Log in to the &PRODUCT; UI as an administrator or end user. </para></listitem>
-        <listitem><para>In the left navigation, choose Network</para></listitem>
-        <listitem><para>In the Select view, select site-to-site VPN.</para></listitem>
-        <listitem><para>Click Add site-to-site VPN. Provide the following information:</para>
-            <itemizedlist>
-                <listitem><para><emphasis role="bold">IP Address</emphasis>:.</para></listitem>
-                <listitem><para><emphasis role="bold">Gateway</emphasis>: The IP address of the remote gateway.</para></listitem>
-                <listitem><para><emphasis role="bold">CIDR list</emphasis>: The guest CIDR list of the remote subnets. Enter a CIDR or a comma-separated list of CIDRs. </para></listitem>
-                <listitem><para><emphasis role="bold">IPsec Preshared Key</emphasis>: The preshared key of the remote gateway.</para></listitem>
-                <listitem><para><emphasis role="bold">IKE Policy</emphasis>: Internet Key Exchange (IKE) policy for phase 1. Specify it as a combination of the encryption algorithm(aes,3des,des) and hash algorithm(sha1,md5). For example: aes-sha1, 3des-sha1.</para></listitem>
-                <listitem><para><emphasis role="bold">ESP Policy</emphasis>: Encapsulating Security Payload (ESP) policy for phase 2. Specify it as a combination of the encryption algorithm(aes,3des,des) and hash algorithm(sha1,md5). For example: aes-sha1, 3des-sha1.</para></listitem>
-                <listitem><para><emphasis role="bold">Lifetime (seconds)</emphasis>: Lifetime of SA in seconds. Default is 86400 seconds(1day).</para></listitem>
-            </itemizedlist></listitem>
-        <listitem><para>Click OK.</para></listitem>
+        <listitem><para>Create a Virtual Private Cloud (VPC).</para><para>See <xref linkend="configure-vpc"/>.</para></listitem>
+        <listitem><para>Create a VPN Customer Gateway.</para></listitem>
+        <listitem><para>Create a VPN gateway for the VPC that you created.</para></listitem>
+        <listitem><para>Create VPN connection from the VPC VPN gateway to the customer VPN gateway.</para></listitem>
     </orderedlist>
-</section>
+    <xi:include href="create-vpn-customer-gateway.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="create-vpn-gateway-for-vpc.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="create-vpn-connection-vpc.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="delete-reset-vpn.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+   </section>

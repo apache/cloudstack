@@ -5,33 +5,32 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
 -->
-
 <section id="compute-disk-service-offerings">
     <title>Compute and Disk Service Offerings</title>
-    <para>A service offering is a set of virtual hardware features such as CPU core count and speed, memory, and disk size. The CloudPlatform administrator can set up various offerings, and then end users choose from the available offerings when they create a new VM. A service offering includes the following elements:</para>
+    <para>A service offering is a set of virtual hardware features such as CPU core count and speed, memory, and disk size. The &PRODUCT; administrator can set up various offerings, and then end users choose from the available offerings when they create a new VM. A service offering includes the following elements:</para>
      <itemizedlist>
          <listitem><para>CPU, memory, and network resource guarantees</para></listitem>
          <listitem><para>How resources are metered</para></listitem>
          <listitem><para>How the resource usage is charged</para></listitem>
          <listitem><para>How often the charges are generated</para></listitem>
         </itemizedlist>
-    <para>For example,  one service offering might allow users to create a virtual machine instance that is equivalent to a 1 GHz Intel Core 2 CPU, with 1 GB memory at $0.20/hour, with network traffic metered at $0.10/GB. Based on the user’s selected offering, CloudPlatform emits usage records that can be integrated with billing systems. CloudPlatform separates service offerings into compute offerings and disk offerings. The computing service offering specifies:</para>
+    <para>For example,  one service offering might allow users to create a virtual machine instance that is equivalent to a 1 GHz Intel® Core™ 2 CPU, with 1 GB memory at $0.20/hour, with network traffic metered at $0.10/GB. Based on the user’s selected offering, &PRODUCT; emits usage records that can be integrated with billing systems. &PRODUCT; separates service offerings into compute offerings and disk offerings. The computing service offering specifies:</para>
     <itemizedlist>
         <listitem><para>Guest CPU</para></listitem>
         <listitem><para>Guest RAM</para></listitem>
@@ -43,4 +42,9 @@
         <listitem><para>Disk size (optional).  An offering without a disk size will allow users to pick their own</para></listitem>
         <listitem><para>Tags on the data disk</para></listitem>
     </itemizedlist>
+    <xi:include href="creating-compute-offerings.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="creating-disk-offerings.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="modify-delete-service-offerings.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>
+
+    
