@@ -31,6 +31,8 @@ import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -48,6 +50,7 @@ public class LocalStoragePoolListener implements Listener {
     @Inject StoragePoolHostDao _storagePoolHostDao;
     @Inject CapacityDao _capacityDao;
     @Inject StorageManager _storageMgr;
+    @Inject DataCenterDao _dcDao;
 
     @Override
     public int getTimeout() {
@@ -86,7 +89,12 @@ public class LocalStoragePoolListener implements Listener {
         if (pInfo == null) {
             return;
         }
-        
+
+        DataCenterVO dc = _dcDao.findById(host.getDataCenterId());
+        if (dc == null || !dc.isLocalStorageEnabled()) {
+            return;
+        }
+
         try {
             StoragePoolVO pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), pInfo.getHost(), pInfo.getHostPath(), pInfo.getUuid());
         	if(pool == null && host.getHypervisorType() == HypervisorType.VMware) {

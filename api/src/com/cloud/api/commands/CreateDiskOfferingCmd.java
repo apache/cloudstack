@@ -26,6 +26,7 @@ import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.DiskOfferingResponse;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
 
 @Implementation(description="Creates a disk offering.", responseObject=DiskOfferingResponse.class)
@@ -56,7 +57,10 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @IdentityMapper(entityTableName="domain")
     @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.LONG, description="the ID of the containing domain, null for public offerings")
     private Long domainId; 
-    
+
+    @Parameter(name=ApiConstants.STORAGE_TYPE, type=CommandType.STRING, description="the storage type of the disk offering. Values are local and shared.")
+    private String storageType = ServiceOffering.StorageType.shared.toString();
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -84,6 +88,11 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     public Long getDomainId(){
     	return domainId;
     }
+
+    public String getStorageType() {
+        return storageType;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////

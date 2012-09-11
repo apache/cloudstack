@@ -588,6 +588,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("Please specify a VM that is in the same zone as the volume.");
         }
 
+        // If local storage is disabled then attaching a volume with local disk offering not allowed
+        DataCenterVO dataCenter = _dcDao.findById(volume.getDataCenterId());
+        if (!dataCenter.isLocalStorageEnabled()) {
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+            if (diskOffering.getUseLocalStorage()) {
+                throw new InvalidParameterValueException("Zone is not configured to use local storage but volume's disk offering " + diskOffering.getName() + " uses it");
+            }
+        }
+
         //permission check
         _accountMgr.checkAccess(caller, null, true, volume, vm);
 
@@ -599,11 +608,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             if( !(volHostVO.getDownloadState() == Status.DOWNLOADED) ){
                 throw new InvalidParameterValueException("Volume is not uploaded yet. Please try this operation once the volume is uploaded");
             }
-        }
-
-        //If the volume is Ready, check that the volume is stored on shared storage
-        if (!(Volume.State.Allocated.equals(volume.getState()) || Volume.State.UploadOp.equals(volume.getState())) && !_storageMgr.volumeOnSharedStoragePool(volume)) {
-            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
         }
 
         if ( !(Volume.State.Allocated.equals(volume.getState()) || Volume.State.Ready.equals(volume.getState()) || Volume.State.UploadOp.equals(volume.getState())) ) {
@@ -700,10 +704,11 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             DiskOfferingVO volumeDiskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
             String[] volumeTags = volumeDiskOffering.getTagsArray();
 
+            boolean isVolumeOnSharedPool = !volumeDiskOffering.getUseLocalStorage();
             StoragePoolVO sourcePool = _storagePoolDao.findById(volume.getPoolId());
-            List<StoragePoolVO> sharedVMPools = _storagePoolDao.findPoolsByTags(vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(), vmRootVolumePool.getClusterId(), volumeTags, true);
+            List<StoragePoolVO> matchingVMPools = _storagePoolDao.findPoolsByTags(vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(), vmRootVolumePool.getClusterId(), volumeTags, isVolumeOnSharedPool);
             boolean moveVolumeNeeded = true;
-            if (sharedVMPools.size() == 0) {
+            if (matchingVMPools.size() == 0) {
                 String poolType;
                 if (vmRootVolumePool.getClusterId() != null) {
                     poolType = "cluster";
@@ -714,15 +719,20 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
                 }
                 throw new CloudRuntimeException("There are no storage pools in the VM's " + poolType + " with all of the volume's tags (" + volumeDiskOffering.getTags() + ").");
             } else {
+                long sourcePoolId = sourcePool.getId();
                 Long sourcePoolDcId = sourcePool.getDataCenterId();
                 Long sourcePoolPodId = sourcePool.getPodId();
                 Long sourcePoolClusterId = sourcePool.getClusterId();
-                for (StoragePoolVO vmPool : sharedVMPools) {
+                for (StoragePoolVO vmPool : matchingVMPools) {
+                    long vmPoolId = vmPool.getId();
                     Long vmPoolDcId = vmPool.getDataCenterId();
                     Long vmPoolPodId = vmPool.getPodId();
                     Long vmPoolClusterId = vmPool.getClusterId();
 
-                    if (sourcePoolDcId == vmPoolDcId && sourcePoolPodId == vmPoolPodId && sourcePoolClusterId == vmPoolClusterId) {
+                    // Moving a volume is not required if storage pools belongs to same cluster in case of shared volume or
+                    // identical storage pool in case of local
+                    if (sourcePoolDcId == vmPoolDcId && sourcePoolPodId == vmPoolPodId && sourcePoolClusterId == vmPoolClusterId
+                            && (isVolumeOnSharedPool || sourcePoolId == vmPoolId)) {
                         moveVolumeNeeded = false;
                         break;
                     }
@@ -730,11 +740,15 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             }
 
             if (moveVolumeNeeded) {
-                // Move the volume to a storage pool in the VM's zone, pod, or cluster
-                try {
-                    volume = _storageMgr.moveVolume(volume, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(), vmRootVolumePool.getClusterId(), dataDiskHyperType);
-                } catch (ConcurrentOperationException e) {
-                    throw new CloudRuntimeException(e.toString());
+                if (isVolumeOnSharedPool) {
+                    // Move the volume to a storage pool in the VM's zone, pod, or cluster
+                    try {
+                        volume = _storageMgr.moveVolume(volume, vmRootVolumePool.getDataCenterId(), vmRootVolumePool.getPodId(), vmRootVolumePool.getClusterId(), dataDiskHyperType);
+                    } catch (ConcurrentOperationException e) {
+                        throw new CloudRuntimeException(e.toString());
+                    }
+                } else {
+                    throw new CloudRuntimeException("Failed to attach local data volume " + volume.getName() + " to VM " + vm.getDisplayName() + " as migration of local data volume is not allowed");
                 }
             }
         }
@@ -837,11 +851,6 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         if (vmId == null) {
             throw new InvalidParameterValueException("The specified volume is not attached to a VM.");
         }
-
-        // Check that the volume is stored on shared storage
-        if (volume.getState() != Volume.State.Allocated && !_storageMgr.volumeOnSharedStoragePool(volume)) {
-            throw new InvalidParameterValueException("Please specify a volume that has been created on a shared storage pool.");
-        } 
 
         // Check that the VM is in the correct state
         UserVmVO vm = _vmDao.findById(vmId);
@@ -3276,6 +3285,25 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
     }
 
+    private boolean isVMUsingLocalStorage(VMInstanceVO vm)
+    {
+        boolean usesLocalStorage = false;
+        ServiceOfferingVO svcOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
+        if (svcOffering.getUseLocalStorage()) {
+            usesLocalStorage = true;
+        } else {
+            List<VolumeVO> volumes = _volsDao.findByInstanceAndType(vm.getId(), Volume.Type.DATADISK);
+            for (VolumeVO vol : volumes) {
+                DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
+                if (diskOffering.getUseLocalStorage()) {
+                    usesLocalStorage = true;
+                    break;
+                }
+            }
+        }
+        return usesLocalStorage;
+    }
+
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_MIGRATE, eventDescription = "migrating VM", async = true)
     public VirtualMachine migrateVirtualMachine(Long vmId, Host destinationHost) throws ResourceUnavailableException, ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException {
@@ -3308,8 +3336,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM only");
         }
 
-        ServiceOfferingVO svcOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
-        if (svcOffering.getUseLocalStorage()) {
+        if (isVMUsingLocalStorage(vm)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(vm + " is using Local Storage, cannot migrate this VM.");
             }

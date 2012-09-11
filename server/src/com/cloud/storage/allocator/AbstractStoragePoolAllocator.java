@@ -193,14 +193,14 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 	
 	
 	@Override
-	public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, long dcId, long podId, Long clusterId, Set<? extends StoragePool> avoids, int returnUpTo) {
+	public List<StoragePool> allocateToPool(DiskProfile dskCh, VirtualMachineProfile<? extends VirtualMachine> vmProfile, long dcId, long podId, Long clusterId, Long hostId, Set<? extends StoragePool> avoids, int returnUpTo) {
 	    
 	    ExcludeList avoid = new ExcludeList();
 	    for(StoragePool pool : avoids){
 	    	avoid.addPool(pool.getId());
 	    }
 	    
-	    DataCenterDeployment plan = new DataCenterDeployment(dcId, podId, clusterId, null, null, null);
+	    DataCenterDeployment plan = new DataCenterDeployment(dcId, podId, clusterId, hostId, null, null);
 	    return allocateToPool(dskCh, vmProfile, plan, avoid, returnUpTo);
 	}
 

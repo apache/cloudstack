@@ -81,7 +81,10 @@ public class UpdateZoneCmd extends BaseCmd {
     
     @Parameter(name=ApiConstants.DNS_SEARCH_ORDER, type=CommandType.LIST, collectionType = CommandType.STRING, description="the dns search order list")
     private List<String> dnsSearchOrder;   
-    
+
+    @Parameter(name=ApiConstants.LOCAL_STORAGE_ENABLED, type=CommandType.BOOLEAN, description="true if local storage offering enabled, false otherwise")
+    private Boolean localStorageEnabled;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -137,6 +140,11 @@ public class UpdateZoneCmd extends BaseCmd {
     public List<String> getDnsSearchOrder() {
         return dnsSearchOrder;
     }   
+
+    public Boolean getLocalStorageEnabled() {
+        return localStorageEnabled;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
