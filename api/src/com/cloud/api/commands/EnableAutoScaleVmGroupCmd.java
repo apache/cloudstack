@@ -27,6 +27,7 @@ import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
 import com.cloud.api.response.AutoScaleVmGroupResponse;
+import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
 import com.cloud.network.as.AutoScaleVmGroup;
 import com.cloud.user.Account;
@@ -91,6 +92,11 @@ public class EnableAutoScaleVmGroupCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return "Enabling AutoScale Vm Group. Vm Group Id: "+getId();
+    }
+
+    @Override
+    public AsyncJob.Type getInstanceType() {
+        return AsyncJob.Type.AutoScaleVmGroup;
     }
 
 }
