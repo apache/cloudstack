@@ -814,7 +814,11 @@ public class ApiDBUtils {
 
     public static String getKeyPairName(String sshPublicKey) {
         SSHKeyPairVO sshKeyPair = _sshKeyPairDao.findByPublicKey(sshPublicKey);
-        return sshKeyPair.getName();
+        //key might be removed prior to this point
+        if (sshKeyPair != null) {
+            return sshKeyPair.getName();
+        }
+        return null;
     }
 
     public static UserVmDetailVO  findPublicKeyByVmId(long vmId) {

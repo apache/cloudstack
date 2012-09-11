@@ -3298,7 +3298,7 @@ public class ManagementServerImpl implements ManagementServer {
             throw ex;
         }
 
-        return _sshKeyPairDao.deleteByName(caller.getAccountId(), caller.getDomainId(), cmd.getName());
+        return _sshKeyPairDao.deleteByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
     }
 
     @Override
