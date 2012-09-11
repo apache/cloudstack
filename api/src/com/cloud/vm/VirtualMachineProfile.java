@@ -104,6 +104,11 @@ public interface VirtualMachineProfile<T extends VirtualMachine> {
      */
     long getId();
 
+    /**
+     * @return virtual machine uuid.
+     */
+    String getUuid();
+
     List<NicProfile> getNics();
 
     List<VolumeTO> getDisks();
