@@ -583,8 +583,11 @@
     <mkdir dir="${docs.dir}" />
     <mkdir dir="${dep.cache.dir}" />
 
+    <condition property="mvn" value="mvn.bat" else="mvn">
+      <os family="Windows"/>
+    </condition>
     <!-- Download all dependencies using maven -->
-    <exec executable="mvn" failifexecutionfails="false">
+    <exec executable="${mvn}" resolveexecutable="true" searchpath="true" failifexecutionfails="false">
       <arg value="-P"/>
       <arg value="deps"/>
       <arg value="-pl"/>
