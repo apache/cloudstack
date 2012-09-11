@@ -695,7 +695,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
     private VmDataCommand generateVmDataCommand(VirtualRouter router, String vmPrivateIpAddress, String userData, 
             String serviceOffering, String zoneName, String guestIpAddress, String vmName,
-            String vmUuid, String publicKey, long guestNetworkId) {
+            String vmInstanceName, long vmId, String vmUuid, String publicKey, long guestNetworkId) {
         VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName);
 
         cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, getRouterControlIp(router.getId()));
@@ -713,17 +713,19 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         if (dcVo.getNetworkType() == NetworkType.Basic) {
             cmd.addVmData("metadata", "public-ipv4", guestIpAddress);
             cmd.addVmData("metadata", "public-hostname",  StringUtils.unicodeEscape(vmName));
-        } else
-        {
-        	if (router.getPublicIpAddress() == null) {
-        		 cmd.addVmData("metadata", "public-ipv4", guestIpAddress);
-        	} else {
-        		cmd.addVmData("metadata", "public-ipv4", router.getPublicIpAddress());
-        	}
+        } else{
+            if (router.getPublicIpAddress() == null) {
+                cmd.addVmData("metadata", "public-ipv4", guestIpAddress);
+            } else {
+                cmd.addVmData("metadata", "public-ipv4", router.getPublicIpAddress());
+            }
             cmd.addVmData("metadata", "public-hostname", router.getPublicIpAddress());
         }
-        cmd.addVmData("metadata", "instance-id", vmUuid);
-        cmd.addVmData("metadata", "vm-id", vmUuid);
+        if (vmUuid == null) {
+            setVmInstanceId(vmInstanceName, vmId, cmd);
+        } else {
+            setVmInstanceId(vmUuid, cmd);
+        }
         cmd.addVmData("metadata", "public-keys", publicKey);
 
         String cloudIdentifier = _configDao.getValue("cloud.identifier");
@@ -736,6 +738,17 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
 
         return cmd;
     }
+
+        private void setVmInstanceId(String vmUuid, VmDataCommand cmd) {
+            cmd.addVmData("metadata", "instance-id", vmUuid);
+	        cmd.addVmData("metadata", "vm-id", vmUuid);
+        }
+
+        private void setVmInstanceId(String vmInstanceName, long vmId,VmDataCommand cmd) {
+            cmd.addVmData("metadata", "instance-id", vmInstanceName);
+            cmd.addVmData("metadata", "vm-id", String.valueOf(vmId));
+        }
+
 
     protected class NetworkUsageTask implements Runnable {
 
@@ -2816,7 +2829,7 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
         String zoneName = _dcDao.findById(router.getDataCenterIdToDeployIn()).getName();
         cmds.addCommand("vmdata",
                 generateVmDataCommand(router, nic.getIp4Address(), vm.getUserData(), serviceOffering, zoneName, nic.getIp4Address(),
-                        vm.getHostName(), vm.getUuid(), publicKey, nic.getNetworkId()));
+                        vm.getHostName(), vm.getInstanceName(), vm.getId(), vm.getUuid(), publicKey, nic.getNetworkId()));
         
     }
 

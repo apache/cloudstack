@@ -152,7 +152,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
     }
 
     private VmDataCommand generateVmDataCommand(String vmPrivateIpAddress,
-            String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName, String vmUuid, String publicKey) {
+            String userData, String serviceOffering, String zoneName, String guestIpAddress, String vmName, String vmInstanceName, long vmId, String vmUuid, String publicKey) {
         VmDataCommand cmd = new VmDataCommand(vmPrivateIpAddress, vmName);
 
         cmd.addVmData("userdata", "user-data", userData);
@@ -162,12 +162,26 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
         cmd.addVmData("metadata", "local-hostname", vmName);
         cmd.addVmData("metadata", "public-ipv4", guestIpAddress);
         cmd.addVmData("metadata", "public-hostname", guestIpAddress);
-        cmd.addVmData("metadata", "instance-id", vmUuid);
-        cmd.addVmData("metadata", "vm-id", vmUuid);
+        if (vmUuid == null) {
+            setVmInstanceId(vmInstanceName, vmId, cmd);
+        }  else {
+            setVmInstanceId(vmUuid, cmd);
+        }
         cmd.addVmData("metadata", "public-keys", publicKey);
 
         return cmd;
     }
+
+        private void setVmInstanceId(String vmUuid, VmDataCommand cmd) {
+            cmd.addVmData("metadata", "instance-id", vmUuid);
+            cmd.addVmData("metadata", "vm-id", vmUuid);
+        }
+
+        private void setVmInstanceId(String vmInstanceName, long vmId, VmDataCommand cmd) {
+            cmd.addVmData("metadata", "instance-id", vmInstanceName);
+            cmd.addVmData("metadata", "vm-id", String.valueOf(vmId));
+        }
+
 
     @Override
     public boolean isReady(PhysicalNetworkServiceProvider provider) {
@@ -213,7 +227,7 @@ public class CloudZonesNetworkElement extends AdapterBase implements NetworkElem
             cmds.addCommand(
                     "vmdata",
                     generateVmDataCommand(nic.getIp4Address(), userData, serviceOffering, zoneName, nic.getIp4Address(), uservm.getVirtualMachine().getHostName(),
-                            uservm.getUuid(), sshPublicKey));
+                            uservm.getInstanceName(), uservm.getId(), uservm.getUuid(), sshPublicKey));
             try {
                 _agentManager.send(dest.getHost().getId(), cmds);
             } catch (OperationTimedoutException e) {
