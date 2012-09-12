@@ -17,12 +17,8 @@ ENABLED=0
 start() {
   [ "$ENABLED" != 0 ]  || exit 0 
   pid=$(getpid)
-  [ "$pid" != "" ] && echo "Password server is already running (pid=$pid)"
-  #stop is required for only in the boot up case. on boot up services are started twice.
-  #so if already passwd server started on one ip, second time RRVM interface got the two ips
-  #so stop the first process and start the process on both the ips 
-  stop;	
-  nohup bash /opt/cloud/bin/passwd_server
+  [ "$pid" != "" ] && echo "Password server is already running (pid=$pid)" && return 0
+  nohup bash /opt/cloud/bin/passwd_server &
 }
 
 getpid() {
@@ -40,7 +36,7 @@ stop () {
   stop_socat
   pid=$(getpid)
   [ "$pid" != "" ] && kill -9 $pid && echo "Stopped password server (pid=$pid)" && stop_socat && return 0
-  echo "stop:Password server is not running" && return 0
+  echo "Password server is not running" && return 0
 }
 
 status () {

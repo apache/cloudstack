@@ -9,4 +9,5 @@ do
     ifup $i
 done < /tmp/iflist
 ip route add default via [GATEWAY] dev eth2 && \
+service cloud-passwd-srvr restart && \
 service dnsmasq restart

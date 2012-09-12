@@ -19,6 +19,15 @@
 
 # set -x 
 
+source /root/func.sh
+
+lock="passwdlock"
+locked=$(getLockFile $lock)
+if [ "$locked" != "1" ]
+then
+    exit 1
+fi
+
 PASSWD_FILE=/var/cache/cloud/passwords
 
 #   $1 filename
@@ -90,4 +99,4 @@ fi
 
 # echo -e \"\\\"\\\n\\\"\"
 
-exit 0
+unlock_exit 0 $lock $locked
