@@ -582,22 +582,23 @@ public class MockConfigurationManagerImpl implements ConfigurationManager, Confi
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationManager#createDiskOffering(java.lang.Long, java.lang.String, java.lang.String, java.lang.Long, java.lang.String, boolean)
+     * @see com.cloud.configuration.ConfigurationManager#createDiskOffering(java.lang.Long, java.lang.String, java.lang.String, java.lang.Long, java.lang.String, boolean, boolean)
      */
     @Override
-    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized) {
+    public DiskOfferingVO createDiskOffering(Long domainId, String name, String description, Long numGibibytes, String tags, boolean isCustomized, boolean localStorageRequired) {
         // TODO Auto-generated method stub
         return null;
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.configuration.ConfigurationManager#createZone(long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.Long, com.cloud.dc.DataCenter.NetworkType, java.lang.String, java.lang.String, boolean)
+     * @see com.cloud.configuration.ConfigurationManager#createZone(long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.Long, com.cloud.dc.DataCenter.NetworkType, java.lang.String, java.lang.String, boolean, boolean)
      */
     @Override
     public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain, Long domainId, NetworkType zoneType,
-            String allocationState, String networkDomain, boolean isSecurityGroupEnabled) {
+            String allocationState, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled) {
         // TODO Auto-generated method stub
         return null;
     }
+
 
 }
