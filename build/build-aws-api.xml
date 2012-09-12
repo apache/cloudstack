@@ -44,7 +44,7 @@
 	<property name="jar.dir" location="${target.dir}/jar" />
 	<property name="build.log" location="${target.dir}/ant_verbose.txt" />
 	<property name="thirdparty.dir" location="${base.dir}/deps/awsapi-lib" />
-	<property name="rampart.dir" location="${base.dir}/deps/awsapi-lib/rampart-lib" />
+	<!-- <property name="rampart.dir" location="${base.dir}/deps/awsapi-lib/rampart-lib" /> --> 
 	<property file="${build.dir}/build-aws-api.properties" />
 	<property name="version" value="${company.major.version}.${company.minor.version}.${company.patch.version}" />
 	<property name="tomcat.home" location="${catalina.dir}" />
@@ -58,11 +58,11 @@
 			<include name="*.jar" />
 		</fileset>
 	</path>
-	<path id="rampart.classpath">
+<!--	<path id="rampart.classpath">
 		<fileset dir="${rampart.dir}">
 			<include name="*.jar" />
 		</fileset>
-	</path>
+	</path>  -->
 	<path id="dist.classpath">
 		<fileset dir="${target.dir}">
 			<include name="**/*.jar" />
@@ -114,7 +114,7 @@
 	<path id="awsapi.classpath">
 		<path refid="deps.classpath" />
 		<!-- <path refid="thirdparty.classpath" /> -->
-		<path refid="rampart.classpath" />
+<!--		<path refid="rampart.classpath" /> -->
 		<path refid="dist.classpath" />
 	</path>
 	<target name="compile-awsapi" depends="-init-awsapi" description="Compile Cloud.com Simple Storage Service">
@@ -252,12 +252,12 @@
 				<include name="web.xml" />
 			</fileset>
 		</copy>
-		<!-- rampart lib goes where the axis lib files go -->
+		<!-- rampart lib goes where the axis lib files go
 		<copy todir="${server.deploy.to.dir}/webapps7080/awsapi/WEB-INF/lib">
 			<fileset dir="${base.dir}/deps/awsapi-lib/rampart-lib">
 				<include name="*.jar" />
 			</fileset>
-		</copy>
+		</copy> -->
 		<!-- copying over rampart mar files for WS-Security -->
 		<copy todir="${server.deploy.to.dir}/webapps7080/awsapi/WEB-INF/modules">
 			<fileset dir="${base.dir}/deps/awsapi-lib/modules">
@@ -365,9 +365,9 @@
 			</fileset>
 		</copy>
 		<copy todir="${rpm.tomcat.dir}/webapps7080/awsapi/WEB-INF/lib">
-            <fileset dir="${base.dir}/deps/awsapi-lib/rampart-lib">
+<!--          <fileset dir="${base.dir}/deps/awsapi-lib/rampart-lib">
 				<include name="*.jar" />
-			</fileset>
+			</fileset> -->
 			<fileset dir="${jar.dir}">
 				<include name="cloud-awsapi.jar" />
 				<include name="cloud-jasypt-1.8.jar" />
