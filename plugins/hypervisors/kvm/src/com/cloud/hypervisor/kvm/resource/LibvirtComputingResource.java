@@ -2585,8 +2585,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements
             if (result == null) {
                 for (DiskDef disk : disks) {
                     if (disk.getDeviceType() == DiskDef.deviceType.CDROM
-                            && disk.getDiskPath() != null)
+                            && disk.getDiskPath() != null) {
                         cleanupDisk(conn, disk);
+                    } else if (disk.getDiskPath().contains(vmName + "-patchdisk") 
+                            && vmName.matches("^[rsv]-\\d+-VM$")) {
+                        if (!_storagePoolMgr.deleteVbdByPath(disk.getDiskPath())) {
+                            s_logger.warn("failed to delete patch disk " + disk.getDiskPath());
+                        }
+                    }
                 }
             }
 
@@ -2947,29 +2953,45 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         List<DiskDef> disks = vm.getDevices().getDisks();
         DiskDef rootDisk = disks.get(0);
         VolumeTO rootVol = getVolume(vmSpec, Volume.Type.ROOT);
-        KVMStoragePool pool = _storagePoolMgr.getStoragePool(rootVol
-                .getPoolUuid());
-        KVMPhysicalDisk disk = pool.createPhysicalDisk(UUID.randomUUID()
-                .toString(), KVMPhysicalDisk.PhysicalDiskFormat.RAW,
+        String patchName = vmName + "-patchdisk";
+        KVMStoragePool pool = _storagePoolMgr.getStoragePool(rootVol.getPoolUuid());
+        String patchDiskPath = pool.getLocalPath() + "/" + patchName;
+
+        List<KVMPhysicalDisk> phyDisks = pool.listPhysicalDisks();
+        boolean foundDisk = false;
+
+        for (KVMPhysicalDisk phyDisk : phyDisks) {
+            if (phyDisk.getPath().equals(patchDiskPath)) {
+                foundDisk = true;
+                break;
+            } 
+        }
+
+        if (!foundDisk) {
+            s_logger.debug("generating new patch disk for " + vmName + " since none was found");
+            KVMPhysicalDisk disk = pool.createPhysicalDisk(patchName, KVMPhysicalDisk.PhysicalDiskFormat.RAW,
                 10L * 1024 * 1024);
+        } else {
+            s_logger.debug("found existing patch disk at " + patchDiskPath + " using it for " + vmName);
+        }
+
         /* Format/create fs on this disk */
         final Script command = new Script(_createvmPath, _timeout, s_logger);
-        command.add("-f", disk.getPath());
+        command.add("-f", patchDiskPath);
         String result = command.execute();
         if (result != null) {
             s_logger.debug("Failed to create data disk: " + result);
             throw new InternalErrorException("Failed to create data disk: "
                     + result);
         }
-        String datadiskPath = disk.getPath();
 
         /* add patch disk */
         DiskDef patchDisk = new DiskDef();
 
         if (pool.getType() == StoragePoolType.CLVM) {
-            patchDisk.defBlockBasedDisk(datadiskPath, 1, rootDisk.getBusType());
+            patchDisk.defBlockBasedDisk(patchDiskPath, 1, rootDisk.getBusType());
         } else {
-            patchDisk.defFileBasedDisk(datadiskPath, 1, rootDisk.getBusType(),
+            patchDisk.defFileBasedDisk(patchDiskPath, 1, rootDisk.getBusType(),
             DiskDef.diskFmtType.RAW);
         }
  
@@ -2977,7 +2999,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements
 
         String bootArgs = vmSpec.getBootArgs();
 
-        patchSystemVm(bootArgs, datadiskPath, vmName);
+        patchSystemVm(bootArgs, patchDiskPath, vmName);
     }
 
     private void createVif(LibvirtVMDef vm, NicTO nic)

@@ -65,4 +65,6 @@ public interface StorageAdaptor {
 
     public boolean createFolder(String uuid, String path);
 
+    public boolean deleteVbdByPath(String path);
+
 }

@@ -73,6 +73,10 @@ public class KVMStoragePoolManager {
         return true;
     }
 
+    public boolean deleteVbdByPath(String diskPath) {
+        return this._storageAdaptor.deleteVbdByPath(diskPath);
+    }
+
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name,
                                                     KVMStoragePool destPool) {
         if (destPool.getType() == StoragePoolType.RBD) {
