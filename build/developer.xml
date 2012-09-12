@@ -185,6 +185,7 @@
     <copy todir="${server.deploy.to.dir}/lib">
       <fileset dir="${deps.dir}/">
         <include name="*.jar"/>
+        <exclude name="servlet*.jar"/>
       </fileset>
     </copy>
     <touch file="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/scripts/vm/hypervisor/xenserver/version"/>
