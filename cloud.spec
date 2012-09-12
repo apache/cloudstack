@@ -489,7 +489,7 @@ fi
 %{_javadir}/commons-discovery-0.5.jar
 %{_javadir}/jstl-1.2.jar
 %{_javadir}/javax.persistence-2.0.0.jar
-
+%{_javadir}/bcprov-jdk16-1.45.jar
 %files core
 %defattr(0644,root,root,0755)
 %{_javadir}/%{name}-core.jar
