@@ -171,7 +171,11 @@
 		</jar>
 	</target>
 	<target name="deploy-axis" depends="-init-awsapi">
-		<unwar overwrite="true" src="${base.dir}/deps/awsapi-lib/axis2-webapp-1.5.1.war" dest="${server.deploy.to.dir}/webapps7080/awsapi" />
+		<unwar overwrite="true" src="${base.dir}/deps/awsapi-lib/axis2-webapp-1.5.1.war" dest="${server.deploy.to.dir}/webapps7080/awsapi" >
+                    <patternset>
+                        <exclude name="WEB-INF/lib/log4j-1.2.15.jar"/>
+                    </patternset>
+                </unwar>
 	</target>
 	<condition property="access_key.private.notpresent">
 		<not>
