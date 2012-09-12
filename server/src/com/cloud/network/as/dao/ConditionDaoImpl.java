@@ -38,9 +38,16 @@ public class ConditionDaoImpl extends GenericDaoBase<ConditionVO, Long> implemen
 
     @Override
     public ConditionVO findByCounterId(long ctrId) {
-        // TODO - may consider indexing counterId field in db-schema
         SearchCriteria<ConditionVO> sc = AllFieldsSearch.create();
         sc.setParameters("counterId", ctrId);
         return findOneBy(sc);
+    }
+
+    public int removeByAccountId(long accountId) {
+        SearchCriteria<ConditionVO> sc = createSearchCriteria();
+
+        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+
+        return remove(sc);
     }
 }

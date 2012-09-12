@@ -20,7 +20,16 @@ import javax.ejb.Local;
 
 import com.cloud.network.as.AutoScalePolicyVO;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchCriteria;
 
 @Local(value = { AutoScalePolicyDao.class })
 public class AutoScalePolicyDaoImpl extends GenericDaoBase<AutoScalePolicyVO, Long>  implements AutoScalePolicyDao {
+
+    public int removeByAccountId(long accountId) {
+        SearchCriteria<AutoScalePolicyVO> sc = createSearchCriteria();
+
+        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+
+        return remove(sc);
+    }
 }

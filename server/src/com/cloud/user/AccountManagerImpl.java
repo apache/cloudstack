@@ -75,6 +75,7 @@ import com.cloud.network.NetworkManager;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.RemoteAccessVpnVO;
 import com.cloud.network.VpnUserVO;
+import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.RemoteAccessVpnDao;
@@ -214,6 +215,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     private DomainRouterDao _routerDao;
     @Inject
     Site2SiteVpnManager _vpnMgr;
+    @Inject
+    private AutoScaleManager _autoscaleMgr;
 
     private Adapters<UserAuthenticator> _userAuthenticators;
 
@@ -651,6 +654,14 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
             s_logger.debug("Deleting site-to-site VPN customer gateways for account " + accountId);
             if (!_vpnMgr.deleteCustomerGatewayByAccount(accountId)) {
                 s_logger.warn("Fail to delete site-to-site VPN customer gateways for account " + accountId);
+            }
+
+            // Delete autoscale resources if any
+            try {
+                _autoscaleMgr.cleanUpAutoScaleResources(accountId);
+            } catch (CloudRuntimeException ex) {
+                s_logger.warn("Failed to cleanup AutoScale resources as a part of account id=" + accountId + " cleanup due to exception:", ex);
+                accountCleanupNeeded = true;
             }
 
             // delete account specific Virtual vlans (belong to system Public Network) - only when networks are cleaned

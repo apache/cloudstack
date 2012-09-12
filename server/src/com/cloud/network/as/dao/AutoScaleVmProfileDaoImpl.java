@@ -20,7 +20,16 @@ import javax.ejb.Local;
 
 import com.cloud.network.as.AutoScaleVmProfileVO;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchCriteria;
 
 @Local(value = { AutoScaleVmProfileDao.class })
 public class AutoScaleVmProfileDaoImpl extends GenericDaoBase<AutoScaleVmProfileVO, Long>  implements AutoScaleVmProfileDao {
+
+    @Override
+    public int removeByAccountId(long accountId) {
+        SearchCriteria<AutoScaleVmProfileVO> sc = createSearchCriteria();
+        sc.addAnd("accountId", SearchCriteria.Op.EQ, accountId);
+
+        return remove(sc);
+    }
 }
