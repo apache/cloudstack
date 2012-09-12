@@ -18,6 +18,18 @@
  */
 package org.apache.cloudstack.framework.ipc;
 
-public class IpcIntercepter {
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
+/**
+ * Marks a method as an ipc mechanism 
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.METHOD)
+public @interface Signal {
+    String topic();
+
+    String responseTopic();
 }

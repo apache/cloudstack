@@ -18,18 +18,20 @@
  */
 package org.apache.cloudstack.framework.ipc;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
 /**
- * Marks a method as an ipc mechanism 
+ * Handles results of the ipc call 
+ *
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface Ipc {
-    String topic();
+public interface ResultHandler {
 
-    String responseTopic();
+    /**
+     * Signals a successful result
+     */
+    void signalSuccess();
+
+    /**
+     * Signals an error result
+     * @param e exception thrown
+     */
+    void signalError(Exception e);
 }
