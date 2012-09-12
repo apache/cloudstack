@@ -2,7 +2,7 @@ Source: cloud
 Section: libs
 Priority: extra
 Maintainer: Wido den Hollander <wido@widodh.nl>
-Build-Depends: debhelper (>= 7), openjdk-6-jdk, tomcat6, libws-commons-util-java, libcommons-dbcp-java, libcommons-collections-java, libcommons-httpclient-java, libservlet2.5-java, genisoimage, python-mysqldb, maven (>= 3.0.4), liblog4j1.2-java (>= 1.2.16)
+	Build-Depends: debhelper (>= 7), openjdk-6-jdk, tomcat6, libws-commons-util-java, libcommons-dbcp-java, libcommons-collections-java, libcommons-httpclient-java, libservlet2.5-java, genisoimage, python-mysqldb, maven3, liblog4j1.2-java (>= 1.2.16)
 Standards-Version: 3.8.1
 Homepage: http://www.cloudstack.org/
 
