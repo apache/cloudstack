@@ -2482,7 +2482,7 @@ CREATE TABLE `cloud`.`autoscale_vmgroups` (
   CONSTRAINT `fk_autoscale_vmgroups__zone_id` FOREIGN KEY `fk_autoscale_vmgroups__zone_id`(`zone_id`) REFERENCES `data_center`(`id`),
   CONSTRAINT `uc_autoscale_vmgroups__uuid` UNIQUE (`uuid`),
   INDEX `i_autoscale_vmgroups__removed`(`removed`),
-  INDEX `i_autoscale_vmgroups__load_balancer_id`(`load_balancer_id`)
+  INDEX `i_autoscale_vmgroups__load_balancer_id`(`load_balancer_id`)  
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`autoscale_policy_condition_map` (
@@ -2505,9 +2505,9 @@ CREATE TABLE `cloud`.`autoscale_vmgroup_policy_map` (
   INDEX `i_autoscale_vmgroup_policy_map__vmgroup_id`(`vmgroup_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (1,'snmp','Linux User CPU Time(%)', '.1.3.6.1.4.1.2021.11.9.0', now());
-INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (2,'snmp','Linux System CPU Time(%)', '.1.3.6.1.4.1.2021.11.10.0', now());
-INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (3,'snmp','Linux CPU Idle Time(%)', '.1.3.6.1.4.1.2021.11.11.0', now());
-INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (100,'netscaler','ResponseTime(in ms)', 'RESPTIME', now());
+INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (1,'snmp','Linux User CPU - percentage', '1.3.6.1.4.1.2021.11.9.0', now());
+INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (2,'snmp','Linux System CPU - percentage', '1.3.6.1.4.1.2021.11.10.0', now());
+INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (3,'snmp','Linux CPU Idle - percentage', '1.3.6.1.4.1.2021.11.11.0', now());
+INSERT INTO `cloud`.`counter` (id, source, name, value,created) VALUES (100,'netscaler','Response Time - microseconds)', 'RESPTIME', now());
 
 SET foreign_key_checks = 1;

@@ -223,10 +223,6 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
                 throw new InvalidParameterValueException("duration : " + duration + " specified in a policy cannot be less than vm group's interval : " + interval);
             }
 
-            if (quietTime < interval) {
-                throw new InvalidParameterValueException("quietTime : " + quietTime + " specified in a policy cannot be less than vm group's interval : " + interval);
-            }
-
             if (quietTime != prevQuietTime) {
                 throw new InvalidParameterValueException("quietTime should be same for all the policies specified in " + paramName);
             }
@@ -669,11 +665,8 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleService, Manager {
             if (!vmGroupVO.getState().equals(AutoScaleVmGroup.State_Disabled)) {
                 throw new InvalidParameterValueException("The AutoScale Policy can be updated only if the Vm Group it is associated with is disabled in state");
             }
-            if (vmGroupVO.getInterval() < policy.getDuration()) {
+            if (policy.getDuration() < vmGroupVO.getInterval()) {
                 throw new InvalidParameterValueException("duration is less than the associated AutoScaleVmGroup's interval");
-            }
-            if (vmGroupVO.getInterval() < policy.getQuietTime()) {
-                throw new InvalidParameterValueException("quietTime is less than the associated AutoScaleVmGroup's interval");
             }
         }
 
