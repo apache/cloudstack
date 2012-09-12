@@ -2620,9 +2620,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         String result = null;
         if (!sshKeysDir.exists()) {
             sshKeysDir.mkdir();
-            // Change permissions for the 600
+            // Change permissions for the 700
             Script script = new Script("chmod", _timeout, s_logger);
-            script.add("600", _SSHKEYSPATH);
+            script.add("700", _SSHKEYSPATH);
             script.execute();
         }
 
