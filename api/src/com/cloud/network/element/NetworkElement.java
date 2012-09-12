@@ -56,7 +56,6 @@ public interface NetworkElement extends Adapter {
      * @return true if network configuration is now usable; false if not; null if not handled by this element.
      * @throws InsufficientNetworkCapacityException TODO
      */
-    @Ipc(topic="implement")
     boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) 
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
