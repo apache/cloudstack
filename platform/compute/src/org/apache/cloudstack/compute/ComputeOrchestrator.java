@@ -18,8 +18,7 @@
  */
 package org.apache.cloudstack.compute;
 
-import org.apache.cloudstack.framework.ipc.Ipc;
-import org.apache.cloudstack.framework.ipc.IpcParam;
+import java.util.logging.Handler;
 
 public interface ComputeOrchestrator {
     /**
@@ -27,7 +26,8 @@ public interface ComputeOrchestrator {
      * @param vm vm
      * @param reservationId
      */
-    void start(@IpcParam String vm, @IpcParam String reservationId);
+    @Ipc(topic="cs.compute.start", response="cs.compute.start.response")
+    void start(@IpcParam String vm, @IpcParam String reservationId, Handler handler);
 
     @Ipc(topic="cs.compute.cancel")
     void cancel(@IpcParam String reservationId);

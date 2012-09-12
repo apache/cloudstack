@@ -243,6 +243,8 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, S
      */
     public long getTemplateId();
 
+
+
     /**
      * returns the guest OS ID
      * 
@@ -290,6 +292,6 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, S
     HypervisorType getHypervisorType();
 
     public Map<String, String> getDetails();
-    
+
     boolean canPlugNics();
 }

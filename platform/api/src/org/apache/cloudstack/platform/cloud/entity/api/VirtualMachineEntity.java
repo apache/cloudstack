@@ -31,7 +31,14 @@ import com.cloud.vm.VirtualMachine;
  * Platform.  
  *
  */
-public interface VirtualMachineEntity extends CloudEntity, VirtualMachine {
+public interface VirtualMachineEntity extends VirtualMachine, CloudEntity {
+
+
+    List<VolumeEntity> getVolumes();
+
+    List<NicEntity> getNics();
+
+    TemplateEntity getTemplate();
 
     /**
      * @return the list of tags associated with the virtual machine
