@@ -35,4 +35,15 @@ fi
 echo Status: MASTER >> [RROUTER_LOG]
 
 releaseLockFile $lock $locked
+
+lock="passwdlock"
+locked=$(getLockFile $lock)
+if [ "$locked" != "1" ]
+then
+    exit 1
+fi
+
+service cloud-passwd-srvr restart
+
+releaseLockFile $lock $locked
 exit 0

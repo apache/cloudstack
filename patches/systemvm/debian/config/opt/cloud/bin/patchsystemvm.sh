@@ -68,7 +68,7 @@ routing_svcs() {
    grep "redundant_router=1" /var/cache/cloud/cmdline > /dev/null
    RROUTER=$?
    chkconfig cloud off
-   chkconfig cloud-passwd-srvr on ; 
+#  chkconfig cloud-passwd-srvr on ; 
    chkconfig haproxy on ; 
    chkconfig ssh on
    chkconfig nfs-common off
@@ -76,16 +76,18 @@ routing_svcs() {
    if [ $RROUTER -eq 0 ]
    then
        chkconfig dnsmasq off
+       chkconfig cloud-passwd-srvr off
        chkconfig keepalived on
        chkconfig conntrackd on
        chkconfig postinit on
        echo "keepalived conntrackd postinit" > /var/cache/cloud/enabled_svcs
-       echo "dnsmasq " > /var/cache/cloud/disabled_svcs
+       echo "dnsmasq cloud-passwd-srvr" > /var/cache/cloud/disabled_svcs
    else
        chkconfig dnsmasq on
+       chkconfig cloud-passwd-srvr on
        chkconfig keepalived off
        chkconfig conntrackd off
-       echo "dnsmasq " > /var/cache/cloud/enabled_svcs
+       echo "dnsmasq cloud-passwd-srvr " > /var/cache/cloud/enabled_svcs
        echo "keepalived conntrackd " > /var/cache/cloud/disabled_svcs
    fi
    echo "cloud-passwd-srvr ssh haproxy apache2" >> /var/cache/cloud/enabled_svcs

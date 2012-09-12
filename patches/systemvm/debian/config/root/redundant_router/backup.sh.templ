@@ -17,4 +17,16 @@ echo Switch conntrackd mode backup $? >> [RROUTER_LOG]
 echo Status: BACKUP >> [RROUTER_LOG]
 
 releaseLockFile $lock $locked
+
+lock="passwdlock"
+locked=$(getLockFile $lock)
+if [ "$locked" != "1" ]
+then
+    exit 1
+fi
+
+service cloud-passwd-srvr stop
+
+releaseLockFile $lock $locked
+
 exit 0

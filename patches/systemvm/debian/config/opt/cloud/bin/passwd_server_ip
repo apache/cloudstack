@@ -1,0 +1,15 @@
+#!/bin/bash
+. /etc/default/cloud-passwd-srvr
+addr=$1;
+while [ "$ENABLED" == "1" ]
+do
+	socat -lf /var/log/cloud.log TCP4-LISTEN:8080,reuseaddr,crnl,bind=$addr SYSTEM:"/opt/cloud/bin/serve_password.sh \"\$SOCAT_PEERADDR\""
+
+	rc=$?
+	if [ $rc -ne 0 ]
+	then
+		logger -t cloud "Password server failed with error code $rc. Restarting socat..."
+		sleep 3
+	fi
+        . /etc/default/cloud-passwd-srvr
+done
