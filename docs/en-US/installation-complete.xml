@@ -21,12 +21,19 @@
     specific language governing permissions and limitations
     under the License.
 -->
-<chapter id="manage-cloud">
-    <title>Managing the Cloud</title>
-    <xi:include href="tagging-resources.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="global-config.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="change-database-config.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="admin-alerts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="customizing-dns.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="stop-restart-management-server.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-</chapter>
+
+<section id="installation-complete">
+	<title>Installation Complete! Next Steps</title>
+	<para>Congratulations! You have now installed &PRODUCT; Management Server and the database it uses to persist system data.</para>
+	<mediaobject>
+		<imageobject>
+			<imagedata fileref="./images/installation-complete.png" />
+		</imageobject>
+		<textobject><phrase>installation-complete.png: Finished installs with single Management Server and multiple Management Servers</phrase></textobject>
+	</mediaobject>
+	<para>What should you do next?</para>
+	<itemizedlist>
+		<listitem><para>Even without adding any cloud infrastructure, you can run the UI to get a feel for what's offered and how you will interact with &PRODUCT; on an ongoing basis. See <xref linkend="ui" />.</para></listitem>
+		<listitem><para>When you're ready, add the cloud infrastructure and try running some virtual machines on it, so you can watch how &PRODUCT; manages the infrastructure. See <xref linkend="provisioning-steps" />.</para></listitem>
+	</itemizedlist>
+</section>

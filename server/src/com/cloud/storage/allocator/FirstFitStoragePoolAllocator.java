@@ -30,6 +30,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
@@ -82,11 +83,12 @@ public class FirstFitStoragePoolAllocator extends AbstractStoragePoolAllocator {
         	s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
         }
 
-		List<StoragePoolVO> pools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags(), null);
+        List<StoragePoolVO> pools = _storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags(), null);
         if (pools.size() == 0) {
-    		if (s_logger.isDebugEnabled()) {
-    			s_logger.debug("No storage pools available for allocation, returning");
-    		}
+            if (s_logger.isDebugEnabled()) {
+                String storageType = dskCh.useLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString();
+                s_logger.debug("No storage pools available for " + storageType + " volume allocation, returning");
+            }
             return suitablePools;
         }
         

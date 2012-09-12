@@ -33,7 +33,7 @@ Provides: vmops-utils
 Conflicts: vmops-utils
 Replaces: vmops-utils
 Architecture: any
-Depends: openjdk-6-jre, python
+Depends: openjdk-6-jre, python, libcglib-java (>= 2.2.2), libjsch-java (>= 0.1.42), libbackport-util-concurrent-java (>= 3.1)
 Description: CloudStack utility library
  The CloudStack utility libraries provide a set of Java classes used
  in the CloudStack environment.
@@ -119,7 +119,7 @@ Provides: vmops-agent
 Conflicts: vmops-agent
 Replaces: vmops-agent
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), libvirt0, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, uuid-runtime, rsync, grep, iproute, ebtables, vlan, libcglib-java, libcommons-httpclient-java, libservlet2.5-java, liblog4j1.2-java (>= 1.2.16), libjna-java, wget, jsvc, lsb-base (>= 3.2)
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), libvirt0, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, uuid-runtime, rsync, grep, iproute, ebtables, vlan, libcommons-httpclient-java, libservlet2.5-java, liblog4j1.2-java (>= 1.2.16), libjna-java, wget, jsvc, lsb-base (>= 3.2)
 Description: CloudStack agent
  The CloudStack agent is in charge of managing shared computing resources in
  a CloudStack powered cloud.  Install this package if this computer

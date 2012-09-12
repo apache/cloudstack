@@ -185,6 +185,7 @@
     <copy todir="${server.deploy.to.dir}/lib">
       <fileset dir="${deps.dir}/">
         <include name="*.jar"/>
+        <exclude name="servlet*.jar"/>
       </fileset>
     </copy>
     <touch file="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/scripts/vm/hypervisor/xenserver/version"/>
@@ -294,8 +295,8 @@
     <fileset dir="${unittest.jar.dir}">
       <include name="*.jar"/>
     </fileset>
-    <fileset dir="${tools.dir}">
-      <include name="**/junit-4.8.1.jar"/>
+    <fileset dir="${deps.dir}">
+      <include name="junit-*.jar"/>
     </fileset>
     <dirset dir="${utils.test.dir}/resources"/>
     <dirset dir="${server.test.dir}/resources"/>

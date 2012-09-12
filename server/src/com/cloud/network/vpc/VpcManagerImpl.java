@@ -17,6 +17,7 @@
 package com.cloud.network.vpc;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -53,7 +54,6 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.IPAddressVO;
 import com.cloud.network.IpAddress;
@@ -167,7 +167,8 @@ public class VpcManagerImpl implements VpcManager, Manager{
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("VpcChecker"));
     private VpcProvider vpcElement = null;
-    
+    private final List<Service> nonSupportedServices = Arrays.asList(Service.SecurityGroup, Service.Firewall);
+ 
     String _name;
     int _cleanupInterval;
     int _maxNetworks;
@@ -265,14 +266,10 @@ public class VpcManagerImpl implements VpcManager, Manager{
         for (String serviceName : supportedServices) {
             // validate if the service is supported
             Service service = Network.Service.getService(serviceName);
-            if (service == null || service == Service.Gateway) {
-                throw new InvalidParameterValueException("Invalid service " + serviceName);
+            if (service == null || nonSupportedServices.contains(service)) {
+                throw new InvalidParameterValueException("Service " + serviceName + " is not supported in VPC");
             }
 
-            //don't allow security group service for vpc
-            if (service == Service.SecurityGroup) {
-                throw new UnsupportedServiceException("Service " + Service.SecurityGroup.getName() + " is not supported by VPC");
-            }
             svcProviderMap.put(service, defaultProviders);
             if (service == Service.NetworkACL) {
                 firewallSvs = true;

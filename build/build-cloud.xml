@@ -224,7 +224,7 @@
     <path refid="deps.classpath" />
     <path refid="dist.classpath" />
   </path>
-  <target name="compile-server" depends="-init, compile-utils, compile-xenapi, compile-core, compile-agent" description="Compile the management server.">
+  <target name="compile-server" depends="-init, compile-utils, compile-core, compile-agent" description="Compile the management server.">
     <compile-java jar.name="${server.jar}" top.dir="${server.dir}" classpath="server.classpath" />
   </target>
 

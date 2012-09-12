@@ -5,23 +5,22 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+    
+    http://www.apache.org/licenses/LICENSE-2.0
+    
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
 -->
-
 <section id="xenserver-maintenance-mode">
     <title>XenServer and Maintenance Mode</title>
     <para>For XenServer, you can take a server offline temporarily by using the Maintenance Mode feature in XenCenter. When you place a server into Maintenance Mode, all running VMs are automatically migrated from it to another host in the same pool. If the server is the pool master, a new master will also be selected for the pool. While a server is Maintenance Mode, you cannot create or start any VMs on it.</para>
@@ -31,10 +30,10 @@
         <itemizedlist>
             <listitem><para>Right-click, then click Enter Maintenance Mode on the shortcut menu.</para>
             </listitem>
-            <listitem><para>On the Server menu, click Enter Maintenance Mode</para>
+            <listitem><para>On the Server menu, click Enter Maintenance Mode.</para>
            </listitem>
         </itemizedlist></listitem> 
-        <listitem><para>Click Enter Maintenance Mode</para></listitem>        
+        <listitem><para>Click Enter Maintenance Mode.</para></listitem>        
     </orderedlist>
     <para>The server's status in the Resources pane shows when all running VMs have been successfully migrated off the server.</para>
     <para><emphasis role="bold">To take a server out of Maintenance Mode:</emphasis></para>
@@ -43,9 +42,10 @@
             <itemizedlist>
                 <listitem><para>Right-click, then click Exit Maintenance Mode on the shortcut menu.</para>
                 </listitem>
-                <listitem><para>On the Server menu, click Exit Maintenance Mode</para>
+                <listitem><para>On the Server menu, click Exit Maintenance Mode.</para>
                 </listitem>
             </itemizedlist></listitem> 
-        <listitem><para>Click Exit Maintenance Mode</para></listitem>        
+        <listitem><para>Click Exit Maintenance Mode.</para></listitem>        
     </orderedlist>
+    
 </section>

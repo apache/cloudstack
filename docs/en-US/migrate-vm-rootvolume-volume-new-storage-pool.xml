@@ -5,33 +5,33 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
- or more contributor license agreements.  See the NOTICE file
- distributed with this work for additional information
- regarding copyright ownership.  The ASF licenses this file
- to you under the Apache License, Version 2.0 (the
- "License"); you may not use this file except in compliance
- with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
- Unless required by applicable law or agreed to in writing,
- software distributed under the License is distributed on an
- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- KIND, either express or implied.  See the License for the
- specific language governing permissions and limitations
- under the License.
+	or more contributor license agreements.  See the NOTICE file
+	distributed with this work for additional information
+	regarding copyright ownership.  The ASF licenses this file
+	to you under the Apache License, Version 2.0 (the
+	"License"); you may not use this file except in compliance
+	with the License.  You may obtain a copy of the License at
+	
+	http://www.apache.org/licenses/LICENSE-2.0
+	
+	Unless required by applicable law or agreed to in writing,
+	software distributed under the License is distributed on an
+	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+	KIND, either express or implied.  See the License for the
+	specific language governing permissions and limitations
+	under the License.
 -->
-
 <section id="migrate-vm-rootvolume-volume-new-storage-pool">
-    <title>Migrating a VM Root Volume to a New Storage Pool</title>
-    <para>When migrating the root disk volume, the VM must first be stopped, and users can not access the VM. After migration is complete, the VM can be restarted.</para>
-            <orderedlist>
-                <listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
-                <listitem><para>Detach the data disk from the VM. See Detaching and Moving Volumes <xref linkend="detach-move-volumes"/>  (but skip the “reattach” step at the end. You will do that after migrating to new storage).</para></listitem>
-                <listitem><para>Stop the VM.</para></listitem>
-                <listitem><para>Call the &PRODUCT; API command migrateVirtualMachine with the ID of the VM to migrate and the IDs of a destination host and destination storage pool in the same zone.</para></listitem>
-                <listitem><para>Watch for the VM status to change to Migrating, then back to Stopped.</para></listitem>
-                <listitem><para>Restart the VM.</para></listitem>
-            </orderedlist>
-    </section>
+	<title>Migrating a VM Root Volume to a New Storage Pool</title>
+	<para>When migrating the root disk volume, the VM must first be stopped, and users can not access the VM. After migration is complete, the VM can be restarted.</para>
+			<orderedlist>
+				<listitem><para>Log in to the &PRODUCT; UI as a user or admin.</para></listitem>
+				<listitem><para>Detach the data disk from the VM. See Detaching and Moving Volumes <xref linkend="detach-move-volumes"/>  (but skip the “reattach” step at the end. You will do that after migrating to new storage).</para></listitem>
+				<listitem><para>Stop the VM.</para></listitem>
+				<listitem><para>Use the &PRODUCT; API command, migrateVirtualMachine, with the ID of the VM to migrate and
+				the IDs of a destination host and destination storage pool in the same zone.</para></listitem>
+				<listitem><para>Watch for the VM status to change to Migrating, then back to Stopped.</para></listitem>
+				<listitem><para>Restart the VM.</para></listitem>
+			</orderedlist>
+	</section>
 

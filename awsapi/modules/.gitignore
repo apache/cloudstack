@@ -15,7 +15,40 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/usr/share/cloud/bridge/*
-/usr/share/cloud/setup/bridge/*
-/usr/bin/*
-/etc/init.d/*
+build/replace.properties
+build/build.number
+bin/
+cloudstack-proprietary/
+premium/
+.lock-wscript
+artifacts/
+.waf-*
+waf-*
+target/
+override/
+.metadata
+dist/
+*~
+*.bak
+cloud-*.tar.bz2
+*.log
+*.pyc
+build.number
+api.log.*.gz
+cloud.log.*.*
+unittest
+deps/cloud.userlibraries
+deps/awsapi-lib/
+.DS_Store
+.idea
+*.iml
+git-remote-https.exe.stackdump
+*.swp
+tools/devcloud/devcloudbox/.vagrant
+deps/*.jar
+deps/*.war
+deps/*.mar
+*.jar
+awsapi/modules/*
+!.gitignore
+

@@ -463,6 +463,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         diskOfferingResponse.setTags(offering.getTags());
         diskOfferingResponse.setCustomized(offering.isCustomized());
+        diskOfferingResponse.setStorageType(offering.getUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
         diskOfferingResponse.setObjectName("diskoffering");
         return diskOfferingResponse;
     }
@@ -954,6 +955,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         zoneResponse.setId(dataCenter.getId());
         zoneResponse.setName(dataCenter.getName());
         zoneResponse.setSecurityGroupsEnabled(ApiDBUtils.isSecurityGroupEnabledInZone(dataCenter.getId()));
+        zoneResponse.setLocalStorageEnabled(dataCenter.isLocalStorageEnabled());
 
         if ((dataCenter.getDescription() != null) && !dataCenter.getDescription().equalsIgnoreCase("null")) {
             zoneResponse.setDescription(dataCenter.getDescription());
@@ -1121,24 +1123,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         
         populateOwner(volResponse, volume);
 
-        String storageType;
-        try {
-            if (volume.getPoolId() == null) {
-                if (volume.getState() == Volume.State.Allocated || volume.getState() == Volume.State.UploadOp) {
-                    /* set it as shared, so the UI can attach it to VM */
-                    storageType = "shared";
-                } else {
-                    storageType = "unknown";
-                }
-            } else {
-                storageType = ApiDBUtils.volumeIsOnSharedStorage(volume.getId()) ? ServiceOffering.StorageType.shared.toString() : ServiceOffering.StorageType.local.toString();
-            }
-        } catch (InvalidParameterValueException e) {
-            s_logger.error(e.getMessage(), e);
-            throw new ServerApiException(BaseCmd.INTERNAL_ERROR, "Volume " + volume.getName() + " does not have a valid ID");
-        }
-
-        volResponse.setStorageType(storageType);
         if (volume.getVolumeType().equals(Volume.Type.ROOT)) {
             volResponse.setServiceOfferingId(volume.getDiskOfferingId());
         } else {
@@ -1153,6 +1137,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             volResponse.setDiskOfferingName(diskOffering.getName());
             volResponse.setDiskOfferingDisplayText(diskOffering.getDisplayText());
         }
+        volResponse.setStorageType(diskOffering.getUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
 
         Long poolId = volume.getPoolId();
         String poolName = (poolId == null) ? "none" : ApiDBUtils.findStoragePoolById(poolId).getName();
