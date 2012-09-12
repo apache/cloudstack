@@ -890,6 +890,7 @@ CREATE TABLE  `cloud`.`user` (
   `timezone` varchar(30) default NULL,
   `registration_token` varchar(255) default NULL,
   `is_registered` tinyint NOT NULL DEFAULT 0 COMMENT '1: yes, 0: no',
+  `incorrect_login_attempts` integer unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY  (`id`),
   INDEX `i_user__removed`(`removed`),
   INDEX `i_user__secret_key_removed`(`secret_key`, `removed`),

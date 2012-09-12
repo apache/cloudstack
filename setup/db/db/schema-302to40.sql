@@ -472,3 +472,6 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'manage
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'site2site.vpn.customergateway.subnets.limit', '10', 'The maximum number of subnets per customer gateway');
 
 INSERT IGNORE INTO `cloud`.`guest_os_category` VALUES ('11','None',NULL); 
+ALTER TABLE `cloud`.`user` ADD COLUMN `incorrect_login_attempts` integer unsigned NOT NULL DEFAULT '0';
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'incorrect.login.attempts.allowed', '5', 'Incorrect login attempts allowed before the user is disabled');
+
