@@ -1140,7 +1140,7 @@ public class AgentManagerImpl implements AgentManager, HandlerFactory, Manager {
                         }
                     } else if (e instanceof HypervisorVersionChangedException) {
                         handleDisconnect(attache, Event.HypervisorVersionChanged, true);
-                        throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
+                        throw new CloudRuntimeException("Hypervisor Version Changed, disconnect host " + attache.getId() + " will reconnect later", e);
                     } else {
                         s_logger.error("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage(), e);
                         handleDisconnect(attache, Event.AgentDisconnected, true);
