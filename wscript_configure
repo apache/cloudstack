@@ -110,18 +110,18 @@ systemjars = {
 	(
 		"servlet-api.jar",
 	),
-    'openSUSE':
-    (
-        "tomcat6-servlet-2.5-api.jar",
-        "tomcat6-jsp-2.1-api-6.0.24.jar",
-        "tomcat6-el-1.0-api.jar"
-    ),
-    'SLES':
-    (
-        "tomcat6-servlet-2.5-api.jar",
-        "tomcat6-jsp-2.1-api-6.0.24.jar",
-        "tomcat6-el-1.0-api.jar"
-    )
+	'openSUSE':
+	(
+		"tomcat6-servlet-2.5-api.jar",
+		"tomcat6-jsp-2.1-api-6.0.24.jar",
+		"tomcat6-el-1.0-api.jar"
+	),
+	'SLES':
+	(
+		"tomcat6-servlet-2.5-api.jar",
+		"tomcat6-jsp-2.1-api-6.0.24.jar",
+		"tomcat6-el-1.0-api.jar"
+	)
 }
 
 #A JAR dependency may be:
