@@ -23,6 +23,7 @@ from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
+from nose.plugins.attrib import attr
 
 #Import System modules
 import time
@@ -40,14 +41,6 @@ class Services:
                         "hypervisors": {
                             0: {
                                     "hypervisor": "XenServer",
-                                    "templatefilter": "self",
-                                },
-                            1: {
-                                    "hypervisor": "KVM",
-                                    "templatefilter": "self",
-                                },
-                            2: {
-                                    "hypervisor": "VMWare",
                                     "templatefilter": "self",
                                 },
                             },
@@ -92,6 +85,7 @@ class TestSecStorageServices(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @unittest.skip("skipped - do not add secondary storage")
     def test_01_add_sec_storage(self):
         """Test secondary storage
         """
@@ -145,6 +139,7 @@ class TestSecStorageServices(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"])
     def test_02_sys_vm_start(self):
         """Test system VM start
         """
@@ -207,7 +202,7 @@ class TestSecStorageServices(cloudstackTestCase):
         while True:
             list_hosts_response = list_hosts(
                            self.apiclient,
-                           type='SecondaryStorage',
+                           type='SecondaryStorageVM',
                            zoneid=self.zone.id,
                            )
 
@@ -275,6 +270,7 @@ class TestSecStorageServices(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "eip", "sg"])
     def test_03_sys_template_ready(self):
         """Test system templates are ready
         """

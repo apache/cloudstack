@@ -61,7 +61,6 @@
   <import file="${build.dir}/build-common.xml" />
 
   <!-- In case these didn't get defined in the build-cloud.properties -->
-  <property name="branding.name" value="default" />
   <property name="tomcat.home" value="${env.CATALINA_HOME}" />
   <property name="deprecation" value="off" />
   <property name="target.compat.version" value="1.6" />
@@ -113,16 +112,11 @@
 
   <property name="tools.dir" location="${base.dir}/tools" />
   <!--  <property name="antcontrib.dir" location="${tools.dir}/tools/ant/apache-ant-1.8.0/lib" />-->
-  <property name="deploy.dir" location="${build.dir}/deploy" />
-  <property name="production.dir" location="${deploy.dir}/production" />
   <property name="meld.home" location="/usr/local/bin" />
   <property name="assertion" value="-da" />
 
   <!-- directory for vmware-base library -->
   <property name="vmware-base.dir" location="${base.dir}/vmware-base" />
-
-  <!-- directories for branding -->
-  <property name="branding.dir" location="${build.dir}/deploy/branding/${branding.name}" />
 
   <property name="core.jar" value="cloud-core.jar" />
   <property name="utils.jar" value="cloud-utils.jar" />
@@ -374,7 +368,7 @@
       </fileset>
     </copy>
     <copy todir="${copyto.dir}/conf">
-      <fileset dir="${production.dir}/consoleproxy/conf">
+      <fileset dir="${console-proxy.dir}/conf">
         <include name="log4j-cloud.xml" />
         <include name="consoleproxy.properties" />
       </fileset>
@@ -487,17 +481,9 @@
   <target name="build-servers" depends="-init, build-server" />
 
   <target name="build-opensource" depends="-init, build-server, build-agent, build-scripts, build-ui, build-console-proxy, package-oss-systemvm-iso">
-    <copy overwrite="true" todir="${dist.dir}">
-      <fileset dir="${base.dir}/build/deploy/">
-        <include name="deploy-agent.sh" />
-        <include name="deploy-server.sh" />
-        <include name="deploy-console-proxy.sh" />
-        <include name="install.sh" />
-      </fileset>
       <fileset dir="${base.dir}/client">
         <include name="setup/**/*" />
       </fileset>
-    </copy>
     
     <copy overwrite="true" todir="${jar.dir}">
       <fileset dir="${deps.dir}">
@@ -505,8 +491,6 @@
       </fileset>
     </copy>
     
-    <chmod file="${dist.dir}/deploy-agent.sh" perm="uog+xr" />
-    <chmod file="${dist.dir}/deploy-server.sh" perm="uog+xr" />
   </target>
 
 

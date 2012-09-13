@@ -17,6 +17,6 @@
 
 # management server compile-time environment parameters
 
-paths.script=@AGENTLIBDIR@
+paths.script=@COMMONLIBDIR@
 mount.parent=@MSMNTDIR@
 cloud-stack-components-specification=@COMPONENTS-SPEC@

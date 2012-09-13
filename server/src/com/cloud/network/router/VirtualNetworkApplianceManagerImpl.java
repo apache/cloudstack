@@ -2654,10 +2654,8 @@ public class VirtualNetworkApplianceManagerImpl implements VirtualNetworkApplian
                 String vlanNetmask = ipAddr.getNetmask();
                 String vifMacAddress = ipAddr.getMacAddress();
 
-                String vmGuestAddress = null;
-
                 IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, firstIP, 
-                        sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, vmGuestAddress, networkRate, ipAddr.isOneToOneNat());
+                        sourceNat, vlanId, vlanGateway, vlanNetmask, vifMacAddress, networkRate, ipAddr.isOneToOneNat());
 
                 ip.setTrafficType(network.getTrafficType());
                 ip.setNetworkName(_networkMgr.getNetworkTag(router.getHypervisorType(), network));

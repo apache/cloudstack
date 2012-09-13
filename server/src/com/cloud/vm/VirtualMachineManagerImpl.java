@@ -1745,7 +1745,6 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         set_vms.addAll(_vmDao.listLHByClusterId(clusterId));
 
         for (VMInstanceVO vm : set_vms) {
-            if (vm.isRemoved() || vm.getState() == State.Destroyed  || vm.getState() == State.Expunging) continue;
             AgentVmInfo info =  infos.remove(vm.getId());
             VMInstanceVO castedVm = null;
             if ((info == null && (vm.getState() == State.Running || vm.getState() == State.Starting))  
@@ -1789,23 +1788,26 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
                     e.printStackTrace();
                 }
             }
-            else if (info != null && (vm.getState() == State.Stopped || vm.getState() == State.Stopping)) {
-            	 Host host = _hostDao.findByGuid(info.getHostUuid());
-                 if (host != null){
-                    s_logger.warn("Stopping a VM which is stopped/stopping " + info.name);
-                    vm.setState(State.Stopped); // set it as stop and clear it from host
-                    vm.setHostId(null);
-                    _vmDao.persist(vm);
-                     try {
-	                     Answer answer = _agentMgr.send(host.getId(), cleanup(info.name));
-	                     if (!answer.getResult()) {
-	                         s_logger.warn("Unable to stop a VM due to " + answer.getDetails());
-	                     }
-                     }
-                     catch (Exception e) {
-                         s_logger.warn("Unable to stop a VM due to " + e.getMessage());
-                     }
-                 }
+            else if (info != null && (vm.getState() == State.Stopped || vm.getState() == State.Stopping
+                    || vm.isRemoved() || vm.getState() == State.Destroyed || vm.getState() == State.Expunging)) {
+                Host host = _hostDao.findByGuid(info.getHostUuid());
+                if (host != null){
+                    s_logger.warn("Stopping a VM which is stopped/stopping/destroyed/expunging " + info.name);
+                    if (vm.getState() == State.Stopped || vm.getState() == State.Stopping) {
+                        vm.setState(State.Stopped); // set it as stop and clear it from host
+                        vm.setHostId(null);
+                        _vmDao.persist(vm);
+                    }
+                    try {
+                        Answer answer = _agentMgr.send(host.getId(), cleanup(info.name));
+                        if (!answer.getResult()) {
+                            s_logger.warn("Unable to stop a VM due to " + answer.getDetails());
+                        }
+                    }
+                    catch (Exception e) {
+                        s_logger.warn("Unable to stop a VM due to " + e.getMessage());
+                    }
+                }
             }
             else
             // host id can change
@@ -1831,7 +1833,7 @@ public class VirtualMachineManagerImpl implements VirtualMachineManager, Listene
         }
 
         for (final AgentVmInfo left : infos.values()) {
-        	if (VirtualMachineName.isValidVmName(left.name)) continue;  // if the vm follows cloudstack naming ignore it for stopping
+            if (!VirtualMachineName.isValidVmName(left.name)) continue;  // if the vm doesn't follow CS naming ignore it for stopping
             try {
                 Host host = _hostDao.findByGuid(left.getHostUuid());
                 if (host != null){

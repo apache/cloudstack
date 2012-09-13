@@ -48,6 +48,7 @@ systemjars = {
 		"commons-pool.jar",
 		"commons-httpclient.jar",
 		"ws-commons-util.jar",
+		"mysql-connector-java.jar",
 	),
 	'Fedora':
 	(
@@ -92,7 +93,6 @@ systemjars = {
 		"asm3.jar",
 		"jsch.jar",
 		"backport-util-concurrent.jar",
-		"mysql-connector-java.jar",
 		"jetty.jar",
 		"jetty-util.jar",
 		"jetty-start-daemon.jar",
@@ -110,18 +110,18 @@ systemjars = {
 	(
 		"servlet-api.jar",
 	),
-    'openSUSE':
-    (
-        "tomcat6-servlet-2.5-api.jar",
-        "tomcat6-jsp-2.1-api-6.0.24.jar",
-        "tomcat6-el-1.0-api.jar"
-    ),
-    'SLES':
-    (
-        "tomcat6-servlet-2.5-api.jar",
-        "tomcat6-jsp-2.1-api-6.0.24.jar",
-        "tomcat6-el-1.0-api.jar"
-    )
+	'openSUSE':
+	(
+		"tomcat6-servlet-2.5-api.jar",
+		"tomcat6-jsp-2.1-api-6.0.24.jar",
+		"tomcat6-el-1.0-api.jar"
+	),
+	'SLES':
+	(
+		"tomcat6-servlet-2.5-api.jar",
+		"tomcat6-jsp-2.1-api-6.0.24.jar",
+		"tomcat6-el-1.0-api.jar"
+	)
 }
 
 #A JAR dependency may be:
@@ -235,6 +235,7 @@ try: conf.check_tool("tomcat")
 except Configure.ConfigurationError,e:
 	conf.fatal("Tomcat directory %r not found.  Either install Tomcat using ./waf installrpmdeps or ./waf installdebdeps, or manually install Tomcat to a directory in your system and set the environment variable TOMCAT_HOME to point to it."%conf.env.TOMCATHOME)
 
+conf.env.COMMONPATH = _join(conf.env.PACKAGE,"common")
 conf.env.AGENTPATH = _join(conf.env.PACKAGE,"agent")
 conf.env.CPPATH = _join(conf.env.PACKAGE,"console-proxy")
 conf.env.IPALLOCATORPATH = _join(conf.env.PACKAGE,"ipallocator")
@@ -276,6 +277,8 @@ else:
 in_javadir = lambda name: _join(conf.env.JAVADIR,_basename(name)) # $PREFIX/share/java
 in_system_javadir = lambda name: _join(conf.env.SYSTEMJAVADIR,name) # /usr/share/java
 in_premiumjavadir = lambda name: _join(conf.env.PREMIUMJAVADIR,name) # $PREFIX/share/java/cloud-premium
+
+conf.env.COMMONLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${COMMONPATH}"),conf.env)
 
 conf.env.AGENTLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${AGENTPATH}"),conf.env)
 conf.env.AGENTSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${AGENTPATH}"),conf.env)
@@ -354,6 +357,8 @@ conf.env.CLASSPATH = pathsep.join(compilecp)
 conf.check_message_2('Done','GREEN')
 
 # log4j config and property config files require backslash escapes on Windows
+
+conf.env.COMMONLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${COMMONPATH}"),conf.env)
 
 conf.env.AGENTLIBDIR = Utils.subst_vars(_join("${LIBDIR}","${AGENTPATH}"),conf.env)
 conf.env.AGENTSYSCONFDIR = Utils.subst_vars(_join("${SYSCONFDIR}","${AGENTPATH}"),conf.env)

@@ -35,19 +35,19 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 
 public class VMInstanceUsageParser {
-	public static final Logger s_logger = Logger.getLogger(VMInstanceUsageParser.class.getName());
-	
-	private static ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
-	private static UsageDao m_usageDao = _locator.getDao(UsageDao.class);
-	private static UsageVMInstanceDao m_usageInstanceDao = _locator.getDao(UsageVMInstanceDao.class);
-	
-	public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-	    if (s_logger.isDebugEnabled()) {
-	        s_logger.debug("Parsing all VMInstance usage events for account: " + account.getId());
-	    }
-		if ((endDate == null) || endDate.after(new Date())) {
-			endDate = new Date();
-		}
+    public static final Logger s_logger = Logger.getLogger(VMInstanceUsageParser.class.getName());
+    
+    private static ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
+    private static UsageDao m_usageDao = _locator.getDao(UsageDao.class);
+    private static UsageVMInstanceDao m_usageInstanceDao = _locator.getDao(UsageVMInstanceDao.class);
+    
+    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Parsing all VMInstance usage events for account: " + account.getId());
+        }
+        if ((endDate == null) || endDate.after(new Date())) {
+            endDate = new Date();
+        }
 
         // - query usage_vm_instance table with the following criteria:
         //     - look for an entry for accountId with start date in the given range
@@ -63,7 +63,7 @@ public class VMInstanceUsageParser {
 
         Map<String, VMInfo> vmServiceOfferingMap = new HashMap<String, VMInfo>();
 
-		// loop through all the usage instances, create a usage record for each
+        // loop through all the usage instances, create a usage record for each
         for (UsageVMInstanceVO usageInstance : usageInstances) {
             long vmId = usageInstance.getVmInstanceId();
             long soId = usageInstance.getSerivceOfferingId();
@@ -124,9 +124,9 @@ public class VMInstanceUsageParser {
         }
 
         return true;
-	}
+    }
 
-	private static void updateVmUsageData(Map<String, Pair<String, Long>> usageDataMap, String key, String vmName, long duration) {
+    private static void updateVmUsageData(Map<String, Pair<String, Long>> usageDataMap, String key, String vmName, long duration) {
         Pair<String, Long> vmUsageInfo = usageDataMap.get(key);
         if (vmUsageInfo == null) {
             vmUsageInfo = new Pair<String, Long>(vmName, new Long(duration));
@@ -136,9 +136,9 @@ public class VMInstanceUsageParser {
             vmUsageInfo = new Pair<String, Long>(vmUsageInfo.first(), runningTime);
         }
         usageDataMap.put(key, vmUsageInfo);
-	}
+    }
 
-	private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, String vmName, long zoneId, long serviceOfferingId, long templateId, String hypervisorType) {
+    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, String vmName, long zoneId, long serviceOfferingId, long templateId, String hypervisorType) {
         // Our smallest increment is hourly for now
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total running time " + runningTime + "ms");
@@ -166,35 +166,35 @@ public class VMInstanceUsageParser {
         m_usageDao.persist(usageRecord);
     }
 
-	private static class VMInfo {
-	    private long virtualMachineId;
-	    private long zoneId;
+    private static class VMInfo {
+        private long virtualMachineId;
+        private long zoneId;
         private long serviceOfferingId;
-	    private long templateId;
-	    private String hypervisorType;
+        private long templateId;
+        private String hypervisorType;
 
-	    public VMInfo(long vmId, long zId, long soId, long tId, String hypervisorType) {
-	        virtualMachineId = vmId;
-	        zoneId = zId;
-	        serviceOfferingId = soId;
-	        templateId = tId;
-	        this.hypervisorType = hypervisorType;
-	    }
+        public VMInfo(long vmId, long zId, long soId, long tId, String hypervisorType) {
+            virtualMachineId = vmId;
+            zoneId = zId;
+            serviceOfferingId = soId;
+            templateId = tId;
+            this.hypervisorType = hypervisorType;
+        }
 
-	    public long getZoneId() {
-	        return zoneId;
-	    }
-	    public long getVirtualMachineId() {
-	        return virtualMachineId;
-	    }
-	    public long getServiceOfferingId() {
-	        return serviceOfferingId;
-	    }
-	    public long getTemplateId() {
-	        return templateId;
-	    }
-	    private String getHypervisorType(){
-	        return hypervisorType;
-	    }
-	}
+        public long getZoneId() {
+            return zoneId;
+        }
+        public long getVirtualMachineId() {
+            return virtualMachineId;
+        }
+        public long getServiceOfferingId() {
+            return serviceOfferingId;
+        }
+        public long getTemplateId() {
+            return templateId;
+        }
+        private String getHypervisorType(){
+            return hypervisorType;
+        }
+    }
 }

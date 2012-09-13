@@ -617,7 +617,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl impl
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> service) throws ResourceUnavailableException {
         // return true, as IP will be associated as part of LB rule configuration
-        return false;
+        return true;
     }
 
     @Override

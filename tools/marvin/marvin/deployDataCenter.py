@@ -109,7 +109,7 @@ class deployDataCenters():
             self.createClusters(pod.clusters, zoneId, podId)
 
     def createVlanIpRanges(self, mode, ipranges, zoneId, podId=None,\
-                           networkId=None):
+                           networkId=None, forvirtualnetwork=None):
         if ipranges is None:
             return
         for iprange in ipranges:
@@ -125,7 +125,10 @@ class deployDataCenters():
             vlanipcmd.zoneid = zoneId
             vlanipcmd.vlan = iprange.vlan
             if mode == "Basic":
-                vlanipcmd.forvirtualnetwork = "false"
+                if forvirtualnetwork:
+                    vlanipcmd.forvirtualnetwork = "true"
+                else:
+                    vlanipcmd.forvirtualnetwork = "false"
             else:
                 vlanipcmd.forvirtualnetwork = "true"
 
@@ -212,6 +215,8 @@ class deployDataCenters():
                     vrconfig.id = vrprovid
                     self.apiClient.configureVirtualRouterElement(vrconfig)
                     self.enableProvider(pnetprovres[0].id)
+                elif provider.name == 'SecurityGroupProvider':
+                    self.enableProvider(pnetprovres[0].id)
             elif provider.name in ['Netscaler', 'JuniperSRX', 'F5BigIp']:
                 netprov = addNetworkServiceProvider.addNetworkServiceProviderCmd()
                 netprov.name = provider.name
@@ -274,6 +279,7 @@ class deployDataCenters():
             createzone.internaldns2 = zone.internaldns2
             createzone.name = zone.name
             createzone.securitygroupenabled = zone.securitygroupenabled
+            createzone.localstorageenabled = zone.localstorageenabled
             createzone.networktype = zone.networktype
             createzone.guestcidraddress = zone.guestcidraddress
             
@@ -289,7 +295,7 @@ class deployDataCenters():
                 listnetworkoffering = listNetworkOfferings.listNetworkOfferingsCmd()
                 
                 listnetworkoffering.name = "DefaultSharedNetscalerEIPandELBNetworkOffering" \
-                        if len(filter(lambda x : x.typ == 'Public', zone.physical_networks.traffictypes)) > 0 \
+                        if len(filter(lambda x : x.typ == 'Public', zone.physical_networks[0].traffictypes)) > 0 \
                         else "DefaultSharedNetworkOfferingWithSGService"
 
                 listnetworkofferingresponse = \
@@ -306,7 +312,7 @@ class deployDataCenters():
                 self.createpods(zone.pods, zoneId, networkid)
                 if self.isEipElbZone(zone):
                     self.createVlanIpRanges(zone.networktype, zone.ipranges, \
-                                        zoneId)
+                                        zoneId, forvirtualnetwork=True)
 
             if zone.networktype == "Advanced":
                 self.createpods(zone.pods, zoneId)
@@ -318,7 +324,7 @@ class deployDataCenters():
         return
     
     def isEipElbZone(self, zone):
-        if zone.networktype == "Basic" and len(filter(lambda x : x.typ == 'Public', zone.physical_networks.traffictypes)) > 0:
+        if zone.networktype == "Basic" and len(filter(lambda x : x.typ == 'Public', zone.physical_networks[0].traffictypes)) > 0:
             return True
         return False
 

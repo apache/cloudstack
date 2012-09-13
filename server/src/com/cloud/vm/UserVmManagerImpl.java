@@ -141,6 +141,8 @@ import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.network.vpc.VpcManager;
+import com.cloud.network.vpc.VpcVO;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.ServiceOffering;
@@ -318,6 +320,8 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
     protected NetworkDao _networkDao;
     @Inject
     protected NicDao _nicDao;
+    @Inject
+    protected VpcDao _vpcDao;
     @Inject
     protected RulesManager _rulesMgr;
     @Inject
@@ -3012,6 +3016,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         c.addCriteria(Criteria.NETWORKID, cmd.getNetworkId());
         c.addCriteria(Criteria.TEMPLATE_ID, cmd.getTemplateId());
         c.addCriteria(Criteria.ISO_ID, cmd.getIsoId());
+        c.addCriteria(Criteria.VPC_ID, cmd.getVpcId());
 
         if (domainId != null) {
             c.addCriteria(Criteria.DOMAINID, domainId);
@@ -3063,6 +3068,7 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
         Object storageId = c.getCriteria(Criteria.STORAGE_ID);
         Object templateId = c.getCriteria(Criteria.TEMPLATE_ID);
         Object isoId = c.getCriteria(Criteria.ISO_ID);
+        Object vpcId = c.getCriteria(Criteria.VPC_ID);
 
         sb.and("displayName", sb.entity().getDisplayName(), SearchCriteria.Op.LIKE);
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -3108,6 +3114,19 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
             networkSearch.and("networkId", networkSearch.entity().getId(), SearchCriteria.Op.EQ);
             nicSearch.join("networkSearch", networkSearch, nicSearch.entity().getNetworkId(), networkSearch.entity().getId(), JoinBuilder.JoinType.INNER);
 
+            sb.join("nicSearch", nicSearch, sb.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
+        }
+        
+        if(vpcId != null && networkId == null){
+            SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
+
+            SearchBuilder<NetworkVO> networkSearch = _networkDao.createSearchBuilder();
+            nicSearch.join("networkSearch", networkSearch, nicSearch.entity().getNetworkId(), networkSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+            
+            SearchBuilder<VpcVO> vpcSearch = _vpcDao.createSearchBuilder();
+            vpcSearch.and("vpcId", vpcSearch.entity().getId(), SearchCriteria.Op.EQ);
+            networkSearch.join("vpcSearch", vpcSearch, networkSearch.entity().getVpcId(), vpcSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+            
             sb.join("nicSearch", nicSearch, sb.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         }
 
@@ -3161,6 +3180,10 @@ public class UserVmManagerImpl implements UserVmManager, UserVmService, Manager 
 
         if (networkId != null) {
             sc.setJoinParameters("nicSearch", "networkId", networkId);
+        }
+        
+        if(vpcId != null && networkId == null){
+            sc.setJoinParameters("vpcSearch", "vpcId", vpcId);
         }
 
         if (name != null) {

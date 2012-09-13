@@ -543,7 +543,7 @@ public class JuniperSRXExternalFirewallElement extends ExternalFirewallDeviceMan
 
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> service) throws ResourceUnavailableException {
-        // TODO Auto-generated method stub
-        return false;
+        // return true, as IP will be associated as part of static NAT/port forwarding rule configuration
+        return true;
     }
 }

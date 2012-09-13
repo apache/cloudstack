@@ -35,19 +35,19 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLocator;
 
 public class PortForwardingUsageParser {
-	public static final Logger s_logger = Logger.getLogger(PortForwardingUsageParser.class.getName());
-	
-	private static ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
-	private static UsageDao m_usageDao = _locator.getDao(UsageDao.class);
-	private static UsagePortForwardingRuleDao m_usagePFRuleDao = _locator.getDao(UsagePortForwardingRuleDao.class);
-	
-	public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-	    if (s_logger.isDebugEnabled()) {
-	        s_logger.debug("Parsing all PortForwardingRule usage events for account: " + account.getId());
-	    }
-		if ((endDate == null) || endDate.after(new Date())) {
-			endDate = new Date();
-		}
+    public static final Logger s_logger = Logger.getLogger(PortForwardingUsageParser.class.getName());
+    
+    private static ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
+    private static UsageDao m_usageDao = _locator.getDao(UsageDao.class);
+    private static UsagePortForwardingRuleDao m_usagePFRuleDao = _locator.getDao(UsagePortForwardingRuleDao.class);
+    
+    public static boolean parse(AccountVO account, Date startDate, Date endDate) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Parsing all PortForwardingRule usage events for account: " + account.getId());
+        }
+        if ((endDate == null) || endDate.after(new Date())) {
+            endDate = new Date();
+        }
 
         // - query usage_volume table with the following criteria:
         //     - look for an entry for accountId with start date in the given range
@@ -57,15 +57,15 @@ public class PortForwardingUsageParser {
         List<UsagePortForwardingRuleVO> usagePFs = m_usagePFRuleDao.getUsageRecords(account.getId(), account.getDomainId(), startDate, endDate, false, 0);
         
         if(usagePFs.isEmpty()){
-        	s_logger.debug("No port forwarding usage events for this period");
-        	return true;
+            s_logger.debug("No port forwarding usage events for this period");
+            return true;
         }
 
         // This map has both the running time *and* the usage amount.
         Map<String, Pair<Long, Long>> usageMap = new HashMap<String, Pair<Long, Long>>();
         Map<String, PFInfo> pfMap = new HashMap<String, PFInfo>();
 
-		// loop through all the port forwarding rule, create a usage record for each
+        // loop through all the port forwarding rule, create a usage record for each
         for (UsagePortForwardingRuleVO usagePF : usagePFs) {
             long pfId = usagePF.getId();
             String key = ""+pfId;
@@ -102,9 +102,9 @@ public class PortForwardingUsageParser {
         }
 
         return true;
-	}
+    }
 
-	private static void updatePFUsageData(Map<String, Pair<Long, Long>> usageDataMap, String key, long pfId, long duration) {
+    private static void updatePFUsageData(Map<String, Pair<Long, Long>> usageDataMap, String key, long pfId, long duration) {
         Pair<Long, Long> pfUsageInfo = usageDataMap.get(key);
         if (pfUsageInfo == null) {
             pfUsageInfo = new Pair<Long, Long>(new Long(pfId), new Long(duration));
@@ -114,9 +114,9 @@ public class PortForwardingUsageParser {
             pfUsageInfo = new Pair<Long, Long>(pfUsageInfo.first(), runningTime);
         }
         usageDataMap.put(key, pfUsageInfo);
-	}
+    }
 
-	private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long pfId, long zoneId) {
+    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long pfId, long zoneId) {
         // Our smallest increment is hourly for now
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total running time " + runningTime + "ms");
@@ -139,21 +139,21 @@ public class PortForwardingUsageParser {
                 new Double(usage), null, null, null, null, pfId, null, startDate, endDate);
         m_usageDao.persist(usageRecord);
     }
-	
-	private static class PFInfo {
-	    private long id;
-	    private long zoneId;
+    
+    private static class PFInfo {
+        private long id;
+        private long zoneId;
 
-	    public PFInfo(long id, long zoneId) {
-	        this.id = id;
-	        this.zoneId = zoneId;
-	    }
-	    public long getZoneId() {
-	        return zoneId;
-	    }
-	    public long getId() {
-	        return id;
-	    }
-	}
+        public PFInfo(long id, long zoneId) {
+            this.id = id;
+            this.zoneId = zoneId;
+        }
+        public long getZoneId() {
+            return zoneId;
+        }
+        public long getId() {
+            return id;
+        }
+    }
 
 }

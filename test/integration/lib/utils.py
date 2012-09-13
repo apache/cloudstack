@@ -114,12 +114,7 @@ def is_server_ssh_ready(ipaddress, port, username, password, retries=50):
     loop_cnt = retries
     while True:
         try:
-            ssh = remoteSSHClient.remoteSSHClient(
-                                            ipaddress,
-                                            port,
-                                            username,
-                                            password
-                                            )
+            ssh = remoteSSHClient(ipaddress, port, username, password)
         except Exception as e:
             if loop_cnt == 0:
                 raise e
@@ -161,12 +156,7 @@ def get_process_status(hostip, port, username, password, linklocalip, process):
     """Double hop and returns a process status"""
 
     #SSH to the machine
-    ssh = remoteSSHClient.remoteSSHClient(
-                                          hostip,
-                                          port,
-                                          username,
-                                          password
-                            )
+    ssh = remoteSSHClient(hostip, port, username, password)
     ssh_command = "ssh -i ~/.ssh/id_rsa.cloud -ostricthostkeychecking=no "
     ssh_command = ssh_command + \
                     "-oUserKnownHostsFile=/dev/null -p 3922 %s %s" % (

@@ -51,4 +51,6 @@ deps/*.mar
 *.jar
 awsapi/modules/*
 !.gitignore
-
+.classpath
+.project
+.settings.xml

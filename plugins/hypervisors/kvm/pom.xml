@@ -42,7 +42,7 @@
     <dependency>
       <groupId>org.libvirt</groupId>
       <artifactId>libvirt</artifactId>
-      <version>0.4.8</version>
+      <version>0.4.9</version>
     </dependency>
   </dependencies>
 </project>

@@ -201,21 +201,22 @@ public class SearchCriteria<K> {
     }
 
     protected JoinBuilder<SearchCriteria<?>> findJoin(Map<String, JoinBuilder<SearchCriteria<?>>> jbmap, String joinName) {
-        JoinBuilder<SearchCriteria<?>> jb = jbmap.get(joinName);
-        if (jb != null) {
-            return jb;
-        }
-
-        for (JoinBuilder<SearchCriteria<?>> j2 : _joins.values()) {
-            SearchCriteria<?> sc = j2.getT();
-            jb = findJoin(sc._joins, joinName);
-            if (jb != null) {
-                return jb;
-            }
-        }
-
-        assert (false) : "Unable to find a join by the name " + joinName;
-        return null;
+    	JoinBuilder<SearchCriteria<?>> jb = jbmap.get(joinName);
+    	if (jb != null) {
+    		return jb;
+    	}
+    	
+    	for (JoinBuilder<SearchCriteria<?>> j2 : jbmap.values()) {
+    		SearchCriteria<?> sc = j2.getT();
+    		if(sc._joins != null)
+    		    jb = findJoin(sc._joins, joinName);
+    		if (jb != null) {
+    			return jb;
+    		}
+    	}
+    	
+    	assert (false) : "Unable to find a join by the name " + joinName;
+    	return null;
     }
 
     public void setJoinParameters(String joinName, String conditionName, Object... params) {

@@ -138,7 +138,7 @@ then
 		fi
 	fi
 else
-    if [ "$dflag" != 1]; then
+    if [ "$dflag" != 1 ]; then
         dbPassword=$(sed '/^\#/d' /etc/cloud/management/db.properties | grep 'db.cloud.password'  | tail -n 1 | cut -d "=" -f2- | sed 's/^[[:space:]]*//;s/[[:space:]]*$//'i )
     fi
 fi

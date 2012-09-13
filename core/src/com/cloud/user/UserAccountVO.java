@@ -83,6 +83,9 @@ public class UserAccountVO implements UserAccount {
     @Column(name="is_registered")
     boolean registered;
 
+    @Column (name="incorrect_login_attempts")
+    int loginAttempts;
+
     @Column(name="account_name", table="account", insertable=false, updatable=false)
     private String accountName = null;
 
@@ -268,5 +271,13 @@ public class UserAccountVO implements UserAccount {
 
     public void setRegistered(boolean registered) {
         this.registered = registered;
+    }
+
+    public void setLoginAttempts(int loginAttempts) {
+        this.loginAttempts = loginAttempts;
+    }
+
+    public int getLoginAttempts() {
+        return loginAttempts;
     }
 }
