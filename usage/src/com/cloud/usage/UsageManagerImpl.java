@@ -78,21 +78,21 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Local(value={UsageManager.class})
 public class UsageManagerImpl implements UsageManager, Runnable {
-	public static final Logger s_logger = Logger.getLogger(UsageManagerImpl.class.getName());
+    public static final Logger s_logger = Logger.getLogger(UsageManagerImpl.class.getName());
 
-	protected static final String DAILY = "DAILY";
-	protected static final String WEEKLY = "WEEKLY";
-	protected static final String MONTHLY = "MONTHLY";
+    protected static final String DAILY = "DAILY";
+    protected static final String WEEKLY = "WEEKLY";
+    protected static final String MONTHLY = "MONTHLY";
 
-	private static final int HOURLY_TIME = 60;
-	private static final int DAILY_TIME = 60 * 24;
-	private static final int THREE_DAYS_IN_MINUTES = 60 * 24 * 3;
-	private static final int USAGE_AGGREGATION_RANGE_MIN = 10;
+    private static final int HOURLY_TIME = 60;
+    private static final int DAILY_TIME = 60 * 24;
+    private static final int THREE_DAYS_IN_MINUTES = 60 * 24 * 3;
+    private static final int USAGE_AGGREGATION_RANGE_MIN = 10;
 
-	private final ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
-	private final AccountDao m_accountDao = _locator.getDao(AccountDao.class);
-	private final UserStatisticsDao m_userStatsDao = _locator.getDao(UserStatisticsDao.class);
-	private final UsageDao m_usageDao = _locator.getDao(UsageDao.class);
+    private final ComponentLocator _locator = ComponentLocator.getLocator(UsageServer.Name, "usage-components.xml", "log4j-cloud_usage");
+    private final AccountDao m_accountDao = _locator.getDao(AccountDao.class);
+    private final UserStatisticsDao m_userStatsDao = _locator.getDao(UserStatisticsDao.class);
+    private final UsageDao m_usageDao = _locator.getDao(UsageDao.class);
     private final UsageVMInstanceDao m_usageInstanceDao = _locator.getDao(UsageVMInstanceDao.class);
     private final UsageIPAddressDao m_usageIPAddressDao = _locator.getDao(UsageIPAddressDao.class);
     private final UsageNetworkDao m_usageNetworkDao = _locator.getDao(UsageNetworkDao.class);
@@ -108,24 +108,24 @@ public class UsageManagerImpl implements UsageManager, Runnable {
     @Inject protected UsageEventDao _usageEventDao;
 
     private String m_version = null;
-	private String m_name = null;
-	private final Calendar m_jobExecTime = Calendar.getInstance();
-	private int m_aggregationDuration = 0;
-	private int m_sanityCheckInterval = 0;
+    private String m_name = null;
+    private final Calendar m_jobExecTime = Calendar.getInstance();
+    private int m_aggregationDuration = 0;
+    private int m_sanityCheckInterval = 0;
     String m_hostname = null;
     int m_pid = 0;
     TimeZone m_usageTimezone = TimeZone.getTimeZone("GMT");;
     private final GlobalLock m_heartbeatLock = GlobalLock.getInternLock("usage.job.heartbeat.check");
 
-	private final ScheduledExecutorService m_executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Job"));
-	private final ScheduledExecutorService m_heartbeatExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-HB"));
-	private final ScheduledExecutorService m_sanityExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Sanity"));
-	private Future m_scheduledFuture = null;
-	private Future m_heartbeat = null;
-	private Future m_sanity = null;
+    private final ScheduledExecutorService m_executor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Job"));
+    private final ScheduledExecutorService m_heartbeatExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-HB"));
+    private final ScheduledExecutorService m_sanityExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("Usage-Sanity"));
+    private Future m_scheduledFuture = null;
+    private Future m_heartbeat = null;
+    private Future m_sanity = null;
 
-	protected UsageManagerImpl() {
-	}
+    protected UsageManagerImpl() {
+    }
 
     private void mergeConfigs(Map<String, String> dbParams, Map<String, Object> xmlParams) {
         for (Map.Entry<String, Object> param : xmlParams.entrySet()) {
@@ -175,7 +175,7 @@ public class UsageManagerImpl implements UsageManager, Runnable {
         }
 
         if(aggreagationTimeZone != null && !aggreagationTimeZone.isEmpty()){  
-        	m_usageTimezone = TimeZone.getTimeZone(aggreagationTimeZone);
+            m_usageTimezone = TimeZone.getTimeZone(aggreagationTimeZone);
         }
         s_logger.debug("Usage stats aggregation time zone: "+aggreagationTimeZone);
         
@@ -225,19 +225,19 @@ public class UsageManagerImpl implements UsageManager, Runnable {
         }
         m_pid = Integer.parseInt(System.getProperty("pid"));
         return true;
-	}
+    }
 
-	public String getName() {
-		return m_name;
-	}
+    public String getName() {
+        return m_name;
+    }
 
-	public boolean start() {
-	    if (s_logger.isInfoEnabled()) {
-	        s_logger.info("Starting Usage Manager");
-	    }
+    public boolean start() {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Starting Usage Manager");
+        }
 
-		// use the configured exec time and aggregation duration for scheduling the job
-		m_scheduledFuture = m_executor.scheduleAtFixedRate(this, m_jobExecTime.getTimeInMillis() - System.currentTimeMillis(), m_aggregationDuration * 60 * 1000, TimeUnit.MILLISECONDS);
+        // use the configured exec time and aggregation duration for scheduling the job
+        m_scheduledFuture = m_executor.scheduleAtFixedRate(this, m_jobExecTime.getTimeInMillis() - System.currentTimeMillis(), m_aggregationDuration * 60 * 1000, TimeUnit.MILLISECONDS);
 
         m_heartbeat = m_heartbeatExecutor.scheduleAtFixedRate(new Heartbeat(), /* start in 15 seconds...*/15*1000, /* check database every minute*/60*1000, TimeUnit.MILLISECONDS);
         
@@ -264,81 +264,81 @@ public class UsageManagerImpl implements UsageManager, Runnable {
             usageTxn.close();
         }
 
-		return true;
-	}
+        return true;
+    }
 
-	public boolean stop() {
-	    m_heartbeat.cancel(true);
-	    m_scheduledFuture.cancel(true);
-	    if(m_sanity != null){
-	    	m_sanity.cancel(true);
-	    }
-		return true;
-	}
+    public boolean stop() {
+        m_heartbeat.cancel(true);
+        m_scheduledFuture.cancel(true);
+        if(m_sanity != null){
+            m_sanity.cancel(true);
+        }
+        return true;
+    }
 
-	public void run() {
-	    if (s_logger.isInfoEnabled()) {
-	        s_logger.info("starting usage job...");
-	    }
+    public void run() {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("starting usage job...");
+        }
 
-	    // how about we update the job exec time when the job starts???
-	    long execTime = m_jobExecTime.getTimeInMillis();
-	    long now = System.currentTimeMillis() + 2000; // 2 second buffer since jobs can run a little early (though usually just by milliseconds)
+        // how about we update the job exec time when the job starts???
+        long execTime = m_jobExecTime.getTimeInMillis();
+        long now = System.currentTimeMillis() + 2000; // 2 second buffer since jobs can run a little early (though usually just by milliseconds)
 
-	    if (execTime < now) {
-	        // if exec time is in the past, calculate the next time the job will execute...if this is a one-off job that is a result
-	        // of scheduleParse() then don't update the next exec time...
-	        m_jobExecTime.add(Calendar.MINUTE, m_aggregationDuration);
-	    }
+        if (execTime < now) {
+            // if exec time is in the past, calculate the next time the job will execute...if this is a one-off job that is a result
+            // of scheduleParse() then don't update the next exec time...
+            m_jobExecTime.add(Calendar.MINUTE, m_aggregationDuration);
+        }
 
-	    UsageJobVO job = m_usageJobDao.isOwner(m_hostname, m_pid);
-	    if (job != null) {
-	        // FIXME: we really need to do a better job of not missing any events...so we should some how
-	        //        keep track of the last time usage was run, then go from there...
-	        // For executing the job, we treat hourly and daily as special time ranges, using the previous full hour or the previous
-	        // full day.  Otherwise we just subtract off the aggregation range from the current time and use that as start date with
-	        // current time as end date.
-	        Calendar cal = Calendar.getInstance(m_usageTimezone);
-	        cal.setTime(new Date());
-	        long startDate = 0;
-	        long endDate = 0;
-	        if (m_aggregationDuration == DAILY_TIME) {
-	            cal.roll(Calendar.DAY_OF_YEAR, false);
-	            cal.set(Calendar.HOUR_OF_DAY, 0);
-	            cal.set(Calendar.MINUTE, 0);
-	            cal.set(Calendar.SECOND, 0);
-	            cal.set(Calendar.MILLISECOND, 0);
-	            startDate = cal.getTime().getTime();
+        UsageJobVO job = m_usageJobDao.isOwner(m_hostname, m_pid);
+        if (job != null) {
+            // FIXME: we really need to do a better job of not missing any events...so we should some how
+            //        keep track of the last time usage was run, then go from there...
+            // For executing the job, we treat hourly and daily as special time ranges, using the previous full hour or the previous
+            // full day.  Otherwise we just subtract off the aggregation range from the current time and use that as start date with
+            // current time as end date.
+            Calendar cal = Calendar.getInstance(m_usageTimezone);
+            cal.setTime(new Date());
+            long startDate = 0;
+            long endDate = 0;
+            if (m_aggregationDuration == DAILY_TIME) {
+                cal.roll(Calendar.DAY_OF_YEAR, false);
+                cal.set(Calendar.HOUR_OF_DAY, 0);
+                cal.set(Calendar.MINUTE, 0);
+                cal.set(Calendar.SECOND, 0);
+                cal.set(Calendar.MILLISECOND, 0);
+                startDate = cal.getTime().getTime();
 
-	            cal.roll(Calendar.DAY_OF_YEAR, true);
-	            cal.add(Calendar.MILLISECOND, -1);
-	            endDate = cal.getTime().getTime();
-	        } else if (m_aggregationDuration == HOURLY_TIME) {
-	            cal.roll(Calendar.HOUR_OF_DAY, false);
-	            cal.set(Calendar.MINUTE, 0);
-	            cal.set(Calendar.SECOND, 0);
-	            cal.set(Calendar.MILLISECOND, 0);
-	            startDate = cal.getTime().getTime();
+                cal.roll(Calendar.DAY_OF_YEAR, true);
+                cal.add(Calendar.MILLISECOND, -1);
+                endDate = cal.getTime().getTime();
+            } else if (m_aggregationDuration == HOURLY_TIME) {
+                cal.roll(Calendar.HOUR_OF_DAY, false);
+                cal.set(Calendar.MINUTE, 0);
+                cal.set(Calendar.SECOND, 0);
+                cal.set(Calendar.MILLISECOND, 0);
+                startDate = cal.getTime().getTime();
 
-	            cal.roll(Calendar.HOUR_OF_DAY, true);
-	            cal.add(Calendar.MILLISECOND, -1);
-	            endDate = cal.getTime().getTime();
-	        } else {
-	            endDate = cal.getTime().getTime(); // current time
-	            cal.add(Calendar.MINUTE, -1*m_aggregationDuration);
-	            startDate = cal.getTime().getTime();
-	        }
+                cal.roll(Calendar.HOUR_OF_DAY, true);
+                cal.add(Calendar.MILLISECOND, -1);
+                endDate = cal.getTime().getTime();
+            } else {
+                endDate = cal.getTime().getTime(); // current time
+                cal.add(Calendar.MINUTE, -1*m_aggregationDuration);
+                startDate = cal.getTime().getTime();
+            }
 
-	        parse(job, startDate, endDate);
-	    } else {
-	        if (s_logger.isDebugEnabled()) {
-	            s_logger.debug("Not owner of usage job, skipping...");
-	        }
-	    }
+            parse(job, startDate, endDate);
+        } else {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Not owner of usage job, skipping...");
+            }
+        }
         if (s_logger.isInfoEnabled()) {
             s_logger.info("usage job complete");
         }
-	}
+    }
 
     public void scheduleParse() {
         if (s_logger.isDebugEnabled()) {
@@ -347,12 +347,12 @@ public class UsageManagerImpl implements UsageManager, Runnable {
         m_executor.schedule(this, 0, TimeUnit.MILLISECONDS);
     }
 
-	public void parse(UsageJobVO job, long startDateMillis, long endDateMillis) {
+    public void parse(UsageJobVO job, long startDateMillis, long endDateMillis) {
         // TODO: Shouldn't we also allow parsing by the type of usage?
 
-	    boolean success = false;
-	    long timeStart = System.currentTimeMillis();
-	    long deleteOldStatsTimeMillis = 0L;
+        boolean success = false;
+        long timeStart = System.currentTimeMillis();
+        long deleteOldStatsTimeMillis = 0L;
         try {
             if ((endDateMillis == 0) || (endDateMillis > timeStart)) {
                 endDateMillis = timeStart;
@@ -532,7 +532,7 @@ public class UsageManagerImpl implements UsageManager, Runnable {
                 // Keep track of user stats for an account, across all of its public IPs
                 Map<String, UserStatisticsVO> aggregatedStats = new HashMap<String, UserStatisticsVO>();
                 int startIndex = 0;
-                do {                	
+                do {                    
                     userStats = m_userStatsDao.listActiveAndRecentlyDeleted(recentlyDeletedDate, startIndex, 500);
                     
                     if (userStats != null) {                        
@@ -557,11 +557,11 @@ public class UsageManagerImpl implements UsageManager, Runnable {
                 // loop over the user stats, create delta entries in the usage_network helper table
                 int numAcctsProcessed = 0;
                 for (String key : aggregatedStats.keySet()) {
-                	UsageNetworkVO currentNetworkStats = null;
+                    UsageNetworkVO currentNetworkStats = null;
                     if (networkStats != null) {
                         currentNetworkStats = networkStats.get(key);
                     }
-                	
+                    
                     createNetworkHelperEntry(aggregatedStats.get(key), currentNetworkStats, endDateMillis);
                     numAcctsProcessed++;
                 }                                
@@ -684,15 +684,15 @@ public class UsageManagerImpl implements UsageManager, Runnable {
                 swap.close();
                 
             }
-		} catch (Exception e) {
-			s_logger.error("Usage Manager error", e);
-		}
-	}
-	
-	private boolean parseHelperTables(AccountVO account, Date currentStartDate, Date currentEndDate){
-	    boolean parsed = false;
+        } catch (Exception e) {
+            s_logger.error("Usage Manager error", e);
+        }
+    }
+    
+    private boolean parseHelperTables(AccountVO account, Date currentStartDate, Date currentEndDate){
+        boolean parsed = false;
 
-	    parsed = VMInstanceUsageParser.parse(account, currentStartDate, currentEndDate);
+        parsed = VMInstanceUsageParser.parse(account, currentStartDate, currentEndDate);
         if (s_logger.isDebugEnabled()) {
             if (!parsed) {
                 s_logger.debug("vm usage instances successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
@@ -761,25 +761,25 @@ public class UsageManagerImpl implements UsageManager, Runnable {
             }
         }
         return parsed;
-	}
+    }
 
-	private void createHelperRecord(UsageEventVO event) {
-	    String eventType = event.getType();
-	    if (isVMEvent(eventType)) {
-	        createVMHelperEvent(event);
-	    } else if (isIPEvent(eventType)) {
-	        createIPHelperEvent(event);
-	    } else if (isVolumeEvent(eventType)) {
-	        createVolumeHelperEvent(event);
-	    } else if (isTemplateEvent(eventType)) {
-	        createTemplateHelperEvent(event);
-	    } else if (isISOEvent(eventType)) {
-	        createISOHelperEvent(event);
-	    } else if (isSnapshotEvent(eventType)) {
+    private void createHelperRecord(UsageEventVO event) {
+        String eventType = event.getType();
+        if (isVMEvent(eventType)) {
+            createVMHelperEvent(event);
+        } else if (isIPEvent(eventType)) {
+            createIPHelperEvent(event);
+        } else if (isVolumeEvent(eventType)) {
+            createVolumeHelperEvent(event);
+        } else if (isTemplateEvent(eventType)) {
+            createTemplateHelperEvent(event);
+        } else if (isISOEvent(eventType)) {
+            createISOHelperEvent(event);
+        } else if (isSnapshotEvent(eventType)) {
             createSnapshotHelperEvent(event);
-	    } else if (isLoadBalancerEvent(eventType)) {
-	        createLoadBalancerHelperEvent(event);
-	    } else if (isPortForwardingEvent(eventType)) {
+        } else if (isLoadBalancerEvent(eventType)) {
+            createLoadBalancerHelperEvent(event);
+        } else if (isPortForwardingEvent(eventType)) {
             createPortForwardingHelperEvent(event);
         } else if (isNetworkOfferingEvent(eventType)) {
             createNetworkOfferingEvent(event);
@@ -788,12 +788,12 @@ public class UsageManagerImpl implements UsageManager, Runnable {
         } else if (isSecurityGroupEvent(eventType)) {
             createSecurityGroupEvent(event);
         }
-	}
+    }
 
-	private boolean isVMEvent(String eventType) {
-	    if (eventType == null) return false;
-	    return eventType.startsWith("VM.");
-	}
+    private boolean isVMEvent(String eventType) {
+        if (eventType == null) return false;
+        return eventType.startsWith("VM.");
+    }
 
     private boolean isIPEvent(String eventType) {
         if (eventType == null) return false;
@@ -1085,21 +1085,21 @@ public class UsageManagerImpl implements UsageManager, Runnable {
             UsageVolumeVO volumeVO = new UsageVolumeVO(volId, zoneId, event.getAccountId(), acct.getDomainId(), doId, templateId, size, event.getCreateDate(), null);
             m_usageVolumeDao.persist(volumeVO);
         } else if (EventTypes.EVENT_VOLUME_DELETE.equals(event.getType())) {
-        	SearchCriteria<UsageVolumeVO> sc = m_usageVolumeDao.createSearchCriteria();
-        	sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
-        	sc.addAnd("id", SearchCriteria.Op.EQ, volId);
-        	sc.addAnd("deleted", SearchCriteria.Op.NULL);
-        	List<UsageVolumeVO> volumesVOs = m_usageVolumeDao.search(sc, null);
-        	if (volumesVOs.size() > 1) {
-        		s_logger.warn("More that one usage entry for volume: " + volId + " assigned to account: " + event.getAccountId() + "; marking them all as deleted...");
-        	}
-        	for (UsageVolumeVO volumesVO : volumesVOs) {
-        		if (s_logger.isDebugEnabled()) {
-        			s_logger.debug("deleting volume: " + volumesVO.getId() + " from account: " + volumesVO.getAccountId());
-        		}
-        		volumesVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
-        		m_usageVolumeDao.update(volumesVO);
-        	}
+            SearchCriteria<UsageVolumeVO> sc = m_usageVolumeDao.createSearchCriteria();
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
+            sc.addAnd("id", SearchCriteria.Op.EQ, volId);
+            sc.addAnd("deleted", SearchCriteria.Op.NULL);
+            List<UsageVolumeVO> volumesVOs = m_usageVolumeDao.search(sc, null);
+            if (volumesVOs.size() > 1) {
+                s_logger.warn("More that one usage entry for volume: " + volId + " assigned to account: " + event.getAccountId() + "; marking them all as deleted...");
+            }
+            for (UsageVolumeVO volumesVO : volumesVOs) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("deleting volume: " + volumesVO.getId() + " from account: " + volumesVO.getAccountId());
+                }
+                volumesVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
+                m_usageVolumeDao.update(volumesVO);
+            }
         }
     }
 
@@ -1129,74 +1129,74 @@ public class UsageManagerImpl implements UsageManager, Runnable {
             }
             List<UsageStorageVO> storageVOs = m_usageStorageDao.listByIdAndZone(event.getAccountId(), templateId, StorageTypes.TEMPLATE, zoneId);
             if (storageVOs.size() > 0) {
-        		s_logger.warn("Usage entry for Template: " + templateId + " assigned to account: " + event.getAccountId() + "already exists in zone "+zoneId);
-        		return;
-        	}
+                s_logger.warn("Usage entry for Template: " + templateId + " assigned to account: " + event.getAccountId() + "already exists in zone "+zoneId);
+                return;
+            }
             Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
             UsageStorageVO storageVO = new UsageStorageVO(templateId, zoneId, event.getAccountId(), acct.getDomainId(), StorageTypes.TEMPLATE, event.getTemplateId(),
-            							templateSize, event.getCreateDate(), null);
+                                        templateSize, event.getCreateDate(), null);
             m_usageStorageDao.persist(storageVO);
         } else if (EventTypes.EVENT_TEMPLATE_DELETE.equals(event.getType())) {
             List<UsageStorageVO> storageVOs;
             if(zoneId != -1L){
-        	    storageVOs = m_usageStorageDao.listByIdAndZone(event.getAccountId(), templateId, StorageTypes.TEMPLATE, zoneId);
+                storageVOs = m_usageStorageDao.listByIdAndZone(event.getAccountId(), templateId, StorageTypes.TEMPLATE, zoneId);
             } else {
                 storageVOs = m_usageStorageDao.listById(event.getAccountId(), templateId, StorageTypes.TEMPLATE);
             }
-        	if (storageVOs.size() > 1) {
-        		s_logger.warn("More that one usage entry for storage: " + templateId + " assigned to account: " + event.getAccountId() + "; marking them all as deleted...");
-        	}
-        	for (UsageStorageVO storageVO : storageVOs) {
-        		if (s_logger.isDebugEnabled()) {
-        			s_logger.debug("deleting template: " + storageVO.getId() + " from account: " + storageVO.getAccountId());
-        		}
-        		storageVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
-        		m_usageStorageDao.update(storageVO);
-        	}
+            if (storageVOs.size() > 1) {
+                s_logger.warn("More that one usage entry for storage: " + templateId + " assigned to account: " + event.getAccountId() + "; marking them all as deleted...");
+            }
+            for (UsageStorageVO storageVO : storageVOs) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("deleting template: " + storageVO.getId() + " from account: " + storageVO.getAccountId());
+                }
+                storageVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
+                m_usageStorageDao.update(storageVO);
+            }
         }
     }
     
     private void createISOHelperEvent(UsageEventVO event) {
-    	long isoSize = -1L;
+        long isoSize = -1L;
 
-    	long isoId = event.getResourceId();
-    	long zoneId = event.getZoneId();
-    	if (EventTypes.EVENT_ISO_CREATE.equals(event.getType()) || EventTypes.EVENT_ISO_COPY.equals(event.getType())) {
-    	    isoSize = event.getSize();
-    	}
+        long isoId = event.getResourceId();
+        long zoneId = event.getZoneId();
+        if (EventTypes.EVENT_ISO_CREATE.equals(event.getType()) || EventTypes.EVENT_ISO_COPY.equals(event.getType())) {
+            isoSize = event.getSize();
+        }
 
-    	if (EventTypes.EVENT_ISO_CREATE.equals(event.getType()) || EventTypes.EVENT_ISO_COPY.equals(event.getType())) {
-    		if (s_logger.isDebugEnabled()) {
-    			s_logger.debug("create iso with id : " + isoId + " for account: " + event.getAccountId());
-    		}
-    		 List<UsageStorageVO> storageVOs = m_usageStorageDao.listByIdAndZone(event.getAccountId(), isoId, StorageTypes.ISO, zoneId);
+        if (EventTypes.EVENT_ISO_CREATE.equals(event.getType()) || EventTypes.EVENT_ISO_COPY.equals(event.getType())) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("create iso with id : " + isoId + " for account: " + event.getAccountId());
+            }
+             List<UsageStorageVO> storageVOs = m_usageStorageDao.listByIdAndZone(event.getAccountId(), isoId, StorageTypes.ISO, zoneId);
              if (storageVOs.size() > 0) {
-         		s_logger.warn("Usage entry for ISO: " + isoId + " assigned to account: " + event.getAccountId() + "already exists in zone "+zoneId);
-         		return;
-         	}
-    		Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
-    		UsageStorageVO storageVO = new UsageStorageVO( isoId, zoneId, event.getAccountId(), acct.getDomainId(), StorageTypes.ISO, null,
-    				isoSize, event.getCreateDate(), null);
-    		m_usageStorageDao.persist(storageVO);
-    	} else if (EventTypes.EVENT_ISO_DELETE.equals(event.getType())) {
-    	    List<UsageStorageVO> storageVOs;
+                 s_logger.warn("Usage entry for ISO: " + isoId + " assigned to account: " + event.getAccountId() + "already exists in zone "+zoneId);
+                 return;
+             }
+            Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+            UsageStorageVO storageVO = new UsageStorageVO( isoId, zoneId, event.getAccountId(), acct.getDomainId(), StorageTypes.ISO, null,
+                    isoSize, event.getCreateDate(), null);
+            m_usageStorageDao.persist(storageVO);
+        } else if (EventTypes.EVENT_ISO_DELETE.equals(event.getType())) {
+            List<UsageStorageVO> storageVOs;
             if(zoneId != -1L){
                 storageVOs = m_usageStorageDao.listByIdAndZone(event.getAccountId(), isoId, StorageTypes.ISO, zoneId);
             } else {
                 storageVOs = m_usageStorageDao.listById(event.getAccountId(), isoId, StorageTypes.ISO);
             }
             
-    		if (storageVOs.size() > 1) {
-    			s_logger.warn("More that one usage entry for storage: " + isoId + " assigned to account: " + event.getAccountId() + "; marking them all as deleted...");
-    		}
-    		for (UsageStorageVO storageVO : storageVOs) {
-    			if (s_logger.isDebugEnabled()) {
-    				s_logger.debug("deleting iso: " + storageVO.getId() + " from account: " + storageVO.getAccountId());
-    			}
-    			storageVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
-    			m_usageStorageDao.update(storageVO);
-    		}
-    	}
+            if (storageVOs.size() > 1) {
+                s_logger.warn("More that one usage entry for storage: " + isoId + " assigned to account: " + event.getAccountId() + "; marking them all as deleted...");
+            }
+            for (UsageStorageVO storageVO : storageVOs) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("deleting iso: " + storageVO.getId() + " from account: " + storageVO.getAccountId());
+                }
+                storageVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
+                m_usageStorageDao.update(storageVO);
+            }
+        }
     }
     
     private void createSnapshotHelperEvent(UsageEventVO event) {
@@ -1234,36 +1234,36 @@ public class UsageManagerImpl implements UsageManager, Runnable {
     
     private void createLoadBalancerHelperEvent(UsageEventVO event) {
 
-    	long zoneId = -1L;
+        long zoneId = -1L;
 
-    	long id = event.getResourceId();
+        long id = event.getResourceId();
 
-    	if (EventTypes.EVENT_LOAD_BALANCER_CREATE.equals(event.getType())) {
-    		if (s_logger.isDebugEnabled()) {
-    			s_logger.debug("Creating load balancer : " + id + " for account: " + event.getAccountId());
-    		}
-    		zoneId = event.getZoneId();
-    		Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
-    		UsageLoadBalancerPolicyVO lbVO = new UsageLoadBalancerPolicyVO(id, zoneId, event.getAccountId(), acct.getDomainId(),
-    											event.getCreateDate(), null);
-    		m_usageLoadBalancerPolicyDao.persist(lbVO);
-    	} else if (EventTypes.EVENT_LOAD_BALANCER_DELETE.equals(event.getType())) {
-    		SearchCriteria<UsageLoadBalancerPolicyVO> sc = m_usageLoadBalancerPolicyDao.createSearchCriteria();
-    		sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
-    		sc.addAnd("id", SearchCriteria.Op.EQ, id);
-    		sc.addAnd("deleted", SearchCriteria.Op.NULL);
-    		List<UsageLoadBalancerPolicyVO> lbVOs = m_usageLoadBalancerPolicyDao.search(sc, null);
-    		if (lbVOs.size() > 1) {
-    			s_logger.warn("More that one usage entry for load balancer policy: " + id + " assigned to account: " + event.getAccountId() + "; marking them all as deleted...");
-    		}
-    		for (UsageLoadBalancerPolicyVO lbVO : lbVOs) {
-    			if (s_logger.isDebugEnabled()) {
-    				s_logger.debug("deleting load balancer policy: " + lbVO.getId() + " from account: " + lbVO.getAccountId());
-    			}
-    			lbVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
-    			m_usageLoadBalancerPolicyDao.update(lbVO);
-    		}
-    	}
+        if (EventTypes.EVENT_LOAD_BALANCER_CREATE.equals(event.getType())) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Creating load balancer : " + id + " for account: " + event.getAccountId());
+            }
+            zoneId = event.getZoneId();
+            Account acct = m_accountDao.findByIdIncludingRemoved(event.getAccountId());
+            UsageLoadBalancerPolicyVO lbVO = new UsageLoadBalancerPolicyVO(id, zoneId, event.getAccountId(), acct.getDomainId(),
+                                                event.getCreateDate(), null);
+            m_usageLoadBalancerPolicyDao.persist(lbVO);
+        } else if (EventTypes.EVENT_LOAD_BALANCER_DELETE.equals(event.getType())) {
+            SearchCriteria<UsageLoadBalancerPolicyVO> sc = m_usageLoadBalancerPolicyDao.createSearchCriteria();
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
+            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.addAnd("deleted", SearchCriteria.Op.NULL);
+            List<UsageLoadBalancerPolicyVO> lbVOs = m_usageLoadBalancerPolicyDao.search(sc, null);
+            if (lbVOs.size() > 1) {
+                s_logger.warn("More that one usage entry for load balancer policy: " + id + " assigned to account: " + event.getAccountId() + "; marking them all as deleted...");
+            }
+            for (UsageLoadBalancerPolicyVO lbVO : lbVOs) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("deleting load balancer policy: " + lbVO.getId() + " from account: " + lbVO.getAccountId());
+                }
+                lbVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
+                m_usageLoadBalancerPolicyDao.update(lbVO);
+            }
+        }
     }
     
     private void createPortForwardingHelperEvent(UsageEventVO event) {
