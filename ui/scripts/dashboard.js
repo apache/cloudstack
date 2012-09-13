@@ -253,7 +253,7 @@
             $.ajax({
               url: createURL('listCapacity'),
               data: {
-                fetchLatest: true,
+                fetchLatest: false,
                 sortBy: 'usage',
                 page: 0,
                 pagesize: 8
