@@ -5,50 +5,24 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
-    
-    http://www.apache.org/licenses/LICENSE-2.0
-    
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
 -->
 
 <section id="primary-storage-add">
-	<title>Adding Primary Storage</title>
-    <note><para>Ensure that nothing stored on the server. Adding the server to &PRODUCT; will destroy any existing data.</para></note>
-    <para>When you create a new zone, the first primary storage is added as part of that procedure. You can add primary storage servers at any time, such as when adding a new cluster or adding more servers to an existing cluster.</para>
-    <orderedlist>
-        <listitem><para>Log in to the &PRODUCT; UI.</para></listitem>
-        <listitem><para>In the left navigation, choose Infrastructure. In Zones, click View More, then click the zone in which you want to add the primary storage.</para></listitem>
-        <listitem><para>Click the Compute tab.</para></listitem>
-        <listitem><para>In the Primary Storage node of the diagram, click View All.</para></listitem>
-        <listitem><para>Click Add Primary Storage.</para></listitem>
-        <listitem><para>Provide the following information in the dialog. The information required varies depending on your choice in Protocol.</para>
-            <itemizedlist>
-                <listitem><para>Pod. The pod for the storage device.</para></listitem>
-                <listitem><para>Cluster. The cluster for the storage device.</para></listitem>
-                <listitem><para>Name. The name of the storage device</para></listitem>
-                <listitem><para>Protocol. For XenServer, choose either NFS, iSCSI, or PreSetup.  For KVM, choose NFS or SharedMountPoint.  For vSphere choose either VMFS (iSCSI or FiberChannel) or NFS</para></listitem>
-                <listitem><para>Server (for NFS, iSCSI, or PreSetup). The IP address or DNS name of the storage device</para></listitem>
-                <listitem><para>Server (for VMFS). The IP address or DNS name of the vCenter server.</para></listitem>
-                <listitem><para>Path (for NFS). In NFS this is the exported path from the server.</para></listitem>
-                <listitem><para>Path (for VMFS).  In vSphere this is a combination of the datacenter name and the datastore name.  The format is "/" datacenter name "/" datastore name.  For example, "/cloud.dc.VM/cluster1datastore".</para></listitem>
-                <listitem><para>Path (for SharedMountPoint).  With KVM this is the path on each host that is where this primary storage is mounted.  For example, "/mnt/primary".</para></listitem>
-                <listitem><para>SR Name-Label (for PreSetup).  Enter the name-label of the SR that has been set up outside &PRODUCT;.</para></listitem>
-                <listitem><para>Target IQN (for iSCSI). In iSCSI this is the IQN of the target. For example, iqn.1986-03.com.sun:02:01ec9bb549-1271378984</para></listitem>
-                <listitem><para>Lun # (for iSCSI). In iSCSI this is the LUN number. For example, 3.</para></listitem>
-                <listitem><para>Tags (optional).  The comma-separated list of tags for this storage device.  It should be an equivalent set or superset of the tags on your disk offerings</para></listitem>
-            </itemizedlist>
-            <para>The tag sets on primary storage across clusters in a Zone must be identical.  For example, if cluster A provides primary storage that has tags T1 and T2, all other clusters in the Zone must also provide primary storage that has tags T1 and T2.</para></listitem>
-        <listitem><para>Click OK.</para></listitem>     
-    </orderedlist>
+    <title>Adding Primary Storage</title>
+    <para>TODO</para>
 </section>
