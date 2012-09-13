@@ -175,6 +175,7 @@
 
     //Fetch Latest action
     $dashboard.find('.fetch-latest').click(function() {
+      window.fetchLatestflag = 1;
       var $browser = $('#browser .container');
 
       if ($(this).hasClass('fetch-latest')) $('#navigation li.dashboard').click();
