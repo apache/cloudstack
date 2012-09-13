@@ -293,5 +293,4 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, S
 
     public Map<String, String> getDetails();
 
-    boolean canPlugNics();
 }

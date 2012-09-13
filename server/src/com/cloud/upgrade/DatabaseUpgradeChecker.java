@@ -131,7 +131,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
         _upgradeMap.put("2.2.8", new DbUpgrade[] { new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(),
                 new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30()
-                , new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40() });
+        , new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40() });
 
         _upgradeMap.put("2.2.9", new DbUpgrade[] { new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212(),
                 new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(),
@@ -335,8 +335,8 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 }
 
                 if ( currentVersion == null )
-                	return;
-                
+                    return;
+
                 s_logger.info("DB version = " + dbVersion + " Code Version = " + currentVersion);
 
                 if (Version.compare(Version.trimToPatch(dbVersion), Version.trimToPatch(currentVersion)) > 0) {

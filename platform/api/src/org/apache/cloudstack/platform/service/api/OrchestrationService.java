@@ -22,10 +22,11 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.platform.cloud.entity.api.VirtualMachineEntity;
+import org.apache.cloudstack.platform.cloud.entity.api.VolumeEntity;
+
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachine;
 
 public interface OrchestrationService {
     /**
@@ -43,7 +44,7 @@ public interface OrchestrationService {
      * @param details extra details to store for the VM
      * @return VirtualMachine
      */
-    VirtualMachine create(String name, 
+    VirtualMachineEntity create(String name, 
             String template,
             String hostName,
             int cpu, 
@@ -55,7 +56,7 @@ public interface OrchestrationService {
             Map<String, String> details,
             String owner);
 
-    VirtualMachine createFromScratch(String uuid,
+    VirtualMachineEntity createFromScratch(String uuid,
             String iso,
             String os,
             String hypervisor,
@@ -77,8 +78,6 @@ public interface OrchestrationService {
      */
     String reserve(String vm, String planner, Long until) throws InsufficientCapacityException;
 
-    String cancel(String reservationId);
-
     /**
      * Deploy the reservation
      * @param reservationId  reservation id during the deployment
@@ -87,29 +86,13 @@ public interface OrchestrationService {
      */
     String deploy(String reservationId);
 
-    /**
-     * Stops the vm
-     * @param vm vm
-     * @throws CloudRuntimeException if error
-     */
-    String stop(String vm);
-
-    /**
-     * destroys the vm
-     * @param vm vm
-     * @throws CloudRuntimeException if error
-     */
-    void destroy(String vm);
-
     void joinNetwork(String network1, String network2);
-
-    void attachVolume(String vm, String vol);
 
     void createNetwork();
 
     void destroyNetwork();
 
-    void createVolume();
+    VolumeEntity createVolume();
 
     void registerTemplate(String name, URL path, String os, Hypervisor hypervisor);
 }
