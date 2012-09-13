@@ -45,12 +45,13 @@ Description: CloudStack server library
  The CloudStack server libraries provide a set of Java classes used
  in the CloudStack management server.
 
-Package: cloud-agent-scripts
+Package: cloud-scripts
+Replaces: cloud-agent-scripts
 Architecture: any
 Depends: openjdk-6-jre, python, bash, bzip2, gzip, unzip, nfs-common, openssh-client
-Description: CloudStack agent scripts
- This package contains a number of scripts needed for the CloudStack Agent on KVM
- HyperVisor hosts. The CloudStack Agent depends on this package.
+Description: CloudStack scripts
+ This package contains a number of scripts needed for the CloudStack Agent and Management Server.
+ Both the CloudStack Agent and Management server depend on this package
 
 Package: cloud-core
 Architecture: any
@@ -89,7 +90,7 @@ Description: CloudStack agent libraries
 
 Package: cloud-agent
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-agent-scripts (= ${source:Version}), libvirt0, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, uuid-runtime, rsync, grep, iproute, ebtables, vlan, libcommons-httpclient-java, libservlet2.5-java, liblog4j1.2-java (>= 1.2.16), libjna-java, wget, jsvc, lsb-base (>= 3.2)
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), python, cloud-python (= ${source:Version}), cloud-agent-libs (= ${source:Version}), cloud-scripts (= ${source:Version}), libvirt0, sysvinit-utils, chkconfig, qemu-kvm, libvirt-bin, uuid-runtime, rsync, grep, iproute, ebtables, vlan, libcommons-httpclient-java, libservlet2.5-java, liblog4j1.2-java (>= 1.2.16), libjna-java, wget, jsvc, lsb-base (>= 3.2)
 Description: CloudStack agent
  The CloudStack agent is in charge of managing shared computing resources in
  a CloudStack powered cloud.  Install this package if this computer

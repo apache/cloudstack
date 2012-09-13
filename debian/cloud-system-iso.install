@@ -15,4 +15,4 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/usr/lib/cloud/agent/vms/systemvm.iso
+/usr/lib/cloud/common/vms/systemvm.iso

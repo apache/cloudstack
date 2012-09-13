@@ -201,9 +201,9 @@ def build_patches ():
 def build_systemvm_patch ():
 	if bld.env.DISTRO not in ["Windows","Mac"]:
 		# patch creation
-		bld.install_files ("${AGENTLIBDIR}/vms", "%s/systemvm.zip" % distdir)
+		bld.install_files ("${COMMONLIBDIR}/vms", "%s/systemvm.zip" % distdir)
 		# ISO creation
-		bld.install_as("${AGENTLIBDIR}/vms/systemvm.iso", "%s/systemvm.iso" % distdir)
+		bld.install_as("${COMMONLIBDIR}/vms/systemvm.iso", "%s/systemvm.iso" % distdir)
 
 def build_systemvm_iso ():
 	if buildpremium:
@@ -263,7 +263,7 @@ def build_dirs_symlinks ():
 
 def build_scripts ():
 	start_path = bld.path.find_dir ("scripts")
-	bld.substitute('**',"${AGENTLIBDIR}/scripts",chmod=0755, cwd=start_path)
+	bld.substitute('**',"${COMMONLIBDIR}/scripts",chmod=0755, cwd=start_path)
 
 def build_bin_exec_dirs ():
 	#bld.install_files_filtered("${LIBEXECDIR}","*/libexec/* cloudstack-proprietary/*/libexec/*",chmod=0755)
@@ -404,7 +404,7 @@ def build_xml_api_description ():
 
 def build_ovm():
 	start_path = bld.path.find_dir("plugins/hypervisors/ovm/scripts")
-	bld.substitute('**',"${AGENTLIBDIR}/scripts",chmod=0755, cwd=start_path)
+	bld.substitute('**',"${COMMONLIBDIR}/scripts",chmod=0755, cwd=start_path)
 
 def build_test():
 	start_path = bld.path.find_dir("test/scripts")

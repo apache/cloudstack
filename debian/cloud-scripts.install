@@ -15,3 +15,13 @@
 # specific language governing permissions and limitations
 # under the License.
 
+/usr/lib/cloud/common/scripts/installer/*
+/usr/lib/cloud/common/scripts/network/*
+/usr/lib/cloud/common/scripts/storage/*
+/usr/lib/cloud/common/scripts/util/*
+/usr/lib/cloud/common/scripts/vm/network/*
+/usr/lib/cloud/common/scripts/vm/systemvm/*
+/usr/lib/cloud/common/scripts/vm/pingtest.sh
+/usr/lib/cloud/common/scripts/vm/hypervisor/kvm/*
+/usr/lib/cloud/common/scripts/vm/hypervisor/versions.sh
+/usr/lib/cloud/common/scripts/vm/hypervisor/xenserver/*

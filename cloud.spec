@@ -81,8 +81,8 @@ Group:     System Environment/Libraries
 %description server
 The CloudStack server libraries provide a set of Java classes for CloudStack.
 
-%package agent-scripts
-Summary:   CloudStack agent scripts
+%package scripts
+Summary:   CloudStack scripts
 # FIXME nuke the archdependency
 Requires: python
 Requires: bash
@@ -95,13 +95,10 @@ Requires: nfs-utils
 Requires: wget
 # there is a fsimage.so in the source code, which adds xen-libs as a dependence, needs to supress it, as rhel doesn't have this pacakge
 AutoReqProv: no
-Obsoletes: vmops-agent-scripts < %{version}-%{release}
+Obsoletes: cloud-agent-scripts < %{version}-%{release}
 Group:     System Environment/Libraries
-%description agent-scripts
-The CloudStack agent is in charge of managing shared computing resources in
-a KVM-powered cloud.  Install this package if this computer 
-will participate in your cloud -- this is a requirement for the CloudStack KVM
-agent.
+%description scripts
+This package contains common scripts used by the Agent and Management server
 
 %package python
 Summary:   CloudStack Python library
@@ -143,8 +140,7 @@ Requires: java >= 1.6.0
 Requires: %{name}-deps = %{version}, %{name}-utils = %{version}, %{name}-server = %{version}
 Requires: %{name}-client-ui = %{version}
 Requires: %{name}-setup = %{version}
-# reqs the agent-scripts package because of xenserver within the management server
-Requires: %{name}-agent-scripts = %{version}
+Requires: %{name}-scripts = %{version}
 Requires: %{name}-python = %{version}
 Requires: %{name}-aws-api = %{version}
 # for consoleproxy
@@ -209,7 +205,7 @@ Obsoletes: cloud-premium-agent < %{version}-%{release}
 Requires: java >= 1.6.0
 Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}
 Requires: %{name}-agent-libs = %{version}
-Requires: %{name}-agent-scripts = %{version}
+Requires: %{name}-scripts = %{version}
 Requires: python
 Requires: %{name}-python = %{version}
 Requires: commons-httpclient
@@ -376,10 +372,6 @@ else
     /sbin/service %{name}-usage condrestart >/dev/null 2>&1 || true
 fi
 
-%pre agent-scripts
-id %{name} > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
-     -r -s /bin/sh -d %{_sharedstatedir}/%{name}/management %{name}|| true
-
 %preun agent
 if [ "$1" == "0" ] ; then
     /sbin/chkconfig --del %{name}-agent  > /dev/null 2>&1 || true
@@ -454,12 +446,12 @@ fi
 %{_javadir}/%{name}-plugin-nicira-nvp.jar
 %config(noreplace) %{_sysconfdir}/%{name}/server/*
 
-%files agent-scripts
+%files scripts
 %defattr(-,root,root,-)
-%{_libdir}/%{name}/agent/scripts/*
-# maintain the following list in sync with files agent-scripts
-%{_libdir}/%{name}/agent/vms/systemvm.zip
-%{_libdir}/%{name}/agent/vms/systemvm.iso
+%{_libdir}/%{name}/common/scripts/*
+# maintain the following list in sync with files scripts
+%{_libdir}/%{name}/common/vms/systemvm.zip
+%{_libdir}/%{name}/common/vms/systemvm.iso
 
 
 %files deps
