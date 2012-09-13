@@ -272,29 +272,6 @@
     <tstamp>
       <format property="package.date" pattern="yyyy-MM-dd" />
     </tstamp>
-    <zip destfile="${publish.dir}/cloud-${company.major.version}.${company.minor.version}.${company.patch.version}.${build.number}-${package.date}.zip" duplicate="preserve">
-      <zipfileset dir="${dist.dir}" prefix="cloud-${company.major.version}.${company.minor.version}.${company.patch.version}.${build.number}-${package.date}" filemode="777">
-        <include name="deploy-agent.sh" />
-        <include name="deploy-server.sh" />
-      </zipfileset>
-      <zipfileset dir="${db.dist.dir}" prefix="cloud-${company.major.version}.${company.minor.version}.${company.patch.version}.${build.number}-${package.date}/db" filemode="777">
-        <include name="deploy-db.sh" />
-      </zipfileset>
-      <zipfileset dir="${db.dist.dir}" prefix="cloud-${company.major.version}.${company.minor.version}.${company.patch.version}.${build.number}-${package.date}/db">
-        <include name="log4j.properties" />
-        <include name="create-schema.sql" />
-        <include name="init-data.sql" />
-        <include name="create-index-fk.sql" />
-        <include name="server-setup.xml" />
-        <include name="create-database.sql" />
-        <include name="templates.sql" />
-      </zipfileset>
-      <zipfileset dir="${dist.dir}" prefix="cloud-${company.major.version}.${company.minor.version}.${company.patch.version}.${build.number}-${package.date}">
-        <include name="agent.zip" />
-        <include name="client.zip" />
-        <include name="docs.zip" />
-      </zipfileset>
-    </zip>
   </target>
 
   <target name="package-kvm" depends="package-agent">
