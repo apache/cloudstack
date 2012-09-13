@@ -81,6 +81,7 @@ public class Criteria {
     public static final String STORAGE_ID="storageid";
     public static final String TEMPLATE_ID = "templateid";
     public static final String ISO_ID = "isoid";
+    public static final String VPC_ID = "vpcId";
 
 	public Criteria(String orderBy, Boolean ascending, Long offset, Long limit) {
 		this.offset = offset;
