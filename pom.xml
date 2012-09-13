@@ -182,8 +182,8 @@
           <artifactId>apache-rat-plugin</artifactId>
           <version>0.8</version>
           <configuration>
-            <numUnapprovedLicenses>1</numUnapprovedLicenses>
-            <excludeSubProjects>false</excludeSubProjects>
+            <numUnapprovedLicenses>0</numUnapprovedLicenses>
+            <excludeSubProjects>true</excludeSubProjects>
             <excludes>
               <exclude>.git/**</exclude>
               <exclude>.gitignore</exclude>
@@ -261,6 +261,7 @@
               <exclude>patches/systemvm/debian/vpn/etc/xl2tpd/xl2tpd.conf</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/xl2tpd/xl2tpd.conf.orig</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.secrets</exclude>
+              <exclude>plugins/deployment-planners/user-dispersing/.settings/org.eclipse.jdt.core.prefs</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
               <exclude>tools/devcloud/devcloud.cfg</exclude>
               <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
@@ -289,15 +290,6 @@
               <exclude>waf</exclude>
             </excludes>
           </configuration>
-          <executions>
-            <execution>
-              <id>generate-rat-report</id>
-              <phase>verify</phase>
-              <goals>
-                <goal>check</goal>
-              </goals>
-            </execution>
-          </executions>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
