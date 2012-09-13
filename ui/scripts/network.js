@@ -909,7 +909,7 @@
                                       data.listvirtualmachinesresponse.virtualmachine : [],
                                     function(instance) {
                                       return $.inArray(instance.state, [
-                                        'Destroyed'
+                                        'Destroyed','Expunging'
                                       ]) == -1;
                                     }
                                   )
@@ -1477,7 +1477,7 @@
                                     data.listvirtualmachinesresponse.virtualmachine : [],
                                   function(instance) {
                                     return $.inArray(instance.state, [
-                                      'Destroyed'
+                                      'Destroyed','Expunging'
                                     ]) == -1;
                                   }
                                 )
@@ -2206,7 +2206,7 @@
                                 data.listvirtualmachinesresponse.virtualmachine ?
                                   data.listvirtualmachinesresponse.virtualmachine : [],
                                 function(instance) {
-                                  var isActiveState = $.inArray(instance.state, ['Destroyed']) == -1;
+                                  var isActiveState = $.inArray(instance.state, ['Destroyed','Expunging']) == -1;
                                   var notExisting = !$.grep(itemData, function(item) {
                                     return item.id == instance.id;
                                   }).length;
@@ -2702,7 +2702,7 @@
                                     data.listvirtualmachinesresponse.virtualmachine : [],
                                   function(instance) {
                                     return $.inArray(instance.state, [
-                                      'Destroyed'
+                                      'Destroyed','Expunging'
                                     ]) == -1;
                                   }
                                 )
