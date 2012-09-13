@@ -28,4 +28,4 @@
 /usr/share/java/cloud-user-authenticator-ldap.jar
 /usr/share/java/cloud-user-authenticator-md5.jar
 /usr/share/java/cloud-user-authenticator-plaintext.jar
-/usr/share/java/cloud-xen.jar
+/usr/share/java/cloud-plugin-hypervisor-xen.jar
