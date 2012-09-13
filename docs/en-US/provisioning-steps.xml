@@ -34,4 +34,5 @@
     <xi:include href="primary-storage-add.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="secondary-storage-add.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="initialize-and-test.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="citrix-xenserver-installation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>
