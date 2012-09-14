@@ -2745,14 +2745,16 @@
                       //'private-ports': {
                       privateport: {
                         edit: true,
-                        label: 'label.private.port'
+                        label: 'label.private.port',
                         //range: ['privateport', 'privateendport']  //Bug 13427 - Don't allow port forwarding ranges in the CreatePortForwardingRule API
+												range: ['privateport', 'privateendport']    //Bug 16344 (restore port range back) (http://bugs.cloudstack.org/browse/CS-16344)
                       },
                       //'public-ports': {
                       publicport: {
                         edit: true,
-                        label: 'label.public.port'
+                        label: 'label.public.port',
                         //range: ['publicport', 'publicendport']  //Bug 13427 - Don't allow port forwarding ranges in the CreatePortForwardingRule API
+												range: ['publicport', 'publicendport']    //Bug 16344 (restore port range back) (http://bugs.cloudstack.org/browse/CS-16344)
                       },
                       'protocol': {
                         label: 'label.protocol',
@@ -2775,25 +2777,28 @@
 
                     add: {
                       label: 'label.add.vm',
-                      action: function(args) {  
-												var data = {
-												  ipaddressid: args.context.ipAddresses[0].id,
-												  privateport: args.data.privateport,
-													publicport: args.data.publicport,
-													protocol: args.data.protocol,		
-													virtualmachineid: args.itemData[0].id,
-                          openfirewall: false													
-												};	
-													                        								
-												if('vpc' in args.context) { //from VPC section
-												  if(args.data.tier == null) {													  
-														args.response.error('Tier is required');
-													  return;
-													}			
+
+                      action: function(args) {
+                        var data = {
+                          ipaddressid: args.context.ipAddresses[0].id,
+                          privateport: args.data.privateport,
+													privateendport: args.data.privateendport,
+                          publicport: args.data.publicport,
+													publicendport: args.data.publicendport,
+                          protocol: args.data.protocol,
+                          virtualmachineid: args.itemData[0].id,
+                          openfirewall: false
+                        };
+
+                        if('vpc' in args.context) { //from VPC section
+                          if(args.data.tier == null) {
+                            args.response.error('Tier is required');
+                            return;
+                          }
                           $.extend(data, {
-                            networkid: args.data.tier		
-                          });	
-												}
+                            networkid: args.data.tier
+                          });
+                        }                        
 												else {  //from Guest Network section
 												  $.extend(data, {
                             networkid: args.context.networks[0].id
