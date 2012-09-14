@@ -441,7 +441,7 @@ fi
 %{_javadir}/%{name}-user-authenticator-ldap.jar
 %{_javadir}/%{name}-user-authenticator-md5.jar
 %{_javadir}/%{name}-user-authenticator-plaintext.jar
-%{_javadir}/%{name}-xen.jar
+%{_javadir}/%{name}-plugin-hypervisor-xen.jar
 %{_javadir}/%{name}-plugin-elb.jar
 %{_javadir}/%{name}-plugin-nicira-nvp.jar
 %config(noreplace) %{_sysconfdir}/%{name}/server/*

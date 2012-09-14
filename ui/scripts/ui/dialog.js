@@ -117,56 +117,52 @@
         var $value = $('<div>').addClass('value')
               .appendTo($formItem);
         var $input, $dependsOn, selectFn, selectArgs;
-        var dependsOn = $.isArray(field.dependsOn) ? field.dependsOn : [field.dependsOn] ; //now an array
+        var dependsOn = field.dependsOn;
 
         // Depends on fields
-        if (dependsOn.length) {
-          $.each(dependsOn, function(key, value){
-            var dependsOn = value;
+        if (field.dependsOn) {
+          $formItem.attr('depends-on', dependsOn);
+          $dependsOn = $form.find('input, select').filter(function() {
+            return $(this).attr('name') === dependsOn;
+          });
 
-            $formItem.attr('depends-on-'+value, dependsOn);
-            $dependsOn = $form.find('input, select').filter(function() {
-              return $(this).attr('name') === dependsOn;
+          if ($dependsOn.is('[type=checkbox]')) {
+            var isReverse = args.form.fields[dependsOn].isReverse;
+
+            // Checkbox
+            $dependsOn.bind('click', function(event) {
+              var $target = $(this);
+              var $dependent = $target.closest('form').find('[depends-on=\'' + dependsOn + '\']');
+
+              if (($target.is(':checked') && !isReverse) ||
+                  ($target.is(':unchecked') && isReverse)) {
+                $dependent.css('display', 'inline-block');
+                $dependent.each(function() {
+                  if ($(this).data('dialog-select-fn')) {
+                    $(this).data('dialog-select-fn')();
+                  }
+                });
+              } else if (($target.is(':unchecked') && !isReverse) ||
+                         ($target.is(':checked') && isReverse)) {
+                $dependent.hide();
+              }
+
+              $dependent.find('input[type=checkbox]').click();
+
+              if (!isReverse) {
+                $dependent.find('input[type=checkbox]').attr('checked', false);
+              } else {
+                $dependent.find('input[type=checkbox]').attr('checked', true);
+              }
+
+              return true;
             });
 
-            if ($dependsOn.is('[type=checkbox]')) {
-              var isReverse = args.form.fields[dependsOn].isReverse;
-
-              // Checkbox
-              $dependsOn.bind('click', function(event) {
-                var $target = $(this);
-                var $dependent = $target.closest('form').find('[depends-on-' + value + '=\'' + dependsOn + '\']');
-
-                if (($target.is(':checked') && !isReverse) ||
-                  ($target.is(':unchecked') && isReverse)) {
-                  $dependent.css('display', 'inline-block');
-                  $dependent.each(function() {
-                    if ($(this).find('select').data('dialog-select-fn')) {
-                      $(this).find('select').data('dialog-select-fn')();
-                    }
-                  });
-                } else if (($target.is(':unchecked') && !isReverse) ||
-                           ($target.is(':checked') && isReverse)) {
-                  $dependent.hide();
-                }
-
-                $dependent.find('input[type=checkbox]').click();
-
-                if (!isReverse) {
-                  $dependent.find('input[type=checkbox]').attr('checked', false);
-                } else {
-                  $dependent.find('input[type=checkbox]').attr('checked', true);
-                }
-
-                return true;
-              });
-
-              // Show fields by default if it is reverse checkbox
-              if (isReverse) {
-                $dependsOn.click();
-              }
-            };
-          });
+            // Show fields by default if it is reverse checkbox
+            if (isReverse) {
+              $dependsOn.click();
+            }
+          }
         }
 
         // Determine field type of input
@@ -211,35 +207,31 @@
           // Pass form item to provider for additional manipulation
           $.extend(selectArgs, { $select: $input });
 
-          if (dependsOn.length) {
-            $.each(dependsOn, function(key, value){
-              var dependsOn = value;
-
-              $dependsOn = $input.closest('form').find('input, select').filter(function() {
-                return $(this).attr('name') === dependsOn;
-              });
-
-              $dependsOn.bind('change', function(event) {
-                var $target = $(this);
-
-                if (!$dependsOn.is('select')) return true;
-
-                var dependsOnArgs = {};
-
-                $input.find('option').remove();
-
-                if (!$target.children().size()) return true;
-
-                dependsOnArgs[dependsOn] = $target.val();
-                selectFn($.extend(selectArgs, dependsOnArgs));
-
-                return true;
-              });
-
-              if (!$dependsOn.is('select')) {
-                selectFn(selectArgs);
-              }
+          if (dependsOn) {
+            $dependsOn = $input.closest('form').find('input, select').filter(function() {
+              return $(this).attr('name') === dependsOn;
             });
+
+            $dependsOn.bind('change', function(event) {
+              var $target = $(this);
+
+              if (!$dependsOn.is('select')) return true;
+
+              var dependsOnArgs = {};
+
+              $input.find('option').remove();
+             
+              if (!$target.children().size()) return true;
+
+              dependsOnArgs[dependsOn] = $target.val();
+              selectFn($.extend(selectArgs, dependsOnArgs));
+
+              return true;
+            });
+
+            if (!$dependsOn.is('select')) {
+              selectFn(selectArgs);
+            }
           } else {
             selectFn(selectArgs);
           }

@@ -139,10 +139,25 @@
             });
           },
           capacity: function(data) {
+           var latestData =null;
+           if(window.fetchLatestflag == 1)
+           {
+              latestData = {
+
+                  fetchLatest:true
+                 }
+            }
+           else
+            {
+              latestData = {
+                fetchLatest:false
+               }         
+            }
+	    window.fetchLatestflag = 0;          
             if (data.zones) {
               $.ajax({
                 url: createURL('listCapacity'),
-                data: { fetchLatest: true },
+                data: latestData,
                 success: function(json) {
                   var capacities = json.listcapacityresponse.capacity;
 
@@ -243,7 +258,7 @@
             $.ajax({
               url: createURL('listCapacity'),
               data: {
-                fetchLatest: true,
+                fetchLatest: false,
                 sortBy: 'usage',
                 page: 0,
                 pagesize: 8
