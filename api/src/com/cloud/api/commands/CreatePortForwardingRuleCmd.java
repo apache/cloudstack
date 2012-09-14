@@ -66,7 +66,6 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
     @Parameter(name = ApiConstants.PRIVATE_END_PORT, type = CommandType.INTEGER, required = false, description = "the ending port of port forwarding rule's private port range")
     private Integer privateEndPort;
 
-
     @Parameter(name = ApiConstants.PUBLIC_START_PORT, type = CommandType.INTEGER, required = true, 
             description = "the starting port of port forwarding rule's public port range")
     private Integer publicStartPort;
