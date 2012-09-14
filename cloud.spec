@@ -423,7 +423,6 @@ fi
 %doc %{_docdir}/%{name}-%{version}/version-info
 %doc %{_docdir}/%{name}-%{version}/sccs-info
 %doc %{_docdir}/%{name}-%{version}/configure-info
-%doc README.html
 %doc debian/copyright
 
 %files client-ui
