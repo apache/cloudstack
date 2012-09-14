@@ -218,6 +218,7 @@ Requires: /sbin/chkconfig
 Requires: jna
 Requires: ebtables
 Requires: jsvc
+Requires: jakarta-commons-daemon
 Group:     System Environment/Libraries
 
 Requires: kvm
@@ -576,7 +577,10 @@ fi
 %attr(0755,root,root) %{_bindir}/cloud-setup-bridge
 
 %changelog
-* Thu Aug 16 2012 Marcus Sorense  <shadowsor@gmail.com> 4.0
+* Fri Sep 14 2012 Marcus Sorensen <shadowsor@gmail.com> 4.0.1
+- adding dependency jakarta-commons-daemon to fix "cannot find daemon loader"
+
+* Thu Aug 16 2012 Marcus Sorensen <shadowsor@gmail.com> 4.0
 - rearranged files sections to match currently built files
 
 * Mon May 3 2010 Manuel Amador (Rudd-O) <manuel@vmops.com> 1.9.12
