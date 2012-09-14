@@ -54,3 +54,4 @@ awsapi/modules/*
 .classpath
 .project
 .settings.xml
+.settings/
