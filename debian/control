@@ -16,7 +16,7 @@ Description: CloudStack library dependencies
 
 Package: cloud-agent-deps
 Architecture: any
-Depends: openjdk-6-jre
+Depends: openjdk-6-jre, cloud-deps (= ${source:Version})
 Description: CloudStack agent library dependencies
  This package contains a number of third-party dependencies
  not shipped by distributions, required to run the CloudStack
