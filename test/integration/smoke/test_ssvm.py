@@ -24,6 +24,7 @@ from marvin import remoteSSHClient
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
+from nose.plugins.attrib import attr
 import telnetlib
 
 #Import System modules
@@ -37,7 +38,7 @@ class Services:
         self.services = {
                       "host": {
                                "username": 'root', # Credentials for SSH
-                               "password": 'fr3sca',
+                               "password": 'password',
                                "publicport": 22,
                                },
                        "sleep": 60,
@@ -63,6 +64,7 @@ class TestSSVMs(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_01_list_sec_storage_vm(self):
         """Test List secondary storage VMs
         """
@@ -81,7 +83,6 @@ class TestSSVMs(cloudstackTestCase):
                                         self.apiclient,
                                         systemvmtype='secondarystoragevm',
                                         state='Running',
-                                        zoneid=self.zone.id
                                         )
         self.assertEqual(
                             isinstance(list_ssvm_response, list),
@@ -181,6 +182,7 @@ class TestSSVMs(cloudstackTestCase):
                             )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_02_list_cpvm_vm(self):
         """Test List console proxy VMs
         """
@@ -199,7 +201,6 @@ class TestSSVMs(cloudstackTestCase):
                                         self.apiclient,
                                         systemvmtype='consoleproxy',
                                         state='Running',
-                                        zoneid=self.zone.id
                                         )
         self.assertEqual(
                             isinstance(list_cpvm_response, list),
@@ -293,6 +294,7 @@ class TestSSVMs(cloudstackTestCase):
                             )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_03_ssvm_internals(self):
         """Test SSVM Internals"""
 
@@ -373,6 +375,7 @@ class TestSSVMs(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_04_cpvm_internals(self):
         """Test CPVM Internals"""
 
@@ -439,6 +442,7 @@ class TestSSVMs(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_05_stop_ssvm(self):
         """Test stop SSVM
         """
@@ -514,6 +518,7 @@ class TestSSVMs(cloudstackTestCase):
         self.test_03_ssvm_internals()
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_06_stop_cpvm(self):
         """Test stop CPVM
         """
@@ -586,6 +591,7 @@ class TestSSVMs(cloudstackTestCase):
         self.test_04_cpvm_internals()
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_07_reboot_ssvm(self):
         """Test reboot SSVM
         """
@@ -671,6 +677,7 @@ class TestSSVMs(cloudstackTestCase):
         self.test_03_ssvm_internals()
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_08_reboot_cpvm(self):
         """Test reboot CPVM
         """
@@ -757,6 +764,7 @@ class TestSSVMs(cloudstackTestCase):
         self.test_04_cpvm_internals()
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_09_destroy_ssvm(self):
         """Test destroy SSVM
         """
@@ -838,6 +846,7 @@ class TestSSVMs(cloudstackTestCase):
         self.test_03_ssvm_internals()
         return
 
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic", "sg"])
     def test_10_destroy_cpvm(self):
         """Test destroy CPVM
         """

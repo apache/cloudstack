@@ -223,9 +223,10 @@ public class SearchCriteria<K> {
     		return jb;
     	}
     	
-    	for (JoinBuilder<SearchCriteria<?>> j2 : _joins.values()) {
+    	for (JoinBuilder<SearchCriteria<?>> j2 : jbmap.values()) {
     		SearchCriteria<?> sc = j2.getT();
-    		jb = findJoin(sc._joins, joinName);
+    		if(sc._joins != null)
+    		    jb = findJoin(sc._joins, joinName);
     		if (jb != null) {
     			return jb;
     		}

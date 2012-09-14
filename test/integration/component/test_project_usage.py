@@ -18,13 +18,15 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
-from marvin import remoteSSHClient
+from marvin.remoteSSHClient import remoteSSHClient
 import datetime
+
 
 class Services:
     """Test Snapshots Services
@@ -39,7 +41,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "project": {
                                     "name": "Project",
@@ -49,8 +51,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
+                                    "cpuspeed": 100,    # in MHz
+                                    "memory": 64,       # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Small",
@@ -73,7 +75,7 @@ class Services:
                         "templates": {
                                     "displaytext": 'Template',
                                     "name": 'Template',
-                                    "ostypeid": '471a4b5b-5523-448f-9608-7d6218995733',
+                                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                     "templatefilter": 'self',
                                     "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.qcow2.bz2"
                                 },
@@ -85,7 +87,7 @@ class Services:
                                   "isextractable": True,
                                   "isfeatured": True,
                                   "ispublic": True,
-                                  "ostypeid": '471a4b5b-5523-448f-9608-7d6218995733',
+                                  "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                 },
                         "lbrule": {
                                    "name": "SSH",
@@ -103,11 +105,11 @@ class Services:
                                    "username": "test",
                                    "password": "test",
                                 },
-                        "ostypeid": '471a4b5b-5523-448f-9608-7d6218995733',
+                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
-                        "mode":'advanced'
+                        "mode": 'advanced'
                     }
 
 
@@ -141,14 +143,14 @@ class TestVmUsage(cloudstackTestCase):
                             )
 
         cls.services["account"] = cls.account.account.name
-        
+
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
                                  account=cls.account.account.name,
                                  domainid=cls.account.account.domainid
                                  )
-         
+
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
@@ -190,10 +192,10 @@ class TestVmUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_01_vm_usage(self):
         """Test Create/Destroy VM and verify usage calculation
         """
-
         # Validate the following
         # 1. Create a VM. Verify usage_events table contains VM .create,
         #    VM.start , Network.offering.assign , Volume.create events
@@ -206,17 +208,17 @@ class TestVmUsage(cloudstackTestCase):
         self.debug("Stopping the VM: %s" % self.virtual_machine.id)
         # Stop the VM
         self.virtual_machine.stop(self.apiclient)
-        
+
         time.sleep(self.services["sleep"])
         # Destroy the VM
         self.debug("Destroying the VM: %s" % self.virtual_machine.id)
         self.virtual_machine.delete(self.apiclient)
 
-        # Fetch project account ID from project UUID 
+        # Fetch project account ID from project UUID
         self.debug(
             "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id)
-        
+
         qresultset = self.dbclient.execute(
                         "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id
@@ -226,7 +228,7 @@ class TestVmUsage(cloudstackTestCase):
                          True,
                          "Check DB query result set for valid data"
                          )
-        
+
         self.assertNotEqual(
                             len(qresultset),
                             0,
@@ -237,7 +239,7 @@ class TestVmUsage(cloudstackTestCase):
         account_id = qresult[0]
         self.debug("select type from usage_event where account_id = '%s';" \
                         % account_id)
-        
+
         qresultset = self.dbclient.execute(
                         "select type from usage_event where account_id = '%s';" \
                         % account_id
@@ -247,7 +249,7 @@ class TestVmUsage(cloudstackTestCase):
                          True,
                          "Check DB query result set for valid data"
                          )
-        
+
         self.assertNotEqual(
                             len(qresultset),
                             0,
@@ -335,14 +337,14 @@ class TestPublicIPUsage(cloudstackTestCase):
                             )
 
         cls.services["account"] = cls.account.account.name
-        
+
         cls.project = Project.create(
                                  cls.api_client,
                                  cls.services["project"],
                                  account=cls.account.account.name,
                                  domainid=cls.account.account.domainid
                                  )
-        
+
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
@@ -355,7 +357,7 @@ class TestPublicIPUsage(cloudstackTestCase):
                                     projectid=cls.project.id
                                 )
         networks = Network.list(
-                                cls.api_client, 
+                                cls.api_client,
                                 projectid=cls.project.id,
                                 listall=True
                                 )
@@ -401,10 +403,10 @@ class TestPublicIPUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "eip", "advancedns", "simulator"])
     def test_01_public_ip_usage(self):
-        """Test Assign new IP and verify usage calculation 
+        """Test Assign new IP and verify usage calculation
         """
-
         # Validate the following
         # 1. Acquire a IP for the network of this account. Verify usage_event
         #    table has  Acquire IP event for  the IP for this account
@@ -412,17 +414,17 @@ class TestPublicIPUsage(cloudstackTestCase):
         #    has IP.Release event for released IP for this account
         # 3. Delete the newly created account
 
-        self.debug("Deleting public IP: %s" % 
+        self.debug("Deleting public IP: %s" %
                                 self.public_ip.ipaddress.ipaddress)
 
         # Release one of the IP
         self.public_ip.delete(self.apiclient)
 
-        # Fetch project account ID from project UUID 
+        # Fetch project account ID from project UUID
         self.debug(
             "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id)
-        
+
         qresultset = self.dbclient.execute(
                         "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id
@@ -442,12 +444,12 @@ class TestPublicIPUsage(cloudstackTestCase):
         account_id = qresult[0]
         self.debug("select type from usage_event where account_id = '%s';" \
                         % account_id)
-        
+
         qresultset = self.dbclient.execute(
                         "select type from usage_event where account_id = '%s';" \
                         % account_id
                         )
-        
+
         self.assertEqual(
                          isinstance(qresultset, list),
                          True,
@@ -559,10 +561,10 @@ class TestVolumeUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_01_volume_usage(self):
         """Test Create/delete a volume and verify correct usage is recorded
         """
-
         # Validate the following
         # 1. Volume.create event for both root and data disk is there for the
         #    created account in cloud.usage_event table
@@ -582,8 +584,8 @@ class TestVolumeUsage(cloudstackTestCase):
                                     listall=True
                                     )
         self.assertEqual(
-                         isinstance(volume_response, list), 
-                         True, 
+                         isinstance(volume_response, list),
+                         True,
                          "Check for valid list volumes response"
                          )
         data_volume = volume_response[0]
@@ -601,11 +603,11 @@ class TestVolumeUsage(cloudstackTestCase):
         cmd.id = data_volume.id
         self.apiclient.deleteVolume(cmd)
 
-        # Fetch project account ID from project UUID 
+        # Fetch project account ID from project UUID
         self.debug(
             "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id)
-        
+
         qresultset = self.dbclient.execute(
                         "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id
@@ -615,7 +617,7 @@ class TestVolumeUsage(cloudstackTestCase):
                          True,
                          "Check DB query result set for valid data"
                          )
-        
+
         self.assertNotEqual(
                             len(qresultset),
                             0,
@@ -626,12 +628,12 @@ class TestVolumeUsage(cloudstackTestCase):
         account_id = qresult[0]
         self.debug("select type from usage_event where account_id = '%s';" \
                         % account_id)
-        
+
         qresultset = self.dbclient.execute(
                         "select type from usage_event where account_id = '%s';" \
                         % account_id
                         )
-                
+
         self.assertNotEqual(
                             len(qresultset),
                             0,
@@ -642,7 +644,7 @@ class TestVolumeUsage(cloudstackTestCase):
                          True,
                          "Check DB query result set for valid data"
                          )
-        
+
         qresult = str(qresultset)
         self.debug("Query result: %s" % qresult)
         # Check VOLUME.CREATE, VOLUME.DESTROY events in cloud.usage_event table
@@ -717,7 +719,7 @@ class TestTemplateUsage(cloudstackTestCase):
                                    type='ROOT',
                                    listall=True
                                    )
-        if isinstance(list_volume, list):        
+        if isinstance(list_volume, list):
             cls.volume = list_volume[0]
         else:
             raise Exception("List Volumes failed!")
@@ -750,11 +752,11 @@ class TestTemplateUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_01_template_usage(self):
         """Test Upload/ delete a template and verify correct usage is generated
             for the template uploaded
         """
-
         # Validate the following
         # 1. Create a account
         # 2. Upload a template from this account. template.create event is
@@ -775,11 +777,11 @@ class TestTemplateUsage(cloudstackTestCase):
         self.template.delete(self.apiclient)
         self.debug("Deleted template with ID: %s" % self.template.id)
 
-        # Fetch project account ID from project UUID 
+        # Fetch project account ID from project UUID
         self.debug(
             "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id)
-        
+
         qresultset = self.dbclient.execute(
                         "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id
@@ -789,7 +791,7 @@ class TestTemplateUsage(cloudstackTestCase):
                          True,
                          "Check DB query result set for valid data"
                          )
-        
+
         self.assertNotEqual(
                             len(qresultset),
                             0,
@@ -800,7 +802,7 @@ class TestTemplateUsage(cloudstackTestCase):
         account_id = qresult[0]
         self.debug("select type from usage_event where account_id = '%s';" \
                         % account_id)
-        
+
         qresultset = self.dbclient.execute(
                         "select type from usage_event where account_id = '%s';" \
                         % account_id
@@ -816,10 +818,10 @@ class TestTemplateUsage(cloudstackTestCase):
                             0,
                             "Check DB Query result set"
                             )
-        
+
         qresult = str(qresultset)
         self.debug("Query result: %s" % qresult)
-        
+
         # Check for TEMPLATE.CREATE, TEMPLATE.DELETE in cloud.usage_event table
         self.assertEqual(
                             qresult.count('TEMPLATE.CREATE'),
@@ -846,7 +848,7 @@ class TestISOUsage(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.services)
         cls.services["server"]["zoneid"] = cls.zone.id
         cls.services["iso"]["zoneid"] = cls.zone.id
-        # Create Account, ISO image etc 
+        # Create Account, ISO image etc
         cls.account = Account.create(
                             cls.api_client,
                             cls.services["account"],
@@ -902,10 +904,10 @@ class TestISOUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_01_ISO_usage(self):
         """Test Create/Delete a ISO and verify its usage is generated correctly
         """
-
         # Validate the following
         # 1. Create a account
         # 2. Upload a ISO from this account. ISO.create event is recorded in
@@ -917,12 +919,12 @@ class TestISOUsage(cloudstackTestCase):
         # Delete the ISO
         self.debug("Deleting ISO with ID: %s" % self.iso.id)
         self.iso.delete(self.apiclient)
-        
-        # Fetch project account ID from project UUID 
+
+        # Fetch project account ID from project UUID
         self.debug(
             "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id)
-        
+
         qresultset = self.dbclient.execute(
                         "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id
@@ -932,7 +934,7 @@ class TestISOUsage(cloudstackTestCase):
                          True,
                          "Check DB query result set for valid data"
                          )
-        
+
         self.assertNotEqual(
                             len(qresultset),
                             0,
@@ -943,18 +945,18 @@ class TestISOUsage(cloudstackTestCase):
         account_id = qresult[0]
         self.debug("select type from usage_event where account_id = '%s';" \
                         % account_id)
-        
+
         qresultset = self.dbclient.execute(
                         "select type from usage_event where account_id = '%s';" \
                         % account_id
                         )
-        
+
         self.assertEqual(
                          isinstance(qresultset, list),
                          True,
                          "Check DB query result set for valid data"
                          )
-        
+
         self.assertNotEqual(
                             len(qresultset),
                             0,
@@ -984,7 +986,7 @@ class TestLBRuleUsage(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.api_client = super(
-                               TestLBRuleUsage, 
+                               TestLBRuleUsage,
                                cls
                                ).getClsTestClient().getApiClient()
         cls.services = Services().services
@@ -1028,7 +1030,7 @@ class TestLBRuleUsage(cloudstackTestCase):
                                 projectid=cls.project.id
                                 )
         networks = Network.list(
-                                cls.api_client, 
+                                cls.api_client,
                                 projectid=cls.project.id,
                                 listall=True
                                 )
@@ -1074,10 +1076,10 @@ class TestLBRuleUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "eip", "advancedns", "simulator"])
     def test_01_lb_usage(self):
         """Test Create/Delete a LB rule and verify correct usage is recorded
         """
-
         # Validate the following
         # 1. Acquire a IP for this account. lb.rule.create event is registered
         #    for this account in cloud.usage_event table
@@ -1087,7 +1089,7 @@ class TestLBRuleUsage(cloudstackTestCase):
         # 4. Delete this account.
 
         self.debug(
-            "Creating load balancer rule for public IP: %s" % 
+            "Creating load balancer rule for public IP: %s" %
                                     self.public_ip_1.ipaddress.id)
         #Create Load Balancer rule and assign VMs to rule
         lb_rule = LoadBalancerRule.create(
@@ -1100,11 +1102,11 @@ class TestLBRuleUsage(cloudstackTestCase):
         self.debug("Deleting LB rule with ID: %s" % lb_rule.id)
         lb_rule.delete(self.apiclient)
 
-        # Fetch project account ID from project UUID 
+        # Fetch project account ID from project UUID
         self.debug(
             "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id)
-        
+
         qresultset = self.dbclient.execute(
                         "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id
@@ -1114,7 +1116,7 @@ class TestLBRuleUsage(cloudstackTestCase):
                          True,
                          "Check DB query result set for valid data"
                          )
-        
+
         self.assertNotEqual(
                             len(qresultset),
                             0,
@@ -1125,7 +1127,7 @@ class TestLBRuleUsage(cloudstackTestCase):
         account_id = qresult[0]
         self.debug("select type from usage_event where account_id = '%s';" \
                         % account_id)
-        
+
         qresultset = self.dbclient.execute(
                         "select type from usage_event where account_id = '%s';" \
                         % account_id
@@ -1146,7 +1148,7 @@ class TestLBRuleUsage(cloudstackTestCase):
         qresult = str(qresultset)
         self.debug("Query result: %s" % qresult)
 
-        # Check for LB.CREATE, LB.DELETE in cloud.usage_event table 
+        # Check for LB.CREATE, LB.DELETE in cloud.usage_event table
         self.assertEqual(
                             qresult.count('LB.CREATE'),
                             1,
@@ -1240,11 +1242,12 @@ class TestSnapshotUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_01_snapshot_usage(self):
         """Test Create/Delete a manual snap shot and verify
-        correct usage is recorded 
+        correct usage is recorded
         """
-
         # Validate the following
         # 1. Create snapshot of the root disk  for this account.Snapshot.create
         #    event is there for the created account in cloud.usage_event table
@@ -1252,7 +1255,7 @@ class TestSnapshotUsage(cloudstackTestCase):
         #    generated for the destroyed Snapshot
         # 3. Delete the account
 
-        # Get the Root disk of VM 
+        # Get the Root disk of VM
         volumes = list_volumes(
                             self.apiclient,
                             projectid=self.project.id,
@@ -1264,7 +1267,7 @@ class TestSnapshotUsage(cloudstackTestCase):
                          True,
                          "Check if list volumes return a valid data"
                         )
-        
+
         volume = volumes[0]
 
         # Create a snapshot from the ROOTDISK
@@ -1275,11 +1278,11 @@ class TestSnapshotUsage(cloudstackTestCase):
         self.debug("Deleting snapshot: %s" % snapshot.id)
         snapshot.delete(self.apiclient)
 
-        # Fetch project account ID from project UUID 
+        # Fetch project account ID from project UUID
         self.debug(
             "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id)
-        
+
         qresultset = self.dbclient.execute(
                         "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id
@@ -1289,7 +1292,7 @@ class TestSnapshotUsage(cloudstackTestCase):
                          True,
                          "Check DB query result set for valid data"
                          )
-        
+
         self.assertNotEqual(
                             len(qresultset),
                             0,
@@ -1300,12 +1303,12 @@ class TestSnapshotUsage(cloudstackTestCase):
         account_id = qresult[0]
         self.debug("select type from usage_event where account_id = '%s';" \
                         % account_id)
-        
+
         qresultset = self.dbclient.execute(
                         "select type from usage_event where account_id = '%s';" \
                         % account_id
                         )
-        
+
         self.assertEqual(
                          isinstance(qresultset, list),
                          True,
@@ -1386,7 +1389,7 @@ class TestNatRuleUsage(cloudstackTestCase):
                                 projectid=cls.project.id
                                 )
         networks = Network.list(
-                                cls.api_client, 
+                                cls.api_client,
                                 projectid=cls.project.id,
                                 listall=True
                                 )
@@ -1432,10 +1435,10 @@ class TestNatRuleUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns", "simulator"])
     def test_01_nat_usage(self):
         """Test Create/Delete a PF rule and verify correct usage is recorded
         """
-
         # Validate the following
         # 1. Acquire a IP for this account
         # 2. Create a PF rule on the IP associated with this account.
@@ -1445,7 +1448,7 @@ class TestNatRuleUsage(cloudstackTestCase):
         #    is registered for this account in cloud.usage_event table
         # 4. Delete this account.
 
-        self.debug("Creating NAT rule with public IP: %s" % 
+        self.debug("Creating NAT rule with public IP: %s" %
                                     self.public_ip_1.ipaddress.id)
         #Create NAT rule
         nat_rule = NATRule.create(
@@ -1459,11 +1462,11 @@ class TestNatRuleUsage(cloudstackTestCase):
         self.debug("Deleting NAT rule: %s" % nat_rule.id)
         nat_rule.delete(self.apiclient)
 
-        # Fetch project account ID from project UUID 
+        # Fetch project account ID from project UUID
         self.debug(
             "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id)
-        
+
         qresultset = self.dbclient.execute(
                         "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id
@@ -1473,7 +1476,7 @@ class TestNatRuleUsage(cloudstackTestCase):
                          True,
                          "Check DB query result set for valid data"
                          )
-        
+
         self.assertNotEqual(
                             len(qresultset),
                             0,
@@ -1484,7 +1487,7 @@ class TestNatRuleUsage(cloudstackTestCase):
         account_id = qresult[0]
         self.debug("select type from usage_event where account_id = '%s';" \
                         % account_id)
-        
+
         qresultset = self.dbclient.execute(
                         "select type from usage_event where account_id = '%s';" \
                         % account_id
@@ -1569,7 +1572,7 @@ class TestVpnUsage(cloudstackTestCase):
                                 projectid=cls.project.id
                                 )
         networks = Network.list(
-                                cls.api_client, 
+                                cls.api_client,
                                 projectid=cls.project.id,
                                 listall=True
                                 )
@@ -1615,19 +1618,19 @@ class TestVpnUsage(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns", "simulator"])
     def test_01_vpn_usage(self):
         """Test Create/Delete a VPN and verify correct usage is recorded
         """
-
         # Validate the following
         # 1. Enable VPN for this IP. vpn.add.user event is registered for this
         #    account in cloud.usage_event table
-        # 2. Add user to this vpn 
+        # 2. Add user to this vpn
         # 3. Delete user for this VPN. vpn.user.delete event is registered for
         #    this account in cloud.usage_event table
         # 4. Delete this account.
 
-        self.debug("Created VPN with public IP: %s" % 
+        self.debug("Created VPN with public IP: %s" %
                                     self.public_ip.ipaddress.id)
         #Assign VPN to Public IP
         vpn = Vpn.create(
@@ -1636,7 +1639,7 @@ class TestVpnUsage(cloudstackTestCase):
                         projectid=self.project.id
                         )
 
-        self.debug("Created VPN user for account: %s" % 
+        self.debug("Created VPN user for account: %s" %
                                     self.account.account.name)
 
         vpnuser = VpnUser.create(
@@ -1654,11 +1657,11 @@ class TestVpnUsage(cloudstackTestCase):
         self.debug("Deleting VPN: %s" % vpn.publicipid)
         vpn.delete(self.apiclient)
 
-        # Fetch project account ID from project UUID 
+        # Fetch project account ID from project UUID
         self.debug(
             "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id)
-        
+
         qresultset = self.dbclient.execute(
                         "select project_account_id from projects where uuid = '%s';" \
                         % self.project.id
@@ -1668,7 +1671,7 @@ class TestVpnUsage(cloudstackTestCase):
                          True,
                          "Check DB query result set for valid data"
                          )
-        
+
         self.assertNotEqual(
                             len(qresultset),
                             0,
@@ -1679,7 +1682,7 @@ class TestVpnUsage(cloudstackTestCase):
         account_id = qresult[0]
         self.debug("select type from usage_event where account_id = '%s';" \
                         % account_id)
-        
+
         qresultset = self.dbclient.execute(
                         "select type from usage_event where account_id = '%s';" \
                         % account_id
@@ -1698,8 +1701,8 @@ class TestVpnUsage(cloudstackTestCase):
 
         qresult = str(qresultset)
         self.debug("Query result: %s" % qresult)
-        
-        # Check for VPN user related events 
+
+        # Check for VPN user related events
         self.assertEqual(
                             qresult.count('VPN.USER.ADD'),
                             1,

@@ -5,26 +5,27 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
-    
-    http://www.apache.org/licenses/LICENSE-2.0
-    
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
 -->
+
 <section id="log-in">
-	<title>Log In to the UI</title>
-	<para>&PRODUCT; provides a web-based UI that can be used by both administrators and end users. The appropriate version of the UI is displayed depending on the credentials used to log in. The UI is available in popular browsers including IE7, IE8, IE9, Firefox 3.5+, Firefox 4, Safari 4, and Safari 5. The URL is: (substitute your own management server IP address)</para>
-	<programlisting>http://&lt;management-server-ip-address&gt;:8080/client</programlisting>
+    <title>Log In to the UI</title>
+    <para>&PRODUCT; provides a web-based UI that can be used by both administrators and end users. The appropriate version of the UI is displayed depending on the credentials used to log in. The UI is available in popular browsers including IE7, IE8, IE9, Firefox 3.5+, Firefox 4, Safari 4, and Safari 5. The URL is: (substitute your own management server IP address)</para>
+    <programlisting>http://&lt;management-server-ip-address&gt;:8080/client</programlisting>
     <para>On a fresh Management Server installation, a guided tour splash screen appears. On later visits, you’ll see a login screen where you specify the following to proceed to your Dashboard:</para>
     <formalpara>
         <title>Username</title>
@@ -41,8 +42,7 @@
     <para>If you are a user in the sub-domains, enter the full path to the domain, excluding the root domain.</para>
     <para>For example, suppose multiple levels are created under the root domain, such as Comp1/hr. The users in the Comp1 domain should enter Comp1 in the Domain field, whereas the users in the Comp1/sales domain should enter Comp1/sales.</para>    
     <para>For more guidance about the choices that appear when you log in to this UI, see Logging In as the Root Administrator.</para>
-	<xi:include href="end-user-ui-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	<xi:include href="root-admin-ui-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-	<xi:include href="log-in-root-admin.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="changing-root-password.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="end-user-ui-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="root-admin-ui-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <xi:include href="log-in-root-admin.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>

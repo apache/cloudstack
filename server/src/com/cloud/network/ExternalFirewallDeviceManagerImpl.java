@@ -413,7 +413,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         // Get network rate
         Integer networkRate = _networkMgr.getNetworkRate(network.getId(), null);
 
-        IpAddressTO ip = new IpAddressTO(account.getAccountId(), sourceNatIpAddress, add, false, !sharedSourceNat, publicVlanTag, null, null, null, null, networkRate, false);
+        IpAddressTO ip = new IpAddressTO(account.getAccountId(), sourceNatIpAddress, add, false, !sharedSourceNat, publicVlanTag, null, null, null, networkRate, false);
         IpAddressTO[] ips = new IpAddressTO[1];
         ips[0] = ip;
         IpAssocCommand cmd = new IpAssocCommand(ips);

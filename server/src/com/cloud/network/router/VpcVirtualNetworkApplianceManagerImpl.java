@@ -497,7 +497,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 
                 IpAddressTO ip = new IpAddressTO(ipAddr.getAccountId(), ipAddr.getAddress().addr(), add, false, 
                         ipAddr.isSourceNat(), ipAddr.getVlanTag(), ipAddr.getGateway(), ipAddr.getNetmask(), macAddress,
-                        null, networkRate, ipAddr.isOneToOneNat());
+                        networkRate, ipAddr.isOneToOneNat());
 
                 ip.setTrafficType(network.getTrafficType());
                 ip.setNetworkName(_networkMgr.getNetworkTag(router.getHypervisorType(), network));
@@ -1172,7 +1172,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 Network network = _networkMgr.getNetwork(ipAddr.getNetworkId());
                 IpAddressTO ip = new IpAddressTO(Account.ACCOUNT_ID_SYSTEM, ipAddr.getIpAddress(), add, false, 
                         false, ipAddr.getVlanTag(), ipAddr.getGateway(), ipAddr.getNetmask(), ipAddr.getMacAddress(),
-                        null, null, false);
+                        null, false);
 
                 ip.setTrafficType(network.getTrafficType());
                 ip.setNetworkName(_networkMgr.getNetworkTag(router.getHypervisorType(), network));

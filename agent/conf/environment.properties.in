@@ -18,4 +18,4 @@
 # management server compile-time environment parameters
 
 paths.pid=@PIDDIR@
-paths.script=@AGENTLIBDIR@
+paths.script=@COMMONLIBDIR@

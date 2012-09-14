@@ -1849,7 +1849,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
 
     protected void assignPublicIpAddress(Connection conn, String vmName, String privateIpAddress, String publicIpAddress, boolean add, boolean firstIP,
-            boolean sourceNat, String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, String guestIp, Integer networkRate, TrafficType trafficType, String name) throws InternalErrorException {
+            boolean sourceNat, String vlanId, String vlanGateway, String vlanNetmask, String vifMacAddress, Integer networkRate, TrafficType trafficType, String name) throws InternalErrorException {
 
         try {
             VM router = getVM(conn, vmName);
@@ -2028,7 +2028,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             for (IpAddressTO ip : ips) {
 
                 assignPublicIpAddress(conn, routerName, routerIp, ip.getPublicIp(), ip.isAdd(), ip.isFirstIP(), ip.isSourceNat(), ip.getVlanId(),
-                        ip.getVlanGateway(), ip.getVlanNetmask(), ip.getVifMacAddress(), ip.getGuestIp(), ip.getNetworkRate(), ip.getTrafficType(), ip.getNetworkName());
+                        ip.getVlanGateway(), ip.getVlanNetmask(), ip.getVifMacAddress(), ip.getNetworkRate(), ip.getTrafficType(), ip.getNetworkName());
                 results[i++] = ip.getPublicIp() + " - success";
             }
         } catch (InternalErrorException e) {

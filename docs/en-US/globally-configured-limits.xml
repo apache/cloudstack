@@ -5,96 +5,96 @@
 ]>
 
 <!-- Licensed to the Apache Software Foundation (ASF) under one
-	or more contributor license agreements.  See the NOTICE file
-	distributed with this work for additional information
-	regarding copyright ownership.  The ASF licenses this file
-	to you under the Apache License, Version 2.0 (the
-	"License"); you may not use this file except in compliance
-	with the License.  You may obtain a copy of the License at
-	
-	http://www.apache.org/licenses/LICENSE-2.0
-	
-	Unless required by applicable law or agreed to in writing,
-	software distributed under the License is distributed on an
-	"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-	KIND, either express or implied.  See the License for the
-	specific language governing permissions and limitations
-	under the License.
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
 -->
 
 <section id="globally-configured-limits">
-	<title>Globally Configured Limits</title>
-	<para>In a zone, the guest virtual network has a 24 bit CIDR by default. This limits the guest virtual network to 254 running instances. It can be adjusted as needed, but this must be done before any instances are created in the zone. For example, 10.1.1.0/22 would provide for ~1000 addresses.</para>
-	<para>The following table lists limits set in the Global Configuration:</para>
-	<informaltable>
-		<tgroup cols="2">
-			<thead>
-				<row>
-					<entry><para>Parameter Name</para></entry>
-					<entry><para>Definition</para></entry>
-					
-				</row>
-			</thead>
-			<tbody>
-				<row>
-					<entry><para>max.account.public.ips</para></entry>
-					<entry><para>Number of public IP addresses that can be owned by an account</para></entry>
-					
-				</row>
-				<row>
-					<entry><para>max.account.snapshots</para></entry>
-					<entry><para>Number of snapshots that can exist for an account</para></entry>
-					
-				</row>
-				
-				<row>
-					<entry><para>max.account.templates</para></entry>
-					<entry><para>Number of templates that can exist for an account</para></entry>
-					
-				</row>
-				<row>
-					<entry><para>max.account.user.vms</para></entry>
-					<entry><para>Number of virtual machine instances that can exist for an account</para></entry>
-				</row>
-				
-				<row>
-					<entry><para>max.account.volumes</para></entry>
-					<entry><para>Number of disk volumes that can exist for an account</para></entry>
-				</row>
-				
-				<row>
-					<entry><para>max.template.iso.size</para></entry>
-					<entry><para>Maximum size for a downloaded template or ISO in GB</para></entry>
-				</row>
-				
-				<row>
-					<entry><para>max.volume.size.gb</para></entry>
-					<entry><para>Maximum size for a volume in GB</para></entry>
-				</row>
-				<row>
-					<entry><para>network.throttling.rate</para></entry>
-					<entry><para>Default data transfer rate in megabits per second allowed per user (supported on XenServer)</para></entry>
-				</row>
-				<row>
-					<entry><para>snapshot.max.hourly</para></entry>
-					<entry><para>Maximum recurring hourly snapshots to be retained for a volume. If the limit is reached, early snapshots from the start of the hour are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring hourly snapshots can not be scheduled</para></entry>
-				</row>
-				
-				<row>
-					<entry><para>snapshot.max.daily</para></entry>
-					<entry><para>Maximum recurring daily snapshots to be retained for a volume. If the limit is reached, snapshots from the start of the day are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring daily snapshots can not be scheduled</para></entry>
-				</row>
-				<row>
-					<entry><para>snapshot.max.weekly</para></entry>
-					<entry><para>Maximum recurring weekly snapshots to be retained for a volume. If the limit is reached, snapshots from the beginning of the week are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring weekly snapshots can not be scheduled</para></entry>
-				</row>
-				
-				<row>
-					<entry><para>snapshot.max.monthly</para></entry>
-					<entry><para>Maximum recurring monthly snapshots to be retained for a volume. If the limit is reached, snapshots from the beginning of the month are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring monthly snapshots can not be scheduled.</para></entry>
-			    </row>		
-			</tbody>
-		</tgroup>
-	</informaltable>
-	<para>To modify global configuration parameters, use the global configuration screen in the &PRODUCT; UI. See Setting Global Configuration Parameters </para>
+    <title>Globally Configured Limits</title>
+    <para>In a zone, the guest virtual network has a 24 bit CIDR by default. This limits the guest virtual network to 254 running instances. It can be adjusted as needed, but this must be done before any instances are created in the zone. For example, 10.1.1.0/22 would provide for ~1000 addresses.</para>
+    <para>The following table lists limits set in the Global Configuration:</para>
+    <informaltable>
+        <tgroup cols="2">
+            <thead>
+                <row>
+                    <entry><para>Parameter Name</para></entry>
+                    <entry><para>Definition</para></entry>
+                    
+                </row>
+            </thead>
+            <tbody>
+                <row>
+                    <entry><para>max.account.public.ips</para></entry>
+                    <entry><para>Number of public IP addresses that can be owned by an account</para></entry>
+                    
+                </row>
+                <row>
+                    <entry><para>max.account.snapshots</para></entry>
+                    <entry><para>Number of snapshots that can exist for an account</para></entry>
+                    
+                </row>
+                
+                <row>
+                    <entry><para>max.account.templates</para></entry>
+                    <entry><para>Number of templates that can exist for an account</para></entry>
+                    
+                </row>
+                <row>
+                    <entry><para>max.account.user.vms</para></entry>
+                    <entry><para>Number of virtual machine instances that can exist for an account</para></entry>
+                </row>
+                
+                <row>
+                    <entry><para>max.account.volumes</para></entry>
+                    <entry><para>Number of disk volumes that can exist for an account</para></entry>
+                </row>
+                
+                <row>
+                    <entry><para>max.template.iso.size</para></entry>
+                    <entry><para>Maximum size for a downloaded template or ISO in GB</para></entry>
+                </row>
+                
+                <row>
+                    <entry><para>max.volume.size.gb</para></entry>
+                    <entry><para>Maximum size for a volume in GB</para></entry>
+                </row>
+                <row>
+                    <entry><para>network.throttling.rate</para></entry>
+                    <entry><para>Default data transfer rate in megabits per second allowed per user (supported on XenServer)</para></entry>
+                </row>
+                <row>
+                    <entry><para>snapshot.max.hourly</para></entry>
+                    <entry><para>Maximum recurring hourly snapshots to be retained for a volume. If the limit is reached, early snapshots from the start of the hour are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring hourly snapshots can not be scheduled</para></entry>
+                </row>
+                
+                <row>
+                    <entry><para>snapshot.max.daily</para></entry>
+                    <entry><para>Maximum recurring daily snapshots to be retained for a volume. If the limit is reached, snapshots from the start of the day are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring daily snapshots can not be scheduled</para></entry>
+                </row>
+                <row>
+                    <entry><para>snapshot.max.weekly</para></entry>
+                    <entry><para>Maximum recurring weekly snapshots to be retained for a volume. If the limit is reached, snapshots from the beginning of the week are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring weekly snapshots can not be scheduled</para></entry>
+                </row>
+                
+                <row>
+                    <entry><para>snapshot.max.monthly</para></entry>
+                    <entry><para>Maximum recurring monthly snapshots to be retained for a volume. If the limit is reached, snapshots from the beginning of the month are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring monthly snapshots can not be scheduled.</para></entry>
+                </row>        
+            </tbody>
+        </tgroup>
+    </informaltable>
+    <para>To modify global configuration parameters, use the global configuration screen in the &PRODUCT; UI. See Setting Global Configuration Parameters </para>
 </section>

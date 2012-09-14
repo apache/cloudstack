@@ -18,12 +18,14 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
-from marvin import remoteSSHClient
+from marvin.remoteSSHClient import remoteSSHClient
+
 
 class Services:
     """Test Snapshots Services
@@ -38,14 +40,14 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "service_offering": {
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 200, # in MHz
-                                    "memory": 256, # In MBs
+                                    "cpuspeed": 200,    # in MHz
+                                    "memory": 256,      # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Small Disk",
@@ -65,26 +67,26 @@ class Services:
                          "mgmt_server": {
                                     "ipaddress": '192.168.100.21',
                                     "username": "root",
-                                    "password": "fr3sca",
+                                    "password": "password",
                                     "port": 22,
                                 },
                         "recurring_snapshot": {
                                     "intervaltype": 'HOURLY',
                                     # Frequency of snapshots
-                                    "maxsnaps": 1, # Should be min 2
+                                    "maxsnaps": 1,  # Should be min 2
                                     "schedule": 1,
                                     "timezone": 'US/Arizona',
-                                    # Timezone Formats - http://cloud.mindtouch.us/CloudStack_Documentation/Developer's_Guide%3A_CloudStack 
+                                    # Timezone Formats - http://cloud.mindtouch.us/CloudStack_Documentation/Developer's_Guide%3A_CloudStack
                                 },
                         "templates": {
                                     "displaytext": 'Template',
                                     "name": 'Template',
-                                    "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
+                                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                     "templatefilter": 'self',
                                 },
                         "diskdevice": "/dev/xvda",
                         "diskname": "TestDiskServ",
-                        "size": 1, # GBs
+                        "size": 1,  # GBs
 
                         "mount_dir": "/mnt/tmp",
                         "sub_dir": "test",
@@ -92,11 +94,11 @@ class Services:
                         "sub_lvl_dir2": "test2",
                         "random_data": "random.data",
 
-                        "ostypeid": '144f66aa-7f74-4cfe-9799-80cc21439cb3',
+                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
-                        "mode" : 'advanced', # Networking mode: Advanced, Basic
+                        "mode": 'advanced',     # Networking mode: Advanced, Basic
                     }
 
 
@@ -162,10 +164,11 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_createVM_snapshotTemplate(self):
         """Test create VM, Snapshot and Template
         """
-
         # Validate the following
         # 1. Deploy VM using default template, small service offering
         #    and small data disk offering.
@@ -191,7 +194,7 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                                 serviceofferingid=self.service_offering.id
                                 )
         self.debug("Created VM with ID: %s" % self.virtual_machine.id)
-        # Get the Root disk of VM 
+        # Get the Root disk of VM
         volumes = list_volumes(
                             self.apiclient,
                             virtualmachineid=self.virtual_machine.id,
@@ -326,27 +329,32 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
             parse_url = (host.name).split('/')
             # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
 
+            # Stripping end ':' from storage type
+            storage_type = parse_url[0][:-1]
             # Split IP address and export path from name
             sec_storage_ip = parse_url[2]
             # Sec Storage IP: 192.168.100.21
+            if sec_storage_ip[-1] != ":":
+                sec_storage_ip = sec_storage_ip + ":"
 
             export_path = '/'.join(parse_url[3:])
             # Export path: export/test
-        
+
             # Sleep to ensure that snapshot is reflected in sec storage
             time.sleep(self.services["sleep"])
             try:
                 # Login to VM to check snapshot present on sec disk
-                ssh_client = remoteSSHClient.remoteSSHClient(
+                ssh_client = remoteSSHClient(
                                     self.services["mgmt_server"]["ipaddress"],
                                     self.services["mgmt_server"]["port"],
                                     self.services["mgmt_server"]["username"],
                                     self.services["mgmt_server"]["password"],
                                     )
 
-                cmds = [    
+                cmds = [
                     "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s/%s %s" % (
+                    "mount -t %s %s/%s %s" % (
+                                         storage_type,
                                          sec_storage_ip,
                                          export_path,
                                          self.services["mount_dir"]
@@ -361,10 +369,10 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                     self.debug("command: %s" % c)
                     result = ssh_client.execute(c)
                     self.debug("Result: %s" % result)
-                
+
             except Exception as e:
-                self.fail("SSH failed for Management server: %s" %
-                                self.services["mgmt_server"]["ipaddress"])
+                self.fail("SSH failed for Management server: %s - %s" %
+                                (self.services["mgmt_server"]["ipaddress"], e))
             uuids.append(result)
             # Unmount the Sec Storage
             cmds = [
@@ -377,9 +385,9 @@ class TestCreateVMsnapshotTemplate(cloudstackTestCase):
                     self.debug("Result: %s" % result)
 
             except Exception as e:
-                self.fail("SSH failed for Management server: %s" %
-                                self.services["mgmt_server"]["ipaddress"])
-        
+                self.fail("SSH failed for Management server: %s - %s" %
+                                (self.services["mgmt_server"]["ipaddress"], e))
+
         res = str(uuids)
         self.assertEqual(
                         res.count(snapshot_uuid),
@@ -430,7 +438,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                                 domainid=cls.account.account.domainid,
                                 serviceofferingid=cls.service_offering.id
                                 )
-        # Get the Root disk of VM 
+        # Get the Root disk of VM
         volumes = list_volumes(
                             cls.api_client,
                             virtualmachineid=cls.virtual_machine.id,
@@ -470,10 +478,11 @@ class TestAccountSnapshotClean(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns"])
     def test_02_accountSnapshotClean(self):
         """Test snapshot cleanup after account deletion
         """
-
         # Validate the following
         # 1. listAccounts API should list out the newly created account
         # 2. listVirtualMachines() command should return the deployed VM.
@@ -518,7 +527,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
         for virtual_machine in virtual_machines:
             self.debug("VM ID: %s, VM state: %s" % (
                                             virtual_machine.id,
-                                            virtual_machine.state    
+                                            virtual_machine.state
                                             ))
             self.assertEqual(
                         virtual_machine.state,
@@ -585,18 +594,23 @@ class TestAccountSnapshotClean(cloudstackTestCase):
             parse_url = (host.name).split('/')
             # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
 
+            # Stripping end ':' from storage type
+            storage_type = parse_url[0][:-1]
             # Split IP address and export path from name
             sec_storage_ip = parse_url[2]
             # Sec Storage IP: 192.168.100.21
 
+            if sec_storage_ip[-1] != ":":
+                sec_storage_ip = sec_storage_ip + ":"
+
             export_path = '/'.join(parse_url[3:])
             # Export path: export/test
-        
+
             # Sleep to ensure that snapshot is reflected in sec storage
             time.sleep(self.services["sleep"])
             try:
                 # Login to Secondary storage VM to check snapshot present on sec disk
-                ssh_client = remoteSSHClient.remoteSSHClient(
+                ssh_client = remoteSSHClient(
                                     self.services["mgmt_server"]["ipaddress"],
                                     self.services["mgmt_server"]["port"],
                                     self.services["mgmt_server"]["username"],
@@ -605,7 +619,8 @@ class TestAccountSnapshotClean(cloudstackTestCase):
 
                 cmds = [
                     "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s/%s %s" % (
+                    "mount -t %s %s/%s %s" % (
+                                         storage_type,
                                          sec_storage_ip,
                                          export_path,
                                          self.services["mount_dir"]
@@ -621,7 +636,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                     self.debug("command: %s" % c)
                     result = ssh_client.execute(c)
                     self.debug("Result: %s" % result)
-                
+
                 uuids.append(result)
 
                 # Unmount the Sec Storage
@@ -630,17 +645,17 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                     ]
                 for c in cmds:
                     result = ssh_client.execute(c)
-            except Exception:
-                self.fail("SSH failed for management server: %s" %
-                                self.services["mgmt_server"]["ipaddress"])
-        
+            except Exception as e:
+                self.fail("SSH failed for management server: %s - %s" %
+                                (self.services["mgmt_server"]["ipaddress"], e))
+
         res = str(uuids)
         self.assertEqual(
                         res.count(snapshot_uuid),
                         1,
                         "Check snapshot UUID in secondary storage and database"
                         )
-        
+
         self.debug("Deleting account: %s" % self.account.account.name)
         # Delete account
         self.account.delete(self.apiclient)
@@ -655,7 +670,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                             "Check list response returns a valid list"
                         )
         self.debug("account.cleanup.interval: %s" % interval[0].value)
-        
+
         # Wait for account cleanup interval
         time.sleep(int(interval[0].value) * 2)
 
@@ -663,29 +678,35 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                                  self.apiclient,
                                  id=self.account.account.id
                                  )
-        
-	self.assertEqual(
-		accounts,
-		None,
-		"List accounts should return empty list after account deletion"
-		)
 
-	uuids = []
+        self.assertEqual(
+            accounts,
+            None,
+            "List accounts should return empty list after account deletion"
+            )
+
+        uuids = []
         for host in hosts:
             # hosts[0].name = "nfs://192.168.100.21/export/test"
             parse_url = (host.name).split('/')
             # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
 
+            # Stripping end ':' from storage type
+            storage_type = parse_url[0][:-1]
             # Split IP address and export path from name
             sec_storage_ip = parse_url[2]
             # Sec Storage IP: 192.168.100.21
+
+            if sec_storage_ip[-1] != ":":
+                sec_storage_ip = sec_storage_ip + ":"
 
             export_path = '/'.join(parse_url[3:])
             # Export path: export/test
 
             try:
-                cmds = [    
-                        "mount %s/%s %s" % (
+                cmds = [
+                        "mount -t %s %s/%s %s" % (
+                                         storage_type,
                                          sec_storage_ip,
                                          export_path,
                                          self.services["mount_dir"]
@@ -701,7 +722,7 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                     self.debug("command: %s" % c)
                     result = ssh_client.execute(c)
                     self.debug("Result: %s" % result)
-                
+
                 uuids.append(result)
                 # Unmount the Sec Storage
                 cmds = [
@@ -712,10 +733,10 @@ class TestAccountSnapshotClean(cloudstackTestCase):
                     result = ssh_client.execute(c)
                     self.debug("Result: %s" % result)
 
-            except Exception:
-                self.fail("SSH failed for management server: %s" %
-                                self.services["mgmt_server"]["ipaddress"])
-                
+            except Exception as e:
+                self.fail("SSH failed for management server: %s - %s" %
+                                (self.services["mgmt_server"]["ipaddress"], e))
+
         res = str(uuids)
         self.assertNotEqual(
                         res.count(snapshot_uuid),
@@ -801,10 +822,11 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns"])
     def test_03_snapshot_detachedDisk(self):
         """Test snapshot from detached disk
         """
-
         # Validate the following
         # 1. login in VM  and write some data on data disk(use fdisk to
         #    partition datadisk,fdisk /dev/sdb, and make filesystem using
@@ -863,7 +885,7 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
                                                 self.services["sub_lvl_dir2"],
                                                 self.services["random_data"]
                                             ),
-		            "sync",
+                    "sync",
                 ]
             for c in cmds:
                 self.debug(ssh_client.execute(c))
@@ -906,9 +928,9 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
                             "Check snapshot id in list resources call"
                         )
         except Exception as e:
-            self.fail("SSH failed for VM with IP: %s" %
-                                self.virtual_machine.ipaddress)
-            
+            self.fail("SSH failed for VM with IP: %s - %s" %
+                                (self.virtual_machine.ipaddress, e))
+
         # Fetch values from database
         qresultset = self.dbclient.execute(
                         "select backup_snap_id, account_id, volume_id from snapshots where uuid = '%s';" \
@@ -948,19 +970,25 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
             parse_url = (host.name).split('/')
             # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
 
+            # Stripping end ':' from storage type
+            storage_type = parse_url[0][:-1]
+
             # Split IP address and export path from name
             sec_storage_ip = parse_url[2]
             # Sec Storage IP: 192.168.100.21
 
+            if sec_storage_ip[-1] != ":":
+                sec_storage_ip = sec_storage_ip + ":"
+
             export_path = '/'.join(parse_url[3:])
             # Export path: export/test
-        
+
             # Sleep to ensure that snapshot is reflected in sec storage
             time.sleep(self.services["sleep"])
             try:
                 # Login to Management server to check snapshot present on
                 # sec disk
-                ssh_client = remoteSSHClient.remoteSSHClient(
+                ssh_client = remoteSSHClient(
                                     self.services["mgmt_server"]["ipaddress"],
                                     self.services["mgmt_server"]["port"],
                                     self.services["mgmt_server"]["username"],
@@ -969,7 +997,8 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
 
                 cmds = [
                     "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s/%s %s" % (
+                    "mount -t %s %s/%s %s" % (
+                                         storage_type,
                                          sec_storage_ip,
                                          export_path,
                                          self.services["mount_dir"]
@@ -983,7 +1012,7 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
 
                 for c in cmds:
                     result = ssh_client.execute(c)
-                
+
                 uuids.append(result)
                 # Unmount the Sec Storage
                 cmds = [
@@ -992,9 +1021,9 @@ class TestSnapshotDetachedDisk(cloudstackTestCase):
                 for c in cmds:
                     result = ssh_client.execute(c)
             except Exception as e:
-                self.fail("SSH failed for management server: %s" %
-                                self.services["mgmt_server"]["ipaddress"])
-        
+                self.fail("SSH failed for management server: %s - %s" %
+                                (self.services["mgmt_server"]["ipaddress"], e))
+
         res = str(uuids)
         self.assertEqual(
                         res.count(snapshot_uuid),
@@ -1073,18 +1102,19 @@ class TestSnapshotLimit(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns"])
     def test_04_snapshot_limit(self):
         """Test snapshot limit in snapshot policies
         """
-
         # Validate the following
         # 1. Perform hourly recurring snapshot on the root disk of VM and keep
         #    the maxsnapshots as 1
-        # 2. listSnapshots should list the snapshot that was created 
-        #    snapshot folder in secondary storage should contain only one 
+        # 2. listSnapshots should list the snapshot that was created
+        #    snapshot folder in secondary storage should contain only one
         #    snapshot image(/secondary/snapshots/$accountid/$volumeid/)
 
-        # Get the Root disk of VM 
+        # Get the Root disk of VM
         volumes = list_volumes(
                             self.apiclient,
                             virtualmachineid=self.virtual_machine.id,
@@ -1116,7 +1146,7 @@ class TestSnapshotLimit(cloudstackTestCase):
                             True,
                             "Check list response returns a valid list"
                         )
-        
+
         self.assertNotEqual(
                             snapshot_policy,
                             None,
@@ -1148,7 +1178,7 @@ class TestSnapshotLimit(cloudstackTestCase):
                         snapshottype='RECURRING',
                         listall=True
                         )
-        
+
         self.assertEqual(
                             isinstance(snapshots, list),
                             True,
@@ -1159,7 +1189,7 @@ class TestSnapshotLimit(cloudstackTestCase):
                          self.services["recurring_snapshot"]["maxsnaps"],
                          "Check maximum number of recurring snapshots retained"
                         )
-	snapshot = snapshots[0]
+        snapshot = snapshots[0]
         # Sleep to ensure that snapshot is reflected in sec storage
         time.sleep(self.services["sleep"])
 
@@ -1201,15 +1231,20 @@ class TestSnapshotLimit(cloudstackTestCase):
             parse_url = (host.name).split('/')
             # parse_url = ['nfs:', '', '192.168.100.21', 'export', 'test']
 
+            # Stripping end ':' from storage type
+            storage_type = parse_url[0][:-1]
             # Split IP address and export path from name
             sec_storage_ip = parse_url[2]
             # Sec Storage IP: 192.168.100.21
+
+            if sec_storage_ip[-1] != ":":
+                sec_storage_ip = sec_storage_ip + ":"
 
             export_path = '/'.join(parse_url[3:])
             # Export path: export/test
             try:
                 # Login to VM to check snapshot present on sec disk
-                ssh_client = remoteSSHClient.remoteSSHClient(
+                ssh_client = remoteSSHClient(
                                     self.services["mgmt_server"]["ipaddress"],
                                     self.services["mgmt_server"]["port"],
                                     self.services["mgmt_server"]["username"],
@@ -1218,7 +1253,8 @@ class TestSnapshotLimit(cloudstackTestCase):
 
                 cmds = [
                     "mkdir -p %s" % self.services["mount_dir"],
-                    "mount %s/%s %s" % (
+                    "mount -t %s %s/%s %s" % (
+                                         storage_type,
                                          sec_storage_ip,
                                          export_path,
                                          self.services["mount_dir"]
@@ -1243,8 +1279,8 @@ class TestSnapshotLimit(cloudstackTestCase):
                     result = ssh_client.execute(c)
             except Exception as e:
                 raise Exception(
-                        "SSH access failed for management server: %s" %
-                                    self.services["mgmt_server"]["ipaddress"])
+                        "SSH access failed for management server: %s - %s" %
+                                    (self.services["mgmt_server"]["ipaddress"], e))
 
         res = str(uuids)
         self.assertEqual(
@@ -1324,17 +1360,18 @@ class TestSnapshotEvents(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
-
+    
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "advancedns"])
     def test_05_snapshot_events(self):
         """Test snapshot events
         """
-
         # Validate the following
         # 1. Perform snapshot on the root disk of this VM and check the events/alerts.
         # 2. delete the snapshots and check the events/alerts
         # 3. listEvents() shows created/deleted snapshot events
 
-        # Get the Root disk of VM 
+        # Get the Root disk of VM
         volumes = list_volumes(
                             self.apiclient,
                             virtualmachineid=self.virtual_machine.id,

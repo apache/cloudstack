@@ -204,42 +204,11 @@
                     }
                   },
 
-                  osCategory: {
-                    label: 'OS Category',
-                    select: function(args) {
-                      $.ajax({
-                        url: createURL("listOsCategories"),
-                        dataType: "json",
-                        async: true,
-                        success: function(json) {
-                          var osCats = json.listoscategoriesresponse.oscategory;
-                          var items = [];
-                          if (isAdmin())
-                            items.push({id: -1, description: "All OS"});
-                          $(osCats).each(function() {
-                            items.push({id: this.id, description: this.name});
-                          });
-                          args.response.success({data: items});
-                        }
-                      });
-                    }
-                  },
-
                   osTypeId: {
                     label: 'label.os.type',
-                    dependsOn: 'osCategory',
                     select: function(args) {
-                      if(args.osCategory == null)
-                        return;
-
-                      var apiCmd;
-                      if(args.osCategory == -1)
-                        apiCmd = "listOsTypes";
-                      else
-                        apiCmd = "listOsTypes&oscategoryid=" + args.osCategory;
-
                       $.ajax({
-                        url: createURL(apiCmd),
+                        url: createURL("listOsTypes"),
                         dataType: "json",
                         async: true,
                         success: function(json) {
@@ -814,46 +783,15 @@
                     isBoolean: true,
                     isChecked: true
                   },
-                  
-                  osCategory: {
-                    label: 'OS Category',
-                    dependsOn: 'isBootable',
-                    select: function(args) {
-                      $.ajax({
-                        url: createURL("listOsCategories"),
-                        dataType: "json",
-                        async: true,
-                        success: function(json) {
-                          var osCats = json.listoscategoriesresponse.oscategory;
-                          var items = [];
-                          if (isAdmin())
-                            items.push({id: -1, description: "All OS"});
-                          $(osCats).each(function() {
-                            items.push({id: this.id, description: this.name});
-                          });
-                          args.response.success({data: items});
-                        }
-                      });
-                    }
-                  },
-                  
+
                   osTypeId: {
                     label: 'label.os.type',
-                    dependsOn: ['isBootable','osCategory'],
+                    dependsOn: 'isBootable',
                     isHidden: false,
                     validation: { required: true },
                     select: function(args) {
-                      if(args.osCategory == null)
-                        return;
-
-                      var apiCmd;
-                      if(args.osCategory == -1)
-                        apiCmd = "listOsTypes";
-                      else
-                        apiCmd = "listOsTypes&oscategoryid=" + args.osCategory;
-
                       $.ajax({
-                        url: createURL(apiCmd),
+                        url: createURL("listOsTypes"),
                         dataType: "json",
                         async: true,
                         success: function(json) {

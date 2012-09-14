@@ -23,6 +23,7 @@ from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
+from nose.plugins.attrib import attr
 
 #Import System modules
 import time
@@ -116,6 +117,7 @@ class TestHosts(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @unittest.skip("skipped - our environments will not add hosts")
     def test_01_clusters(self):
         """Test Add clusters & hosts - XEN, KVM, VWARE
         """

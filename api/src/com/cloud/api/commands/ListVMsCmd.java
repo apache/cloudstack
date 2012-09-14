@@ -96,6 +96,9 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
     @Parameter(name=ApiConstants.ISO_ID, type=CommandType.LONG, description="list vms by iso")
     private Long isoId;
 
+    @IdentityMapper(entityTableName="vpc")
+    @Parameter(name=ApiConstants.VPC_ID, type=CommandType.LONG, description="list vms by vpc")
+    private Long vpcId;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -156,6 +159,10 @@ public class ListVMsCmd extends BaseListTaggedResourcesCmd {
         return isoId;
     }
 
+    public Long getVpcId(){
+        return vpcId;
+    }
+    
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {
         EnumSet<VMDetails> dv;
         if (viewDetails==null || viewDetails.size() <=0){

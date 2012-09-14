@@ -224,6 +224,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 
+    int _allowedLoginAttempts;
+
     UserVO _systemUser;
     AccountVO _systemAccount;
     @Inject(adapter = SecurityChecker.class)
@@ -247,6 +249,9 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         ComponentLocator locator = ComponentLocator.getCurrentLocator();
         ConfigurationDao configDao = locator.getDao(ConfigurationDao.class);
         Map<String, String> configs = configDao.getConfiguration(params);
+
+        String loginAttempts = configs.get(Config.IncorrectLoginAttemptsAllowed.key());
+        _allowedLoginAttempts = NumbersUtil.parseInt(loginAttempts, 5);
 
         String value = configs.get(Config.AccountCleanupInterval.key());
         _cleanupInterval = NumbersUtil.parseInt(value, 60 * 60 * 24); // 1 day.
@@ -300,6 +305,13 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
 
     public boolean isResourceDomainAdmin(short accountType) {
         return (accountType == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN);
+    }
+
+    public boolean isInternalAccount(short accountType) {
+        if (isRootAdmin(accountType) || (accountType == Account.ACCOUNT_ID_SYSTEM)) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -418,6 +430,25 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         else
             throw new CloudRuntimeException("Failed to find any private zone for Resource domain admin.");
 
+    }
+
+    @DB
+    public void updateLoginAttempts(Long id, int attempts, boolean toDisable) {
+        Transaction txn = Transaction.currentTxn();
+        txn.start();
+        try {
+            UserAccountVO user = null;
+            user = _userAccountDao.lockRow(id, true);
+            user.setLoginAttempts(attempts);
+            if(toDisable) {
+                user.setState(State.disabled.toString());
+            }
+            _userAccountDao.update(id, user);
+             txn.commit();
+        } catch (Exception e) {
+            s_logger.error("Failed to update login attempts for user with id " + id );
+        }
+        txn.close();
     }
 
     private boolean doSetUserStatus(long userId, State state) {
@@ -732,7 +763,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (domainId == null) {
             domainId = DomainVO.ROOT_DOMAIN;
         }
-        
+
         if (userName.isEmpty()) {
             throw new InvalidParameterValueException("Username is empty");
         }
@@ -740,7 +771,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (firstName.isEmpty()) {
             throw new InvalidParameterValueException("Firstname is empty");
         }
-        
+
         if (lastName.isEmpty()) {
             throw new InvalidParameterValueException("Lastname is empty");
         }
@@ -1002,6 +1033,8 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         txn.commit();
 
         if (success) {
+            // whenever the user is successfully enabled, reset the login attempts to zero
+            updateLoginAttempts(userId, 0, false);
             return _userAccountDao.findById(userId);
         } else {
             throw new CloudRuntimeException("Unable to enable user " + userId);
@@ -1818,10 +1851,35 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 throw new CloudAuthenticationException("User " + username + " in domain " + domainName + " is disabled/locked (or account is disabled/locked)");
                 // return null;
             }
+            // Whenever the user is able to log in successfully, reset the login attempts to zero
+            if(!isInternalAccount(userAccount.getType()))
+                updateLoginAttempts(userAccount.getId(), 0, false);
+
             return userAccount;
         } else {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Unable to authenticate user with username " + username + " in domain " + domainId);
+            }
+
+            UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
+            UserAccountVO user = _userAccountDao.findById(userAccount.getId());
+            if (user != null) {
+                if ((user.getState().toString()).equals("enabled")) {
+                    if (!isInternalAccount(user.getType())) {
+                        //Internal accounts are not disabled
+                        int attemptsMade = user.getLoginAttempts() + 1;
+                        if (attemptsMade < _allowedLoginAttempts) {
+                            updateLoginAttempts(userAccount.getId(), attemptsMade, false);
+                            s_logger.warn("Login attempt failed. You have " + ( _allowedLoginAttempts - attemptsMade ) + " attempt(s) remaining");
+                        } else {
+                            updateLoginAttempts(userAccount.getId(), _allowedLoginAttempts, true);
+                            s_logger.warn("User " + user.getUsername() + " has been disabled due to multiple failed login attempts." +
+                                    " Please contact admin.");
+                        }
+                    }
+                } else {
+                    s_logger.info("User " + user.getUsername() + " is disabled/locked");
+                }
             }
             return null;
         }

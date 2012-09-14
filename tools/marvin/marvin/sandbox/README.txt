@@ -15,8 +15,8 @@ those who have deployed CloudStack before. Once you have your properties file
 you will have to create a JSON configuration of your deployment using the
 python script provided in the respective folder.
 
-The demo files are from the tutorial for testing with python that can be found
-on the wiki.cloudstack.org
+The demo files are from the tutorial for testing with python that can be found at
+   https://cwiki.apache.org/confluence/display/CLOUDSTACK/Testing+with+Python
 
 A common deployment model of a simulator.cfg that can be used for debugging is
 included. This will configure an advanced zone with simulators that can be used

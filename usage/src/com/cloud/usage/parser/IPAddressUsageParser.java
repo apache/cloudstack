@@ -138,7 +138,7 @@ public class IPAddressUsageParser {
         // Create the usage record
 
         UsageVO usageRecord = new UsageVO(zoneId, account.getAccountId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", UsageTypes.IP_ADDRESS, new Double(usage), IpId, 
-        		(isSystem?1:0), (isSourceNat?"SourceNat":""), startDate, endDate);
+                (isSystem?1:0), (isSourceNat?"SourceNat":""), startDate, endDate);
         m_usageDao.persist(usageRecord);
     }
 

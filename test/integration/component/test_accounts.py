@@ -57,8 +57,10 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
+                                    "cpuspeed": 100,
+                                    # in MHz
+                                    "memory": 64,
+                                    # In MBs
                         },
                          "virtual_machine": {
                                     "displayname": "Test VM",
@@ -75,19 +77,24 @@ class Services:
                          "template": {
                                 "displaytext": "Public Template",
                                 "name": "Public template",
-                                "ostypeid": 'aaf6e8c9-b609-441d-9ebd-b4eaa030a275',
+                                "ostypeid": 'bc66ada0-99e7-483b-befc-8fb0c2129b70',
                                 "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                                 "hypervisor": 'XenServer',
-                                "format" : 'VHD',
+                                "format": 'VHD',
                                 "isfeatured": True,
                                 "ispublic": True,
                                 "isextractable": True,
                         },
-                        "ostypeid": 'aaf6e8c9-b609-441d-9ebd-b4eaa030a275',
+                        "natrule": {
+                                    "publicport": 22,
+                                    "privateport": 22,
+                                    "protocol": 'TCP',
+                        },
+                        "ostypeid": 'bc66ada0-99e7-483b-befc-8fb0c2129b70',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
-                        "mode":'advanced'
+                        "mode": 'advanced'
                     }
 
 
@@ -95,7 +102,10 @@ class TestAccounts(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestAccounts, cls).getClsTestClient().getApiClient()
+        cls.api_client = super(
+                               TestAccounts,
+                               cls
+                               ).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -137,8 +147,9 @@ class TestAccounts(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
     def test_01_create_account(self):
-        """Test Create Account and user for that account 
+        """Test Create Account and user for that account
         """
 
         # Validate the following
@@ -220,7 +231,10 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestRemoveUserFromAccount, cls).getClsTestClient().getApiClient()
+        cls.api_client = super(
+                               TestRemoveUserFromAccount,
+                               cls
+                               ).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -270,8 +284,9 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
     def test_01_user_remove_VM_running(self):
-        """Test Remove one user from the account 
+        """Test Remove one user from the account
         """
 
         # Validate the following
@@ -333,8 +348,8 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                                           id=self.account.account.id
                                         )
         self.assertEqual(
-                         isinstance(accounts_response, list), 
-                         True, 
+                         isinstance(accounts_response, list),
+                         True,
                          "Check for valid list accounts response"
                          )
 
@@ -349,8 +364,8 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                                     domainid=self.account.account.domainid
                                     )
         self.assertEqual(
-                         isinstance(vm_response, list), 
-                         True, 
+                         isinstance(vm_response, list),
+                         True,
                          "Check for valid list VM response"
                          )
 
@@ -368,9 +383,11 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                             "Check state of VMs associated with account"
                             )
         return
+
     @unittest.skip("Open Questions")
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
     def test_02_remove_all_users(self):
-        """Test Remove both users from the account 
+        """Test Remove both users from the account
         """
 
         # Validate the following
@@ -421,12 +438,12 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                           domainid=self.account.account.domainid
                           )
         self.assertEqual(
-                         isinstance(users, list), 
-                         True, 
+                         isinstance(users, list),
+                         True,
                          "Check for valid list users response"
                          )
         for user in users:
-            
+
             self.debug("Deleting user: %s" % user.id)
             cmd = deleteUser.deleteUserCmd()
             cmd.id = user.id
@@ -437,12 +454,12 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
                                     name='account.cleanup.interval'
                                     )
         self.assertEqual(
-                         isinstance(interval, list), 
-                         True, 
+                         isinstance(interval, list),
+                         True,
                          "Check for valid list configurations response"
                          )
         self.debug("account.cleanup.interval: %s" % interval[0].value)
-        
+
         # Sleep to ensure that all resources are deleted
         time.sleep(int(interval[0].value))
 
@@ -481,7 +498,10 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestNonRootAdminsPrivileges, cls).getClsTestClient().getApiClient()
+        cls.api_client = super(
+                               TestNonRootAdminsPrivileges,
+                               cls
+                               ).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone settings
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -526,6 +546,7 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
     def test_01_non_root_admin_Privileges(self):
         """Test to verify Non Root admin previleges"""
 
@@ -554,11 +575,11 @@ class TestNonRootAdminsPrivileges(cloudstackTestCase):
                                           )
 
         self.assertEqual(
-                         isinstance(accounts_response, list), 
-                         True, 
+                         isinstance(accounts_response, list),
+                         True,
                          "Check list accounts response for valid data"
                         )
-        
+
         self.assertEqual(
                             len(accounts_response),
                             1,
@@ -578,7 +599,10 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestServiceOfferingSiblings, cls).getClsTestClient().getApiClient()
+        cls.api_client = super(
+                               TestServiceOfferingSiblings,
+                               cls
+                               ).getClsTestClient().getApiClient()
         cls.services = Services().services
 
         # Create Domains, accounts etc
@@ -643,6 +667,7 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
     def test_01_service_offering_siblings(self):
         """Test to verify service offerings at same level in hierarchy"""
 
@@ -655,11 +680,11 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
                                                   domainid=self.domain_1.id
                                                   )
         self.assertEqual(
-                         isinstance(service_offerings, list), 
-                         True, 
+                         isinstance(service_offerings, list),
+                         True,
                          "Check if valid list service offerings response"
                         )
-        
+
         self.assertNotEqual(
                             len(service_offerings),
                             0,
@@ -685,12 +710,16 @@ class TestServiceOfferingSiblings(cloudstackTestCase):
                     )
         return
 
+
 @unittest.skip("Open Questions")
 class TestServiceOfferingHierarchy(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestServiceOfferingHierarchy, cls).getClsTestClient().getApiClient()
+        cls.api_client = super(
+                               TestServiceOfferingHierarchy,
+                               cls
+                               ).getClsTestClient().getApiClient()
         cls.services = Services().services
 
         # Create domain, service offerings etc
@@ -756,6 +785,7 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
     def test_01_service_offering_hierarchy(self):
         """Test to verify service offerings at same level in hierarchy"""
 
@@ -809,12 +839,15 @@ class TestServiceOfferingHierarchy(cloudstackTestCase):
             )
         return
 
+
 @unittest.skip("Open Questions")
 class TesttemplateHierarchy(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TesttemplateHierarchy, cls).getClsTestClient().getApiClient()
+        cls.api_client = super(
+                               TesttemplateHierarchy,
+                               cls).getClsTestClient().getApiClient()
         cls.services = Services().services
         # Get Zone settings
         cls.zone = get_zone(cls.api_client, cls.services)
@@ -885,6 +918,7 @@ class TesttemplateHierarchy(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
     def test_01_template_hierarchy(self):
         """Test to verify template at same level in hierarchy"""
 
@@ -945,11 +979,15 @@ class TesttemplateHierarchy(cloudstackTestCase):
             )
         return
 
+
 class TestAddVmToSubDomain(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.api_client = super(TestAddVmToSubDomain, cls).getClsTestClient().getApiClient()
+        cls.api_client = super(
+                               TestAddVmToSubDomain,
+                               cls
+                               ).getClsTestClient().getApiClient()
         cls.services = Services().services
 
         # Setup working Environment- Create domain, zone, pod cluster etc.
@@ -1012,19 +1050,19 @@ class TestAddVmToSubDomain(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id
                                     )
         cls._cleanup = [
-			cls.account_2,
-			cls.account_1, 
-			cls.sub_domain, 
-			cls.service_offering
-			]
+                        cls.account_2,
+                        cls.account_1,
+                        cls.sub_domain,
+                        cls.service_offering
+                        ]
         return
 
     @classmethod
     def tearDownClass(cls):
-        try: 
+        try:
             #Clean up, terminate the created resources
-            cleanup_resources(cls.api_client,cls._cleanup)
-	except Exception as e:
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
@@ -1042,7 +1080,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
-
+    @attr(tags=["advanced", "basic", "eip", "advancedns", "sg"])
     def test_01_add_vm_to_subdomain(self):
         """ Test Sub domain allowed to launch VM  when a Domain level zone is
             created"""
@@ -1091,4 +1129,848 @@ class TestAddVmToSubDomain(cloudstackTestCase):
                              'Running',
                              "Check State of Virtual machine"
                              )
+        return
+
+
+class TestUserDetails(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(
+                               TestUserDetails,
+                               cls
+                               ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        # Get Zone, Domain etc
+        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.services)
+        cls._cleanup = []
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            #Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            interval = list_configurations(
+                                    self.apiclient,
+                                    name='account.cleanup.interval'
+                                    )
+            # Sleep to ensure that all resources are deleted
+            time.sleep(int(interval[0].value) * 2)
+            #Clean up, terminate the created network offerings
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=[
+                "role",
+                "accounts",
+                "simulator",
+                "advanced",
+                "advancedns",
+                "basic",
+                "eip",
+                "sg"
+                ])
+    def test_updateUserDetails(self):
+        """Test user update API
+        """
+
+        # Steps for test scenario
+        # 1. create a user account
+        # 2. update the user details (firstname, lastname, user) with
+        #    updateUser API
+        # 3. listUsers in the account
+        # 4. delete the account
+        # Validate the following
+        # 1. listAccounts should show account created successfully
+        # 2. updateUser API should return valid response
+        # 3. user should be updated with new details
+
+        self.debug("Creating an user account..")
+        self.account = Account.create(
+                                     self.apiclient,
+                                     self.services["account"],
+                                     domainid=self.domain.id
+                                     )
+        self.cleanup.append(self.account)
+
+        # Fetching the user details of account
+        self.debug(
+                   "Fetching user details for account: %s" %
+                                            self.account.account.name)
+        users = User.list(
+                          self.apiclient,
+                          account=self.account.account.name,
+                          domainid=self.account.account.domainid
+                          )
+        self.assertEqual(
+                         isinstance(users, list),
+                         True,
+                         "List users should return a valid list for account"
+                         )
+        user_1 = users[0]
+        self.debug("Updating the details of user: %s" % user_1.name)
+        firstname = random_gen()
+        lastname = random_gen()
+
+        self.debug("New firstname: %s, lastname: %s" % (firstname, lastname))
+        User.update(
+                    self.apiclient,
+                    user_1.id,
+                    firstname=firstname,
+                    lastname=lastname
+                    )
+
+        # Fetching the user details of account
+        self.debug(
+                   "Fetching user details for user: %s" % user_1.name)
+        users = User.list(
+                          self.apiclient,
+                          id=user_1.id,
+                          listall=True
+                          )
+
+        self.assertEqual(
+                         isinstance(users, list),
+                         True,
+                         "List users should return a valid list for account"
+                         )
+        user_1 = users[0]
+        self.assertEqual(
+                         user_1.firstname,
+                         firstname,
+                         "User's first name should be updated with new one"
+                         )
+        self.assertEqual(
+                         user_1.lastname,
+                         lastname,
+                         "User's last name should be updated with new one"
+                         )
+        return
+
+    @attr(tags=[
+                "role",
+                "accounts",
+                "simulator",
+                "advanced",
+                "advancedns",
+                "basic",
+                "eip",
+                "sg"
+                ])
+    def test_updateAdminDetails(self):
+        """Test update admin details
+        """
+
+        # Steps for test scenario
+        # 1. create a admin account
+        # 2. update the user details (firstname, lastname, user) with
+        #    updateUser API
+        # 3. listUsers in the account
+        # 4. delete the account
+        # Validate the following
+        # 1. listAccounts should show account created successfully
+        # 2. updateUser API should return valid response
+        # 3. user should be updated with new details
+
+        self.debug("Creating a ROOT admin account")
+        self.account = Account.create(
+                                     self.apiclient,
+                                     self.services["account"],
+                                     admin=True,
+                                     )
+        self.cleanup.append(self.account)
+
+        # Fetching the user details of account
+        self.debug(
+                   "Fetching user details for account: %s" %
+                                            self.account.account.name)
+        users = User.list(
+                          self.apiclient,
+                          account=self.account.account.name,
+                          domainid=self.account.account.domainid
+                          )
+        self.assertEqual(
+                         isinstance(users, list),
+                         True,
+                         "List users should return a valid list for account"
+                         )
+        user_1 = users[0]
+        self.debug("Updating the details of user: %s" % user_1.name)
+        firstname = random_gen()
+        lastname = random_gen()
+
+        self.debug("New firstname: %s, lastname: %s" % (firstname, lastname))
+        User.update(
+                    self.apiclient,
+                    user_1.id,
+                    firstname=firstname,
+                    lastname=lastname
+                    )
+
+        # Fetching the user details of account
+        self.debug(
+                   "Fetching user details for user: %s" % user_1.name)
+        users = User.list(
+                          self.apiclient,
+                          id=user_1.id,
+                          listall=True
+                          )
+
+        self.assertEqual(
+                         isinstance(users, list),
+                         True,
+                         "List users should return a valid list for account"
+                         )
+        user_1 = users[0]
+        self.assertEqual(
+                         user_1.firstname,
+                         firstname,
+                         "User's first name should be updated with new one"
+                         )
+        self.assertEqual(
+                         user_1.lastname,
+                         lastname,
+                         "User's last name should be updated with new one"
+                         )
+        return
+
+    @attr(tags=[
+                "role",
+                "accounts",
+                "simulator",
+                "advanced",
+                "advancedns",
+                "basic",
+                "eip",
+                "sg"
+                ])
+    def test_updateDomainAdminDetails(self):
+        """Test update domain admin details
+        """
+
+        # Steps for test scenario
+        # 2. update the user details (firstname, lastname, user) with
+        #    updateUser API
+        # 3. listUsers in the account
+        # 4. delete the account
+        # Validate the following
+        # 1. listAccounts should show account created successfully
+        # 2. updateUser API should return valid response
+        # 3. user should be updated with new details
+
+        self.debug("Creating a domain admin account")
+        self.account = Account.create(
+                                     self.apiclient,
+                                     self.services["account"],
+                                     admin=True,
+                                     domainid=self.domain.id
+                                     )
+        self.cleanup.append(self.account)
+
+        # Fetching the user details of account
+        self.debug(
+                   "Fetching user details for account: %s" %
+                                            self.account.account.name)
+        users = User.list(
+                          self.apiclient,
+                          account=self.account.account.name,
+                          domainid=self.account.account.domainid
+                          )
+        self.assertEqual(
+                         isinstance(users, list),
+                         True,
+                         "List users should return a valid list for account"
+                         )
+        user_1 = users[0]
+        self.debug("Updating the details of user: %s" % user_1.name)
+        firstname = random_gen()
+        lastname = random_gen()
+
+        self.debug("New firstname: %s, lastname: %s" % (firstname, lastname))
+        User.update(
+                    self.apiclient,
+                    user_1.id,
+                    firstname=firstname,
+                    lastname=lastname
+                    )
+
+        # Fetching the user details of account
+        self.debug(
+                   "Fetching user details for user: %s" % user_1.name)
+        users = User.list(
+                          self.apiclient,
+                          id=user_1.id,
+                          listall=True
+                          )
+
+        self.assertEqual(
+                         isinstance(users, list),
+                         True,
+                         "List users should return a valid list for account"
+                         )
+        user_1 = users[0]
+        self.assertEqual(
+                         user_1.firstname,
+                         firstname,
+                         "User's first name should be updated with new one"
+                         )
+        self.assertEqual(
+                         user_1.lastname,
+                         lastname,
+                         "User's last name should be updated with new one"
+                         )
+        return
+
+@unittest.skip("Login API response returns nothing")
+class TestUserLogin(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(
+                               TestUserLogin,
+                               cls
+                               ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+        # Get Zone, Domain etc
+        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.services)
+        cls._cleanup = []
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            #Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            interval = list_configurations(
+                                    self.apiclient,
+                                    name='account.cleanup.interval'
+                                    )
+            # Sleep to ensure that all resources are deleted
+            time.sleep(int(interval[0].value) * 2)
+            #Clean up, terminate the created network offerings
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=["login", "accounts", "simulator", "advanced",
+                        "advancedns", "basic", "eip", "sg"])
+    def test_LoginApiUuidResponse(self):
+        """Test if Login API does not return UUID's
+        """
+
+        # Steps for test scenario
+        # 1. create a user account
+        # 2. login to the user account with given credentials (loginCmd)
+        # 3. delete the user account
+        # Validate the following
+        # 1. listAccounts should return account created
+        # 2. loginResponse should have UUID only is response. Assert by
+        #    checking database id is not same as response id
+        #    Login also succeeds with non NULL sessionId in response
+
+        self.debug("Creating an user account..")
+        self.account = Account.create(
+                                     self.apiclient,
+                                     self.services["account"],
+                                     domainid=self.domain.id
+                                     )
+        self.cleanup.append(self.account)
+
+        self.debug("Logging into the cloudstack with login API")
+        respose = User.login(
+                             self.apiclient,
+                             username=self.account.account.name,
+                             password=self.services["account"]["password"]
+                             )
+        self.assertEqual(respose, None, "Login response should not be none")
+        self.debug("Login API response: %s" % respose)
+
+        self.assertNotEqual(
+                            respose.sessionkey,
+                            None,
+                            "Login to the CloudStack should be successful" +
+                            "response shall have non Null key"
+                            )
+        return
+
+    @attr(tags=["login", "accounts", "simulator", "advanced",
+                        "advancedns", "basic", "eip", "sg"])
+    def test_LoginApiDomain(self):
+        """Test login API with domain
+        """
+
+        # Steps for test scenario
+        # 1. create a domain
+        # 2. create user in the domain
+        # 3. login to the user account above using UUID domain/user
+        # 4. delete the user account
+        # Validate the following
+        # 1. listDomains returns created domain
+        # 2. listAccounts returns created user
+        # 3. loginResponse should have UUID only in responses
+        #    Login also succeeds with non NULL sessionId in response
+
+        self.debug("Creating a domain for login with API domain test")
+        domain = Domain.create(
+                                self.apiclient,
+                                self.services["domain"],
+                                parentdomainid=self.domain.id
+                                )
+        self.debug("Domain: %s is created succesfully." % domain.name)
+        self.debug(
+            "Checking if the created domain is listed in list domains API")
+        domains = Domain.list(self.apiclient, id=domain.id, listall=True)
+
+        self.assertEqual(
+                         isinstance(domains, list),
+                         True,
+                         "List domains shall return a valid response"
+                         )
+        self.debug("Creating an user account in domain: %s" % domain.name)
+        self.account = Account.create(
+                                     self.apiclient,
+                                     self.services["account"],
+                                     domainid=domain.id
+                                     )
+        self.cleanup.append(self.account)
+
+        accounts = Account.list(
+                                self.apiclient,
+                                name=self.account.account.name,
+                                domainid=self.account.account.domainid,
+                                listall=True
+                                )
+
+        self.assertEqual(
+                         isinstance(accounts, list),
+                         True,
+                         "List accounts should return a valid response"
+                         )
+
+        self.debug("Logging into the cloudstack with login API")
+        respose = User.login(
+                             self.apiclient,
+                             username=self.account.account.name,
+                             password=self.services["account"]["password"]
+                             )
+        self.assertEqual(respose, None, "Login response should not be none")
+        self.debug("Login API response: %s" % respose)
+
+        self.assertNotEqual(
+                            respose.sessionkey,
+                            None,
+                            "Login to the CloudStack should be successful" +
+                            "response shall have non Null key"
+                            )
+        return
+
+
+class TestDomainForceRemove(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(
+                               TestDomainForceRemove,
+                               cls
+                               ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+
+        # Setup working Environment- Create domain, zone, pod cluster etc.
+        cls.domain = get_domain(
+                                   cls.api_client,
+                                   cls.services
+                                   )
+        cls.zone = get_zone(
+                               cls.api_client,
+                               cls.services,
+                               )
+
+        cls.template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostypeid"]
+                            )
+
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls._cleanup = []
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            #Clean up, terminate the created resources
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created resources
+            cleanup_resources(self.apiclient, self.cleanup)
+            interval = list_configurations(
+                                    self.apiclient,
+                                    name='account.cleanup.interval'
+                                    )
+            # Sleep to ensure that all resources are deleted
+            time.sleep(int(interval[0].value) * 2)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=["domains", "advanced", "advancedns", "simulator"])
+    def test_forceDeleteDomain(self):
+        """ Test delete domain with force option"""
+
+        # Steps for validations
+        # 1. create a domain DOM
+        # 2. create 2 users under this domain
+        # 3. deploy 1 VM into each of these user accounts
+        # 4. create PF / FW rules for port 22 on these VMs for their
+        #    respective accounts
+        # 5. delete the domain with force=true option
+        # Validate the following
+        # 1. listDomains should list the created domain
+        # 2. listAccounts should list the created accounts
+        # 3. listvirtualmachines should show the Running VMs
+        # 4. PF and FW rules should be shown in listFirewallRules
+        # 5. domain should delete successfully and above three list calls
+        #    should show all the resources now deleted. listRouters should
+        #    not return any routers in the deleted accounts/domains
+
+        self.debug("Creating a domain for login with API domain test")
+        domain = Domain.create(
+                                self.apiclient,
+                                self.services["domain"],
+                                parentdomainid=self.domain.id
+                                )
+        self.debug("Domain is created succesfully.")
+        self.debug(
+            "Checking if the created domain is listed in list domains API")
+        domains = Domain.list(self.apiclient, id=domain.id, listall=True)
+
+        self.assertEqual(
+                         isinstance(domains, list),
+                         True,
+                         "List domains shall return a valid response"
+                         )
+        self.debug("Creating 2 user accounts in domain: %s" % domain.name)
+        self.account_1 = Account.create(
+                                     self.apiclient,
+                                     self.services["account"],
+                                     domainid=domain.id
+                                     )
+
+        self.account_2 = Account.create(
+                                     self.apiclient,
+                                     self.services["account"],
+                                     domainid=domain.id
+                                     )
+
+        self.debug("Creating a tiny service offering for VM deployment")
+        self.service_offering = ServiceOffering.create(
+                                    self.apiclient,
+                                    self.services["service_offering"],
+                                    domainid=self.domain.id
+                                    )
+
+        self.debug("Deploying virtual machine in account 1: %s" %
+                                                self.account_1.account.name)
+        vm_1 = VirtualMachine.create(
+                                    self.apiclient,
+                                    self.services["virtual_machine"],
+                                    templateid=self.template.id,
+                                    accountid=self.account_1.account.name,
+                                    domainid=self.account_1.account.domainid,
+                                    serviceofferingid=self.service_offering.id
+                                    )
+
+        self.debug("Deploying virtual machine in account 2: %s" %
+                                                self.account_2.account.name)
+        vm_2 = VirtualMachine.create(
+                                    self.apiclient,
+                                    self.services["virtual_machine"],
+                                    templateid=self.template.id,
+                                    accountid=self.account_2.account.name,
+                                    domainid=self.account_2.account.domainid,
+                                    serviceofferingid=self.service_offering.id
+                                    )
+
+        networks = Network.list(
+                                self.apiclient,
+                                account=self.account_1.account.name,
+                                domainid=self.account_1.account.domainid,
+                                listall=True
+                                )
+        self.assertEqual(
+                         isinstance(networks, list),
+                         True,
+                         "List networks should return a valid response"
+                         )
+        network_1 = networks[0]
+        self.debug("Default network in account 1: %s is %s" % (
+                                                self.account_1.account.name,
+                                                network_1.name))
+        src_nat_list = PublicIPAddress.list(
+                                    self.apiclient,
+                                    associatednetworkid=network_1.id,
+                                    account=self.account_1.account.name,
+                                    domainid=self.account_1.account.domainid,
+                                    listall=True,
+                                    issourcenat=True,
+                                    )
+        self.assertEqual(
+                         isinstance(src_nat_list, list),
+                         True,
+                         "List Public IP should return a valid source NAT"
+                         )
+        self.assertNotEqual(
+                    len(src_nat_list),
+                    0,
+                    "Length of response from listPublicIp should not be 0"
+                    )
+
+        src_nat = src_nat_list[0]
+
+        self.debug(
+            "Trying to create a port forwarding rule in source NAT: %s" %
+                                                            src_nat.ipaddress)
+        #Create NAT rule
+        nat_rule = NATRule.create(
+                                  self.apiclient,
+                                  vm_1,
+                                  self.services["natrule"],
+                                  ipaddressid=src_nat.id
+                           )
+        self.debug("Created PF rule on source NAT: %s" % src_nat.ipaddress)
+
+        nat_rules = NATRule.list(self.apiclient, id=nat_rule.id)
+
+        self.assertEqual(
+                         isinstance(nat_rules, list),
+                         True,
+                         "List NAT should return a valid port forwarding rules"
+                         )
+
+        self.assertNotEqual(
+                    len(nat_rules),
+                    0,
+                    "Length of response from listLbRules should not be 0"
+                    )
+
+        self.debug("Deleting domain with force option")
+        try:
+            domain.delete(self.apiclient, cleanup=True)
+        except Exception as e:
+            self.fail("Failed to delete domain: %s" % e)
+
+        self.debug("Waiting for account.cleanup.interval" +
+                   " to cleanup any remaining resouces")
+
+        configurations = Configurations.list(
+                                            self.apiclient,
+                                            name="account.cleanup.interval",
+                                            listall=True
+                                            )
+        self.debug("account.cleanup.interval: %s" %
+                                            int(configurations[0].value))
+        # Sleep to ensure that all resources are deleted
+        time.sleep(int(configurations[0].value) * 2)
+        self.debug("Checking if the resources in domain are deleted or not..")
+        accounts = Account.list(
+                                self.apiclient,
+                                name=self.account_1.account.name,
+                                domainid=self.account_1.account.domainid,
+                                listall=True
+                                )
+
+        self.assertEqual(
+            accounts,
+            None,
+            "Account should get automatically deleted after domain removal"
+            )
+        return
+
+    @attr(tags=["domains", "advanced", "advancedns", "simulator"])
+    def test_DeleteDomain(self):
+        """ Test delete domain with force option"""
+
+        # Steps for validations
+        # 1. create a domain DOM
+        # 2. create 2 users under this domain
+        # 3. deploy 1 VM into each of these user accounts
+        # 4. create PF / FW rules for port 22 on these VMs for their
+        #    respective accounts
+        # 5. delete the domain with force=false option
+        # Validate the following
+        # 1. listDomains should list the created domain
+        # 2. listAccounts should list the created accounts
+        # 3. listvirtualmachines should show the Running VMs
+        # 4. PF and FW rules should be shown in listFirewallRules
+        # 5. domain deletion should fail saying there are resources under use
+
+        self.debug("Creating a domain for login with API domain test")
+        domain = Domain.create(
+                                self.apiclient,
+                                self.services["domain"],
+                                parentdomainid=self.domain.id
+                                )
+        self._cleanup.append(domain)
+        self.debug("Domain: %s is created successfully." % domain.name)
+        self.debug(
+            "Checking if the created domain is listed in list domains API")
+        domains = Domain.list(self.apiclient, id=domain.id, listall=True)
+
+        self.assertEqual(
+                         isinstance(domains, list),
+                         True,
+                         "List domains shall return a valid response"
+                         )
+        self.debug("Creating 2 user accounts in domain: %s" % domain.name)
+        self.account_1 = Account.create(
+                                     self.apiclient,
+                                     self.services["account"],
+                                     domainid=domain.id
+                                     )
+        self.cleanup.append(self.account_1)
+
+        self.account_2 = Account.create(
+                                     self.apiclient,
+                                     self.services["account"],
+                                     domainid=domain.id
+                                     )
+        self.cleanup.append(self.account_2)
+
+        self.debug("Creating a tiny service offering for VM deployment")
+        self.service_offering = ServiceOffering.create(
+                                    self.apiclient,
+                                    self.services["service_offering"],
+                                    domainid=self.domain.id
+                                    )
+        self.cleanup.append(self.service_offering)
+
+        self.debug("Deploying virtual machine in account 1: %s" %
+                                                self.account_1.account.name)
+        vm_1 = VirtualMachine.create(
+                                    self.apiclient,
+                                    self.services["virtual_machine"],
+                                    templateid=self.template.id,
+                                    accountid=self.account_1.account.name,
+                                    domainid=self.account_1.account.domainid,
+                                    serviceofferingid=self.service_offering.id
+                                    )
+
+        self.debug("Deploying virtual machine in account 2: %s" %
+                                                self.account_2.account.name)
+        vm_2 = VirtualMachine.create(
+                                    self.apiclient,
+                                    self.services["virtual_machine"],
+                                    templateid=self.template.id,
+                                    accountid=self.account_2.account.name,
+                                    domainid=self.account_2.account.domainid,
+                                    serviceofferingid=self.service_offering.id
+                                    )
+
+        networks = Network.list(
+                                self.apiclient,
+                                account=self.account_1.account.name,
+                                domainid=self.account_1.account.domainid,
+                                listall=True
+                                )
+        self.assertEqual(
+                         isinstance(networks, list),
+                         True,
+                         "List networks should return a valid response"
+                         )
+        network_1 = networks[0]
+        self.debug("Default network in account 1: %s is %s" % (
+                                                self.account_1.account.name,
+                                                network_1.name))
+        src_nat_list = PublicIPAddress.list(
+                                    self.apiclient,
+                                    associatednetworkid=network_1.id,
+                                    account=self.account_1.account.name,
+                                    domainid=self.account_1.account.domainid,
+                                    listall=True,
+                                    issourcenat=True,
+                                    )
+        self.assertEqual(
+                         isinstance(src_nat_list, list),
+                         True,
+                         "List Public IP should return a valid source NAT"
+                         )
+        self.assertNotEqual(
+                    len(src_nat_list),
+                    0,
+                    "Length of response from listPublicIp should not be 0"
+                    )
+
+        src_nat = src_nat_list[0]
+
+        self.debug(
+            "Trying to create a port forwarding rule in source NAT: %s" %
+                                                            src_nat.ipaddress)
+        #Create NAT rule
+        nat_rule = NATRule.create(
+                                  self.apiclient,
+                                  vm_1,
+                                  self.services["natrule"],
+                                  ipaddressid=src_nat.id
+                           )
+        self.debug("Created PF rule on source NAT: %s" % src_nat.ipaddress)
+
+        nat_rules = NATRule.list(self.apiclient, id=nat_rule.id)
+
+        self.assertEqual(
+                         isinstance(nat_rules, list),
+                         True,
+                         "List NAT should return a valid port forwarding rules"
+                         )
+
+        self.assertNotEqual(
+                    len(nat_rules),
+                    0,
+                    "Length of response from listLbRules should not be 0"
+                    )
+
+        self.debug("Deleting domain without force option")
+        with self.assertRaises(Exception):
+            domain.delete(self.apiclient, cleanup=False)
         return

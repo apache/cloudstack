@@ -909,7 +909,7 @@
                                       data.listvirtualmachinesresponse.virtualmachine : [],
                                     function(instance) {
                                       return $.inArray(instance.state, [
-                                        'Destroyed'
+                                        'Destroyed','Expunging'
                                       ]) == -1;
                                     }
                                   )
@@ -1430,34 +1430,33 @@
                       listView: {
                         filters: false,
                         dataProvider: function(args) {
-                          var $listView = args.$listView;
                           var data = {
                             page: args.page,
                             pageSize: pageSize,                            
                             listAll: true
                           };
-
-                          // See if tier is selected
-                          var $tierSelect = $listView.find('.tier-select select');
                           
-                          if ($tierSelect.size() && $tierSelect.val() != '-1') {
-                            data.networkid = $tierSelect.val();
+                          var $tierSelect = $(".ui-dialog-content").find('.tier-select select');
+                          
+                          // if $tierSelect is not initialized, return; tierSelect() will refresh listView and come back here later 
+                          if($tierSelect.size() == 0){
+                            args.response.success({ data: null });
+                            return;             
                           }
-													else {
-													  args.response.success({ data: null });
-														return;
-													}
-
-													if('vpc' in args.context) {
-													  $.extend(data, {
-														  vpcid: args.context.vpc[0].id
-														});
-													}
-													else if('networks' in args.context) {
-													  $.extend(data, {
-														  networkid: args.context.networks[0].id
-														});
-													}
+                          
+                          if('vpc' in args.context) {
+                            if($tierSelect.size() && $tierSelect.val() != '-1' ){ 
+                              data.networkid = $tierSelect.val();
+                            }                          
+                            $.extend(data, {
+                              vpcid: args.context.vpc[0].id
+                            });
+                          }
+                          else if('networks' in args.context) {
+                            $.extend(data, {
+                              networkid: args.context.networks[0].id
+                            });
+                          }
 													
                           if (!args.context.projects) {
                             $.extend(data, {
@@ -1478,7 +1477,7 @@
                                     data.listvirtualmachinesresponse.virtualmachine : [],
                                   function(instance) {
                                     return $.inArray(instance.state, [
-                                      'Destroyed'
+                                      'Destroyed','Expunging'
                                     ]) == -1;
                                   }
                                 )
@@ -2207,7 +2206,7 @@
                                 data.listvirtualmachinesresponse.virtualmachine ?
                                   data.listvirtualmachinesresponse.virtualmachine : [],
                                 function(instance) {
-                                  var isActiveState = $.inArray(instance.state, ['Destroyed']) == -1;
+                                  var isActiveState = $.inArray(instance.state, ['Destroyed','Expunging']) == -1;
                                   var notExisting = !$.grep(itemData, function(item) {
                                     return item.id == instance.id;
                                   }).length;
@@ -2703,7 +2702,7 @@
                                     data.listvirtualmachinesresponse.virtualmachine : [],
                                   function(instance) {
                                     return $.inArray(instance.state, [
-                                      'Destroyed'
+                                      'Destroyed','Expunging'
                                     ]) == -1;
                                   }
                                 )

@@ -18,12 +18,13 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
-from marvin import remoteSSHClient
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
+from marvin.remoteSSHClient import remoteSSHClient
 
 #Import System modules
 import time
@@ -57,7 +58,7 @@ class Services:
                                 },
                         "host": {
                                         "username": "root",
-                                        "password": "fr3sca",
+                                        "password": "password",
                                         "publicport": 22,
                             },
                         "account": {
@@ -80,16 +81,17 @@ class Services:
                                     # Algorithm used for load balancing
                                     "privateport": 22,
                                     "publicport": 2222,
+                                    "protocol": 'TCP',
                                 },
-                         "fw_rule":{
+                         "fw_rule": {
                                     "startport": 1,
                                     "endport": 6000,
                                     "cidr": '55.55.0.0/11',
                                     # Any network (For creating FW rule
                                     },
-                         "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                         "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                          # Used for Get_Template : CentOS 5.3 (64 bit)
-                         "mode": 'advanced', # Networking mode: Advanced, basic
+                         "mode": 'advanced',    # Networking mode: Advanced, basic
                         }
 
 
@@ -166,10 +168,10 @@ class TestRouterServices(cloudstackTestCase):
         self._cleanup = []
         return
 
+    @attr(tags = ["advanced"])
     def test_01_AdvancedZoneRouterServices(self):
         """Test advanced zone router services
         """
-
         # Validate the following:
         # 1. Verify that list of services provided by this network are running
         #    a. DNS
@@ -179,7 +181,7 @@ class TestRouterServices(cloudstackTestCase):
         #    e. LB
         #    f. VPN
         #    g. userdata
-        # 2. wait for router to start and guest network to be created 
+        # 2. wait for router to start and guest network to be created
         #    a. listRouters account=user, domainid=1 (router state=Running)
         #    b. listNetworks account=user domainid=1 (network state=Implemented)
         #    c. listVirtualMachines account=user domainid=1 (VM state=Running)
@@ -312,12 +314,13 @@ class TestRouterServices(cloudstackTestCase):
                     )
         return
 
+    @attr(configuration = "network.gc")
+    @attr(tags = ["advanced"])
     def test_02_NetworkGarbageCollection(self):
         """Test network garbage collection
         """
-
         # Validate the following
-        # 1. wait for router to start and guest network to be created 
+        # 1. wait for router to start and guest network to be created
         #    a.listRouters account=user, domainid=1 (router state=Running)
         #    b.listNetworks account=user domainid=1 (network state=Implemented)
         #    c.listVirtualMachines account=user domainid=1 (VM states=Running)
@@ -435,9 +438,9 @@ class TestRouterServices(cloudstackTestCase):
                         )
         self.debug("network.gc.wait: %s" % gcwait[0].value)
 
-	total_wait = int(gcinterval[0].value) + int (gcwait[0].value)
+        total_wait = int(gcinterval[0].value) + int(gcwait[0].value)
         # Router is stopped after (network.gc.interval *2) time. Wait for
-        # (network.gc.interval+network.gc.wait) * 2 for moving router to 'Stopped' 
+        # (network.gc.interval+network.gc.wait) * 2 for moving router to 'Stopped'
         time.sleep(total_wait * 2)
 
         routers = list_routers(
@@ -470,6 +473,7 @@ class TestRouterServices(cloudstackTestCase):
         self._cleanup.append(self.vm_2)
         return
 
+    @attr(tags = ["advanced"])
     def test_03_RouterStartOnVmDeploy(self):
         """Test router start on VM deploy
         """
@@ -578,7 +582,6 @@ class TestRouterServices(cloudstackTestCase):
         return
 
 
-
 class TestRouterStopCreatePF(cloudstackTestCase):
 
     @classmethod
@@ -645,20 +648,20 @@ class TestRouterStopCreatePF(cloudstackTestCase):
         self._cleanup = []
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_RouterStopCreatePF(self):
         """Test router stop create port forwarding
         """
-
         # validate the following
         # 1. wait for router to start, guest network to be implemented and
         #    VM to report Running
         # 2. stopRouter for this account
         # 3. wait for listRouters to report Router as 'Stopped'
         # 4. listPublicIpAddresses account=user, domainid=1 - pick ipaddressid
-        # 5. createPortForwardingRule (ipaddressid from step 5.) 
+        # 5. createPortForwardingRule (ipaddressid from step 5.)
         #    a. for port 22 (ssh) for user VM deployed in step 1.
         #    b. public port 222 , private port 22
-        # 6. startRouter stopped for this account 
+        # 6. startRouter stopped for this account
         # 7. wait for listRouters to show router as Running
 
         # Get router details associated for that account
@@ -718,7 +721,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
                         )
         public_ip = public_ips[0]
 
-        # Open up firewall port for SSH        
+        # Open up firewall port for SSH
         fw_rule = FireWallRule.create(
                             self.apiclient,
                             ipaddressid=public_ip.id,
@@ -789,6 +792,7 @@ class TestRouterStopCreatePF(cloudstackTestCase):
                       )
         return
 
+
 class TestRouterStopCreateLB(cloudstackTestCase):
 
     @classmethod
@@ -854,10 +858,10 @@ class TestRouterStopCreateLB(cloudstackTestCase):
         self._cleanup = []
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_RouterStopCreateLB(self):
         """Test router stop create Load balancing
         """
-
         # validate the following
         # 1. listLoadBalancerRules (publicipid=ipaddressid of source NAT)
         # 2. rule should be for port 2222 as applied and
@@ -921,8 +925,8 @@ class TestRouterStopCreateLB(cloudstackTestCase):
                         "Check for list public IPs response return valid data"
                         )
         public_ip = public_ips[0]
-        
-        # Open up firewall port for SSH        
+
+        # Open up firewall port for SSH
         fw_rule = FireWallRule.create(
                             self.apiclient,
                             ipaddressid=public_ip.id,
@@ -1064,17 +1068,17 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         self._cleanup = []
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_RouterStopCreateFW(self):
         """Test router stop create Firewall rule
         """
-
         # validate the following
         # 1. 1. listFirewallRules (filter by ipaddressid of sourcenat)
         # 2. rule should be for ports 1-600 and in state=Active
         #    (optional backend)
         # 3. verify on router using iptables -t nat -nvx if rules are applied
 
-        # Get the router details associated with account 
+        # Get the router details associated with account
         routers = list_routers(
                                self.apiclient,
                                account=self.account.account.name,
@@ -1221,4 +1225,3 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                             "Check public IP address"
                         )
         return
-

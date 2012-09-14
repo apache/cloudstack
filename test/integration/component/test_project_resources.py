@@ -18,6 +18,7 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
@@ -25,6 +26,7 @@ from integration.lib.base import *
 from integration.lib.common import *
 from marvin.remoteSSHClient import remoteSSHClient
 import datetime
+
 
 class Services:
     """Test Resource creation Services
@@ -46,7 +48,7 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "user": {
                                     "email": "administrator@clogeny.com",
@@ -55,14 +57,14 @@ class Services:
                                     "username": "User",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "service_offering": {
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
+                                    "cpuspeed": 100,    # in MHz
+                                    "memory": 64,       # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Tiny Disk Offering",
@@ -85,7 +87,7 @@ class Services:
                         "template": {
                                     "displaytext": "Cent OS Template",
                                     "name": "Cent OS Template",
-                                    "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                                    "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                                     "templatefilter": 'self',
                                     "ispublic": False,
                         },
@@ -97,7 +99,7 @@ class Services:
                                     "name": "Domainwide Network",
                                     "displaytext": "Domainwide Network",
                                     "gateway": '192.168.100.1',
-                                    "netmask": '255.255.255.0', 
+                                    "netmask": '255.255.255.0',
                                     "startip": '192.168.100.200',
                                     "endip": '192.168.100.201',
                                     "vlan": 4001,
@@ -128,13 +130,13 @@ class Services:
                                     "endport": 22,
                                     "cidrlist": '0.0.0.0/0',
                         },
-                        "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                        "ostypeid": '01853327-513e-4508-9628-f1f55db1946f',
                         # Cent OS 5.3 (64 bit)
                         "sleep": 60,
                         "timeout": 10,
                         "mode": 'advanced',
                     }
-        
+
 
 class TestOfferings(cloudstackTestCase):
 
@@ -176,7 +178,7 @@ class TestOfferings(cloudstackTestCase):
                                     cls.services["disk_offering"]
                                     )
         cls._cleanup = [
-                        cls.account, 
+                        cls.account,
                         cls.service_offering,
                         cls.disk_offering
                         ]
@@ -205,10 +207,10 @@ class TestOfferings(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_01_service_offerings(self):
         """ Test service offerings in a project
         """
-
         # Validate the following
         # 1. Create a project.
         # 2. List service offerings for the project. All SO available in the
@@ -225,9 +227,9 @@ class TestOfferings(cloudstackTestCase):
         self.cleanup.append(project)
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
-        
+
         self.debug(
-            "Deploying VM instance for project: %s & service offering: %s" % ( 
+            "Deploying VM instance for project: %s & service offering: %s" % (
                                                     project.id,
                                                     self.service_offering.id
                                                     ))
@@ -247,6 +249,7 @@ class TestOfferings(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_02_project_disk_offerings(self):
         """ Test project disk offerings
         """
@@ -267,9 +270,9 @@ class TestOfferings(cloudstackTestCase):
         self.cleanup.append(project)
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
-        
+
         list_projects_reponse = Project.list(
-                                             self.apiclient, 
+                                             self.apiclient,
                                              id=project.id,
                                              listall=True
                                              )
@@ -351,7 +354,7 @@ class TestNetwork(cloudstackTestCase):
                                             domainid=cls.domain.id
                                             )
         cls._cleanup = [
-                        cls.account, 
+                        cls.account,
                         cls.service_offering,
                         ]
         return
@@ -379,10 +382,10 @@ class TestNetwork(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns", "simulator"])
     def test_03_network_create(self):
         """ Test create network in project
         """
-
         # Validate the following
         # 1. Create a project.
         # 2. Add virtual/direct network resource to the project. User shared
@@ -403,7 +406,7 @@ class TestNetwork(cloudstackTestCase):
         self.cleanup.append(project)
         self.debug("Created project with domain admin with ID: %s" %
                                                                 project.id)
-        
+
         network_offerings = list_network_offerings(
                                                 self.apiclient,
                                                 projectid=project.id,
@@ -412,36 +415,36 @@ class TestNetwork(cloudstackTestCase):
                                                 state='Enabled'
                                                 )
         self.assertEqual(
-                         isinstance(network_offerings, list), 
-                         True, 
+                         isinstance(network_offerings, list),
+                         True,
                          "Check for the valid network offerings"
                          )
         network_offering = network_offerings[0]
-        
-        self.debug("creating a network with network offering ID: %s" % 
+
+        self.debug("creating a network with network offering ID: %s" %
                                                         network_offering.id)
         self.services["network"]["zoneid"] = self.zone.id
         network = Network.create(
-                                 self.apiclient, 
-                                 self.services["network"], 
-                                 networkofferingid=network_offering.id, 
+                                 self.apiclient,
+                                 self.services["network"],
+                                 networkofferingid=network_offering.id,
                                  projectid=project.id
                                  )
         self.debug("Created network with ID: %s" % network.id)
-        networks= Network.list(
-                               self.apiclient, 
-                               projectid=project.id, 
+        networks = Network.list(
+                               self.apiclient,
+                               projectid=project.id,
                                listall=True
                                )
         self.assertEqual(
-                         isinstance(networks, list), 
-                         True, 
+                         isinstance(networks, list),
+                         True,
                          "Check for the valid network list response"
                          )
         network_response = networks[0]
-        
+
         self.debug("Deploying VM with network: %s" % network.id)
-        
+
         virtual_machine = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
@@ -466,24 +469,24 @@ class TestNetwork(cloudstackTestCase):
                                         displaytext='Offering for Shared networks'
                                         )
         self.assertEqual(
-                         isinstance(network_offerings, list), 
-                         True, 
+                         isinstance(network_offerings, list),
+                         True,
                          "Check for the valid network offerings"
                          )
         network_offering = network_offerings[0]
-        
-        self.debug("creating a shared network in domain: %s" % 
+
+        self.debug("creating a shared network in domain: %s" %
                                                         self.domain.id)
         domain_network = Network.create(
-                                 self.apiclient, 
+                                 self.apiclient,
                                  self.services["domain_network"],
                                  domainid=self.domain.id,
                                  networkofferingid=network_offering.id,
-                                 zoneid=self.zone.id 
+                                 zoneid=self.zone.id
                                  )
         self._cleanup.append(domain_network)
         self.debug("Created network with ID: %s" % domain_network.id)
-        
+
         virtual_machine = VirtualMachine.create(
                                 self.apiclient,
                                 self.services["server"],
@@ -583,17 +586,16 @@ class TestTemplates(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_04_public_template_use_in_project(self):
         """Test Templates creation in projects
         """
-
-        # Validate the following 
         # 1. Create a project
         # 2. Verify Public templates can be used without any restriction
         # 3. Verify that template created in project can be used in project
         #    without any restrictions
-        
-        self.debug("Deploying VM for with public template: %s" % 
+
+        self.debug("Deploying VM for with public template: %s" %
                                                         self.template.id)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
@@ -642,18 +644,17 @@ class TestTemplates(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns"])
     def test_05_use_private_template_in_project(self):
         """Test use of private template in a project
         """
-
-        # Validate the following 
         # 1. Create a project
         # 2. Verify that in order to use somebody’s Private template for vm
         #    creation in the project, permission to use the template has to
         #    be granted to the Project (use API “updateTemplatePermissions”
         #    with project id to achieve that).
-        
-        self.debug("Deploying VM for with public template: %s" % 
+
+        self.debug("Deploying VM for with public template: %s" %
                                                         self.template.id)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
@@ -701,7 +702,7 @@ class TestTemplates(cloudstackTestCase):
                             True,
                             "Check Template is in ready state or not"
                         )
-        
+
         # Update template permissions to grant permission to project
         self.debug(
           "Updating template permissions:%s to grant access to project: %s" % (
@@ -714,7 +715,7 @@ class TestTemplates(cloudstackTestCase):
                                      op='add',
                                      projectids=self.project.id
                                      )
-        self.debug("Deploying VM for with privileged template: %s" % 
+        self.debug("Deploying VM for with privileged template: %s" %
                                                         self.template.id)
         virtual_machine_2 = VirtualMachine.create(
                                 self.apiclient,
@@ -808,10 +809,11 @@ class TestSnapshots(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(speed = "slow")
+    @attr(tags = ["advanced", "basic", "sg", "eip", "advancedns", "simulator"])
     def test_06_create_snapshots_in_project(self):
         """Test create snapshots in project
         """
-
         # Validate the following
         # 1. Create a project
         # 2. Add some snapshots to the project
@@ -864,7 +866,7 @@ class TestSnapshots(cloudstackTestCase):
                             True,
                             "Check Snapshot state is Running or not"
                         )
-        
+
         snapshots = Snapshot.list(
                                   self.apiclient,
                                   account=self.account.account.name,
@@ -929,7 +931,7 @@ class TestPublicIpAddress(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id,
                                     projectid=cls.project.id
                                 )
-        
+
         cls._cleanup = [
                         cls.project,
                         cls.service_offering,
@@ -961,10 +963,10 @@ class TestPublicIpAddress(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_07_associate_public_ip(self):
         """Test associate public IP within the project
         """
-
         # Validate the following
         # 1. Create a project
         # 2. Add some public Ips to the project
@@ -972,7 +974,7 @@ class TestPublicIpAddress(cloudstackTestCase):
         #    inside project
 
         networks = Network.list(
-                                self.apiclient, 
+                                self.apiclient,
                                 projectid=self.project.id,
                                 listall=True
                                 )
@@ -996,10 +998,10 @@ class TestPublicIpAddress(cloudstackTestCase):
                                            projectid=self.project.id
                                            )
         self.cleanup.append(public_ip)
-        
+
         #Create NAT rule
         self.debug(
-                "Creating a NAT rule within project, VM ID: %s" % 
+                "Creating a NAT rule within project, VM ID: %s" %
                                                     self.virtual_machine.id)
         nat_rule = NATRule.create(
                                   self.apiclient,
@@ -1028,9 +1030,9 @@ class TestPublicIpAddress(cloudstackTestCase):
                             nat_rule.id,
                             "Check Correct Port forwarding Rule is returned"
                         )
-        
+
         #Create Load Balancer rule and assign VMs to rule
-        self.debug("Created LB rule for public IP: %s" % 
+        self.debug("Created LB rule for public IP: %s" %
                                         public_ip.ipaddress.ipaddress)
         lb_rule = LoadBalancerRule.create(
                                           self.apiclient,
@@ -1065,7 +1067,7 @@ class TestPublicIpAddress(cloudstackTestCase):
                             lb_rule.id,
                             "Check List Load Balancer Rules returns valid Rule"
                         )
-        
+
         #Create Firewall rule with configurations from settings file
         fw_rule = FireWallRule.create(
                             self.apiclient,
@@ -1077,7 +1079,7 @@ class TestPublicIpAddress(cloudstackTestCase):
                             projectid=self.project.id
                             )
         self.debug("Created firewall rule: %s" % fw_rule.id)
-        
+
         # After Router start, FW rule should be in Active state
         fw_rules = FireWallRule.list(
                                      self.apiclient,
@@ -1088,7 +1090,7 @@ class TestPublicIpAddress(cloudstackTestCase):
                         True,
                         "Check for list FW rules response return valid data"
                         )
-        
+
         self.assertEqual(
                     fw_rules[0].state,
                     'Active',
@@ -1105,7 +1107,7 @@ class TestPublicIpAddress(cloudstackTestCase):
                     str(self.services["fw_rule"]["endport"]),
                     "Check end port of firewall rule"
                     )
-        
+
         self.debug("Deploying VM for account: %s" % self.account.account.name)
         virtual_machine_1 = VirtualMachine.create(
                                 self.apiclient,
@@ -1116,7 +1118,7 @@ class TestPublicIpAddress(cloudstackTestCase):
                                 serviceofferingid=self.service_offering.id,
                                 )
         self.cleanup.append(virtual_machine_1)
-        
+
         self.debug("VM state after deploy: %s" % virtual_machine_1.state)
         # Verify VM state
         self.assertEqual(
@@ -1124,7 +1126,7 @@ class TestPublicIpAddress(cloudstackTestCase):
                             'Running',
                             "Check VM state is Running or not"
                         )
-        
+
         self.debug("Creating NAT rule for VM (ID: %s) outside project" %
                                                     virtual_machine_1.id)
         with self.assertRaises(Exception):
@@ -1134,7 +1136,7 @@ class TestPublicIpAddress(cloudstackTestCase):
                                   self.services["natrule"],
                                   public_ip.ipaddress.id,
                                   )
-        
+
         self.debug("Creating LB rule for public IP: %s outside project" %
                                                 public_ip.ipaddress.ipaddress)
         with self.assertRaises(Exception):
@@ -1160,7 +1162,7 @@ class TestPublicIpAddress(cloudstackTestCase):
 
 
 class TestSecurityGroup(cloudstackTestCase):
-    
+
     def setUp(self):
 
         self.apiclient = self.testClient.getApiClient()
@@ -1189,7 +1191,7 @@ class TestSecurityGroup(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client, cls.services)
         cls.zone = get_zone(cls.api_client, cls.services)
-        
+
         template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -1198,7 +1200,7 @@ class TestSecurityGroup(cloudstackTestCase):
         cls.services["domainid"] = cls.domain.id
         cls.services["server"]["zoneid"] = cls.zone.id
         cls.services["server"]["template"] = template.id
-        
+
         cls.service_offering = ServiceOffering.create(
                                             cls.api_client,
                                             cls.services["service_offering"]
@@ -1237,10 +1239,10 @@ class TestSecurityGroup(cloudstackTestCase):
 
         return
 
+    @attr(tags = ["sg", "eip"])
     def test_08_security_group(self):
         """Test security groups in project
         """
-
         # Validate the following:
         # 1. Create a project
         # 2. Assign some security groups to that project
@@ -1248,8 +1250,8 @@ class TestSecurityGroup(cloudstackTestCase):
         #    to that project.
 
         security_group = SecurityGroup.create(
-                                              self.apiclient, 
-                                              self.services["security_group"], 
+                                              self.apiclient,
+                                              self.services["security_group"],
                                               projectid=self.project.id
                                               )
         self.debug("Created security group with ID: %s" % security_group.id)
@@ -1263,16 +1265,16 @@ class TestSecurityGroup(cloudstackTestCase):
                          True,
                          "Check for list security groups response"
                          )
-        
+
         self.assertNotEqual(
-                            len(sercurity_groups), 
-                            0, 
+                            len(sercurity_groups),
+                            0,
                             "Check List Security groups response"
                             )
         # Authorize Security group to SSH to VM
         ingress_rule = security_group.authorize(
                                 self.apiclient,
-                                self.services["security_group"], 
+                                self.services["security_group"],
                                 projectid=self.project.id
                                 )
         self.assertEqual(
@@ -1280,9 +1282,9 @@ class TestSecurityGroup(cloudstackTestCase):
                           True,
                           "Check ingress rule created properly"
                     )
-        
+
         self.debug(
-            "Authorizing ingress rule for sec group ID: %s for ssh access" 
+            "Authorizing ingress rule for sec group ID: %s for ssh access"
                                                         % security_group.id)
         self.virtual_machine = VirtualMachine.create(
                                     self.apiclient,
@@ -1296,8 +1298,8 @@ class TestSecurityGroup(cloudstackTestCase):
                                                     self.project.id
                                                     ))
         self.assertEqual(
-                         self.virtual_machine.state, 
-                         'Running', 
+                         self.virtual_machine.state,
+                         'Running',
                          "VM state should be running after deployment"
                          )
         # Deploy another VM with same security group outside the project

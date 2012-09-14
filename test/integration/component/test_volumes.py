@@ -18,12 +18,13 @@
 """
 #Import Local Modules
 import marvin
+from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from integration.lib.utils import *
 from integration.lib.base import *
 from integration.lib.common import *
-from marvin import remoteSSHClient
+from marvin.remoteSSHClient import remoteSSHClient
 #Import System modules
 import os
 import urllib
@@ -44,14 +45,14 @@ class Services:
                                     "username": "test",
                                     # Random characters are appended for unique
                                     # username
-                                    "password": "fr3sca",
+                                    "password": "password",
                          },
                          "service_offering": {
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100, # in MHz
-                                    "memory": 64, # In MBs
+                                    "cpuspeed": 100,    # in MHz
+                                    "memory": 64,       # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Small",
@@ -78,10 +79,14 @@ class Services:
                           "name": "testISO",
                           "url": "http://iso.linuxquestions.org/download/504/1819/http/gd4.tuwien.ac.at/dsl-4.4.10.iso",
                           # Source URL where ISO is located
-                          "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                          "ostypeid": 'bc66ada0-99e7-483b-befc-8fb0c2129b70',
                           },
+                         "custom_volume": {
+                                           "customdisksize": 2,
+                                           "diskname": "Custom disk",
+                        },
                         "sleep": 50,
-                        "ostypeid": '5776c0d2-f331-42db-ba3a-29f1f8319bc9',
+                        "ostypeid": 'bc66ada0-99e7-483b-befc-8fb0c2129b70',
                         "mode": 'advanced',
                     }
 
@@ -140,10 +145,10 @@ class TestAttachVolume(cloudstackTestCase):
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_volume_attach(self):
         """Test Attach volumes (max capacity)
         """
-
         # Validate the following
         # 1. Deploy a vm and create 5 data disk
         # 2. Attach all the created Volume to the vm.
@@ -163,7 +168,7 @@ class TestAttachVolume(cloudstackTestCase):
                                    )
             self.debug("Created volume: %s for account: %s" % (
                                                 volume.id,
-                                                self.account.account.name               
+                                                self.account.account.name
                                                 ))
             # Check List Volume response for newly created volume
             list_volume_response = list_volumes(
@@ -182,7 +187,7 @@ class TestAttachVolume(cloudstackTestCase):
                                                 )
             self.debug("Attach volume: %s to VM: %s" % (
                                                 volume.id,
-                                                self.virtual_machine.id       
+                                                self.virtual_machine.id
                                                 ))
         # Check all volumes attached to same VM
         list_volume_response = list_volumes(
@@ -196,7 +201,7 @@ class TestAttachVolume(cloudstackTestCase):
                                 True,
                                 "Check list volumes response for valid list"
                         )
-        
+
         self.assertNotEqual(
                                 list_volume_response,
                                 None,
@@ -246,7 +251,7 @@ class TestAttachVolume(cloudstackTestCase):
                                 True,
                                 "Check list VM response for valid list"
                         )
-        
+
         #Verify VM response to check whether VM deployment was successful
         self.assertNotEqual(
                             len(vm_response),
@@ -276,7 +281,7 @@ class TestAttachVolume(cloudstackTestCase):
                                 True,
                                 "Check list VM response for valid list"
                         )
-        
+
         #Verify VM response to check whether VM deployment was successful
         self.assertNotEqual(
                             len(vm_response),
@@ -292,6 +297,7 @@ class TestAttachVolume(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_02_volume_attach_max(self):
         """Test attach volumes (more than max) to an instance
         """
@@ -311,7 +317,7 @@ class TestAttachVolume(cloudstackTestCase):
                                )
         self.debug("Created volume: %s for account: %s" % (
                                                 volume.id,
-                                                self.account.account.name               
+                                                self.account.account.name
                                                 ))
         # Check List Volume response for newly created volume
         list_volume_response = list_volumes(
@@ -323,7 +329,7 @@ class TestAttachVolume(cloudstackTestCase):
                                 True,
                                 "Check list volumes response for valid list"
                         )
-        
+
         self.assertNotEqual(
                             list_volume_response,
                             None,
@@ -333,7 +339,7 @@ class TestAttachVolume(cloudstackTestCase):
         with self.assertRaises(Exception):
             self.debug("Trying to Attach volume: %s to VM: %s" % (
                                                 volume.id,
-                                                self.virtual_machine.id       
+                                                self.virtual_machine.id
                                                 ))
             self.virtual_machine.attach_volume(
                                                 self.apiclient,
@@ -422,6 +428,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_volume_attach_detach(self):
         """Test Volume attach/detach to VM (5 data volumes)
         """
@@ -447,7 +454,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
                                    )
             self.debug("Created volume: %s for account: %s" % (
                                                 volume.id,
-                                                self.account.account.name               
+                                                self.account.account.name
                                                 ))
             self.cleanup.append(volume)
             volumes.append(volume)
@@ -462,7 +469,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
                                 True,
                                 "Check list volumes response for valid list"
                         )
-        
+
             self.assertNotEqual(
                                 list_volume_response,
                                 None,
@@ -470,7 +477,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
                                 )
             self.debug("Attach volume: %s to VM: %s" % (
                                                 volume.id,
-                                                self.virtual_machine.id       
+                                                self.virtual_machine.id
                                                 ))
             # Attach volume to VM
             self.virtual_machine.attach_volume(
@@ -490,7 +497,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
                                 True,
                                 "Check list volumes response for valid list"
                         )
-        
+
         self.assertNotEqual(
                                 list_volume_response,
                                 None,
@@ -506,7 +513,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
         for volume in volumes:
             self.debug("Detach volume: %s to VM: %s" % (
                                                 volume.id,
-                                                self.virtual_machine.id       
+                                                self.virtual_machine.id
                                                 ))
             self.virtual_machine.detach_volume(
                                                 self.apiclient,
@@ -528,7 +535,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
                                 True,
                                 "Check list VM response for valid list"
                         )
-        
+
         self.assertNotEqual(
                             len(vm_response),
                             0,
@@ -540,7 +547,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
                             'Running',
                             "Check the state of VM"
                         )
-        
+
         # Stop VM
         self.debug("Stopping the VM: %s" % self.virtual_machine.id)
         self.virtual_machine.stop(self.apiclient)
@@ -669,6 +676,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
             raise Exception("Warning: Exception during cleanup : %s" % e)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_volume_iso_attach(self):
         """Test Volumes and ISO attach
         """
@@ -690,7 +698,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
                                    )
             self.debug("Created volume: %s for account: %s" % (
                                                 volume.id,
-                                                self.account.account.name               
+                                                self.account.account.name
                                                 ))
             # Check List Volume response for newly created volume
             list_volume_response = list_volumes(
@@ -743,7 +751,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
                          domainid=self.account.account.domainid,
                          )
         self.debug("Created ISO with ID: %s for account: %s" % (
-                                                    iso.id, 
+                                                    iso.id,
                                                     self.account.account.name
                                                     ))
 
@@ -775,7 +783,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
                                 True,
                                 "Check list VM response for valid list"
                         )
-        
+
         self.assertNotEqual(
                             len(vm_response),
                             0,
@@ -864,6 +872,7 @@ class TestVolumes(cloudstackTestCase):
         cleanup_resources(self.apiclient, self.cleanup)
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_01_attach_volume(self):
         """Attach a created Volume to a Running VM
         """
@@ -947,6 +956,7 @@ class TestVolumes(cloudstackTestCase):
                         )
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_02_detach_volume(self):
         """Detach a Volume attached to a VM
         """
@@ -974,7 +984,7 @@ class TestVolumes(cloudstackTestCase):
                          True,
                          "Check list volumes response for valid list"
                         )
-        
+
         self.assertNotEqual(
                             list_volume_response,
                             None,
@@ -994,6 +1004,7 @@ class TestVolumes(cloudstackTestCase):
                          )
         return
 
+    @attr(tags = ["advanced", "advancedns"])
     def test_03_delete_detached_volume(self):
         """Delete a Volume unattached to an VM
         """
@@ -1019,4 +1030,140 @@ class TestVolumes(cloudstackTestCase):
                         None,
                         "Check if volume exists in ListVolumes"
                     )
+        return
+
+
+class TestDeployVmWithCustomDisk(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.api_client = super(
+                               TestDeployVmWithCustomDisk,
+                               cls
+                               ).getClsTestClient().getApiClient()
+        cls.services = Services().services
+
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client, cls.services)
+        cls.zone = get_zone(cls.api_client, cls.services)
+        cls.disk_offering = DiskOffering.create(
+                                    cls.api_client,
+                                    cls.services["disk_offering"],
+                                    custom=True
+                                    )
+        template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostypeid"]
+                            )
+        cls.services["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = template.id
+
+        # Create VMs, NAT Rules etc
+        cls.account = Account.create(
+                            cls.api_client,
+                            cls.services["account"],
+                            domainid=cls.domain.id
+                            )
+
+        cls.services["account"] = cls.account.account.name
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
+        cls._cleanup = [
+                        cls.service_offering,
+                        cls.disk_offering,
+                        cls.account
+                        ]
+
+    def setUp(self):
+
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+    @attr(tags=["advanced", "configuration", "advancedns", "simulator",
+                "api", "basic", "eip", "sg"])
+    def test_deployVmWithCustomDisk(self):
+        """Test custom disk sizes beyond range
+        """
+        # Steps for validation
+        # 1. listConfigurations - custom.diskoffering.size.min
+        #    and custom.diskoffering.size.max
+        # 2. deployVm with custom disk offering size < min
+        # 3. deployVm with custom disk offering min< size < max
+        # 4. deployVm with custom disk offering size > max
+        # Validate the following
+        # 2. and 4. of deploy VM should fail.
+        #    Only case 3. should succeed.
+        #    cleanup all created data disks from the account
+
+        config = Configurations.list(
+                                    self.apiclient,
+                                    name="custom.diskoffering.size.min"
+                                    )
+        self.assertEqual(
+            isinstance(config, list),
+            True,
+            "custom.diskoffering.size.min should be present in global config"
+            )
+        # minimum size of custom disk (in GBs)
+        min_size = int(config[0].value)
+        self.debug("custom.diskoffering.size.min: %s" % min_size)
+
+        config = Configurations.list(
+                                    self.apiclient,
+                                    name="custom.diskoffering.size.max"
+                                    )
+        self.assertEqual(
+            isinstance(config, list),
+            True,
+            "custom.diskoffering.size.min should be present in global config"
+            )
+        # maximum size of custom disk (in GBs)
+        max_size = int(config[0].value)
+        self.debug("custom.diskoffering.size.max: %s" % max_size)
+
+        self.debug("Creating a volume with size less than min cust disk size")
+        self.services["custom_volume"]["customdisksize"] = (min_size - 1)
+        self.services["custom_volume"]["zoneid"] = self.zone.id
+        with self.assertRaises(Exception):
+            Volume.create_custom_disk(
+                                    self.apiclient,
+                                    self.services["custom_volume"],
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid,
+                                    diskofferingid=self.disk_offering.id
+                                    )
+        self.debug("Create volume failed!")
+
+        self.debug("Creating a volume with size more than max cust disk size")
+        self.services["custom_volume"]["customdisksize"] = (max_size + 1)
+        with self.assertRaises(Exception):
+            Volume.create_custom_disk(
+                                    self.apiclient,
+                                    self.services["custom_volume"],
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid,
+                                    diskofferingid=self.disk_offering.id
+                                    )
+        self.debug("Create volume failed!")
+
+        self.debug("Creating a volume with size more than min cust disk " +
+                   "but less than max cust disk size"
+                   )
+        self.services["custom_volume"]["customdisksize"] = (min_size + 1)
+        try:
+            Volume.create_custom_disk(
+                                    self.apiclient,
+                                    self.services["custom_volume"],
+                                    account=self.account.account.name,
+                                    domainid=self.account.account.domainid,
+                                    diskofferingid=self.disk_offering.id
+                                    )
+            self.debug("Create volume of cust disk size succeeded")
+        except Exception as e:
+            self.fail("Create volume failed with exception: %s" % e)
         return

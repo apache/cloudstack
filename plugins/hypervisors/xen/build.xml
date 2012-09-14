@@ -75,7 +75,7 @@
 
   <property name="deps.dir" location="${top.dir}/deps" />
   
-  <property name="xen.jar" value="cloud-xen.jar" />
+  <property name="xen.jar" value="cloud-plugin-hypervisor-xen.jar" />
   <property name="xen-scripts.dir" location="${base.dir}/plugins/hypervisors/xen/scripts" />
 	
   <import file="${build.dir}/build-common.xml"/>
