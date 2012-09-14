@@ -161,7 +161,7 @@ def svninfo(*args):
 
 def gitinfo(dir=None):
 	if dir and not _isdir(dir): return ''
-	try: p = _Popen(['git','rev-parse', '--short', 'HEAD'],stdin=PIPE,stdout=PIPE,stderr=PIPE,cwd=dir)
+	try: p = _Popen(['git','remote','show','-n','origin'],stdin=PIPE,stdout=PIPE,stderr=PIPE,cwd=dir)
 	except OSError,e:
 		if e.errno == 2: return '' # svn command is not installed
 		raise
@@ -194,7 +194,7 @@ def allgitinfo():
 	
 	return t + "\n\ncloustack-proprietary:\n" + u
 
-def _getbuildnumber():
+def _getbuildnumber(): # FIXME implement for git
 	n = Options.options.BUILDNUMBER
 	if n:
 		# luntbuild prepends "build-" to the build number.  we work around this here:
@@ -203,8 +203,8 @@ def _getbuildnumber():
 		if n.startswith("$Revision:"): n = n[11:-2].strip()
 		return n
 	else:
-		# Try to guess the Git revision number
-		stdout = gitinfo()
+		# Try to guess the SVN revision number by calling SVN info.
+		stdout = svninfo()
 		if not stdout: return ''
 		# Filter lines.
 		rev = [ x for x in stdout.splitlines() if x.startswith('SVN Revision') ]

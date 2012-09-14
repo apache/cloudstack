@@ -222,6 +222,19 @@ conf.check_tool('java')
 conf.check_tool("python")
 conf.check_python_version((2,4,0))
 
+conf.check_message_1('Detecting Python MySQL module')
+try: import MySQLdb
+except ImportError,e:
+	raise Configure.ConfigurationError, "The Python MySQLdb module could not be found.\nOn Linux: ./waf installrpmdeps or ./waf installdebdeps according to your distro's package format.\nOn Windows: Install MySQL 5.1 on your machine, then install the Python MySQLdb module for Python %s.\nThe module for Python 2.6 / win32 / MySQL 5.1 is available here: http://soemin.googlecode.com/files/MySQL-python-1.2.3c1.win32-py2.6.exe"%conf.env.PYTHON_VERSION
+conf.check_message_2('MySQLdb','GREEN')
+conf.check_message_1('Database info for developer setup')
+for a in "DBHOST DBUSER DBPW".split(): conf.env[a] = getattr(Options.options, a, '')
+conf.check_message_2("user: %r, password: %r, host: %r"%(conf.env.DBUSER,conf.env.DBPW,conf.env.DBHOST),'GREEN')
+
+try: conf.check_tool("tomcat")
+except Configure.ConfigurationError,e:
+	conf.fatal("Tomcat directory %r not found.  Either install Tomcat using ./waf installrpmdeps or ./waf installdebdeps, or manually install Tomcat to a directory in your system and set the environment variable TOMCAT_HOME to point to it."%conf.env.TOMCATHOME)
+
 conf.env.COMMONPATH = _join(conf.env.PACKAGE,"common")
 conf.env.AGENTPATH = _join(conf.env.PACKAGE,"agent")
 conf.env.CPPATH = _join(conf.env.PACKAGE,"console-proxy")
