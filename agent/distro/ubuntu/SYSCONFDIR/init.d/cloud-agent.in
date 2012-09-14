@@ -99,7 +99,7 @@ start() {
 
     wait_for_network
 
-    if start_daemon -p $PIDFILE $DAEMON -cp "$CLASSPATH" -pidfile "$PIDFILE" $CLASS
+    if start_daemon -p $PIDFILE $DAEMON -cp "$CLASSPATH" -pidfile "$PIDFILE" -errfile SYSLOG $CLASS
         RETVAL=$?
     then
         rc=0
