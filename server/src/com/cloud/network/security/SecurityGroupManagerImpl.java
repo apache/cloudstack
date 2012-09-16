@@ -56,8 +56,7 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
-import com.cloud.event.dao.UsageEventDao;
+import com.cloud.event.UsageEventGenerator;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
@@ -157,8 +156,6 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
     DomainManager _domainMgr;
     @Inject
     ProjectManager _projectMgr;
-    @Inject
-    UsageEventDao _usageEventDao;
     @Inject
     ResourceTagDao _resourceTagDao;
     
@@ -459,8 +456,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         // For each group, find the security rules that allow the group
         for (SecurityGroupVMMapVO mapVO : groupsForVm) {// FIXME: use custom sql in the dao
         	//Add usage events for security group assign
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SECURITY_GROUP_ASSIGN, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), mapVO.getSecurityGroupId());
-            _usageEventDao.persist(usageEvent);
+            UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_SECURITY_GROUP_ASSIGN, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), mapVO.getSecurityGroupId());
 
             List<SecurityGroupRuleVO> allowingRules = _securityGroupRuleDao.listByAllowedSecurityGroupId(mapVO.getSecurityGroupId());
             // For each security rule that allows a group that the vm belongs to, find the group it belongs to
@@ -475,8 +471,7 @@ public class SecurityGroupManagerImpl implements SecurityGroupManager, SecurityG
         // For each group, find the security rules rules that allow the group
         for (SecurityGroupVMMapVO mapVO : groupsForVm) {// FIXME: use custom sql in the dao
         	//Add usage events for security group remove
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SECURITY_GROUP_REMOVE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), mapVO.getSecurityGroupId());
-            _usageEventDao.persist(usageEvent);
+            UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_SECURITY_GROUP_REMOVE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), mapVO.getSecurityGroupId());
 
             List<SecurityGroupRuleVO> allowingRules = _securityGroupRuleDao.listByAllowedSecurityGroupId(mapVO.getSecurityGroupId());
             // For each security rule that allows a group that the vm belongs to, find the group it belongs to

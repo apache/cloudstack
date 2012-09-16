@@ -3174,12 +3174,12 @@ public class ManagementServerImpl implements ManagementServer {
 
     @Override
     public Long saveStartedEvent(Long userId, Long accountId, String type, String description, long startEventId) {
-        return EventUtils.saveStartedEvent(userId, accountId, type, description, startEventId);
+        return EventUtils.saveStartedActionEvent(userId, accountId, type, description, startEventId);
     }
 
     @Override
     public Long saveCompletedEvent(Long userId, Long accountId, String level, String type, String description, long startEventId) {
-        return EventUtils.saveEvent(userId, accountId, level, type, description, startEventId);
+        return EventUtils.saveActionEvent(userId, accountId, level, type, description, startEventId);
     }
 
     @Override

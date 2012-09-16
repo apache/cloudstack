@@ -32,8 +32,9 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.UsageEventDao;
+import com.cloud.event.UsageEventGenerator;
+import com.cloud.event.UsageEventGenerator;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -278,8 +279,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
                         for(VpnUserVO user : vpnUsers){
                         	// VPN_USER_REMOVE event is already generated for users in Revoke state
                         	if(user.getState() != VpnUser.State.Revoke){
-                        		UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername());
-                        		_usageEventDao.persist(usageEvent);
+                                UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername());
                         	}
                         }
                         if (vpnFwRules != null) {
@@ -330,8 +330,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         }
         
         VpnUser user = _vpnUsersDao.persist(new VpnUserVO(vpnOwnerId, owner.getDomainId(), username, password));
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VPN_USER_ADD, user.getAccountId(), 0, user.getId(), user.getUsername());
-        _usageEventDao.persist(usageEvent);
+        UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_VPN_USER_ADD, user.getAccountId(), 0, user.getId(), user.getUsername());
         txn.commit();
         return user;
     }
@@ -349,8 +348,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
         txn.start();
         user.setState(State.Revoke);
         _vpnUsersDao.update(user.getId(), user);
-        UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername());
-        _usageEventDao.persist(usageEvent);
+        UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername());
         txn.commit();
         return true;
     }
@@ -407,8 +405,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
                 List<VpnUserVO> vpnUsers = _vpnUsersDao.listByAccount(vpn.getAccountId());
                 for(VpnUserVO user : vpnUsers){
                 	if(user.getState() != VpnUser.State.Revoke){
-                		UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VPN_USER_ADD, user.getAccountId(), 0, user.getId(), user.getUsername());
-                		_usageEventDao.persist(usageEvent);
+                        UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_VPN_USER_ADD, user.getAccountId(), 0, user.getId(), user.getUsername());
                 	}
                 }
                 txn.commit();
@@ -485,8 +482,7 @@ public class RemoteAccessVpnManagerImpl implements RemoteAccessVpnService, Manag
                     Transaction txn = Transaction.currentTxn();
                     txn.start();            		
                     _vpnUsersDao.remove(user.getId());
-                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername());
-                    _usageEventDao.persist(usageEvent);
+                    UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_VPN_USER_REMOVE, user.getAccountId(), 0, user.getId(), user.getUsername());
                     txn.commit();
                 }
                 s_logger.warn("Failed to apply vpn for user " + user.getUsername() + ", accountId=" + user.getAccountId());

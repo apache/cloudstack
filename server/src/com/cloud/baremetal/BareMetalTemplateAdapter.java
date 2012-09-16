@@ -29,7 +29,7 @@ import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
+import com.cloud.event.UsageEventGenerator;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -82,9 +82,8 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 	
 	private void templateCreateUsage(VMTemplateVO template, HostVO host) {
 		if (template.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-			UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_TEMPLATE_CREATE, template.getAccountId(), host.getDataCenterId(),
+            UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_TEMPLATE_CREATE, template.getAccountId(), host.getDataCenterId(),
 					template.getId(), template.getName(), null, template.getSourceTemplateId(), 0L);
-			_usageEventDao.persist(usageEvent);
 		}
 	}
 	
@@ -172,8 +171,7 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
 					_tmpltZoneDao.remove(templateZone.getId());
 				}
 
-				UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), pxeServer.getDataCenterId(), templateId, null);
-				_usageEventDao.persist(usageEvent);
+                UsageEventGenerator.publishUsageEvent(eventType, account.getId(), pxeServer.getDataCenterId(), templateId, null);
 			} finally {
 				if (lock != null) {
 					_tmpltHostDao.releaseFromLockTable(lock.getId());

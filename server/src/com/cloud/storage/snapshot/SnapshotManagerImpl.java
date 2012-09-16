@@ -57,7 +57,7 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.EventUtils;
 import com.cloud.event.EventVO;
-import com.cloud.event.UsageEventVO;
+import com.cloud.event.UsageEventGenerator;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -484,9 +484,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                 //Check if the snapshot was removed while backingUp. If yes, do not log snapshot create usage event
                 SnapshotVO freshSnapshot = _snapshotDao.findById(snapshot.getId());
                 if ((freshSnapshot != null) && backedUp) {
-                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
+                    UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_CREATE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null,
                             volume.getSize());
-                    _usageEventDao.persist(usageEvent);
                 }
                 if( !backedUp ) {
 
@@ -736,8 +735,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
             long oldSnapId = oldestSnapshot.getId();
             s_logger.debug("Max snaps: " + policy.getMaxSnaps() + " exceeded for snapshot policy with Id: " + policyId + ". Deleting oldest snapshot: " + oldSnapId);
             if(deleteSnapshotInternal(oldSnapId)){
-            	//log Snapshot delete event
-            	EventUtils.saveEvent(User.UID_SYSTEM, oldestSnapshot.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_SNAPSHOT_DELETE, "Successfully deleted oldest snapshot: " + oldSnapId, 0);
+                //log Snapshot delete event
+                EventUtils.saveActionEvent(User.UID_SYSTEM, oldestSnapshot.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_SNAPSHOT_DELETE, "Successfully deleted oldest snapshot: " + oldSnapId, 0);
             }
             snaps.remove(oldestSnapshot);
         }
@@ -783,8 +782,7 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         txn.start();
         _snapshotDao.remove(snapshotId);
         if (snapshot.getStatus() == Snapshot.Status.BackedUp) {
-        	UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null, 0L);
-        	_usageEventDao.persist(usageEvent);
+            UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), snapshot.getDataCenterId(), snapshotId, snapshot.getName(), null, null, 0L);
         }
         _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.snapshot);
         txn.commit();
@@ -1071,9 +1069,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                     }
 
                     // Log event after successful deletion
-                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), volume.getDataCenterId(), snapshot.getId(), snapshot.getName(), null, null,
+                    UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_DELETE, snapshot.getAccountId(), volume.getDataCenterId(), snapshot.getId(), snapshot.getName(), null, null,
                             volume.getSize());
-                    _usageEventDao.persist(usageEvent);
                 }
             }
         }

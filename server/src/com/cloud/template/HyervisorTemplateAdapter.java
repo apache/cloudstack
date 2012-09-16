@@ -37,7 +37,7 @@ import com.cloud.api.commands.RegisterTemplateCmd;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
+import com.cloud.event.UsageEventGenerator;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.HostVO;
@@ -202,8 +202,7 @@ public class HyervisorTemplateAdapter extends TemplateAdapterBase implements Tem
 						success = false;
 						break;
 					}
-					UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), sZoneId, templateId, null);
-					_usageEventDao.persist(usageEvent);					
+					UsageEventGenerator.publishUsageEvent(eventType, account.getId(), sZoneId, templateId, null);
                     templateHostVO.setDestroyed(true);
 					_tmpltHostDao.update(templateHostVO.getId(), templateHostVO);
                     String installPath = templateHostVO.getInstallPath();

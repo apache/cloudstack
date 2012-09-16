@@ -85,9 +85,9 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
-import com.cloud.event.dao.EventDao;
+import com.cloud.event.UsageEventGenerator;
 import com.cloud.event.dao.UsageEventDao;
+import com.cloud.event.dao.EventDao;
 import com.cloud.exception.AccountLimitException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
@@ -269,8 +269,6 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject
     LoadBalancingRulesManager _lbMgr;
     @Inject
-    UsageEventDao _usageEventDao;
-    @Inject
     RemoteAccessVpnService _vpnMgr;
     @Inject
     PodVlanMapDao _podVlanMapDao;
@@ -324,6 +322,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     NetworkACLManager _networkACLMgr;
     @Inject
     ResourceTagDao _resourceTagDao;
+    @Inject
+    UsageEventDao _usageEventDao;
 
     protected StateMachine2<Network.State, Network.Event, Network> _stateMachine;
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
@@ -493,10 +493,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             String guestType = vlan.getVlanType().toString();
             
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), 
+            UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(),
                     addr.getDataCenterId(), addr.getId(), addr.getAddress().toString(), addr.isSourceNat(), guestType, 
                     addr.getSystem());
-            _usageEventDao.persist(usageEvent);
             // don't increment resource count for direct ip addresses
             if (addr.getAssociatedWithNetworkId() != null) {
                 _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
@@ -4494,10 +4493,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
                 String guestType = vlan.getVlanType().toString();
 
-                UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_IP_RELEASE,
+                UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_NET_IP_RELEASE,
                         ip.getAllocatedToAccountId(), ip.getDataCenterId(), addrId, ip.getAddress().addr(), 
                         ip.isSourceNat(), guestType, ip.getSystem());
-                _usageEventDao.persist(usageEvent);
             }
 
             ip = _ipAddressDao.markAsUnavailable(addrId);
@@ -4743,10 +4741,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                         continue;
                     }
                     long isDefault = (nic.isDefaultNic()) ? 1 : 0;
-                    UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), null, oldNetworkOfferingId, null, 0L);
-                    _usageEventDao.persist(usageEvent);
-                    usageEvent = new UsageEventVO(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName(), networkOfferingId, null, isDefault);
-                    _usageEventDao.persist(usageEvent);
+                    UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), null, oldNetworkOfferingId, null, 0L);
+                    UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_NETWORK_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterIdToDeployIn(), vm.getId(), vm.getHostName(), networkOfferingId, null, isDefault);
                 }
                 txn.commit();
             } else {

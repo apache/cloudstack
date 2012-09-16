@@ -34,9 +34,8 @@ import com.cloud.configuration.dao.ConfigurationDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
-import com.cloud.event.dao.UsageEventDao;
+import com.cloud.event.UsageEventGenerator;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -100,8 +99,6 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
     AccountManager _accountMgr;
     @Inject
     NetworkManager _networkMgr;
-    @Inject
-    UsageEventDao _usageEventDao;
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -559,8 +556,7 @@ public class FirewallManagerImpl implements FirewallService, FirewallManager, Ma
         }
 
         if (generateUsageEvent && needUsageEvent) {
-            UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_NET_RULE_DELETE, rule.getAccountId(), 0, rule.getId(), null);
-            _usageEventDao.persist(usageEvent);
+            UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_NET_RULE_DELETE, rule.getAccountId(), 0, rule.getId(), null);
         }
 
         txn.commit();

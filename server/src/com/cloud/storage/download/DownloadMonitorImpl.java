@@ -54,8 +54,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
-import com.cloud.event.dao.UsageEventDao;
+import com.cloud.event.UsageEventGenerator;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.StorageUnavailableException;
@@ -147,11 +146,6 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
     ConfigurationDao _configDao;
     @Inject
     UserVmManager _vmMgr;
-
-    
-    @Inject 
-    private UsageEventDao _usageEventDao;
-    
     @Inject
     private ClusterDao _clusterDao;
     @Inject
@@ -517,8 +511,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
                 eventType = EventTypes.EVENT_ISO_CREATE;
             }
             if(template.getAccountId() != Account.ACCOUNT_ID_SYSTEM){
-                UsageEventVO usageEvent = new UsageEventVO(eventType, template.getAccountId(), host.getDataCenterId(), template.getId(), template.getName(), null, template.getSourceTemplateId() , size);
-                _usageEventDao.persist(usageEvent);
+                UsageEventGenerator.publishUsageEvent(eventType, template.getAccountId(), host.getDataCenterId(), template.getId(), template.getName(), null, template.getSourceTemplateId() , size);
             }
         }
         txn.commit();
@@ -550,8 +543,7 @@ public class DownloadMonitorImpl implements  DownloadMonitor {
             }
             String eventType = EventTypes.EVENT_VOLUME_UPLOAD;            
             if(volume.getAccountId() != Account.ACCOUNT_ID_SYSTEM){
-               UsageEventVO usageEvent = new UsageEventVO(eventType, volume.getAccountId(), host.getDataCenterId(), volume.getId(), volume.getName(), null, 0l , size);
-               _usageEventDao.persist(usageEvent);
+                UsageEventGenerator.publishUsageEvent(eventType, volume.getAccountId(), host.getDataCenterId(), volume.getId(), volume.getName(), null, 0l , size);
             }
         }else if (dnldStatus == Status.DOWNLOAD_ERROR || dnldStatus == Status.ABANDONED || dnldStatus == Status.UNKNOWN){
             //Decrement the volume count

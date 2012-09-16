@@ -70,9 +70,9 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
 import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.UsageEventDao;
+import com.cloud.event.UsageEventGenerator;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
@@ -801,8 +801,7 @@ public class TemplateManagerImpl implements TemplateManager, Manager, TemplateSe
                 _tmpltDao.addTemplateToZone(template, dstZoneId);
             	
             	if(account.getId() != Account.ACCOUNT_ID_SYSTEM){
-            	    UsageEventVO usageEvent = new UsageEventVO(copyEventType, account.getId(), dstZoneId, tmpltId, null, null, null, srcTmpltHost.getSize());
-            	    _usageEventDao.persist(usageEvent);
+                    UsageEventGenerator.publishUsageEvent(copyEventType, account.getId(), dstZoneId, tmpltId, null, null, null, srcTmpltHost.getSize());
             	}
             	return true;
             }

@@ -503,7 +503,7 @@ public class ApiServer implements HttpRequestHandler {
             asyncCmd.setStartEventId(startEventId);
 
             // save the scheduled event
-            Long eventId = EventUtils.saveScheduledEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId, 
+            Long eventId = EventUtils.saveScheduledActionEvent((callerUserId == null) ? User.UID_SYSTEM : callerUserId,
                     asyncCmd.getEntityOwnerId(), asyncCmd.getEventType(), asyncCmd.getEventDescription(),
                     startEventId);
             if (startEventId == 0) {

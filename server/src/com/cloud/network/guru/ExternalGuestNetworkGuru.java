@@ -142,7 +142,7 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             }
 
             implemented.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlanTag));
-            EventUtils.saveEvent(UserContext.current().getCallerUserId(), config.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: "+vnet+ " Network Id: "+config.getId(), 0);
+            EventUtils.saveActionEvent(UserContext.current().getCallerUserId(), config.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VLAN_ASSIGN, "Assigned Zone Vlan: "+vnet+ " Network Id: "+config.getId(), 0);
         } else {
             vlanTag = Integer.parseInt(config.getBroadcastUri().getHost());
             implemented.setBroadcastUri(config.getBroadcastUri());

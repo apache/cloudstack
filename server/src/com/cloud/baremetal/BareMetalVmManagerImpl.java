@@ -47,7 +47,7 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.domain.DomainVO;
 import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventVO;
+import com.cloud.event.UsageEventGenerator;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -367,8 +367,7 @@ public class BareMetalVmManagerImpl extends UserVmManagerImpl implements BareMet
 			s_logger.debug("Successfully allocated DB entry for " + vm);
 		}
 		UserContext.current().setEventDetails("Vm Id: " + vm.getId());
-		 UsageEventVO usageEvent = new UsageEventVO(EventTypes.EVENT_VM_CREATE, accountId, cmd.getZoneId(), vm.getId(), vm.getHostName(), offering.getId(), template.getId(), HypervisorType.BareMetal.toString());
-		_usageEventDao.persist(usageEvent);
+        UsageEventGenerator.publishUsageEvent(EventTypes.EVENT_VM_CREATE, accountId, cmd.getZoneId(), vm.getId(), vm.getHostName(), offering.getId(), template.getId(), HypervisorType.BareMetal.toString());
 
 		_resourceLimitMgr.incrementResourceCount(accountId, ResourceType.user_vm);
 
