@@ -59,6 +59,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DataCenterIpAddressDao;
 import com.cloud.dc.dao.HostPodDao;
+import com.cloud.event.AlertGenerator;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -261,6 +262,10 @@ public class AlertManagerImpl implements AlertManager {
 
     @Override
     public void sendAlert(short alertType, long dataCenterId, Long podId, String subject, String body) {
+
+        // publish alert
+        AlertGenerator.publishAlert(getAlertType(alertType), dataCenterId, podId, subject, body);
+
         // TODO:  queue up these messages and send them as one set of issues once a certain number of issues is reached?  If that's the case,
         //         shouldn't we have a type/severity as part of the API so that severe errors get sent right away?
         try {
@@ -270,6 +275,65 @@ public class AlertManagerImpl implements AlertManager {
         } catch (Exception ex) {
             s_logger.error("Problem sending email alert", ex);
         }
+    }
+
+    private String getAlertType(short alertType) {
+        if (alertType == ALERT_TYPE_MEMORY) {
+            return "ALERT.MEMORY";
+        } else if (alertType == ALERT_TYPE_CPU) {
+            return "ALERT.MEMORY";
+        } else if (alertType == ALERT_TYPE_STORAGE) {
+            return "ALERT.STORAGE";
+        } else if (alertType == ALERT_TYPE_STORAGE_ALLOCATED) {
+            return "ALERT.STORAGE.ALLOCATED";
+        } else if (alertType == ALERT_TYPE_VIRTUAL_NETWORK_PUBLIC_IP) {
+            return "ALERT.NETWORK.PUBLICIP";
+        } else if (alertType == ALERT_TYPE_PRIVATE_IP) {
+            return "ALERT.NETWORK.PRIVATEIP";
+        } else if (alertType == ALERT_TYPE_SECONDARY_STORAGE) {
+            return "ALERT.STORAGE.SECONDARY";
+        } else if (alertType == ALERT_TYPE_HOST) {
+            return "ALERT.COMPUTE.HOST";
+        } else if (alertType == ALERT_TYPE_USERVM) {
+            return "ALERT.USERVM";
+        } else if (alertType == ALERT_TYPE_DOMAIN_ROUTER) {
+            return "ALERT.SERVICE.DOMAINROUTER";
+        } else if (alertType == ALERT_TYPE_CONSOLE_PROXY) {
+            return "ALERT.SERVICE.CONSOLEPROXY";
+        } else if (alertType == ALERT_TYPE_ROUTING) {
+            return "ALERT.NETWORK.ROUTING";
+        } else if (alertType == ALERT_TYPE_STORAGE_MISC) {
+            return "ALERT.STORAGE.MISC";
+        } else if (alertType == ALERT_TYPE_USAGE_SERVER) {
+            return "ALERT.USAGE";
+        } else if (alertType == ALERT_TYPE_MANAGMENT_NODE) {
+            return "ALERT.MANAGEMENT";
+        } else if (alertType == ALERT_TYPE_DOMAIN_ROUTER_MIGRATE) {
+            return "ALERT.NETWORK.DOMAINROUTERMIGRATE";
+        } else if (alertType == ALERT_TYPE_CONSOLE_PROXY_MIGRATE) {
+            return "ALERT.SERVICE.CONSOLEPROXYMIGRATE";
+        } else if (alertType == ALERT_TYPE_USERVM_MIGRATE) {
+            return "ALERT.USERVM.MIGRATE";
+        } else if (alertType == ALERT_TYPE_VLAN) {
+            return "ALERT.NETWORK.VLAN";
+        } else if (alertType == ALERT_TYPE_SSVM) {
+            return "ALERT.SERVICE.SSVM";
+        } else if (alertType == ALERT_TYPE_USAGE_SERVER_RESULT) {
+            return "ALERT.USAGE.RESULT";
+        } else if (alertType == ALERT_TYPE_STORAGE_DELETE) {
+            return "ALERT.STORAGE.DELETE";
+        } else if (alertType == ALERT_TYPE_UPDATE_RESOURCE_COUNT) {
+            return "ALERT.RESOURCE.COUNT";
+        } else if (alertType == ALERT_TYPE_USAGE_SANITY_RESULT) {
+            return "ALERT.USAGE.SANITY";
+        } else if (alertType == ALERT_TYPE_DIRECT_ATTACHED_PUBLIC_IP) {
+            return "ALERT.NETWORK.DIRECTPUBLICIP";
+        } else if (alertType == ALERT_TYPE_LOCAL_STORAGE) {
+            return "ALERT.STORAGE.LOCAL";
+        } else if (alertType == ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED) {
+            return "ALERT.RESOURCE.EXCEED";
+        }
+        return "UNKNOWN";
     }
 
     @Override @DB
