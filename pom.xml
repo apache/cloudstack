@@ -157,6 +157,7 @@
     <module>awsapi</module>
     <module>patches</module>
     <module>test</module>
+    <module>framework/events</module>
   </modules>
 
   <dependencies>
