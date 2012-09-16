@@ -247,6 +247,7 @@ public class NetworkVO implements Network, Identity {
         return state;
     }
 
+    // don't use this directly when possible, use Network state machine instead
     public void setState(State state) {
         this.state = state;
     }

@@ -25,9 +25,11 @@ import javax.persistence.TableGenerator;
 
 import com.cloud.acl.ControlledEntity.ACLType;
 import com.cloud.network.Network;
+import com.cloud.network.Network.Event;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.Network.State;
 import com.cloud.network.NetworkAccountDaoImpl;
 import com.cloud.network.NetworkAccountVO;
 import com.cloud.network.NetworkDomainVO;
@@ -550,5 +552,19 @@ public class NetworkDaoImpl extends GenericDaoBase<NetworkVO, Long> implements N
         SearchCriteria<Long> sc = VpcNetworksCount.create();
         sc.setParameters("vpcId", vpcId);
         return customSearch(sc, null).get(0);
+    }
+
+	@Override
+	public boolean updateState(State currentState, Event event, State nextState, Network vo, Object data) {
+	   // TODO: ensure this update is correct
+       Transaction txn = Transaction.currentTxn();
+        txn.start();
+
+        NetworkVO networkVo = (NetworkVO) vo;
+        networkVo.setState(nextState);
+        super.update(networkVo.getId(), networkVo);
+
+        txn.commit();
+        return true;
     }
 }

@@ -142,6 +142,7 @@ import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VpcVirtualRouterElement;
+import com.cloud.network.Network.Event;
 import com.cloud.network.guru.NetworkGuru;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRule.LbDestination;
@@ -200,6 +201,8 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
@@ -322,6 +325,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     @Inject
     ResourceTagDao _resourceTagDao;
 
+    protected StateMachine2<Network.State, Network.Event, Network> _stateMachine;
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
     private static Long _privateOfferingId = null;
 
@@ -1503,6 +1507,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
         _agentMgr.registerForHostEvents(this, true, false, true);
 
+        Network.State.getStateMachine().registerListener(new NetworkStateListener(_usageEventDao, _networksDao));
+
         s_logger.info("Network Manager is configured.");
 
         return true;
@@ -1553,6 +1559,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     protected NetworkManagerImpl() {
+        setStateMachine();
     }
 
     @Override
@@ -1949,9 +1956,7 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
 
             network.setReservationId(context.getReservationId());
-            network.setState(Network.State.Implementing);
-
-            _networksDao.update(networkId, network);
+            stateTransitTo(network, Event.ImplementNetwork);
 
             Network result = guru.implement(network, offering, dest, context);
             network.setCidr(result.getCidr());
@@ -1964,16 +1969,23 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             // implement network elements and re-apply all the network rules
             implementNetworkElementsAndResources(dest, context, network, offering);
 
-            network.setState(Network.State.Implemented);
+            stateTransitTo(network,Event.OperationSucceeded);
+
             network.setRestartRequired(false);
             _networksDao.update(network.getId(), network);
             implemented.set(guru, network);
             return implemented;
+        } catch (NoTransitionException e) {
+            s_logger.error(e.getMessage());
+            return null;
         } finally {
             if (implemented.first() == null) {
                 s_logger.debug("Cleaning up because we're unable to implement the network " + network);
-                network.setState(Network.State.Shutdown);
-                _networksDao.update(networkId, network);
+                try {
+                    stateTransitTo(network,Event.OperationFailed);
+                } catch (NoTransitionException e) {
+                    s_logger.error(e.getMessage());
+                }
 
                 shutdownNetwork(networkId, context, false);
             }
@@ -3401,8 +3413,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             return false;
         }
 
-        network.setState(Network.State.Shutdown);
-        _networksDao.update(network.getId(), network);
+        try {
+            stateTransitTo(network, Event.DestroyNetwork);
+         } catch (NoTransitionException e) {
+             s_logger.debug(e.getMessage());
+         }
 
         boolean success = shutdownNetworkElementsAndResources(context, cleanupElements, network);
 
@@ -3418,14 +3433,22 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
 
             applyProfileToNetwork(network, profile);
 
-            network.setState(Network.State.Allocated);
+            try {
+                stateTransitTo(network, Event.OperationSucceeded);
+             } catch (NoTransitionException e) {
+                 s_logger.debug(e.getMessage());
+             }
+
             network.setRestartRequired(false);
             _networksDao.update(network.getId(), network);
             _networksDao.clearCheckForGc(networkId);
             result = true;
         } else {
-            network.setState(Network.State.Implemented);
-            _networksDao.update(network.getId(), network);
+            try {
+                stateTransitTo(network, Event.OperationFailed);
+             } catch (NoTransitionException e) {
+                 s_logger.debug(e.getMessage());
+             }
             result = false;
         }
         txn.commit();
@@ -3584,8 +3607,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 s_logger.warn("Failed to delete network " + network + "; was unable to cleanup corresponding ip ranges");
             } else {
                 // commit transaction only when ips and vlans for the network are released successfully
-                network.setState(Network.State.Destroy);
-                _networksDao.update(network.getId(), network);
+                try {
+                    stateTransitTo(network, Event.DestroyNetwork);
+                 } catch (NoTransitionException e) {
+                     s_logger.debug(e.getMessage());
+                 }
                 _networksDao.remove(network.getId());
                 txn.commit();
             }
@@ -7331,4 +7357,11 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         return _networkLockTimeout;
     }
 
+    protected boolean stateTransitTo(NetworkVO network, Network.Event e) throws NoTransitionException {
+        return _stateMachine.transitTo(network, e, null, _networksDao);
+    }
+
+    private void setStateMachine() {
+        _stateMachine = Network.State.getStateMachine();
+    }
 }
