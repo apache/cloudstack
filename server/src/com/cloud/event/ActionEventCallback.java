@@ -25,8 +25,12 @@ import net.sf.cglib.proxy.MethodProxy;
 
 import com.cloud.user.UserContext;
 import com.cloud.utils.component.AnnotationInterceptor;
+import org.apache.cloudstack.framework.events.EventBus;
 
 public class ActionEventCallback implements MethodInterceptor, AnnotationInterceptor<EventVO> {
+
+    protected static EventBus _eventBus = null;
+    protected static boolean _eventBusLoaded = false;
 
     @Override
     public Object intercept(Object object, Method method, Object[] args, MethodProxy methodProxy) throws Throwable {
@@ -77,6 +81,7 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
                     eventDescription += ". "+ctx.getEventDetails();
                 }
                 EventUtils.saveStartedActionEvent(userId, accountId, actionEvent.eventType(), eventDescription, startEventId);
+                publishOnEventBus(userId, accountId, actionEvent.eventType(), "Started", eventDescription);
             }
         }
         return event;
@@ -98,9 +103,11 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
             if(actionEvent.create()){
                 //This start event has to be used for subsequent events of this action
                 startEventId = EventUtils.saveCreatedActionEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully created entity for "+eventDescription);
+                publishOnEventBus(userId, accountId, actionEvent.eventType(), "Successfully created entity for "+eventDescription);
                 ctx.setStartEventId(startEventId);
             } else {
                 EventUtils.saveActionEvent(userId, accountId, EventVO.LEVEL_INFO, actionEvent.eventType(), "Successfully completed "+eventDescription, startEventId);
+                publishOnEventBus(userId, accountId, actionEvent.eventType(), "Successfully completed "+eventDescription, startEventId);
             }
         }
     }
@@ -131,5 +138,31 @@ public class ActionEventCallback implements MethodInterceptor, AnnotationInterce
     public Callback getCallback() {
         return this;
     }
-    
+
+    void publishOnEventBus(long userId, long accountId, String type, String state, String description) {
+        if (getEventBus() != null) {
+            Map<String, String> eventDescription = new HashMap<String, String>();
+            eventDescription.put("user", String.valueOf(userId));
+            eventDescription.put("account", String.valueOf(accountId));
+            eventDescription.put("state", state);
+            eventDescription.put("description", description);
+            _eventBus.publish(EventCategory.ACTION_EVENT, type, eventDescription);
+        }
+    }
+
+    private EventBus getEventBus() {
+        //TODO: check if there is way of getting single adapter
+        if (_eventBus == null) {
+            if (!_eventBusLoaded) {
+                ComponentLocator locator = ComponentLocator.getLocator("management-server");
+                Adapters<EventBus> eventBusImpls = locator.getAdapters(EventBus.class);
+                if (eventBusImpls != null) {
+                    Enumeration<EventBus> eventBusenum = eventBusImpls.enumeration();
+                   _eventBus = eventBusenum.nextElement();
+                }
+                _eventBusLoaded = true;
+            }
+        }
+        return _eventBus;
+    }
 }

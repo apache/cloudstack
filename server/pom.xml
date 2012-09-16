@@ -33,6 +33,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-framework-events</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>servlet-api</artifactId>
       <version>${cs.servlet.version}</version>
