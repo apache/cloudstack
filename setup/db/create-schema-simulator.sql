@@ -15,14 +15,14 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
-DROP TABLE IF EXISTS `cloud`.`mockhost`;
-DROP TABLE IF EXISTS `cloud`.`mocksecstorage`;
-DROP TABLE IF EXISTS `cloud`.`mockstoragepool`;
-DROP TABLE IF EXISTS `cloud`.`mockvm`;
-DROP TABLE IF EXISTS `cloud`.`mockvolume`;
-DROP TABLE IF EXISTS `cloud`.`mocksecurityrules`;
+DROP TABLE IF EXISTS `simulator`.`mockhost`;
+DROP TABLE IF EXISTS `simulator`.`mocksecstorage`;
+DROP TABLE IF EXISTS `simulator`.`mockstoragepool`;
+DROP TABLE IF EXISTS `simulator`.`mockvm`;
+DROP TABLE IF EXISTS `simulator`.`mockvolume`;
+DROP TABLE IF EXISTS `simulator`.`mocksecurityrules`;
 
-CREATE TABLE  `cloud`.`mockhost` (
+CREATE TABLE  `simulator`.`mockhost` (
   `id` bigint unsigned NOT NULL auto_increment,
   `name` varchar(255) NOT NULL,
   `private_ip_address` char(40),
@@ -48,7 +48,7 @@ CREATE TABLE  `cloud`.`mockhost` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`mocksecstorage` (
+CREATE TABLE `simulator`.`mocksecstorage` (
   `id` bigint unsigned NOT NULL auto_increment,
   `url` varchar(255),
   `capacity` bigint unsigned,
@@ -56,7 +56,7 @@ CREATE TABLE `cloud`.`mocksecstorage` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`mockstoragepool` (
+CREATE TABLE `simulator`.`mockstoragepool` (
   `id` bigint unsigned NOT NULL auto_increment,
   `guid` varchar(255),
   `mount_point` varchar(255),
@@ -67,7 +67,7 @@ CREATE TABLE `cloud`.`mockstoragepool` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`mockvm` (
+CREATE TABLE `simulator`.`mockvm` (
   `id` bigint unsigned NOT NULL auto_increment,
   `name` varchar(255),
   `host_id` bigint unsigned,
@@ -83,7 +83,7 @@ CREATE TABLE `cloud`.`mockvm` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`mockvolume` (
+CREATE TABLE `simulator`.`mockvolume` (
   `id` bigint unsigned NOT NULL auto_increment,
   `name` varchar(255),
   `size` bigint unsigned,
@@ -97,7 +97,7 @@ CREATE TABLE `cloud`.`mockvolume` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
-CREATE TABLE `cloud`.`mockconfiguration` (
+CREATE TABLE `simulator`.`mockconfiguration` (
   `id` bigint unsigned NOT NULL auto_increment,
   `data_center_id` bigint unsigned,
   `pod_id` bigint unsigned,
@@ -108,7 +108,7 @@ CREATE TABLE `cloud`.`mockconfiguration` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`mocksecurityrules` (
+CREATE TABLE `simulator`.`mocksecurityrules` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vmid` bigint unsigned,
   `signature` varchar(255),
