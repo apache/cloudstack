@@ -93,7 +93,7 @@
     <dependency>
       <groupId>org.apache.rampart</groupId>
       <artifactId>rahas</artifactId>
-      <version>1.5</version>
+      <version>${cs.rampart.version}</version>
       <type>mar</type>
       <exclusions>
         <exclusion>
@@ -105,7 +105,7 @@
     <dependency>
       <groupId>org.apache.rampart</groupId>
       <artifactId>rampart</artifactId>
-      <version>1.5</version>
+      <version>${cs.rampart.version}</version>
       <type>mar</type>
       <exclusions>
         <exclusion>
@@ -117,19 +117,19 @@
     <dependency>
         <groupId>org.apache.rampart</groupId>
         <artifactId>rampart-core</artifactId>
-        <version>1.5</version>
+        <version>${cs.rampart.version}</version>
         <scope>runtime</scope>
     </dependency>
     <dependency>
         <groupId>org.apache.rampart</groupId>
         <artifactId>rampart-policy</artifactId>
-        <version>1.5</version>
+        <version>${cs.rampart.version}</version>
         <scope>runtime</scope>
     </dependency>
     <dependency>
         <groupId>org.apache.rampart</groupId>
         <artifactId>rampart-trust</artifactId>
-        <version>1.5</version>
+        <version>${cs.rampart.version}</version>
         <scope>runtime</scope>
     </dependency>
     <dependency>

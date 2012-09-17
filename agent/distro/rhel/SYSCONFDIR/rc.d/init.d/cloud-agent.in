@@ -67,7 +67,7 @@ export CLASSPATH="$SCP:$DCP:$ACP:$JCP:@AGENTSYSCONFDIR@:@AGENTLIBDIR@"
 start() {
         echo -n $"Starting $PROGNAME: "
 	if hostname --fqdn >/dev/null 2>&1 ; then
-		$JSVC -cp "$CLASSPATH" -pidfile "$PIDFILE" $CLASS
+		$JSVC -cp "$CLASSPATH" -pidfile "$PIDFILE" -errfile SYSLOG $CLASS
 		RETVAL=$?
 		echo
 	else

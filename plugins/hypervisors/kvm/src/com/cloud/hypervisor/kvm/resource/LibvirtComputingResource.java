@@ -2587,7 +2587,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements
                     if (disk.getDeviceType() == DiskDef.deviceType.CDROM
                             && disk.getDiskPath() != null) {
                         cleanupDisk(conn, disk);
-                    } else if (disk.getDiskPath().contains(vmName + "-patchdisk") 
+                    } else if (disk.getDiskPath() != null 
+                            && disk.getDiskPath().contains(vmName + "-patchdisk") 
                             && vmName.matches("^[rsv]-\\d+-VM$")) {
                         if (!_storagePoolMgr.deleteVbdByPath(disk.getDiskPath())) {
                             s_logger.warn("failed to delete patch disk " + disk.getDiskPath());
