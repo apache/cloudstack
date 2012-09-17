@@ -31,6 +31,7 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import com.cloud.dc.DataCenter.NetworkType;
 
 public class Upgrade302to40 extends Upgrade30xBase implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade302to40.class);
