@@ -19,21 +19,7 @@ package com.cloud.agent.manager;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CheckVirtualMachineCommand;
-import com.cloud.agent.api.CleanupNetworkRulesCmd;
-import com.cloud.agent.api.GetDomRVersionAnswer;
-import com.cloud.agent.api.GetDomRVersionCmd;
-import com.cloud.agent.api.GetVmStatsCommand;
-import com.cloud.agent.api.GetVncPortCommand;
-import com.cloud.agent.api.MigrateAnswer;
-import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.NetworkUsageCommand;
-import com.cloud.agent.api.RebootCommand;
-import com.cloud.agent.api.SecurityGroupRuleAnswer;
-import com.cloud.agent.api.SecurityGroupRulesCmd;
-import com.cloud.agent.api.StartCommand;
-import com.cloud.agent.api.StopCommand;
+import com.cloud.agent.api.*;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.proxy.CheckConsoleProxyLoadCommand;
@@ -90,5 +76,8 @@ public interface MockVmManager extends Manager {
 	MigrateAnswer Migrate(MigrateCommand cmd, SimulatorInfo info);
 	GetDomRVersionAnswer getDomRVersion(GetDomRVersionCmd cmd);
 	Map<String, MockVMVO> getVms(String hostGuid);
-    
+
+    CheckRouterAnswer checkRouter(CheckRouterCommand cmd);
+
+    Answer bumpPriority(BumpUpPriorityCommand cmd);
 }
