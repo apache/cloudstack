@@ -4846,11 +4846,19 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
     }
 
     private String getDomainNetworkDomain(long domainId, long zoneId) {
-        String networkDomain = _domainDao.findById(domainId).getNetworkDomain();
+        String networkDomain = null;
+        Long searchDomainId = domainId;
+        while(searchDomainId != null){
+            DomainVO domain = _domainDao.findById(searchDomainId);
+            if(domain.getNetworkDomain() != null){
+                networkDomain = domain.getNetworkDomain();
+                break;
+            }
+            searchDomainId = domain.getParent();
+        }
         if (networkDomain == null) {
             return getZoneNetworkDomain(zoneId);
         }
-
         return networkDomain;
     }
 
