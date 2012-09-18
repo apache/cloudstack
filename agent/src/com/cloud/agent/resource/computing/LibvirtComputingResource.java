@@ -1172,12 +1172,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (nic.getBrName().equalsIgnoreCase(_linkLocalBridgeName)) {
                     vlanAllocatedToVM.put("LinkLocal", nicPos);
                 } else {
-                    String vlanId = getVlanIdFromBridge(nic.getBrName());
-                    if (vlanId != null) {
-                        vlanAllocatedToVM.put(vlanId, nicPos);
+                	if (nic.getBrName().equalsIgnoreCase(_publicBridgeName) || nic.getBrName().equalsIgnoreCase(_privBridgeName) || nic.getBrName().equalsIgnoreCase(_guestBridgeName)) {
+                    	vlanAllocatedToVM.put(Vlan.UNTAGGED, nicPos);
                     } else {
-                        vlanAllocatedToVM.put(Vlan.UNTAGGED, nicPos);
-                    }
+                    	String vlanId = getVlanIdFromBridge(nic.getBrName());
+                    	vlanAllocatedToVM.put(vlanId, nicPos);
+                   }
                 }
                 nicPos++;
             }
