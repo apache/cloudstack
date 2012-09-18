@@ -6,9 +6,9 @@
 * to you under the Apache License, Version 2.0 (the
 * "License"); you may not use this file except in compliance
 * with the License.  You may obtain a copy of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
+*
 * Unless required by applicable law or agreed to in writing,
 * software distributed under the License is distributed on an
 * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -8611,6 +8611,9 @@ div.panel.ui-dialog div.list-view div.fixed-header {
   position: relative;
   left: 5px;
   top: 8px;
+  display: inline-block;
+  padding-bottom: 13px;
+  max-width: 171px;
 }
 
 .info-boxes .info-box ul li .total span {
@@ -10386,5 +10389,6 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
 
 .label-hovered {
   cursor: pointer;
-  color: blue !important;
+  color: #0000FF !important;
 }
+
