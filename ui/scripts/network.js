@@ -282,25 +282,40 @@
                     label: 'label.network.offering',
                     validation: { required: true },
 										dependsOn: 'zoneId',
-                    select: function(args) {										 
+                    select: function(args) {
                       $.ajax({
-                        url: createURL('listNetworkOfferings&zoneid=' + args.zoneId),
+                        url: createURL('listVPCs'),
                         data: {
-                          guestiptype: 'Isolated',
-                          supportedServices: 'SourceNat',
-                          specifyvlan: false,
-                          state: 'Enabled'
+                          listAll: true
                         },
                         success: function(json) {
-                          networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
-                          args.response.success({
-                            data: $.map(networkOfferingObjs, function(zone) {
-                              return {
-                                id: zone.id,
-                                description: zone.name
-                              };
-                            })
-                          });
+                          var items = json.listvpcsresponse.vpc;
+                          var baseUrl = 'listNetworkOfferings&zoneid=' + args.zoneId;
+                          var listUrl;
+                          if(items != null && items.length > 0) 
+                            listUrl = baseUrl;
+                          else
+                            listUrl = baseUrl + '&forVpc=false';
+                          $.ajax({
+                            url: createURL(listUrl),
+                            data: {
+                              guestiptype: 'Isolated',
+                              supportedServices: 'SourceNat',
+                              specifyvlan: false,
+                              state: 'Enabled'
+                            },
+                            success: function(json) {
+                              networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+                              args.response.success({
+                                data: $.map(networkOfferingObjs, function(zone) {
+                                  return {
+                                    id: zone.id,
+                                    description: zone.name
+                                  };
+                                })
+                              });
+                            }
+                          });                            
                         }
                       });
                     }
