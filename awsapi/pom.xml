@@ -100,6 +100,10 @@
            <groupId>bouncycastle</groupId>
            <artifactId>bcprov-jdk14</artifactId>
         </exclusion>
+        <exclusion>
+           <groupId>org.apache.xalan</groupId>
+           <artifactId>xalan</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -112,6 +116,10 @@
            <groupId>bouncycastle</groupId>
            <artifactId>bcprov-jdk14</artifactId>
         </exclusion>
+        <exclusion>
+           <groupId>org.apache.xalan</groupId>
+           <artifactId>xalan</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -119,18 +127,36 @@
         <artifactId>rampart-core</artifactId>
         <version>${cs.rampart.version}</version>
         <scope>runtime</scope>
+      <exclusions>
+        <exclusion>
+           <groupId>org.apache.xalan</groupId>
+           <artifactId>xalan</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
         <groupId>org.apache.rampart</groupId>
         <artifactId>rampart-policy</artifactId>
         <version>${cs.rampart.version}</version>
         <scope>runtime</scope>
+      <exclusions>
+        <exclusion>
+           <groupId>org.apache.xalan</groupId>
+           <artifactId>xalan</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
         <groupId>org.apache.rampart</groupId>
         <artifactId>rampart-trust</artifactId>
         <version>${cs.rampart.version}</version>
         <scope>runtime</scope>
+      <exclusions>
+        <exclusion>
+           <groupId>org.apache.xalan</groupId>
+           <artifactId>xalan</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
         <groupId>org.slf4j</groupId>
