@@ -644,7 +644,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
                 ub.set(host, _pingTimeAttr, System.currentTimeMillis() >> 10);
             }
         }
-        if (event.equals(Event.ManagementServerDown)) {
+        if (event.equals(Event.ManagementServerDown) || event.equals(Event.HypervisorVersionChanged)) {
             ub.set(host, _pingTimeAttr, ((System.currentTimeMillis() >> 10) - (10 * 60)));
         }
         int result = update(ub, sc, null);
