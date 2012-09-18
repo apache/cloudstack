@@ -311,6 +311,7 @@
                     dependsOn: 'networkOfferingId',
                     select: function(args) {
                       var networkOfferingObj;
+                      var $form = args.$select.closest('form');
                       $(networkOfferingObjs).each(function(key, value) {
                         if(value.id == args.networkOfferingId) {
                           networkOfferingObj = value;
@@ -338,40 +339,50 @@
                             args.response.success({ data: data });
                           }
                         });
+                        $form.find('.form-item[rel=networkDomain]').hide();
                       }
                       else {
                         args.$select.closest('.form-item').hide();
+                        $form.find('.form-item[rel=networkDomain]').show();
                         args.response.success({ data: null });
                       }
                     }
                   },
 
                   guestGateway: { label: 'label.guest.gateway' },
-                  guestNetmask: { label: 'label.guest.netmask' }
+                  guestNetmask: { label: 'label.guest.netmask' },
+                  networkDomain: { label: 'label.network.domain' }
                 }
               },
               action: function(args) {
-							  var dataObj = {
-								  zoneId: args.data.zoneId,
-									name: args.data.name,
-									displayText: args.data.displayText,
-									networkOfferingId: args.data.networkOfferingId
-								};				
+                var dataObj = {
+                  zoneId: args.data.zoneId,
+                  name: args.data.name,
+                  displayText: args.data.displayText,
+                  networkOfferingId: args.data.networkOfferingId
+                };		
+		
                 if(args.data.guestGateway != null && args.data.guestGateway.length > 0) {                  
-									$.extend(dataObj, {
-									  gateway: args.data.guestGateway
-									});
-								}								
+                  $.extend(dataObj, {
+                    gateway: args.data.guestGateway
+                  });
+                }								
                 if(args.data.guestNetmask != null && args.data.guestNetmask.length > 0) {                  
-									$.extend(dataObj, {
-									  netmask: args.data.guestNetmask
-									});									
-								}								
-								if(args.$form.find('.form-item[rel=vpcid]').css("display") != "none") {                 
-									$.extend(dataObj, {
-									  vpcid: args.data.vpcid
-									});
-								}											
+                  $.extend(dataObj, {
+                    netmask: args.data.guestNetmask
+                  });									
+                }								
+                if(args.$form.find('.form-item[rel=vpcid]').css("display") != "none") {                 
+                  $.extend(dataObj, {
+                    vpcid: args.data.vpcid
+                  });
+                }
+                if(args.data.networkDomain != null && args.data.networkDomain.length > 0 && args.$form.find('.form-item[rel=vpcid]').css("display") == "none") {
+                  $.extend(dataObj, {
+                    networkDomain: args.data.networkDomain
+                  });                
+                }
+															
                 $.ajax({
                   url: createURL('createNetwork'),
 									data: dataObj,
