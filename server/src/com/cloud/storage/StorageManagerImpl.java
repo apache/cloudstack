@@ -1503,7 +1503,10 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
             s_logger.warn("Unable to find pool:" + id);
             throw new InvalidParameterValueException("Unable to find pool by id " + id);
         }
-
+        if(sPool.getStatus() != StoragePoolStatus.Maintenance){
+            s_logger.warn("Unable to delete storage id: " + id +" due to it is not in Maintenance state");
+            throw new InvalidParameterValueException("Unable to delete storage due to it is not in Maintenance state, id: " + id);           
+        }
         if (sPool.getPoolType().equals(StoragePoolType.LVM) || sPool.getPoolType().equals(StoragePoolType.EXT)) {
             s_logger.warn("Unable to delete local storage id:" + id);
             throw new InvalidParameterValueException("Unable to delete local storage id: " + id);
@@ -1545,8 +1548,6 @@ public class StorageManagerImpl implements StorageManager, Manager, ClusterManag
 
         // mark storage pool as removed (so it can't be used for new volumes creation), release the lock
         boolean isLockReleased = false;
-        sPool.setStatus(StoragePoolStatus.Removed);
-        _storagePoolDao.update(id, sPool);
         isLockReleased = _storagePoolDao.releaseFromLockTable(lock.getId());
         s_logger.trace("Released lock for storage pool " + id);
 
