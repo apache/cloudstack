@@ -81,21 +81,29 @@ fi
 cp $sourcedir/KEYS $outputdir/KEYS
 
 cd $sourcedir
+echo 'archiving'
 git archive --format=tar.gz --prefix=apache-cloudstack-$version-incubating-src/ $branch > $outputdir/apache-cloudstack-$version-incubating-src.tar.gz
 git archive --format=zip --prefix=apache-cloudstack-$version-incubating-src/ $branch > $outputdir/apache-cloudstack-$version-incubating-src.zip
 
 cd $outputdir
+echo 'armor'
 gpg -v --armor --output apache-cloudstack-$version-incubating-src.tar.gz.asc --detach-sig apache-cloudstack-$version-incubating-src.tar.gz
 gpg -v --armor --output apache-cloudstack-$version-incubating-src.zip.asc --detach-sig apache-cloudstack-$version-incubating-src.zip
+
+echo 'md5'
 gpg -v --print-md MD5 apache-cloudstack-$version-incubating-src.tar.gz > apache-cloudstack-$version-incubating-src.tar.gz.md5
 gpg -v --print-md MD5 apache-cloudstack-$version-incubating-src.zip > apache-cloudstack-$version-incubating-src.zip.md5
+
+echo 'sha'
 gpg -v --print-md SHA512 apache-cloudstack-$version-incubating-src.tar.gz > apache-cloudstack-$version-incubating-src.tar.gz.sha
 gpg -v --print-md SHA512 apache-cloudstack-$version-incubating-src.zip > apache-cloudstack-$version-incubating-src.zip.sha
 
-gpg -v --verify apache-cloudstack-$version.tar.gz.asc apache-cloudstack-$version-incubating-src.tar.gz
-gpg -v --verify apache-cloudstack-$version.zip.asc apache-cloudstack-$version-incubating-src.zip
+echo 'verify'
+gpg -v --verify apache-cloudstack-$version-incubating-src.tar.gz.asc apache-cloudstack-$version-incubating-src.tar.gz
+gpg -v --verify apache-cloudstack-$version-incubating-src.zip.asc apache-cloudstack-$version-incubating-src.zip
 
 if [ $tag == 'yes' ]; then
+  echo 'tag'
   cd $sourcedir
   if [ $certid == 'X' ]; then
       git tag -s $version -m "Tagging release $version on branch $branch."
