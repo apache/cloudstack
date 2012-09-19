@@ -213,10 +213,11 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
-    private StoragePool CreateSharedStoragePool(Connect conn, String uuid,
+    private StoragePool createSharedStoragePool(Connect conn, String uuid,
             String host, String path) {
         String mountPoint = path;
         if (!_storageLayer.exists(mountPoint)) {
+            s_logger.error(mountPath + " does not exists. Check local.storage.path in agent.properties.");
             return null;
         }
         LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.DIR,
@@ -550,7 +551,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 sp = createNfsStoragePool(conn, name, host, path);
             } else if (type == StoragePoolType.SharedMountPoint
                     || type == StoragePoolType.Filesystem) {
-                sp = CreateSharedStoragePool(conn, name, host, path);
+                sp = createSharedStoragePool(conn, name, host, path);
             } else if (type == StoragePoolType.RBD) {
                 sp = createRBDStoragePool(conn, name, host, port, userInfo, path);
             } else if (type == StoragePoolType.CLVM) {
