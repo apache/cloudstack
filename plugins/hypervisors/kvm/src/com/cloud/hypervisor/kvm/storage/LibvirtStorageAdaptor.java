@@ -217,7 +217,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             String host, String path) {
         String mountPoint = path;
         if (!_storageLayer.exists(mountPoint)) {
-            s_logger.error(mountPath + " does not exists. Check local.storage.path in agent.properties.");
+            s_logger.error(mountPoint + " does not exists. Check local.storage.path in agent.properties.");
             return null;
         }
         LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(poolType.DIR,
