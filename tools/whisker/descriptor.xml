@@ -2743,16 +2743,6 @@ Copyright © 2010-2011 OpenStack, LLC.
 			</by-organisation>
 		</with-license>
 	</within>
-    <within dir='tools/gcc'>
-    	<with-license id='ApacheLicenseVersion2'>
-    		<copyright-notice>
-Copyright © 2009 Google Inc.
-			</copyright-notice>
-			<by-organisation id='google.com'>
-				<resource name='compiler.jar' />
-			</by-organisation>
-		</with-license>
-	</within>
     <within dir='deps/awsapi-lib'>
     	<with-license id='ApacheLicenseVersion2'>
     		<copyright-notice>

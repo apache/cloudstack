@@ -3881,13 +3881,6 @@ Within the target/jar directory
             cloud-xstream-1.3.1.jar  http://xstream.codehaus.org/repository.html             
 
 
-Within the tools/gcc directory
-    licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
-    Copyright © 2009 Google Inc.
-        from Google Inc.  http://google.com 
-            compiler.jar             
-
-
 Within the ui/lib directory
     placed in the public domain
         by Eric Meyer  http://meyerweb.com/eric/ 
