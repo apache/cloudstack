@@ -92,7 +92,7 @@ if installed mysql-server ; then
 "
 fi
 
-read -p "Welcome to the Cloud.com CloudStack Installer.  What would you like to do?
+read -p "Welcome to the Apache CloudStack (Incubating) Installer.  What would you like to do?
 
 $installms$installag$installbm$installus$installdb$upgrade$remove$removedb$quitoptio
     > " installtype
