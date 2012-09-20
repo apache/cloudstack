@@ -681,7 +681,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         _sysvmISOPath = (String) params.get("systemvm.iso.path");
         if (_sysvmISOPath == null) {
             String[] isoPaths = { "/usr/lib64/cloud/agent/vms/systemvm.iso",
-                    "/usr/lib/cloud/agent/vms/systemvm.iso" };
+                    "/usr/lib/cloud/agent/vms/systemvm.iso",
+                    "/usr/lib64/cloud/common/vms/systemvm.iso",
+                    "/usr/lib/cloud/common/vms/systemvm.iso" };
             for (String isoPath : isoPaths) {
                 if (_storage.exists(isoPath)) {
                     _sysvmISOPath = isoPath;
