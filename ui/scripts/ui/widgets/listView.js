@@ -669,7 +669,8 @@
     var $search = $('<div></div>').addClass('text-search reduced-hide');
     var $searchBar = $('<div></div>').addClass('search-bar reduced hide').appendTo($search);
     $searchBar.append('<input type="text" />');
-    $search.append('<div class="button search"></div>');
+    $search.append('<div id="basic_search" class="button search"></div>');
+		//$search.append('<div id="advanced_search" class="button search"></div>');
 
     return $search.appendTo($toolbar);
   };
@@ -1316,7 +1317,7 @@
       return true;
     });
 
-    var search = function() {
+    var basicSearch = function() {
       page = 1;
       loadBody(
         $table,
@@ -1341,13 +1342,18 @@
         }
       );
     };
-
-    $listView.find('.search-bar input[type=text]').change(function(event) {
-      search();
-    });
-
-    // Setup filter events
-    $listView.find('.button.search, select').bind('change', function(event) {
+		
+		//basic search
+    $listView.find('.search-bar input[type=text]').keyup(function(event) {	
+			if(event.keyCode == 13) //13 is keycode of Enter key		
+        basicSearch();
+			return true;
+    });    		    
+    $listView.find('.button.search#basic_search').bind('click', function(event) {					
+      basicSearch();			
+      return true;
+    });			
+		$listView.find('select').bind('change', function(event) {
       if ($(event.target).closest('.section-select').size()) return true;
       if ((event.type == 'click' ||
            event.type == 'mouseup') &&
@@ -1356,11 +1362,18 @@
            $(event.target).is('input')))
         return true;
 
-      search();
+      basicSearch();
 
       return true;
     });
-
+   		
+		//advanced search 
+		/*
+    $listView.find('.button.search#advanced_search').bind('click', function(event) {	
+      return true;
+    });		
+		*/
+		
     // Infinite scrolling event
     $listView.bind('scroll', function(event) {
       if (args.listView && args.listView.disableInfiniteScrolling) return false;
