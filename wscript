@@ -83,6 +83,14 @@ for pattern in ["**/.project","**/.classpath","**/.pydevproject"]: Node.exclude_
 
 # Support functions
 
+def distclean(ctx):
+   """Clear the build artifacts"""
+   for root, folder, files in os.walk(blddir):
+       for f in files:
+           path = os.path.join(root, f)
+           print "Removing artifact %s"%path
+           os.remove(path)
+
 def inspectobj(x):
 	"""Look inside an object"""
 	for m in dir(x): print m,":	",getattr(x,m)
