@@ -115,6 +115,7 @@ get_boot_params() {
           cp -f $EXTRA_MOUNT/authorized_keys /var/cache/cloud/authorized_keys
           privkey=/var/cache/cloud/authorized_keys
           umount $EXTRA_MOUNT
+          cp -f $privkey /root/.ssh/ && chmod go-rwx /root/.ssh/authorized_keys
           ;;
      vmware)
           vmtoolsd --cmd 'machine.id.get' > /var/cache/cloud/cmdline 
