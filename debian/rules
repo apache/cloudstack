@@ -113,7 +113,8 @@ binary-common:
 #	dh_shlibdeps
 	dh_gencontrol
 	dh_md5sums
-	dh_builddeb
+	mkdir -p ./artifacts/debs
+	dh_builddeb --destdir=$(CURDIR)/artifacts/debs
 # Build architecture independant packages using the common target.
 # binary-indep: build-indep install-indep
 # 	$(MAKE) -f debian/rules DH_OPTIONS=-i binary-common
