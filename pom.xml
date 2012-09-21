@@ -218,8 +218,6 @@
               <exclude>patches/systemvm/debian/config/etc/apache2/vhostexample.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/apache2/sites-available/default-ssl</exclude>
               <exclude>patches/systemvm/debian/config/etc/apache2/sites-available/default</exclude>
-              <exclude>patches/systemvm/debian/config/etc/apache2/httpd.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/apache2/ports.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/rsyslog.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/cloud-nic.rules</exclude>
               <exclude>patches/systemvm/debian/config/etc/init.d/postinit</exclude>
