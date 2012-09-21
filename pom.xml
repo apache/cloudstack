@@ -223,7 +223,6 @@
               <exclude>patches/systemvm/debian/config/etc/apache2/ports.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/rsyslog.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/cloud-nic.rules</exclude>
-              <exclude>patches/systemvm/debian/config/etc/logrotate.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/init.d/postinit</exclude>
               <exclude>patches/systemvm/debian/config/etc/modprobe.d/aesni_intel</exclude>
               <exclude>patches/systemvm/debian/config/etc/dnsmasq.conf</exclude>
