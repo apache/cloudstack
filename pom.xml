@@ -212,12 +212,6 @@
               <exclude>patches/systemvm/debian/xe/xen-vcpu-hotplug.rules</exclude>
               <exclude>patches/systemvm/debian/xe/xe-linux-distribution.init</exclude>
               <exclude>patches/systemvm/debian/systemvm.vmx</exclude>
-              <exclude>patches/systemvm/debian/config/etc/vpcdnsmasq.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/httpd/conf/httpd.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/haproxy/haproxy.cfg</exclude>
-              <exclude>patches/systemvm/debian/config/etc/apache2/vhostexample.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/apache2/sites-available/default-ssl</exclude>
-              <exclude>patches/systemvm/debian/config/etc/apache2/sites-available/default</exclude>
               <exclude>patches/systemvm/debian/config/etc/rsyslog.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/cloud-nic.rules</exclude>
               <exclude>patches/systemvm/debian/config/etc/init.d/postinit</exclude>
