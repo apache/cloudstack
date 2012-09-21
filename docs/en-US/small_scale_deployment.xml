@@ -1,0 +1,37 @@
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ http://www.apache.org/licenses/LICENSE-2.0.
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+
+<section id="small_scale_deployment">
+    <title>Small-Scale Deployment</title>
+    <mediaobject>
+        <imageobject>
+            <imagedata fileref="./images/small_scale_deployment.png" />
+        </imageobject>
+        <textobject><phrase>Small-Scale Deployment</phrase></textobject>
+    </mediaobject>
+    <para>This diagram illustrates the network architecture of a small-scale &PRODUCT; deployment.</para>
+    <itemizedlist>
+        <listitem><para>A firewall provides a connection to the Internet. The firewall is configured in NAT mode. The firewall forwards HTTP requests and API calls from the Internet to the Management Server. The Management Server resides on the management network.</para></listitem>
+        <listitem><para>A layer-2 switch connects all physical servers and storage.</para></listitem>
+        <listitem><para>A single NFS server functions as both the primary and secondary storage.</para></listitem>
+        <listitem><para>The Management Server is connected to the management network.</para></listitem>
+    </itemizedlist>
+</section>
