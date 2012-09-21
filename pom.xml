@@ -213,11 +213,6 @@
               <exclude>patches/systemvm/debian/xe/xe-linux-distribution.init</exclude>
               <exclude>patches/systemvm/debian/systemvm.vmx</exclude>
               <exclude>patches/systemvm/debian/config/etc/ssh/sshd_config</exclude>
-              <exclude>patches/systemvm/debian/config/etc/logrotate.d/haproxy</exclude>
-              <exclude>patches/systemvm/debian/config/etc/logrotate.d/dnsmasq</exclude>
-              <exclude>patches/systemvm/debian/config/etc/logrotate.d/apache2</exclude>
-              <exclude>patches/systemvm/debian/config/etc/logrotate.d/ppp</exclude>
-              <exclude>patches/systemvm/debian/config/etc/logrotate.d/rsyslog</exclude>
               <exclude>patches/systemvm/debian/config/etc/vpcdnsmasq.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/httpd/conf/httpd.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/haproxy/haproxy.cfg</exclude>
