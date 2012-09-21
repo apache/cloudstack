@@ -251,9 +251,6 @@
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.secrets.orig</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.conf</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/ppp/options.xl2tpd</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/xl2tpd/xl2tpd.conf</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/xl2tpd/xl2tpd.conf.orig</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.secrets</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
               <exclude>tools/devcloud/devcloud.cfg</exclude>
