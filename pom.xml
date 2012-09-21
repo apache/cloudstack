@@ -248,7 +248,6 @@
               <exclude>patches/systemvm/debian/config/var/www/html/userdata/.htaccess</exclude>
               <exclude>patches/systemvm/debian/config/var/www/html/latest/.htaccess</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/ipsec.secrets</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
               <exclude>tools/devcloud/devcloud.cfg</exclude>
               <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
