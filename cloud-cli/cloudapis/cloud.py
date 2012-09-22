@@ -71,10 +71,10 @@ class CloudAPI:
         requests = zip(requests.keys(), requests.values())
         requests.sort(key=lambda x: str.lower(x[0]))
 
-        requestUrl = "&".join(["=".join([request[0], urllib.quote_plus(str(request[1]))]) for request in requests])
-        hashStr = "&".join(["=".join([str.lower(request[0]), urllib.quote_plus(str.lower(str(request[1])))]) for request in requests])
+        requestUrl = "&".join(["=".join([request[0], urllib.quote(str(request[1],""))]) for request in requests])
+        hashStr = "&".join(["=".join([str.lower(request[0]), urllib.quote(str.lower(str(request[1])),"")]) for request in requests])
 
-        sig = urllib.quote_plus(base64.encodestring(hmac.new(self.securityKey, hashStr, hashlib.sha1).digest()).strip())
+        sig = urllib.quote_plus(base64.encodestring(hmac.new(self.securityKey, str.lower(hashStr), hashlib.sha1).digest()).strip())
 
         requestUrl += "&signature=%s"%sig
 
