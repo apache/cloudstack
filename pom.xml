@@ -303,6 +303,12 @@
         <module>deps</module>
       </modules>
     </profile>
+    <profile>
+      <id>developer</id>
+      <modules>
+        <module>developer</module>
+      </modules>
+    </profile>
   </profiles>
 
 </project>
