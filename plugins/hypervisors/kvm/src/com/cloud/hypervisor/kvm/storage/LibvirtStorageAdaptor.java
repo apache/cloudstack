@@ -199,7 +199,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             sp.create(0);
             return sp;
         } catch (LibvirtException e) {
-            s_logger.debug(e.toString());
+            s_logger.error(e.toString());
             if (sp != null) {
                 try {
                     sp.undefine();
@@ -230,7 +230,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             return sp;
         } catch (LibvirtException e) {
-            s_logger.debug(e.toString());
+            s_logger.error(e.toString());
             if (sp != null) {
                 try {
                     sp.undefine();
@@ -260,7 +260,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             sp.create(0);
             return sp;
         } catch (LibvirtException e) {
-            s_logger.debug(e.toString());
+            s_logger.error(e.toString());
             if (sp != null) {
                 try {
                     sp.undefine();
@@ -294,7 +294,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 s = conn.secretDefineXML(sd.toString());
                 s.setValue(Base64.decodeBase64(userInfoTemp[1]));
             } catch (LibvirtException e) {
-                s_logger.debug(e.toString());
+                s_logger.error(e.toString());
                 if (s != null) {
                     try {
                         s.undefine();
