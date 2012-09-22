@@ -105,7 +105,7 @@
 
 						<executions>
 							<execution>
-								<id>create-database</id>
+								<id>drop-database</id>
 								<phase>process-test-resources</phase>
 								<goals>
 									<goal>execute</goal>
@@ -115,10 +115,21 @@
 									<password>${db.cloud.password}</password>
 									<url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
 									<sqlCommand>drop database if exists `cloud`</sqlCommand>
-									<sqlCommand>create database `cloud`</sqlCommand>
-									<!-- <onError>continue</onError> -->
 								</configuration>
 							</execution>
+                            <execution>
+                                <id>create-database</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <configuration>
+                                    <username>root</username>
+                                    <password>${db.cloud.password}</password>
+                                    <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
+                                    <sqlCommand>create database `cloud`</sqlCommand>
+                                </configuration>
+                            </execution>
 							<execution>
 								<id>create-schema</id>
 								<phase>process-test-resources</phase>
@@ -133,6 +144,16 @@
 									</srcFiles>
 								</configuration>
 							</execution>
+                            <execution>
+                                <id>prefill-schema</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <configuration>
+                                    <sqlCommand>INSERT INTO `cloud`.`domain` (id, name, parent, path, owner) VALUES (1, 'ROOT', NULL, '/', 2)</sqlCommand>
+                                </configuration>
+                            </execution>
 						</executions>
 					</plugin>
 				</plugins>
