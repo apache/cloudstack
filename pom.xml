@@ -209,8 +209,6 @@
               <exclude>deps/XenServerJava/Makefile</exclude>
               <exclude>dist/console-proxy/js/jquery.js</exclude>
               <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
-              <exclude>patches/systemvm/debian/xe/xen-vcpu-hotplug.rules</exclude>
-              <exclude>patches/systemvm/debian/xe/xe-linux-distribution.init</exclude>
               <exclude>patches/systemvm/debian/systemvm.vmx</exclude>
               <exclude>patches/systemvm/debian/config/etc/rsyslog.conf</exclude>
               <exclude>patches/systemvm/debian/config/etc/cloud-nic.rules</exclude>
