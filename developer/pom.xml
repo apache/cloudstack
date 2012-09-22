@@ -152,6 +152,7 @@
                                 </goals>
                                 <configuration>
                                     <sqlCommand>INSERT INTO `cloud`.`domain` (id, name, parent, path, owner) VALUES (1, 'ROOT', NULL, '/', 2)</sqlCommand>
+                                    <sqlCommand>INSERT INTO `cloud`.`configuration` (category, instance, component, name, value) VALUES ('Hidden', 'DEFAULT', 'management-server', 'init', 'false')</sqlCommand>
                                 </configuration>
                             </execution>
 						</executions>
