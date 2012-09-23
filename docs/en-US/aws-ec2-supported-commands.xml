@@ -1,0 +1,407 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="aws-ec2-supported-commands">
+  <title>Supported AWS API Calls</title>
+    <para>
+      The following Amazon EC2 commands are supported by &PRODUCT; when the AWS API compatibility feature is enabled. For a few commands, there are differences between the &PRODUCT; and Amazon EC2 versions, and these differences are noted. The underlying SOAP call for each command is also given, for those who have built tools using those calls.
+    </para>
+    <para>Elastic IP Addresses</para>
+    <table frame='all'>
+      <title>Elastic IP API mapping</title>
+      <tgroup cols='3' align='left' colsep='1' rowsep='1'>
+        <!--<colspec colname='c1'tcolwidth="1*"/>
+        <colspec colname='c2'tcolwidth="1*"/>-->
+        <thead>
+          <row>
+            <entry>EC2 command</entry>
+            <entry>SOAP all</entry>
+            <entry>&PRODUCT; API call</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>ec2-allocate-address</entry>
+            <entry>AllocateAddress</entry>
+            <entry>associateIpAddress</entry>
+          </row>
+          <row>
+            <entry>ec2-associate-address</entry>
+            <entry>AssociateAddress</entry>
+            <entry>enableStaticNat</entry>
+          </row>
+          <row>
+            <entry>ec2-describe-addresses</entry>
+            <entry>DescribeAddresses</entry>
+            <entry>listPublicIpAddresses</entry>
+          </row>
+          <row>
+            <entry>ec2-diassociate-address</entry>
+            <entry>DisassociateAddress</entry>
+            <entry>disableStaticNat</entry>
+          </row>
+          <row>
+            <entry>ec2-release-address</entry>
+            <entry>ReleaseAddress</entry>
+            <entry>disassociateIpAddress</entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+    <para>Availability Zones</para>
+    <table frame='all'>
+      <title>Availability Zone API mapping</title>
+        <tgroup cols='3' align='left' colsep='1' rowsep='1'>
+          <!--<colspec colname='c1'tcolwidth="1*"/>
+          <colspec colname='c2'tcolwidth="1*"/>-->
+          <thead>
+            <row>
+              <entry>EC2 command</entry>
+              <entry>SOAP all</entry>
+              <entry>&PRODUCT; API call</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry>ec2-describe-availability-zones</entry>
+              <entry>DescribeAvailabilityZones</entry>
+              <entry>listZones</entry>
+            </row>
+          </tbody>
+        </tgroup>
+    </table>
+    <para>Images</para>
+    <table frame='all'>
+      <title>Images API mapping</title>
+        <tgroup cols='3' align='left' colsep='1' rowsep='1'>
+          <!--<colspec colname='c1'tcolwidth="1*"/>
+          <colspec colname='c2'tcolwidth="1*"/>-->
+          <thead>
+            <row>
+              <entry>EC2 command</entry>
+              <entry>SOAP all</entry>
+              <entry>&PRODUCT; API call</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry>ec2-create-image</entry>
+              <entry>CreateImage</entry>
+              <entry>createTemplate</entry>
+            </row>
+            <row>
+              <entry>ec2-deregister</entry>
+              <entry>DeregisterImage</entry>
+              <entry>DeleteTemplate</entry>
+            </row>
+            <row>
+              <entry>ec2-describe-images</entry>
+              <entry>DescribeImages</entry>
+              <entry>listTemplates</entry>
+            </row>
+            <row>
+              <entry>ec2-register</entry>
+              <entry>RegisterImage</entry>
+              <entry>registerTemplate</entry>
+            </row>
+          </tbody>
+        </tgroup>
+    </table>
+    <para>Image Attributes</para>
+    <table frame='all'>
+      <title>Image Attributes API mapping</title>
+      <tgroup cols='3' align='left' colsep='1' rowsep='1'>
+        <!--<colspec colname='c1'tcolwidth="1*"/>
+        <colspec colname='c2'tcolwidth="1*"/>-->
+        <thead>
+          <row>
+            <entry>EC2 command</entry>
+            <entry>SOAP all</entry>
+            <entry>&PRODUCT; API call</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>ec2-describe-image-attribute</entry>
+            <entry>DescribeImageAttribute</entry>
+            <entry>listTemplatePermissions</entry>
+          </row>
+          <row>
+            <entry>ec2-modify-image-attribute</entry>
+            <entry>ModifyImageAttribute</entry>
+            <entry>updateTemplatePermissions</entry>
+          </row>
+          <row>
+            <entry>ec2-reset-image-attribute</entry>
+            <entry>ResetImageAttribute</entry>
+            <entry>updateTemplatePermissions</entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+    <para>Instances</para>
+    <table frame='all'>
+      <title>Instances API mapping</title>
+      <tgroup cols='3' align='left' colsep='1' rowsep='1'>
+        <!--<colspec colname='c1'tcolwidth="1*"/>
+        <colspec colname='c2'tcolwidth="1*"/>-->
+        <thead>
+          <row>
+            <entry>EC2 command</entry>
+            <entry>SOAP all</entry>
+            <entry>&PRODUCT; API call</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+            <entry>ec2-describe-instances</entry>
+            <entry>DescribeInstances</entry>
+            <entry>listVirtualMachines</entry>
+          </row>
+          <row>
+            <entry>ec2-run-instances</entry>
+            <entry>RunInstances</entry>
+            <entry>deployVirtualMachine</entry>
+          </row>
+          <row>
+            <entry>ec2-reboot-instances</entry>
+            <entry>RebootInstances</entry>
+            <entry>rebootVirtualMachine</entry>
+          </row>
+          <row>
+            <entry>ec2-start-instances</entry>
+            <entry>StartInstances</entry>
+            <entry>startVirtualMachine</entry>
+          </row>
+          <row>
+            <entry>ec2-stop-instances</entry>
+            <entry>StopInstances</entry>
+            <entry>stopVirtualMachine</entry>
+          </row>
+          <row>
+            <entry>ec2-terminate-instances</entry>
+            <entry>TerminateInstances</entry>
+            <entry>destroyVirtualMachine</entry>
+          </row>
+        </tbody>
+      </tgroup>
+    </table>
+    <para>Instance Attributes</para>
+    <table frame='all'>
+      <title>Instance Attributes Mapping</title>
+      <tgroup cols='3' align='left' colsep='1' rowsep='1'>
+        <!--<colspec colname='c1'tcolwidth="1*"/>
+        <colspec colname='c2'tcolwidth="1*"/>-->
+        <thead>
+          <row>
+            <entry>EC2 command</entry>
+            <entry>SOAP all</entry>
+            <entry>&PRODUCT; API call</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row>
+             <entry>ec2-describe-instance-attribute</entry>
+             <entry>DescribeInstanceAttribute</entry>
+             <entry>listVirtualMachines</entry>
+           </row>
+         </tbody>
+       </tgroup>
+     </table>
+     <para>Key Pairs</para>
+     <table frame='all'>
+       <title>Keys Pairs Mapping</title>
+       <tgroup cols='3' align='left' colsep='1' rowsep='1'>
+         <!--<colspec colname='c1'tcolwidth="1*"/>
+         <colspec colname='c2'tcolwidth="1*"/>-->
+         <thead>
+           <row>
+             <entry>EC2 command</entry>
+             <entry>SOAP all</entry>
+             <entry>&PRODUCT; API call</entry>
+           </row>
+         </thead>
+         <tbody>
+           <row>
+             <entry>ec2-add-keypair</entry> 
+             <entry>CreateKeyPair</entry>
+             <entry>createSSHKeyPair</entry>
+           </row>
+           <row>
+             <entry>ec2-delete-keypair</entry>
+             <entry>DeleteKeyPair</entry>
+             <entry>deleteSSHKeyPair</entry>
+           </row>
+           <row>
+             <entry>ec2-describe-keypairs</entry>
+             <entry>DescribeKeyPairs</entry>
+             <entry>listSSHKeyPairs</entry>
+           </row>
+           <row>
+             <entry>ec2-import-keypair</entry>
+             <entry>ImportKeyPair</entry>
+             <entry>registerSSHKeyPair</entry>
+           </row>	
+         </tbody>
+       </tgroup>
+     </table>
+     <para>Passwords</para>
+     <table frame='all'>
+       <title>Passwords API Mapping</title>
+       <tgroup cols='3' align='left' colsep='1' rowsep='1'>
+         <!--<colspec colname='c1'tcolwidth="1*"/>
+         <colspec colname='c2'tcolwidth="1*"/>-->
+         <thead>
+           <row>
+             <entry>EC2 command</entry>
+             <entry>SOAP all</entry>
+             <entry>&PRODUCT; API call</entry>
+           </row>
+         </thead>
+         <tbody>
+           <row>
+             <entry>ec2-get-password</entry>
+             <entry>GetPasswordData</entry>
+             <entry>getVMPassword</entry>
+          </row>
+         </tbody>
+       </tgroup>
+     </table>
+     <para>Security Groups</para>
+     <table frame='all'>
+       <title>Security Groups API Mapping</title>
+       <tgroup cols='3' align='left' colsep='1' rowsep='1'>
+         <!--<colspec colname='c1'tcolwidth="1*"/>
+         <colspec colname='c2'tcolwidth="1*"/>-->
+         <thead>
+           <row>
+             <entry>EC2 command</entry>
+             <entry>SOAP all</entry>
+             <entry>&PRODUCT; API call</entry>
+           </row>
+         </thead>
+         <tbody>
+           <row>
+             <entry>ec2-authorize</entry>
+             <entry>AuthorizeSecurityGroupIngress</entry>
+             <entry>authorizeSecurityGroupIngress</entry>
+           </row>
+           <row>
+             <entry>ec2-add-group</entry>
+             <entry>CreateSecurityGroup</entry>
+             <entry>createSecurityGroup</entry>
+           </row>
+           <row>
+             <entry>ec2-delete-group</entry>
+             <entry>DeleteSecurityGroup</entry>
+             <entry>deleteSecurityGroup</entry>
+           </row>
+           <row>
+             <entry>ec2-describe-group</entry>
+             <entry>DescribeSecurityGroups</entry>
+             <entry>listSecurityGroups</entry>
+           </row>
+           <row>
+             <entry>ec2-revoke</entry>
+             <entry>RevokeSecurityGroupIngress</entry>
+             <entry>revokeSecurityGroupIngress</entry>
+           </row>
+         </tbody>
+       </tgroup>
+     </table>
+     <para>Snapshots</para>
+     <table frame='all'>
+       <title>Snapshots API Mapping</title>
+       <tgroup cols='3' align='left' colsep='1' rowsep='1'>
+         <!--<colspec colname='c1'tcolwidth="1*"/>
+         <colspec colname='c2'tcolwidth="1*"/>-->
+         <thead>
+           <row>
+             <entry>EC2 command</entry>
+             <entry>SOAP all</entry>
+             <entry>&PRODUCT; API call</entry>
+           </row>
+         </thead>
+         <tbody>
+           <row>
+             <entry>ec2-create-snapshot</entry>
+             <entry>CreateSnapshot</entry>
+             <entry>createSnapshot</entry>
+           </row>
+           <row>
+             <entry>ec2-delete-snapshot</entry>
+             <entry>DeleteSnapshot</entry>
+             <entry>deleteSnapshot</entry>
+           </row>
+           <row>
+             <entry>ec2-describe-snapshots</entry>
+             <entry>DescribeSnapshots</entry>
+             <entry>listSnapshots</entry>
+           </row>
+         </tbody>
+      </tgroup>
+    </table>
+    <para>Volumes</para>
+    <table frame='all'>
+	  <title>Volumes API Mapping</title>
+        <tgroup cols='3' align='left' colsep='1' rowsep='1'>
+         <!--<colspec colname='c1'tcolwidth="1*"/>
+         <colspec colname='c2'tcolwidth="1*"/>-->
+         <thead>
+           <row>
+             <entry>EC2 command</entry>
+             <entry>SOAP all</entry>
+             <entry>&PRODUCT; API call</entry>
+           </row>
+         </thead>
+         <tbody>
+           <row>
+             <entry>ec2-attach-volume</entry>
+             <entry>AttachVolume</entry>
+             <entry>attachVolume</entry>
+           </row>
+           <row>
+             <entry>ec2-create-volume</entry>
+             <entry>CreateVolume</entry>
+             <entry>createVolume</entry>
+           </row>
+           <row>
+             <entry>ec2-delete-volume</entry>
+             <entry>DeleteVolume</entry>
+             <entry>deleteVolume</entry>
+           </row>
+           <row>
+             <entry>ec2-describe-volume</entry>
+             <entry>DescribeVolume</entry>
+             <entry>listVolumes</entry>
+           </row>
+           <row>
+             <entry>ec2-detach-volume</entry>
+             <entry>DetachVolume</entry>
+             <entry>detachVolume</entry>
+           </row>
+         </tbody>
+       </tgroup>
+     </table>
+</section>
