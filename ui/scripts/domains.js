@@ -97,66 +97,92 @@
             },
             action: function(args) {
               var domainObj;
-              var array1 = [];
-              array1.push("&name=" + todb(args.data.name));
-              array1.push("&networkdomain=" + todb(args.data.networkdomain));
+							
+							var data = {
+							  id: args.context.domains[0].id,
+							  networkdomain: args.data.networkdomain
+							};
+														
+							if(args.data.name != null) {
+							  $.extend(data, {
+								  name: args.data.name
+								});
+							}							             
+							
               $.ajax({
-                url: createURL("updateDomain&id=" + args.context.domains[0].id + array1.join("")),
+                url: createURL("updateDomain"),
                 async: false,
-                dataType: "json",
+                data: data,
                 success: function(json) {
                   domainObj = json.updatedomainresponse.domain;
                 }
               });
 
-              $.ajax({
-                url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=0&max=" + args.data.vmLimit),
-                dataType: "json",
-                async: false,
-                success: function(json) {
-                  domainObj["vmLimit"] = args.data.vmLimit;
-                }
-              });
-              $.ajax({
-                url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=1&max=" + args.data.ipLimit),
-                dataType: "json",
-                async: false,
-                success: function(json) {
-                  domainObj["ipLimit"] = args.data.ipLimit;
-                }
-              });
-              $.ajax({
-                url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=2&max=" + args.data.volumeLimit),
-                dataType: "json",
-                async: false,
-                success: function(json) {
-                  domainObj["volumeLimit"] = args.data.volumeLimit;
-                }
-              });
-              $.ajax({
-                url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=3&max=" + args.data.snapshotLimit),
-                dataType: "json",
-                async: false,
-                success: function(json) {
-                  domainObj["snapshotLimit"] = args.data.snapshotLimit;
-                }
-              });
-              $.ajax({
-                url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=4&max=" + args.data.templateLimit),
-                dataType: "json",
-                async: false,
-                success: function(json) {
-                  domainObj["templateLimit"] = args.data.templateLimit;
-                }
-              });
-              $.ajax({
-                url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=7&max=" + args.data.vpcLimit),
-                dataType: "json",
-                async: false,
-                success: function(json) {
-                  domainObj["vpcLimit"] = args.data.vpcLimit;
-                }
-              });
+							if(args.data.vmLimit != null) {
+								$.ajax({
+									url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=0&max=" + args.data.vmLimit),
+									dataType: "json",
+									async: false,
+									success: function(json) {
+										domainObj["vmLimit"] = args.data.vmLimit;
+									}
+								});
+							}
+							
+							if(args.data.ipLimit != null) {
+								$.ajax({
+									url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=1&max=" + args.data.ipLimit),
+									dataType: "json",
+									async: false,
+									success: function(json) {
+										domainObj["ipLimit"] = args.data.ipLimit;
+									}
+								});
+							}
+
+              if(args.data.volumeLimit != null) {							
+								$.ajax({
+									url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=2&max=" + args.data.volumeLimit),
+									dataType: "json",
+									async: false,
+									success: function(json) {
+										domainObj["volumeLimit"] = args.data.volumeLimit;
+									}
+								});
+							}
+
+              if(args.data.snapshotLimit != null) {						
+								$.ajax({
+									url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=3&max=" + args.data.snapshotLimit),
+									dataType: "json",
+									async: false,
+									success: function(json) {
+										domainObj["snapshotLimit"] = args.data.snapshotLimit;
+									}
+								});
+							}
+
+              if(args.data.templateLimit != null) {							
+								$.ajax({
+									url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=4&max=" + args.data.templateLimit),
+									dataType: "json",
+									async: false,
+									success: function(json) {
+										domainObj["templateLimit"] = args.data.templateLimit;
+									}
+								});
+							}
+
+              if(args.data.vpcLimit != null) {						
+								$.ajax({
+									url: createURL("updateResourceLimit&domainid=" + args.context.domains[0].id + "&resourceType=7&max=" + args.data.vpcLimit),
+									dataType: "json",
+									async: false,
+									success: function(json) {
+										domainObj["vpcLimit"] = args.data.vpcLimit;
+									}
+								});
+							}
 
               args.response.success({data: domainObj});
             }
@@ -243,7 +269,15 @@
             title: 'label.details',
             fields: [
               {
-                name: { label: 'label.name', isEditable: true }
+                name: { 
+								  label: 'label.name', 
+									isEditable: function(context) {		                    
+                    if(context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to change domain name 												
+										  return true;
+										else
+											return false;
+									}
+								}
               },
               {
                 id: { label: 'ID' },
@@ -256,27 +290,57 @@
                 },
                 vmLimit: {
                   label: 'label.instance.limits',
-                  isEditable: true
+                  isEditable: function(context) {		                    
+                    if(context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits 												
+										  return true;
+										else
+											return false;
+									}
                 },
                 ipLimit: {
                   label: 'label.ip.limits',
-                  isEditable: true
+                  isEditable: function(context) {		                    
+                    if(context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits 												
+										  return true;
+										else
+											return false;
+									}
                 },
                 volumeLimit: {
                   label: 'label.volume.limits',
-                  isEditable: true
+                  isEditable: function(context) {		                    
+                    if(context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits 												
+										  return true;
+										else
+											return false;
+									}
                 },
                 snapshotLimit: {
                   label: 'label.snapshot.limits',
-                  isEditable: true
+                  isEditable: function(context) {		                    
+                    if(context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits 												
+										  return true;
+										else
+											return false;
+									}
                 },
                 templateLimit: {
                   label: 'label.template.limits',
-                  isEditable: true
+                  isEditable: function(context) {		                    
+                    if(context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits 												
+										  return true;
+										else
+											return false;
+									}
                 },
                 vpcLimit: {
                   label: 'VPC limits',
-                  isEditable: true
+                  isEditable: function(context) {		                    
+                    if(context.domains[0].level != 0) //ROOT domain (whose level is 0) is not allowed to updateResourceLimits 												
+										  return true;
+										else
+											return false;
+									}
                 },
                 accountTotal: { label: 'label.accounts' },
                 vmTotal: { label: 'label.instances' },
@@ -412,8 +476,8 @@
     var allowedActions = [];
     if(isAdmin()) {
       allowedActions.push("create");     
-			if(jsonObj.level != 0) { //ROOT domain (whose level is 0) is not allowed to edit or delete
-        allowedActions.push("edit"); //merge updateResourceLimit into edit
+			allowedActions.push("edit"); //merge updateResourceLimit into edit
+			if(jsonObj.level != 0) { //ROOT domain (whose level is 0) is not allowed to delete         
         allowedActions.push("delete");
       }
     }
