@@ -468,12 +468,14 @@ public class Site2SiteVpnManagerImpl implements Site2SiteVpnManager, Manager {
         }
 
         checkCustomerGatewayCidrList(guestCidrList);
-        
+
         long accountId = gw.getAccountId();
-        if (_customerGatewayDao.findByGatewayIp(gatewayIp) != null) {
+        Site2SiteCustomerGatewayVO existedGw = _customerGatewayDao.findByGatewayIp(gatewayIp);
+        if (existedGw != null && existedGw.getId() != gw.getId()) {
             throw new InvalidParameterValueException("The customer gateway with ip " + gatewayIp + " already existed in the system!");
         }
-        if (_customerGatewayDao.findByNameAndAccountId(name, accountId) != null) {
+        existedGw = _customerGatewayDao.findByNameAndAccountId(name, accountId);
+        if (existedGw != null && existedGw.getId() != gw.getId()) {
             throw new InvalidParameterValueException("The customer gateway with name " + name + " already existed!");
         }
 
