@@ -86,6 +86,8 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.agent.api.MaintainCommand;
+import com.cloud.agent.api.MaintainAnswer;
 
 @Local({ ResourceManager.class, ResourceService.class })
 public class ResourceManagerImpl implements ResourceManager, ResourceService, Manager {
@@ -782,6 +784,9 @@ public class ResourceManagerImpl implements ResourceManager, ResourceService, Ma
                     
                     for( HostVO host : hosts ) {
                         if ( host.getStatus().equals(Status.Up )) {
+                            if (host.getHypervisorType() == HypervisorType.KVM) {
+                                MaintainAnswer answer = (MaintainAnswer) _agentMgr.easySend(host.getId(), new MaintainCommand());
+                            }
                             _agentMgr.disconnect(host.getId());
                         }
                     }
