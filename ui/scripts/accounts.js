@@ -19,12 +19,6 @@
 	var domainObjs;
 	var rootDomainId;
 
-  var systemAccountId = 1;
-  var adminAccountId = 2;
-
-  var systemUserId = 1;
-  var adminUserId = 2;
-
   cloudStack.sections.accounts = {
     title: 'label.accounts',
     id: 'accounts',
@@ -1097,7 +1091,7 @@
     if (jsonObj.state == 'Destroyed') return [];
 
     if(isAdmin()) {
-      if(jsonObj.id != systemAccountId && jsonObj.id != adminAccountId) {
+      if(!(jsonObj.domain == "ROOT" && jsonObj.name == "admin" && jsonObj.accounttype == 1)) { //if not system-generated default admin account 
         //allowedActions.push("edit");
         if (jsonObj.accounttype == roleTypeUser || jsonObj.accounttype == roleTypeDomainAdmin) {
           //allowedActions.push("updateResourceLimits");
@@ -1127,7 +1121,7 @@
       allowedActions.push("edit");
       allowedActions.push("changePassword");
       allowedActions.push("generateKeys");
-      if(jsonObj.id != systemUserId && jsonObj.id != adminUserId) {
+      if(!(jsonObj.domain == "ROOT" && jsonObj.account == "admin" && jsonObj.accounttype == 1)) { //if not system-generated default admin account user 
         if(jsonObj.state == "enabled")
           allowedActions.push("disable");
         if(jsonObj.state == "disabled")
