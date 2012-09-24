@@ -789,7 +789,7 @@
 
         // Set up editable metadata				
 				if(typeof(value.isEditable) == 'function')
-				  $value.data('detail-view-is-editable', value.isEditable());
+				  $value.data('detail-view-is-editable', value.isEditable(context));
 				else //typeof(value.isEditable) == 'boolean' or 'undefined'
           $value.data('detail-view-is-editable', value.isEditable);
         if (value.select) {
