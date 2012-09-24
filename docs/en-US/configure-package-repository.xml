@@ -26,6 +26,9 @@
     <title>Configure package repository</title>
     <para>&PRODUCT; is only distributed from source from the official mirrors. DEB and RPM packages are however build for your convience by third-parties</para>
     <para>When installing &PRODUCT; it is recommended you use these package repositories for easy installation.</para>
+    <note>
+        <para>These repositories contain both the Management Server and KVM Hypervisor packages.</para>
+    </note>
     <section id="configure-package-repository-deb">
         <title>DEB package repository</title>
         <para>You can add a DEB package repository to your apt sources with the following commands.</para>
