@@ -387,6 +387,16 @@ else
     /sbin/service %{name}-agent condrestart >/dev/null 2>&1 || true
 fi
 
+%post scripts
+mkdir -p %{_libdir}/%{name}/agent
+ln -f -s %{_libdir}/%{name}/common/scripts %{_libdir}/%{name}/agent/
+ln -f -s %{_libdir}/%{name}/common/vms %{_libdir}/%{name}/agent/
+
+%postun scripts
+rm -f %{_libdir}/%{name}/agent/scripts
+rm -f %{_libdir}/%{name}/agent/vms
+rm -fr %{_libdir}/%{name}/agent
+
 %post client
 if [ "$1" == "1" ] ; then
     /sbin/chkconfig --add %{name}-management > /dev/null 2>&1 || true
