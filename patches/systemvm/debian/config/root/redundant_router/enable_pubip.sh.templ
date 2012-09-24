@@ -21,8 +21,14 @@ set -e
 ip link|grep BROADCAST|grep -v eth0|grep -v eth1|cut -d ":" -f 2 > /tmp/iflist
 while read i
 do
-    ifdown $i
-    ifup $i
+    if [ "$i" == "eth2" ]
+    then
+        ifdown $i
+        ifup $i
+    else
+        ifconfig $i down
+        ifconfig $i up
+    fi
 done < /tmp/iflist
 ip route add default via [GATEWAY] dev eth2 && \
 service cloud-passwd-srvr restart && \
