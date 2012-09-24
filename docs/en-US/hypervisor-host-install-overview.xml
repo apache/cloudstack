@@ -30,7 +30,6 @@
     <para>The procedure for installing the Hypervisor Host is:</para>
     <orderedlist>
         <listitem><para>Prepare the Operating System</para></listitem>
-        <listitem><para>Configure the DEB / RPM repository</para></listitem>
         <listitem><para>Install and configure libvirt</para></listitem>
         <listitem><para>Configure Security Policies (AppArmor and SELinux)</para></listitem>
         <listitem><para>Install and configure the Agent</para></listitem>
