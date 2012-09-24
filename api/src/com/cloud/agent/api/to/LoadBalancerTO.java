@@ -49,7 +49,7 @@ public class LoadBalancerTO {
     final static int MAX_STICKINESS_POLICIES = 1;
 
     public LoadBalancerTO (Long id, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, List<LbDestination> destinations) {
-        if(destinations == null) { // for autoscaleconfig destinations will be null;
+        if (destinations == null) { // for autoscaleconfig destinations will be null;
             destinations = new ArrayList<LbDestination>();
         }
         this.id = id;
@@ -70,7 +70,7 @@ public class LoadBalancerTO {
     public LoadBalancerTO (Long id, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, List<LbDestination> arg_destinations, List<LbStickinessPolicy> stickinessPolicies) {
         this(id, srcIp, srcPort, protocol, algorithm, revoked, alreadyAdded, arg_destinations);
         this.stickinessPolicies = null;
-        if (stickinessPolicies != null && stickinessPolicies.size()>0) {
+        if (stickinessPolicies != null && stickinessPolicies.size() > 0) {
             this.stickinessPolicies = new StickinessPolicyTO[MAX_STICKINESS_POLICIES];
             int index = 0;
             for (LbStickinessPolicy stickinesspolicy : stickinessPolicies) {
@@ -186,7 +186,7 @@ public class LoadBalancerTO {
             return alreadyAdded;
         }
     }
-    public static class CounterTO implements Serializable{
+    public static class CounterTO implements Serializable {
         private final String name;
         private final String source;
         private final String value;
@@ -210,7 +210,7 @@ public class LoadBalancerTO {
         }
     }
 
-    public static class ConditionTO implements Serializable{
+    public static class ConditionTO implements Serializable {
         private final long threshold;
         private final String relationalOperator;
         private final CounterTO counter;
@@ -235,7 +235,7 @@ public class LoadBalancerTO {
         }
     }
 
-    public static class AutoScalePolicyTO implements Serializable{
+    public static class AutoScalePolicyTO implements Serializable {
         private final long id;
         private final int duration;
         private final int quietTime;
@@ -277,7 +277,7 @@ public class LoadBalancerTO {
         }
     }
 
-    public static class AutoScaleVmProfileTO implements Serializable{
+    public static class AutoScaleVmProfileTO implements Serializable {
         private final Long zoneId;
         private final Long domainId;
         private final Long serviceOfferingId;
@@ -350,7 +350,7 @@ public class LoadBalancerTO {
         }
     }
 
-    public static class AutoScaleVmGroupTO implements Serializable{
+    public static class AutoScaleVmGroupTO implements Serializable {
         private final int minMembers;
         private final int maxMembers;
         private final int memberPort;
@@ -358,8 +358,9 @@ public class LoadBalancerTO {
         private final List<AutoScalePolicyTO> policies;
         private final AutoScaleVmProfileTO profile;
         private final String state;
+        private final String currentState;
 
-        AutoScaleVmGroupTO(int minMembers, int maxMembers, int memberPort, int interval, List<AutoScalePolicyTO> policies, AutoScaleVmProfileTO profile, String state)
+        AutoScaleVmGroupTO(int minMembers, int maxMembers, int memberPort, int interval, List<AutoScalePolicyTO> policies, AutoScaleVmProfileTO profile, String state, String currentState)
         {
             this.minMembers = minMembers;
             this.maxMembers = maxMembers;
@@ -368,6 +369,7 @@ public class LoadBalancerTO {
             this.policies = policies;
             this.profile = profile;
             this.state = state;
+            this.currentState = currentState;
         }
 
         public int getMinMembers() {
@@ -396,6 +398,10 @@ public class LoadBalancerTO {
 
         public String getState() {
             return state;
+        }
+
+        public String getCurrentState() {
+            return currentState;
         }
     }
 
@@ -428,7 +434,7 @@ public class LoadBalancerTO {
 
         AutoScaleVmGroup autoScaleVmGroup = lbAutoScaleVmGroup.getVmGroup();
         autoScaleVmGroupTO = new AutoScaleVmGroupTO(autoScaleVmGroup.getMinMembers(), autoScaleVmGroup.getMaxMembers(), autoScaleVmGroup.getMemberPort(),
-                autoScaleVmGroup.getInterval(), autoScalePolicyTOs, autoScaleVmProfileTO, autoScaleVmGroup.getState());
+                autoScaleVmGroup.getInterval(), autoScalePolicyTOs, autoScaleVmProfileTO, autoScaleVmGroup.getState(), lbAutoScaleVmGroup.getCurrentState());
     }
 
 }

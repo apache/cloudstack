@@ -27,7 +27,7 @@ import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.utils.Pair;
 
-public class LoadBalancingRule implements FirewallRule, LoadBalancer{
+public class LoadBalancingRule implements FirewallRule, LoadBalancer {
     private LoadBalancer lb;
     private List<LbDestination> destinations;
     private List<LbStickinessPolicy> stickinessPolicies;
@@ -319,17 +319,19 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
         public String getCsUrl() {
             return csUrl;
         }
-    }
+        }
 
     public static class LbAutoScaleVmGroup {
         AutoScaleVmGroup vmGroup;
         private final List<LbAutoScalePolicy> policies;
         private final LbAutoScaleVmProfile profile;
+        private final String currentState;
 
-        public LbAutoScaleVmGroup(AutoScaleVmGroup vmGroup, List<LbAutoScalePolicy> policies, LbAutoScaleVmProfile profile) {
+        public LbAutoScaleVmGroup(AutoScaleVmGroup vmGroup, List<LbAutoScalePolicy> policies, LbAutoScaleVmProfile profile, String currentState) {
             this.vmGroup = vmGroup;
             this.policies = policies;
             this.profile = profile;
+            this.currentState = currentState;
         }
 
         public AutoScaleVmGroup getVmGroup() {
@@ -342,6 +344,10 @@ public class LoadBalancingRule implements FirewallRule, LoadBalancer{
 
         public LbAutoScaleVmProfile getProfile() {
             return profile;
+        }
+
+        public String getCurrentState() {
+            return currentState;
         }
     }
 }
