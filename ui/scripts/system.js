@@ -2255,6 +2255,7 @@
                             id: { label: 'label.id' },
                             projectid: { label: 'label.project.id' },
                             state: { label: 'label.state' },
+                            guestnetworkid: { label: 'label.network.id' },
                             publicip: { label: 'label.public.ip' },
                             guestipaddress: { label: 'label.guest.ip' },
                             linklocalip: { label: 'label.linklocal.ip' },
@@ -2285,6 +2286,47 @@
 															});
 														}
 													});		
+                        }
+                      },
+                      nics: {
+                        title: 'label.nics',
+                        multiple: true,
+                        fields: [
+                          {
+                            name: { label: 'label.name', header: true },
+                            type: { label: 'label.type' },
+                            traffictype: { label: 'label.traffic.type' },
+                            networkname: { label: 'label.network.name' },
+                            netmask: { label: 'label.netmask' },
+                            ipaddress: { label: 'label.ip.address' },
+                            id: { label: 'label.id' },
+                            networkid: { label: 'label.network.id' },
+                            isolationuri: { label: 'label.isolation.uri' },
+                            broadcasturi: { label: 'label.broadcast.uri' }
+                          }
+                        ],
+                        dataProvider: function(args) {
+                          $.ajax({
+                            url: createURL("listRouters&id=" + args.context.routers[0].id),
+                            dataType: 'json',
+                            async: true,
+                            success: function(json) {
+                              var jsonObj = json.listroutersresponse.router[0].nic;
+
+                              args.response.success({
+                                actionFilter: routerActionfilter,
+                                data: $.map(jsonObj, function(nic, index) {
+                                  var name = 'NIC ' + (index + 1);                    
+                                  if (nic.isdefault) {
+                                    name += ' (' + _l('label.default') + ')';
+                                  }
+                                  return $.extend(nic, {
+                                    name: name
+                                  });
+                                })
+                              });
+                            }
+                          });
                         }
                       }
                     }
@@ -5176,6 +5218,7 @@
                     id: { label: 'label.id' },
                     projectid: { label: 'label.project.id' },
                     state: { label: 'label.state' },
+                    guestnetworkid: { label: 'label.network.id' },
                     publicip: { label: 'label.public.ip' },
                     guestipaddress: { label: 'label.guest.ip' },
                     linklocalip: { label: 'label.linklocal.ip' },
@@ -5204,6 +5247,47 @@
                       args.response.success({
                         actionFilter: routerActionfilter,
                         data: jsonObj
+                      });
+                    }
+                  });
+                }
+              },
+              nics: {
+                title: 'label.nics',
+                multiple: true,
+                fields: [
+                  {
+                    name: { label: 'label.name', header: true },
+                    type: { label: 'label.type' },
+                    traffictype: { label: 'label.traffic.type' },
+                    networkname: { label: 'label.network.name' },
+                    netmask: { label: 'label.netmask' },
+                    ipaddress: { label: 'label.ip.address' },
+                    id: { label: 'label.id' },
+                    networkid: { label: 'label.network.id' },
+                    isolationuri: { label: 'label.isolation.uri' },
+                    broadcasturi: { label: 'label.broadcast.uri' }
+                  }
+                ],
+                dataProvider: function(args) {
+                  $.ajax({
+                    url: createURL("listRouters&id=" + args.context.routers[0].id),
+                    dataType: 'json',
+                    async: true,
+                    success: function(json) {
+                      var jsonObj = json.listroutersresponse.router[0].nic;
+
+                      args.response.success({
+                        actionFilter: routerActionfilter,
+                        data: $.map(jsonObj, function(nic, index) {
+                          var name = 'NIC ' + (index + 1);                    
+                          if (nic.isdefault) {
+                            name += ' (' + _l('label.default') + ')';
+                          }
+                          return $.extend(nic, {
+                            name: name
+                          });
+                        })
                       });
                     }
                   });
