@@ -89,7 +89,7 @@ setup_dnsmasq() {
   echo "dhcp-option=tag:interface-$dev,15,$DOMAIN" >> /etc/dnsmasq.d/cloud.conf
   service dnsmasq restart
   sleep 1
-}
+} 
 
 desetup_dnsmasq() {
   logger -t cloud "Desetting up dnsmasq for network $ip/$mask "

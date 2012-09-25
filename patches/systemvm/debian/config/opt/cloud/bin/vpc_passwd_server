@@ -1,13 +1,15 @@
 #!/bin/bash
 
 ip=$1
-while [ -n "$ip" ]
+result=$ip
+while [ -n "$result" ]
 do
-	socat -lf /var/log/cloud.log TCP4-LISTEN:8080,reuseaddr,crnl,bind=$ip SYSTEM:"/opt/cloud/bin/serve_password.sh"
-	rc=$?
-	if [ $rc -ne 0 ]
-	then
-		logger -t cloud "Password server failed with error code $rc. Restarting socat..."
-		sleep 3
-	fi
+    socat -lf /var/log/cloud.log TCP4-LISTEN:8080,reuseaddr,crnl,bind=$ip SYSTEM:"/opt/cloud/bin/serve_password.sh"
+    rc=$?
+    if [ $rc -ne 0 ]
+    then
+        logger -t cloud "Password server failed with error code $rc. Restarting socat..."
+        sleep 3
+    fi
+    result=`ip addr show | grep $ip`
 done
