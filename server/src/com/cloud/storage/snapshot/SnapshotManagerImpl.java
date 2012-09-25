@@ -44,7 +44,6 @@ import com.cloud.api.commands.DeleteSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListRecurringSnapshotScheduleCmd;
 import com.cloud.api.commands.ListSnapshotPoliciesCmd;
 import com.cloud.api.commands.ListSnapshotsCmd;
-import com.cloud.async.AsyncJobManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.dao.ConfigurationDao;
@@ -69,7 +68,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
-import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.server.ResourceTag.TaggedResourceType;
 import com.cloud.storage.Snapshot;
@@ -105,7 +103,6 @@ import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.UserContext;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
@@ -145,8 +142,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     @Inject
     protected DiskOfferingDao _diskOfferingDao;
     @Inject
-    protected UserDao _userDao;
-    @Inject
     protected SnapshotDao _snapshotDao;
     @Inject
     protected StoragePoolDao _storagePoolDao;
@@ -165,8 +160,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     @Inject
     protected SnapshotScheduler _snapSchedMgr;
     @Inject
-    protected AsyncJobManager _asyncMgr;
-    @Inject
     protected AccountManager _accountMgr;
     @Inject
     private AlertManager _alertMgr;
@@ -178,8 +171,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     private ResourceLimitService _resourceLimitMgr;
     @Inject
     private SwiftManager _swiftMgr;
-    @Inject
-    private ProjectManager _projectMgr;
     @Inject 
     private SecondaryStorageVmManager _ssvmMgr;
     @Inject
