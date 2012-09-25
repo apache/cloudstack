@@ -2409,7 +2409,7 @@ The Apache Software Foundation (http://www.apache.org/).
     <within dir='.'>
         <with-license id='BSD3ClauseGeneric'>
             <copyright-notice>
-Copyright © 2005-2010 Thomas Nagy
+Copyright (c) 2005-2010 Thomas Nagy
             </copyright-notice>
             <by-organisation id="person:Thomas.Nagy">
                 <resource name="waf"/>
@@ -2419,7 +2419,7 @@ Copyright © 2005-2010 Thomas Nagy
     <within dir='patches/systemvm/debian/config/etc/apache2'>
         <with-license id='ApacheLicenseVersion2'>
             <copyright-notice>
-Copyright © 2012 The Apache Software Foundation
+Copyright (c) 2012 The Apache Software Foundation
             </copyright-notice>
             <by-organisation id='apache.org.2'>
                 <resource name='httpd.conf' />
@@ -2452,7 +2452,7 @@ All rights reserved.
     <within dir='console-proxy/js'>
         <with-license id='MIT'>
             <copyright-notice>
-Copyright © 2009, John Resig
+Copyright (c) 2009, John Resig
             </copyright-notice>
             <by-organisation id='person:john.resig'>
                 <resource name="jquery.js" notice='jquery.notice.1.3.2' />
@@ -2462,7 +2462,7 @@ Copyright © 2009, John Resig
     <within dir='ui/lib'>
         <with-license id='MIT'>
             <copyright-notice>
-Copyright © 2011, John Resig
+Copyright (c) 2011, John Resig
             </copyright-notice>
             <by-organisation id='person:john.resig'>
                 <resource name="jquery.js" notice='jquery.notice.1.6.1' />
@@ -2470,7 +2470,7 @@ Copyright © 2011, John Resig
         </with-license>
         <with-license id='MIT'>
             <copyright-notice>
-Copyright © 2006 - 2011 Jörn Zaefferer
+Copyright (c) 2006 - 2011 Jörn Zaefferer
             </copyright-notice>
             <by-organisation id='person:jorn.zaefferer'>
                 <resource name="jquery.validate.js" />
@@ -2478,7 +2478,7 @@ Copyright © 2006 - 2011 Jörn Zaefferer
         </with-license>
         <with-license id='MIT'>
             <copyright-notice>
-Copyright © 2010, Sebastian Tschan
+Copyright (c) 2010, Sebastian Tschan
             </copyright-notice>
             <by-organisation id='person:sebastian.tschan'>
                 <resource name="jquery.md5.js" notice='jquery.md5.notice' />
@@ -2486,7 +2486,7 @@ Copyright © 2010, Sebastian Tschan
         </with-license>
         <with-license id='MIT'>
             <copyright-notice>
-Copyright © 2006 Klaus Hartl (stilbuero.de)
+Copyright (c) 2006 Klaus Hartl (stilbuero.de)
             </copyright-notice>
             <by-organisation id='person:klaus.hartl'>
                 <resource name="jquery.cookies.js" />
@@ -2494,7 +2494,7 @@ Copyright © 2006 Klaus Hartl (stilbuero.de)
         </with-license>
         <with-license id='BSD2ClauseGeneric'>
             <copyright-notice>
-Copyright © 2008 George McGinley Smith
+Copyright (c) 2008 George McGinley Smith
 All rights reserved.
             </copyright-notice>
             <by-organisation id='person:george.mcginley.smith'>
@@ -2554,7 +2554,7 @@ Updated November 2009 with contributions from: btburnett3, Anthony Aragues and X
     <within dir='ui/lib/qunit'>
         <with-license id='MIT'>
 	        <copyright-notice>
-Copyright © 2012 John Resig, Jörn Zaefferer
+Copyright (c) 2012 John Resig, Jörn Zaefferer
 	        </copyright-notice>
             <by-organisation id='person:jorn.zaefferer'>
                 <resource name="qunit.css" source='http://docs.jquery.com/QUnit' />
@@ -2565,7 +2565,7 @@ Copyright © 2012 John Resig, Jörn Zaefferer
     <within dir='awsapi'>
         <with-license id='BSD3ClauseGeneric'>
             <copyright-notice>
-Copyright © 2005-2010 Thomas Nagy
+Copyright (c) 2005-2010 Thomas Nagy
             </copyright-notice>
             <by-organisation id="person:Thomas.Nagy">
                 <resource name="waf"/>
@@ -2575,7 +2575,7 @@ Copyright © 2005-2010 Thomas Nagy
     <within dir='utils/src/com/cloud/utils/db'>
         <with-license id='ApacheLicenseVersion2'>
             <copyright-notice>
-Copyright © 2004 Clinton Begin
+Copyright (c) 2004 Clinton Begin
             </copyright-notice>
             <by-organisation id="person:Clinton.Begin">
 `                <resource name="ScriptRunner.java" source="http://code.google.com/p/mybatis/" />
@@ -2585,7 +2585,7 @@ Copyright © 2004 Clinton Begin
     <within dir='target/jar'>
         <with-license id="ApacheLicenseVersion2">
             <copyright-notice>
-Copyright © 2012 The Apache Software Foundation
+Copyright (c) 2012 The Apache Software Foundation
             </copyright-notice>
             <by-organisation id="apache.org.2">
                 <resource name="cloud-axis.jar" source="http://axis.apache.org/axis/" notice='axis2.notice'/>
@@ -2607,7 +2607,7 @@ Copyright © 2012 The Apache Software Foundation
         </with-license>
         <with-license id="ApacheLicenseVersion1.1">
             <copyright-notice>
-Copyright © 2012 The Apache Software Foundation
+Copyright (c) 2012 The Apache Software Foundation
             </copyright-notice>
             <by-organisation id="apache.org.2">
                 <resource name="cloud-commons-discovery.jar" source="http://commons.apache.org/discovery/" />
@@ -2623,7 +2623,7 @@ Copyright (c) 2007-2010, The JASYPT team (http://www.jasypt.org)
         </with-license>
         <with-license id="ApacheLicenseVersion2">
             <copyright-notice>
-Copyright © 2003-2007 Luck Consulting Pty Ltd
+Copyright (c) 2003-2007 Luck Consulting Pty Ltd
             </copyright-notice>
             <by-organisation id="luck">
                 <resource name="cloud-ehcache.jar" source="http://ehcache.org/" />
@@ -2631,7 +2631,7 @@ Copyright © 2003-2007 Luck Consulting Pty Ltd
         </with-license>
         <with-license id='CDDL'>
             <copyright-notice>
-Copyright © 2006 Sun Microsystems, Inc. All rights reserved.
+Copyright (c) 2006 Sun Microsystems, Inc. All rights reserved.
             </copyright-notice>
             <by-organisation id='glassfish.org'>
                 <resource name='cloud-ejb-api-3.0.jar' source='http://repo1.maven.org/maven2/javax/ejb/ejb-api/3.0/ejb-api-3.0-sources.jar' notice='cddlnotice' />
@@ -2640,7 +2640,7 @@ Copyright © 2006 Sun Microsystems, Inc. All rights reserved.
         </with-license>
         <with-license id='CDDL'>
             <copyright-notice>
-Copyright © 1997-2010 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved.
             </copyright-notice>
             <by-organisation id='oracle.com'>
                 <resource name='cloud-email.jar' source='http://kenai.com/projects/javamail' notice='cddlnotice' />
@@ -2648,7 +2648,7 @@ Copyright © 1997-2010 Oracle and/or its affiliates. All rights reserved.
         </with-license>
         <with-license id='ApacheLicenseVersion2'>
             <copyright-notice>
-Copyright © 2009 Google Inc.
+Copyright (c) 2009 Google Inc.
             </copyright-notice>
             <by-organisation id='google.com'>
                 <resource name='cloud-google-gson-1.7.1.jar' source='http://code.google.com/p/google-gson/' />
@@ -2656,7 +2656,7 @@ Copyright © 2009 Google Inc.
         </with-license>
         <with-license id='EclipseDistributionLicense1'>
             <copyright-notice>
-Copyright © 2012 The Eclipse Foundation.
+Copyright (c) 2012 The Eclipse Foundation.
             </copyright-notice>
             <by-organisation id='eclipse.org'>
                 <resource name='cloud-javax.persistence-2.0.0.jar' source='http://wiki.eclipse.org/EclipseLink/Release/2.0.0' notice='eclipse.persistence' />
@@ -2664,7 +2664,7 @@ Copyright © 2012 The Eclipse Foundation.
         </with-license>
         <with-license id='BSD3ClauseGeneric'>
             <copyright-notice>
-Copyright © 2009, Caringo, Inc.
+Copyright (c) 2009, Caringo, Inc.
             </copyright-notice>
             <by-organisation id='caringo.com'>
                 <resource name='CAStorSDK.jar' source='http://www.castor.org/download.html' />
@@ -2672,7 +2672,7 @@ Copyright © 2009, Caringo, Inc.
         </with-license>
         <with-license id='BSD3ClauseGeneric'>
             <copyright-notice>
-Copyright © 2002-2011 Atsuhiko Yamanaka, JCraft,Inc.
+Copyright (c) 2002-2011 Atsuhiko Yamanaka, JCraft,Inc.
             </copyright-notice>
             <by-organisation id='jcraft.com'>
                 <resource name='cloud-jsch-0.1.42.jar' source='http://www.jcraft.com/jsch/' />
@@ -2680,7 +2680,7 @@ Copyright © 2002-2011 Atsuhiko Yamanaka, JCraft,Inc.
         </with-license>
         <with-license id='CPL1'>
             <copyright-notice>
-Copyright © IBM Corp 2006 
+Copyright (c) IBM Corp 2006 
             </copyright-notice>
             <by-organisation id='ibm.com'>
                 <resource name='cloud-wsdl4j-1.6.2.jar' source='http://sourceforge.net/projects/wsdl4j/' />
@@ -2701,7 +2701,7 @@ Copyright © IBM Corp 2006
         </with-license>
         <with-license id='BSD3ClauseGeneric'>
             <copyright-notice>
-Copyright © 2007-2008 Trilead AG (http://www.trilead.com)
+Copyright (c) 2007-2008 Trilead AG (http://www.trilead.com)
 All rights reserved.
             </copyright-notice>
             <by-organisation id='trilead.com'>
@@ -2730,7 +2730,7 @@ All rights reserved.
     <within dir='scripts/storage/secondary'>
     	<with-license id='ApacheLicenseVersion2'>
     		<copyright-notice>
-Copyright © 2010-2011 OpenStack, LLC.
+Copyright (c) 2010-2011 OpenStack, LLC.
 			</copyright-notice>
 			<by-organisation id='openstack.org'>
 				<resource name='swift' />
@@ -2740,7 +2740,7 @@ Copyright © 2010-2011 OpenStack, LLC.
     <within dir='scripts/vm/hypervisor/xenserver'>
     	<with-license id='ApacheLicenseVersion2'>
     		<copyright-notice>
-Copyright © 2010-2011 OpenStack, LLC.
+Copyright (c) 2010-2011 OpenStack, LLC.
 			</copyright-notice>
 			<by-organisation id='openstack.org'>
 				<resource name='swift' />
@@ -2750,7 +2750,7 @@ Copyright © 2010-2011 OpenStack, LLC.
     <within dir='deps/awsapi-lib'>
     	<with-license id='ApacheLicenseVersion2'>
     		<copyright-notice>
-Copyright © 2004-2008 The Apache Software Foundation
+Copyright (c) 2004-2008 The Apache Software Foundation
 			</copyright-notice>
 			<by-organisation id='apache.org.2'>
 				<resource name='XmlSchema-1.4.3.jar' notice='xmlschema.notice' />
@@ -2764,7 +2764,7 @@ Copyright © 2004-2008 The Apache Software Foundation
 		</with-license>
 		<with-license id='MIT'>
     		<copyright-notice>
-Copyright © 2004-2011 QOS.ch
+Copyright (c) 2004-2011 QOS.ch
 			</copyright-notice>
 			<by-organisation id='qos.ch'>
 				<resource name='slf4j-api-1.5.11.jar' source='https://github.com/qos-ch/slf4j' />
@@ -2773,7 +2773,7 @@ Copyright © 2004-2011 QOS.ch
 		</with-license>
         <with-license id="ApacheLicenseVersion2">
             <copyright-notice>
-Copyright © 2004-2012 The Apache Software Foundation
+Copyright (c) 2004-2012 The Apache Software Foundation
             </copyright-notice>
             <by-organisation id="apache.org.2">
                 <resource name="apache-log4j-extras-1.0.jar" source="http://logging.apache.org/log4j/companions/extras/" />
@@ -2808,7 +2808,7 @@ Copyright © 2004-2012 The Apache Software Foundation
         </with-license>
         <with-license id='ApacheLicenseVersion2'>
             <copyright-notice>
-Copyright © 2009 Google Inc.
+Copyright (c) 2009 Google Inc.
             </copyright-notice>
             <by-organisation id='google.com'>
                 <resource name='cloud-gson.jar' source='http://code.google.com/p/google-gson/' />
@@ -2823,7 +2823,7 @@ Copyright © 2009 Google Inc.
         </with-license>
         <with-license id='CDDL'>
             <copyright-notice>
-Copyright © 1997-2010 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved.
             </copyright-notice>
             <by-organisation id='oracle.com'>
                 <resource name='jaxb-api-2.1.jar' source='http://repo1.maven.org/maven2/javax/xml/bind/jaxb-api/2.1/jaxb-api-2.1-sources.jar' notice='cddlnotice' />
@@ -2833,7 +2833,7 @@ Copyright © 1997-2010 Oracle and/or its affiliates. All rights reserved.
         </with-license>
         <with-license id='CDDL'>
             <copyright-notice>
-Copyright © 2006 Sun Microsystems, Inc. All rights reserved.
+Copyright (c) 2006 Sun Microsystems, Inc. All rights reserved.
             </copyright-notice>
             <by-organisation id='glassfish.org'>
                 <resource name='jta-1.1.jar' source='http://repo1.maven.org/maven2/javax/transaction/jta/1.1/jta-1.1-sources.jar' notice='cddlnotice' />
@@ -2841,7 +2841,7 @@ Copyright © 2006 Sun Microsystems, Inc. All rights reserved.
         </with-license>
         <with-license id='BSD3ClauseGeneric'>
             <copyright-notice>
-Copyright © 2002-2011 Atsuhiko Yamanaka, JCraft,Inc.
+Copyright (c) 2002-2011 Atsuhiko Yamanaka, JCraft,Inc.
             </copyright-notice>
             <by-organisation id='jcraft.com'>
                 <resource name='jsch-0.1.42.jar' source='http://www.jcraft.com/jsch/' />
@@ -2855,7 +2855,7 @@ Copyright © 2002-2011 Atsuhiko Yamanaka, JCraft,Inc.
         </with-license>
         <with-license id='CDDL'>
             <copyright-notice>
-Copyright © 1997-2010 Oracle and/or its affiliates. All rights reserved.
+Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved.
             </copyright-notice>
             <by-organisation id='oracle.com'>
                 <resource name='mail-1.4.jar' source='http://kenai.com/projects/javamail' notice='cddlnotice' />
