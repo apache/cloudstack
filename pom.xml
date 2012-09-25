@@ -183,7 +183,7 @@
           <version>0.8</version>
           <configuration>
             <numUnapprovedLicenses>0</numUnapprovedLicenses>
-            <excludeSubProjects>true</excludeSubProjects>
+            <excludeSubProjects>false</excludeSubProjects>
             <excludes>
               <exclude>.git/**</exclude>
               <exclude>.gitignore</exclude>
@@ -234,6 +234,35 @@
               <exclude>ui/lib/qunit/qunit.js</exclude>
               <exclude>ui/lib/reset.css</exclude>
               <exclude>waf</exclude>
+              <exclude>patches/systemvm/debian/systemvm.vmx</exclude>
+              <exclude>patches/systemvm/debian/config/root/.ssh/authorized_keys</exclude>
+              <exclude>patches/systemvm/debian/config/etc/apache2/httpd.conf</exclude>
+              <exclude>patches/systemvm/debian/config/etc/apache2/ports.conf</exclude>
+              <exclude>patches/systemvm/debian/config/etc/apache2/sites-available/default</exclude>
+              <exclude>patches/systemvm/debian/config/etc/apache2/sites-available/default-ssl</exclude>
+              <exclude>patches/systemvm/debian/config/etc/apache2/vhostexample.conf</exclude>
+              <exclude>patches/systemvm/debian/config/etc/dnsmasq.conf</exclude>
+              <exclude>patches/systemvm/debian/config/etc/vpcdnsmasq.conf</exclude>
+              <exclude>patches/systemvm/debian/config/etc/ssh/sshd_config</exclude> <!-- Pending resolution of CLOUDSTACK-145 -->
+              <exclude>patches/systemvm/debian/config/etc/rsyslog.conf</exclude> <!-- Pending resolution of CLOUDSTACK-147 -->
+              <exclude>patches/systemvm/debian/config/etc/logrotate.conf</exclude>
+              <exclude>patches/systemvm/debian/config/etc/logrotate.d/*</exclude>
+              <exclude>patches/systemvm/debian/config/etc/sysctl.conf</exclude>
+              <exclude>patches/systemvm/debian/config/root/redundant_router/keepalived.conf.templ</exclude>
+              <exclude>patches/systemvm/debian/config/root/redundant_router/arping_gateways.sh.templ</exclude>
+              <exclude>patches/systemvm/debian/config/root/redundant_router/conntrackd.conf.templ</exclude> <!-- Pending resolution of CLOUDSTACK-166 -->
+              <exclude>patches/systemvm/debian/vpn/etc/ipsec.conf</exclude>
+              <exclude>patches/systemvm/debian/vpn/etc/ppp/options.xl2tpd</exclude>
+              <exclude>patches/systemvm/debian/vpn/etc/xl2tpd/xl2tpd.conf</exclude>
+              <exclude>patches/systemvm/debian/vpn/etc/ipsec.secrets</exclude>
+              <exclude>patches/systemvm/debian/config/etc/haproxy/haproxy.cfg</exclude>
+              <exclude>patches/systemvm/debian/config/etc/cloud-nic.rules</exclude>
+              <exclude>patches/systemvm/debian/config/etc/modprobe.d/aesni_intel</exclude>
+              <exclude>patches/systemvm/debian/config/etc/rc.local</exclude>
+              <exclude>patches/systemvm/debian/config/var/www/html/userdata/.htaccess</exclude>
+              <exclude>patches/systemvm/debian/config/var/www/html/latest/.htaccess</exclude>
+              <exclude>patches/systemvm/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
+
             </excludes>
           </configuration>
         </plugin>
