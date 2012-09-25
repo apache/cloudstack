@@ -208,52 +208,6 @@
               <exclude>deps/XenServerJava/Makefile</exclude>
               <exclude>dist/console-proxy/js/jquery.js</exclude>
               <exclude>scripts/vm/systemvm/id_rsa.cloud</exclude>
-              <exclude>patches/systemvm/debian/xe/xen-vcpu-hotplug.rules</exclude>
-              <exclude>patches/systemvm/debian/xe/xe-linux-distribution.init</exclude>
-              <exclude>patches/systemvm/debian/systemvm.vmx</exclude>
-              <exclude>patches/systemvm/debian/config/etc/ssh/sshd_config</exclude>
-              <exclude>patches/systemvm/debian/config/etc/logrotate.d/haproxy</exclude>
-              <exclude>patches/systemvm/debian/config/etc/logrotate.d/dnsmasq</exclude>
-              <exclude>patches/systemvm/debian/config/etc/logrotate.d/apache2</exclude>
-              <exclude>patches/systemvm/debian/config/etc/logrotate.d/ppp</exclude>
-              <exclude>patches/systemvm/debian/config/etc/logrotate.d/rsyslog</exclude>
-              <exclude>patches/systemvm/debian/config/etc/vpcdnsmasq.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/httpd/conf/httpd.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/haproxy/haproxy.cfg</exclude>
-              <exclude>patches/systemvm/debian/config/etc/apache2/vhostexample.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/apache2/sites-available/default-ssl</exclude>
-              <exclude>patches/systemvm/debian/config/etc/apache2/sites-available/default</exclude>
-              <exclude>patches/systemvm/debian/config/etc/apache2/httpd.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/apache2/ports.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/rsyslog.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/cloud-nic.rules</exclude>
-              <exclude>patches/systemvm/debian/config/etc/logrotate.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/init.d/postinit</exclude>
-              <exclude>patches/systemvm/debian/config/etc/modprobe.d/aesni_intel</exclude>
-              <exclude>patches/systemvm/debian/config/etc/sysctl.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/dnsmasq.conf</exclude>
-              <exclude>patches/systemvm/debian/config/etc/rc.local</exclude>
-              <exclude>patches/systemvm/debian/config/root/redundant_router/heartbeat.sh.templ</exclude>
-              <exclude>patches/systemvm/debian/config/root/redundant_router/keepalived.conf.templ</exclude>
-              <exclude>patches/systemvm/debian/config/root/redundant_router/check_heartbeat.sh.templ</exclude>
-              <exclude>patches/systemvm/debian/config/root/redundant_router/backup.sh.templ</exclude>
-              <exclude>patches/systemvm/debian/config/root/redundant_router/arping_gateways.sh.templ</exclude>
-              <exclude>patches/systemvm/debian/config/root/redundant_router/fault.sh.templ</exclude>
-              <exclude>patches/systemvm/debian/config/root/redundant_router/checkrouter.sh.templ</exclude>
-              <exclude>patches/systemvm/debian/config/root/redundant_router/master.sh.templ</exclude>
-              <exclude>patches/systemvm/debian/config/root/redundant_router/conntrackd.conf.templ</exclude>
-              <exclude>patches/systemvm/debian/config/root/redundant_router/enable_pubip.sh.templ</exclude>
-              <exclude>patches/systemvm/debian/config/var/lib/misc/dnsmasq.leases</exclude>
-              <exclude>patches/systemvm/debian/config/var/www/html/userdata/.htaccess</exclude>
-              <exclude>patches/systemvm/debian/config/var/www/html/latest/.htaccess</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/ipsec.conf.orig</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/ipsec.secrets.orig</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/ipsec.conf</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/ppp/options.xl2tpd</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/xl2tpd/xl2tpd.conf</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/xl2tpd/xl2tpd.conf.orig</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/ipsec.secrets</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
               <exclude>tools/devcloud/devcloud.cfg</exclude>
               <exclude>ui/lib/flot/jquery.colorhelpers.js</exclude>
