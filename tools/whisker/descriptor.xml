@@ -2415,6 +2415,10 @@ this distribution.
             id='caringo.com'
             name='Caringo, Inc.'
             url='http://www.caringo.com/' />
+        <organisation
+            id='person:simon.kelley'
+            name='Simon Kelley'
+            url='' />
     </organisations>
     <primary-license id='ApacheLicenseVersion2'>
         <copyright-notice>Copyright (c) 2012 The Apache Software Foundation</copyright-notice>
@@ -2433,6 +2437,28 @@ Copyright © 2005-2010 Thomas Nagy
                 <resource name="waf"/>
             </by-organisation>
         </with-license>
+    </within>
+    <within dir='patches/systemvm/debian/config/etc/apache2'>
+        <with-license id='ApacheLicenseVersion2'>
+            <copyright-notice>
+Copyright © 2012 The Apache Software Foundation
+            </copyright-notice>
+            <by-organisation id='apache.org'>
+                <resource name='httpd.conf' />
+                <resource name='ports.conf' />
+                <resource name='vhostexample.conf' />
+                <resource name='sites-available/default' />
+                <resource name='sites-available/default-ssl' />
+            </by-organisation>
+        </with-license>
+    </within>
+    <within dir='patches/systemvm/debian/config/etc'>
+        <public-domain>
+            <by-organisation id='person:simon.kelly'>
+                <resource name='vpcdnsmasq.conf' />
+                <resource name='dnsmasq.conf' />
+            </by-organisation>
+        </public-domain>
     </within>
     <within dir='deps'>
         <with-license id='BSD2ClauseXenServerJava'>
