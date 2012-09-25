@@ -388,13 +388,10 @@ else
 fi
 
 %post scripts
-mkdir -p %{_libdir}/%{name}/agent
-ln -f -s %{_libdir}/%{name}/common/scripts %{_libdir}/%{name}/agent/
-ln -f -s %{_libdir}/%{name}/common/vms %{_libdir}/%{name}/agent/
+rm -fr %{_libdir}/%{name}/agent
+ln -f -s %{_libdir}/%{name}/common %{_libdir}/%{name}/agent
 
 %postun scripts
-rm -f %{_libdir}/%{name}/agent/scripts
-rm -f %{_libdir}/%{name}/agent/vms
 rm -fr %{_libdir}/%{name}/agent
 
 %post client
