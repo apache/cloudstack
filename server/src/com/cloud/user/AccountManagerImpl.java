@@ -2007,7 +2007,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
                 if (domainId == null) {
                     domainId = caller.getDomainId();
                 }
-            } else if (domainId != null) {
+            } else if (isAdmin(caller.getType()) && domainId != null) {
                 listForDomain = true;
             } else {
                 accountId = caller.getAccountId();
