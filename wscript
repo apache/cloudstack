@@ -24,7 +24,7 @@
 # entry in debian/changelog. SHORTVERSION is used in package
 # naming for deb/rpm, VERSION is used for tarball and bin 
 VERSION = '4.0.0.2012-08-15T18:03:12Z'
-SHORTVERSION = '4.0'
+SHORTVERSION = '4.0.0'
 APPNAME = 'cloud'
 
 import shutil,os
