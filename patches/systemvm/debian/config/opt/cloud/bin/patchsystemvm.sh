@@ -105,7 +105,7 @@ vpcrouting_svcs() {
    chkconfig keepalived off
    chkconfig conntrackd off
    chkconfig apache2 off
-   echo "ssh haproxy dnsmasq" >> /var/cache/cloud/enabled_svcs
+   echo "ssh haproxy dnsmasq" > /var/cache/cloud/enabled_svcs
    echo "cloud cloud-passwd-srvr apache2 nfs-common portmap keepalived conntrackd" > /var/cache/cloud/disabled_svcs
 }
 
