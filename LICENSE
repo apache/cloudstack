@@ -2348,6 +2348,24 @@ Within the deps/awsapi-lib directory
             javassist-3.9.0.GA.jar  http://sourceforge.net/projects/jboss/files/Javassist/             
 
 
+Within the patches/systemvm/debian/config/etc directory
+    placed in the public domain
+        by Simon Kelley   
+            dnsmasq.conf
+            vpcdnsmasq.conf
+
+
+Within the patches/systemvm/debian/config/etc/apache2 directory
+    licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
+    Copyright © 2012 The Apache Software Foundation
+        from The Apache Software Foundation  http://www.apache.org/ 
+            httpd.conf             
+            ports.conf             
+            sites-available/default             
+            sites-available/default-ssl             
+            vhostexample.conf             
+
+
 Within the scripts/storage/secondary directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright © 2010-2011 OpenStack, LLC.
