@@ -87,6 +87,45 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+          <groupId>org.apache.rat</groupId>
+          <artifactId>apache-rat-plugin</artifactId>
+          <version>0.8</version>
+          <configuration>
+            <numUnapprovedLicenses>0</numUnapprovedLicenses>
+            <excludeSubProjects>true</excludeSubProjects>
+            <excludes>
+              <exclude>systemvm/debian/systemvm.vmx</exclude>
+              <exclude>systemvm/debian/config/root/.ssh/authorized_keys</exclude>
+              <exclude>systemvm/debian/config/etc/apache2/httpd.conf</exclude>
+              <exclude>systemvm/debian/config/etc/apache2/ports.conf</exclude>
+              <exclude>systemvm/debian/config/etc/apache2/sites-available/default</exclude>
+              <exclude>systemvm/debian/config/etc/apache2/sites-available/default-ssl</exclude>
+              <exclude>systemvm/debian/config/etc/apache2/vhostexample.conf</exclude>
+              <exclude>systemvm/debian/config/etc/dnsmasq.conf</exclude>
+              <exclude>systemvm/debian/config/etc/vpcdnsmasq.conf</exclude>
+              <exclude>systemvm/debian/config/etc/ssh/sshd_config</exclude> <!-- Pending resolution of CLOUDSTACK-145 -->
+              <exclude>systemvm/debian/config/etc/rsyslog.conf</exclude> <!-- Pending resolution of CLOUDSTACK-147 -->
+              <exclude>systemvm/debian/config/etc/logrotate.conf</exclude>
+              <exclude>systemvm/debian/config/etc/logrotate.d/*</exclude>
+              <exclude>systemvm/debian/config/etc/sysctl.conf</exclude>
+              <exclude>systemvm/debian/config/root/redundant_router/keepalived.conf.templ</exclude>
+              <exclude>systemvm/debian/config/root/redundant_router/arping_gateways.sh.templ</exclude>
+              <exclude>systemvm/debian/config/root/redundant_router/conntrackd.conf.templ</exclude> <!-- Pending resolution of CLOUDSTACK-166 -->
+              <exclude>systemvm/debian/vpn/etc/ipsec.conf</exclude>
+              <exclude>systemvm/debian/vpn/etc/ppp/options.xl2tpd</exclude>
+              <exclude>systemvm/debian/vpn/etc/xl2tpd/xl2tpd.conf</exclude>
+              <exclude>systemvm/debian/vpn/etc/ipsec.secrets</exclude>
+              <exclude>systemvm/debian/config/etc/haproxy/haproxy.cfg</exclude>
+              <exclude>systemvm/debian/config/etc/cloud-nic.rules</exclude>
+              <exclude>systemvm/debian/config/etc/modprobe.d/aesni_intel</exclude>
+              <exclude>systemvm/debian/config/etc/rc.local</exclude>
+              <exclude>systemvm/debian/config/var/www/html/userdata/.htaccess</exclude>
+              <exclude>systemvm/debian/config/var/www/html/latest/.htaccess</exclude>
+              <exclude>systemvm/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
+            </excludes>
+          </configuration>
+      </plugin>
     </plugins>
   </build>
 </project>
