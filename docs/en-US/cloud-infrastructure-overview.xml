@@ -42,5 +42,5 @@
         <textobject><phrase>infrastructure_overview.png: Nested organization of a zone</phrase></textobject>
     </mediaobject>
     <para><emphasis role="bold">More Information</emphasis></para>
-    <para>For more information, see <xref linkend="cloud-infrastructure-concepts" />.</para>
+    <para>For more information, see documentation on cloud infrastructure concepts.</para>
 </section>

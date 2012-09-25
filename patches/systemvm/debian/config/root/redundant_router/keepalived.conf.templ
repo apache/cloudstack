@@ -1,5 +1,3 @@
-! Configuration File for keepalived
-
 global_defs {
    router_id [ROUTER_ID]
 }
@@ -36,29 +34,7 @@ vrrp_instance inside_network {
         heartbeat
     }
 
-    #nopreempt
-
-    # notify scripts and alerts are optional
-    #
-    # filenames of scripts to run on transitions
-    # can be unquoted (if just filename)
-    # or quoted (if has parameters)
-    # to MASTER transition
     notify_master "[RROUTER_BIN_PATH]/master.sh"
-    # to BACKUP transition
     notify_backup "[RROUTER_BIN_PATH]/backup.sh"
-    # FAULT transition
     notify_fault "[RROUTER_BIN_PATH]/fault.sh"
- 
-    # for ANY state transition.
-    # "notify" script is called AFTER the
-    # notify_* script(s) and is executed
-    # with 3 arguments provided by keepalived
-    # (ie don't include parameters in the notify line).
-    # arguments
-    # $1 = "GROUP"|"INSTANCE"
-    # $2 = name of group or instance
-    # $3 = target state of transition
-    #     ("MASTER"|"BACKUP"|"FAULT")
-    #notify [RROUTER_BIN_PATH]/notify.sh
 }

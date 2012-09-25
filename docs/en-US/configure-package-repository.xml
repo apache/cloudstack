@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+<section id="configure-package-repository">
+    <title>Configure package repository</title>
+    <para>&PRODUCT; is only distributed from source from the official mirrors. DEB and RPM packages are however build for your convience by third-parties</para>
+    <para>When installing &PRODUCT; it is recommended you use these package repositories for easy installation.</para>
+    <note>
+        <para>These repositories contain both the Management Server and KVM Hypervisor packages.</para>
+    </note>
+    <section id="configure-package-repository-deb">
+        <title>DEB package repository</title>
+        <para>You can add a DEB package repository to your apt sources with the following commands.</para>
+        <programlisting language="Bash">echo "deb http://cloudstack.apt-get.eu/ubuntu $(lsb_release -s -c) 4.0" > /etc/apt/sources.list.d/cloudstack.list</programlisting>
+        <para>We now have to add the public key to the trusted keys.</para>
+        <programlisting language="Bash">wget -O - http://cloudstack.apt-get.eu/release.asc|apt-key add -</programlisting>
+        <para>Now update your local apt-cache.</para>
+        <programlisting language="Bash">apt-get update</programlisting>
+        <para>Your DEB package repository should now be configured and ready for use.</para>
+    </section>
+    <section id="configure-package-repository-rpm">
+        <title>RPM package repository</title>
+        <para>TODO</para>
+    </section>
+</section>

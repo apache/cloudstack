@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
@@ -22,12 +22,9 @@
  under the License.
 -->
 
-<chapter id="installation">
-    <title>Installation</title>
-    <xi:include href="who-should-read-installation.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-    <xi:include href="installation-steps-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-    <xi:include href="minimum-system-requirements.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-    <xi:include href="configure-package-repository.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="management-server-install-flow.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-    <xi:include href="hypervisor-host-install-flow.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-</chapter>
+<section id="aws-ec2-requirements">
+  <title>System Requirements</title>
+    <para>This interface complies with Amazon's WDSL version dated November 15, 2010, available at http://ec2.amazonaws.com/doc/2010-11-15/. The EC2 command line utilities compatible with it are <emphasis>EC2 tools v. 1.3.6230</emphasis>that can be downloaded at <ulink url="http://s3.amazonaws.com/ec2-downloads/ec2-api-tools-1.3-62308.zip">http://s3.amazonaws.com/ec2-downloads/ec2-api-tools-1.3-62308.zip</ulink>
+    </para>
+    <note>Effort is underway to provide support for a newer API</note>
+</section>

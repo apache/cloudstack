@@ -1,9 +1,7 @@
-<?xml version='1.0' encoding='utf-8' ?>
 <!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 ]>
-
 <!-- Licensed to the Apache Software Foundation (ASF) under one
  or more contributor license agreements.  See the NOTICE file
  distributed with this work for additional information
@@ -11,9 +9,7 @@
  to you under the Apache License, Version 2.0 (the
  "License"); you may not use this file except in compliance
  with the License.  You may obtain a copy of the License at
- 
-   http://www.apache.org/licenses/LICENSE-2.0
- 
+ http://www.apache.org/licenses/LICENSE-2.0.
  Unless required by applicable law or agreed to in writing,
  software distributed under the License is distributed on an
  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,12 +18,7 @@
  under the License.
 -->
 
-<chapter id="installation">
-    <title>Installation</title>
-    <xi:include href="who-should-read-installation.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-    <xi:include href="installation-steps-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-    <xi:include href="minimum-system-requirements.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-    <xi:include href="configure-package-repository.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="management-server-install-flow.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-    <xi:include href="hypervisor-host-install-flow.xml" xmlns:xi="http://www.w3.org/2001/XInclude"/>
-</chapter>
+<section id="separate_storage_network">
+    <title>Separate Storage Network</title>
+    <para>In the large-scale redundant setup described in the previous section, storage traffic can overload the management network. A separate storage network is optional for deployments. Storage protocols such as iSCSI are sensitive to network delays. A separate storage network ensures guest network traffic contention does not impact storage performance.</para>
+</section>

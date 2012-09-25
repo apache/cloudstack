@@ -70,10 +70,6 @@
             the algorithm for the stickiness policy. See Sticky Session Policies for Load Balancer
             Rules.</para>
         </listitem>
-        <listitem>
-          <para><emphasis role="bold">AutoScale</emphasis>: Click Configure and complete the
-            AutoScale configuration as explained in <xref linkend="autoscale"/>.</para>
-        </listitem>
       </itemizedlist>
     </listitem>
     <listitem>
