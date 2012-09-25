@@ -56,7 +56,7 @@
             </programlisting>
         </listitem>
         <listitem><para>Configure the database client. Note the absence of the --deploy-as argument in this case.
-            (For more details about the arguments to this command, see <xref linkend="install-database-on-separate-node"/>.)
+            (For more details about the arguments to this command, see <xref linkend="management-server-install-db-external"/>.)
         </para>
             <programlisting># cloud-setup-databases cloud:&lt;dbpassword&gt;@&lt;dbhost&gt; -e &lt;encryption_type&gt; -m &lt;management_server_key&gt; -k &lt;database_key&gt;
             </programlisting>
