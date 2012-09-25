@@ -103,7 +103,7 @@ desetup_dnsmasq() {
 
 setup_passwdsvcs() {
   logger -t cloud "Setting up password service for network $ip/$mask, eth $dev "
-  nohup bash /opt/cloud/bin/vpc_passwd_server $ip &
+  nohup bash /opt/cloud/bin/vpc_passwd_server $ip >/dev/null 2>&1 &
 }
 
 desetup_passwdsvcs() {
