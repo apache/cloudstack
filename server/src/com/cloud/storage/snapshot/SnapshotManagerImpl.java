@@ -191,43 +191,8 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
     protected SearchBuilder<SnapshotVO> PolicySnapshotSearch;
     protected SearchBuilder<SnapshotPolicyVO> PoliciesForSnapSearch;
 
-    private boolean isVolumeDirty(long volumeId, Long policy) {
-        VolumeVO volume = _volsDao.findById(volumeId);
-        boolean runSnap = true;
-
-        if (volume.getInstanceId() == null) {
-            long lastSnapId = _snapshotDao.getLastSnapshot(volumeId, 0);
-            SnapshotVO lastSnap = _snapshotDao.findByIdIncludingRemoved(lastSnapId);
-            if (lastSnap != null) {
-                Date lastSnapTime = lastSnap.getCreated();
-                if (lastSnapTime.after(volume.getUpdated())) {
-                    runSnap = false;
-                    s_logger.debug("Volume: " + volumeId + " is detached and last snap time is after Volume detach time. Skip snapshot for recurring policy");
-                }
-            }
-        } else if (_storageMgr.volumeInactive(volume)) {
-            // Volume is attached to a VM which is in Stopped state.
-            long lastSnapId = _snapshotDao.getLastSnapshot(volumeId, 0);
-            SnapshotVO lastSnap = _snapshotDao.findByIdIncludingRemoved(lastSnapId);
-            if (lastSnap != null) {
-                Date lastSnapTime = lastSnap.getCreated();
-                VMInstanceVO vmInstance = _vmDao.findById(volume.getInstanceId());
-                if (vmInstance != null) {
-                    if (lastSnapTime.after(vmInstance.getUpdateTime())) {
-                        runSnap = false;
-                        s_logger.debug("Volume: " + volumeId + " is inactive and last snap time is after VM update time. Skip snapshot for recurring policy");
-                    }
-                }
-            }
-        }
-        if (volume.getState() == Volume.State.Destroy || volume.getRemoved() != null) {
-            s_logger.debug("Volume: " + volumeId + " is destroyed/removed. Not taking snapshot");
-            runSnap = false;
-        }
-
-        return runSnap;
-    }
-
+    
+    
     protected Answer sendToPool(Volume vol, Command cmd) {
         StoragePool pool = _storagePoolDao.findById(vol.getPoolId());
         VMInstanceVO vm = _vmDao.findById(vol.getInstanceId());
@@ -433,20 +398,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
                     }
                 }
             }
-
-            //when taking snapshot, make sure nobody can delete/move the volume
-            boolean stateTransit = false;
-            /*
-            try {
-            	stateTransit = _storageMgr.stateTransitTo(volume, Volume.Event.SnapshotRequested);
-            } catch (NoTransitionException e) {
-            	s_logger.debug("Failed transit volume state: " + e.toString());
-            } finally {
-            	if (!stateTransit) {
-            		_snapshotDao.expunge(snapshotId);           		
-            		throw new CloudRuntimeException("Creating snapshot failed due to volume:" + volumeId + " is being used, try it later ");
-            	}
-            }*/
 
             snapshot = createSnapshotOnPrimary(volume, policyId, snapshotId);
             if (snapshot != null) {
@@ -864,7 +815,6 @@ public class SnapshotManagerImpl implements SnapshotManager, SnapshotService, Ma
         Long dcId = snapshot.getDataCenterId();
         Long accountId = snapshot.getAccountId();
         Long volumeId = snapshot.getVolumeId();
-        HypervisorType hvType = snapshot.getHypervisorType();
 
         String backupOfSnapshot = snapshot.getBackupSnapshotId();
         if (backupOfSnapshot == null) {
