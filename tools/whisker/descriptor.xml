@@ -16,32 +16,6 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
-
-<!--
-
-The following source / binaries need to be either removed from the project 
-completely, or set to be optional downloads / build features:
-
-deps/XenServerJava/*
-deps/bin/*
-deps/cloud-iControl.jar
-deps/cloud-jasypt-1.8.jar
-deps/cloud-jnetpcap.jar
-deps/cloud-manageontap.jar
-deps/cloud-netscaler-sdx.jar
-deps/cloud-netscaler.jar
-deps/cloud-servlet-api.jar
-deps/cloud-xenserver-5.6.100-1.jar
-deps/libvirt-0.4.8.jar
-deps/vmware-apputils.jar
-deps/vmware-lib-jaxrpc.jar
-deps/vmware-vim.jar
-deps/vmware-vim25.jar
-deps/awsapi-lib/c3p0-0.9.1.2.jar   < GPL!
-deps/awsapi-lib/hibernate3.jar     < GPL!
--->
-
-
 <manifest>
     <licenses>
         <license name='COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.0' id='CDDL'
@@ -2283,6 +2257,10 @@ this distribution.
             id='apache.org' 
             name='The Apache Software Foundation' 
             url='http://www.apache.org/'/>  
+        <organisation 
+            id='apache.org.2' 
+            name='The Apache Software Foundation' 
+            url='http://www.apache.org/'/>  
         <organisation
             id='person:Thomas.Nagy'
             name='Thomas Nagy'
@@ -2443,7 +2421,7 @@ Copyright © 2005-2010 Thomas Nagy
             <copyright-notice>
 Copyright © 2012 The Apache Software Foundation
             </copyright-notice>
-            <by-organisation id='apache.org'>
+            <by-organisation id='apache.org.2'>
                 <resource name='httpd.conf' />
                 <resource name='ports.conf' />
                 <resource name='vhostexample.conf' />
@@ -2454,7 +2432,7 @@ Copyright © 2012 The Apache Software Foundation
     </within>
     <within dir='patches/systemvm/debian/config/etc'>
         <public-domain>
-            <by-organisation id='person:simon.kelly'>
+            <by-organisation id='person:simon.kelley'>
                 <resource name='vpcdnsmasq.conf' />
                 <resource name='dnsmasq.conf' />
             </by-organisation>
@@ -2609,7 +2587,7 @@ Copyright © 2004 Clinton Begin
             <copyright-notice>
 Copyright © 2012 The Apache Software Foundation
             </copyright-notice>
-            <by-organisation id="apache.org">
+            <by-organisation id="apache.org.2">
                 <resource name="cloud-axis.jar" source="http://axis.apache.org/axis/" notice='axis2.notice'/>
                 <resource name="cloud-commons-codec-1.5.jar" source="http://commons.apache.org/codec/" notice="codec" />
                 <resource name="cloud-commons-collections-3.2.1.jar" source="http://commons.apache.org/collections/"/>
@@ -2631,7 +2609,7 @@ Copyright © 2012 The Apache Software Foundation
             <copyright-notice>
 Copyright © 2012 The Apache Software Foundation
             </copyright-notice>
-            <by-organisation id="apache.org">
+            <by-organisation id="apache.org.2">
                 <resource name="cloud-commons-discovery.jar" source="http://commons.apache.org/discovery/" />
             </by-organisation>
         </with-license>
@@ -2774,7 +2752,7 @@ Copyright © 2010-2011 OpenStack, LLC.
     		<copyright-notice>
 Copyright © 2004-2008 The Apache Software Foundation
 			</copyright-notice>
-			<by-organisation id='apache.org'>
+			<by-organisation id='apache.org.2'>
 				<resource name='XmlSchema-1.4.3.jar' notice='xmlschema.notice' />
 			</by-organisation>
 		</with-license>
@@ -2797,7 +2775,7 @@ Copyright © 2004-2011 QOS.ch
             <copyright-notice>
 Copyright © 2004-2012 The Apache Software Foundation
             </copyright-notice>
-            <by-organisation id="apache.org">
+            <by-organisation id="apache.org.2">
                 <resource name="apache-log4j-extras-1.0.jar" source="http://logging.apache.org/log4j/companions/extras/" />
                 <resource name="axiom-api-1.2.8.jar" source="http://ws.apache.org/axiom/source-repository.html" notice="axiom.notice" />
                 <resource name="axiom-impl-1.2.8.jar" source="http://ws.apache.org/axiom/source-repository.html" notice="axiom.notice" />
