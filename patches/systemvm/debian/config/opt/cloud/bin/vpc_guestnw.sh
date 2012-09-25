@@ -92,13 +92,27 @@ setup_dnsmasq() {
 }
 
 desetup_dnsmasq() {
-  logger -t cloud "Setting up dnsmasq for network $ip/$mask "
+  logger -t cloud "Desetting up dnsmasq for network $ip/$mask "
   
   sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,option:router.*$/d" /etc/dnsmasq.d/cloud.conf
   sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,6.*$/d" /etc/dnsmasq.d/cloud.conf
   sed -i -e "/^[#]*dhcp-range=interface:$dev/d" /etc/dnsmasq.d/cloud.conf
   service dnsmasq restart
   sleep 1
+}
+
+setup_passwdsvcs() {
+  logger -t cloud "Setting up password service for network $ip/$mask, eth $dev "
+  nohup bash /opt/cloud/bin/vpc_passwd_server $ip &
+}
+
+desetup_passwdsvcs() {
+  logger -t cloud "Desetting up password service for network $ip/$mask, eth $dev "
+  pid=`ps -ef | grep socat | grep $ip | grep -v grep | awk '{print $2}'`
+  if [ -n "$pid" ]
+  then
+    kill -9 $pid
+  fi 
 }
 
 create_guest_network() {
@@ -125,6 +139,7 @@ create_guest_network() {
   create_acl_chain
   setup_dnsmasq
   setup_apache2
+  setup_passwdsvcs
 }
 
 destroy_guest_network() {
@@ -140,6 +155,7 @@ destroy_guest_network() {
   destroy_acl_chain
   desetup_dnsmasq
   desetup_apache2
+  desetup_passwdsvcs
 }
 
 #set -x

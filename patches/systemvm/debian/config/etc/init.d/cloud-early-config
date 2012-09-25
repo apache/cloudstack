@@ -650,11 +650,9 @@ EOF
 
   enable_svc dnsmasq 1
   enable_svc haproxy 1
-  enable_svc cloud-passwd-srvr 1
   enable_svc cloud 0
   disable_rpfilter_domR
   enable_fwding 1
-  chkconfig nfs-common off
   cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules
   setup_sshd $ETH0_IP "eth0"
   cp /etc/vpcdnsmasq.conf /etc/dnsmasq.conf
