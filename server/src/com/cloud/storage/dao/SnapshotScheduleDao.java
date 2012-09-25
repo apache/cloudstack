@@ -19,7 +19,6 @@ package com.cloud.storage.dao;
 
 import java.util.Date;
 import java.util.List;
-
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotScheduleVO;
 import com.cloud.utils.db.GenericDao;
