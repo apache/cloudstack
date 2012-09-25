@@ -74,7 +74,11 @@ public class XcpOssResource extends CitrixResourceBase {
     
     @Override
     protected String getGuestOsType(String stdType, boolean bootFromCD) {
-        return CitrixHelper.getXcpGuestOsType(stdType);
+    	if (stdType.equalsIgnoreCase("Debian GNU/Linux 6(64-bit)")) {
+    		return "Debian Squeeze 6.0 (64-bit)";
+    	} else {
+    		return CitrixHelper.getXcpGuestOsType(stdType);
+    	}
     }
     
     protected VBD createPatchVbd(Connection conn, String vmName, VM vm) throws XmlRpcException, XenAPIException {
