@@ -31,11 +31,11 @@
     </note>
     <section id="configure-package-repository-deb">
         <title>DEB package repository</title>
-        <para>You can add a DEB package repository to your apt sources with the following commands.</para>
+        <para>You can add a DEB package repository to your apt sources with the following commands. Please note that currently only packages for Ubuntu 12.04 (precise) are being build.</para>
         <programlisting language="Bash">echo "deb http://cloudstack.apt-get.eu/ubuntu $(lsb_release -s -c) 4.0" > /etc/apt/sources.list.d/cloudstack.list</programlisting>
         <para>We now have to add the public key to the trusted keys.</para>
         <programlisting language="Bash">wget -O - http://cloudstack.apt-get.eu/release.asc|apt-key add -</programlisting>
-        <para>Now update your local apt-cache.</para>
+        <para>Now update your local apt cache.</para>
         <programlisting language="Bash">apt-get update</programlisting>
         <para>Your DEB package repository should now be configured and ready for use.</para>
     </section>
