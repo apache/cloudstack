@@ -274,7 +274,7 @@ Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = 
 Requires: %{name}-setup = %{version}
 Requires: %{name}-client = %{version}
 Requires: jsvc
-License:   GPLv3+
+License:   Apache License 2.0
 Group:     System Environment/Libraries
 %description usage
 The CloudStack usage monitor provides usage accounting across the entire cloud for
