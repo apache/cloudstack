@@ -40,7 +40,7 @@ Description: CloudStack management server UI
 
 Package: cloud-server
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), libservlet2.5-java
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-deps (= ${source:Version}), cloud-scripts (= ${source:Version}), libservlet2.5-java
 Description: CloudStack server library
  The CloudStack server libraries provide a set of Java classes used
  in the CloudStack management server.
