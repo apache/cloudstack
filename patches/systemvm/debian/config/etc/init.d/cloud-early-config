@@ -408,7 +408,9 @@ setup_dnsmasq() {
 
 setup_sshd(){
   local ip=$1
+  local eth=$2
   [ -f /etc/ssh/sshd_config ] && sed -i -e "s/^[#]*ListenAddress.*$/ListenAddress $ip/" /etc/ssh/sshd_config
+  sed -i "/3922/s/eth./$eth/" /etc/iptables/rules
 }
 
 
@@ -575,7 +577,6 @@ setup_router() {
   sed -i  /gateway/d /etc/hosts
   echo "$ETH0_IP $NAME" >> /etc/hosts
 
-  setup_sshd $ETH1_IP
 
   enable_svc dnsmasq 1
   enable_svc haproxy 1
@@ -585,6 +586,7 @@ setup_router() {
   enable_fwding 1
   chkconfig nfs-common off
   cp /etc/iptables/iptables-router /etc/iptables/rules
+  setup_sshd $ETH1_IP "eth1"
 }
 
 
@@ -644,10 +646,6 @@ EOF
   sudo ip rule add from $VPCCIDR table static_route 2>/dev/null
   sudo ip rule add from $VPCCIDR table static_route_back 2>/dev/null
 
-  sed -i  /gateway/d /etc/hosts
-
-  echo "$ETH0_IP $NAME" >> /etc/hosts
-  setup_sshd $ETH0_IP
   setup_vpc_apache2
 
   enable_svc dnsmasq 1
@@ -658,6 +656,7 @@ EOF
   enable_fwding 1
   chkconfig nfs-common off
   cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules
+  setup_sshd $ETH0_IP "eth0"
   cp /etc/vpcdnsmasq.conf /etc/dnsmasq.conf
   cp /etc/cloud-nic.rules /etc/udev/rules.d/cloud-nic.rules
   echo "" > /etc/dnsmasq.d/dhcphosts.txt
@@ -696,24 +695,18 @@ setup_dhcpsrvr() {
   sed -i  /gateway/d /etc/hosts
   echo "$ETH0_IP $NAME" >> /etc/hosts
 
-  if [ "$SSHONGUEST" == "true" ]
-  then
-    setup_sshd $ETH0_IP
-  else
-    setup_sshd $ETH1_IP
-  fi
-
   enable_svc dnsmasq 1
   enable_svc haproxy 0
   enable_svc cloud-passwd-srvr 1
   enable_svc cloud 0
   enable_fwding 0
   chkconfig nfs-common off
+  cp /etc/iptables/iptables-router /etc/iptables/rules
   if [ "$SSHONGUEST" == "true" ]
   then
-    sed '/3922/i -A INPUT -i eth0 -p tcp -m state --state NEW --dport 3922 -j ACCEPT' /etc/iptables/iptables-router > /etc/iptables/rules
+    setup_sshd $ETH0_IP "eth0"
   else
-    cp /etc/iptables/iptables-router /etc/iptables/rules
+    setup_sshd $ETH1_IP "eth1"
   fi
 }
 
@@ -745,9 +738,9 @@ setup_secstorage() {
 
   cp /etc/iptables/iptables-secstorage /etc/iptables/rules
   if [ "$hyp" == "vmware" ]; then
-    setup_sshd $ETH1_IP
+    setup_sshd $ETH1_IP "eth1"
   else
-    setup_sshd $ETH0_IP
+    setup_sshd $ETH0_IP "eth0"
   fi
   setup_apache2 $ETH2_IP
 
@@ -769,9 +762,9 @@ setup_console_proxy() {
   echo "$public_ip $NAME" >> /etc/hosts
   cp /etc/iptables/iptables-consoleproxy /etc/iptables/rules
   if [ "$hyp" == "vmware" ]; then
-    setup_sshd $ETH1_IP
+    setup_sshd $ETH1_IP "eth1"
   else
-    setup_sshd $ETH0_IP
+    setup_sshd $ETH0_IP "eth0"
   fi
 
   disable_rpfilter
@@ -792,13 +785,12 @@ setup_elbvm() {
   [ "$ETH2_IP" == "0.0.0.0" ] || [ "$ETH2_IP" == "" ] && public_ip=$ETH0_IP
   echo "$public_ip $NAME" >> /etc/hosts
 
+  cp /etc/iptables/iptables-elbvm /etc/iptables/rules
   if [ "$SSHONGUEST" == "true" ]
   then
-    sed '/3922/s/eth1/eth0/'
-    setup_sshd $ETH0_IP
+    setup_sshd $ETH0_IP "eth0"
   else
-    cp /etc/iptables/iptables-elbvm /etc/iptables/rules
-    setup_sshd $ETH1_IP
+    setup_sshd $ETH1_IP "eth1"
   fi
   
   enable_fwding 0
