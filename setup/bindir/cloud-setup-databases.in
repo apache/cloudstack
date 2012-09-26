@@ -475,8 +475,15 @@ for example:
                 self.errorAndExit("There are more than one parameters for user:password@hostname (%s)"%self.args)
             
             arg = self.args[0]
-            stuff = arg.split("@", 1)
-            if len(stuff) == 1: stuff.append("localhost")
+            try:
+                splitIndex = arg.rindex('@')
+            except ValueError:
+                # If it failed to find @, use host=localhost
+                splitIndex = len(arg)
+                arg += "@localhost"
+            finally:
+                stuff = [arg[:splitIndex], arg[splitIndex+1:]]
+
             self.user,self.password = parseUserAndPassword(stuff[0])
             self.host,self.port = parseHostInfo(stuff[1])
             
