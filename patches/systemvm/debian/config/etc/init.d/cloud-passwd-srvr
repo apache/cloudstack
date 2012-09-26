@@ -33,11 +33,11 @@ start() {
   [ "$ENABLED" != 0 ]  || exit 0 
   pid=$(getpid)
   [ "$pid" != "" ] && echo "Password server is already running (pid=$pid)" && return 0
-  nohup bash /opt/cloud/bin/passwd_server&
+  nohup bash /opt/cloud/bin/passwd_server &
 }
 
 getpid() {
-  pid=$(ps -ef | grep passwd_server | grep -v grep | awk '{print $2}')
+  pid=$(ps -ef | grep passwd_server_ip | grep -v grep | awk '{print $2}')
   echo $pid
 }
 
