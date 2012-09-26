@@ -1518,16 +1518,19 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         String cpvmSrvcOffIdStr = configs.get(Config.ConsoleProxyServiceOffering.key()); 
         if (cpvmSrvcOffIdStr != null) {
             
-            Long cpvmSrvcOffId = _identityDao.getIdentityId(DiskOfferingVO.class.getAnnotation(Table.class).name(),cpvmSrvcOffIdStr);
-            if(cpvmSrvcOffId != null)
+            Long cpvmSrvcOffId = null;
+            try {
+                cpvmSrvcOffId = _identityDao.getIdentityId(DiskOfferingVO.class.getAnnotation(Table.class).name(),cpvmSrvcOffIdStr);
+            } catch (Exception e) {
+                String msg = "Can't find system service offering specified by global config, uuid=" + cpvmSrvcOffIdStr + " for console proxy vm";
+                s_logger.warn(msg);
+            }
+            if(cpvmSrvcOffId != null){
                 _serviceOffering = _offeringDao.findById(cpvmSrvcOffId);
-            if (_serviceOffering == null || !_serviceOffering.getSystemUse()) {
-                String msg = "Can't find system service offering specified by global config, id=" + cpvmSrvcOffId + " for console proxy vm";
-                s_logger.error(msg);
             }
         } 
 
-        if(_serviceOffering == null){
+        if(_serviceOffering == null || !_serviceOffering.getSystemUse()){
         	int ramSize = NumbersUtil.parseInt(_configDao.getValue("console.ram.size"), DEFAULT_PROXY_VM_RAMSIZE);
         	int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("console.cpu.mhz"), DEFAULT_PROXY_VM_CPUMHZ);
             _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, ramSize, cpuFreq, 0, 0, false, null, useLocalStorage, true, null, true, VirtualMachine.Type.ConsoleProxy, true);
