@@ -2628,11 +2628,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements
         File sshKeysDir = new File(_SSHKEYSPATH);
         String result = null;
         if (!sshKeysDir.exists()) {
-            sshKeysDir.mkdir();
             // Change permissions for the 700
-            Script script = new Script("chmod", _timeout, s_logger);
-            script.add("700", _SSHKEYSPATH);
+            Script script = new Script("mkdir", _timeout, s_logger);
+            script.add("-m","700");
+            script.add(_SSHKEYSPATH);
             script.execute();
+            
+            if(!sshKeysDir.exists()) {
+                s_logger.debug("failed to create directory " + _SSHKEYSPATH);
+            }
         }
 
         File pubKeyFile = new File(_SSHPUBKEYPATH);
