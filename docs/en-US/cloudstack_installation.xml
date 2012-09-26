@@ -23,7 +23,27 @@
 -->
 
 <book>
-    <xi:include href="Book_Info.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <bookinfo id="book-installation">
+        <title>&PRODUCT; Installation Guide</title>
+        <productname>Apache CloudStack</productname>
+        <productnumber>4.0</productnumber>
+        <edition>1</edition>
+        <pubsnumber></pubsnumber>
+        <abstract>
+            <para>
+                Installation Guide for &PRODUCT;.
+            </para>
+        </abstract>
+        <corpauthor>
+            <inlinemediaobject>
+                <imageobject>
+                    <imagedata fileref="Common_Content/images/title_logo.svg" format="SVG" />
+                </imageobject>
+            </inlinemediaobject>
+        </corpauthor>
+        <xi:include href="Common_Content/Legal_Notice.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+        <xi:include href="Author_Group.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </bookinfo>
     <xi:include href="concepts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="installation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="Revision_History.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

@@ -23,7 +23,26 @@
 -->
 
 <book>
-    <xi:include href="Book_Info_Build_All.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    <bookinfo>
+        <title>CloudStack Guide</title>
+            <subtitle>Revised September 18, 2012 10:48 am Pacific</subtitle>
+            <productname>Apache CloudStack (incubating)</productname>
+            <productnumber>3.0</productnumber>
+            <edition>1</edition>
+            <pubsnumber></pubsnumber>
+            <abstract>
+                <para>Complete technical documentation for Apache CloudStack.</para>
+            </abstract>
+            <corpauthor>
+                <inlinemediaobject>
+                        <imageobject>
+                                <imagedata fileref="Common_Content/images/title_logo.svg" format="SVG" />
+                        </imageobject>
+                </inlinemediaobject>
+            </corpauthor>
+            <xi:include href="Common_Content/Legal_Notice.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+            <xi:include href="Author_Group.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    </bookinfo>
     <xi:include href="concepts.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="installation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="ui.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
