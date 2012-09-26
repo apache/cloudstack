@@ -20,6 +20,7 @@ package com.cloud.hypervisor.xen.resource;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.ejb.Local;
@@ -44,6 +45,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
 import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
@@ -82,9 +84,18 @@ public class XcpOssResource extends CitrixResourceBase {
     }
     
     protected VBD createPatchVbd(Connection conn, String vmName, VM vm) throws XmlRpcException, XenAPIException {
-    	if (_host.localSRuuid != null) {
+    	String localStorageUuid = null;
+    	Map<SR, SR.Record> map = SR.getAllRecords(conn);
+    	for (Map.Entry<SR, SR.Record> entry : map.entrySet()) {
+    		SR.Record srRec = entry.getValue();
+    		if (srRec.nameLabel.equalsIgnoreCase("local-storage")) {
+    			localStorageUuid = srRec.uuid;
+    			break;
+    		}
+    	}
+    	if (localStorageUuid != null) {
     		//create an iso vdi on it
-    		String result = callHostPlugin(conn, "vmops", "createISOVHD", "uuid", _host.localSRuuid);
+    		String result = callHostPlugin(conn, "vmops", "createISOVHD", "uuid", localStorageUuid);
     		if (result == null || result.equalsIgnoreCase("Failed")) {
     			 throw new CloudRuntimeException("can not create systemvm vdi");
     		}
