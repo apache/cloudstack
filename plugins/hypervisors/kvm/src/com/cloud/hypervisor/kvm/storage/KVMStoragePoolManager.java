@@ -49,7 +49,7 @@ public class KVMStoragePoolManager {
     }
 
     public KVMStoragePool getStoragePoolByURI(String uri) {
-        return this._storageAdaptor.getStoragePoolByUri(uri);
+        return this._storageAdaptor.getStoragePoolByURI(uri);
     }
 
     public KVMStoragePool createStoragePool(String name, String host, int port, String path,
