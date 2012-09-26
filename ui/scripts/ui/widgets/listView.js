@@ -1368,7 +1368,7 @@
    		
 		//advanced search 	
 		var advancedSearch = function(args) {		  
-      page = 1;
+      page = 1;			
       loadBody(
         $table,
         listViewData.dataProvider,
@@ -1379,10 +1379,7 @@
           page: page,
           filterBy: {
             kind: $listView.find('select[id=filterBy]').val(),
-            search: {
-              value: args.data.name,
-              by: 'name'
-            }
+            advSearch: args.data            
           }
         },
         listViewData.actions,

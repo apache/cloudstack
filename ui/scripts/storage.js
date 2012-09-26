@@ -271,8 +271,13 @@
 
           dataProvider: function(args) {
             var array1 = [];
-            if(args.filterBy != null) {
-              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
+            if(args.filterBy != null) {					
+						  if(args.filterBy.advSearch != null && typeof(args.filterBy.advSearch) == "object") {
+							  for(var key in args.filterBy.advSearch) {
+								  array1.push("&" + key + "=" + args.filterBy.advSearch[key]);
+								}
+							}						
+              else if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
                 switch(args.filterBy.search.by) {
                 case "name":
                   if(args.filterBy.search.value.length > 0)
