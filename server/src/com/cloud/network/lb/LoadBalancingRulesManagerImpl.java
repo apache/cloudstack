@@ -110,6 +110,8 @@ import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.server.ResourceTag.TaggedResourceType;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.TemplateManager;
@@ -199,6 +201,10 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
     @Inject
     VpcManager _vpcMgr;
     @Inject
+    VMTemplateDao _templateDao;
+    @Inject
+    ServiceOfferingDao _offeringsDao;
+    @Inject
     CounterDao _counterDao;
     @Inject
     ConditionDao _conditionDao;
@@ -263,20 +269,24 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         String apiKey = user.getApiKey();
         String secretKey = user.getSecretKey();
         String csUrl = _configDao.getValue(Config.EndpointeUrl.key());
+        String zoneId = _dcDao.findById(autoScaleVmProfile.getZoneId()).getUuid();
+        String domainId = _domainDao.findById(autoScaleVmProfile.getDomainId()).getUuid();
+        String serviceOfferingId = _offeringsDao.findById(autoScaleVmProfile.getServiceOfferingId()).getUuid();
+        String templateId = _templateDao.findById(autoScaleVmProfile.getTemplateId()).getUuid();
 
-        if (apiKey == null) {
+        if(apiKey == null) {
             throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
         }
 
-        if (secretKey == null) {
+        if(secretKey == null) {
             throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
         }
 
-        if (csUrl == null || csUrl.contains("localhost")) {
+        if(csUrl == null || csUrl.contains("localhost")) {
             throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point");
         }
 
-        LbAutoScaleVmProfile lbAutoScaleVmProfile = new LbAutoScaleVmProfile(autoScaleVmProfile, apiKey, secretKey, csUrl);
+        LbAutoScaleVmProfile lbAutoScaleVmProfile = new LbAutoScaleVmProfile(autoScaleVmProfile, apiKey, secretKey, csUrl, zoneId, domainId, serviceOfferingId, templateId);
         return new LbAutoScaleVmGroup(vmGroup, autoScalePolicies, lbAutoScaleVmProfile, currentState);
     }
 
@@ -326,11 +336,11 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             success = applyAutoScaleConfig(loadBalancer, vmGroup, currentState);
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to configure AutoScaleVmGroup to the lb rule: " + loadBalancer.getId() + " because resource is unavaliable:", e);
-            if (isRollBackAllowedForProvider(loadBalancer)) {
-                loadBalancer.setState(backupState);
-                _lbDao.persist(loadBalancer);
-                s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + " lb state rolback while creating AutoscaleVmGroup");
-            }
+                if (isRollBackAllowedForProvider(loadBalancer)) {
+                    loadBalancer.setState(backupState);
+                    _lbDao.persist(loadBalancer);
+                    s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + " lb state rolback while creating AutoscaleVmGroup");
+                }
             throw e;
         } finally {
             if (!success) {
@@ -829,10 +839,10 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
 
         if (apply) {
             try {
-                if (!applyLoadBalancerConfig(loadBalancerId)) {
-                    s_logger.warn("Unable to apply the load balancer config");
-                    return false;
-                }
+                    if (!applyLoadBalancerConfig(loadBalancerId)) {
+                        s_logger.warn("Unable to apply the load balancer config");
+                        return false;
+                    }
             } catch (ResourceUnavailableException e) {
                 if (rollBack && isRollBackAllowedForProvider(lb)) {
                     if (backupMaps != null) {

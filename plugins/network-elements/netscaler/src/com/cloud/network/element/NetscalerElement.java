@@ -371,7 +371,7 @@ StaticNatServiceProvider {
                 HostPodVO pod = _podDao.findById(podId);
                 if (pod == null) {
                     throw new InvalidParameterValueException("Can't find pod by id " + podId);
-                }
+        }
             }
 
             for (Long podId: newPodsConfig) {
@@ -669,12 +669,13 @@ StaticNatServiceProvider {
             boolean revoked = (rule.getState().equals(FirewallRule.State.Revoke));
             String protocol = rule.getProtocol();
             String algorithm = rule.getAlgorithm();
+            String lbUuid = rule.getUuid();
             String srcIp = _networkMgr.getIp(rule.getSourceIpAddressId()).getAddress().addr();
             int srcPort = rule.getSourcePortStart();
             List<LbDestination> destinations = rule.getDestinations();
 
             if ((destinations != null && !destinations.isEmpty()) || rule.isAutoScaleConfig()) {
-                LoadBalancerTO loadBalancer = new LoadBalancerTO(rule.getId(), srcIp, srcPort, protocol, algorithm, revoked, false, destinations, rule.getStickinessPolicies());
+                LoadBalancerTO loadBalancer = new LoadBalancerTO(lbUuid, srcIp, srcPort, protocol, algorithm, revoked, false, destinations, rule.getStickinessPolicies());
                 if(rule.isAutoScaleConfig()) {
                     loadBalancer.setAutoScaleVmGroup(rule.getAutoScaleVmGroup());
                 }
@@ -711,41 +712,41 @@ StaticNatServiceProvider {
 
         try {
             if (!multiNetScalerDeployment) {
-                String errMsg;
-                ExternalLoadBalancerDeviceVO lbDevice = getExternalLoadBalancerForNetwork(config);
-                if (lbDevice == null) {
-                    try {
-                        lbDevice = allocateLoadBalancerForNetwork(config);
-                    } catch (Exception e) {
-                        errMsg = "Could not allocate a NetSclaer load balancer for configuring static NAT rules due to" + e.getMessage();
-                        s_logger.error(errMsg);
-                        throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
-                    }
-                }
+        String errMsg;
+        ExternalLoadBalancerDeviceVO lbDevice = getExternalLoadBalancerForNetwork(config);
+        if (lbDevice == null) {
+            try {
+                lbDevice = allocateLoadBalancerForNetwork(config);
+            } catch (Exception e) {
+                errMsg = "Could not allocate a NetSclaer load balancer for configuring static NAT rules due to" + e.getMessage();
+                s_logger.error(errMsg);
+                throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
+            }
+        }
 
-                if (!isNetscalerDevice(lbDevice.getDeviceName())) {
-                    errMsg = "There are no NetScaler load balancer assigned for this network. So NetScaler element will not be handling the static nat rules.";
-                    s_logger.error(errMsg);
-                    throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
+        if (!isNetscalerDevice(lbDevice.getDeviceName())) {
+            errMsg = "There are no NetScaler load balancer assigned for this network. So NetScaler element will not be handling the static nat rules.";
+            s_logger.error(errMsg);
+            throw new ResourceUnavailableException(errMsg, this.getClass(), 0);
+        }
+        SetStaticNatRulesAnswer answer = null;
+            List<StaticNatRuleTO> rulesTO = null;
+            if (rules != null) {
+                rulesTO = new ArrayList<StaticNatRuleTO>();
+                for (StaticNat rule : rules) {
+                    IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
+                    StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
+                    rulesTO.add(ruleTO);
                 }
-                SetStaticNatRulesAnswer answer = null;
-                List<StaticNatRuleTO> rulesTO = null;
-                if (rules != null) {
-                    rulesTO = new ArrayList<StaticNatRuleTO>();
-                    for (StaticNat rule : rules) {
-                        IpAddress sourceIp = _networkMgr.getIp(rule.getSourceIpAddressId());
-                        StaticNatRuleTO ruleTO = new StaticNatRuleTO(0, sourceIp.getAddress().addr(), null, null, rule.getDestIpAddress(), null, null, null, rule.isForRevoke(), false);
-                        rulesTO.add(ruleTO);
-                    }
-                }
+            }
 
                 SetStaticNatRulesCommand cmd = new SetStaticNatRulesCommand(rulesTO, null);
-                answer = (SetStaticNatRulesAnswer) _agentMgr.send(lbDevice.getHostId(), cmd);
-                if (answer == null) {
-                    return false;
-                } else {
-                    return answer.getResult();
-                }
+            answer = (SetStaticNatRulesAnswer) _agentMgr.send(lbDevice.getHostId(), cmd);
+            if (answer == null) {
+                return false;
+            } else {
+                return answer.getResult();
+            }
             } else {
                 if (rules != null) {
                     for (StaticNat rule : rules) {

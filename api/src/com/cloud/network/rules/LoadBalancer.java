@@ -17,7 +17,7 @@
 package com.cloud.network.rules;
 
 /**
- * Definition for a LoadBalancer 
+ * Definition for a LoadBalancer
  */
 public interface LoadBalancer extends FirewallRule {
 
@@ -26,9 +26,10 @@ public interface LoadBalancer extends FirewallRule {
     String getDescription();
 
     int getDefaultPortStart();
-    
+
     int getDefaultPortEnd();
 
     String getAlgorithm();
-    
+
+    String getUuid();
 }

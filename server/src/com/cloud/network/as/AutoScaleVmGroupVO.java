@@ -182,4 +182,9 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup {
     public void setLoadBalancerId(Long loadBalancerId) {
         this.loadBalancerId = loadBalancerId;
     }
+
+    @Override
+    public String getUuid() {
+        return uuid;
+    }
 }
