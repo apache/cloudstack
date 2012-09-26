@@ -35,7 +35,7 @@ public interface RemoteAccessVpnService {
     VpnUser addVpnUser(long vpnOwnerId, String userName, String password);
     boolean removeVpnUser(long vpnOwnerId, String userName);
     List<? extends VpnUser> listVpnUsers(long vpnOwnerId, String userName);
-    boolean applyVpnUsers(long vpnOwnerId);
+    boolean applyVpnUsers(long vpnOwnerId, String userName);
     
     List<? extends RemoteAccessVpn> searchForRemoteAccessVpns(ListRemoteAccessVpnsCmd cmd);
     List<? extends VpnUser> searchForVpnUsers(ListVpnUsersCmd cmd);
