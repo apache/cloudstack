@@ -4,7 +4,7 @@ ip=$1
 result=$ip
 while [ -n "$result" ]
 do
-    socat -lf /var/log/cloud.log TCP4-LISTEN:8080,reuseaddr,crnl,bind=$ip SYSTEM:"/opt/cloud/bin/serve_password.sh"
+    socat -lf /var/log/cloud.log TCP4-LISTEN:8080,reuseaddr,crnl,bind=$ip SYSTEM:"/opt/cloud/bin/serve_password.sh \"\$SOCAT_PEERADDR\""
     rc=$?
     if [ $rc -ne 0 ]
     then
