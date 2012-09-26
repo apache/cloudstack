@@ -76,7 +76,7 @@ CloudStack management server.
 Summary:   CloudStack server library
 Requires: java >= 1.6.0
 Obsoletes: vmops-server < %{version}-%{release}
-Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, tomcat6-servlet-2.5-api
+Requires: %{name}-utils = %{version}, %{name}-core = %{version}, %{name}-deps = %{version}, %{name}-scripts = %{version}, tomcat6-servlet-2.5-api
 Group:     System Environment/Libraries
 %description server
 The CloudStack server libraries provide a set of Java classes for CloudStack.
