@@ -23,6 +23,8 @@
 -->
 
 <section id="accounts">
+    <title>Accounts</title>
     <xi:include href="accounts-users-domains.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="LDAPserver-for-user-authentication.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+    
 </section>

@@ -23,6 +23,7 @@
 -->
 
 <section id="security-groups">
+    <title>Security Groups</title>
     <xi:include href="add-security-group.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="enable-security-groups.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
     <xi:include href="add-ingress-egress-rules.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
