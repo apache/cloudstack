@@ -28,6 +28,7 @@ import java.util.UUID;
 
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
+import javax.persistence.Table;
 
 import org.apache.log4j.Logger;
 
@@ -105,6 +106,7 @@ import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.servlet.ConsoleProxyServlet;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolVO;
@@ -1515,14 +1517,17 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         //check if there is a default service offering configured
         String cpvmSrvcOffIdStr = configs.get(Config.ConsoleProxyServiceOffering.key()); 
         if (cpvmSrvcOffIdStr != null) {
-            Long cpvmSrvcOffId = Long.parseLong(cpvmSrvcOffIdStr);
-            _serviceOffering = _offeringDao.findById(cpvmSrvcOffId);
+            
+            Long cpvmSrvcOffId = _identityDao.getIdentityId(DiskOfferingVO.class.getAnnotation(Table.class).name(),cpvmSrvcOffIdStr);
+            if(cpvmSrvcOffId != null)
+                _serviceOffering = _offeringDao.findById(cpvmSrvcOffId);
             if (_serviceOffering == null || !_serviceOffering.getSystemUse()) {
-                String msg = "Can't find system service offering id=" + cpvmSrvcOffId + " for console proxy vm";
+                String msg = "Can't find system service offering specified by global config, id=" + cpvmSrvcOffId + " for console proxy vm";
                 s_logger.error(msg);
-                throw new ConfigurationException(msg);
             }
-        } else {
+        } 
+
+        if(_serviceOffering == null){
         	int ramSize = NumbersUtil.parseInt(_configDao.getValue("console.ram.size"), DEFAULT_PROXY_VM_RAMSIZE);
         	int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("console.cpu.mhz"), DEFAULT_PROXY_VM_CPUMHZ);
             _serviceOffering = new ServiceOfferingVO("System Offering For Console Proxy", 1, ramSize, cpuFreq, 0, 0, false, null, useLocalStorage, true, null, true, VirtualMachine.Type.ConsoleProxy, true);

@@ -345,7 +345,7 @@ public enum Config {
     EIPWithMultipleNetScalersEnabled("Advanced", ManagementServer.class, Boolean.class, "eip.use.multiple.netscalers", "false", "Should be set to true, if there will be multiple NetScaler devices providing EIP service in a zone", null),
 	CustomDiskOfferingMinSize("Advanced", ManagementServer.class, Long.class, "custom.diskoffering.size.min", "1", "Minimum size in GB for custom disk offering", null),
 	CustomDiskOfferingMaxSize("Advanced", ManagementServer.class, Long.class, "custom.diskoffering.size.max", "1024", "Maximum size in GB for custom disk offering", null),
-	ConsoleProxyServiceOffering("Advanced", ManagementServer.class, Long.class, "consoleproxy.service.offering", null, "Service offering used by console proxy; if NULL - system offering will be used", null),
+	ConsoleProxyServiceOffering("Advanced", ManagementServer.class, Long.class, "consoleproxy.service.offering", null, "Uuid of the service offering used by console proxy; if NULL - system offering will be used", null),
 	SecondaryStorageServiceOffering("Advanced", ManagementServer.class, Long.class, "secstorage.service.offering", null, "Service offering used by secondary storage; if NULL - system offering will be used", null),
 	HaTag("Advanced", ManagementServer.class, String.class, "ha.tag", null, "HA tag defining that the host marked with this tag can be used for HA purposes only", null),
 	VpcCleanupInterval("Advanced", ManagementServer.class, Integer.class, "vpc.cleanup.interval", "3600", "The interval (in seconds) between cleanup for Inactive VPCs", null),
