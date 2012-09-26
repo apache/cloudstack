@@ -111,8 +111,28 @@ LOCALIZATION
 
 ----------------------------------
 
-Localized versions of the documentation files can be stored in appropriately named subdirectories parallel to en-US. The language code names to use for these directories are listed in Publican documentation, http://jfearn.fedorapeople.org/en-US/Publican/2.7/html/Users_Guide/appe-Users_Guide-Language_codes.html.
+Localized versions of the documentation files can be stored in appropriately 
+named subdirectories parallel to en-US. The language code names to use for 
+these directories are listed in Publican documentation, 
+http://jfearn.fedorapeople.org/en-US/Publican/2.7/html/Users_Guide/appe-Users_Guide-Language_codes.html.
 For example, Japanese XML files would be stored in the docs/ja-JP directory.
+
+Localization currently happens using Transifex and you can find the strings 
+to be translated at this location: 
+https://www.transifex.com/projects/p/ACS_DOCS/
+
+In preparation for l10n, authors and docs folks must take not of a number of
+things. 
+All .xml files must contain a translatable string. <xi:include> tags are not enough. 
+All new .xml files must have a corresponding entry in docs/.tx/config 
+Filenames should be less than 50 characters long. 
+
+To generate new POT files and upload source do the following: 
+publican update_pot --config=./publican-all.cfg
+tx push -s 
+
+To receive translated files from publican, run the following command:
+tx pull 
 
 
 ----------------------------------
