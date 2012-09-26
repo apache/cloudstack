@@ -49,6 +49,32 @@
 						}
 						*/
           },
+					advSearchFields: {
+					  name: { label: 'Name' },
+						zoneid: { 
+						  label: 'Zone',							
+              select: function(args) {							  					
+								$.ajax({
+									url: createURL('listZones'),
+									data: {
+									  listAll: true
+									},
+									success: function(json) {									  
+										var zones = json.listzonesresponse.zone;
+
+										args.response.success({
+											data: $.map(zones, function(zone) {
+												return {
+													id: zone.id,
+													description: zone.name
+												};
+											})
+										});
+									}
+								});
+							}						
+						}
+					},
 
           // List view actions
           actions: {
@@ -270,11 +296,12 @@
           },
 
           dataProvider: function(args) {
-            var array1 = [];
+            var array1 = [];						
             if(args.filterBy != null) {					
 						  if(args.filterBy.advSearch != null && typeof(args.filterBy.advSearch) == "object") {
 							  for(var key in args.filterBy.advSearch) {
-								  array1.push("&" + key + "=" + args.filterBy.advSearch[key]);
+								  if(args.filterBy.advSearch[key] != null && args.filterBy.advSearch[key].length > 0)
+								    array1.push("&" + key + "=" + args.filterBy.advSearch[key]);
 								}
 							}						
               else if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {

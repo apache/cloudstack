@@ -1390,13 +1390,11 @@
       );
     };
 				
-    $listView.find('.button.search#advanced_search').bind('click', function(event) {			
+    $listView.find('.button.search#advanced_search').bind('click', function(event) {	
 			cloudStack.dialog.createForm({
 				form: {
 					title: 'Advanced Search',					
-					fields: {
-            name: { label: 'Name' }
-					}
+					fields: listViewData.advSearchFields
 				},
 				after: function(args) {				  
 					advancedSearch(args);					
