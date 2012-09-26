@@ -2,13 +2,13 @@ Source: cloud
 Section: libs
 Priority: extra
 Maintainer: Wido den Hollander <wido@widodh.nl>
-Build-Depends: debhelper (>= 7), openjdk-6-jdk, tomcat6, libws-commons-util-java, libcommons-dbcp-java, libcommons-collections-java, libcommons-httpclient-java, libservlet2.5-java, genisoimage, python-mysqldb, maven3 | maven (>= 3), liblog4j1.2-java (>= 1.2.16)
+Build-Depends: debhelper (>= 7), openjdk-6-jdk, tomcat6, libws-commons-util-java, libcommons-codec-java (>= 1.5), libcommons-httpclient-java (>= 3.1), libservlet2.5-java, genisoimage, python-mysqldb, maven3 | maven (>= 3), liblog4j1.2-java (>= 1.2.16)
 Standards-Version: 3.8.1
 Homepage: http://www.cloudstack.org/
 
 Package: cloud-deps
 Architecture: any
-Depends: openjdk-6-jre, libcommons-discovery-java (>= 0.5), libcommons-dbcp-java (>= 1.4), libcommons-pool-java (>= 1.5.6), libcommons-codec-java (>= 1.5)
+Depends: openjdk-6-jre, libcommons-codec-java (>= 1.5), libcommons-httpclient-java (>= 3.1)
 Description: CloudStack library dependencies
  This package contains a number of third-party dependencies
  not shipped by distributions, required to run the CloudStack
@@ -24,7 +24,7 @@ Description: CloudStack agent library dependencies
 
 Package: cloud-utils
 Architecture: any
-Depends: openjdk-6-jre, python, libcglib-java (>= 2.2.2), libjsch-java (>= 0.1.42), libbackport-util-concurrent-java (>= 3.1)
+Depends: openjdk-6-jre, python, libcglib-java (>= 2.2.2), libjsch-java (>= 0.1.42), libbackport-util-concurrent-java (>= 3.1), libcommons-dbcp-java (>= 1.4), libcommons-pool-java (>= 1.5.6)
 Description: CloudStack utility library
  The CloudStack utility libraries provide a set of Java classes used
  in the CloudStack environment.
@@ -84,7 +84,7 @@ Description: CloudStack Python library
 
 Package: cloud-agent-libs
 Architecture: any
-Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version}), libcommons-httpclient-java, libcommons-collections-java, libcommons-dbcp-java, libcommons-pool-java, libcommons-logging-java
+Depends: openjdk-6-jre, cloud-utils (= ${source:Version}), cloud-core (= ${source:Version}), cloud-agent-deps (= ${source:Version})
 Description: CloudStack agent libraries
  The CloudStack agent libraries are used by the Cloud Agent.
 
