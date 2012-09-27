@@ -352,7 +352,9 @@
               $.ajax({
                 url: createURL("listAccounts&domainid=" + domainObj.id),
                 async: false,
-                dataType: "json",
+                data: {
+								  details: 'min'
+								},
                 success: function(json) {
                   var items = json.listaccountsresponse.account;
                   var total;
