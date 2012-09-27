@@ -22,15 +22,14 @@
 # set -x
 
 usage() {
-  printf "Usage: %s: -o <op>(add | delete) -v <vlan id> -p <pif> \n" 
+  printf "Usage: %s: -o <op>(add | delete) -v <vlan id> -p <pif> -b <bridge name>\n" 
 }
 
-VIRBR=cloudVirBr
 addVlan() {
 	local vlanId=$1
 	local pif=$2
 	local vlanDev=$pif.$vlanId
-	local vlanBr=$VIRBR$vlanId
+	local vlanBr=$3
     
     vconfig set_name_type DEV_PLUS_VID_NO_PAD	
 
@@ -99,7 +98,7 @@ deleteVlan() {
 	local vlanId=$1
 	local pif=$2
 	local vlanDev=$pif.$vlanId
-	local vlanBr=$VIRBR$vlanId
+        local vlanBr=$3
 
 	vconfig rem $vlanDev > /dev/null
 	
@@ -132,7 +131,7 @@ op=
 vlanId=
 option=$@
 
-while getopts 'o:v:p:' OPTION
+while getopts 'o:v:p:b:' OPTION
 do
   case $OPTION in
   o)	oflag=1
@@ -144,6 +143,9 @@ do
   p)    pflag=1
 		pif="$OPTARG"
 		;;
+  b)    bflag=1
+                brName="$OPTARG"
+                ;;
   ?)	usage
 		exit 2
 		;;
@@ -151,7 +153,7 @@ do
 done
 
 # Check that all arguments were passed in
-if [ "$oflag$vflag$pflag" != "111" ]
+if [ "$oflag$vflag$pflag$bflag" != "1111" ]
 then
 	usage
 	exit 2
@@ -167,7 +169,7 @@ fi
 if [ "$op" == "add" ]
 then
 	# Add the vlan
-	addVlan $vlanId $pif
+	addVlan $vlanId $pif $brName
 	
 	# If the add fails then return failure
 	if [ $? -gt 0 ]
@@ -178,22 +180,9 @@ else
 	if [ "$op" == "delete" ]
 	then
 		# Delete the vlan
-		deleteVlan $vlanId $pif
+		deleteVlan $vlanId $pif $brName
 	
 		# Always exit with success
 		exit 0
 	fi
 fi
-
-
-
-
-
-
-
-
-
-
-
-
-
