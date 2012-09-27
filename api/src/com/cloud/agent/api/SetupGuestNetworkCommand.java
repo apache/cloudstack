@@ -45,7 +45,7 @@ public class SetupGuestNetworkCommand extends NetworkElementCommand{
         return networkDomain;
     }
 
-    boolean isAdd() {
+    public boolean isAdd() {
        return add;
     }
 
