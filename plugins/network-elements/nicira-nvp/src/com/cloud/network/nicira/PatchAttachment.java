@@ -19,34 +19,21 @@ package com.cloud.network.nicira;
 /**
  * 
  */
-public class L3GatewayAttachment extends Attachment {
-	private String l3_gateway_service_uuid;
-	private String type = "L3GatewayAttachment";
-	private Long vlan_id;
+public class PatchAttachment extends Attachment {
+	private final String type = "PatchAttachment";
+	private String peer_port_uuid;
 	
-	public L3GatewayAttachment(String l3_gateway_service_uuid) {
-		this.l3_gateway_service_uuid = l3_gateway_service_uuid;
-	}
-	
-	public L3GatewayAttachment(String l3_gateway_service_uuid, long vlan_id) {
-		this.l3_gateway_service_uuid = l3_gateway_service_uuid;
-		this.vlan_id = vlan_id;
-	}
-	
-	public String getL3GatewayServiceUuid() {
-		return l3_gateway_service_uuid;
-	}
-	
-	public void setL3GatewayServiceUuid(String l3_gateway_service_uuid) {
-		this.l3_gateway_service_uuid = l3_gateway_service_uuid;
-	}
-	
-	public long getVlanId() {
-		return vlan_id;
-	}
-	
-	public void setVlanId(long vlan_id) {
-		this.vlan_id = vlan_id;
+	public PatchAttachment(String peerPortUuid) {
+		this.peer_port_uuid = peerPortUuid;
 	}
 
+	public String getPeerPortUuid() {
+		return peer_port_uuid;
+	}
+
+	public void setPeerPortUuid(String peerPortUuid) {
+		this.peer_port_uuid = peerPortUuid;
+	}
+	
+	
 }

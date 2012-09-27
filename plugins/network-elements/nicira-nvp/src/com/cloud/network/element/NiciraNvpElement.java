@@ -47,6 +47,8 @@ import javax.naming.ConfigurationException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.CreateLogicalRouterAnswer;
+import com.cloud.agent.api.CreateLogicalRouterCommand;
 import com.cloud.agent.api.CreateLogicalSwitchPortAnswer;
 import com.cloud.agent.api.CreateLogicalSwitchPortCommand;
 import com.cloud.agent.api.DeleteLogicalSwitchPortAnswer;
@@ -62,6 +64,9 @@ import com.cloud.api.commands.DeleteNiciraNvpDeviceCmd;
 import com.cloud.api.commands.ListNiciraNvpDeviceNetworksCmd;
 import com.cloud.api.commands.ListNiciraNvpDevicesCmd;
 import com.cloud.api.response.NiciraNvpDeviceResponse;
+import com.cloud.configuration.ConfigurationManager;
+import com.cloud.dc.Vlan;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -80,11 +85,15 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkVO;
 import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.network.NetworkManager;
 import com.cloud.network.NiciraNvpDeviceVO;
 import com.cloud.network.NiciraNvpNicMappingVO;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
+import com.cloud.network.PublicIpAddress;
+import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NiciraNvpDao;
 import com.cloud.network.dao.NiciraNvpNicMappingDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -98,11 +107,13 @@ import com.cloud.resource.ResourceState;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.Inject;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
@@ -111,7 +122,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 
 @Local(value = NetworkElement.class)
-public class NiciraNvpElement extends AdapterBase implements ConnectivityProvider, NiciraNvpElementService, ResourceStateAdapter {
+public class NiciraNvpElement extends AdapterBase implements ConnectivityProvider, SourceNatServiceProvider, NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
     private static final Logger s_logger = Logger.getLogger(NiciraNvpElement.class);
     
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
@@ -137,6 +148,14 @@ public class NiciraNvpElement extends AdapterBase implements ConnectivityProvide
     NiciraNvpNicMappingDao _niciraNvpNicMappingDao;
     @Inject
     NetworkDao _networkDao;
+    @Inject
+    NetworkManager _networkManager;
+    @Inject
+    ConfigurationManager _configMgr;
+    @Inject
+    NetworkServiceMapDao _ntwkSrvcDao;
+    @Inject
+    VlanDao _vlanDao;
     
     @Override
     public Map<Service, Map<Capability, String>> getCapabilities() {
@@ -148,12 +167,23 @@ public class NiciraNvpElement extends AdapterBase implements ConnectivityProvide
         return Provider.NiciraNvp;
     }
     
-    private boolean canHandle(Network network) {
+    private boolean canHandle(Network network, Service service) {
+    	s_logger.debug("Checking if NiciraNvpElement can handle service " + service.getName() + " on network " + network.getDisplayText());
         if (network.getBroadcastDomainType() != BroadcastDomainType.Lswitch) {
             return false;
         }
         
-        return true;        
+        if (!_networkManager.isProviderForNetwork(getProvider(), network.getId())) {
+        	s_logger.debug("NiciraNvpElement is not a provider for network " + network.getDisplayText());
+        	return false;
+        }
+        
+        if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), service, Network.Provider.NiciraNvp)) {
+        	s_logger.debug("NiciraNvpElement can't provide the " + service.getName() + " service on network " + network.getDisplayText());
+        	return false;
+        }
+        
+        return true;
     }
     
     @Override
@@ -169,12 +199,79 @@ public class NiciraNvpElement extends AdapterBase implements ConnectivityProvide
             DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, ResourceUnavailableException,
             InsufficientCapacityException {
+    	s_logger.debug("entering NiciraNvpElement implement function for network " 
+            + network.getDisplayText() + " (state " + network.getState() + ")");
         
-        if (!canHandle(network)) {
+        if (!canHandle(network, Service.Connectivity)) {
             return false;
         }
         
-        return true;
+        if (network.getBroadcastUri() == null) {
+            s_logger.error("Nic has no broadcast Uri with the LSwitch Uuid");
+            return false;
+        }
+        
+        List<NiciraNvpDeviceVO> devices = _niciraNvpDao.listByPhysicalNetwork(network.getPhysicalNetworkId());
+        if (devices.isEmpty()) {
+            s_logger.error("No NiciraNvp Controller on physical network " + network.getPhysicalNetworkId());
+            return false;
+        }
+        NiciraNvpDeviceVO niciraNvpDevice = devices.get(0);
+        HostVO niciraNvpHost = _hostDao.findById(niciraNvpDevice.getHostId());
+        _hostDao.loadDetails(niciraNvpHost);
+        
+        Account owner = context.getAccount();
+        
+		/**
+		 * Lock the network as we might need to do multiple operations that
+		 * should be done only once.
+		 */
+		Network lock = _networkDao.acquireInLockTable(network.getId(),
+				_networkManager.getNetworkLockTimeout());
+		if (lock == null) {
+			throw new ConcurrentOperationException("Unable to lock network "
+					+ network.getId());
+		}
+		try {
+			if (_networkManager.isProviderSupportServiceInNetwork(
+					network.getId(), Service.SourceNat, Provider.NiciraNvp)) {
+				s_logger.debug("Apparently we are supposed to provide SourceNat on this network");
+				
+				PublicIp sourceNatIp = _networkManager.assignSourceNatIpAddressToGuestNetwork(owner, network);
+				String publicCidr = sourceNatIp.getAddress().addr() + "/" + NetUtils.getCidrSize(sourceNatIp.getVlanNetmask());
+				String internalCidr = network.getGateway() + "/" + network.getCidr().split("/")[1];
+				long vlanid = (Vlan.UNTAGGED.equals(sourceNatIp.getVlanTag())) ? 0 : Long.parseLong(sourceNatIp.getVlanTag());
+				
+				CreateLogicalRouterCommand cmd = new CreateLogicalRouterCommand(
+						niciraNvpHost.getDetail("gatewayserviceuuid"), 
+						vlanid, 
+						network.getBroadcastUri().getSchemeSpecificPart(),
+						"router-" + network.getDisplayText(),
+						publicCidr,
+						sourceNatIp.getGateway(),
+						internalCidr,
+						context.getDomain().getName() + "-" + context.getAccount().getAccountName());
+				CreateLogicalRouterAnswer answer = 
+						(CreateLogicalRouterAnswer) _agentMgr.easySend(niciraNvpHost.getId(), cmd);
+				if (answer.getResult() == false) {
+					s_logger.error("Failed to create Logical Router for network " + network.getDisplayText());
+					return false;
+				}
+				
+			}
+
+
+		} finally {
+			if (lock != null) {
+				_networkDao.releaseFromLockTable(lock.getId());
+				if (s_logger.isDebugEnabled()) {
+					s_logger.debug("Lock is released for network id "
+							+ lock.getId() + " as a part of router startup in "
+							+ dest);
+				}
+			}
+		}
+		return true;
     }
 
     @Override
@@ -184,7 +281,7 @@ public class NiciraNvpElement extends AdapterBase implements ConnectivityProvide
             throws ConcurrentOperationException, ResourceUnavailableException,
             InsufficientCapacityException {
         
-        if (!canHandle(network)) {
+        if (!canHandle(network, Service.Connectivity)) {
             return false;
         }
 
@@ -244,7 +341,7 @@ public class NiciraNvpElement extends AdapterBase implements ConnectivityProvide
             ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException {
 
-        if (!canHandle(network)) {
+        if (!canHandle(network, Service.Connectivity)) {
             return false;
         }
 
@@ -286,7 +383,7 @@ public class NiciraNvpElement extends AdapterBase implements ConnectivityProvide
     public boolean shutdown(Network network, ReservationContext context,
             boolean cleanup) throws ConcurrentOperationException,
             ResourceUnavailableException {
-        if (!canHandle(network)) {
+        if (!canHandle(network, Service.Connectivity)) {
             return false;
         }
 
@@ -296,7 +393,7 @@ public class NiciraNvpElement extends AdapterBase implements ConnectivityProvide
     @Override
     public boolean destroy(Network network)
             throws ConcurrentOperationException, ResourceUnavailableException {
-        if (!canHandle(network)) {
+        if (!canHandle(network, Service.Connectivity)) {
             return false;
         }
 
@@ -318,18 +415,34 @@ public class NiciraNvpElement extends AdapterBase implements ConnectivityProvide
 
     @Override
     public boolean canEnableIndividualServices() {
-        return false;
+        return true;
     }
 
     @Override
     public boolean verifyServicesCombination(Set<Service> services) {
-        return true;
+    	// This element can only function in a Nicra Nvp based
+    	// SDN network, so Connectivity needs to be present here
+    	if (services.contains(Service.Connectivity)) {
+    		return true;
+    	}
+    	s_logger.debug("Unable to provide services without Connectivity service enabled for this element");
+        return false;
     }
 
     private static Map<Service, Map<Capability, String>> setCapabilities() {
         Map<Service, Map<Capability, String>> capabilities = new HashMap<Service, Map<Capability, String>>();
 
+        // Basic L2 SDN provisioning
         capabilities.put(Service.Connectivity, null);
+        
+        // L3 Support : SourceNat
+        capabilities.put(Service.Gateway, null);
+        Map<Capability, String> sourceNatCapabilities = new HashMap<Capability, String>();
+        sourceNatCapabilities.put(Capability.SupportedSourceNatTypes, "peraccount");
+        sourceNatCapabilities.put(Capability.RedundantRouter, "true");
+        capabilities.put(Service.SourceNat, sourceNatCapabilities);
+        
+
         return capabilities;
     }
 
@@ -539,5 +652,29 @@ public class NiciraNvpElement extends AdapterBase implements ConnectivityProvide
         }
         return new DeleteHostAnswer(true);
     }
+
+    /**
+     * From interface SourceNatServiceProvider
+     */
+	@Override
+	public IpDeployer getIpDeployer(Network network) {
+		return this;
+	}
+
+	/**
+	 * From interface IpDeployer
+	 * @param network
+	 * @param ipAddress
+	 * @param services
+	 * @return
+	 * @throws ResourceUnavailableException
+	 */
+	@Override
+	public boolean applyIps(Network network,
+			List<? extends PublicIpAddress> ipAddress, Set<Service> services)
+			throws ResourceUnavailableException {
+		// TODO Auto-generated method stub
+		return false;
+	}
 
 }

@@ -14,25 +14,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.nicira;
+package com.cloud.agent.api;
 
 /**
  * 
  */
-public class RouterNextHop {
-	private String gateway_ip_address;
-	private String type = "RouterNextHop";
-	
-	public RouterNextHop(String gatewayIpAddress) {
-		this.gateway_ip_address = gatewayIpAddress;
-	}
-		
-	public String getGatewayIpAddress() {
-		return gateway_ip_address;
-	}
-	
-	public void setGatewayIpAddress(String gateway_ip_address) {
-		this.gateway_ip_address = gateway_ip_address;
-	}
-		
+public class CreateLogicalRouterAnswer extends Answer {
+
+    private String _logicalRouterUuid;
+
+    public CreateLogicalRouterAnswer(Command command, boolean success,
+            String details, String logicalRouterUuid) {
+        super(command, success, details);
+        this._logicalRouterUuid = logicalRouterUuid;
+    }
+    
+    public CreateLogicalRouterAnswer(Command command, Exception e) {
+        super(command, e);
+    }
+
+    public String getLogicalSwitchUuid() {
+        return _logicalRouterUuid;
+    }
+
 }
