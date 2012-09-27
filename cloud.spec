@@ -387,6 +387,10 @@ else
     /sbin/service %{name}-agent condrestart >/dev/null 2>&1 || true
 fi
 
+if [ -x /etc/sysconfig/modules/kvm.modules ] ; then
+    /bin/sh /etc/sysconfig/modules/kvm.modules
+fi
+
 %post scripts
 rm -fr %{_libdir}/%{name}/agent
 ln -f -s %{_libdir}/%{name}/common %{_libdir}/%{name}/agent
