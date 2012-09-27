@@ -178,7 +178,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
         for (Counter counter : counters) {
             if (!supportedCounters.contains(counter.getSource().name().toString())) {
                 throw new InvalidParameterException("AutoScale counter with source='" + counter.getSource() + "' is not supported " +
-                        "in the network where lb is configured");
+                "in the network where lb is configured");
             }
         }
     }
@@ -315,6 +315,9 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
 
         // validations
         HashMap<String, String> deployParams = cmd.getDeployParamMap();
+        if(deployParams.containsKey("networks") && deployParams.get("networks").length() > 0) {
+            throw new InvalidParameterValueException("'networks' is not a valid parameter, network for an AutoScaled VM is chosen automatically. An autoscaled VM is deployed in the loadbalancer's network");
+        }
         /*
          * Just for making sure the values are right in other deploy params.
          * For ex. if projectId is given as a string instead of an long value, this
@@ -566,7 +569,7 @@ public class AutoScaleManagerImpl<Type> implements AutoScaleManager, AutoScaleSe
             Account caller = UserContext.current().getCaller();
 
             Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
-                    ListProjectResourcesCriteria>(domainId, isRecursive, null);
+            ListProjectResourcesCriteria>(domainId, isRecursive, null);
             _accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject,
                     listAll, false);
             domainId = domainIdRecursiveListProject.first();

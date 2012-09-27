@@ -49,7 +49,7 @@ public class LoadBalancerTO {
     final static int MAX_STICKINESS_POLICIES = 1;
 
     public LoadBalancerTO(String uuid, String srcIp, int srcPort, String protocol, String algorithm, boolean revoked, boolean alreadyAdded, List<LbDestination> destinations) {
-        if(destinations == null) { // for autoscaleconfig destinations will be null;
+        if (destinations == null) { // for autoscaleconfig destinations will be null;
             destinations = new ArrayList<LbDestination>();
         }
         this.uuid = uuid;
@@ -185,7 +185,7 @@ public class LoadBalancerTO {
             return alreadyAdded;
         }
     }
-    public static class CounterTO implements Serializable{
+    public static class CounterTO implements Serializable {
         private final String name;
         private final String source;
         private final String value;
@@ -209,7 +209,7 @@ public class LoadBalancerTO {
         }
     }
 
-    public static class ConditionTO implements Serializable{
+    public static class ConditionTO implements Serializable {
         private final long threshold;
         private final String relationalOperator;
         private final CounterTO counter;
@@ -234,7 +234,7 @@ public class LoadBalancerTO {
         }
     }
 
-    public static class AutoScalePolicyTO implements Serializable{
+    public static class AutoScalePolicyTO implements Serializable {
         private final long id;
         private final int duration;
         private final int quietTime;
@@ -276,7 +276,7 @@ public class LoadBalancerTO {
         }
     }
 
-    public static class AutoScaleVmProfileTO implements Serializable{
+    public static class AutoScaleVmProfileTO implements Serializable {
         private final String zoneId;
         private final String domainId;
         private final String serviceOfferingId;
@@ -288,9 +288,10 @@ public class LoadBalancerTO {
         private final String cloudStackApiUrl;
         private final String autoScaleUserApiKey;
         private final String autoScaleUserSecretKey;
+        private final String networkId;
 
-        public AutoScaleVmProfileTO(String zoneId, String domainId, String cloudStackApiUrl, String autoScaleUserApiKey, String autoScaleUserSecretKey, String serviceOfferingId, String templateId,
-                String otherDeployParams, String snmpCommunity, Integer snmpPort, Integer destroyVmGraceperiod) {
+        public AutoScaleVmProfileTO(String zoneId, String domainId, String cloudStackApiUrl, String autoScaleUserApiKey, String autoScaleUserSecretKey, String serviceOfferingId,
+                String templateId, String networkId, String otherDeployParams, String snmpCommunity, Integer snmpPort, Integer destroyVmGraceperiod) {
             this.zoneId = zoneId;
             this.domainId = domainId;
             this.serviceOfferingId = serviceOfferingId;
@@ -302,6 +303,7 @@ public class LoadBalancerTO {
             this.cloudStackApiUrl = cloudStackApiUrl;
             this.autoScaleUserApiKey = autoScaleUserApiKey;
             this.autoScaleUserSecretKey = autoScaleUserSecretKey;
+            this.networkId = networkId;
         }
 
         public String getZoneId() {
@@ -347,9 +349,13 @@ public class LoadBalancerTO {
         public String getAutoScaleUserSecretKey() {
             return autoScaleUserSecretKey;
         }
+
+        public String getNetworkId() {
+            return networkId;
+        }
     }
 
-    public static class AutoScaleVmGroupTO implements Serializable{
+    public static class AutoScaleVmGroupTO implements Serializable {
         private final int minMembers;
         private final int maxMembers;
         private final int memberPort;
@@ -401,7 +407,7 @@ public class LoadBalancerTO {
 
         public String getCurrentState() {
             return currentState;
-    }
+        }
     }
 
     public void setAutoScaleVmGroup(LbAutoScaleVmGroup lbAutoScaleVmGroup)
@@ -428,8 +434,9 @@ public class LoadBalancerTO {
 
         AutoScaleVmProfileTO autoScaleVmProfileTO = new AutoScaleVmProfileTO(lbAutoScaleVmProfile.getZoneId(), lbAutoScaleVmProfile.getDomainId(),
                 lbAutoScaleVmProfile.getCsUrl(), lbAutoScaleVmProfile.getAutoScaleUserApiKey(), lbAutoScaleVmProfile.getAutoScaleUserSecretKey(),
-                lbAutoScaleVmProfile.getServiceOfferingId(), lbAutoScaleVmProfile.getTemplateId(), autoScaleVmProfile.getOtherDeployParams(),
-                autoScaleVmProfile.getSnmpCommunity(), autoScaleVmProfile.getSnmpPort(), autoScaleVmProfile.getDestroyVmGraceperiod());
+                lbAutoScaleVmProfile.getServiceOfferingId(), lbAutoScaleVmProfile.getTemplateId(), lbAutoScaleVmProfile.getNetworkId(),
+                autoScaleVmProfile.getOtherDeployParams(), autoScaleVmProfile.getSnmpCommunity(), autoScaleVmProfile.getSnmpPort(),
+                autoScaleVmProfile.getDestroyVmGraceperiod());
 
         AutoScaleVmGroup autoScaleVmGroup = lbAutoScaleVmGroup.getVmGroup();
         autoScaleVmGroupTO = new AutoScaleVmGroupTO(autoScaleVmGroup.getMinMembers(), autoScaleVmGroup.getMaxMembers(), autoScaleVmGroup.getMemberPort(),

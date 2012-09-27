@@ -42,6 +42,8 @@ import com.cloud.api.response.ServiceResponse;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.domain.dao.DomainDao;
@@ -249,7 +251,7 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         }
         return null;
     }
-    private LbAutoScaleVmGroup getLbAutoScaleVmGroup(AutoScaleVmGroup vmGroup, String currentState) {
+    private LbAutoScaleVmGroup getLbAutoScaleVmGroup(AutoScaleVmGroupVO vmGroup, String currentState, long networkId) {
         List<AutoScaleVmGroupPolicyMapVO> vmGroupPolicyMapList = _autoScaleVmGroupPolicyMapDao.listByVmGroupId(vmGroup.getId());
         List<LbAutoScalePolicy> autoScalePolicies = new ArrayList<LbAutoScalePolicy>();
         for (AutoScaleVmGroupPolicyMapVO vmGroupPolicyMap : vmGroupPolicyMapList) {
@@ -273,31 +275,46 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         String domainId = _domainDao.findById(autoScaleVmProfile.getDomainId()).getUuid();
         String serviceOfferingId = _offeringsDao.findById(autoScaleVmProfile.getServiceOfferingId()).getUuid();
         String templateId = _templateDao.findById(autoScaleVmProfile.getTemplateId()).getUuid();
+        String lbNetworkUuid = null;
 
-        if(apiKey == null) {
+        DataCenter zone = _configMgr.getZone(vmGroup.getZoneId());
+        if (zone == null) {
+            // This should never happen, but still a cautious check
+            s_logger.warn("Unable to find zone while packaging AutoScale Vm Group, zoneid: " + vmGroup.getZoneId());
+            throw new InvalidParameterValueException("Unable to find zone");
+        } else {
+            if (zone.getNetworkType() == NetworkType.Advanced) {
+                NetworkVO lbNetwork = _networkDao.findById(networkId);
+                lbNetworkUuid = lbNetwork.getUuid();
+            }
+        }
+
+
+        if (apiKey == null) {
             throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
         }
 
-        if(secretKey == null) {
+        if (secretKey == null) {
             throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
         }
 
-        if(csUrl == null || csUrl.contains("localhost")) {
+        if (csUrl == null || csUrl.contains("localhost")) {
             throw new InvalidParameterValueException("Global setting endpointe.url has to be set to the Management Server's API end point");
         }
 
-        LbAutoScaleVmProfile lbAutoScaleVmProfile = new LbAutoScaleVmProfile(autoScaleVmProfile, apiKey, secretKey, csUrl, zoneId, domainId, serviceOfferingId, templateId);
+
+        LbAutoScaleVmProfile lbAutoScaleVmProfile = new LbAutoScaleVmProfile(autoScaleVmProfile, apiKey, secretKey, csUrl, zoneId, domainId, serviceOfferingId, templateId, lbNetworkUuid);
         return new LbAutoScaleVmGroup(vmGroup, autoScalePolicies, lbAutoScaleVmProfile, currentState);
     }
 
     private boolean applyAutoScaleConfig(LoadBalancerVO lb, AutoScaleVmGroupVO vmGroup, String currentState) throws ResourceUnavailableException {
-        LbAutoScaleVmGroup lbAutoScaleVmGroup = getLbAutoScaleVmGroup(vmGroup, currentState);
+        LbAutoScaleVmGroup lbAutoScaleVmGroup = getLbAutoScaleVmGroup(vmGroup, currentState, lb.getNetworkId());
         /* Regular config like destinations need not be packed for applying autoscale config as of today.*/
         LoadBalancingRule rule = new LoadBalancingRule(lb, null, null);
         rule.setAutoScaleVmGroup(lbAutoScaleVmGroup);
 
         if (!isRollBackAllowedForProvider(lb)) {
-            // this is for Netscalar type of devices. if their is failure the db entries will be rollbacked.
+            // this is for Netscaler type of devices. if their is failure the db entries will be rollbacked.
             return false;
         }
 
@@ -336,11 +353,11 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             success = applyAutoScaleConfig(loadBalancer, vmGroup, currentState);
         } catch (ResourceUnavailableException e) {
             s_logger.warn("Unable to configure AutoScaleVmGroup to the lb rule: " + loadBalancer.getId() + " because resource is unavaliable:", e);
-                if (isRollBackAllowedForProvider(loadBalancer)) {
-                    loadBalancer.setState(backupState);
-                    _lbDao.persist(loadBalancer);
-                    s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + " lb state rolback while creating AutoscaleVmGroup");
-                }
+            if (isRollBackAllowedForProvider(loadBalancer)) {
+                loadBalancer.setState(backupState);
+                _lbDao.persist(loadBalancer);
+                s_logger.debug("LB Rollback rule id: " + loadBalancer.getId() + " lb state rolback while creating AutoscaleVmGroup");
+            }
             throw e;
         } finally {
             if (!success) {
@@ -630,8 +647,9 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
         }
         txn.commit();
         if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancerId)) {
-            // Nothing needs to be done for an autoscaled loadbalancer,
-            // just persist and proceed.
+            // For autoscaled loadbalancer, the rules need not be applied,
+            // meaning the call need not reach the resource layer.
+            // We can consider the job done.
             return true;
         }
         boolean success = false;
@@ -700,8 +718,10 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
             }
 
             if (_autoScaleVmGroupDao.isAutoScaleLoadBalancer(loadBalancerId)) {
-                // Nothing needs to be done for an autoscaled loadbalancer,
-                // just persist and proceed.
+                // For autoscaled loadbalancer, the rules need not be applied,
+                // meaning the call need not reach the resource layer.
+                // We can consider the job done and only need to remove the rules in DB
+                _lb2VmMapDao.remove(loadBalancer.getId(), instanceIds, null);
                 return true;
             }
 
@@ -839,10 +859,10 @@ public class LoadBalancingRulesManagerImpl<Type> implements LoadBalancingRulesMa
 
         if (apply) {
             try {
-                    if (!applyLoadBalancerConfig(loadBalancerId)) {
-                        s_logger.warn("Unable to apply the load balancer config");
-                        return false;
-                    }
+                if (!applyLoadBalancerConfig(loadBalancerId)) {
+                    s_logger.warn("Unable to apply the load balancer config");
+                    return false;
+                }
             } catch (ResourceUnavailableException e) {
                 if (rollBack && isRollBackAllowedForProvider(lb)) {
                     if (backupMaps != null) {
