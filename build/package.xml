@@ -156,7 +156,7 @@
     </zip>
   </target>
 
-  <target name="build-all" depends="build-opensource, build-ui, build-war-oss, compile-testclient, compile-usage, build-awsapi">
+  <target name="build-all" depends="build-opensource, build-plugins, build-ui, build-war-oss, compile-testclient, compile-usage, build-awsapi">
   </target>
 
   <target name="build-all-with-simulator" depends="build-all, compile-agent-simulator">
@@ -226,6 +226,7 @@
         <include name="${api.jar}" />
         <include name="${vmware-base.jar}" />
       </zipfileset>
+      <zipfileset dir="${console-proxy.dist.dir}" filemode="555"/>
       <zipfileset dir="${scripts.dir}/storage/secondary" prefix="scripts/storage/secondary" filemode="555">
         <exclude name="**/.project" />
         <exclude name="**/.classpath" />

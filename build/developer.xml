@@ -36,8 +36,6 @@
   <property name="unittest.target.dir" location="${unittest.dir}/classes"/>
   <property name="unittest.jar.dir" location="${unittest.dir}/jar"/>
   <property name="ovm.dir" location="${base.dir}/ovm" />
-  <property name="ovm-scripts.dir" location="${ovm.dir}/scripts" />
-
   
   <!-- directories for api doc -->
   <property name="api.docs.dir" location="${dist.dir}/apidocs" />
@@ -163,11 +161,7 @@
   </target>
     
   <target name="deploy-ovm" >
-      <copy todir="${server.deploy.to.dir}/webapps/client/WEB-INF/lib/scripts">
-          <fileset dir="${ovm-scripts.dir}">
-              <include name="**/*"/>
-          </fileset>
-      </copy>
+  	<ant antfile="${base.dir}/plugins/hypervisors/ovm/build.xml" target="deploy-ovm"/>
   </target>
 
   <target name="deploy-server" depends="deploy-common, deploy-ovm, deploy-awsapi" >

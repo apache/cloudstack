@@ -255,4 +255,9 @@ public interface GenericDao<T, ID extends Serializable> {
     SearchCriteria2 createSearchCriteria2();
 
     public T findOneBy(final SearchCriteria<T> sc);
+
+    /**
+     * @return
+     */
+    Class<T> getEntityBeanType();
 }

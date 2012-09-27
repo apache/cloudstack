@@ -40,6 +40,7 @@ public class VirtualMachineTO {
     boolean enableHA;
     boolean limitCpuUse;
     String vncPassword;
+    String vncAddr;
     Map<String, String> params;
 
     VolumeTO[] disks;
@@ -190,6 +191,14 @@ public class VirtualMachineTO {
     
     public void setVncPassword(String vncPassword) {
     	this.vncPassword = vncPassword;
+    }
+
+    public String getVncAddr() {
+        return this.vncAddr;
+    }
+
+    public void setVncAddr(String vncAddr) {
+        this.vncAddr = vncAddr;
     }
     
     public Map<String, String> getDetails() {

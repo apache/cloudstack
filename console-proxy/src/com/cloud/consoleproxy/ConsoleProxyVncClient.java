@@ -189,24 +189,25 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
 		
 		updateFrontEndActivityTime();
 
-	    int pointerMask = 0;
-	    int mask = 1;
-	    if(code == 2)
-	    	mask = 4;
+	    if (event == InputEventType.MOUSE_DOWN) {
+	    	if (code == 2) {
+	    		lastPointerMask |= 4;
+	    	} else if (code == 0) {
+	    		lastPointerMask |= 1;
+	    	}
+	    }
 	    
-		if(event == InputEventType.MOUSE_DOWN) {
-			pointerMask = mask;
-			lastPointerMask = pointerMask;
-		} else if(event == InputEventType.MOUSE_UP) {
-			lastPointerMask = 0;
-		} else if(event == InputEventType.MOUSE_MOVE) {
-			if(lastPointerMask != 0)
-				pointerMask = lastPointerMask;
-		}
-		
+	    if (event == InputEventType.MOUSE_UP) {
+	    	if (code == 2) {
+	    		lastPointerMask ^= 4;
+	    	} else if (code == 0) {
+	    		lastPointerMask ^= 1;
+	    	}
+	    }
+	    	
 		sendModifierEvents(modifiers);
-		client.sendClientMouseEvent(pointerMask, x, y, code, modifiers);
-		if(pointerMask == 0)
+		client.sendClientMouseEvent(lastPointerMask, x, y, code, modifiers);
+		if(lastPointerMask == 0)
 			sendModifierEvents(0);
 	}
 	

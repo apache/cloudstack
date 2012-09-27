@@ -1,0 +1,146 @@
+#!/usr/bin/python
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+# Version @VERSION@
+#
+# A plugin for executing script needed by vmops cloud 
+
+import os, sys, time
+import XenAPIPlugin
+sys.path.append("/usr/lib/xcp/sm/")
+import util
+import socket
+
+def echo(fn):
+    def wrapped(*v, **k):
+        name = fn.__name__
+        util.SMlog("#### VMOPS enter  %s ####" % name )
+        res = fn(*v, **k)
+        util.SMlog("#### VMOPS exit  %s ####" % name )
+        return res
+    return wrapped
+
+@echo
+def forceShutdownVM(session, args):
+    domId = args['domId']
+    try:
+        cmd = ["/usr/lib/xcp/debug/xenops", "destroy_domain", "-domid", domId]
+        txt = util.pread2(cmd)
+    except:
+        txt = '10#failed'
+    return txt
+
+
+@echo
+def create_privatetemplate_from_snapshot(session, args):
+    templatePath = args['templatePath']
+    snapshotPath = args['snapshotPath']
+    tmpltLocalDir = args['tmpltLocalDir']
+    try:
+        cmd = ["bash", "/usr/lib/xcp/bin/create_privatetemplate_from_snapshot.sh",snapshotPath, templatePath, tmpltLocalDir]
+        txt = util.pread2(cmd)
+    except:
+        txt = '10#failed'
+    return txt
+
+@echo
+def upgrade_snapshot(session, args):
+    templatePath = args['templatePath']
+    snapshotPath = args['snapshotPath']
+    try:
+        cmd = ["bash", "/usr/lib/xcp/bin/upgrate_snapshot.sh",snapshotPath, templatePath]
+        txt = util.pread2(cmd)
+    except:
+        txt = '10#failed'
+    return txt
+
+@echo
+def copy_vhd_to_secondarystorage(session, args):
+    mountpoint = args['mountpoint']
+    vdiuuid = args['vdiuuid']
+    sruuid = args['sruuid']
+    try:
+        cmd = ["bash", "/usr/lib/xcp/bin/copy_vhd_to_secondarystorage.sh", mountpoint, vdiuuid, sruuid]
+        txt = util.pread2(cmd)
+    except:
+        txt = '10#failed'
+    return txt
+
+@echo
+def copy_vhd_from_secondarystorage(session, args):
+    mountpoint = args['mountpoint']
+    sruuid = args['sruuid']
+    namelabel = args['namelabel']
+    try:
+        cmd = ["bash", "/usr/lib/xcp/bin/copy_vhd_from_secondarystorage.sh", mountpoint, sruuid, namelabel]
+        txt = util.pread2(cmd)
+    except:
+        txt = '10#failed'
+    return txt
+
+@echo
+def setup_heartbeat_sr(session, args):
+    host = args['host']
+    sr = args['sr']
+    try:
+        cmd = ["bash", "/usr/lib/xcp/bin/setup_heartbeat_sr.sh", host, sr]
+        txt = util.pread2(cmd)
+    except:
+        txt = ''
+    return txt
+
+@echo
+def setup_heartbeat_file(session, args):
+    host = args['host']
+    sr = args['sr']
+    add = args['add']
+    try:
+        cmd = ["bash", "/usr/lib/xcp/bin/setup_heartbeat_file.sh", host, sr, add]
+        txt = util.pread2(cmd)
+    except:
+        txt = ''
+    return txt
+
+@echo
+def check_heartbeat(session, args):
+    host = args['host']
+    interval = args['interval']
+    try:
+       cmd = ["bash", "/usr/lib/xcp/bin/check_heartbeat.sh", host, interval]
+       txt = util.pread2(cmd)
+    except:
+       txt=''
+    return txt
+    
+   
+@echo
+def heartbeat(session, args):
+    '''
+    host = args['host']
+    interval = args['interval']
+    try: 
+       cmd = ["/bin/bash", "/usr/lib/xcp/bin/launch_hb.sh", host, interval]
+       txt = util.pread2(cmd)
+    except:
+       txt='fail'
+    '''
+    return '> DONE <'
+
+if __name__ == "__main__":
+    XenAPIPlugin.dispatch({"forceShutdownVM":forceShutdownVM, "upgrade_snapshot":upgrade_snapshot, "create_privatetemplate_from_snapshot":create_privatetemplate_from_snapshot, "copy_vhd_to_secondarystorage":copy_vhd_to_secondarystorage, "copy_vhd_from_secondarystorage":copy_vhd_from_secondarystorage, "setup_heartbeat_sr":setup_heartbeat_sr, "setup_heartbeat_file":setup_heartbeat_file, "check_heartbeat":check_heartbeat, "heartbeat": heartbeat})
+

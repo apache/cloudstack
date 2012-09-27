@@ -1,17 +1,22 @@
-# Copyright 2012 Citrix Systems, Inc. Licensed under the
-# Apache License, Version 2.0 (the "License"); you may not use this
-# file except in compliance with the License.  Citrix Systems, Inc.
-# reserves all rights not expressly granted by the License.
-# You may obtain a copy of the License at http:#www.apache.org/licenses/LICENSE-2.0
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-# 
+-- Licensed to the Apache Software Foundation (ASF) under one
+-- or more contributor license agreements.  See the NOTICE file
+-- distributed with this work for additional information
+-- regarding copyright ownership.  The ASF licenses this file
+-- to you under the Apache License, Version 2.0 (the
+-- "License"); you may not use this file except in compliance
+-- with the License.  You may obtain a copy of the License at
+-- 
+--   http://www.apache.org/licenses/LICENSE-2.0
+-- 
+-- Unless required by applicable law or agreed to in writing,
+-- software distributed under the License is distributed on an
+-- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+-- KIND, either express or implied.  See the License for the
+-- specific language governing permissions and limitations
+-- under the License.
 
 
-#Schema upgrade from 3.0.2 to 3.0.3;
+-- Schema upgrade from 3.0.2 to 3.0.3;
 
 DELETE FROM `cloud`.`configuration` WHERE name='consoleproxy.cpu.mhz';
 DELETE FROM `cloud`.`configuration` WHERE name='secstorage.vm.cpu.mhz';
@@ -121,9 +126,6 @@ DELETE FROM `cloud`.`configuration` WHERE name='xen.min.xapi.version';
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'enable.ec2.api', 'false', 'enable EC2 API on CloudStack');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'enable.s3.api', 'false', 'enable Amazon S3 API on CloudStack');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Network', 'DEFAULT', 'management-server', 'vmware.use.nexus.vswitch', 'false', 'Enable/Disable Cisco Nexus 1000v vSwitch in VMware environment');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.guest.network.vswitch.type', 'standard', 'Specify type of (standard/nexus) virtual switch designated for guest traffic');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.private.network.vswitch.type','standard', 'Specify type of (standard/nexus) virtual switch designated for private traffic');
-INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.public.network.vswitch.type', 'standard', 'Specify type of (standard/nexus) virtual switch designated for public traffic');
 ALTER TABLE `cloud`.`account` ADD COLUMN `default_zone_id` bigint unsigned;
 ALTER TABLE `cloud`.`account` ADD CONSTRAINT `fk_account__default_zone_id` FOREIGN KEY `fk_account__default_zone_id`(`default_zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE;
 

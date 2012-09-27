@@ -338,3 +338,8 @@ addRegion=com.cloud.api.commands.AddRegionCmd;1
 updateRegion=com.cloud.api.commands.UpdateRegionCmd;1
 removeRegion=com.cloud.api.commands.RemoveRegionCmd;1
 listRegions=com.cloud.api.commands.ListRegionsCmd;7
+
+#### Tags commands
+createTags=com.cloud.api.commands.CreateTagsCmd;15
+deleteTags=com.cloud.api.commands.DeleteTagsCmd;15
+listTags=com.cloud.api.commands.ListTagsCmd;15

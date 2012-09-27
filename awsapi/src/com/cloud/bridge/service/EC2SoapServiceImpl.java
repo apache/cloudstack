@@ -1,18 +1,19 @@
-/*
- * Copyright (C) 2011 Citrix Systems, Inc.  All rights reserved.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 package com.cloud.bridge.service;
 
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import com.cloud.bridge.service.core.ec2.EC2Address;
 import com.cloud.bridge.service.core.ec2.EC2AddressFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2AssociateAddress;
 import com.cloud.bridge.service.core.ec2.EC2AuthorizeRevokeSecurityGroup;
+import com.cloud.bridge.service.core.ec2.EC2AvailabilityZonesFilterSet;
 import com.cloud.bridge.service.core.ec2.EC2CreateImage;
 import com.cloud.bridge.service.core.ec2.EC2CreateImageResponse;
 import com.cloud.bridge.service.core.ec2.EC2CreateKeyPair;
@@ -232,6 +234,12 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		if (null != items) {  // -> can be empty
 			for( int i=0; i < items.length; i++ ) request.addZone( items[i].getZoneName());
 		}
+
+        FilterSetType fst = dazt.getFilterSet();
+        if (fst != null) {
+            request.setFilterSet( toAvailabiltyZonesFilterSet(fst));
+        }
+
 		return toDescribeAvailabilityZonesResponse( engine.handleRequest( request ));
 	}
 
@@ -1065,6 +1073,29 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 		return ifs;
 	}
 
+
+    private EC2AvailabilityZonesFilterSet toAvailabiltyZonesFilterSet( FilterSetType fst )	{
+        EC2AvailabilityZonesFilterSet azfs = new EC2AvailabilityZonesFilterSet();
+
+        FilterType[] items = fst.getItem();
+        if (items != null) {
+            for (FilterType item : items) {
+                EC2Filter oneFilter = new EC2Filter();
+                String filterName = item.getName();
+                oneFilter.setName( filterName );
+
+                ValueSetType vft = item.getValueSet();
+                ValueType[] valueItems = vft.getItem();
+                for (ValueType valueItem : valueItems) {
+                    oneFilter.addValueEncoded( valueItem.getValue());
+                }
+                azfs.addFilter( oneFilter );
+            }
+        }
+        return azfs;
+    }
+	
+	
 	// toMethods
 	public static DescribeVolumesResponse toDescribeVolumesResponse( EC2DescribeVolumesResponse engineResponse ) 
 	{
@@ -1100,7 +1131,12 @@ public class EC2SoapServiceImpl implements AmazonEC2SkeletonInterface  {
 	        	String devicePath = engine.cloudDeviceIdToDevicePath( vol.getHypervisor(), vol.getDeviceId());
 	        	param5.setDevice( devicePath );
 	        	param5.setStatus( toVolumeAttachmentState( vol.getInstanceId(), vol.getVMState()));
-	        	param5.setAttachTime( cal );  
+                if (vol.getAttached() == null) {
+                    param5.setAttachTime( cal );
+                } else {
+                    Calendar attachTime = EC2RestAuth.parseDateString(vol.getAttached());
+                    param5.setAttachTime( attachTime );
+                }
 	        	param5.setDeleteOnTermination( false );
                 param4.addItem( param5 );
             }

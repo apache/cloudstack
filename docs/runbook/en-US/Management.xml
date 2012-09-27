@@ -1,0 +1,127 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "Runbook.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+
+<chapter id="chap-Runbook-Management">
+  <title>Installation of the management server</title>
+  <para>
+    Now it is time to start installing CloudStack's management server
+    and some of the related components. 
+  </para>
+  <section id="sect-Runbook-Management-database">
+    <title>Database Installation and Configuration</title>
+      <para>
+        We'll start out by installing <application>MySQL</application> and configuring 
+        some options to ensure CloudStack runs well.
+      </para>
+      <para>
+        To install <application>MySQL</application> run the following command:
+        <screen><prompt># </prompt><userinput><command>yum</command> -y install mysql-server</userinput></screen>
+      </para>
+      <para>With <application>MySQL</application> installed we need to make
+      a few configuration changes to <filename>/etc/my.cnf</filename>. 
+      Specifically we need to add the following options to the [mysqld] section:
+        <screen>
+innodb_rollback_on_timeout=1
+innodb_lock_wait_timeout=600
+max_connections=350
+log-bin=mysql-bin
+binlog-format = 'ROW' 
+        </screen>
+      </para>
+      <para>
+        Now that <application>MySQL</application> is properly configured we can
+        start it and configure it to start on boot as follows:
+        <screen>
+          <prompt># </prompt><userinput><command>service</command> mysqld start</userinput>
+          <prompt># </prompt><userinput><command>chkconfig</command> mysqld on</userinput>
+        </screen>
+      </para>
+
+  </section>
+	
+  <section id="sect-Runbook-Management-extraction">
+    <title>Extraction</title>
+    <para>
+	The next step is to extract the contents of the CloudStack tarball 
+	(mentioned in <xref linkend="sect-Runbook-Overview-prereqs" />) you
+	downloaded previously. To extract the contents of this tarball use 
+	the following command:
+    </para>
+    <screen>
+      <prompt># </prompt><userinput><command>tar</command> -xzvf CloudStack-oss-3.0.2-1-rhel6.2.tar.gz</userinput>
+    </screen>
+    <para> For the next few sections you'll need to <command>cd</command> into the first level that was just created.
+    </para>
+  </section>
+  <section id="sect-Runbook-Management-installation">
+    <title>Installation</title>
+    <para>Now that you are in the directory created by extracting the tarball, it's now time to install. We'll run 
+      <filename>./install.sh</filename> and choose option <option>M</option>. This will install the management server
+      and necessary dependencies. 
+    </para>
+    <para>With the application itself installed we can now setup the database, we'll do that with the following command
+      and options: 
+    </para>
+    <screen>
+      <prompt># </prompt><userinput><command>cloud-setup-databases</command> cloud:<replaceable>password</replaceable>@localhost --deploy-as=root</userinput>
+    </screen>
+    <para>When this process is finished, you should see a message like "CloudStack has successfully initialized the database."
+    </para>
+    <para>Now that the database has been created, we can take the final step in setting up the management server by issuing the following command:</para>
+    <screen>
+      <prompt># </prompt><userinput><command>cloud-setup-mangament</command></userinput>
+    </screen>
+  </section>
+  <section id="sect-Runbook-Management-templatesetup">
+    <title>System Template Setup</title>
+    <para>CloudStack uses a number of system VMs to provide functionality for 
+      accessing the console of virtual machines, providing various networking 
+      services, and managing various aspects of storage. This step will 
+      acquire those system images ready for deployment when we bootstrap
+      your cloud.
+    </para>
+    <para> 
+      The place we are going to download these images to is the secondary 
+      storage share that we setup earlier, so we'll need to mount that share
+      with the <command>mount</command> command run on the management server:
+    </para>
+    <screen>
+      <prompt># </prompt><userinput><command>mount</command> -t nfs <replaceable>172.16.10.</replaceable>2:/secondary /mnt/secondary</userinput>
+    </screen>
+    <para>
+      Now we need to download the system VM template and deploy that to the
+      share we just mounted. The management server includes a script to properly
+      manipulate the system VMs images. 
+    </para>
+    <screen>
+      <prompt># </prompt><userinput><command>/usr/lib64/cloud/agent/scripts/storage/secondary/cloud-install-sys-tmplt</command> -m  /mnt/secondary -u http://download.cloud.com/templates/acton/acton-systemvm-02062012.qcow2.bz2 -h kvm -F</userinput>
+    </screen>
+    <para>
+      That concludes our setup of the management server. We still need to 
+      configure CloudStack, but we will do that after we get our hypervisor
+      set up. 
+    </para>
+  </section>
+</chapter>

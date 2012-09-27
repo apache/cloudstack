@@ -28,9 +28,9 @@ import com.cloud.utils.component.Manager;
  */
 public interface VmDataServer extends Manager {
 
-	public Answer handleVmDataCommand(VmDataCommand cmd);
+    public Answer handleVmDataCommand(VmDataCommand cmd);
 
-	public void handleVmStarted(VirtualMachineTO vm);
+    public void handleVmStarted(VirtualMachineTO vm);
 
-	public void handleVmStopped(String vmName);
+    public void handleVmStopped(String vmName);
 }

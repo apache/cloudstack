@@ -1,18 +1,19 @@
-/*
- * Copyright 2011 Cloud.com, Inc.
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- *      http://www.apache.org/licenses/LICENSE-2.0
- * 
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+// Licensed to the Apache Software Foundation (ASF) under one
+// or more contributor license agreements.  See the NOTICE file
+// distributed with this work for additional information
+// regarding copyright ownership.  The ASF licenses this file
+// to you under the Apache License, Version 2.0 (the
+// "License"); you may not use this file except in compliance
+// with the License.  You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing,
+// software distributed under the License is distributed on an
+// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+// KIND, either express or implied.  See the License for the
+// specific language governing permissions and limitations
+// under the License.
 package com.cloud.bridge.service.core.ec2;
 
 import java.text.ParseException;
@@ -21,9 +22,10 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
+import java.util.Date;
 
 import com.cloud.bridge.service.exception.EC2ServiceException;
-import com.cloud.bridge.util.DateHelper;
 import com.cloud.bridge.util.EC2RestAuth;
 
 
@@ -123,8 +125,14 @@ public class EC2VolumeFilterSet {
 			return containsString(vol.getState(), valueSet );	
 		else if (filterName.equalsIgnoreCase( "volume-id" )) 
 			return containsString(vol.getId().toString(), valueSet );	
-		else if (filterName.equalsIgnoreCase( "attachment.attach-time" ))
-			return containsTime(vol.getAttached(), valueSet );	
+        else if (filterName.equalsIgnoreCase( "attachment.attach-time" )) {
+            if (vol.getAttached() != null)
+                return containsTime(vol.getAttached(), valueSet );
+            else if (vol.getInstanceId() != null)
+                return containsTime(vol.getCreated(), valueSet);
+            else
+                return false;
+        }	
 		else if (filterName.equalsIgnoreCase( "attachment.device" )) 
 			return containsDevice(vol.getDeviceId(), valueSet );	
 		else if (filterName.equalsIgnoreCase( "attachment.instance-id" )) 
@@ -155,14 +163,17 @@ public class EC2VolumeFilterSet {
 
 	private boolean containsTime(String lookingForDate, String[] set ) throws ParseException
 	{
-		Calendar lookingFor = EC2RestAuth.parseDateString(lookingForDate);
-		for (String s : set) {
-			Calendar toMatch = Calendar.getInstance();
-			toMatch.setTime( DateHelper.parseISO8601DateString( s ));
-			if (0 == lookingFor.compareTo( toMatch )) return true;
-		}
-		return false;
-	}
+        Calendar lookingFor = EC2RestAuth.parseDateString(lookingForDate);
+        lookingFor.setTimeZone(TimeZone.getTimeZone("GMT"));
+        Date lookForDate = lookingFor.getTime();
+        for (String s : set) {
+            Calendar toMatch = EC2RestAuth.parseDateString(s);
+            toMatch.setTimeZone(TimeZone.getTimeZone("GMT"));
+            Date toMatchDate = toMatch.getTime();
+            if ( 0 == lookForDate.compareTo(toMatchDate)) return true;
+        }
+        return false;
+    }
 
 
 	private boolean containsDevice(String deviceId, String[] set )

@@ -1,0 +1,100 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!ENTITY % BOOK_ENTITIES SYSTEM "Runbook.ent">
+%BOOK_ENTITIES;
+]>
+
+<!-- Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+-->
+
+
+<chapter id="chap-Runbook-Overview">
+  <title>Overview</title>
+    <para>
+	Infrastructure-as-a-Service (IaaS) clouds can be a complex thing to build, 
+	and by definition they have a plethora of options, which often lead to confusion
+	for even experienced admins who are newcomers to building cloud platforms. 
+	The goal for this runbook is to provide a straightforward set of instructions 
+	to get you up and running with CloudStack with a minimum amount of trouble. 
+    </para>
+    <section id="sect-Runbook-Overview-What_building">
+      <title>What exactly are we building?</title>
+      <para>
+	  This runbook will focus on building a CloudStack cloud using KVM with 
+	  CentOS 6.2 with NFS storage on a flat layer-2 network utilizing 
+          layer-3 network isolation (aka Security Groups), and doing it all
+          on a single piece of hardware.   
+      </para>
+      <para> 
+        KVM, or Kernel-based Virtual Machine is a virtualization technology
+        for the Linux kernel. KVM supports native virtualization atop 
+        processors with hardware virtualization extensions. 
+      </para>
+      <para>
+        Security Groups act as distributed firewalls that control access
+        to a group of virtual machines.
+      </para>
+    </section>
+    <section id="sect-Runbook-Overview-hilevel">
+      <title>High level overview of the process</title>
+      <para> 
+        Before we actually get to installing CloudStack, we'll start with 
+        installing our base operating system, and then configuring that to act
+        as an NFS server for several types of storage. We'll install the 
+        management server, download the systemVMs, and finally install the agent
+        software. Finally we'll spend a good deal of time configuring the entire
+        cloud in the CloudStack web interface. 
+      </para>
+    </section>	
+    <section id="sect-Runbook-Overview-prereqs">
+      <title>Prerequisites</title>
+        <para>
+          To complete this runbook you'll need the following items:
+          <orderedlist>
+            <listitem>
+              <para>
+                At least one computer which supports hardware virtualization. 
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                The 
+                <ulink url="http://mirrors.kernel.org/centos/6.2/isos/x86_64/CentOS-6.2-x86_64-minimal.iso">
+                CentOS 6.2 x86_64 minimal install CD
+                </ulink>
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+		  A /24 network with the gateway being at xxx.xxx.xxx.1, no DHCP should be on this network and 
+		  none of the computers running CloudStack may have a dynamic address.
+              </para>
+            </listitem>
+            <listitem>
+              <para>
+                Copy of 
+                <ulink url="http://sourceforge.net/projects/cloudstack/files/CloudStack%20Acton/3.0.2/CloudStack-oss-3.0.2-1-rhel6.2.tar.gz/download">
+                  CloudStack 3.0.2 for RHEL and CentOS 6.2
+                </ulink>
+              </para>
+            </listitem>
+          </orderedlist>
+        </para>
+      </section>
+
+</chapter>

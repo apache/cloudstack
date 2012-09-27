@@ -9,7 +9,7 @@
 
    <!-- A time/date based rolling appender -->
    <appender name="FILE" class="org.apache.log4j.DailyRollingFileAppender">
-      <param name="File" value="cloud.log"/>
+      <param name="File" value="/var/log/cloud/systemvm.log"/>
       <param name="Append" value="true"/>
       <param name="Threshold" value="DEBUG"/>
 

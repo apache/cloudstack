@@ -244,6 +244,11 @@ public class DbUtil {
         return false;
     }
     
+    
+    public static Class<?> getEntityBeanType(GenericDao<?, Long> dao) {
+        return dao.getEntityBeanType();
+    }
+    
     public static boolean releaseGlobalLock(String name) {
         Connection conn = getConnectionForGlobalLocks(name, false);
         if(conn == null) {
