@@ -132,6 +132,11 @@ create_guest_network() {
   sudo ip addr add dev $dev $ip/$mask brd +
   sudo ip link set $dev up
   sudo arping -c 3 -I $dev -A -U -s $ip $ip
+  # setup rules to allow dhcp/dns request
+  sudo iptables -D INPUT -i $dev -d $ip -p udp -m udp --dport 67 -j ACCEPT
+  sudo iptables -D INPUT -i $dev -d $ip -p udp -m udp --dport 53 -j ACCEPT
+  sudo iptables -A INPUT -i $dev -d $ip -p udp -m udp --dport 67 -j ACCEPT
+  sudo iptables -A INPUT -i $dev -d $ip -p udp -m udp --dport 53 -j ACCEPT
   # restore mark from  connection mark
   local tableName="Table_$dev"
   sudo ip route add $subnet/$mask dev $dev table $tableName proto static
@@ -150,6 +155,8 @@ destroy_guest_network() {
   logger -t cloud " $(basename $0): Create network on interface $dev,  gateway $gw, network $ip/$mask "
 
   sudo ip addr del dev $dev $ip/$mask
+  sudo iptables -D INPUT -i $dev -d $ip -p udp -m udp --dport 67 -j ACCEPT
+  sudo iptables -D INPUT -i $dev -d $ip -p udp -m udp --dport 53 -j ACCEPT
   sudo iptables -t mangle -D PREROUTING -i $dev -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
   sudo iptables -t nat -D POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
   destroy_acl_chain
