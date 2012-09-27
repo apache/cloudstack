@@ -2397,6 +2397,10 @@ this distribution.
             id='person:simon.kelley'
             name='Simon Kelley'
             url='' />
+        <organisation
+        	id='openssh.org'
+        	name='OpenSSH Project'
+        	url='http://www.openssh.org/' />
     </organisations>
     <primary-license id='ApacheLicenseVersion2'>
         <copyright-notice>Copyright (c) 2012 The Apache Software Foundation</copyright-notice>
@@ -2437,6 +2441,13 @@ Copyright (c) 2012 The Apache Software Foundation
                 <resource name='dnsmasq.conf' />
             </by-organisation>
         </public-domain>
+    </within>
+    <within dir='patches/systemvm/debian/config/etc/ssh/'>
+    	<with-license id='BSD2ClauseGeneric'>
+    		<by-organisation id='openssh.org'>
+    			<resource name='sshd_config' />
+            </by-organisation>
+        </with-license>
     </within>
     <within dir='deps'>
         <with-license id='BSD2ClauseXenServerJava'>
