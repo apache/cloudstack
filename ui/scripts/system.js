@@ -273,13 +273,22 @@
             $.ajax({
               url: createURL('listRouters'),
               data: {
-                listAll: true
+                projectid: -1
               },
               success: function(json) {
-                dataFns.capacity($.extend(data, {
-                  virtualRouterCount: json.listroutersresponse.count ?
-                    json.listroutersresponse.count : 0
-                }));
+                var total1 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;								
+								$.ajax({
+								  url: createURL('listRouters'),
+									data: {
+									  listAll: true
+									},
+									success: function(json) {
+									  var total2 = json.listroutersresponse.count ? json.listroutersresponse.count : 0;		
+										dataFns.capacity($.extend(data, {
+											virtualRouterCount: (total1 + total2)
+										}));																	
+									}									
+								});										
               }
             });
           },
