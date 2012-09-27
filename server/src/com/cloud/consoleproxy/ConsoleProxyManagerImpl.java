@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -658,6 +659,13 @@ public class ConsoleProxyManagerImpl implements ConsoleProxyManager, ConsoleProx
         assert (allocator != null);
         List<ConsoleProxyVO> runningList = _consoleProxyDao.getProxyListInStates(dataCenterId, State.Running);
         if (runningList != null && runningList.size() > 0) {
+            Iterator<ConsoleProxyVO> it = runningList.iterator();
+            while (it.hasNext()) {
+                ConsoleProxyVO proxy = it.next();
+                if(proxy.getActiveSession() >= _capacityPerProxy){
+                    it.remove();
+                }
+            }            
             if (s_logger.isTraceEnabled()) {
                 s_logger.trace("Running proxy pool size : " + runningList.size());
                 for (ConsoleProxyVO proxy : runningList) {
