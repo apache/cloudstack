@@ -66,6 +66,7 @@ setup_apache2() {
   sed -i -e "s/Listen .*:80/Listen $ip:80/g" /etc/apache2/conf.d/vhost$dev.conf
   sed -i -e "s/Listen .*:443/Listen $ip:443/g" /etc/apache2/conf.d/vhost$dev.conf
   service apache2 restart
+  sudo iptables -D INPUT -i $dev -d $ip -p tcp -m state --state NEW --dport 80 -j ACCEPT
   sudo iptables -A INPUT -i $dev -d $ip -p tcp -m state --state NEW --dport 80 -j ACCEPT
 }
 
@@ -110,11 +111,14 @@ desetup_dnsmasq() {
 
 setup_passwdsvcs() {
   logger -t cloud "Setting up password service for network $ip/$mask, eth $dev "
+  sudo iptables -D INPUT -i $dev -d $ip -p tcp -m state --state NEW --dport 8080 -j ACCEPT
+  sudo iptables -A INPUT -i $dev -d $ip -p tcp -m state --state NEW --dport 8080 -j ACCEPT
   nohup bash /opt/cloud/bin/vpc_passwd_server $ip >/dev/null 2>&1 &
 }
 
 desetup_passwdsvcs() {
   logger -t cloud "Desetting up password service for network $ip/$mask, eth $dev "
+  sudo iptables -D INPUT -i $dev -d $ip -p tcp -m state --state NEW --dport 8080 -j ACCEPT
   pid=`ps -ef | grep socat | grep $ip | grep -v grep | awk '{print $2}'`
   if [ -n "$pid" ]
   then
@@ -131,6 +135,8 @@ create_guest_network() {
   # restore mark from  connection mark
   local tableName="Table_$dev"
   sudo ip route add $subnet/$mask dev $dev table $tableName proto static
+  sudo iptables -t mangle -D PREROUTING -i $dev -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
+  sudo iptables -t nat -D POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
   sudo iptables -t mangle -A PREROUTING -i $dev -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
   # set up hairpin
   sudo iptables -t nat -A POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
@@ -145,7 +151,7 @@ destroy_guest_network() {
 
   sudo ip addr del dev $dev $ip/$mask
   sudo iptables -t mangle -D PREROUTING -i $dev -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
-  sudo iptables -t nat -A POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
+  sudo iptables -t nat -D POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
   destroy_acl_chain
   desetup_dnsmasq
   desetup_apache2
