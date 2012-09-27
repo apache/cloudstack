@@ -400,6 +400,7 @@ cloudStack.converters = {
       case 2: return cloudStack.converters.convertBytes(value);
       case 3: return cloudStack.converters.convertBytes(value);
       case 6: return cloudStack.converters.convertBytes(value);
+      case 9: return cloudStack.converters.convertBytes(value);
       case 11: return cloudStack.converters.convertBytes(value);
     }
 
