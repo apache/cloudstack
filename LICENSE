@@ -2398,6 +2398,12 @@ Within the patches/systemvm/debian/config/etc/ssh/ directory
             sshd_config             
 
 
+Within the patches/systemvm/debian/config/root/redundant_router directory
+    placed in the public domain
+        by The netfilter.org project  http://www.netfilter.org/ 
+            conntrackd.conf.templ
+
+
 Within the scripts/storage/secondary directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright (c) 2010-2011 OpenStack, LLC.
