@@ -88,7 +88,7 @@
     },
     tagItem: function(title, onRemove, data) {
       var $li = $('<li>');
-      var $label = $('<span>').addClass('label').html(title);
+      var $label = $('<span>').addClass('label').html(_s(title));
       var $remove = $('<span>').addClass('remove').html('X');
 
       $remove.click(function() {
