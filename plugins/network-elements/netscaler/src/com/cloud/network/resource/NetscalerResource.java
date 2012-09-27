@@ -240,11 +240,11 @@ public class NetscalerResource implements ServerResource {
     private void logout() throws ExecutionException {
         try {
             if (!_isSdx) {
-                if (_netscalerService != null) {
+                if(_netscalerService != null) {
                     _netscalerService.logout();
                 }
             } else {
-                if (_netscalerSdxService != null) {
+                if(_netscalerSdxService != null) {
                     _netscalerSdxService.logout();
                 }
             }
@@ -1569,11 +1569,11 @@ public class NetscalerResource implements ServerResource {
         String nsVirtualServerName  = generateNSVirtualServerName(srcIp, srcPort);
         String serviceGroupName = generateAutoScaleServiceGroupName(vmGroupIdentifier);
 
-        if (loadBalancerTO.getAutoScaleVmGroupTO().getCurrentState().equals("enabled")) {
+        if(loadBalancerTO.getAutoScaleVmGroupTO().getCurrentState().equals("enabled")) {
             disableAutoScaleConfig(loadBalancerTO, false);
         }
 
-        if (isServiceGroupBoundToVirtualServer(nsVirtualServerName, serviceGroupName)) {
+        if(isServiceGroupBoundToVirtualServer(nsVirtualServerName, serviceGroupName)) {
             // UnBind autoscale service group
             // unbind lb vserver lb lb_autoscaleGroup
             lbvserver_servicegroup_binding vserver_servicegroup_binding = new lbvserver_servicegroup_binding();
@@ -1713,6 +1713,7 @@ public class NetscalerResource implements ServerResource {
                 ApiConstants.ZONE_ID + "=" + profileTO.getZoneId()+ "&" +
                 ApiConstants.SERVICE_OFFERING_ID + "=" + profileTO.getServiceOfferingId()+ "&" +
                 ApiConstants.TEMPLATE_ID + "=" + profileTO.getTemplateId()+ "&" +
+                ApiConstants.DISPLAY_NAME + "=" + profileTO.getVmName()+ "&" +
                 ((profileTO.getNetworkId() == null)? "" : (ApiConstants.NETWORK_IDS + "=" + profileTO.getNetworkId()+ "&")) +
                 ((profileTO.getOtherDeployParams() == null)? "" : (profileTO.getOtherDeployParams() + "&")) +
                 "lbruleid=" + loadBalancerTO.getUuid();
