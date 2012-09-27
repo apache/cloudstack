@@ -75,13 +75,7 @@ public class DomainVO implements Domain, Identity {
     
     public DomainVO() {}
     
-    public DomainVO(long id, String name, long owner, Long parentId, String networkDomain) {
-        this(name, owner, parentId, networkDomain);
-        this.id = id;
-        this.uuid = UUID.randomUUID().toString();
-    }
-
-    public DomainVO(String name, long owner, Long parentId, String networkDomain) {
+    public DomainVO(String name, long owner, Long parentId, String networkDomain, Long regionId) {
     	this.parent = parentId;
         this.name = name;
         this.accountId = owner;
@@ -90,8 +84,21 @@ public class DomainVO implements Domain, Identity {
         this.state = Domain.State.Active;
         this.networkDomain = networkDomain;
         this.uuid = UUID.randomUUID().toString();
+        this.regionId = regionId;
     }
 
+    public DomainVO(String name, long owner, Long parentId, String networkDomain, String uuid, Long regionId) {
+    	this.parent = parentId;
+        this.name = name;
+        this.accountId = owner;
+        this.path ="";
+        this.level = 0;
+        this.state = Domain.State.Active;
+        this.networkDomain = networkDomain;
+        this.uuid = uuid;
+        this.regionId = regionId;
+    }
+    
     @Override
     public long getId() {
         return id;

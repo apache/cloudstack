@@ -57,4 +57,6 @@ public interface Domain extends OwnedBy {
     void setState(State state);
 
     String getNetworkDomain();
+    
+    public String getUuid();
 }

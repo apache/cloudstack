@@ -21,11 +21,11 @@ import java.util.Map;
 
 public interface RegionManager {
 	public boolean propogateAddAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long domainId, String networkDomain,
-            Map<String, String> details, String accountUUID, String userUUID, long regionId);
-	public boolean addResource();
-	public boolean updateResource();
-	public boolean deleteResource();
-	
+            Map<String, String> details, String accountUUID, String userUUID);
 	public long getId();
 	public void setId(long id);
+	public void propogateAddUser(String userName, String password,
+			String firstName, String lastName, String email, String timeZone,
+			String accountName, String domainUUId, String userUUID);
+	public void propogateAddDomain(String name, Long parentId, String networkDomain, String uuid);
 }

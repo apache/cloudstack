@@ -124,10 +124,7 @@ public class DisableAccountCmd extends BaseAsyncCmd {
     		else
     			result = _accountService.disableAccount(getAccountName(), getDomainId(), getId());
     	} else {
-    		if(lockRequested)
-    			result = _regionService.lockAccount(getAccountName(), getDomainId(), getId());
-    		else
-    			result = _regionService.disableAccount(getAccountName(), getDomainId(), getId());
+    		result = _regionService.disableAccount(getAccountName(), getDomainId(), getId(), lockRequested);
     	}
         if (result != null){
             AccountResponse response = _responseGenerator.createAccountResponse(result);

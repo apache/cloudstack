@@ -25,6 +25,7 @@ import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.SuccessResponse;
 import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
@@ -47,6 +48,8 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.CLEANUP, type=CommandType.BOOLEAN, description="true if all domain resources (child domains, accounts) have to be cleaned up, false otherwise")
     private Boolean cleanup;
 
+    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
+    private Boolean isPropagate;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -60,6 +63,10 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
         return cleanup;
     }
 
+	public Boolean getIsPropagate() {
+		return isPropagate;
+	}
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -92,7 +99,13 @@ public class DeleteDomainCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Domain Id: "+getId());
-        boolean result = _domainService.deleteDomain(id, cleanup);
+        boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false; 
+        boolean result = false;
+        if(isPopagate){
+        	result = _domainService.deleteDomain(id, cleanup);
+        } else {
+        	result = _regionService.deleteDomain(id, cleanup);
+        }
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

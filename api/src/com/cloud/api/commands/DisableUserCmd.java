@@ -25,6 +25,7 @@ import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.UserResponse;
 import com.cloud.async.AsyncJob;
 import com.cloud.event.EventTypes;
@@ -46,6 +47,9 @@ public class DisableUserCmd extends BaseAsyncCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Disables user by user ID.")
     private Long id;
 
+    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
+    private Boolean isPropagate;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -54,6 +58,10 @@ public class DisableUserCmd extends BaseAsyncCmd {
         return id;
     }
 
+	public Boolean getIsPropagate() {
+		return isPropagate;
+	}
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -87,7 +95,14 @@ public class DisableUserCmd extends BaseAsyncCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
-        UserAccount user = _accountService.disableUser(getId());
+        boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false;
+        UserAccount user = null;
+    	if(isPopagate){
+    		user = _accountService.disableUser(getId());
+        } else {
+        	user = _regionService.disableUser(getId());
+        }
+        
         if (user != null){
             UserResponse response = _responseGenerator.createUserResponse(user);
             response.setResponseName(getCommandName()); 

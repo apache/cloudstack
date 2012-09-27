@@ -49,6 +49,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ConfigurationDao;
+import com.cloud.configuration.dao.ConfigurationDaoImpl;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -741,7 +742,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         	txn.commit();
         	//Propogate Add account to other Regions
         	_regionMgr.propogateAddAccount(userName, password, firstName, lastName, email, timezone, accountName, accountType, domainId, 
-        			networkDomain, details, account.getUuid(), user.getUuid(), _regionMgr.getId());
+        			networkDomain, details, account.getUuid(), user.getUuid());
         	//check success
             return _userAccountDao.findById(user.getId());
         } else {
@@ -769,7 +770,7 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
     }
 
     @Override
-    public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId) {
+    public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID, Long regionId) {
 
         // default domain to ROOT if not specified
         if (domainId == null) {
@@ -793,9 +794,14 @@ public class AccountManagerImpl implements AccountManager, AccountService, Manag
         if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
             throw new CloudRuntimeException("The user " + userName + " already exists in domain " + domainId);
         }
-
-        UserVO user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone);
-
+        UserVO user = null;
+        if(regionId == null){
+        	user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone);
+        	//Propogate Add user to other Regions
+        	_regionMgr.propogateAddUser(userName, password, firstName, lastName, email, timeZone, accountName, domain.getUuid(), user.getUuid());
+        } else {
+        	user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone, userUUID, regionId);
+        }
         return user;
     }
 

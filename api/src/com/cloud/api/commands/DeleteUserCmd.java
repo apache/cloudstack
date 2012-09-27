@@ -43,6 +43,9 @@ public class DeleteUserCmd extends BaseCmd {
     @Parameter(name=ApiConstants.ID, type=CommandType.LONG, required=true, description="Deletes a user")
     private Long id;
 
+    @Parameter(name=ApiConstants.IS_PROPAGATE, type=CommandType.BOOLEAN, description="True if command is sent from another Region")
+    private Boolean isPropagate;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -51,6 +54,10 @@ public class DeleteUserCmd extends BaseCmd {
         return id;
     }
 
+	public Boolean getIsPropagate() {
+		return isPropagate;
+	}
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -73,7 +80,13 @@ public class DeleteUserCmd extends BaseCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("UserId: "+getId());
-        boolean result = _accountService.deleteUser(this);
+        boolean isPopagate = (getIsPropagate() != null ) ? getIsPropagate() : false;
+        boolean result = false;
+        if(isPopagate){
+        	result = _accountService.deleteUser(this);
+        } else {
+        	result = _regionService.deleteUser(this);
+        }
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);

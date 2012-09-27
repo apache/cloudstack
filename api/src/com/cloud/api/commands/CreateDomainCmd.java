@@ -24,6 +24,7 @@ import com.cloud.api.IdentityMapper;
 import com.cloud.api.Implementation;
 import com.cloud.api.Parameter;
 import com.cloud.api.ServerApiException;
+import com.cloud.api.BaseCmd.CommandType;
 import com.cloud.api.response.DomainResponse;
 import com.cloud.domain.Domain;
 import com.cloud.user.Account;
@@ -49,6 +50,12 @@ public class CreateDomainCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NETWORK_DOMAIN, type=CommandType.STRING, description="Network domain for networks in the domain")
     private String networkDomain;
 
+    @Parameter(name=ApiConstants.DOMAIN_ID, type=CommandType.STRING, description="Domain UUID, required for adding domain from another Region")
+    private String domainUUID;
+    
+    @Parameter(name=ApiConstants.REGION_ID, type=CommandType.LONG, description="Id of the Region creating the Domain")
+    private Long regionId;
+    
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -63,8 +70,16 @@ public class CreateDomainCmd extends BaseCmd {
 
     public String getNetworkDomain() {
         return networkDomain;
-    }  
+    }
 
+    public String getDomainUUID() {
+        return domainUUID;
+    }
+    
+	public Long getRegionId() {
+		return regionId;
+	}
+    
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -82,7 +97,7 @@ public class CreateDomainCmd extends BaseCmd {
     @Override
     public void execute(){
         UserContext.current().setEventDetails("Domain Name: "+getDomainName()+((getParentDomainId()!=null)?", Parent DomainId :"+getParentDomainId():""));
-        Domain domain = _domainService.createDomain(getDomainName(), getParentDomainId(), getNetworkDomain());
+        Domain domain = _domainService.createDomain(getDomainName(), getParentDomainId(), getNetworkDomain(), getDomainUUID(), getRegionId());
         if (domain != null) {
             DomainResponse response = _responseGenerator.createDomainResponse(domain);
             response.setResponseName(getCommandName());

@@ -38,6 +38,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.region.RegionManager;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
@@ -74,7 +75,9 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
     private ProjectDao _projectDao;
     @Inject
     private ProjectManager _projectMgr;
-
+    @Inject
+    private RegionManager _regionMgr;
+    
     @Override
     public Domain getDomain(long domainId) {
         return _domainDao.findById(domainId);
@@ -124,7 +127,7 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_DOMAIN_CREATE, eventDescription = "creating Domain")
-    public Domain createDomain(String name, Long parentId, String networkDomain) {
+    public Domain createDomain(String name, Long parentId, String networkDomain, String domainUUID, Long regionId) {
         Account caller = UserContext.current().getCaller();
 
         if (parentId == null) {
@@ -142,13 +145,13 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
 
         _accountMgr.checkAccess(caller, parentDomain);
 
-        return createDomain(name, parentId, caller.getId(), networkDomain);
+        return createDomain(name, parentId, caller.getId(), networkDomain, domainUUID, regionId);
 
     }
 
     @Override
     @DB
-    public Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain) {
+    public Domain createDomain(String name, Long parentId, Long ownerId, String networkDomain, String domainUUID, Long regionId) {
         // Verify network domain
         if (networkDomain != null) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
@@ -167,15 +170,27 @@ public class DomainManagerImpl implements DomainManager, DomainService, Manager 
             throw new InvalidParameterValueException("Domain with name " + name + " already exists for the parent id=" + parentId);
         }
 
-        Transaction txn = Transaction.currentTxn();
-        txn.start();
+        if(regionId == null){
+        	Transaction txn = Transaction.currentTxn();
+        	txn.start();
 
-        DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain));
-        _resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
+        	DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, _regionMgr.getId()));
+        	_resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
+        	_regionMgr.propogateAddDomain(name, parentId, networkDomain, domain.getUuid());
+        	txn.commit();
+        	return domain;
+        } else {
+        	Transaction txn = Transaction.currentTxn();
+        	txn.start();
 
-        txn.commit();
+        	DomainVO domain = _domainDao.create(new DomainVO(name, ownerId, parentId, networkDomain, domainUUID, regionId));
+        	_resourceCountDao.createResourceCounts(domain.getId(), ResourceLimit.ResourceOwnerType.Domain);
 
-        return domain;
+        	txn.commit();
+        	return domain;
+        	
+        }
+        
     }
 
     @Override

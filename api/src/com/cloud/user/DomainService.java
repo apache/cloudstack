@@ -25,7 +25,7 @@ import com.cloud.exception.PermissionDeniedException;
 
 public interface DomainService {
 
-    Domain createDomain(String name, Long parentId, String networkDomain);
+    Domain createDomain(String name, Long parentId, String networkDomain, String domainUUID, Long regionId);
 
     Domain getDomain(long id);
 

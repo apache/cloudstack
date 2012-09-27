@@ -144,14 +144,6 @@ public class CreateAccountCmd extends BaseCmd {
     	return params;
     }
 
-    /*public Map<String, String> getRegionDetails() {
-    	if (regionDetails == null || regionDetails.isEmpty()) {
-    		return null;
-    	}
-    	
-		return regionDetails;
-	}*/
-    
     public String getAccountUUID() {
 		return accountUUID;
 	}

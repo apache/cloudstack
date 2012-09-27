@@ -18,9 +18,16 @@ package com.cloud.region;
 
 import java.util.List;
 
+import com.cloud.api.commands.DeleteUserCmd;
 import com.cloud.api.commands.ListRegionsCmd;
 import com.cloud.api.commands.UpdateAccountCmd;
+import com.cloud.api.commands.UpdateDomainCmd;
+import com.cloud.api.commands.UpdateUserCmd;
+import com.cloud.domain.Domain;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
+import com.cloud.user.UserAccount;
 
 
 public interface RegionService {
@@ -30,7 +37,12 @@ public interface RegionService {
 	public List<? extends Region> listRegions(ListRegionsCmd cmd);
 	boolean deleteUserAccount(long accountId);
 	Account updateAccount(UpdateAccountCmd cmd);
-	public Account lockAccount(String accountName, Long domainId, Long id);
-	public Account disableAccount(String accountName, Long domainId, Long id);
+	public Account disableAccount(String accountName, Long domainId, Long id, Boolean lockRequested) throws ConcurrentOperationException, ResourceUnavailableException;
 	public Account enableAccount(String accountName, Long domainId, Long id);
+	public boolean deleteUser(DeleteUserCmd deleteUserCmd);
+	public boolean deleteDomain(Long id, Boolean cleanup);
+	public UserAccount updateUser(UpdateUserCmd updateUserCmd);
+	public Domain updateDomain(UpdateDomainCmd updateDomainCmd);
+	public UserAccount disableUser(Long id);
+	public UserAccount enableUser(Long id);
 }
