@@ -22,14 +22,25 @@
     under the License.
 -->
 
-<chapter id="projects">
-	<title>Using Projects to Organize Users and Resources</title>
-    <xi:include href="projects-overview.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="configuring-projects.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="create-new-projects.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="add-members-to-projects.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="accept-membership-invite.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="suspend-project.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="use-project-view.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />  
-</chapter>
-
+<bookinfo id="book-cloudstack-admin">
+	<title> Apache CloudStack 4.0
+		Administrator's Guide</title>
+	<subtitle>Revised September 11, 2012 01:32 am Pacific</subtitle>
+	<productname></productname>
+	<productnumber></productnumber>
+	<pubsnumber></pubsnumber>
+	<abstract>
+	    <para>If you have already installed &PRODUCT; or you want to learn more about the ongoing 
+	        operation and maintenance of a &PRODUCT;-powered cloud, read this documentation. It
+	        will help you start using, configuring, and managing the ongoing operation of your cloud.</para>
+	</abstract>
+	<corpauthor>
+		<inlinemediaobject>
+			<imageobject>
+				<imagedata fileref="Common_Content/images/title_logo.png" format="PNG" />
+			</imageobject>
+		</inlinemediaobject>
+	</corpauthor>
+	<xi:include href="Common_Content/Legal_Notice.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+	<xi:include href="Author_Group.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
+</bookinfo>

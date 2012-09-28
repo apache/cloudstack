@@ -22,14 +22,7 @@
  under the License.
 -->
 
-<section id="add-members-to-projects">
-    <title>Adding Members to a Project</title>
-    <para>New members can be added to a project by the project’s administrator, the domain administrator of the domain where the project resides or any parent domain, or the &PRODUCT; root administrator. There are two ways to add members in &PRODUCT;, but only one way is enabled at a time:</para>
-    <itemizedlist>
-        <listitem><para>If invitations have been enabled, you can send invitations to new members.</para></listitem>
-        <listitem><para>If invitations are not enabled, you can add members directly through the UI.</para></listitem>
-    </itemizedlist>
-    <xi:include href="send-projects-membership-invitation.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-    <xi:include href="add-projects-members-from-ui.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
-   </section>
-      
+<section id="set-global-project-resource-limits">
+    <title>Setting the Global Project Resource Limits</title>
+    <para>TODO</para>
+</section>
