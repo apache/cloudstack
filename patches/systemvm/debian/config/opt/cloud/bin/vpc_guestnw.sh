@@ -80,6 +80,11 @@ desetup_apache2() {
 
 setup_dnsmasq() {
   logger -t cloud "Setting up dnsmasq for network $ip/$mask "
+  # setup rules to allow dhcp/dns request
+  sudo iptables -D INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
+  sudo iptables -D INPUT -i $dev -d $ip -p udp -m udp --dport 53 -j ACCEPT
+  sudo iptables -A INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
+  sudo iptables -A INPUT -i $dev -d $ip -p udp -m udp --dport 53 -j ACCEPT
   # setup static 
   sed -i -e "/^[#]*dhcp-range=interface:$dev/d" /etc/dnsmasq.d/cloud.conf
   echo "dhcp-range=interface:$dev,set:interface-$dev,$ip,static" >> /etc/dnsmasq.d/cloud.conf
@@ -94,7 +99,9 @@ setup_dnsmasq() {
 
 desetup_dnsmasq() {
   logger -t cloud "Desetting up dnsmasq for network $ip/$mask "
-  
+  # remove rules to allow dhcp/dns request
+  sudo iptables -D INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
+  sudo iptables -D INPUT -i $dev -d $ip -p udp -m udp --dport 53 -j ACCEPT
   sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,option:router.*$/d" /etc/dnsmasq.d/cloud.conf
   sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,6.*$/d" /etc/dnsmasq.d/cloud.conf
   sed -i -e "/^[#]*dhcp-range=interface:$dev/d" /etc/dnsmasq.d/cloud.conf
@@ -125,11 +132,6 @@ create_guest_network() {
   sudo ip addr add dev $dev $ip/$mask brd +
   sudo ip link set $dev up
   sudo arping -c 3 -I $dev -A -U -s $ip $ip
-  # setup rules to allow dhcp/dns request
-  sudo iptables -D INPUT -i $dev -d $ip -p udp -m udp --dport 67 -j ACCEPT
-  sudo iptables -D INPUT -i $dev -d $ip -p udp -m udp --dport 53 -j ACCEPT
-  sudo iptables -A INPUT -i $dev -d $ip -p udp -m udp --dport 67 -j ACCEPT
-  sudo iptables -A INPUT -i $dev -d $ip -p udp -m udp --dport 53 -j ACCEPT
   # restore mark from  connection mark
   local tableName="Table_$dev"
   sudo ip route add $subnet/$mask dev $dev table $tableName proto static
@@ -148,8 +150,6 @@ destroy_guest_network() {
   logger -t cloud " $(basename $0): Create network on interface $dev,  gateway $gw, network $ip/$mask "
 
   sudo ip addr del dev $dev $ip/$mask
-  sudo iptables -D INPUT -i $dev -d $ip -p udp -m udp --dport 67 -j ACCEPT
-  sudo iptables -D INPUT -i $dev -d $ip -p udp -m udp --dport 53 -j ACCEPT
   sudo iptables -t mangle -D PREROUTING -i $dev -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
   sudo iptables -t nat -D POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
   destroy_acl_chain
