@@ -256,6 +256,10 @@ public class NiciraNvpElement extends AdapterBase implements
 					+ network.getId());
 		}
 		try {
+			// FIXME Check if any services other than connectiviy are required
+			// If that is the case start the logical router with only the
+			// internal interface, leave the external interfaces to the
+			// IpDeployer
 			if (_networkManager.isProviderSupportServiceInNetwork(
 					network.getId(), Service.SourceNat, Provider.NiciraNvp)) {
 				s_logger.debug("Apparently we are supposed to provide SourceNat on this network");
@@ -457,9 +461,10 @@ public class NiciraNvpElement extends AdapterBase implements
 			NiciraNvpRouterMappingVO routermapping = _niciraNvpRouterMappingDao
 					.findByNetworkIdI(network.getId());
 			if (routermapping == null) {
-				s_logger.error("No logical router uuid found for network "
+				s_logger.warn("No logical router uuid found for network "
 						+ network.getDisplayText());
-				return false;
+				// This might be cause by a failed deployment, so don't make shutdown fail as well.
+				return true;
 			}
 
 			DeleteLogicalRouterCommand cmd = new DeleteLogicalRouterCommand(routermapping.getLogicalRouterUuid());
@@ -470,6 +475,8 @@ public class NiciraNvpElement extends AdapterBase implements
 						+ network.getDisplayText());
 				return false;
 			}
+			
+			_niciraNvpRouterMappingDao.remove(routermapping.getId());
 		}
 
 		return true;
@@ -507,11 +514,15 @@ public class NiciraNvpElement extends AdapterBase implements
 	public boolean verifyServicesCombination(Set<Service> services) {
 		// This element can only function in a Nicra Nvp based
 		// SDN network, so Connectivity needs to be present here
-		if (services.contains(Service.Connectivity)) {
-			return true;
+		if (!services.contains(Service.Connectivity)) {
+			s_logger.warn("Unable to provide services without Connectivity service enabled for this element");
+			return false;
 		}
-		s_logger.debug("Unable to provide services without Connectivity service enabled for this element");
-		return false;
+		if ((services.contains(Service.PortForwarding) || services.contains(Service.StaticNat)) && !services.contains(Service.PortForwarding)) {
+			s_logger.warn("Unable to provider StaticNat and/or PortForwarding without the SourceNat service");
+			return false;
+		}
+		return true;
 	}
 
 	private static Map<Service, Map<Capability, String>> setCapabilities() {
@@ -808,8 +819,14 @@ public class NiciraNvpElement extends AdapterBase implements
 			List<? extends PublicIpAddress> ipAddress, Set<Service> services)
 			throws ResourceUnavailableException {
 		s_logger.debug("Entering applyIps"); // TODO Remove this line
-		// TODO Auto-generated method stub
-		return false;
+		
+		// The Nicira Nvp L3 Gateway doesn't need the addresses configured on
+		// the router interface. Only configure the CIDR and individual ip
+		// addresses become available when DNAT rules are created for them.
+		// The cidr setup is done during implementation of the logical router
+		// in the function implement 
+		
+		return true;
 	}
 
 	/**
@@ -819,9 +836,12 @@ public class NiciraNvpElement extends AdapterBase implements
 	public boolean applyStaticNats(Network config,
 			List<? extends StaticNat> rules)
 			throws ResourceUnavailableException {
+		// FIXME Implement this
 		s_logger.debug("Entering applyStaticNats"); // TODO Remove this line
-		// TODO Auto-generated method stub
-		return false;
+		for (StaticNat rule : rules) {
+			s_logger.debug ("StaticNat rule : from " + rule.getSourceIpAddressId() + " to " + rule.getDestIpAddress() + (rule.isForRevoke() ? " for revoke" : ""));
+		}
+		return true;
 	}
 
 	/**
@@ -830,8 +850,12 @@ public class NiciraNvpElement extends AdapterBase implements
 	@Override
 	public boolean applyPFRules(Network network, List<PortForwardingRule> rules)
 			throws ResourceUnavailableException {
+		// FIXME Implement this
 		s_logger.debug("Entering applyPFRules"); // TODO Remove this line
-		// TODO Auto-generated method stub
+		for (PortForwardingRule rule : rules) {
+			s_logger.debug ("PortForwardingRule rule : from " + rule.getSourceIpAddressId() + 
+					" to " + rule.getDestinationIpAddress().addr() + " port " + rule.getDestinationPortStart() + "-" + rule.getDestinationPortEnd());
+		}
 		return false;
 	}
 

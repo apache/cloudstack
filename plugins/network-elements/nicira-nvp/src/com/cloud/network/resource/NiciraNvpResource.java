@@ -26,6 +26,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.AssignIpToLogicalRouterAnswer;
+import com.cloud.agent.api.AssignIpToLogicalRouterCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreateLogicalRouterAnswer;
 import com.cloud.agent.api.CreateLogicalRouterCommand;
@@ -218,6 +220,9 @@ public class NiciraNvpResource implements ServerResource {
         else if (cmd instanceof DeleteLogicalRouterCommand) {
         	return executeRequest((DeleteLogicalRouterCommand) cmd, numRetries);
         }
+        else if (cmd instanceof AssignIpToLogicalRouterCommand) {
+        	return executeRequest((AssignIpToLogicalRouterCommand) cmd, numRetries);
+        }
         s_logger.debug("Received unsupported command " + cmd.toString());
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
@@ -345,7 +350,7 @@ public class NiciraNvpResource implements ServerResource {
         
         try {
         	NiciraNvpList<LogicalSwitchPort> ports = _niciraNvpApi.findLogicalSwitchPortsByUuid(logicalSwitchUuid, logicalSwitchPortUuid);
-        	if (ports.getResult_count() == 0) {
+        	if (ports.getResultCount() == 0) {
         		return new FindLogicalSwitchPortAnswer(cmd, false, "Logical switchport " + logicalSwitchPortUuid + " not found", null);
         	}
         	else {
@@ -434,13 +439,15 @@ public class NiciraNvpResource implements ServerResource {
 	            match.setSourceIpAddresses(internalNetworkAddress);
 	            snr.setMatch(match);
 	            _niciraNvpApi.createLogicalRouterNatRule(lrc.getUuid(), snr);
-        	} finally {
+        	} catch (NiciraNvpApiException e) {
         		// We need to destroy the router if we already created it
         		// this will also take care of any router ports
         		// TODO Clean up the switchport
         		try {
         			_niciraNvpApi.deleteLogicalRouter(lrc.getUuid());
-        		} catch (NiciraNvpApiException e) {}
+        		} catch (NiciraNvpApiException ex) {}
+        		
+        		throw e;
         	}
             
             return new CreateLogicalRouterAnswer(cmd, true, "Logical Router created (uuid " + lrc.getUuid() + ")", lrc.getUuid());    	
@@ -466,6 +473,69 @@ public class NiciraNvpResource implements ServerResource {
         		return new DeleteLogicalRouterAnswer(cmd, e);
         	}
         }
+    }
+    
+    private Answer executeRequest(AssignIpToLogicalRouterCommand cmd, int numRetries) {
+    	try {
+    		LogicalRouterConfig lrc = _niciraNvpApi.findOneLogicalRouterByUuid(cmd.getLogicalRouterUuid());
+    		
+    		NiciraNvpList<LogicalRouterPort> ports = 
+    				_niciraNvpApi.findLogicalRouterPortByGatewayServiceAndVlanId(cmd.getLogicalRouterUuid(), 
+    						cmd.getGatewayServiceUuid(), cmd.getPublicIpVlan());
+    		
+    		String publicNetworkIpAddress = cmd.getPublicIpCidr();    		
+    		
+    		if (ports.isEmpty()) {
+    			// No attachment on this network, we need to create one
+	        	// Create the outside port for the router
+	        	LogicalRouterPort lrpo = new LogicalRouterPort();
+	        	lrpo.setAdminStatusEnabled(true);
+	        	lrpo.setDisplayName(lrc.getDisplayName() + "-outside-port");
+	        	lrpo.setTags(lrc.getTags());
+	        	List<String> outsideIpAddresses = new ArrayList<String>();
+	        	outsideIpAddresses.add(publicNetworkIpAddress);
+	        	lrpo.setIpAddresses(outsideIpAddresses);
+	        	lrpo = _niciraNvpApi.createLogicalRouterPort(lrc.getUuid(),lrpo);
+	        	
+	        	// Attach the outside port to the gateway service on the correct VLAN
+	        	L3GatewayAttachment attachment = new L3GatewayAttachment(cmd.getGatewayServiceUuid());
+	        	if (cmd.getPublicIpVlan() != 0) {
+	        		attachment.setVlanId(cmd.getPublicIpVlan());
+	        	}
+	        	_niciraNvpApi.modifyLogicalRouterPortAttachment(lrc.getUuid(), lrpo.getUuid(), attachment);
+	        	return new AssignIpToLogicalRouterAnswer(cmd, true, "Ip address configured on new logical router port");
+    		}
+    		else {
+    			// There is already and attachment to this public network, see if we need to add this IP
+    			boolean found = false;
+    			LogicalRouterPort publicPort = null;
+    			for (LogicalRouterPort port : ports.getResults()) {
+    				for (String cidr : port.getIpAddresses()) {
+    					if (publicNetworkIpAddress.equals(cidr)) {
+    						found = true;
+    						publicPort = port;
+    						break;
+    					}
+    				}
+    			}
+    			if (found) {
+    				s_logger.warn("Ip " + publicNetworkIpAddress + " is already configured on logical router " + cmd.getLogicalRouterUuid());
+    				return new AssignIpToLogicalRouterAnswer(cmd, true, "Ip address already alocated on logical Router");
+    			}
+    			
+    			publicPort.getIpAddresses().add(publicNetworkIpAddress);
+    			_niciraNvpApi.updateLogicalRouterPortConfig(cmd.getLogicalRouterUuid(), publicPort);
+    			return new AssignIpToLogicalRouterAnswer(cmd, true, "Ip address configured on existing logical router port");
+    		}
+        } catch (NiciraNvpApiException e) {
+        	if (numRetries > 0) {
+        		return retry(cmd, --numRetries);
+        	} 
+        	else {
+        		return new DeleteLogicalRouterAnswer(cmd, e);
+        	}
+        }
+    	
     }
     
     private Answer executeRequest(ReadyCommand cmd) {
