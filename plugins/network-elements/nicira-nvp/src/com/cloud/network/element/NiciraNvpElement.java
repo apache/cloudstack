@@ -266,7 +266,7 @@ public class NiciraNvpElement extends AdapterBase implements
 						: Long.parseLong(sourceNatIp.getVlanTag());
 
 				CreateLogicalRouterCommand cmd = new CreateLogicalRouterCommand(
-						niciraNvpHost.getDetail("gatewayserviceuuid"), vlanid,
+						niciraNvpHost.getDetail("l3gatewayserviceuuid"), vlanid,
 						network.getBroadcastUri().getSchemeSpecificPart(),
 						"router-" + network.getDisplayText(), publicCidr,
 						sourceNatIp.getGateway(), internalCidr, context
