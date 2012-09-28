@@ -10009,6 +10009,15 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   font-size: 11px;
 }
 
+/*CS-16413: Disable infrastructure totals*/
+.system-dashboard.zone .status_box li span.header {
+  display: block;
+  width: 156px;
+  font-size: 16px;
+  text-align: center;
+  top: 31px;
+}
+
 /*Action icons*/
 .action.edit .icon {
   background-position: 1px -1px;
