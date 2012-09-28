@@ -44,7 +44,7 @@
 			},			
       fields: {        
         displayname: { label: 'label.display.name' },
-				instancename: { label: 'label.internal.name' },
+				name: { label: 'label.host.name' },
         zonename: { label: 'label.zone.name' },
         state: {
           label: 'label.state',         
