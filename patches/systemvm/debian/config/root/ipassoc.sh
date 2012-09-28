@@ -211,6 +211,8 @@ add_first_ip() {
   sudo ip link show $ethDev | grep "state DOWN" > /dev/null
   local old_state=$?
   
+  sudo ip addr show dev $ethDev | grep "inet $ipNoMask"
+  local noexisted=$?
   ip_addr_add $ethDev $pubIp
 
   sudo iptables -D FORWARD -i $ethDev -o eth0 -m state --state RELATED,ESTABLISHED -j ACCEPT
@@ -229,7 +231,10 @@ add_first_ip() {
   if [ $if_keep_state -ne 1 -o $old_state -ne 0 ]
   then
       sudo ip link set $ethDev up
-      sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
+      if [ $noexisted -eq 1 ]
+      then
+          sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
+      fi
   fi
   add_routing $1 
 
@@ -265,13 +270,17 @@ add_an_ip () {
   local ipNoMask=$(echo $1 | awk -F'/' '{print $1}')
   sudo ip link show $ethDev | grep "state DOWN" > /dev/null
   local old_state=$?
-
+  sudo ip addr show dev $ethDev | grep "inet $ipNoMask"
+  local noexisted=$?
   ip_addr_add $ethDev $pubIp
   add_snat $1
   if [ $if_keep_state -ne 1 -o $old_state -ne 0 ]
   then
       sudo ip link set $ethDev up
-      sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
+      if [ $noexisted -eq 1 ]
+      then
+          sudo arping -c 3 -I $ethDev -A -U -s $ipNoMask $ipNoMask;
+      fi
   fi
   add_routing $1 
   return $?
