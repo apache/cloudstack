@@ -237,6 +237,8 @@
               <exclude>patches/systemvm/debian/config/root/redundant_router/master.sh.templ</exclude>
               <exclude>patches/systemvm/debian/config/root/redundant_router/conntrackd.conf.templ</exclude>
               <exclude>patches/systemvm/debian/config/root/redundant_router/enable_pubip.sh.templ</exclude>
+              <exclude>patches/systemvm/debian/vpn/etc/ipsec.secrets.orig</exclude>
+              <exclude>patches/systemvm/debian/vpn/etc/ipsec.conf.orig</exclude>
               <exclude>patches/systemvm/debian/config/var/www/html/userdata/.htaccess</exclude>
               <exclude>patches/systemvm/debian/config/var/www/html/latest/.htaccess</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
