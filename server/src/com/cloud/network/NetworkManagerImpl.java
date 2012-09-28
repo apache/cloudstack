@@ -130,6 +130,7 @@ import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.element.ConnectivityProvider;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.FirewallServiceProvider;
+import com.cloud.network.element.SourceNatServiceProvider;
 import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkACLServiceProvider;
@@ -137,7 +138,6 @@ import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.PortForwardingServiceProvider;
 import com.cloud.network.element.RemoteAccessVPNServiceProvider;
 import com.cloud.network.element.Site2SiteVpnServiceProvider;
-import com.cloud.network.element.SourceNatServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.element.VirtualRouterElement;
@@ -218,7 +218,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
 import edu.emory.mathcs.backport.java.util.Collections;
 
 /**
@@ -5192,6 +5191,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
             } catch (NumberFormatException e) {
                 throw new InvalidParameterValueException("Please specify valid integers for the vlan range.");
             }
+            
+            //check for vnet conflicts with other physical network(s) in the zone
+            checkGuestVnetsConflicts(zoneId, vnetStart, vnetEnd, null);
 
             if ((vnetStart > vnetEnd) || (vnetStart < 0) || (vnetEnd > 4096)) {
                 s_logger.warn("Invalid vnet range: start range:" + vnetStart + " end range:" + vnetEnd);
@@ -5370,6 +5372,9 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
                 throw new InvalidParameterValueException("Vnet range has to be" + rangeMessage + " and start range should be lesser than or equal to stop range");
             }
             
+            //check if new vnet conflicts with vnet ranges of other physical networks
+            checkGuestVnetsConflicts(network.getDataCenterId(), newStartVnet, newEndVnet, network.getId());
+
             if (physicalNetworkHasAllocatedVnets(network.getDataCenterId(), network.getId())) {
                 String[] existingRange = network.getVnet().split("-");
                 int existingStartVnet = Integer.parseInt(existingRange[0]);
@@ -5412,6 +5417,24 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         }
 
         return network;
+    }
+
+    protected void checkGuestVnetsConflicts(long zoneId, int newStartVnet, int newEndVnet, Long pNtwkIdToSkip) {
+        List<? extends PhysicalNetwork> pNtwks = _physicalNetworkDao.listByZone(zoneId);
+        for (PhysicalNetwork pNtwk : pNtwks) {
+            // skip my own network
+            if (pNtwkIdToSkip != null && pNtwkIdToSkip == pNtwk.getId()) {
+                continue;
+            }
+            String[] existingRange = pNtwk.getVnet().split("-");
+            int startVnet = Integer.parseInt(existingRange[0]);
+            int endVnet = Integer.parseInt(existingRange[1]);
+            if ((newStartVnet >= startVnet && newStartVnet <= endVnet)
+                    || (newEndVnet <= endVnet && newEndVnet >= startVnet)) {
+                throw new InvalidParameterValueException("Vnet range for physical network conflicts with another " +
+                		"physical network's vnet in the zone");
+            } 
+        }
     }
 
     private boolean physicalNetworkHasAllocatedVnets(long zoneId, long physicalNetworkId) {
