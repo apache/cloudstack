@@ -146,6 +146,7 @@ DROP TABLE IF EXISTS `cloud`.`s2s_vpn_gateway`;
 DROP TABLE IF EXISTS `cloud`.`s2s_vpn_connection`;
 DROP TABLE IF EXISTS `cloud`,`external_nicira_nvp_devices`;
 DROP TABLE IF EXISTS `cloud`,`nicira_nvp_nic_map`;
+DROP TABLE IF EXISTS `cloud`,`nicira_nvp_router_map`;
 
 CREATE TABLE `cloud`.`version` (
   `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT COMMENT 'id',
@@ -2368,6 +2369,14 @@ CREATE TABLE `cloud`.`nicira_nvp_nic_map` (
   `logicalswitchport` varchar(255) UNIQUE COMMENT 'nicira uuid of this logical switch port',
   `nic` varchar(255) UNIQUE COMMENT 'cloudstack uuid of the nic connected to this logical switch port',
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`nicira_nvp_router_map` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `logicalrouter_uuid` varchar(255) NOT NULL UNIQUE COMMENT 'nicira uuid of logical router',
+  `network_id` bigint unsigned NOT NULL UNIQUE COMMENT 'cloudstack id of the network',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_nicira_nvp_router_map__network_id` FOREIGN KEY (`network_id`) REFERENCES `networks`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks = 1;

@@ -90,6 +90,7 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.NetworkManager;
 import com.cloud.network.NiciraNvpDeviceVO;
 import com.cloud.network.NiciraNvpNicMappingVO;
+import com.cloud.network.NiciraNvpRouterMappingVO;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PhysicalNetworkVO;
 import com.cloud.network.PublicIpAddress;
@@ -98,6 +99,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NiciraNvpDao;
 import com.cloud.network.dao.NiciraNvpNicMappingDao;
+import com.cloud.network.dao.NiciraNvpRouterMappingDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
@@ -153,6 +155,8 @@ public class NiciraNvpElement extends AdapterBase implements
 	AgentManager _agentMgr;
 	@Inject
 	NiciraNvpNicMappingDao _niciraNvpNicMappingDao;
+	@Inject
+	NiciraNvpRouterMappingDao _niciraNvpRouterMappingDao;
 	@Inject
 	NetworkDao _networkDao;
 	@Inject
@@ -280,7 +284,11 @@ public class NiciraNvpElement extends AdapterBase implements
 							+ network.getDisplayText());
 					return false;
 				}
-
+				
+				// Store the uuid so we can easily find it during cleanup
+				NiciraNvpRouterMappingVO routermapping = 
+						new NiciraNvpRouterMappingVO(cmd.getLogicalSwitchUuid(), network.getId());
+				_niciraNvpRouterMappingDao.persist(routermapping);
 			}
 		} finally {
 			if (lock != null) {
@@ -446,15 +454,23 @@ public class NiciraNvpElement extends AdapterBase implements
 
 			// Deleting the LogicalRouter will also take care of all provisioned
 			// nat rules.
-			/*
-			 * DeleteLogicalRouterCommand cmd = new
-			 * DeleteLogicalRouterCommand(""); DeleteLogicalRouterAnswer answer
-			 * = (DeleteLogicalRouterAnswer)
-			 * _agentMgr.easySend(niciraNvpHost.getId(), cmd); if
-			 * (answer.getResult() == false) {
-			 * s_logger.error("Failed to delete LogicalRouter for network " +
-			 * network.getDisplayText()); return false; }
-			 */}
+			NiciraNvpRouterMappingVO routermapping = _niciraNvpRouterMappingDao
+					.findByNetworkIdI(network.getId());
+			if (routermapping == null) {
+				s_logger.error("No logical router uuid found for network "
+						+ network.getDisplayText());
+				return false;
+			}
+
+			DeleteLogicalRouterCommand cmd = new DeleteLogicalRouterCommand(routermapping.getLogicalRouterUuid());
+			DeleteLogicalRouterAnswer answer = 
+					(DeleteLogicalRouterAnswer) _agentMgr.easySend(niciraNvpHost.getId(), cmd);
+			if (answer.getResult() == false) {
+				s_logger.error("Failed to delete LogicalRouter for network "
+						+ network.getDisplayText());
+				return false;
+			}
+		}
 
 		return true;
 	}
