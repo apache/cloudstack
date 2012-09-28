@@ -33,6 +33,8 @@ import com.cloud.agent.api.CreateLogicalSwitchAnswer;
 import com.cloud.agent.api.CreateLogicalSwitchCommand;
 import com.cloud.agent.api.CreateLogicalSwitchPortAnswer;
 import com.cloud.agent.api.CreateLogicalSwitchPortCommand;
+import com.cloud.agent.api.DeleteLogicalRouterAnswer;
+import com.cloud.agent.api.DeleteLogicalRouterCommand;
 import com.cloud.agent.api.DeleteLogicalSwitchAnswer;
 import com.cloud.agent.api.DeleteLogicalSwitchCommand;
 import com.cloud.agent.api.DeleteLogicalSwitchPortAnswer;
@@ -211,7 +213,10 @@ public class NiciraNvpResource implements ServerResource {
         	return executeRequest((FindLogicalSwitchPortCommand) cmd, numRetries);
         }
         else if (cmd instanceof CreateLogicalRouterCommand) {
-        	return executeRequest((CreateLogicalRouterCommand) cmd, 0); //TODO set to numRetries when done
+        	return executeRequest((CreateLogicalRouterCommand) cmd, numRetries);
+        }
+        else if (cmd instanceof DeleteLogicalRouterCommand) {
+        	return executeRequest((DeleteLogicalRouterCommand) cmd, numRetries);
         }
         s_logger.debug("Received unsupported command " + cmd.toString());
         return Answer.createUnsupportedCommandAnswer(cmd);
@@ -385,7 +390,7 @@ public class NiciraNvpResource implements ServerResource {
 	        	// Create the outside port for the router
 	        	LogicalRouterPort lrpo = new LogicalRouterPort();
 	        	lrpo.setAdminStatusEnabled(true);
-	        	lrpo.setDisplayName(routerName + "-port");
+	        	lrpo.setDisplayName(routerName + "-outside-port");
 	        	lrpo.setTags(tags);
 	        	List<String> outsideIpAddresses = new ArrayList<String>();
 	        	outsideIpAddresses.add(publicNetworkIpAddress);
@@ -402,7 +407,7 @@ public class NiciraNvpResource implements ServerResource {
 	        	// Create the inside port for the router
 	        	LogicalRouterPort lrpi = new LogicalRouterPort();
 	        	lrpi.setAdminStatusEnabled(true);
-	        	lrpi.setDisplayName(routerName + "-port");
+	        	lrpi.setDisplayName(routerName + "-inside-port");
 	        	lrpi.setTags(tags);
 	        	List<String> insideIpAddresses = new ArrayList<String>();
 	        	insideIpAddresses.add(internalNetworkAddress);
@@ -410,7 +415,7 @@ public class NiciraNvpResource implements ServerResource {
 	        	lrpi = _niciraNvpApi.createLogicalRouterPort(lrc.getUuid(),lrpi);
 	        	
 	        	// Create the inside port on the lswitch
-	            LogicalSwitchPort lsp = new LogicalSwitchPort(routerName + "-port", tags, true);
+	            LogicalSwitchPort lsp = new LogicalSwitchPort(routerName + "-inside-port", tags, true);
 	            lsp = _niciraNvpApi.createLogicalSwitchPort(logicalSwitchUuid, lsp);
 	       	
 	        	// Attach the inside router port to the lswitch port with a PatchAttachment
@@ -445,6 +450,20 @@ public class NiciraNvpResource implements ServerResource {
         	} 
         	else {
         		return new CreateLogicalRouterAnswer(cmd, e);
+        	}
+        }
+    }
+    
+    private Answer executeRequest(DeleteLogicalRouterCommand cmd, int numRetries) {
+    	try {
+    		_niciraNvpApi.deleteLogicalRouter(cmd.getLogicalRouterUuid());
+    		return new DeleteLogicalRouterAnswer(cmd, true, "Logical Router deleted (uuid " + cmd.getLogicalRouterUuid() + ")");
+        } catch (NiciraNvpApiException e) {
+        	if (numRetries > 0) {
+        		return retry(cmd, --numRetries);
+        	} 
+        	else {
+        		return new DeleteLogicalRouterAnswer(cmd, e);
         	}
         }
     }

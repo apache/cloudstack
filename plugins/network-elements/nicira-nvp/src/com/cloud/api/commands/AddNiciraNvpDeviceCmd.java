@@ -67,7 +67,8 @@ public class AddNiciraNvpDeviceCmd extends BaseCmd {
     @Parameter(name=ApiConstants.NICIRA_NVP_TRANSPORT_ZONE_UUID, type=CommandType.STRING, required = true, description="The Transportzone UUID configured on the Nicira Controller")
     private String transportzoneuuid;
     
-    //FIXME add optional gateway service uuid
+    @Parameter(name=ApiConstants.NICIRA_NVP_GATEWAYSERVICE_UUID, type=CommandType.STRING, required = false, description="The L3 Gateway Service UUID configured on the Nicira Controller")
+    private String l3gatewayserviceuuid;
     
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -91,6 +92,10 @@ public class AddNiciraNvpDeviceCmd extends BaseCmd {
     
     public String getTransportzoneUuid() {
         return transportzoneuuid;
+    }
+    
+    public String getL3GatewayServiceUuid() {
+    	return l3gatewayserviceuuid;
     }
 
     /////////////////////////////////////////////////////
