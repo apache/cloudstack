@@ -247,7 +247,6 @@
               <exclude>patches/systemvm/debian/config/var/lib/misc/dnsmasq.leases</exclude>
               <exclude>patches/systemvm/debian/config/var/www/html/userdata/.htaccess</exclude>
               <exclude>patches/systemvm/debian/config/var/www/html/latest/.htaccess</exclude>
-              <exclude>patches/systemvm/debian/vpn/etc/ipsec.conf.orig</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.secrets.orig</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
               <exclude>patches/systemvm/debian/vpn/etc/ipsec.secrets</exclude>
