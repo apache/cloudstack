@@ -404,18 +404,18 @@ of liability.
         </text>
         </license>
         <license
-        	name='Mozilla Public License, Version 1.0'
-        	id='MPL1'
-        	url='http://www.mozilla.org/MPL/1.1/' >
-        	<template>
-        		<parameter-name>PROJECT</parameter-name>
-        		<parameter-name>INITIAL_DEVELOPER</parameter-name>
-        		<parameter-name>INITIAL_DEVELOPER_COPYRIGHT</parameter-name>
-        		<parameter-name>CONTRIBUTORS</parameter-name>
-        		<parameter-name>ALT_LIC_NAME</parameter-name>
-        		<parameter-name>ALT_LIC_SHORT</parameter-name>
-        	</template>
-        	<text>
+            name='Mozilla Public License, Version 1.0'
+            id='MPL1'
+            url='http://www.mozilla.org/MPL/1.1/' >
+            <template>
+                <parameter-name>PROJECT</parameter-name>
+                <parameter-name>INITIAL_DEVELOPER</parameter-name>
+                <parameter-name>INITIAL_DEVELOPER_COPYRIGHT</parameter-name>
+                <parameter-name>CONTRIBUTORS</parameter-name>
+                <parameter-name>ALT_LIC_NAME</parameter-name>
+                <parameter-name>ALT_LIC_SHORT</parameter-name>
+            </template>
+            <text>
                           MOZILLA PUBLIC LICENSE
                                 Version 1.1
 
@@ -886,7 +886,7 @@ EXHIBIT A -Mozilla Public License.
      use the text of this Exhibit A rather than the text found in the
      Original Code Source Code for Your Modifications.]
 
-        	</text>
+            </text>
         </license>
         <license 
             name='Bouncy Castle adaptation of MIT X11 License' 
@@ -1426,10 +1426,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
             </text>
         </license>
         <license
-        	name='ANTLR 2 License'
-        	id='antlr2'
-        	url='http://www.antlr2.org/license.html'>
-        	<text>        		
+            name='ANTLR 2 License'
+            id='antlr2'
+            url='http://www.antlr2.org/license.html'>
+            <text>                
 ANTLR 2 License
 
 We reserve no legal rights to the ANTLR--it is fully in the public domain. An
@@ -1445,13 +1445,13 @@ mention that you developed it using ANTLR. In addition, we ask that the headers
 remain intact in our source code. As long as these guidelines are kept, we
 expect to continue enhancing this system and expect to make other tools
 available as they are completed.
-        	</text>
+            </text>
         </license>
         <license
-        	name='Dom4J License'
-        	id='dom4j.license'
-        	url='http://dom4j.cvs.sourceforge.net/viewvc/dom4j/dom4j/LICENSE.txt'>
-        	<text>
+            name='Dom4J License'
+            id='dom4j.license'
+            url='http://dom4j.cvs.sourceforge.net/viewvc/dom4j/dom4j/LICENSE.txt'>
+            <text>
 Copyright 2001-2005 (C) MetaStuff, Ltd. All Rights Reserved.
 
 Redistribution and use of this software and associated documentation
@@ -1492,7 +1492,7 @@ HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
 STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
 OF THE POSSIBILITY OF SUCH DAMAGE.
-        	</text>
+            </text>
         </license>
         <license 
             name='Apache License, Version 2' 
@@ -2203,8 +2203,8 @@ This product also includes software developed by :
 
 Please read the different LICENSE files present in the root directory of
 this distribution.
-   		</notice>
-   		<notice id='xerces.notice'>
+           </notice>
+           <notice id='xerces.notice'>
 =========================================================================
 ==  NOTICE file corresponding to section 4(d) of the Apache License,   ==
 ==  Version 2.0, in this case for the Apache Xerces Java distribution. ==
@@ -2222,8 +2222,8 @@ Portions of this software were originally based on the following:
   - voluntary contributions made by Paul Eng on behalf of the 
     Apache Software Foundation that were originally developed at iClick, Inc.,
     software copyright (c) 1999.
-   		</notice>
-   		<notice id='xml-apis.notice'>
+           </notice>
+           <notice id='xml-apis.notice'>
 =========================================================================
 ==  NOTICE file corresponding to section 4(d) of the Apache License,   ==
 ==  Version 2.0, in this case for the Apache xml-commons xml-apis      ==
@@ -2240,8 +2240,8 @@ Portions of this software were originally based on the following:
   - software copyright (c) 1999, IBM Corporation., http://www.ibm.com.
   - software copyright (c) 1999, Sun Microsystems., http://www.sun.com.
   - software copyright (c) 2000 World Wide Web Consortium, http://www.w3.org
-   		</notice>
-   		<notice id='rampart.notice'>
+           </notice>
+           <notice id='rampart.notice'>
 Apache Rampart
 Copyright 2010 The Apache Software Foundation
 
@@ -2250,7 +2250,7 @@ The Apache Software Foundation (http://www.apache.org/).
 
 Please read the different LICENSE files present in the lib directory of
 this distribution.
-   		</notice>
+           </notice>
     </notices>
     <organisations>
         <organisation 
@@ -2358,33 +2358,33 @@ this distribution.
             name='jQuery UI Developers'
             url='http://jqueryui.com/about' />
         <organisation
-        	id='openstack.org'
-        	name='OpenStack, LLC'
-        	url='http://www.openstack.org' />
+            id='openstack.org'
+            name='OpenStack, LLC'
+            url='http://www.openstack.org' />
         <organisation
-        	id='antlr2.org'
-        	name='ANTLR Translator Generator Project'
-        	url='http://www.antlr2.org/' />
+            id='antlr2.org'
+            name='ANTLR Translator Generator Project'
+            url='http://www.antlr2.org/' />
         <organisation
-        	id='qos.ch'
-        	name='QOS.ch'
-        	url='http://www.qos.ch/' />
+            id='qos.ch'
+            name='QOS.ch'
+            url='http://www.qos.ch/' />
         <organisation
-        	id='dom4j.sourceforge.net'
-        	name='DOM4J Project'
-        	url='http://dom4j.sourceforge.net/' />
+            id='dom4j.sourceforge.net'
+            name='DOM4J Project'
+            url='http://dom4j.sourceforge.net/' />
         <organisation
-        	id='json-simple'
-        	name='Json.simple Project'
-        	url='http://code.google.com/p/json-simple/' />
+            id='json-simple'
+            name='Json.simple Project'
+            url='http://code.google.com/p/json-simple/' />
         <organisation
-        	id='junit.org'
-        	name='JUnit Project'
-        	url='http://www.junit.org/' />
+            id='junit.org'
+            name='JUnit Project'
+            url='http://www.junit.org/' />
         <organisation
-        	id='person:shigeru.chiba'
-        	name='Shigeru Chiba'
-        	url='http://www.csg.ci.i.u-tokyo.ac.jp/~chiba/javassist/' />
+            id='person:shigeru.chiba'
+            name='Shigeru Chiba'
+            url='http://www.csg.ci.i.u-tokyo.ac.jp/~chiba/javassist/' />
         <organisation
             id='citrix.com'
             name='Citrix Systems, Inc'
@@ -2398,13 +2398,17 @@ this distribution.
             name='Simon Kelley'
             url='' />
         <organisation
-        	id='openssh.org'
-        	name='OpenSSH Project'
-        	url='http://www.openssh.org/' />
+            id='openssh.org'
+            name='OpenSSH Project'
+            url='http://www.openssh.org/' />
         <organisation
-        	id='netfilter.org'
-        	name='The netfilter.org project'
-        	url='http://www.netfilter.org/' />
+            id='netfilter.org'
+            name='The netfilter.org project'
+            url='http://www.netfilter.org/' />
+        <organisation
+            id='libvirt.org'
+            name='The libvirt project'
+            url='http://libvirt.org/' />
     </organisations>
     <primary-license id='ApacheLicenseVersion2'>
         <copyright-notice>Copyright (c) 2012 The Apache Software Foundation</copyright-notice>
@@ -2454,10 +2458,10 @@ Copyright (c) 2012 The Apache Software Foundation
         </public-domain>
     </within>
     <within dir='patches/systemvm/debian/config/etc/ssh/'>
-    	<with-license id='BSD2ClauseGeneric'>
+        <with-license id='BSD2ClauseGeneric'>
             <copyright-notice />
-    		<by-organisation id='openssh.org'>
-    			<resource name='sshd_config' />
+            <by-organisation id='openssh.org'>
+                <resource name='sshd_config' />
             </by-organisation>
         </with-license>
     </within>
@@ -2576,9 +2580,9 @@ Updated November 2009 with contributions from: btburnett3, Anthony Aragues and X
     </within>
     <within dir='ui/lib/qunit'>
         <with-license id='MIT'>
-	        <copyright-notice>
+            <copyright-notice>
 Copyright (c) 2012 John Resig, Jörn Zaefferer
-	        </copyright-notice>
+            </copyright-notice>
             <by-organisation id='person:jorn.zaefferer'>
                 <resource name="qunit.css" source='http://docs.jquery.com/QUnit' />
                 <resource name="qunit.js" source='http://docs.jquery.com/QUnit' />
@@ -2606,6 +2610,16 @@ Copyright (c) 2004 Clinton Begin
         </with-license>
     </within>
     <within dir='target/jar'>
+        <with-license id='MIT'>
+            <copyright-notice>
+Copyright (C) 2008      Tóth István &lt;stoty@tvnet.hu&gt;
+              2008-2012 Daniel Veillard &lt;veillard@redhat.com&gt;
+              2009-2011 Bryan Kearney &lt;bkearney@redhat.com&gt;
+            </copyright-notice>
+            <by-organisation id='libvirt.org'>
+                <resource name='libvirt-java-0.4.9' />
+            </by-organisation>
+        </with-license>
         <with-license id="ApacheLicenseVersion2">
             <copyright-notice>
 Copyright (c) 2012 The Apache Software Foundation
@@ -2740,8 +2754,8 @@ All rights reserved.
         </with-license>
         <with-license id='CPL1'>
             <copyright-notice />
-        	<by-organisation id='junit.org'>
-        		<resource name='cloud-junit.jar' source='http://kentbeck.github.com/junit/' />
+            <by-organisation id='junit.org'>
+                <resource name='cloud-junit.jar' source='http://kentbeck.github.com/junit/' />
             </by-organisation>
         </with-license>
         <public-domain>
@@ -2751,49 +2765,49 @@ All rights reserved.
         </public-domain>
     </within>
     <within dir='scripts/storage/secondary'>
-    	<with-license id='ApacheLicenseVersion2'>
-    		<copyright-notice>
+        <with-license id='ApacheLicenseVersion2'>
+            <copyright-notice>
 Copyright (c) 2010-2011 OpenStack, LLC.
-			</copyright-notice>
-			<by-organisation id='openstack.org'>
-				<resource name='swift' />
-			</by-organisation>
-		</with-license>
-	</within>
+            </copyright-notice>
+            <by-organisation id='openstack.org'>
+                <resource name='swift' />
+            </by-organisation>
+        </with-license>
+    </within>
     <within dir='scripts/vm/hypervisor/xenserver'>
-    	<with-license id='ApacheLicenseVersion2'>
-    		<copyright-notice>
+        <with-license id='ApacheLicenseVersion2'>
+            <copyright-notice>
 Copyright (c) 2010-2011 OpenStack, LLC.
-			</copyright-notice>
-			<by-organisation id='openstack.org'>
-				<resource name='swift' />
-			</by-organisation>
-		</with-license>
-	</within>
+            </copyright-notice>
+            <by-organisation id='openstack.org'>
+                <resource name='swift' />
+            </by-organisation>
+        </with-license>
+    </within>
     <within dir='deps/awsapi-lib'>
-    	<with-license id='ApacheLicenseVersion2'>
-    		<copyright-notice>
+        <with-license id='ApacheLicenseVersion2'>
+            <copyright-notice>
 Copyright (c) 2004-2008 The Apache Software Foundation
-			</copyright-notice>
-			<by-organisation id='apache.org.2'>
-				<resource name='XmlSchema-1.4.3.jar' notice='xmlschema.notice' />
-			</by-organisation>
-		</with-license>
-		<with-license id='antlr2'>
+            </copyright-notice>
+            <by-organisation id='apache.org.2'>
+                <resource name='XmlSchema-1.4.3.jar' notice='xmlschema.notice' />
+            </by-organisation>
+        </with-license>
+        <with-license id='antlr2'>
             <copyright-notice />
-			<by-organisation id='antlr2.org'>
-				<resource name='antlr-2.7.6.jar' source='http://repo1.maven.org/maven2/antlr/antlr/2.7.6/antlr-2.7.6-sources.jar' />
-			</by-organisation>
-		</with-license>
-		<with-license id='MIT'>
-    		<copyright-notice>
+            <by-organisation id='antlr2.org'>
+                <resource name='antlr-2.7.6.jar' source='http://repo1.maven.org/maven2/antlr/antlr/2.7.6/antlr-2.7.6-sources.jar' />
+            </by-organisation>
+        </with-license>
+        <with-license id='MIT'>
+            <copyright-notice>
 Copyright (c) 2004-2011 QOS.ch
-			</copyright-notice>
-			<by-organisation id='qos.ch'>
-				<resource name='slf4j-api-1.5.11.jar' source='https://github.com/qos-ch/slf4j' />
-				<resource name='slf4j-jdk14-1.5.11.jar' source='https://github.com/qos-ch/slf4j' />
-			</by-organisation>
-		</with-license>
+            </copyright-notice>
+            <by-organisation id='qos.ch'>
+                <resource name='slf4j-api-1.5.11.jar' source='https://github.com/qos-ch/slf4j' />
+                <resource name='slf4j-jdk14-1.5.11.jar' source='https://github.com/qos-ch/slf4j' />
+            </by-organisation>
+        </with-license>
         <with-license id="ApacheLicenseVersion2">
             <copyright-notice>
 Copyright (c) 2004-2012 The Apache Software Foundation
@@ -2839,10 +2853,10 @@ Copyright (c) 2009 Google Inc.
         </with-license>
         <with-license id='dom4j.license'>
             <copyright-notice />
-        	<by-organisation id='dom4j.sourceforge.net'>
-        		<!-- TODO: Need to have a review of this license! -->
-        		<resource name='dom4j-1.6.1.jar' source='http://dom4j.sourceforge.net/source-repository.html' />
-        	</by-organisation>
+            <by-organisation id='dom4j.sourceforge.net'>
+                <!-- TODO: Need to have a review of this license! -->
+                <resource name='dom4j-1.6.1.jar' source='http://dom4j.sourceforge.net/source-repository.html' />
+            </by-organisation>
         </with-license>
         <with-license id='CDDL'>
             <copyright-notice>
@@ -2886,23 +2900,23 @@ Copyright (c) 1997-2010 Oracle and/or its affiliates. All rights reserved.
         </with-license>
         <with-license id='CPL1'>
             <copyright-notice />
-        	<by-organisation id='junit.org'>
-        		<resource name='junit-4.8.1.jar' source='http://kentbeck.github.com/junit/' />
+            <by-organisation id='junit.org'>
+                <resource name='junit-4.8.1.jar' source='http://kentbeck.github.com/junit/' />
             </by-organisation>
         </with-license>
         <with-license id='MPL1'>
             <copyright-notice />
-        	<license-parameters>
-        		<parameter><name>PROJECT</name><value>Javassist</value></parameter>
-        		<parameter><name>INITIAL_DEVELOPER</name><value>Shigeru Chiba</value></parameter>
-        		<parameter><name>INITIAL_DEVELOPER_COPYRIGHT</name><value>1999-2008 Shigeru Chiba</value></parameter>
-        		<parameter><name>CONTRIBUTORS</name><value></value></parameter>
-        		<parameter><name>ALT_LIC_NAME</name><value>GNU Lesser General Public License Version 2.1 or later</value></parameter>
-        		<parameter><name>ALT_LIC_SHORT</name><value>LGPL</value></parameter>
-           	</license-parameters>
-           	<by-organisation id='person:shigeru.chiba'>
-           		<resource name='javassist-3.9.0.GA.jar' source='http://sourceforge.net/projects/jboss/files/Javassist/' />
-           	</by-organisation>
+            <license-parameters>
+                <parameter><name>PROJECT</name><value>Javassist</value></parameter>
+                <parameter><name>INITIAL_DEVELOPER</name><value>Shigeru Chiba</value></parameter>
+                <parameter><name>INITIAL_DEVELOPER_COPYRIGHT</name><value>1999-2008 Shigeru Chiba</value></parameter>
+                <parameter><name>CONTRIBUTORS</name><value></value></parameter>
+                <parameter><name>ALT_LIC_NAME</name><value>GNU Lesser General Public License Version 2.1 or later</value></parameter>
+                <parameter><name>ALT_LIC_SHORT</name><value>LGPL</value></parameter>
+               </license-parameters>
+               <by-organisation id='person:shigeru.chiba'>
+                   <resource name='javassist-3.9.0.GA.jar' source='http://sourceforge.net/projects/jboss/files/Javassist/' />
+               </by-organisation>
         </with-license>
-	</within>
+    </within>
 </manifest>

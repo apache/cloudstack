@@ -312,7 +312,7 @@ Within the deps directory
 Within the deps/awsapi-lib directory
     licensed under the ANTLR 2 License http://www.antlr2.org/license.html  (as follows)
  
-                        
+                            
             ANTLR 2 License
             
             We reserve no legal rights to the ANTLR--it is fully in the public domain. An
@@ -328,7 +328,7 @@ Within the deps/awsapi-lib directory
             remain intact in our source code. As long as these guidelines are kept, we
             expect to continue enhancing this system and expect to make other tools
             available as they are completed.
-                          
+                            
         from ANTLR Translator Generator Project  http://www.antlr2.org/ 
             antlr-2.7.6.jar  http://repo1.maven.org/maven2/antlr/antlr/2.7.6/antlr-2.7.6-sources.jar             
 
@@ -1839,7 +1839,7 @@ Within the deps/awsapi-lib directory
             STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
             ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
             OF THE POSSIBILITY OF SUCH DAMAGE.
-                          
+                            
         from DOM4J Project  http://dom4j.sourceforge.net/ 
             dom4j-1.6.1.jar  http://dom4j.sourceforge.net/source-repository.html             
 
@@ -2343,7 +2343,7 @@ Within the deps/awsapi-lib directory
                  use the text of this Exhibit A rather than the text found in the
                  Original Code Source Code for Your Modifications.]
             
-                          
+                            
         from Shigeru Chiba  http://www.csg.ci.i.u-tokyo.ac.jp/~chiba/javassist/ 
             javassist-3.9.0.GA.jar  http://sourceforge.net/projects/jboss/files/Javassist/             
 
@@ -3900,6 +3900,34 @@ Within the target/jar directory
                             
         from The Eclipse Foundation  http://www.eclipse.org 
             cloud-javax.persistence-2.0.0.jar  http://wiki.eclipse.org/EclipseLink/Release/2.0.0             
+
+    licensed under the MIT License http://www.opensource.org/licenses/mit-license.php  (as follows)
+
+            Copyright (C) 2008      Tóth István <stoty@tvnet.hu>
+                          2008-2012 Daniel Veillard <veillard@redhat.com>
+                          2009-2011 Bryan Kearney <bkearney@redhat.com> 
+            
+            Permission is hereby granted, free  of charge, to any person obtaining
+            a  copy  of this  software  and  associated  documentation files  (the
+            "Software"), to  deal in  the Software without  restriction, including
+            without limitation  the rights to  use, copy, modify,  merge, publish,
+            distribute,  sublicense, and/or sell  copies of  the Software,  and to
+            permit persons to whom the Software  is furnished to do so, subject to
+            the following conditions:
+            
+            The  above  copyright  notice  and  this permission  notice  shall  be
+            included in all copies or substantial portions of the Software.
+            
+            THE  SOFTWARE IS  PROVIDED  "AS  IS", WITHOUT  WARRANTY  OF ANY  KIND,
+            EXPRESS OR  IMPLIED, INCLUDING  BUT NOT LIMITED  TO THE  WARRANTIES OF
+            MERCHANTABILITY,    FITNESS    FOR    A   PARTICULAR    PURPOSE    AND
+            NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+            LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+            OF CONTRACT, TORT OR OTHERWISE,  ARISING FROM, OUT OF OR IN CONNECTION
+            WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+                            
+        from The libvirt project  http://libvirt.org/ 
+            libvirt-java-0.4.9             
 
     licensed under the XStream BSD Style License https://fisheye.codehaus.org/browse/xstream/trunk/LICENSE.txt?hb=true  (as follows)
  
