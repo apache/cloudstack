@@ -468,7 +468,10 @@
       };
 
       if (args.cancel) {  //click Cancel button
-        showLabel();
+       // showLabel();
+         $edit.hide();
+         $label.fadeIn();
+         $instanceRow.closest('div.data-table').dataTable('refresh');
         return false;
       }
 
