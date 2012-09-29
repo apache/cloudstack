@@ -363,10 +363,21 @@
                   else
                     total = 0;
                   domainObj["accountTotal"] = total;
+                  var itemsAcc;
+                  var totalVMs=0;
+                  var totalVolumes=0;
+                  for(var i=0;i<total;i++) {
+                        itemsAcc = json.listaccountsresponse.account[i];
+                        totalVMs = totalVMs + itemsAcc.vmtotal;
+                        totalVolumes = totalVolumes + itemsAcc.volumetotal;
+                  }
+                  domainObj["vmTotal"] = totalVMs;
+                  domainObj["volumeTotal"] = totalVolumes;
+
                 }
               });
 
-              $.ajax({
+              /* $.ajax({
                 url: createURL("listVirtualMachines&details=min&domainid=" + domainObj.id),
                 async: false,
                 dataType: "json",
@@ -394,7 +405,7 @@
                     total = 0;
                   domainObj["volumeTotal"] = total;
                 }
-              });
+              });*/
 
               $.ajax({
                 url: createURL("listResourceLimits&domainid=" + domainObj.id),
