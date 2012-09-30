@@ -19,22 +19,25 @@ package com.cloud.agent.api;
 /**
  * 
  */
-public class CreateLogicalRouterAnswer extends Answer {
+public class ConfigureStaticNatRulesOnLogicalRouterAnswer extends Answer {
 
-    private String _logicalRouterUuid;
+	/**
+	 * @param command
+	 * @param success
+	 * @param details
+	 */
+	public ConfigureStaticNatRulesOnLogicalRouterAnswer(Command command,
+			boolean success, String details) {
+		super(command, success, details);
+	}
 
-    public CreateLogicalRouterAnswer(Command command, boolean success,
-            String details, String logicalRouterUuid) {
-        super(command, success, details);
-        this._logicalRouterUuid = logicalRouterUuid;
-    }
-    
-    public CreateLogicalRouterAnswer(Command command, Exception e) {
-        super(command, e);
-    }
-
-    public String getLogicalRouterUuid() {
-        return _logicalRouterUuid;
-    }
+	/**
+	 * @param command
+	 * @param e
+	 */
+	public ConfigureStaticNatRulesOnLogicalRouterAnswer(Command command,
+			Exception e) {
+		super(command, e);
+	}
 
 }

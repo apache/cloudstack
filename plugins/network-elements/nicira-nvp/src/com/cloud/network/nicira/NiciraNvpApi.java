@@ -284,6 +284,12 @@ public class NiciraNvpApi {
     	executeUpdateObject(logicalRouterPort, uri, Collections.<String,String>emptyMap());
     }
     
+    public NiciraNvpList<NatRule> findNatRulesByLogicalRouterUuid(String logicalRouterUuid) throws NiciraNvpApiException {
+    	String uri = "/ws.v1/lrouter/" + logicalRouterUuid + "/nat";
+    	
+    	return executeRetrieveObject(new TypeToken<NiciraNvpList<NatRule>>(){}.getType(), uri, Collections.<String,String>emptyMap());
+    }
+    
     private <T> void executeUpdateObject(T newObject, String uri, Map<String,String> parameters) throws NiciraNvpApiException {
         String url;
         try {

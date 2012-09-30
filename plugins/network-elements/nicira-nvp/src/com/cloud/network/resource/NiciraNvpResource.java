@@ -26,9 +26,11 @@ import org.apache.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AssignIpToLogicalRouterAnswer;
-import com.cloud.agent.api.AssignIpToLogicalRouterCommand;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.ConfigurePortForwardingRulesOnLogicalRouterAnswer;
+import com.cloud.agent.api.ConfigurePortForwardingRulesOnLogicalRouterCommand;
+import com.cloud.agent.api.ConfigureStaticNatRulesOnLogicalRouterAnswer;
+import com.cloud.agent.api.ConfigureStaticNatRulesOnLogicalRouterCommand;
 import com.cloud.agent.api.CreateLogicalRouterAnswer;
 import com.cloud.agent.api.CreateLogicalRouterCommand;
 import com.cloud.agent.api.CreateLogicalSwitchAnswer;
@@ -52,6 +54,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupNiciraNvpCommand;
 import com.cloud.agent.api.UpdateLogicalSwitchPortAnswer;
 import com.cloud.agent.api.UpdateLogicalSwitchPortCommand;
+import com.cloud.agent.api.to.StaticNatRuleTO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.network.nicira.Attachment;
@@ -62,6 +65,7 @@ import com.cloud.network.nicira.LogicalRouterPort;
 import com.cloud.network.nicira.LogicalSwitch;
 import com.cloud.network.nicira.LogicalSwitchPort;
 import com.cloud.network.nicira.Match;
+import com.cloud.network.nicira.NatRule;
 import com.cloud.network.nicira.NiciraNvpApi;
 import com.cloud.network.nicira.NiciraNvpApiException;
 import com.cloud.network.nicira.NiciraNvpList;
@@ -220,10 +224,12 @@ public class NiciraNvpResource implements ServerResource {
         else if (cmd instanceof DeleteLogicalRouterCommand) {
         	return executeRequest((DeleteLogicalRouterCommand) cmd, numRetries);
         }
-        else if (cmd instanceof AssignIpToLogicalRouterCommand) {
-        	return executeRequest((AssignIpToLogicalRouterCommand) cmd, numRetries);
+        else if (cmd instanceof ConfigureStaticNatRulesOnLogicalRouterCommand) {
+        	return executeRequest((ConfigureStaticNatRulesOnLogicalRouterCommand) cmd, numRetries);
         }
-        s_logger.debug("Received unsupported command " + cmd.toString());
+        else if (cmd instanceof ConfigurePortForwardingRulesOnLogicalRouterCommand) {
+        	return executeRequest((ConfigurePortForwardingRulesOnLogicalRouterCommand) cmd, numRetries);
+        }        s_logger.debug("Received unsupported command " + cmd.toString());
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
 
@@ -475,64 +481,49 @@ public class NiciraNvpResource implements ServerResource {
         }
     }
     
-    private Answer executeRequest(AssignIpToLogicalRouterCommand cmd, int numRetries) {
+    private Answer executeRequest(ConfigureStaticNatRulesOnLogicalRouterCommand cmd, int numRetries) {
     	try {
     		LogicalRouterConfig lrc = _niciraNvpApi.findOneLogicalRouterByUuid(cmd.getLogicalRouterUuid());
+    		NiciraNvpList<NatRule> existingRules = _niciraNvpApi.findNatRulesByLogicalRouterUuid(cmd.getLogicalRouterUuid());
+    		// Rules of the game (also known as assumptions-that-will-make-stuff-break-later-on)
+    		// A SourceNat rule with a match other than a /32 cidr is assumed to be the "main" SourceNat rule
+    		// Any other SourceNat rule should have a corresponding DestinationNat rule
     		
-    		NiciraNvpList<LogicalRouterPort> ports = 
-    				_niciraNvpApi.findLogicalRouterPortByGatewayServiceAndVlanId(cmd.getLogicalRouterUuid(), 
-    						cmd.getGatewayServiceUuid(), cmd.getPublicIpVlan());
-    		
-    		String publicNetworkIpAddress = cmd.getPublicIpCidr();    		
-    		
-    		if (ports.isEmpty()) {
-    			// No attachment on this network, we need to create one
-	        	// Create the outside port for the router
-	        	LogicalRouterPort lrpo = new LogicalRouterPort();
-	        	lrpo.setAdminStatusEnabled(true);
-	        	lrpo.setDisplayName(lrc.getDisplayName() + "-outside-port");
-	        	lrpo.setTags(lrc.getTags());
-	        	List<String> outsideIpAddresses = new ArrayList<String>();
-	        	outsideIpAddresses.add(publicNetworkIpAddress);
-	        	lrpo.setIpAddresses(outsideIpAddresses);
-	        	lrpo = _niciraNvpApi.createLogicalRouterPort(lrc.getUuid(),lrpo);
-	        	
-	        	// Attach the outside port to the gateway service on the correct VLAN
-	        	L3GatewayAttachment attachment = new L3GatewayAttachment(cmd.getGatewayServiceUuid());
-	        	if (cmd.getPublicIpVlan() != 0) {
-	        		attachment.setVlanId(cmd.getPublicIpVlan());
-	        	}
-	        	_niciraNvpApi.modifyLogicalRouterPortAttachment(lrc.getUuid(), lrpo.getUuid(), attachment);
-	        	return new AssignIpToLogicalRouterAnswer(cmd, true, "Ip address configured on new logical router port");
-    		}
-    		else {
-    			// There is already and attachment to this public network, see if we need to add this IP
-    			boolean found = false;
-    			LogicalRouterPort publicPort = null;
-    			for (LogicalRouterPort port : ports.getResults()) {
-    				for (String cidr : port.getIpAddresses()) {
-    					if (publicNetworkIpAddress.equals(cidr)) {
-    						found = true;
-    						publicPort = port;
-    						break;
-    					}
+    		for (StaticNatRuleTO rule : cmd.getRules()) {
+    			// Find if a DestinationNat rule exists for this rule
+    			for (NatRule storedRule : existingRules.getResults()) {
+    				if ("SourceNatRule".equals(storedRule.getType())) {
+    					continue;
     				}
+    				String insideCidr = rule.getDstIp() + "/32";
+    				String outsideCidr = rule.getSrcIp() + "/32";
+    				//if (insideCidr.equals(storedRule.getMatch().getDestinationIpAddresses()))
     			}
-    			if (found) {
-    				s_logger.warn("Ip " + publicNetworkIpAddress + " is already configured on logical router " + cmd.getLogicalRouterUuid());
-    				return new AssignIpToLogicalRouterAnswer(cmd, true, "Ip address already alocated on logical Router");
-    			}
-    			
-    			publicPort.getIpAddresses().add(publicNetworkIpAddress);
-    			_niciraNvpApi.updateLogicalRouterPortConfig(cmd.getLogicalRouterUuid(), publicPort);
-    			return new AssignIpToLogicalRouterAnswer(cmd, true, "Ip address configured on existing logical router port");
     		}
+    		//FIXME implement!
+    		return new ConfigureStaticNatRulesOnLogicalRouterAnswer(cmd, true, cmd.getRules().size() +" StaticNat rules applied");
         } catch (NiciraNvpApiException e) {
         	if (numRetries > 0) {
         		return retry(cmd, --numRetries);
         	} 
         	else {
-        		return new DeleteLogicalRouterAnswer(cmd, e);
+        		return new ConfigureStaticNatRulesOnLogicalRouterAnswer(cmd, e);
+        	}
+        }
+    	
+    }
+
+    private Answer executeRequest(ConfigurePortForwardingRulesOnLogicalRouterCommand cmd, int numRetries) {
+    	try {
+    		LogicalRouterConfig lrc = _niciraNvpApi.findOneLogicalRouterByUuid(cmd.getLogicalRouterUuid());
+    		//FIXME implement!
+    		return new ConfigurePortForwardingRulesOnLogicalRouterAnswer(cmd, true, cmd.getRules().size() +" PortForwarding rules applied");
+        } catch (NiciraNvpApiException e) {
+        	if (numRetries > 0) {
+        		return retry(cmd, --numRetries);
+        	} 
+        	else {
+        		return new ConfigurePortForwardingRulesOnLogicalRouterAnswer(cmd, e);
         	}
         }
     	

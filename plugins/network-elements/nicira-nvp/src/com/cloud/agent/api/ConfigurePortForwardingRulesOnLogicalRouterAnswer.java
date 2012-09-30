@@ -16,20 +16,19 @@
 // under the License.
 package com.cloud.agent.api;
 
-import com.cloud.agent.api.Command;
-
 /**
  * 
  */
-public class AssignIpToLogicalRouterAnswer extends Answer {
-	
-    public AssignIpToLogicalRouterAnswer(Command command, boolean success,
-            String details) {
-        super(command, success, details);
-    }
-    
-    public AssignIpToLogicalRouterAnswer(Command command, Exception e) {
-        super(command, e);
-    }
+public class ConfigurePortForwardingRulesOnLogicalRouterAnswer extends Answer {
+
+	public ConfigurePortForwardingRulesOnLogicalRouterAnswer(Command command,
+			boolean success, String details) {
+		super(command, success, details);
+	}
+
+	public ConfigurePortForwardingRulesOnLogicalRouterAnswer(Command command,
+			Exception e) {
+		super(command, e);
+	}
 
 }
