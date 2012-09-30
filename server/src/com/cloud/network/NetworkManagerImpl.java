@@ -878,7 +878,8 @@ public class NetworkManagerImpl implements NetworkManager, NetworkService, Manag
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         if (!offering.isConserveMode()) {
             for (PublicIp ip : ipToServices.keySet()) {
-                Set<Service> services = ipToServices.get(ip);
+                Set<Service> services = new HashSet<Service>() ;
+                services.addAll(ipToServices.get(ip));
                 if (services != null && services.contains(Service.Firewall)) {
                     services.remove(Service.Firewall);
                 }
