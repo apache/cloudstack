@@ -468,7 +468,12 @@
       };
 
       if (args.cancel) {  //click Cancel button
-        showLabel();
+       // showLabel();
+          var oldVal = $label.html();
+          $edit.hide();
+          $label.fadeIn();
+          $instanceRow.closest('div.data-table').dataTable('refresh');
+          $editInput.val(_s(oldVal));
         return false;
       }
 
