@@ -21,11 +21,13 @@
     var value = $form.find('input[name=value]').val();
 
     if (!key || !value) {
-      cloudStack.dialog.notice({ message: 'Please specify a tag key and value' });
-      
+      cloudStack.dialog.notice({ message: 'Please specify a tag key and value' });      
       return false;
     }
-
+   
+    if($form.find('div.field.key').find('label.error').css('display') == 'block' || $form.find('div.field.value').find('label.error').css('display') == 'block')
+		  return false;
+		
     return true;
   };
   
@@ -34,10 +36,10 @@
       var $form = $('<form>').addClass('tag-input');
       var $keyField = $('<div>').addClass('field key');
       var $keyLabel = $('<label>').attr('for', 'key').html(_l('label.key') + ':');
-      var $key = $('<input>').addClass('key').attr('name', 'key');
+      var $key = $('<input>').addClass('key disallowSpecialCharacters').attr('name', 'key');
       var $valueField = $('<div>').addClass('field value');
       var $valueLabel = $('<label>').attr('for', 'value').html(_l('label.value') + ':');
-      var $value = $('<input>').addClass('value').attr('name', 'value');
+      var $value = $('<input>').addClass('value disallowSpecialCharacters').attr('name', 'value');
       var $submit = $('<input>').attr('type', 'submit').val('Add');
 
       $keyField.append($keyLabel, $key);
@@ -47,7 +49,7 @@
         $submit
       );
 
-      $form.validate({ onfocusout: false });
+      $form.validate();
 
       $form.submit(
         args.onSubmit ?
