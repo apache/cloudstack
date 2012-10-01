@@ -3761,7 +3761,213 @@
               name: { label: 'label.name' }//,
               //state: { label: 'label.status' } //comment it for now, since dataProvider below doesn't get called by widget code after action is done
             }
-          }
+          },
+          // Nicira Nvp provider detail view
+          niciraNvp: {
+            type: 'detailView',
+            id: 'niciraNvpProvider',
+            label: 'label.niciraNvp',
+            viewAll: { label: 'label.devices', path: '_zone.niciraNvpDevices' },
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {
+                    name: { label: 'label.name' }
+                  },
+                  {
+                    state: { label: 'label.state' }
+                  }
+                ],
+                dataProvider: function(args) {
+                                  refreshNspData("NiciraNvp");
+                                    var providerObj;
+                                    $(nspHardcodingArray).each(function(){
+                                        if(this.id == "niciraNvp") {
+                                            providerObj = this;
+                                            return false; //break each loop
+                                        }
+                                    });
+                  args.response.success({
+                    data: providerObj,
+                    actionFilter: networkProviderActionFilter('niciraNvp')
+                  });
+                }
+              }
+            },
+            actions: {
+              add: {
+                label: 'label.add.NiciraNvp.device',
+                createForm: {
+                  title: 'label.add.NiciraNvp.device',
+                  preFilter: function(args) {  },   // TODO What is this?  
+                  fields: {
+                    host: {
+                      label: 'label.ip.address'
+                    },
+                    username: {
+                      label: 'label.username'
+                    },
+                    password: {
+                      label: 'label.password',
+                      isPassword: true
+                    },
+                    numretries: {
+                      label: 'label.numretries',
+                      defaultValue: '2'
+                    },
+                    transportzoneuuid: {
+                      label: 'label.nicira.transportzoneuuid'
+                    },
+                    l3gatewayserviceuuid: {
+                      label: 'label.nicira.l3gatewayserviceuuid'
+                    }
+                  }
+                },
+                action: function(args) {
+                  if(nspMap["niciraNvp"] == null) {
+                    $.ajax({
+                      url: createURL("addNetworkServiceProvider&name=NiciraNvp&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                      dataType: "json",
+                      async: true,
+                      success: function(json) {
+                        var jobId = json.addnetworkserviceproviderresponse.jobid;                        
+                        var addNiciraNvpProviderIntervalID = setInterval(function() {  
+                          $.ajax({
+                            url: createURL("queryAsyncJobResult&jobId="+jobId),
+                            dataType: "json",
+                            success: function(json) {
+                              var result = json.queryasyncjobresultresponse;
+                              if (result.jobstatus == 0) {
+                                return; //Job has not completed
+                              }
+                              else {
+                                clearInterval(addNiciraNvpProviderIntervalID); 
+                                if (result.jobstatus == 1) {
+                                  nspMap["niciraNvp"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                  addNiciraNvpDevice(args, selectedPhysicalNetworkObj, "addNiciraNvpDevice", "addniciranvpdeviceresponse", "niciranvpdevice")
+                                }
+                                else if (result.jobstatus == 2) {
+                                  alert("addNetworkServiceProvider&name=NiciraNvp failed. Error: " + _s(result.jobresult.errortext));
+                                }
+                              }
+                            },
+                            error: function(XMLHttpResponse) {
+                              var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                              alert("addNetworkServiceProvider&name=NiciraNvp failed. Error: " + errorMsg);
+                            }
+                          });
+                        }, 3000);       
+                      }
+                    });
+                  }
+                  else {
+                      addNiciraNvpDevice(args, selectedPhysicalNetworkObj, "addNiciraNvpDevice", "addniciranvpdeviceresponse", "niciranvpdevice")
+                  }
+                },
+                messages: {
+                  notification: function(args) {
+                    return 'label.add.NiciraNvp.device';
+                  }
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              },
+              enable: {
+                label: 'label.enable.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["niciraNvp"].id + "&state=Enabled"),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                                                        getUpdatedItem: function(json) {
+                                                            $(window).trigger('cloudStack.fullRefresh');
+                                                        }
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                messages: {
+                                  confirm: function(args) {
+                                      return 'message.confirm.enable.provider';
+                                    },
+                  notification: function() {
+                                      return 'label.enable.provider';
+                                  }
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+              disable: {
+                label: 'label.disable.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("updateNetworkServiceProvider&id=" + nspMap["niciraNvp"].id + "&state=Disabled"),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.updatenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                          {
+                            jobId: jid,
+                                   getUpdatedItem: function(json) {
+                                     $(window).trigger('cloudStack.fullRefresh');
+                                   }
+                          }
+                        }
+                      );
+                    }
+                  });
+                },
+                messages: {
+                                  confirm: function(args) {
+                                      return 'message.confirm.disable.provider';
+                                    },
+                  notification: function() {
+                                      return 'label.disable.provider';
+                                    }
+                },
+                notification: { poll: pollAsyncJobResult }
+              },
+              destroy: {
+                label: 'label.shutdown.provider',
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("deleteNetworkServiceProvider&id=" + nspMap["niciraNvp"].id),
+                    dataType: "json",
+                    success: function(json) {
+                      var jid = json.deletenetworkserviceproviderresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {
+                           jobId: jid
+                         }
+                        }
+                      );
+
+                      $(window).trigger('cloudStack.fullRefresh');
+                    }
+                  });
+                },
+                messages: {
+                                  confirm: function(args) {
+                                      return 'message.confirm.shutdown.provider';
+                                    },
+                  notification: function(args) {
+                                      return 'label.shutdown.provider';
+                                    }
+                },
+                notification: { poll: pollAsyncJobResult }
+              }
+            }
+          }          
         }
       }
     },
@@ -6312,7 +6518,171 @@
           }
         }
       },
-
+      // FIXME convert to nicira detailview
+      // NiciraNvp devices listView
+      niciraNvpDevices: {
+        id: 'niciraNvpDevices',
+        title: 'label.devices',
+        listView: {
+          id: 'niciraNvpDevices',
+          fields: {
+            hostname: { label: 'label.nicira.controller.address' },
+            transportzoneuuid: { label: 'label.nicira.transportzoneuuid'},
+            l3gatewayserviceuuid: { label: 'label.nicira.l3gatewayserviceuuid' }
+          },
+          actions: {
+        	  add: {
+                label: 'label.add.NiciraNvp.device',
+                createForm: {
+                  title: 'label.add.NiciraNvp.device',
+                  preFilter: function(args) {  },   // TODO What is this?
+                  fields: {
+                    host: {
+                      label: 'label.ip.address'
+                    },
+                    username: {
+                      label: 'label.username'
+                    },
+                    password: {
+                      label: 'label.password',
+                      isPassword: true
+                    },
+                    numretries: {
+                      label: 'label.numretries',
+                      defaultValue: '2'
+                    },
+                    transportzoneuuid: {
+                      label: 'label.nicira.transportzoneuuid'
+                    },
+                    l3gatewayserviceuuid: {
+                      label: 'label.nicira.l3gatewayserviceuuid'
+                    }
+                  }
+                },
+                action: function(args) {
+                  if(nspMap["niciraNvp"] == null) {
+                    $.ajax({
+                      url: createURL("addNetworkServiceProvider&name=NiciraNvp&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+                      dataType: "json",
+                      async: true,
+                      success: function(json) {
+                        var jobId = json.addnetworkserviceproviderresponse.jobid;                        
+                        var addNiciraNvpProviderIntervalID = setInterval(function() {  
+                          $.ajax({
+                            url: createURL("queryAsyncJobResult&jobId="+jobId),
+                            dataType: "json",
+                            success: function(json) {
+                              var result = json.queryasyncjobresultresponse;
+                              if (result.jobstatus == 0) {
+                                return; // Job has not completed
+                              }
+                              else {
+                                clearInterval(addNiciraNvpProviderIntervalID); 
+                                if (result.jobstatus == 1) {
+                                  nspMap["niciraNvp"] = json.queryasyncjobresultresponse.jobresult.networkserviceprovider;
+                                  addNiciraNvpDevice(args, selectedPhysicalNetworkObj, "addNiciraNvpDevice", "addniciranvpdeviceresponse", "niciranvpdevice")
+                                }
+                                else if (result.jobstatus == 2) {
+                                  alert("addNetworkServiceProvider&name=NiciraNvp failed. Error: " + _s(result.jobresult.errortext));
+                                }
+                              }
+                            },
+                            error: function(XMLHttpResponse) {
+                              var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                              alert("addNetworkServiceProvider&name=NiciraNvp failed. Error: " + errorMsg);
+                            }
+                          });
+                        }, 3000);       
+                      }
+                    });
+                  }
+                  else {
+                      addNiciraNvpDevice(args, selectedPhysicalNetworkObj, "addNiciraNvpDevice", "addniciranvpdeviceresponse", "niciranvpdevice")
+                  }
+                },
+        	  
+              messages: {
+                notification: function(args) {
+                  return 'Added new Nicira Nvp Controller';
+                }
+              },
+              notification: {
+                poll: pollAsyncJobResult
+              }
+            }
+          },
+          dataProvider: function(args) {
+            $.ajax({
+              url: createURL("listNiciraNvpDevices&physicalnetworkid=" + selectedPhysicalNetworkObj.id),
+              data: { page: args.page, pageSize: pageSize },
+              dataType: "json",
+              async: false,
+              success: function(json) {
+                var items = json.listniciranvpdeviceresponse.niciranvpdevice;
+                args.response.success({data: items});
+              }
+            });
+          },   
+          detailView: {
+            name: 'Nicira Nvp details',
+            actions: {
+              'remove': {
+                label: 'label.delete.NiciaNvp',
+                messages: {
+                  confirm: function(args) {
+                    return 'message.confirm.delete.NiciraNvp';
+                  },
+                  notification: function(args) {
+                    return 'label.delete.NiciraNvp';
+                  }
+                },
+                action: function(args) {
+                  $.ajax({
+                    url: createURL("deleteNiciraNvpDevice&nvpdeviceid=" + args.context.niciraNvpDevices[0].nvpdeviceid),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      var jid = json.deleteniciranvpdeviceresponse.jobid;
+                      args.response.success(
+                        {_custom:
+                         {jobId: jid}
+                        }
+                      );
+                    }
+                  });
+                },
+                notification: {
+                  poll: pollAsyncJobResult
+                }
+              }
+            },
+            tabs: {
+              details: {
+                title: 'label.details',
+                fields: [
+                  {
+                    nvpdeviceid: { label: 'label.id' },
+                    hostname: { label: 'label.ip.address' },
+                    transportzoneuuid: { label: 'label.nicira.transportzoneuuid' },
+                    l3gatewayserviceuuid: { label: 'label.nicira.l3gatewayserviceuuid' }
+                  }
+                ],
+                dataProvider: function(args) {                                
+                                    $.ajax({
+                                        url: createURL("listNiciraNvpDevices&nvpdeviceid=" + args.context.niciraNvpDevices[0].nvpdeviceid),                                       
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {                                         
+                                            var item = json.listniciranvpdeviceresponse.niciranvpdevice[0];
+                                            args.response.success({data: item});
+                                        }
+                                    });                                 
+                }
+              }
+            }
+          }
+        }
+      },
       pods: {
         title: 'label.pods',
         listView: {
@@ -9327,6 +9697,40 @@
     });
   }
 
+  function addNiciraNvpDevice(args, physicalNetworkObj, apiCmd, apiCmdRes, apiCmdObj) {
+    var array1 = [];
+    array1.push("&physicalnetworkid=" + physicalNetworkObj.id);
+    array1.push("&username=" + todb(args.data.username));
+    array1.push("&password=" + todb(args.data.password));
+    array1.push("&hostname=" + todb(args.data.host));
+    array1.push("&transportzoneuuid=" + todb(args.data.transportzoneuuid));
+
+    var l3GatewayServiceUuid = args.data.l3gatewayserviceuuid;
+    if(l3GatewayServiceUuid != null && l3GatewayServiceUuid.length > 0) {
+        array1.push("&l3gatewayserviceuuid=" + todb(args.data.l3gatewayserviceuuid));
+    }
+    
+    $.ajax({
+      url: createURL(apiCmd + array1.join("")),
+      dataType: "json",
+      success: function(json) {
+        var jid = json[apiCmdRes].jobid;
+        args.response.success(
+          {_custom:
+           {jobId: jid,
+            getUpdatedItem: function(json) {
+              var item = json.queryasyncjobresultresponse.jobresult[apiCmdObj];
+
+              return item;
+            }
+           }
+          }
+        );
+      }
+    });
+  }
+
+
 	var afterCreateZonePhysicalNetworkTrafficTypes = function(args, newZoneObj, newPhysicalnetwork) {
 		$.ajax({
 			url: createURL("updatePhysicalNetwork&state=Enabled&id=" + newPhysicalnetwork.id),
@@ -9924,6 +10328,9 @@
 							case "SecurityGroupProvider":
 								nspMap["securityGroups"] = items[i];
 								break;
+                            case "NiciraNvp":
+                                nspMap["niciraNvp"] = items[i];
+                                break;
 						}
 					}
 				}
@@ -9940,7 +10347,12 @@
 				id: 'virtualRouter',
 				name: 'Virtual Router',
 				state: nspMap.virtualRouter ? nspMap.virtualRouter.state : 'Disabled'
-			}
+			},
+            {
+                id: 'niciraNvp',
+                name: 'Nicira Nvp',
+                state: nspMap.niciraNvp ? nspMap.niciraNvp.state : 'Disabled'
+            }
 		];
 
 		if(selectedZoneObj.networktype == "Basic") {

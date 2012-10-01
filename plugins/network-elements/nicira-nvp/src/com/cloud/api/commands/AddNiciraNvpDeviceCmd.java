@@ -42,7 +42,7 @@ import com.cloud.user.UserContext;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Implementation(responseObject=NiciraNvpDeviceResponse.class, description="Adds a Nicira NVP device")
-public class AddNiciraNvpDeviceCmd extends BaseCmd {
+public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
     private static final Logger s_logger = Logger.getLogger(AddNiciraNvpDeviceCmd.class.getName());
     private static final String s_name = "addniciranvpdevice";
     @PlugService NiciraNvpElementService _niciraNvpElementService;
@@ -130,4 +130,14 @@ public class AddNiciraNvpDeviceCmd extends BaseCmd {
     public long getEntityOwnerId() {
         return UserContext.current().getCaller().getId();
     }
+
+	@Override
+	public String getEventType() {
+		return EventTypes.EVENT_EXTERNAL_NVP_CONTROLLER_ADD;
+	}
+
+	@Override
+	public String getEventDescription() {
+		return "Adding a Nicira Nvp Controller";
+	}
 }

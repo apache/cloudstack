@@ -43,7 +43,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Implementation(responseObject=NiciraNvpDeviceResponse.class, description="Lists Nicira NVP devices")
 public class ListNiciraNvpDevicesCmd extends BaseListCmd {
     private static final Logger s_logger = Logger.getLogger(ListNiciraNvpDevicesCmd.class.getName());
-    private static final String s_name = "listniciranvpdevices";
+    private static final String s_name = "listniciranvpdeviceresponse";
     @PlugService NiciraNvpElementService _niciraNvpElementService;
 
    /////////////////////////////////////////////////////

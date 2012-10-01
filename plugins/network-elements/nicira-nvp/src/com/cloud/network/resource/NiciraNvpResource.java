@@ -229,7 +229,8 @@ public class NiciraNvpResource implements ServerResource {
         }
         else if (cmd instanceof ConfigurePortForwardingRulesOnLogicalRouterCommand) {
         	return executeRequest((ConfigurePortForwardingRulesOnLogicalRouterCommand) cmd, numRetries);
-        }        s_logger.debug("Received unsupported command " + cmd.toString());
+        }        
+        s_logger.debug("Received unsupported command " + cmd.toString());
         return Answer.createUnsupportedCommandAnswer(cmd);
     }
 

@@ -657,11 +657,18 @@ public class NiciraNvpElement extends AdapterBase implements
 	@Override
 	public NiciraNvpDeviceResponse createNiciraNvpDeviceResponse(
 			NiciraNvpDeviceVO niciraNvpDeviceVO) {
+		HostVO niciraNvpHost = _hostDao.findById(niciraNvpDeviceVO.getHostId());
+		_hostDao.loadDetails(niciraNvpHost);
+		
 		NiciraNvpDeviceResponse response = new NiciraNvpDeviceResponse();
 		response.setDeviceName(niciraNvpDeviceVO.getDeviceName());
 		response.setPhysicalNetworkId(niciraNvpDeviceVO.getPhysicalNetworkId());
 		response.setId(niciraNvpDeviceVO.getId());
 		response.setProviderName(niciraNvpDeviceVO.getProviderName());
+		response.setHostName(niciraNvpHost.getDetail("ip"));
+		response.setTransportZoneUuid(niciraNvpHost.getDetail("transportzoneuuid"));
+		response.setL3GatewayServiceUuid(niciraNvpHost.getDetail("l3gatewayserviceuuid"));
+		response.setObjectName("niciranvpdevice");
 		return response;
 	}
 
@@ -705,7 +712,6 @@ public class NiciraNvpElement extends AdapterBase implements
 		_resourceMgr.deleteHost(hostId, false, false);
 
 		_niciraNvpDao.remove(niciraDeviceId);
-
 		return true;
 	}
 
