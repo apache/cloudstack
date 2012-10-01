@@ -297,9 +297,26 @@ class puppet-devcloud {
     group   => '0',
   }
 
+  file { '/opt/cloudstack/installmaven.sh':
+    ensure  => 'file',
+    source  => 'puppet:///modules/puppet-devcloud/installmaven.sh',
+    mode    => '777',
+    owner   => '0',
+    group   => '0',
+  }
+
+  exec { "install_maven":
+    require => File['/opt/cloudstack/installmaven.sh'],
+    command => '/opt/cloudstack/installmaven.sh',
+    cwd     => '/opt/cloudstack',
+    creates => '/opt/cloudstack/apache-maven-3.0.4/',
+    timeout => '0',
+  }
+
   exec { "build_cloudstack":
     require => [
       Package['ant'],
+      Exec['install_maven'],
       Exec["catalina_home"],
       File['/opt/cloudstack/incubator-cloudstack/dist'],
       File['/opt/cloudstack/incubator-cloudstack/target'],
