@@ -123,11 +123,26 @@
       <artifactId>commons-configuration</artifactId>
       <version>${cs.configuration.version}</version>
     </dependency>
+    <!-- Test dependency in mysql for db tests -->
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>5.1.21</version>
+      <scope>test</scope>
+    </dependency>    
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
+    <testResources>
+      <testResource>
+        <directory>test/resources</directory>
+      </testResource>
+      <testResource>
+        <directory>conf</directory>
+      </testResource>
+    </testResources>    
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -140,6 +155,15 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>com/cloud/utils/testcase/*TestCase*</exclude>
+          </excludes>
+        </configuration>
+      </plugin>      
     </plugins>
     <resources>
        <resource>

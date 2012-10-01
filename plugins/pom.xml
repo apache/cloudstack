@@ -29,6 +29,7 @@
   <build>
     <defaultGoal>install</defaultGoal>
     <sourceDirectory>src</sourceDirectory>
+    <testSourceDirectory>test</testSourceDirectory>
   </build>
   <modules>
     <module>deployment-planners/user-concentrated-pod</module>

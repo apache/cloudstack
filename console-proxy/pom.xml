@@ -137,7 +137,19 @@
           </execution>
         </executions>
       </plugin>
-      <!--plugin>
+    </plugins>
+  </build>
+  <profiles>
+    <profile>
+      <id>systemvm</id>
+      <activation>
+        <property>
+          <name>systemvm</name>
+        </property>
+      </activation>
+      <build>
+      <plugins>
+      <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.2.1</version>
@@ -162,7 +174,10 @@
             <argument>authorized_keys</argument>
           </arguments>
         </configuration>
-      </plugin-->
-    </plugins>
-  </build>
+      </plugin>
+      </plugins>
+      </build>
+    </profile>
+  </profiles>
+
 </project>

@@ -343,4 +343,5 @@
       </plugins>
     </pluginManagement>
   </build>
+  <packaging>war</packaging>
 </project>

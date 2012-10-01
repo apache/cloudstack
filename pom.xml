@@ -156,6 +156,7 @@
     <module>plugins</module>
     <module>awsapi</module>
     <module>patches</module>
+    <module>client</module>
     <module>test</module>
   </modules>
 
@@ -312,12 +313,7 @@
   </build>
 
   <profiles>
-    <profile>
-      <id>client</id>
-      <modules>
-        <module>client</module>
-      </modules>
-    </profile>
+
     <profile>
       <id>deps</id>
       <modules>
@@ -330,6 +326,18 @@
         <module>developer</module>
       </modules>
     </profile>
+    <profile>
+      <id>vmware</id>
+      <activation>
+        <property>
+          <name>nonoss</name>
+        </property>
+      </activation>
+      <modules>
+        <module>vmware-base</module>
+      </modules>
+    </profile>
+
   </profiles>
 
 </project>
