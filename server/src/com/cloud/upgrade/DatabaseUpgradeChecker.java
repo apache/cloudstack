@@ -55,6 +55,7 @@ import com.cloud.upgrade.dao.Upgrade229to2210;
 import com.cloud.upgrade.dao.Upgrade301to302;
 import com.cloud.upgrade.dao.Upgrade302to40;
 import com.cloud.upgrade.dao.Upgrade30to301;
+import com.cloud.upgrade.dao.Upgrade40to41;
 import com.cloud.upgrade.dao.UpgradeSnapshot217to224;
 import com.cloud.upgrade.dao.UpgradeSnapshot223to224;
 import com.cloud.upgrade.dao.VersionDao;
@@ -157,6 +158,8 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         _upgradeMap.put("3.0.1", new DbUpgrade[] { new Upgrade301to302(), new Upgrade302to40() });
 
         _upgradeMap.put("3.0.2", new DbUpgrade[] { new Upgrade302to40() });
+        
+        _upgradeMap.put("4.0.0", new DbUpgrade[] { new Upgrade40to41() });
     }
 
     protected void runScript(Connection conn, File file) {
