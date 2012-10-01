@@ -73,7 +73,9 @@
 									}
 								});
 							}						
-						}
+						},
+						tagKey: { label: 'Tag Key' },
+						tagValue: { label: 'Tag Value' }						
 					},
 
           // List view actions
@@ -299,8 +301,12 @@
             var array1 = [];						
             if(args.filterBy != null) {					
 						  if(args.filterBy.advSearch != null && typeof(args.filterBy.advSearch) == "object") {
-							  for(var key in args.filterBy.advSearch) {
-								  if(args.filterBy.advSearch[key] != null && args.filterBy.advSearch[key].length > 0)
+							  for(var key in args.filterBy.advSearch) {								  
+									if(key == 'tagKey')
+									  array1.push("&tags[0].key=" + args.filterBy.advSearch[key]);
+									else if(key == 'tagValue')
+									  array1.push("&tags[0].value=" + args.filterBy.advSearch[key]);			
+								  else if(args.filterBy.advSearch[key] != null && args.filterBy.advSearch[key].length > 0)
 								    array1.push("&" + key + "=" + args.filterBy.advSearch[key]);
 								}
 							}						
