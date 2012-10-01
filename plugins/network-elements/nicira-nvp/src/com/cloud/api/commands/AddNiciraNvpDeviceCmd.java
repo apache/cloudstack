@@ -44,7 +44,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @Implementation(responseObject=NiciraNvpDeviceResponse.class, description="Adds a Nicira NVP device")
 public class AddNiciraNvpDeviceCmd extends BaseAsyncCmd {
     private static final Logger s_logger = Logger.getLogger(AddNiciraNvpDeviceCmd.class.getName());
-    private static final String s_name = "addniciranvpdevice";
+    private static final String s_name = "addniciranvpdeviceresponse";
     @PlugService NiciraNvpElementService _niciraNvpElementService;
     
     /////////////////////////////////////////////////////
