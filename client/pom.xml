@@ -16,8 +16,7 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>cloud-client-ui</artifactId>
   <name>Apache CloudStack Client UI</name>
@@ -25,7 +24,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
+    <version>4.1.0-SNAPSHOT</version>
   </parent>
   <dependencies>
     <dependency>
@@ -152,15 +151,15 @@
             </goals>
             <configuration>
               <target>
-                <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes" >
-                  <fileset dir="${basedir}/WEB-INF/classes" >
+                <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes">
+                  <fileset dir="${basedir}/WEB-INF/classes">
                     <include name="resources/**/*" />
                   </fileset>
                 </copy>
-                <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts" >
+                <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts">
                   <fileset dir="${basedir}/../scripts" />
                 </copy>
-                <copy todir="${basedir}/target/generated-webapp" >
+                <copy todir="${basedir}/target/generated-webapp">
                   <fileset dir="${basedir}/../ui" />
                 </copy>
                 <copy overwrite="true" todir="${basedir}/target/generated-webapp/WEB-INF/classes">
@@ -204,7 +203,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore></ignore>
+                    <ignore />
                   </action>
                 </pluginExecution>
               </pluginExecutions>
