@@ -1004,6 +1004,7 @@
                         return toClearInterval;												
 											}											
 										},
+		    status: {label: 'label.status'},
                     type: { label: 'label.type' },
                     storagetype: { label: 'label.storage.type' },   
                     hypervisor: { label: 'label.hypervisor' },										
