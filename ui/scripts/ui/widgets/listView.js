@@ -670,12 +670,15 @@
     return $filters.appendTo($toolbar);
   };
 
-  var createSearchBar = function($toolbar) {
+  var createSearchBar = function($toolbar, listViewData) {
     var $search = $('<div></div>').addClass('text-search reduced-hide');
     var $searchBar = $('<div></div>').addClass('search-bar reduced hide').appendTo($search);
     $searchBar.append('<input type="text" />');
     $search.append('<div id="basic_search" class="button search"></div>');
-		//$search.append('<div id="advanced_search" class="button search"></div>'); 
+		/*		
+		if(listViewData.advSearchFields != null)
+		  $search.append('<div id="advanced_search" class="button search"></div>'); 
+		*/	
     return $search.appendTo($toolbar);
   };
 
@@ -1271,7 +1274,7 @@
                  listViewData.actions,
                  { reorder: reorder });
     createFilters($toolbar, listViewData.filters);
-    createSearchBar($toolbar);
+    createSearchBar($toolbar, listViewData);
 
     loadBody(
       $table,
