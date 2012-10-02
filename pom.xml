@@ -186,6 +186,7 @@
             <numUnapprovedLicenses>0</numUnapprovedLicenses>
             <excludeSubProjects>true</excludeSubProjects>
             <excludes>
+              <exclude>INSTALL.md</exclude>
               <exclude>.git/**</exclude>
               <exclude>.gitignore</exclude>
               <exclude>**/*.crt</exclude>
