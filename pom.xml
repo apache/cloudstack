@@ -72,9 +72,9 @@
     <cs.xmlrpc.version>3.1.3</cs.xmlrpc.version>
     <cs.mail.version>1.4</cs.mail.version>
     <cs.axis.version>1.4</cs.axis.version>
-    <cs.axis2.version>1.5.1</cs.axis2.version>
+    <cs.axis2.version>1.6.2</cs.axis2.version>
     <cs.rampart.version>1.6.2</cs.rampart.version>
-    <cs.axiom.version>1.2.8</cs.axiom.version>
+    <cs.axiom.version>1.2.13</cs.axiom.version>
     <cs.neethi.version>2.0.4</cs.neethi.version>
     <cs.servlet.version>2.4</cs.servlet.version>
     <cs.jstl.version>1.2</cs.jstl.version>
