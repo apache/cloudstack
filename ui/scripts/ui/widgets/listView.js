@@ -675,10 +675,10 @@
     var $searchBar = $('<div></div>').addClass('search-bar reduced hide').appendTo($search);
     $searchBar.append('<input type="text" />');
     $search.append('<div id="basic_search" class="button search"></div>');
-		/*	
+		
 		if(listViewData.advSearchFields != null)
 		  $search.append('<div id="advanced_search" class="button search"></div>'); 
-		*/
+		
     return $search.appendTo($toolbar);
   };
 

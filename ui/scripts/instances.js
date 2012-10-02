@@ -56,7 +56,36 @@
           }
         }
       },
+			
+			advSearchFields: {
+				name: { label: 'Name' },
+				zoneid: { 
+					label: 'Zone',							
+					select: function(args) {							  					
+						$.ajax({
+							url: createURL('listZones'),
+							data: {
+								listAll: true
+							},
+							success: function(json) {									  
+								var zones = json.listzonesresponse.zone;
 
+								args.response.success({
+									data: $.map(zones, function(zone) {
+										return {
+											id: zone.id,
+											description: zone.name
+										};
+									})
+								});
+							}
+						});
+					}						
+				},									
+				tagKey: { label: 'Tag Key' },
+				tagValue: { label: 'Tag Value' }						
+			},						
+			
       // List view actions
       actions: {
         // Add instance wizard
