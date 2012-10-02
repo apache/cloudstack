@@ -129,6 +129,32 @@
                                     <sqlCommand>create database `cloud`</sqlCommand>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>drop-database-usage</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <configuration>
+                                    <username>root</username>
+                                    <password>${db.cloud.password}</password>
+                                    <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
+                                    <sqlCommand>drop database if exists `cloud_usage`</sqlCommand>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>create-database-usage</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <configuration>
+                                    <username>root</username>
+                                    <password>${db.cloud.password}</password>
+                                    <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
+                                    <sqlCommand>create database `cloud_usage`</sqlCommand>
+                                </configuration>
+                            </execution>
 							<execution>
 								<id>create-schema</id>
 								<phase>process-test-resources</phase>
@@ -138,6 +164,7 @@
 								<configuration>
 									<srcFiles>
 										<srcFile>${basedir}/target/db/create-schema.sql</srcFile>
+										<srcFile>${basedir}/target/db/create-schema-premium.sql</srcFile>
 										<srcFile>${basedir}/target/db/templates.sql</srcFile>
 										<srcFile>${basedir}/target/db/create-index-fk.sql</srcFile>
 									</srcFiles>
