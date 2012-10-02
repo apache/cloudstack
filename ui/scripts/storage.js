@@ -49,6 +49,7 @@
 						}
 						*/
           },
+					
 					advSearchFields: {
 					  name: { label: 'Name' },
 						zoneid: { 
@@ -73,32 +74,7 @@
 									}
 								});
 							}						
-						},											
-						
-						domainid: {
-							label: 'Domain',							
-							select: function(args) {
-								$.ajax({
-									url: createURL('listDomains'),
-									data: { 
-									  listAll: true,
-                    details: 'min'					
-									},
-									success: function(json) {
-										args.response.success({
-											data: $.map(json.listdomainsresponse.domain, function(domain) {
-												return {
-													id: domain.id,
-													description: domain.path
-												};
-											})
-										});
-									}
-								});
-							}
-						},
-						account: { label: 'Account' },
-												
+						},									
 						tagKey: { label: 'Tag Key' },
 						tagValue: { label: 'Tag Value' }						
 					},
@@ -323,39 +299,20 @@
           },
 
           dataProvider: function(args) {
-            var array1 = [];						
-            if(args.filterBy != null) {					
-						  if(args.filterBy.advSearch != null && typeof(args.filterBy.advSearch) == "object") {
-							  for(var key in args.filterBy.advSearch) {								  
-									if(key == 'tagKey' && args.filterBy.advSearch[key].length > 0)
-									  array1.push("&tags[0].key=" + args.filterBy.advSearch[key]);
-									else if(key == 'tagValue' && args.filterBy.advSearch[key].length > 0)
-									  array1.push("&tags[0].value=" + args.filterBy.advSearch[key]);			
-								  else if(args.filterBy.advSearch[key] != null && args.filterBy.advSearch[key].length > 0)
-								    array1.push("&" + key + "=" + args.filterBy.advSearch[key]);
-								}
-							}						
-              else if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                switch(args.filterBy.search.by) {
-                case "name":
-                  if(args.filterBy.search.value.length > 0)
-                    array1.push("&keyword=" + args.filterBy.search.value);
-                  break;
-                }
-              }
-            }
-
-            var apiCmd = "listVolumes&listAll=true&page=" + args.page + "&pagesize=" + pageSize+ array1.join("");
+					  var data = {};
+						listViewDataProvider(args, data);						
+           
             if(args.context != null) {
               if("instances" in args.context) {
-                apiCmd += "&virtualMachineId=" + args.context.instances[0].id;
+							  $.extend(data, {
+								  virtualMachineId: args.context.instances[0].id
+								});
               }
             }
 
             $.ajax({
-              url: createURL(apiCmd),
-              dataType: "json",
-              async: true,
+              url: createURL('listVolumes'),
+              data: data,             
               success: function(json) {
                 var items = json.listvolumesresponse.volume;
                 args.response.success({
