@@ -141,6 +141,26 @@
   </build>
   <profiles>
     <profile>
+      <id>vmware</id>
+      <activation>
+        <property>
+          <name>nonoss</name>
+        </property>
+      </activation>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.cloudstack</groupId>
+                <artifactId>cloud-plugin-hypervisor-vmware</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.cloudstack</groupId>
+                <artifactId>cloud-vmware-base</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </profile>
+    <profile>
       <id>systemvm</id>
       <activation>
         <property>
