@@ -39,6 +39,11 @@
     </dependency>
     <dependency>
       <groupId>org.apache.axis2</groupId>
+      <artifactId>axis2-adb</artifactId>
+      <version>${cs.axis2.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.axis2</groupId>
       <artifactId>axis2-webapp</artifactId>
       <type>war</type>
       <version>${cs.axis2.version}</version>
