@@ -73,7 +73,32 @@
 									}
 								});
 							}						
+						},											
+						
+						domainid: {
+							label: 'Domain',							
+							select: function(args) {
+								$.ajax({
+									url: createURL('listDomains'),
+									data: { 
+									  listAll: true,
+                    details: 'min'					
+									},
+									success: function(json) {
+										args.response.success({
+											data: $.map(json.listdomainsresponse.domain, function(domain) {
+												return {
+													id: domain.id,
+													description: domain.path
+												};
+											})
+										});
+									}
+								});
+							}
 						},
+						account: { label: 'Account' },
+												
 						tagKey: { label: 'Tag Key' },
 						tagValue: { label: 'Tag Value' }						
 					},
