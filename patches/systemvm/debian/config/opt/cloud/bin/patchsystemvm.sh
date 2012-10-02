@@ -192,7 +192,7 @@ then
    enable_serial_console
 fi
 
-if [ "$TYPE" == "router" ] || [ "$type" == "vpcrouter" ]
+if [ "$TYPE" == "router" ] || [ "$TYPE" == "vpcrouter" ]
 then
   routing_svcs
   if [ $? -gt 0 ]
