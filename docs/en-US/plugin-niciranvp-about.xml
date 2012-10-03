@@ -20,7 +20,7 @@
  specific language governing permissions and limitations
  under the License.
 -->
-<chapter id="About-the-Nicira-NVP-Plugin">
+<chapter id="About-the-Nicira-NVP-Plugin" xmlns:xi="http://www.w3.org/2001/XInclude">
     <title>The Nicira NVP Plugin</title>
     <xi:include href="plugin-niciranvp-introduction.xml"></xi:include>
     <xi:include href="plugin-niciranvp-features.xml"></xi:include>
