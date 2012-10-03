@@ -14,6 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package com.cloud.async;
 
 import java.util.Date;
@@ -30,110 +31,112 @@ import javax.persistence.TemporalType;
 @Entity
 @Table(name="sync_queue")
 public class SyncQueueVO {
-	@Id
+
+    @Id
     @GeneratedValue(strategy=GenerationType.IDENTITY)
     @Column(name="id")
     private Long id;
 
     @Column(name="sync_objtype")
-	private String syncObjType;
+
+    private String syncObjType;
     
     @Column(name="sync_objid")
-	private Long syncObjId;
+    private Long syncObjId;
     
     @Column(name="queue_proc_number")
     private Long lastProcessNumber;
     
     @Column(name="queue_proc_time")
     @Temporal(TemporalType.TIMESTAMP)
-	private Date lastProcessTime;
+    private Date lastProcessTime;
     
     @Column(name="queue_proc_msid")
-	private Long lastProcessMsid;
+    private Long lastProcessMsid;
     
     @Column(name="created")
     @Temporal(TemporalType.TIMESTAMP)
-	private Date created;
+    private Date created;
     
     @Column(name="last_updated")
     @Temporal(TemporalType.TIMESTAMP)
-	private Date lastUpdated;
+    private Date lastUpdated;
     
-	public Long getId() {
-		return id;
-	}
+    public Long getId() {
+        return id;
+    }
 
-	public void setId(Long id) {
-		this.id = id;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-	public String getSyncObjType() {
-		return syncObjType;
-	}
+    public String getSyncObjType() {
+        return syncObjType;
+    }
 
-	public void setSyncObjType(String syncObjType) {
-		this.syncObjType = syncObjType;
-	}
+    public void setSyncObjType(String syncObjType) {
+        this.syncObjType = syncObjType;
+    }
 
-	public Long getSyncObjId() {
-		return syncObjId;
-	}
+    public Long getSyncObjId() {
+        return syncObjId;
+    }
 
-	public void setSyncObjId(Long syncObjId) {
-		this.syncObjId = syncObjId;
-	}
-	
-	public Long getLastProcessNumber() {
-		return lastProcessNumber;
-	}
-	
-	public void setLastProcessNumber(Long number) {
-		lastProcessNumber = number;
-	}
+    public void setSyncObjId(Long syncObjId) {
+        this.syncObjId = syncObjId;
+    }
+    
+    public Long getLastProcessNumber() {
+        return lastProcessNumber;
+    }
+    
+    public void setLastProcessNumber(Long number) {
+        lastProcessNumber = number;
+    }
 
-	public Date getLastProcessTime() {
-		return lastProcessTime;
-	}
+    public Date getLastProcessTime() {
+        return lastProcessTime;
+    }
 
-	public void setLastProcessTime(Date lastProcessTime) {
-		this.lastProcessTime = lastProcessTime;
-	}
+    public void setLastProcessTime(Date lastProcessTime) {
+        this.lastProcessTime = lastProcessTime;
+    }
 
-	public Long getLastProcessMsid() {
-		return lastProcessMsid;
-	}
+    public Long getLastProcessMsid() {
+        return lastProcessMsid;
+    }
 
-	public void setLastProcessMsid(Long lastProcessMsid) {
-		this.lastProcessMsid = lastProcessMsid;
-	}
+    public void setLastProcessMsid(Long lastProcessMsid) {
+        this.lastProcessMsid = lastProcessMsid;
+    }
 
-	public Date getCreated() {
-		return created;
-	}
+    public Date getCreated() {
+        return created;
+    }
 
-	public void setCreated(Date created) {
-		this.created = created;
-	}
+    public void setCreated(Date created) {
+        this.created = created;
+    }
 
-	public Date getLastUpdated() {
-		return lastUpdated;
-	}
+    public Date getLastUpdated() {
+        return lastUpdated;
+    }
 
-	public void setLastUpdated(Date lastUpdated) {
-		this.lastUpdated = lastUpdated;
-	}
-	
-	public String toString() {
-		StringBuffer sb = new StringBuffer();
-		sb.append("SyncQueueVO {id:").append(getId());
-		sb.append(", syncObjType: ").append(getSyncObjType());
-		sb.append(", syncObjId: ").append(getSyncObjId());
-		sb.append(", lastProcessMsid: ").append(getLastProcessMsid());
-		sb.append(", lastProcessNumber: ").append(getLastProcessNumber());
-		sb.append(", lastProcessTime: ").append(getLastProcessTime());
-		sb.append(", lastUpdated: ").append(getLastUpdated());
-		sb.append(", created: ").append(getCreated());
-		sb.append("}");
-		return sb.toString();
-	}
+    public void setLastUpdated(Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
+    }
+    
+    public String toString() {
+        StringBuffer sb = new StringBuffer();
+        sb.append("SyncQueueVO {id:").append(getId());
+        sb.append(", syncObjType: ").append(getSyncObjType());
+        sb.append(", syncObjId: ").append(getSyncObjId());
+        sb.append(", lastProcessMsid: ").append(getLastProcessMsid());
+        sb.append(", lastProcessNumber: ").append(getLastProcessNumber());
+        sb.append(", lastProcessTime: ").append(getLastProcessTime());
+        sb.append(", lastUpdated: ").append(getLastUpdated());
+        sb.append(", created: ").append(getCreated());
+        sb.append("}");
+        return sb.toString();
+    }
 }
