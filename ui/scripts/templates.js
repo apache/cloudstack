@@ -907,43 +907,73 @@
             }
           },
 
+					advSearchFields: {
+					  name: { label: 'Name' },
+						zoneid: { 
+						  label: 'Zone',							
+              select: function(args) {							  					
+								$.ajax({
+									url: createURL('listZones'),
+									data: {
+									  listAll: true
+									},
+									success: function(json) {									  
+										var zones = json.listzonesresponse.zone;
+
+										args.response.success({
+											data: $.map(zones, function(zone) {
+												return {
+													id: zone.id,
+													description: zone.name
+												};
+											})
+										});
+									}
+								});
+							}						
+						},									
+						tagKey: { label: 'Tag Key' },
+						tagValue: { label: 'Tag Value' }						
+					},
+					
           dataProvider: function(args) {
-            var array1 = [];
+					  var data = {};
+						listViewDataProvider(args, data);		
+						           
             var ignoreProject = false;
-            if(args.filterBy != null) {
+            if(args.filterBy != null) {	//filter dropdown
               if(args.filterBy.kind != null) {
                 switch(args.filterBy.kind) {
                 case "all":
                   ignoreProject = true;
-                  array1.push("&isofilter=all");
+									$.extend(data, {
+									  isofilter: 'all'
+									});  
                   break;
                 case "mine":
-                  array1.push("&isofilter=self");
+								  $.extend(data, {
+									  isofilter: 'self'
+									});  
                   break;
                 case "featured":
                   ignoreProject = true;
-                  array1.push("&isofilter=featured");
+									$.extend(data, {
+									  isofilter: 'featured'
+									});                    
                   break;
                 case "community":
                   ignoreProject = true;
-                  array1.push("&isofilter=community");
+									$.extend(data, {
+									  isofilter: 'community'
+									});                    
                   break;
                 }
-              }
-              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                switch(args.filterBy.search.by) {
-                case "name":
-                  if(args.filterBy.search.value.length > 0)
-                    array1.push("&keyword=" + args.filterBy.search.value);
-                  break;
-                }
-              }
-            }
+              }              
+            }		
 
             $.ajax({
-              url: createURL("listIsos&page=" + args.page + "&pagesize=" + pageSize + array1.join(""), { ignoreProject: ignoreProject }),
-              dataType: "json",
-              async: true,
+              url: createURL('listIsos', { ignoreProject: ignoreProject }),
+              data: data,      
               success: function(json) {
                 var items = json.listisosresponse.iso;
                 args.response.success({
