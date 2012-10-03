@@ -408,6 +408,49 @@ cloudStack.converters = {
   }
 }
 
+//data parameter passed to API call in listView
+function listViewDataProvider(args, data) {   
+  //search 
+	if(args.filterBy != null) {				    
+		if(args.filterBy.advSearch != null && typeof(args.filterBy.advSearch) == "object") { //advanced search		  
+			for(var key in args.filterBy.advSearch) {	
+				if(key == 'tagKey' && args.filterBy.advSearch[key].length > 0) {
+				  $.extend(data, {
+					  'tags[0].key': args.filterBy.advSearch[key]
+					});
+				}	
+				else if(key == 'tagValue' && args.filterBy.advSearch[key].length > 0) {
+				  $.extend(data, {
+					  'tags[0].value': args.filterBy.advSearch[key]
+					});					
+				}	
+				else if(args.filterBy.advSearch[key] != null && args.filterBy.advSearch[key].length > 0) {				  
+					data[key] = args.filterBy.advSearch[key]; //do NOT use  $.extend(data, { key: args.filterBy.advSearch[key] }); which will treat key variable as "key" string 
+        }					
+			}			
+		}		
+		else if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) { //basic search
+			switch(args.filterBy.search.by) {
+			  case "name":
+				  if(args.filterBy.search.value.length > 0) {
+				    $.extend(data, {
+					    keyword: args.filterBy.search.value
+					  });					
+				  }
+				  break;
+			}
+		}		
+	}
+
+	//pagination
+	$.extend(data, {
+	  listAll: true,
+		details: 'min',
+		page: args.page,
+		pagesize: pageSize		
+	});	
+}
+
 //find service object in network object
 function ipFindNetworkServiceByName(pName, networkObj) {    
     if(networkObj == null)

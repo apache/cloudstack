@@ -66,6 +66,7 @@ setup_apache2() {
   sed -i -e "s/Listen .*:80/Listen $ip:80/g" /etc/apache2/conf.d/vhost$dev.conf
   sed -i -e "s/Listen .*:443/Listen $ip:443/g" /etc/apache2/conf.d/vhost$dev.conf
   service apache2 restart
+  sudo iptables -D INPUT -i $dev -d $ip -p tcp -m state --state NEW --dport 80 -j ACCEPT
   sudo iptables -A INPUT -i $dev -d $ip -p tcp -m state --state NEW --dport 80 -j ACCEPT
 }
 
@@ -79,6 +80,11 @@ desetup_apache2() {
 
 setup_dnsmasq() {
   logger -t cloud "Setting up dnsmasq for network $ip/$mask "
+  # setup rules to allow dhcp/dns request
+  sudo iptables -D INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
+  sudo iptables -D INPUT -i $dev -d $ip -p udp -m udp --dport 53 -j ACCEPT
+  sudo iptables -A INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
+  sudo iptables -A INPUT -i $dev -d $ip -p udp -m udp --dport 53 -j ACCEPT
   # setup static 
   sed -i -e "/^[#]*dhcp-range=interface:$dev/d" /etc/dnsmasq.d/cloud.conf
   echo "dhcp-range=interface:$dev,set:interface-$dev,$ip,static" >> /etc/dnsmasq.d/cloud.conf
@@ -93,7 +99,9 @@ setup_dnsmasq() {
 
 desetup_dnsmasq() {
   logger -t cloud "Desetting up dnsmasq for network $ip/$mask "
-  
+  # remove rules to allow dhcp/dns request
+  sudo iptables -D INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
+  sudo iptables -D INPUT -i $dev -d $ip -p udp -m udp --dport 53 -j ACCEPT
   sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,option:router.*$/d" /etc/dnsmasq.d/cloud.conf
   sed -i -e "/^[#]*dhcp-option=tag:interface-$dev,6.*$/d" /etc/dnsmasq.d/cloud.conf
   sed -i -e "/^[#]*dhcp-range=interface:$dev/d" /etc/dnsmasq.d/cloud.conf
@@ -103,11 +111,14 @@ desetup_dnsmasq() {
 
 setup_passwdsvcs() {
   logger -t cloud "Setting up password service for network $ip/$mask, eth $dev "
+  sudo iptables -D INPUT -i $dev -d $ip -p tcp -m state --state NEW --dport 8080 -j ACCEPT
+  sudo iptables -A INPUT -i $dev -d $ip -p tcp -m state --state NEW --dport 8080 -j ACCEPT
   nohup bash /opt/cloud/bin/vpc_passwd_server $ip >/dev/null 2>&1 &
 }
 
 desetup_passwdsvcs() {
   logger -t cloud "Desetting up password service for network $ip/$mask, eth $dev "
+  sudo iptables -D INPUT -i $dev -d $ip -p tcp -m state --state NEW --dport 8080 -j ACCEPT
   pid=`ps -ef | grep socat | grep $ip | grep -v grep | awk '{print $2}'`
   if [ -n "$pid" ]
   then
@@ -121,18 +132,11 @@ create_guest_network() {
   sudo ip addr add dev $dev $ip/$mask brd +
   sudo ip link set $dev up
   sudo arping -c 3 -I $dev -A -U -s $ip $ip
-  # setup rules to allow dhcp/dns request
-  sudo iptables -D INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
-  sudo iptables -D INPUT -i $dev -p udp -m udp --dport 53 -j ACCEPT
-  sudo iptables -A INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
-  sudo iptables -A INPUT -i $dev -p udp -m udp --dport 53 -j ACCEPT
-  sudo iptables -D INPUT -i $dev -p tcp -m state --state NEW --dport 8080 -j ACCEPT
-  sudo iptables -D INPUT -i $dev -p tcp -m state --state NEW --dport 80 -j ACCEPT
-  sudo iptables -A INPUT -i $dev -p tcp -m state --state NEW --dport 8080 -j ACCEPT
-  sudo iptables -A INPUT -i $dev -p tcp -m state --state NEW --dport 80 -j ACCEPT
   # restore mark from  connection mark
   local tableName="Table_$dev"
   sudo ip route add $subnet/$mask dev $dev table $tableName proto static
+  sudo iptables -t mangle -D PREROUTING -i $dev -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
+  sudo iptables -t nat -D POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
   sudo iptables -t mangle -A PREROUTING -i $dev -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
   # set up hairpin
   sudo iptables -t nat -A POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
@@ -146,12 +150,8 @@ destroy_guest_network() {
   logger -t cloud " $(basename $0): Create network on interface $dev,  gateway $gw, network $ip/$mask "
 
   sudo ip addr del dev $dev $ip/$mask
-  sudo iptables -D INPUT -i $dev -p udp -m udp --dport 67 -j ACCEPT
-  sudo iptables -D INPUT -i $dev -p udp -m udp --dport 53 -j ACCEPT
-  sudo iptables -D INPUT -i $dev -p tcp -m state --state NEW --dport 8080 -j ACCEPT
-  sudo iptables -D INPUT -i $dev -p tcp -m state --state NEW --dport 80 -j ACCEPT
   sudo iptables -t mangle -D PREROUTING -i $dev -m state --state ESTABLISHED,RELATED -j CONNMARK --restore-mark
-  sudo iptables -t nat -A POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
+  sudo iptables -t nat -D POSTROUTING -s $subnet/$mask -o $dev -j SNAT --to-source $ip
   destroy_acl_chain
   desetup_dnsmasq
   desetup_apache2

@@ -8,17 +8,15 @@
 	License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
 	OF ANY KIND, either express or implied. See the License for the specific 
 	language governing permissions and limitations under the License. -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.apache.cloudstack</groupId>
 	<artifactId>cloud-developer</artifactId>
 	<name>Apache CloudStack Developer Tools</name>
 	<packaging>pom</packaging>
 	<parent>
 		<groupId>org.apache.cloudstack</groupId>
 		<artifactId>cloudstack</artifactId>
-		<version>4.0.0-SNAPSHOT</version>
+		<version>4.1.0-SNAPSHOT</version>
 	</parent>
 	<dependencies>
 		<dependency>
@@ -76,6 +74,11 @@
 											<fileset dir="${project.basedir}/../setup/db/">
 											</fileset>
 										</copy>
+                                        <copy todir="${basedir}/target/db" filtering="true">
+                                            <fileset dir="${project.basedir}/../awsapi-setup/db/mysql/">
+                                              <include name="**/*.sql" />
+                                            </fileset>
+                                        </copy>
 									</target>
 								</configuration>
 							</execution>
@@ -130,6 +133,58 @@
                                     <sqlCommand>create database `cloud`</sqlCommand>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>drop-database-usage</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <configuration>
+                                    <username>root</username>
+                                    <password>${db.cloud.password}</password>
+                                    <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
+                                    <sqlCommand>drop database if exists `cloud_usage`</sqlCommand>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>create-database-usage</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <configuration>
+                                    <username>root</username>
+                                    <password>${db.cloud.password}</password>
+                                    <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
+                                    <sqlCommand>create database `cloud_usage`</sqlCommand>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>drop-database-cloudbridge</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <configuration>
+                                    <username>root</username>
+                                    <password>${db.cloud.password}</password>
+                                    <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
+                                    <sqlCommand>drop database if exists `cloudbridge`</sqlCommand>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>create-database-cloudbridge</id>
+                                <phase>process-test-resources</phase>
+                                <goals>
+                                    <goal>execute</goal>
+                                </goals>
+                                <configuration>
+                                    <username>root</username>
+                                    <password>${db.cloud.password}</password>
+                                    <url>jdbc:mysql://${db.cloud.host}:${db.cloud.port}</url>
+                                    <sqlCommand>create database `cloudbridge`</sqlCommand>
+                                </configuration>
+                            </execution>
 							<execution>
 								<id>create-schema</id>
 								<phase>process-test-resources</phase>
@@ -139,8 +194,17 @@
 								<configuration>
 									<srcFiles>
 										<srcFile>${basedir}/target/db/create-schema.sql</srcFile>
+										<srcFile>${basedir}/target/db/create-schema-premium.sql</srcFile>
 										<srcFile>${basedir}/target/db/templates.sql</srcFile>
 										<srcFile>${basedir}/target/db/create-index-fk.sql</srcFile>
+										<srcFile>${basedir}/target/db/cloudbridge_schema.sql</srcFile>
+										<srcFile>${basedir}/target/db/cloudbridge_multipart.sql</srcFile>
+										<srcFile>${basedir}/target/db/cloudbridge_index.sql</srcFile>
+										<srcFile>${basedir}/target/db/cloudbridge_multipart_alter.sql</srcFile>
+										<srcFile>${basedir}/target/db/cloudbridge_bucketpolicy.sql</srcFile>
+										<srcFile>${basedir}/target/db/cloudbridge_policy_alter.sql</srcFile>
+										<srcFile>${basedir}/target/db/cloudbridge_offering.sql</srcFile>
+										<srcFile>${basedir}/target/db/cloudbridge_offering_alter.sql</srcFile>
 									</srcFiles>
 								</configuration>
 							</execution>

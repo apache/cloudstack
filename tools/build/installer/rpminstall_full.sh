@@ -111,13 +111,14 @@ if [ "$installtype" == "q" -o "$installtype" == "Q" ] ; then
 elif [ "$installtype" == "m" -o "$installtype" == "M" ] ; then
 
     echo "Installing the Management Server..." >&2
-    doinstall cloud-client cloud-premium 
+    doinstall cloud-client
     true
 
 elif [ "$installtype" == "a" -o "$installtype" == "A" ] ; then
 
     echo "Installing the Agent..." >&2
-    if doinstall cloud-agent cloud-premium ; then
+    if doinstall cloud-agent; then
+
         echo "Agent installation is completed, please add the host from management server" >&2
     else
         true
@@ -130,7 +131,7 @@ elif [ "$installtype" == "b" -o "$installtype" == "B" ] ; then
 elif [ "$installtype" == "s" -o "$installtype" == "S" ] ; then
 
     echo "Installing the Usage Server..." >&2
-    doinstall cloud-usage cloud-premium 
+    doinstall cloud-usage
     true
 
 elif [ "$installtype" == "d" -o "$installtype" == "D" ] ; then

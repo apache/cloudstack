@@ -16,8 +16,7 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -28,7 +27,7 @@
 
   <groupId>org.apache.cloudstack</groupId>
   <artifactId>cloudstack</artifactId>
-  <version>4.0.0-SNAPSHOT</version>
+  <version>4.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
   <name>Apache CloudStack</name>
   <description>CloudStack is an IaaS (“Infrastracture as a Service”) cloud orchestration platform.</description>
@@ -74,7 +73,7 @@
     <cs.mail.version>1.4</cs.mail.version>
     <cs.axis.version>1.4</cs.axis.version>
     <cs.axis2.version>1.5.1</cs.axis2.version>
-    <cs.rampart.version>1.6.2</cs.rampart.version>
+    <cs.rampart.version>1.5.1</cs.rampart.version>
     <cs.axiom.version>1.2.8</cs.axiom.version>
     <cs.neethi.version>2.0.4</cs.neethi.version>
     <cs.servlet.version>2.4</cs.servlet.version>
@@ -157,6 +156,7 @@
     <module>plugins</module>
     <module>awsapi</module>
     <module>patches</module>
+    <module>client</module>
     <module>test</module>
   </modules>
 
@@ -186,6 +186,7 @@
             <numUnapprovedLicenses>0</numUnapprovedLicenses>
             <excludeSubProjects>false</excludeSubProjects>
             <excludes>
+              <exclude>INSTALL.md</exclude>
               <exclude>.git/**</exclude>
               <exclude>.gitignore</exclude>
               <exclude>**/*.crt</exclude>
@@ -313,12 +314,7 @@
   </build>
 
   <profiles>
-    <profile>
-      <id>client</id>
-      <modules>
-        <module>client</module>
-      </modules>
-    </profile>
+
     <profile>
       <id>deps</id>
       <modules>
@@ -331,6 +327,18 @@
         <module>developer</module>
       </modules>
     </profile>
+    <profile>
+      <id>vmware</id>
+      <activation>
+        <property>
+          <name>nonoss</name>
+        </property>
+      </activation>
+      <modules>
+        <module>vmware-base</module>
+      </modules>
+    </profile>
+
   </profiles>
 
 </project>

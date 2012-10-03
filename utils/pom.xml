@@ -16,15 +16,14 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <artifactId>cloud-utils</artifactId>
   <name>Apache CloudStack Utils</name>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.0.0-SNAPSHOT</version>
+    <version>4.1.0-SNAPSHOT</version>
   </parent>
   <dependencies>
     <dependency>
@@ -124,11 +123,26 @@
       <artifactId>commons-configuration</artifactId>
       <version>${cs.configuration.version}</version>
     </dependency>
+    <!-- Test dependency in mysql for db tests -->
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>5.1.21</version>
+      <scope>test</scope>
+    </dependency>    
   </dependencies>
   <build>
     <defaultGoal>install</defaultGoal>
     <sourceDirectory>src</sourceDirectory>
     <testSourceDirectory>test</testSourceDirectory>
+    <testResources>
+      <testResource>
+        <directory>test/resources</directory>
+      </testResource>
+      <testResource>
+        <directory>conf</directory>
+      </testResource>
+    </testResources>    
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -141,6 +155,15 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>com/cloud/utils/testcase/*TestCase*</exclude>
+          </excludes>
+        </configuration>
+      </plugin>      
     </plugins>
     <resources>
        <resource>

@@ -191,7 +191,8 @@
           url: createURL('listNetworks', { ignoreProject: true }),
           data: {
             supportedServices: 'SecurityGroup',
-            listAll: true
+            listAll: true,
+						details: 'min'
           },
           async: false,
           success: function(data) {
@@ -338,7 +339,8 @@
                         $.ajax({
                           url: createURL('listVPCs'),
                           data: {
-                            listAll: true
+                            listAll: true,
+														details: 'min'
                           },
                           success: function(json) {
                             var items = json.listvpcsresponse.vpc;
@@ -436,24 +438,42 @@
              }
              */
           },
-          dataProvider: function(args) {
-            var array1 = [];
-            if(args.filterBy != null) {
-              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                switch(args.filterBy.search.by) {
-                case "name":
-                  if(args.filterBy.search.value.length > 0)
-                    array1.push("&keyword=" + args.filterBy.search.value);
-                  break;
-                }
-              }
-            }
+          
+					advSearchFields: {					 
+						zoneid: { 
+						  label: 'Zone',							
+              select: function(args) {							  					
+								$.ajax({
+									url: createURL('listZones'),
+									data: {
+									  listAll: true
+									},
+									success: function(json) {									  
+										var zones = json.listzonesresponse.zone;
+
+										args.response.success({
+											data: $.map(zones, function(zone) {
+												return {
+													id: zone.id,
+													description: zone.name
+												};
+											})
+										});
+									}
+								});
+							}						
+						},									
+						tagKey: { label: 'Tag Key' },
+						tagValue: { label: 'Tag Value' }						
+					},
+					
+					dataProvider: function(args) {
+            var data = {};
+						listViewDataProvider(args, data);		
+						
             $.ajax({
-              url: createURL("listNetworks&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              data: {
-                listAll: true
-              },
-              dataType: 'json',
+              url: createURL('listNetworks'),
+              data: data,			
               async: false,
               success: function(data) {
                 args.response.success({								  
@@ -3600,23 +3620,43 @@
             cidr: { label: 'label.cidr' },
             state: {label: 'label.state', indicator: { 'Enabled': 'on', 'Disabled': 'off'}}
           },
-          dataProvider: function(args) {            
-						var array1 = [];  
-						if(args.filterBy != null) {          
-							if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-								switch(args.filterBy.search.by) {
-								case "name":
-									if(args.filterBy.search.value.length > 0)
-										array1.push("&keyword=" + args.filterBy.search.value);
-									break;
-								}
-							}
-						}
-						
+										
+					advSearchFields: {
+					  name: { label: 'Name' },
+						zoneid: { 
+						  label: 'Zone',							
+              select: function(args) {							  					
+								$.ajax({
+									url: createURL('listZones'),
+									data: {
+									  listAll: true
+									},
+									success: function(json) {									  
+										var zones = json.listzonesresponse.zone;
+
+										args.response.success({
+											data: $.map(zones, function(zone) {
+												return {
+													id: zone.id,
+													description: zone.name
+												};
+											})
+										});
+									}
+								});
+							}						
+						},									
+						tagKey: { label: 'Tag Key' },
+						tagValue: { label: 'Tag Value' }						
+					},					
+					
+          dataProvider: function(args) {
+            var data = {};
+						listViewDataProvider(args, data);			
+
             $.ajax({
-              url: createURL("listVPCs&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              dataType: "json",
-              async: true,
+              url: createURL('listVPCs'),
+              data: data,              
               success: function(json) {
                 var items = json.listvpcsresponse.vpc; 
                 args.response.success({data:items});

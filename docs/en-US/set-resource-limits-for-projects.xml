@@ -24,5 +24,7 @@
 
 <section id="set-resource-limits-for-projects">
     <title>Setting Resource Limits for Projects</title>
-    <para>The &PRODUCT; administrator can set global default limits to control the amount of resources that can be owned by each project  in the cloud. This serves to prevent uncontrolled usage of resources such as snapshots, IP addresses, and virtual machine instances. Domain administrators can override these resource limits for individual projects with their domains, as long as the new limits are below the global defaults set by the &PRODUCT; root administrator. The root administrator can also set lower resource limits for any project in the cloud</para>
+    <para>The &PRODUCT; administrator can set global default limits to control the amount of resources that can be owned by each project  in the cloud. This serves to prevent uncontrolled usage of resources such as snapshots, IP addresses, and virtual machine instances. Domain administrators can override these resource limits for individual projects with their domains, as long as the new limits are below the global defaults set by the &PRODUCT; root administrator. The root administrator can also set lower resource limits for any project in the cloud.</para>
+    <xi:include href="set-global-project-resource-limits.xml" xmlns:xi="http://www.w3.org/2001/XInclude" /> 
+    <xi:include href="set-per-project-resource-limits.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />
 </section>

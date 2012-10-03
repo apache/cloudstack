@@ -2409,6 +2409,10 @@ this distribution.
             id='libvirt.org'
             name='The libvirt project'
             url='http://libvirt.org/' />
+        <organisation
+            id='adiscon.com'
+            name='Adiscon GmbH'
+            url='http://www.adiscon.com/' />
     </organisations>
     <primary-license id='ApacheLicenseVersion2'>
         <copyright-notice>Copyright (c) 2012 The Apache Software Foundation</copyright-notice>
@@ -2444,6 +2448,9 @@ Copyright (c) 2012 The Apache Software Foundation
     </within>
     <within dir='patches/systemvm/debian/config/etc'>
         <public-domain>
+            <by-organisation id='adiscon.com'>
+                <resource name='rsyslog.conf' />
+            </by-organisation>
             <by-organisation id='person:simon.kelley'>
                 <resource name='vpcdnsmasq.conf' />
                 <resource name='dnsmasq.conf' />
