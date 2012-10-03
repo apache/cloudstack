@@ -208,6 +208,7 @@
           sectionsToShow.push('vpc');
           sectionsToShow.push('vpnCustomerGateway');
         }
+
         
         if(havingSecurityGroupNetwork == true)
           sectionsToShow.push('securityGroups');
@@ -3142,23 +3143,18 @@
             }
           },
 
+					advSearchFields: {					  					
+						tagKey: { label: 'Tag Key' },
+						tagValue: { label: 'Tag Value' }						
+					},
+					
           dataProvider: function(args) {
-            var array1 = [];
-            if(args.filterBy != null) {
-              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                switch(args.filterBy.search.by) {
-                case "name":
-                  if(args.filterBy.search.value.length > 0)
-                    array1.push("&keyword=" + args.filterBy.search.value);
-                  break;
-                }
-              }
-            }
+            var data = {};
+						listViewDataProvider(args, data);						
 
             $.ajax({
-              url: createURL("listSecurityGroups&listAll=true&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-              dataType: "json",
-              async: true,
+              url: createURL('listSecurityGroups'),
+              data: data,              
               success: function(json) {
                 var items = json.listsecuritygroupsresponse.securitygroup;
                 args.response.success({
