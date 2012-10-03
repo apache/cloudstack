@@ -48,6 +48,36 @@
             zonename: { label: 'label.zone' },
             hypervisor: { label: 'label.hypervisor' }
           },
+					
+					advSearchFields: {
+					  name: { label: 'Name' },
+						zoneid: { 
+						  label: 'Zone',							
+              select: function(args) {							  					
+								$.ajax({
+									url: createURL('listZones'),
+									data: {
+									  listAll: true
+									},
+									success: function(json) {									  
+										var zones = json.listzonesresponse.zone;
+
+										args.response.success({
+											data: $.map(zones, function(zone) {
+												return {
+													id: zone.id,
+													description: zone.name
+												};
+											})
+										});
+									}
+								});
+							}						
+						},									
+						tagKey: { label: 'Tag Key' },
+						tagValue: { label: 'Tag Value' }						
+					},
+					
           reorder: cloudStack.api.actions.sort('updateTemplate', 'templates'),
           actions: {
             add: {
@@ -301,43 +331,44 @@
             }
           },
 
-          dataProvider: function(args) {
-            var array1 = [];
+          dataProvider: function(args) {					  
+						var data = {};
+						listViewDataProvider(args, data);		
+						           
             var ignoreProject = false;
-            if(args.filterBy != null) {
+            if(args.filterBy != null) {	//filter dropdown
               if(args.filterBy.kind != null) {
                 switch(args.filterBy.kind) {
                 case "all":
                   ignoreProject = true;
-                  array1.push("&templatefilter=all");
+									$.extend(data, {
+									  templatefilter: 'all'
+									});  
                   break;
                 case "mine":
-                  array1.push("&templatefilter=self");
+								  $.extend(data, {
+									  templatefilter: 'self'
+									});  
                   break;
                 case "featured":
                   ignoreProject = true;
-                  array1.push("&templatefilter=featured");
+									$.extend(data, {
+									  templatefilter: 'featured'
+									});                    
                   break;
                 case "community":
                   ignoreProject = true;
-                  array1.push("&templatefilter=community");
+									$.extend(data, {
+									  templatefilter: 'community'
+									});                    
                   break;
                 }
-              }
-              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                switch(args.filterBy.search.by) {
-                case "name":
-                  if(args.filterBy.search.value.length > 0)
-                    array1.push("&keyword=" + args.filterBy.search.value);
-                  break;
-                }
-              }
+              }              
             }
+						
             $.ajax({
-              url: createURL("listTemplates&page=" + args.page + "&pagesize=" + pageSize + array1.join(""),
-                             { ignoreProject: ignoreProject }),
-              dataType: "json",
-              async: true,
+              url: createURL('listTemplates', { ignoreProject: ignoreProject }),
+              data: data,              
               success: function(json) {
                 var items = json.listtemplatesresponse.template;
                 args.response.success({
