@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+<!DOCTYPE section PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
 <!ENTITY % BOOK_ENTITIES SYSTEM "cloudstack.ent">
 %BOOK_ENTITIES;
 <!ENTITY % xinclude SYSTEM "http://www.docbook.org/xml/4.4/xinclude.mod">
@@ -20,10 +20,11 @@
  specific language governing permissions and limitations
  under the License.
 -->
-<chapter id="Using-the-Nicira-NVP-Plugin">
-    <title>Using the Nicira NVP Plugin</title>
+<section id="UUID-references">
+    <title>UUID References</title>
+    <para>The plugin maintains several references in the CloudStack database to items created on the NVP Controller.</para>
+    <para>Every guest network this is created will have its broadcast type set to Lswitch and if the network is in state "Implemented", the broadcast URI will have the UUID of the Logical Switch that was created for this network on the NVP Controller.</para>
+    <para>The Nics that are connected to one of the Logical Switches will have their Logical Switch Port UUID listed in the nicira_nvp_nic_map table</para>
+    <note><para>All devices created on the NVP Controller will have a tag set to domain-account of the owner of the network, this string can be used to search for items in the NVP Controller.</para></note>    
     
-    <xi:include href="plugin-niciranvp-preparations.xml"></xi:include>
-    <xi:include href="plugin-niciranvp-provider.xml"></xi:include>
-    <xi:include href="plugin-niciranvp-devicemanagement.xml"></xi:include>
-</chapter>
+</section>

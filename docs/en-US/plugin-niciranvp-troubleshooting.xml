@@ -22,8 +22,7 @@
 -->
 <chapter id="Troubleshooting-the-Nicira-NVP-Plugin">
     <title>Troubleshooting the Nicira NVP Plugin</title>
-    <!--
+    
     <xi:include href="plugin-niciranvp-uuidreferences.xml"></xi:include>
     <xi:include href="plugin-niciranvp-tables.xml"></xi:include>
-    -->
 </chapter>

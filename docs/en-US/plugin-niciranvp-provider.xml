@@ -20,10 +20,23 @@
  specific language governing permissions and limitations
  under the License.
 -->
-<section id="Features-of-the-Nicira-NVP-Plugin">
-    <title>Features of the Nicira NVP Plugin</title>
-    <para>In CloudStack release 4.0.x this plugin supports the Connectivity service. This service is responsible for creating Layer 2 networks supporting the networks created by Guests. In other words when an tennant creates a new network, instead of the traditional VLAN a logical network will be created by sending the appropriate calls to the Nicira NVP Controller.</para>
-    <para>The plugin has been tested with Nicira NVP versions 2.1.0, 2.2.0 and 2.2.1</para>
-    <note><para>In CloudStack 4.0.x only the XenServer hypervisor is supported for use in combination with Nicira NVP</para></note>
-    <note><para>In CloudStack 4.0.x the UI components for this plugin are not complete, configuration is done by sending commands to the API</para></note>
+<section id="Enabling-the-service-provider">
+    <title>Enabling the service provider</title>
+    <para>To allow CloudStack to use the Nicira NVP Plugin the network service provider needs to be enabled on the physical network. The following sequence of API calls will enable the network service provider</para>
+    <itemizedlist>
+        <listitem><para>addNetworkServiceProvider</para></listitem>
+        <listitem>
+            <itemizedlist>
+                <listitem><para>name = "NiciraNVP"</para></listitem>
+                <listitem><para>physicalnetworkid = &lt;the uuid of the physical network&gt;</para></listitem>
+            </itemizedlist>
+        </listitem>
+        <listitem><para>updateNetworkServiceProvider</para></listitem>
+        <listitem>
+            <itemizedlist>
+                <listitem><para>id = &lt;the provider uuid returned by the previous call&gt;</para></listitem>
+                <listitem><para>state = "Enabled"</para></listitem>
+            </itemizedlist>
+        </listitem>
+    </itemizedlist>    
 </section>
