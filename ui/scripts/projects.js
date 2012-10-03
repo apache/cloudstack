@@ -622,29 +622,48 @@
             }
           },
 
+					advSearchFields: {
+					  name: { label: 'Name' },
+						zoneid: { 
+						  label: 'Zone',							
+              select: function(args) {							  					
+								$.ajax({
+									url: createURL('listZones'),
+									data: {
+									  listAll: true
+									},
+									success: function(json) {									  
+										var zones = json.listzonesresponse.zone;
+
+										args.response.success({
+											data: $.map(zones, function(zone) {
+												return {
+													id: zone.id,
+													description: zone.name
+												};
+											})
+										});
+									}
+								});
+							}						
+						},									
+						tagKey: { label: 'Tag Key' },
+						tagValue: { label: 'Tag Value' }						
+					},
+					
           dataProvider: function(args) {
-            var array1 = [];
-            if(args.filterBy != null) {
-              if(args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                switch(args.filterBy.search.by) {
-                case "name":
-                  if(args.filterBy.search.value.length > 0)
-                    array1.push("&keyword=" + args.filterBy.search.value);
-                  break;
-                }
-              }
-            }
-
-            var apiCmd = "listProjects&page=" + args.page + "&pagesize=" + pageSize + array1.join("") + '&listAll=true';
-
+            var data = {};
+						listViewDataProvider(args, data);						
+           
             if (isDomainAdmin()) {
-                apiCmd += '&domainid=' + args.context.users[0].domainid;
+						  $.extend(data, {
+							  domainid: args.context.users[0].domainid
+							});
             }
             
             $.ajax({
-              url: createURL(apiCmd, { ignoreProject: true }),
-              dataType: 'json',
-              async: true,
+              url: createURL('listProjects', { ignoreProject: true }),
+              data: data,          
               success: function(data) {
                 args.response.success({
                   data: data.listprojectsresponse.project,
