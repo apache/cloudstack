@@ -445,6 +445,7 @@ function listViewDataProvider(args, data) {
 	//pagination
 	$.extend(data, {
 	  listAll: true,
+		details: 'min',
 		page: args.page,
 		pagesize: pageSize		
 	});	
