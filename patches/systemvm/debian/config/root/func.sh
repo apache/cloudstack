@@ -46,6 +46,7 @@ getLockFile() {
 	logger -t cloud "fail to acquire the lock $1 for process $0 pid $$ after $__TIMEOUT seconds time out!"
         psline=`ps u $$`
         logger -t cloud "Failed job detail: $psline"
+        rm $__LOCKFILE
     fi
     echo $__locked
 }
